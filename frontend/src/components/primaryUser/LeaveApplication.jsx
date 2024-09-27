@@ -40,13 +40,12 @@ function LeaveApplication() {
     }))
   }
   useEffect(() => {
-    console.log("lecc", leaves)
     if (leaves) {
       const formattedEvents = formatEventData(leaves)
       setEvents(formattedEvents)
     }
   }, [leaves])
-  console.log("e", events)
+
   const labels = [
     {
       title: "Half Day",
@@ -73,7 +72,6 @@ function LeaveApplication() {
       className: "bg-gradient-to-r from-purple-400 to-purple-600"
     }
   ]
-  console.log("ositeeee", formData.onsite)
 
   const handleOnsiteChange = () => {
     setIsOnsite(!isOnsite)
@@ -202,14 +200,10 @@ function LeaveApplication() {
   }
   const handleApply = async () => {
     try {
-      console.log("fome", formData)
-
       let updatedData = { ...formData, userid: user._id }
-      console.log("up", updatedData)
 
-      console.log("newform", formData)
       // Assuming you have an API endpoint for creating leave requests
-      const response = await fetch("http://localhost:5000/api/auth/leave", {
+      const response = await fetch("https://www.crm.camet.in/api/auth/leave", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -218,11 +212,10 @@ function LeaveApplication() {
       })
 
       const responseData = await response.json()
-      console.log("resda", responseData)
+
       if (!response.ok) {
         throw new Error("Failed to apply for leave")
       }
-      console.log("ressafdadfdf", responseData.data.startDate)
 
       // Update calendar with new event (simplified example)
       const newEvent = {
@@ -247,8 +240,6 @@ function LeaveApplication() {
       console.error("Error applying for leave:", error)
     }
   }
-
-  console.log("eventss", events)
 
   return (
     <div className="flex p-8">
