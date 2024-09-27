@@ -37,18 +37,22 @@ const CustomerSchema = new mongoose.Schema({
       licensenumber: { type: Number },
       noofusers: { type: Number }, // Ensure this is a number
       version: { type: mongoose.Schema.Types.Mixed },
-      customerAddDate: { type: Date },
-      amcstartDate: { type: Date },
-      amcendDate: { type: Date },
+      customerAddDate: { type: String },
+      amcstartDate: { type: String },
+      amcendDate: { type: String },
       amcAmount: { type: Number }, // Ensure this is a number
       amcDescription: { type: String },
-      licenseExpiryDate: { type: Date },
+      licenseExpiryDate: { type: String },
       productAmount: { type: Number }, // Ensure this is a number
       productamountDescription: { type: String },
-      tvuexpiryDate: { type: Date },
+      tvuexpiryDate: { type: String },
       tvuAmount: { type: Number }, // Ensure this is a number
       tvuamountDescription: { type: String },
-      isActive: { type: Boolean },
+      isActive: {
+        type: String,
+
+        enum: ["Running", "Not Running"]
+      },
       softwareTrade: { type: String }
     }
   ],
