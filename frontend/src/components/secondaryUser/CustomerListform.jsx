@@ -206,6 +206,7 @@ import {
   FaHourglassHalf
 } from "react-icons/fa"
 import { MdPending } from "react-icons/md"
+import { Link } from "react-router-dom"
 
 const CustomerListform = ({ customerlist }) => {
   const navigate = useNavigate()
