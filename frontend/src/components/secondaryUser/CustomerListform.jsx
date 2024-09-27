@@ -202,7 +202,7 @@ const CustomerListform = ({ customerlist }) => {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
   const [displayedCustomers, setDisplayedCustomers] = useState([]) // Initially displayed customers
-  const [loadMoreCount, setLoadMoreCount] = useState(20) // Initial count to load
+  const [loadMoreCount, setLoadMoreCount] = useState(6) // Initial count to load
   const [allCustomers, setAllCustomers] = useState(customerlist) // Store all fetched customers
 
   useEffect(() => {
@@ -229,7 +229,7 @@ const CustomerListform = ({ customerlist }) => {
     if (scrollTop + clientHeight >= scrollHeight - 50) {
       // Load more customers if available
       if (displayedCustomers.length < allCustomers.length) {
-        setLoadMoreCount((prev) => prev + 20) // Increase load count by 20 on each scroll
+        setLoadMoreCount((prev) => prev + 6) // Increase load count by 20 on each scroll
       }
     }
   }
@@ -242,7 +242,7 @@ const CustomerListform = ({ customerlist }) => {
   return (
     <div className="container mx-auto min-h-screen py-8 bg-gray-100">
       <div className="w-auto bg-white shadow-lg rounded p-8 h-screen mx-8">
-      <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-4">
+        <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-4">
           <h3 className="text-2xl text-black font-bold">Customer List</h3>
           {/* Search Bar for large screens */}
           <div className="mx-4 md:block">
@@ -253,8 +253,8 @@ const CustomerListform = ({ customerlist }) => {
               type="text"
               value={searchQuery}
               onChange={(e) => {
-                setSearchQuery(e.target.value);
-                handleSearch(e.target.value);
+                setSearchQuery(e.target.value)
+                handleSearch(e.target.value)
               }}
               className=" w-full border border-gray-300 rounded-full py-2 px-4 pl-10 focus:outline-none"
               placeholder="Search for..."
