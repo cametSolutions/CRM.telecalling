@@ -1,23 +1,27 @@
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import axios from 'axios';
+import React from "react"
+import { useForm } from "react-hook-form"
+import axios from "axios"
 
 const UserRegister = () => {
-  const { register, handleSubmit, formState: { errors } } = useForm();
-  const [success, setSuccess] = React.useState(null);
-  const [error, setError] = React.useState(null);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }
+  } = useForm()
+  const [success, setSuccess] = React.useState(null)
+  const [error, setError] = React.useState(null)
 
   // Submit form data
   const onSubmit = async (data) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/register', data);
-      setSuccess('User registered successfully');
-      setError(null);
+      const response = await axios.post("https://www.crm.camet.in/api/register", data)
+      setSuccess("User registered successfully")
+      setError(null)
     } catch (err) {
-      setError('Registration failed. Please try again.');
-      setSuccess(null);
+      setError("Registration failed. Please try again.")
+      setSuccess(null)
     }
-  };
+  }
 
   return (
     <div className="max-w-md mx-auto mt-10 p-8 border border-gray-300 rounded-lg shadow-md">
@@ -32,10 +36,12 @@ const UserRegister = () => {
           <label className="block mb-1 font-semibold">Name</label>
           <input
             type="text"
-            {...register('name', { required: 'Name is required' })}
+            {...register("name", { required: "Name is required" })}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
+          {errors.name && (
+            <p className="text-red-500 text-sm">{errors.name.message}</p>
+          )}
         </div>
 
         {/* Email Field */}
@@ -43,10 +49,12 @@ const UserRegister = () => {
           <label className="block mb-1 font-semibold">Email</label>
           <input
             type="email"
-            {...register('email', { required: 'Email is required' })}
+            {...register("email", { required: "Email is required" })}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
+          {errors.email && (
+            <p className="text-red-500 text-sm">{errors.email.message}</p>
+          )}
         </div>
 
         {/* Mobile Field */}
@@ -54,10 +62,12 @@ const UserRegister = () => {
           <label className="block mb-1 font-semibold">Mobile</label>
           <input
             type="text"
-            {...register('mobile', { required: 'Mobile is required' })}
+            {...register("mobile", { required: "Mobile is required" })}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          {errors.mobile && <p className="text-red-500 text-sm">{errors.mobile.message}</p>}
+          {errors.mobile && (
+            <p className="text-red-500 text-sm">{errors.mobile.message}</p>
+          )}
         </div>
 
         {/* Password Field */}
@@ -65,10 +75,18 @@ const UserRegister = () => {
           <label className="block mb-1 font-semibold">Password</label>
           <input
             type="password"
-            {...register('password', { required: 'Password is required', minLength: { value: 6, message: 'Password must be at least 6 characters' } })}
+            {...register("password", {
+              required: "Password is required",
+              minLength: {
+                value: 6,
+                message: "Password must be at least 6 characters"
+              }
+            })}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
+          {errors.password && (
+            <p className="text-red-500 text-sm">{errors.password.message}</p>
+          )}
         </div>
 
         {/* Submit Button */}
@@ -80,7 +98,7 @@ const UserRegister = () => {
         </button>
       </form>
     </div>
-  );
-};
+  )
+}
 
-export default UserRegister;
+export default UserRegister
