@@ -12,12 +12,11 @@ function CustomerList() {
 
   useEffect(() => {
     if (customerData) {
-      console.log("cust",customerData)
+      console.log("cust", customerData)
       // Set the data to the state when it is fetched
       setCustomer(customerData)
     }
   }, [customerData])
-  console.log("customerssss:", customerData)
 
   useEffect(() => {
     if (error) {
