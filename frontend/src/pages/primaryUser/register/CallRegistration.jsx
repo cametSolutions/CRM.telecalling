@@ -250,12 +250,12 @@ export default function CallRegistration() {
   }
 
   const fetchCustomerData = debounce(async (query) => {
-    // const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
-    //   query
-    // )}`
-    const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
+    const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
       query
     )}`
+    // const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
+    //   query
+    // )}`
 
     try {
       const response = await fetch(url, {
