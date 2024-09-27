@@ -197,6 +197,15 @@ import React, { useState, useEffect } from "react"
 import { CiEdit } from "react-icons/ci"
 import { useNavigate } from "react-router-dom"
 import _ from "lodash"
+import {
+  FaUserPlus,
+  FaSearch,
+  FaRegFileExcel,
+  FaFilePdf,
+  FaPrint,
+  FaHourglassHalf
+} from "react-icons/fa"
+import { MdPending } from "react-icons/md"
 
 const CustomerListform = ({ customerlist }) => {
   const navigate = useNavigate()
