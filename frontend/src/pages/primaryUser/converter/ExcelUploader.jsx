@@ -81,7 +81,7 @@ const ExcelUploader = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:9000/api/excel/uploadExcel",
+        "https://www.crm.camet.in/api",
         {
           method: "POST",
           body: formData
