@@ -156,7 +156,7 @@ const CallregistrationList = () => {
                             {calls?.customerName}
                           </td>
                           <td className="px-4 py-2 text-sm text-[#010101]">
-                            {/* {item?.product.productName} */}
+                            {item?.product?.productName}
                           </td>
                           <td className="px-4 py-2 text-sm text-[#010101]">
                             {item?.license}
