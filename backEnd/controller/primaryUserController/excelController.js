@@ -38,13 +38,13 @@ export const ExceltoJson = async (req, res) => {
 
     for (const item of jsonData) {
       const matchingProduct = product.find(
-        (product) => product.productName === item["Type"]
+        (product) => product.productName === item["Type"].toUpperCase()
       )
       const matchingCompany = company.find(
         (company) => company.name === "CAMET GROUP"
       )
       const matchingBranch = branch.find(
-        (branch) => branch.branchName === "ACCUANET"
+        (branch) => branch.branchName === item["Branch"].toUpperCase()
       )
 
       const selectedData = [
@@ -78,12 +78,37 @@ export const ExceltoJson = async (req, res) => {
       ]
 
       // Conditionally add the Wallet Id only if it exists
-      if (item["Wallet Id"]) {
+
+      if (item["Wallet Name"]) {
         selectedData.push({
-          productName: "Wallet Id",
-          licensenumber: item["Wallet Id"]
+          company_id: matchingCompany ? matchingCompany._id : null,
+          companyName: matchingCompany ? matchingCompany.name : "",
+          branch_id: matchingBranch ? matchingBranch._id : null,
+          branchName: matchingBranch ? matchingBranch.branchName : "",
+          product_id: matchingProduct ? matchingProduct._id : null,
+          productName: item["Wallet Name"],
+          brandName: item["S/W Type"],
+          categoryName: item["User"],
+          licensenumber: item["CUSTOMER ID"],
+          softwareTrade: item["Software Trade"],
+          noofusers: item["NoOfUser"],
+          companyusing: item["CompanyUsing"],
+          version: item["Version"],
+          customerAddDate: item["Act On"],
+          amcstartDate: item["Software HitDate"],
+          amcendDate: item["Due On"],
+          amcAmount: item["Total Amount"],
+          amcDescription: "",
+          licenseExpiryDate: "",
+          productAmount: "",
+          productamountDescription: "",
+          tvuexpiryDate: "",
+          tvuAmount: "",
+          tvuamountDescription: "",
+          isActive: item["Party Status"]
         })
       }
+      
 
       const customerData = new Customer({
         customerName: item["Party Name"],

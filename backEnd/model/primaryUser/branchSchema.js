@@ -1,21 +1,23 @@
 import mongoose from "mongoose"
 
 const BranchSchema = new mongoose.Schema({
-  company: {
+  companyName: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Company",
-    required: true,
+    required: true
   },
 
   branchName: { type: String, required: true },
-  branchCode: Number,
+
   address: String,
+
   city: String,
   state: String,
   country: String,
   pincode: String,
-  phone: String,
+  mobile: String,
   email: String,
+  landlineno: String
 })
 
 export default mongoose.model("Branch", BranchSchema)

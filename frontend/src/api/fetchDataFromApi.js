@@ -3,10 +3,10 @@ import api from "./api"
 export const fetchDataFromApi = async (url, params) => {
   try {
     const response = await api.get(url, {
-      withCredentials: true,
+      withCredentials: true
     })
-    console.log("waht is the error", response)
-    console.log("kadddd", response.data)
+
+    console.log("responsedata", response.data)
     return response.data
   } catch (error) {
     console.log(error)

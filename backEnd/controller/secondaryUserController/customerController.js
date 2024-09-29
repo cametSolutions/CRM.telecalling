@@ -125,7 +125,7 @@ export const customerCallRegistration = async (req, res) => {
 
     // Convert customerid to ObjectId
     const customerId = new mongoose.Types.ObjectId(customerid)
-    console.log("howww")
+
     if (!mongoose.Types.ObjectId.isValid(customerId)) {
       throw new Error("Invalid ObjectId format")
     }
