@@ -1,7 +1,7 @@
 import Company from "../../model/primaryUser/companySchema.js"
 
 export const CompanyRegister = async (req, res) => {
-  const { email, name } = req.body
+  const { email, companyName } = req.body
 
   // Check if user already exists
   const userExists = await Company.findOne({ email })
@@ -12,13 +12,13 @@ export const CompanyRegister = async (req, res) => {
   try {
     // Create and save new user
     const companies = new Company({
-      name,
-      email,
+      companyName,
+      email
     })
     await companies.save()
     res.status(200).json({
       status: true,
-      message: "User created successfully",
+      message: "User created successfully"
     })
   } catch (error) {
     res.status(500).json({ message: "server error" })
@@ -61,20 +61,20 @@ export const UpdateCompany = async (req, res) => {
         gstin: data.gstin,
         accountDetails: data.accountDetails,
         terms: data.terms,
-        parcelServices: data.parcelServices,
+        parcelServices: data.parcelServices
       }
     )
 
     return res.status(200).json({
       success: true,
       message: "Company updated successfully",
-      data: updatedCompany,
+      data: updatedCompany
     })
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Error updating company",
-      error: error.message,
+      error: error.message
     })
   }
 }

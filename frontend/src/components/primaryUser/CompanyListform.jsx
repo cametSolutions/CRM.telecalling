@@ -6,7 +6,7 @@ import {
   FaSearch,
   FaRegFileExcel,
   FaFilePdf,
-  FaPrint,
+  FaPrint
 } from "react-icons/fa"
 import { Link } from "react-router-dom"
 import _ from "lodash"
@@ -17,11 +17,11 @@ const CompanyListForm = ({ companies }) => {
   const [filteredCompanies, setFilteredCompanies] = useState(companies)
 
   const handleSearch = useCallback(
-    _.debounce(query => {
+    _.debounce((query) => {
       const lowerCaseQuery = query.toLowerCase()
       setFilteredCompanies(
-        companies.filter(company =>
-          company.name.toLowerCase().includes(lowerCaseQuery)
+        companies.filter((company) =>
+          company.companyName.toLowerCase().includes(lowerCaseQuery)
         )
       )
     }, 300),
@@ -45,7 +45,7 @@ const CompanyListForm = ({ companies }) => {
             <input
               type="text"
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className=" w-full border border-gray-300 rounded-full py-2 px-4 pl-10 focus:outline-none"
               placeholder="Search for..."
             />
@@ -111,10 +111,10 @@ const CompanyListForm = ({ companies }) => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredCompanies?.length > 0 ? (
-                filteredCompanies.map(company => (
+                filteredCompanies.map((company) => (
                   <tr key={company?._id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {company?.name}
+                      {company?.companyName}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                       {company?.address}
@@ -153,7 +153,7 @@ const CompanyListForm = ({ companies }) => {
                       <CiEdit
                         onClick={() =>
                           navigate("", {
-                            state: { company: company },
+                            state: { company: company }
                           })
                         }
                       />

@@ -71,7 +71,8 @@ const CustomerAdd = ({
   useEffect(() => {
     if (productData) setProducts(productData) // Directly set products to productData
   }, [productData])
-
+  console.log("customerrrrrr", customer)
+  console.log("seletedd"), selected
   const productOptions = useMemo(() => {
     return products?.map((product) => ({
       value: product._id,
@@ -88,34 +89,14 @@ const CustomerAdd = ({
   const debouncedLicenseNo = useDebounce(tableObject.licensenumber, 500)
   console.log("debounce", debouncedLicenseNo)
   useEffect(() => {
-    // Assuming you want to set the values for the first selected product
-    // const selectedProduct = customer.selected[0];
-    const keyvalue = []
-    const value = []
-    // if (selected) {
-    //   Object.keys(selected).forEach((key) => {
-    //     console.log("sel", selected["amcstartDate"])
-    //     console.log("type", typeof selected.amcstartDate)
-    //     setValue("amcstartDate", new Date(selected["amcstartDate"]))
-    //     // if (key === "amcstartDate") {
-    //     //   keyvalue.push(key)
-    //     //   value.push(selected[key])
-    //     // }
-    //   })
-    // }
+    
     if (selected) {
       Object.keys(selected).forEach((key) => {
-        if (key === "productName") {
-          // Find the product object in the options list
-          const selectedProduct = productOptions.find(
-            (option) => option.label === customer[key]
-          );
-          setValue("productName", selectedProduct); // Set the react-select value as an object
-        } 
-        // else {
-        //   setValue(key, customer[key]); // Set other values directly
-        // }
-      });
+        console.log("key")
+        setValue(key, selected[key])
+
+       
+      })
     }
     if (customer) {
       Object.keys(customer).forEach((key) => {
@@ -197,10 +178,7 @@ const CustomerAdd = ({
 
       toast.error("license number is already exist")
     }
-    // if (!licenseAvailable) {
-    //   toast.error("license number is already exists")
-    //   return
-    // }
+    
     if (tableObject.company_id.trim() === "") {
       toast.error("please select a company")
       return

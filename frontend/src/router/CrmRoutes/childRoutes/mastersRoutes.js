@@ -38,6 +38,7 @@ const mastersRoutes = [
 
     component: BranchRegistration
   },
+
   { path: "/admin/masters/branchEdit", component: BranchEdit },
   { path: "/admin/masters/customer", component: CustomerList },
   { path: "/admin/masters/pendingCustomer", component: PendingCustomer },

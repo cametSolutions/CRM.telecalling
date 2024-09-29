@@ -9,13 +9,13 @@ const ProductAdd = ({
   process,
   productData,
 
-  handleProductData,
+  handleProductData
 }) => {
   const {
     register,
     handleSubmit,
     setValue,
-    formState: { errors },
+    formState: { errors }
   } = useForm()
 
   const [selectedCompany, setSelectedCompany] = useState([])
@@ -23,7 +23,7 @@ const ProductAdd = ({
   const [editObject, setEditObject] = useState({
     brands: {},
     categories: {},
-    hsn: {},
+    hsn: {}
     // products: [],
   })
   const [showTable, setShowTable] = useState(false)
@@ -35,7 +35,7 @@ const ProductAdd = ({
     companies: [],
     brands: [],
     categories: [],
-    hsn: [],
+    hsn: []
     // products: [],
   })
   const [tableObject, setTableObject] = useState({
@@ -48,7 +48,7 @@ const ProductAdd = ({
     category_id: "",
     categoryName: "",
     hsn_id: "",
-    hsnName: "",
+    hsnName: ""
   })
   // const { data: productData, error: productError } = UseFetch(
   //   "/product/getallProducts"
@@ -64,6 +64,7 @@ const ProductAdd = ({
   const { data: categoryData, error: categoryError } = UseFetch(
     `/inventory/getproductsubDetails?tab=category`
   )
+  console.log("com", companyData)
   useEffect(() => {
     if (productData) {
       const selectedObject =
@@ -83,7 +84,7 @@ const ProductAdd = ({
       setEditObject({
         brand: selectedObject.brand_name,
         categories: selectedObject.category_name,
-        hsn: selectedObject.hsn_name,
+        hsn: selectedObject.hsn_name
       })
     }
   }, [productData])
@@ -96,7 +97,7 @@ const ProductAdd = ({
     if (brandData) setData((prev) => ({ ...prev, brands: brandData }))
     if (categoryData) setData((prev) => ({ ...prev, categories: categoryData }))
   }, [companyData, hsnData, brandData, categoryData])
-
+  console.log("data.com", data.companies)
   useEffect(() => {
     if (
       // productError ||
@@ -146,7 +147,7 @@ const ProductAdd = ({
     setTableObject((prev) => ({
       ...prev,
       branch_id: branchId,
-      branchName: branchName,
+      branchName: branchName
     }))
     // setSelectedBranch(true)
     setValue("branch", branchId) // Update the value in react-hook-form
@@ -180,7 +181,7 @@ const ProductAdd = ({
     }
     setTableData((prev) => [
       ...prev, // Spread the existing items in the state
-      tableObject, // Add the new item to the array
+      tableObject // Add the new item to the array
     ])
 
     // setTableObject({
@@ -212,7 +213,7 @@ const ProductAdd = ({
     setTableObject((prev) => ({
       ...prev,
       company_id: companyId,
-      companyName: companyName,
+      companyName: companyName
     }))
 
     setSelectedCompany(companyId)
@@ -227,7 +228,7 @@ const ProductAdd = ({
     setTableObject((prev) => ({
       ...prev,
       brand_id: brandId,
-      brandName: brandName,
+      brandName: brandName
     }))
 
     setValue("brand", brandId) // Update the value in react-hook-form
@@ -239,7 +240,7 @@ const ProductAdd = ({
     setTableObject((prev) => ({
       ...prev,
       category_id: categoryId,
-      categoryName: categoryName,
+      categoryName: categoryName
     }))
 
     setValue("category", categoryId) // Update the value in react-hook-form
@@ -251,7 +252,7 @@ const ProductAdd = ({
     setTableObject((prev) => ({
       ...prev,
       hsn_id: hsnId,
-      hsnName: hsnName,
+      hsnName: hsnName
     }))
 
     setValue("hsn", hsnId) // Update the value in react-hook-form
@@ -261,7 +262,7 @@ const ProductAdd = ({
     () =>
       data.companies.map((company) => ({
         value: company._id,
-        label: company.name,
+        label: company.companyName
       })),
     [data.companies]
   )
@@ -277,7 +278,7 @@ const ProductAdd = ({
     () =>
       filteredBranches.map((branch) => ({
         value: branch._id,
-        label: branch.branchName,
+        label: branch.branchName
       })),
     [filteredBranches]
   )
@@ -286,7 +287,7 @@ const ProductAdd = ({
     () =>
       data.brands.map((brand) => ({
         value: brand._id,
-        label: brand.brand,
+        label: brand.brand
       })) || [],
     [data.brands]
   )
@@ -294,7 +295,7 @@ const ProductAdd = ({
     () =>
       data.categories.map((category) => ({
         value: category._id,
-        label: category.category,
+        label: category.category
       })) || [],
     [data.categories]
   )
@@ -302,7 +303,7 @@ const ProductAdd = ({
     () =>
       data.hsn.map((hsndata) => ({
         value: hsndata._id,
-        label: hsndata.hsnSac,
+        label: hsndata.hsnSac
       })) || [],
     [data.hsn]
   )
@@ -346,7 +347,7 @@ const ProductAdd = ({
                 id="productName"
                 type="text"
                 {...register("productName", {
-                  required: "Product name is required",
+                  required: "Product name is required"
                 })}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
                 placeholder="Product Name"
@@ -370,7 +371,7 @@ const ProductAdd = ({
                 id="productPrice"
                 type="number"
                 {...register("productPrice", {
-                  required: "Product price is required",
+                  required: "Product price is required"
                 })}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
                 placeholder="Product Price"
@@ -440,7 +441,7 @@ const ProductAdd = ({
               <textarea
                 id="description"
                 {...register("description", {
-                  required: "Description is required",
+                  required: "Description is required"
                 })}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
                 placeholder="Product Description"

@@ -10,27 +10,11 @@ function CustomerList() {
     error
   } = UseFetch("/customer/getCustomer")
 
-  useEffect(() => {
-    if (customerData) {
-      console.log("cust", customerData)
-      // Set the data to the state when it is fetched
-      setCustomer(customerData)
-    }
-  }, [customerData])
-
-  useEffect(() => {
-    if (error) {
-      if (error.response) {
-        toast.error(error.response.data.message)
-      } else {
-        toast.error("Something went wrong!")
-      }
-    }
-  }, [error])
+  
 
   return (
     <div>
-      <CustomerListform customerlist={customers} />
+      <CustomerListform customerlist={customerData} />
     </div>
   )
 }

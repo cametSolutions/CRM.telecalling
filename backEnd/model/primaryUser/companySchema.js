@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
 
 const companySchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  companyName: { type: String, required: true },
   address: String,
   city: String,
   pincode: Number,
@@ -20,10 +20,10 @@ const companySchema = new mongoose.Schema({
     bankName: String,
     branchName: String,
     accountNumber: String,
-    ifscCode: String,
+    ifscCode: String
   },
 
-  branches: [{ type: mongoose.Schema.Types.ObjectId, ref: "Branch" }], // Reference to Branches
+  branches: [{ type: mongoose.Schema.Types.ObjectId, ref: "Branch" }] // Reference to Branches
 })
 
 export default mongoose.model("Company", companySchema)
