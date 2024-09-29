@@ -26,8 +26,8 @@ const CustomerAdd = ({
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [selectedCompany, setSelectedCompany] = useState(null)
   const [selectedBranch, setSelectedBranch] = useState(null)
-  const [companyData, setCompanyData] = useState([])
-  const [branchData, setBranchData] = useState([])
+  const [filteredCompanies, setfilteredCompanies] = useState([])
+  const [filteredBranches, setfilteredBranches] = useState([])
   const [showTable, setShowTable] = useState(false)
   const [tableData, setTableData] = useState([])
   const [editState, seteditState] = useState(false)
@@ -72,13 +72,14 @@ const CustomerAdd = ({
     if (productData) setProducts(productData) // Directly set products to productData
   }, [productData])
   console.log("customerrrrrr", customer)
-  console.log("seletedd"), selected
-  const productOptions = useMemo(() => {
-    return products?.map((product) => ({
-      value: product._id,
-      label: product.productName
-    }))
-  }, [products])
+  console.log("seletedd", selected)
+  // const productOptions = useMemo(() => {
+  //   return products?.map((product) => ({
+  //     value: product._id,
+  //     label: product.productName
+  //   }))
+  // }, [products])
+
   // Debounce license number input
   useEffect(() => {
     if (licensenumber) {
@@ -89,22 +90,98 @@ const CustomerAdd = ({
   const debouncedLicenseNo = useDebounce(tableObject.licensenumber, 500)
   console.log("debounce", debouncedLicenseNo)
   useEffect(() => {
-    
-    if (selected) {
+    const ignored = ["company_id", "branch_id", "product_id"]
+    if (selected && products.length > 0) {
+      console.log("select", selected)
+      console.log("tableo", tableObject)
       Object.keys(selected).forEach((key) => {
-        console.log("key")
-        setValue(key, selected[key])
+        if (!ignored.includes(key)) {
+          if (key === "productName") {
+            console.log("hii")
 
-       
+            // handleProductChange(selected.product_id)
+            setSelectedProduct(selected.product_id)
+            setValue(key, selected.product_id)
+            setTableObject((prev) => ({
+              ...prev,
+              product_id: selected.product_id,
+              productName: selected[key]
+            }))
+          } else if (key === "companyName") {
+            console.log("hii")
+            console.log("sdffdf", selected.company_id)
+            // handleProductChange(selected.product_id)
+            setTableObject((prev) => ({
+              ...prev,
+              company_id: selected.company_id,
+              companyName: selected[key]
+            }))
+            setSelectedCompany(selected.company_id)
+            setValue(key, selected.company_id)
+          } else if (key === "branchName") {
+            console.log("sdffdf", selected.branch_id)
+            setTableObject((prev) => ({
+              ...prev,
+              branch_id: selected.branch_id,
+              branchName: selected[key]
+            }))
+
+            setValue(key, selected[key])
+          } else {
+            setTableObject((prev) => ({
+              ...prev,
+
+              key: selected[key]
+            }))
+
+            setValue(key, selected[key])
+          }
+        }
       })
     }
+    // Add the keys you want to ignore here
+    const ignoredKeys = [
+      "company_id",
+      "companyName",
+      "branch_id",
+      "branchName",
+      "product_id",
+      "productName",
+      "licensenumber",
+      "noofusers",
+      "version",
+      "customerAddDate",
+      "amcstartDate",
+      "amcendDate",
+      "amcAmount",
+      "amcDescription",
+      "licenseExpiryDate",
+      "productAmount",
+      "productamountDescription",
+      "tvuexpiryDate",
+      "tvuAmount",
+      "tvuamountDescription",
+      "isActive",
+      "softwareTrade",
+      "_id"
+    ]
+
     if (customer) {
       Object.keys(customer).forEach((key) => {
-        console.log("key")
-        setValue(key, customer[key])
+        if (!ignoredKeys.includes(key)) {
+          // Check if the key is not in the ignored list
+          console.log(key) // Log the key if necessary
+          setValue(key, customer[key])
+          setTableObject((prev) => ({
+            ...prev,
+
+            key: customer[key]
+          }))
+        }
       })
     }
-  }, [customer, selected, setValue])
+    setTableData((prev) => [...prev, tableObject])
+  }, [customer, selected, products])
 
   useEffect(() => {
     // If there's a debounced license number, check its uniqueness
@@ -172,15 +249,15 @@ const CustomerAdd = ({
     const licensecheck = license.find(
       (item) => item.licensenumber === debouncedLicenseNo
     )
-    if (checklicense || licensecheck) {
+    if (checklicense && licensecheck) {
       setLicenseAvailable(false)
       console.log("checked false at islicense")
 
       toast.error("license number is already exist")
     }
-    
+
     if (tableObject.company_id.trim() === "") {
-      toast.error("please select a company")
+      toast.error("please select a companyssssss")
       return
     } else if (tableObject.branch_id.trim() === "") {
       toast.error("please select a branch")
@@ -345,55 +422,62 @@ const CustomerAdd = ({
     }
   }
 
-  const handleProductChange = (selectedOption) => {
-    const productId = selectedOption.value
-    const productName = selectedOption.label
+  const handleProductChange = (e) => {
+    console.log("event", e)
+
+    const productId = e.target.value
+    // const productName = selectedOption.label
 
     setTableObject((prev) => ({
       ...prev,
       product_id: productId,
       productName: productName
     }))
+    console.log("id", productId)
 
     setSelectedProduct(productId)
 
-    setValue("product", productId) // Update the value in react-hook-form
+    setValue("productName", productId) // Update the value in react-hook-form
   }
 
-  const handleCompanyChange = (selectedOption) => {
-    const companyId = selectedOption.value
-    const companyName = selectedOption.label
+  const handleCompanyChange = (e) => {
+    const companyId = e.target.value
+    console.log("compid", companyId)
+    // const companyName = selectedOption.label
 
     setTableObject((prev) => ({
       ...prev,
       company_id: companyId,
       companyName: companyName
     }))
-    setValue("company", selectedOption?.value || "")
-    setSelectedCompany(selectedOption.value)
+    // setValue("companyName", companyId)
+    setSelectedCompany(companyId)
   }
   ///now created
 
-  const handleBranchChange = (selectedOption) => {
-    const branchId = selectedOption.value
-    const branchName = selectedOption.label
+  const handleBranchChange = (e) => {
+    const branchId = e.target.value
+    console.log("branchid", branchId)
+    // const branchName = selectedOption.label
 
     setTableObject((prev) => ({
       ...prev,
       branch_id: branchId,
       branchName: branchName
     }))
-    setValue("branch", selectedOption?.value || "")
+    // setValue("branchName", branchId)
     setSelectedBranch(true)
   }
 
   //now created
-  const filteredCompanies = useMemo(() => {
+  useEffect(() => {
     const product = products.find((product) => product._id === selectedProduct)
+    console.log("products", product)
     if (product) {
       // Using a Set to track unique company IDs
       const uniqueCompanyIds = new Set()
       const uniqueCompanies = product.selected
+
         .filter((item) => {
           if (!uniqueCompanyIds.has(item.company_id)) {
             uniqueCompanyIds.add(item.company_id)
@@ -403,59 +487,85 @@ const CustomerAdd = ({
         })
         .map((item) => ({
           _id: item.company_id,
-          name: item.companyName
+          companyName: item.companyName,
+          branchId: item.branch_id,
+          branchName: item.branchName
         }))
-      return uniqueCompanies
+      console.log("uni", uniqueCompanies)
+      setfilteredCompanies(uniqueCompanies)
     }
-    return []
-  }, [products, selectedProduct])
+  }, [selectedProduct])
 
+  useEffect(() => {
+    console.log("fittt", filteredCompanies)
+    console.log("prod", products)
+    console.log("selet", selectedCompany)
+    const company = filteredCompanies.find(
+      (company) => company._id === selectedCompany
+    )
+    console.log("products", company)
+    if (company) {
+      console.log("commmm", company)
+      const branch = [company]
+      // Using a Set to track unique company IDs
+      const filteredbranch = branch.map((item) => ({
+        _id: item.branchId,
+        name: item.branchName
+      }))
+
+      setfilteredBranches(filteredbranch)
+    }
+  }, [products, selectedProduct, filteredCompanies, selectedCompany])
   // Mapping filtered companies to options for a dropdown
-  const companyOptions = useMemo(() => {
-    return filteredCompanies.map((company) => ({
-      value: company._id,
-      label: company.name
-    }))
-  }, [filteredCompanies])
+  // const companyOptions = useMemo(() => {
+  //   return filteredCompanies.map((company) => ({
+  //     value: company._id,
+  //     label: company.name
+  //   }))
+  // }, [filteredCompanies])
 
   //now created
-  const filteredBranches = useMemo(() => {
-    if (!selectedCompany) return [] // No branches if no company is selected
-    const product = products.find((product) => product._id === selectedProduct)
-    if (product) {
-      return product.selected
-        .filter((item) => item.company_id === selectedCompany)
-        .map((item) => ({
-          _id: item.branch_id,
-          name: item.branchName
-        }))
-    }
-    return []
-  }, [products, selectedProduct, selectedCompany])
+  // useEffect(() => {
+  //   if (selectedCompany) {
+  //     const product = selected.find(
+  //       (product) => product._id === selectedProduct
+  //     )
+  //     if (product) {
+  //       return product.selected
+  //         .filter((item) => item.company_id === selectedCompany)
+  //         .map((item) => ({
+  //           _id: item.branch_id,
+  //           name: item.branchName
+  //         }))
+  //     }
+  //   }
+  // }, [products, selectedProduct, selectedCompany])
   //now created
-  const branchOptions = useMemo(() => {
-    return filteredBranches.map((branch) => ({
-      value: branch._id,
-      label: branch.name
-    }))
-  }, [filteredBranches])
+  // const branchOptions = useMemo(() => {
+  //   return filteredBranches.map((branch) => ({
+  //     value: branch._id,
+  //     label: branch.name
+  //   }))
+  // }, [filteredBranches])
 
   const onSubmit = async (formData) => {
     try {
-      if (!licenseAvailable) {
-        toast.error("license number is already exists")
-        return
-      }
+      console.log("form", formData)
+
       if (process === "Registration") {
         await handleCustomerData(formData, tableData)
         reset()
-      } else if (process === "Edit") {
+      } else if (process === "edit") {
+        console.log("foem", formData)
+        console.log("tagleobb", tableObject)
+        console.log("eit", tableData)
         await handleEditedData(formData)
       }
     } catch (error) {
       toast.error("Failed to save customer!")
     }
   }
+  console.log("fite", filteredCompanies)
 
   return (
     <div className="container justify-center items-center min-h-screen p-8 bg-gray-100">
@@ -671,13 +781,30 @@ const CustomerAdd = ({
                 >
                   Select Product
                 </label>
-                <Select
+                {/* <Select
                   id="productName"
                   options={productOptions}
                   onChange={handleProductChange}
+                  defaultValue={productOptions.find(
+                    (option) => option.value === selected?.product_id
+                  )}
                   className=""
                   placeholder="Select a product..."
-                />
+                /> */}
+                <select
+                  id="productName"
+                  {...register("productName")}
+                  onChange={handleProductChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                >
+                  <option value="">-- Select a product --</option>
+
+                  {products?.map((product) => (
+                    <option key={product._id} value={product._id}>
+                      {product.productName}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label
@@ -686,13 +813,28 @@ const CustomerAdd = ({
                 >
                   Associated Company
                 </label>
-                <Select
+                {/* <Select
                   id="companyName"
                   options={companyOptions}
                   onChange={handleCompanyChange}
                   className=""
-                  placeholder="Select a product..."
-                />
+                /> */}
+                <select
+                  id="companyName"
+                  {...register("companyName")}
+                  onChange={handleCompanyChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                >
+                  <option value="" disabled>
+                    -- Select a company --
+                  </option>
+
+                  {filteredCompanies?.map((company) => (
+                    <option key={company._id} value={company._id}>
+                      {company.companyName}
+                    </option>
+                  ))}
+                </select>
               </div>
               {/* Branch Display */}
               <div>
@@ -702,13 +844,29 @@ const CustomerAdd = ({
                 >
                   Associated Branch
                 </label>
-                <Select
+                {/* <Select
                   id="branchName"
                   options={branchOptions}
                   onChange={handleBranchChange}
                   className=""
                   placeholder="Select a product..."
-                />
+                /> */}
+                <select
+                  id="branchName"
+                  {...register("branchName")}
+                  onChange={handleBranchChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                >
+                  <option value="" disabled>
+                    -- Select a branch --
+                  </option>
+
+                  {filteredBranches?.map((branch) => (
+                    <option key={branch._id} value={branch._id}>
+                      {branch.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label
