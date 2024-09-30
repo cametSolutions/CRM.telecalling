@@ -9,13 +9,14 @@ function CustomerEdit() {
   const location = useLocation()
   const customer = location.state?.customer
   const selected = location.state?.selected
+  const customerId = customer._id
   console.log("selected", selected)
-  console.log("customer", customer)
-  const handleSubmit = async (customerData) => {
+  console.log(customerId)
+  const handleSubmit = async (customerData, tableData) => {
     try {
       const response = await api.post(
         `/customer/customerEdit?customerid=${customerId}`,
-        customerData,
+        { customerData, tableData },
         {
           withCredentials: true
         }

@@ -10,14 +10,23 @@ function ProductEdit() {
   const [data, setData] = useState([])
   const navigate = useNavigate()
   const location = useLocation()
-  const { productData } = location.state
-  console.log("proddddddd", productData)
+  const { product, selected } = location.state
+  const productId = product._id
+  console.log("produid", productId)
+  console.log("proddddddd", product)
+  console.log("selevtd", selected)
 
-  const handleSubmit = async (productData) => {
+  const handleSubmit = async (productData, editData) => {
+    console.log("editdata", editData)
+    console.log("prrp", productData)
     try {
-      const response = await api.post("/product/productEdit", productData, {
-        withCredentials: true,
-      })
+      const response = await api.post(
+        `/product/productEdit?productid=${productId}`,
+        { productData, editData },
+        {
+          withCredentials: true
+        }
+      )
       toast.success("Company updated successfully:")
       navigate("/admin/masters/product")
     } catch (error) {
@@ -28,8 +37,9 @@ function ProductEdit() {
     <div>
       <ProductAdd
         process="edit"
-        handleProductData={handleSubmit}
-        productData={productData}
+        handleEditedData={handleSubmit}
+        product={product}
+        selected={selected}
       />
     </div>
   )

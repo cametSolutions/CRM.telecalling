@@ -8,6 +8,7 @@ export const CustomerRegister = async (req, res) => {
   console.log("table", tabledata)
   console.log("pin", customerData.pincode)
   console.log("pinty", typeof customerData.pincode)
+  console.log("tabledata", tabledata)
 
   const {
     customerName,
@@ -67,6 +68,50 @@ export const CustomerRegister = async (req, res) => {
   } catch (error) {
     console.log(error.message)
     res.status(500).json({ message: "server error" })
+  }
+}
+export const CustomerEdit = async (req, res) => {
+  const { customerData, tableData } = req.body
+  const customerId = req.query.customerid
+  console.log("editdata", customerData)
+  console.log("cusotmerid", customerId)
+  try {
+    if (customerId && customerData) {
+      const objectId = new mongoose.Types.ObjectId(customerId)
+
+      const existingCustomer = await Customer.findById(objectId)
+
+      if (!existingCustomer) {
+        return res.status(404).json({ message: "Customer not found" })
+      }
+
+      existingCustomer.selected = tableData
+      existingCustomer.customerName =
+        customerData.customerName || existingCustomer.customerName
+      existingCustomer.address1 =
+        customerData.address1 || existingCustomer.landline
+
+      existingCustomer.address2 =
+        customerData.address2 || existingCustomer.address2
+      existingCustomer.country =
+        customerData.country || existingCustomer.country
+      existingCustomer.state = customerData.state || existingCustomer.state
+      existingCustomer.city = customerData.city || existingCustomer.city
+      existingCustomer.pincode =
+        customerData.pincode || existingCustomer.pincode
+      existingCustomer.email = customerData.email || existingCustomer.email
+      existingCustomer.mobile = customerData.mobile || existingCustomer.mobile
+      existingCustomer.landline =
+        customerData.landline || existingCustomer.landline
+      existingCustomer.isActive =
+        customerData.isActive || existingCustomer.isActive
+      // Step 3: Save the changes to the database
+      await existingCustomer.save()
+      res.status(200).json({ message: "Customer updated succesfully" })
+    }
+  } catch (error) {
+    console.log("Error:", error.message)
+    res.status(500).json({ message: "Error updating customer" })
   }
 }
 export const GetCustomer = async (req, res) => {
