@@ -1,18 +1,7 @@
 import Product from "../../model/primaryUser/productSchema.js"
 import mongoose from "mongoose"
 export const ProductRegistration = async (req, res) => {
-  const {
-    productData,
-    tableData
-    // company,
-    // branches,
-    // productName,
-    // productPrice,
-    // brand,
-    // category,
-    // hsn,
-    // description,
-  } = req.body
+  const { productData, tableData } = req.body
   console.log("productData:", productData)
   console.log("table Data:", tableData)
 
@@ -34,9 +23,7 @@ export const ProductRegistration = async (req, res) => {
       selected: tableData,
       productName: productData.productName,
       productPrice: productData.productPrice,
-      brand: productData.brand,
-      category: productData.category,
-      hsn: productData.hsn,
+
       description: productData.description
     })
     await products.save()
@@ -49,94 +36,40 @@ export const ProductRegistration = async (req, res) => {
   }
 }
 
-// export const ProductRegistration = async (req, res) => {
-//   const formData = req.body
-//   const tab = Object.keys(formData)[0]
-//   const value = formData[tab]
-//   console.log("values of formData", value)
+export const EditProduct = async (req, res) => {
+  const { productData, editData } = req.body
 
-//   let data
-//   switch (tab) {
-//     case "brand":
-//       data = {
-//         model: Brand,
-//         field: "brand",
-//       }
-//       break
-//     case "category":
-//       data = {
-//         model: Category,
-//         field: "category",
-//       }
-//       break
-//     default:
-//       return res.status(400).json({ message: "Invalid tab provided" })
-//   }
+  const productId = req.query.productid
 
-//   // Check if item already exists
-//   const existingItem = await data.model.findOne({ [data.field]: value })
-//   if (existingItem) {
-//     return res.status(400).json({ message: `${tab} is already registered` })
-//   }
+  try {
+    const objectId = new mongoose.Types.ObjectId(productId)
 
-//   try {
-//     // Create and save new item
-//     const collection = new data.model({
-//       [data.field]: value,
-//     })
-//     console.log("collection:", collection)
-//     await collection.save()
+    const existingProduct = await Product.findById(objectId)
 
-//     res.status(200).json({
-//       status: true,
-//       message: `${tab} created successfully`,
-//       data: collection,
-//     })
-//   } catch (error) {
-//     console.log(error)
-//     res.status(500).json({ message: "Server error" })
-//   }
-// }
-// export const GetproductsubDetails = async (req, res) => {
-//   const { tab, page = 1, limit = 10 } = req.query
+    if (!existingProduct) {
+      return res.status(404).json({ message: "Product not found" })
+    }
 
-//   let model
-//   switch (tab) {
-//     case "brand":
-//       model = Brand
-//       break
-//     case "category":
-//       model = Category
-//       break
-//     default:
-//       return res.status(400).json({ message: "Invalid tab provided" })
-//   }
+    // Step 2: Update the existing product with new values
+    existingProduct.selected = editData // Use the updated tableData
+    existingProduct.productName =
+      productData.productName || existingProduct.productName
+    existingProduct.productPrice =
+      productData.productPrice || existingProduct.productPrice
 
-//   try {
-//     const skip = (page - 1) * limit // Calculate how many items to skip
-//     const items = await model.find().skip(skip).limit(parseInt(limit)) // Fetch the items
+    existingProduct.description =
+      productData.description || existingProduct.description
 
-//     if (!items || items.length === 0) {
-//       return res.status(404).json({
-//         message: `${tab.charAt(0).toUpperCase() + tab.slice(1)}s not found`,
-//       })
-//     }
-
-//     const totalItems = await model.countDocuments() // Get total number of documents
-//     const totalPages = Math.ceil(totalItems / limit) // Calculate total number of pages
-
-//     res.status(200).json({
-//       message: `${tab.charAt(0).toUpperCase() + tab.slice(1)}s found`,
-//       data: items,
-//       totalItems, // Total number of items
-//       totalPages, // Total number of pages
-//       currentPage: parseInt(page), // Current page number
-//     })
-//   } catch (error) {
-//     console.error(error.message)
-//     res.status(500).json({ message: "Server error", error })
-//   }
-// }
+    // Step 3: Save the changes to the database
+    await existingProduct.save()
+    res.status(200).json({ message: "Product edit successfully" })
+  } catch (error) {
+    console.log("Error:", error.message)
+    res.status(500).json({
+      message: "Error on editing"
+    })
+  }
+}
 
 export const GetallProducts = async (req, res) => {
   try {

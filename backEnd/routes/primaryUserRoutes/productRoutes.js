@@ -5,12 +5,14 @@ import {
   ProductRegistration,
   GetallProducts,
   GetProducts,
+  EditProduct
 } from "../../controller/primaryUserController/productController.js"
 
 const router = express.Router()
 router.post("/productRegistration", authMiddleware, ProductRegistration)
 router.get("/getallProducts", authMiddleware, GetallProducts)
 router.get("/getProducts", authMiddleware, GetProducts)
+router.post("/productEdit", authMiddleware, EditProduct)
 
 export default router
 

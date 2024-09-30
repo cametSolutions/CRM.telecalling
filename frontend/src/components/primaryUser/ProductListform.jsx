@@ -101,74 +101,7 @@ const ProductListform = ({ productlist }) => {
                 </th>
               </tr>
             </thead>
-            {/* <tbody className="bg-white divide-y divide-gray-200">
-              {filteredProducts?.length > 0 ? (
-                filteredProducts.map((product) => (
-                  <tr key={product?._id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {product.company?.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {branch?.branchName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {branch?.address1}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {branch?.address2}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {branch?.city}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {branch?.pincode}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {branch?.mobile}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {branch?.landlineno}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {branch?.email}
-                    </td>
 
-                    <Link to="https://www.flipkart.com/">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-700">
-                        {branch?.website}
-                      </td>
-                    </Link>
-                    <td
-                      className={`px-6 py-4 whitespace-nowrap text-sm ${
-                        branch?.status === "Active"
-                          ? "text-blue-700"
-                          : "text-red-700"
-                      }`}
-                    >
-                      {branch?.status}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xl text-black">
-                      <CiEdit
-                        onClick={() =>
-                          navigate("/admin/primaryUser/masters/branchEdit", {
-                            state: { branch: branch },
-                          })
-                        }
-                      />
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan="10"
-                    className="px-6 py-4 text-center text-sm text-gray-500"
-                  >
-                    No branches found in
-                  </td>
-                </tr>
-              )}
-            </tbody> */}
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredProducts?.length > 0 ? (
                 filteredProducts.map((product) =>
@@ -208,7 +141,8 @@ const ProductListform = ({ productlist }) => {
                           onClick={() =>
                             navigate("/admin/masters/productEdit", {
                               state: {
-                                productData: product
+                                product: product,
+                                selected: item
                               } // pass the correct data here
                             })
                           }

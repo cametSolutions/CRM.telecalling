@@ -6,13 +6,14 @@ import {
   GetLicense,
   customerCallRegistration,
   GetCallRegister,
-  GetallCalls
+  GetallCalls,
+  CustomerEdit
 } from "../../controller/secondaryUserController/customerController.js"
 
 const router = express.Router()
 
 router.post("/customerRegistration", authMiddleware, CustomerRegister)
-// router.post("/customerEdit")
+router.post("/customerEdit", authMiddleware, CustomerEdit)
 router.get("/getLicensenumber", authMiddleware, GetLicense)
 router.get("/getCustomer", authMiddleware, GetCustomer)
 router.post("/callRegistration", authMiddleware, customerCallRegistration)
