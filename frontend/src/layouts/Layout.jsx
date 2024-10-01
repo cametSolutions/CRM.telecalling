@@ -16,9 +16,11 @@ const Layout = () => {
     <>
       {adminHeader ? <AdminHeader /> : ""}
       {staffHeader ? <StaffHeader /> : ""}
+
       <main>
         <Mainrouter />
       </main>
+
       {/* <Footer /> */}
     </>
   )

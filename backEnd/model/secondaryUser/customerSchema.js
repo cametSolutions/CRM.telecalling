@@ -34,6 +34,8 @@ const CustomerSchema = new mongoose.Schema({
       branchName: { type: String },
       product_id: { type: mongoose.Schema.Types.ObjectId, ref: "Product" }, // Adjust for product ID as ObjectId
       productName: { type: String },
+      brandName: { type: String },
+      categoryName: { type: String },
       licensenumber: { type: Number },
       noofusers: { type: Number }, // Ensure this is a number
       version: { type: mongoose.Schema.Types.Mixed },
