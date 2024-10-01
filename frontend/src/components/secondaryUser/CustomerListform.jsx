@@ -294,8 +294,8 @@ const CustomerListform = ({ customerlist }) => {
   }, [loadMoreCount, allCustomers])
 
   return (
-    <div className=" mx-auto h-screen p-8 bg-gray-300">
-      <div className="w-auto bg-white shadow-lg rounded p-8 ">
+    <div className=" mx-auto  overflow-y-hidden  ">
+      <div className="w-auto shadow-lg rounded p-8 ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-4">
           <h3 className="text-2xl text-black font-bold">Customer List</h3>
           {/* Search Bar for large screens */}
@@ -345,10 +345,10 @@ const CustomerListform = ({ customerlist }) => {
 
         <div
           ref={tableContainerRef}
-          className="overflow-y-auto max-h-96" // Fixed height for scrolling
+          className="overflow-y-auto max-h-96 " // Fixed height for scrolling
         >
-          <table className="min-w-full bg-white border border-gray-300">
-            <thead>
+          <table className="min-w-full bg-white ">
+            <thead className="bg-gray-200 sticky top-0 z-40">
               {/* Table Headers */}
               <tr>
                 <th className="py-1 px-2 border-b border-gray-300 text-left">

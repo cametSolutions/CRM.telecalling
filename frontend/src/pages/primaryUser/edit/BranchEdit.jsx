@@ -10,13 +10,13 @@ function BranchEdit() {
   const navigate = useNavigate()
   const location = useLocation()
   const { branch } = location.state || {}
+  console.log("branch", branch)
 
   const handleSubmit = async (branchData, branchId) => {
     try {
       const response = await api.post(
         "/branch/branchEdit",
-        {branchData,
-        branchId},
+        { branchData, branchId },
         {
           withCredentials: true
         }

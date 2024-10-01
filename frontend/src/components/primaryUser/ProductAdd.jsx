@@ -20,7 +20,7 @@ const ProductAdd = ({
   } = useForm()
 
   const [selectedCompany, setSelectedCompany] = useState([])
-  const [dd, setd] = useState(false)
+  // const [dd, setd] = useState(false)
   const [selectedBranch, setSelectedBranch] = useState(false)
   const [editObject, setEditObject] = useState({
     brands: {},
@@ -67,9 +67,7 @@ const ProductAdd = ({
     `/inventory/getproductsubDetails?tab=category`
   )
 
-  console.log("com", companyData)
   useEffect(() => {
-    console.log("sel", selectedCompany.length)
     if (selected) {
       console.log("pro", product)
       console.log("selected", selected)
@@ -124,7 +122,7 @@ const ProductAdd = ({
     if (brandData) setData((prev) => ({ ...prev, brands: brandData }))
     if (categoryData) setData((prev) => ({ ...prev, categories: categoryData }))
   }, [companyData, hsnData, brandData, categoryData])
-  console.log("data.com", data.companies)
+
   useEffect(() => {
     if (
       // productError ||
@@ -186,22 +184,21 @@ const ProductAdd = ({
 
   const handleTableData = (e) => {
     e.preventDefault()
-
-    if (tableObject.company_id.trim() === "") {
+    if (tableObject.product_id === "") {
+      toast.error("please select a product")
+      return
+    } else if (tableObject.company_id.trim() === "") {
       toast.error("please select a company")
       return
     } else if (tableObject.branch_id.trim() === "") {
       toast.error("please select a branch")
       return
-    } else if (tableObject.brand_id.trim() === "") {
-      toast.error("please select a brand")
-      return
-    } else if (tableObject.category_id.trim() === "") {
-      toast.error("please select a category")
-      return
-    } else if (tableObject.hsn_id.trim() === "") {
-      toast.error("please select a hsn")
-      return
+    } else if (tableObject.brand_id === "") {
+      tableObject.brand_id.trim()
+    } else if (tableObject.category_id === "") {
+      tableObject.category_id.trim()
+    } else if (tableObject.hsn_id === "") {
+      tableObject.hsn_id.trim()
     }
     const isIncluded = tableData.some(
       (item) => JSON.stringify(item) === JSON.stringify(tableObject)
@@ -216,7 +213,6 @@ const ProductAdd = ({
       tableObject // Add the new item to the array
     ])
   }
-  console.log(tableObject)
 
   const handleCompanyChange = (e) => {
     const companyId = e.target.value
@@ -236,7 +232,7 @@ const ProductAdd = ({
 
     // setValue("companyName", selectedCompany.companyName) // Update the value in react-hook-form
   }
-  console.log("id", selectedCompany)
+
   const handleBrandChange = (e) => {
     const brandId = e.target.value
     const selectedBrand = data.brands.find((brand) => brand._id === brandId)
@@ -294,7 +290,6 @@ const ProductAdd = ({
         ?.branches || [],
     [data.companies, selectedCompany]
   )
-  console.log("filteredbranch", filteredBranches)
 
   const branchOptions = useMemo(
     () =>
@@ -321,7 +316,7 @@ const ProductAdd = ({
       })) || [],
     [data.categories]
   )
-  console.log("category", categoryOptions)
+
   const hsnOptions = useMemo(
     () =>
       data.hsn.map((hsndata) => ({
@@ -330,7 +325,6 @@ const ProductAdd = ({
       })) || [],
     [data.hsn]
   )
-  console.log("hsnoptions", hsnOptions)
 
   const toggleTable = () => {
     setShowTable(!showTable)
@@ -353,8 +347,7 @@ const ProductAdd = ({
       toast.error("Failed to add product!")
     }
   }
-  console.log("category", tableObject)
-  console.log("dd", dd)
+
   return (
     <div className="container justify-center items-center min-h-screen p-8 bg-gray-100">
       <div className="w-auto bg-white shadow-lg rounded p-8 mx-auto">
@@ -397,17 +390,10 @@ const ProductAdd = ({
               <input
                 id="productPrice"
                 type="number"
-                {...register("productPrice", {
-                  required: "Product price is required"
-                })}
+                {...register("productPrice")}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
                 placeholder="Product Price"
               />
-              {errors.productPrice && (
-                <span className="mt-2 text-sm text-red-600">
-                  {errors.productPrice.message}
-                </span>
-              )}
             </div>
 
             {/* Brand Select Dropdown */}
@@ -492,17 +478,10 @@ const ProductAdd = ({
               </label>
               <textarea
                 id="description"
-                {...register("description", {
-                  required: "Description is required"
-                })}
+                {...register("description")}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
                 placeholder="Product Description"
               ></textarea>
-              {errors.description && (
-                <span className="mt-2 text-sm text-red-600">
-                  {errors.description.message}
-                </span>
-              )}
             </div>
 
             <div>
