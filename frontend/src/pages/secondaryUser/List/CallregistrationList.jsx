@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from "react"
 import { CiEdit } from "react-icons/ci"
+import Tiles from "../../../components/common/Tiles"
 import { useNavigate } from "react-router-dom"
 import {
   FaUserPlus,
@@ -30,7 +31,12 @@ const CallregistrationList = () => {
     }
   }, [registeredcalllist])
   console.log("calllist", calllist)
-
+  const data = {
+    pending: 12,
+    solved: 23,
+    todayCalls: 4,
+    totalToken: 48
+  }
   const handleSearch = useCallback(
     _.debounce((query) => {
       const lowerCaseQuery = query.toLowerCase()
@@ -48,26 +54,27 @@ const CallregistrationList = () => {
   }, [searchQuery, handleSearch])
 
   return (
-    <div className="container mx-auto h-screen p-8 bg-gray-300 ">
-      <div className="w-auto  bg-white shadow-lg rounded p-8  h-full ">
-        <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-4">
+    <div className="container mx-auto h-screen p-4 bg-gray-300 ">
+      <div className="w-auto  bg-white shadow-lg rounded p-4  h-full ">
+        <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
           {/* Search Bar for large screens */}
-          <div className="mx-4 md:block">
+          <div className="mx-4 md:block items-center">
             <div className="relative">
-              <FaSearch className="absolute w-5 h-5 left-2 top-3 text-gray-500" />
+              <FaSearch className="absolute w-5 h-5 left-2 top-2 text-gray-500" />
             </div>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className=" w-full border border-gray-300 rounded-full py-2 px-4 pl-10 focus:outline-none"
+              className=" w-full border border-gray-300 rounded-full py-1 px-4 pl-10 focus:outline-none"
               placeholder="Search for..."
             />
           </div>
         </div>
 
-        <hr className="border-t-2 border-gray-300 mb-4" />
-        <div className="overflow-y-auto max-h-60 shadow-md rounded-lg">
+        <hr className="border-t-2 border-gray-300 mb-2 " />
+        <Tiles list={data} />
+        <div className="overflow-y-auto max-h-60 shadow-md rounded-lg mt-2">
           <table className="divide-y divide-gray-200 w-full">
             <thead className="bg-gray-400 sticky top-0 z-40">
               <tr>

@@ -22,15 +22,13 @@ const ExcelUploader = () => {
 
     const formData = new FormData()
     formData.append("file", file)
-    // https://www.crm.camet.in/api/excel/uploadExcel
-    try {
-      const response = await fetch(
-        "https://www.crm.camet.in/api/excel/uploadExcel",
-        {
-          method: "POST",
-          body: formData
-        }
-      )
+    // https://www.crm.camet.in/api
+
+    https: try {
+      const response = await fetch("https://www.crm.camet.in/api/excel/uploadExcel", {
+        method: "POST",
+        body: formData
+      })
 
       if (response.ok) {
         setLoading(false)
