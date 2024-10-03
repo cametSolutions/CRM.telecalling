@@ -3,11 +3,15 @@ import React, { useState } from "react"
 const ExcelUploader = () => {
   const [file, setFile] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState("")
+  const [message, setMessage] = useState(false)
+  const [passMessage, setpassMessage] = useState("")
 
   const handleFileChange = (e) => {
+    console.log("hiii")
+    setpassMessage("")
     setFile(e.target.files[0])
   }
+  console.log("message", passMessage)
 
   const handleUpload = async () => {
     setLoading(true)
@@ -20,16 +24,22 @@ const ExcelUploader = () => {
     formData.append("file", file)
     // https://www.crm.camet.in/api/excel/uploadExcel
     try {
-      const response = await fetch("https://www.crm.camet.in/api/excel/uploadExcel", {
-        method: "POST",
-        body: formData
-      })
+      const response = await fetch(
+        "https://www.crm.camet.in/api/excel/uploadExcel",
+        {
+          method: "POST",
+          body: formData
+        }
+      )
 
       if (response.ok) {
         setLoading(false)
-        setMessage("File uploaded successfully!")
+
+        setMessage(true)
+        setpassMessage("File uploaded succes fully")
       } else {
-        setMessage("File upload failed.")
+        setMessage(false)
+        setpassMessage("File upload failed")
       }
     } catch (error) {
       console.error("Error uploading file:", error)
@@ -60,7 +70,12 @@ const ExcelUploader = () => {
         {loading ? "Loading..." : "Upload"}
       </button>
 
-      {message && <p className="mt-4 text-green-600 text-sm">{message}</p>}
+      {/* {message && <p className="mt-4 text-green-600 text-sm">{message}</p>} */}
+      {message ? (
+        <div className="text-green-500 ">{passMessage}</div>
+      ) : (
+        <div className="text-red-500">{passMessage}</div>
+      )}
     </div>
   )
 }
