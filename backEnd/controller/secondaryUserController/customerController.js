@@ -116,7 +116,8 @@ export const CustomerEdit = async (req, res) => {
 }
 export const GetCustomer = async (req, res) => {
   const { search } = req.query
-
+  console.log("hiii")
+  console.log("search", search)
   try {
     let searchCriteria = {}
 
