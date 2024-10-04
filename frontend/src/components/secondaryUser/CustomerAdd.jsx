@@ -1272,7 +1272,7 @@ const CustomerAdd = ({
                 >
                   <option value="">Select Status</option>
                   <option value="Running">Active</option>
-                  <option value="Not Running">Inactive</option>
+                  <option value="Deactive">Deactive</option>
                 </select>
                 {errors.isActive && (
                   <p className="text-red-500">

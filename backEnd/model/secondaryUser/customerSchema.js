@@ -20,7 +20,7 @@ const CustomerSchema = new mongoose.Schema({
   isActive: {
     type: String,
 
-    enum: ["Running", "Not Running"]
+    enum: ["Running", "Deactive"]
   },
   contactPerson: {
     type: String
