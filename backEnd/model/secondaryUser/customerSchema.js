@@ -15,7 +15,7 @@ const CustomerSchema = new mongoose.Schema({
     }
   },
   email: { type: String },
-  mobile: { type: String, required: true },
+  mobile: { type: String },
   landline: String,
   isActive: {
     type: String,

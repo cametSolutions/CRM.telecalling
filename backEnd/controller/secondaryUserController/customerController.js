@@ -124,17 +124,19 @@ export const GetCustomer = async (req, res) => {
     if (!isNaN(search)) {
       // Search by license number or mobile number using partial match
       const searchRegex = new RegExp(`^${search}`, "i")
-
+      console.log("hiii")
       searchCriteria = {
         $or: [{ "selected.license_no": searchRegex }, { mobile: searchRegex }]
       }
     } else {
+      console.log("hls")
       // Search by customer name
       searchCriteria = { customerName: new RegExp(search, "i") }
+      console.log("search ", searchCriteria)
     }
 
     let customers = await Customer.find(searchCriteria)
-
+    console.log("cuatome", customers)
     if (customers.length === 0) {
       res.json({ message: "No customer found" })
     } else {
@@ -246,6 +248,7 @@ export const GetCallRegister = async (req, res) => {
   try {
     const { customerid, customer } = req.query
     const { callId } = req.params
+    console.log("idsssssssss", callId)
 
     if (customerid !== "null" && customerid) {
       const customerId = new mongoose.Types.ObjectId(customerid)
@@ -288,16 +291,58 @@ export const GetCallRegister = async (req, res) => {
 }
 export const GetallCalls = async (req, res) => {
   try {
+    let totalTokens = 0
+    let pendingCount = 0
+    let solvedCount = 0
+    let todayCallsCount = 0
     const allcalls = await CallRegistration.find()
       .populate({
         path: "callregistration.product", // Populate the product field inside callregistration array
         select: "productName" // Optionally select fields from the Product schema you need
       })
       .exec()
+
+    const isToday = (date) => {
+      const today = new Date()
+      return (
+        date.getDate() === today.getDate() &&
+        date.getMonth() === today.getMonth() &&
+        date.getFullYear() === today.getFullYear()
+      )
+    }
     console.log("allcalls", allcalls)
+    allcalls.forEach((token) => {
+      const callRegistrations = token.callregistration
+      totalTokens += callRegistrations.length
+
+      callRegistrations.forEach((call) => {
+        if (call.formdata.status === "pending") {
+          pendingCount++
+        } else {
+          solvedCount++
+        }
+
+        const startTime = new Date(call.timedata.startTime)
+        if (isToday(startTime)) {
+          todayCallsCount++
+        }
+      })
+    })
+    console.log("token", totalTokens)
+    const alltokens = {
+      totalTokens,
+      pendingCount,
+      solvedCount,
+      todayCallsCount
+    }
+    console.log("alltok", alltokens)
 
     if (allcalls.length > 0) {
-      res.status(200).json({ message: "calls found", data: allcalls })
+      res
+        .status(200)
+        .json({ message: "calls found", data:{
+          allcalls, alltokens
+        } })
     } else {
       res.status(400).json({ message: "no calls" })
     }

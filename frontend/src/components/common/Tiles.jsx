@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react"
 
-const Tiles = ({ list }) => {
-  console.log("props", list)
-  const [data, setData] = useState({})
+const Tiles = ({ datas }) => {
+  console.log("props", datas)
+  const [data, setData] = useState([])
+  console.log("data", datas)
   useEffect(() => {
-    if (list) {
-      setData(list)
+    if (datas) {
+      setData(datas)
     }
-  }, [data])
+  }, [datas])
   console.log("data", data)
 
   return (
@@ -16,7 +17,7 @@ const Tiles = ({ list }) => {
       <div className="mb-2 text-center">
         <h2 className="text-md font-semibold">Pending</h2>
         <span className="mt-1 px-6 py-4 text-md font-bold h-20 w-40 flex items-center justify-center bg-gradient-to-r from-red-400 to-red-600 rounded-md">
-          {data.pending}
+          {data.pendingCount}
         </span>
       </div>
 
@@ -24,7 +25,7 @@ const Tiles = ({ list }) => {
       <div className="mb-2 text-center">
         <h2 className="text-md font-semibold">Solved</h2>
         <span className="mt-1 px-6 py-4 text-md font-bold h-20 w-40 flex items-center justify-center bg-gradient-to-r from-green-500 to-green-600 rounded-md">
-          {data.solved}
+          {data.solvedCount}
         </span>
       </div>
 
@@ -32,7 +33,7 @@ const Tiles = ({ list }) => {
       <div className="mb-2 text-center">
         <h2 className="text-md font-semibold">Today's Calls</h2>
         <span className="mt-1 px-6 py-4 text-md font-bold h-20 w-40 flex items-center justify-center bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-md">
-          {data.todayCalls}
+          {data.todayCallsCount}
         </span>
       </div>
 
@@ -40,7 +41,7 @@ const Tiles = ({ list }) => {
       <div className="mb-2 text-center">
         <h2 className="text-md font-semibold">Total Token</h2>
         <span className="mt-1 px-6 py-4 text-md font-bold h-20 w-40 flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-700 rounded-md">
-          {data.totalToken}
+          {data.totalTokens}
         </span>
       </div>
     </div>

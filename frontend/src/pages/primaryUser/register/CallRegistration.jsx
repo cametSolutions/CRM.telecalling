@@ -47,7 +47,8 @@ export default function CallRegistration() {
   )
   const location = useLocation()
   const { calldetails, token } = location.state || {}
-
+  console.log("calldetais", calldetails)
+  console.log("token", token)
   useEffect(() => {
     if (calldetails) {
       console.log("editcalls")
@@ -57,11 +58,12 @@ export default function CallRegistration() {
       // Fetch the call details using the ID
       fetchCallDetails(calldetails)
         .then((callData) => {
+          console.log("calldet", callData)
           const matchingRegistration =
             callData.callDetails.callregistration.find(
               (registration) => registration.timedata.token === token
             )
-
+          console.log("mtaa", matchingRegistration)
           // If a matching registration is found, extract the product details
           const productName = matchingRegistration
             ? matchingRegistration.product.productName
@@ -103,7 +105,7 @@ export default function CallRegistration() {
           console.error("Error fetching call details:", error)
         })
     }
-  }, [calldetails, setValue])
+  }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
     console.log("callid", callId)
@@ -118,6 +120,7 @@ export default function CallRegistration() {
   }
 
   useEffect(() => {
+    console.log("hiii")
     if (registeredCall) {
       setCallData(registeredCall.callregistration)
     }
@@ -193,7 +196,6 @@ export default function CallRegistration() {
       )
       if (response.status === 200) {
         setCallData(response.data.updatedCall.callregistration)
-        reset()
       }
     } else {
       const timeData = {
@@ -226,7 +228,6 @@ export default function CallRegistration() {
       )
       if (response.status === 200) {
         setCallData(response.data.updatedCall.callregistration)
-        reset()
       }
     }
 
@@ -252,7 +253,7 @@ export default function CallRegistration() {
   const fetchCustomerData = debounce(async (query) => {
     const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
       query
-    )}`
+      )}`
     // const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
     //   query
     // )}`
@@ -260,7 +261,7 @@ export default function CallRegistration() {
     try {
       const response = await fetch(url, {
         method: "GET",
-        credentials: "include",
+        credentials: "include"
         // headers: {
         //   "Content-Type": "application/json"
         // }
@@ -521,12 +522,12 @@ export default function CallRegistration() {
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Product Amount
                           </th>
-                          {/* <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Tvu Amount
                           </th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Amc Amount
-                          </th> */}
+                          </th>
                         </>
                       )}
                     </tr>
@@ -595,12 +596,13 @@ export default function CallRegistration() {
                               {product?.productAmount}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                              {product?.tvuAmount}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                               {product?.amcAmount}
                             </td>
 
-                            {/* <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                              {product?.tvuAmount}
-                            </td> */}
+                           
                           </>
                         )}
                       </tr>
