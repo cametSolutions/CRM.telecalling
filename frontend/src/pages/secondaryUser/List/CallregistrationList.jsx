@@ -22,11 +22,13 @@ const CallregistrationList = () => {
   const [calllist, setcallList] = useState([])
   const [filteredCalls, setFilteredCalls] = useState([])
   const { data: registeredcalllist } = UseFetch("/customer/getallCalls")
+  console.log("dta", registeredcalllist)
+
   useEffect(() => {
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
     if (registeredcalllist) {
-      setcallList(registeredcalllist)
+      setcallList(registeredcalllist.allcalls)
       setUser(user)
     }
   }, [registeredcalllist])
@@ -73,8 +75,8 @@ const CallregistrationList = () => {
         </div>
 
         <hr className="border-t-2 border-gray-300 mb-2 " />
-        <Tiles list={data} />
-        <div className="overflow-y-auto max-h-60 shadow-md rounded-lg mt-2">
+        <Tiles datas={registeredcalllist?.alltokens} />
+        <div className="overflow-y-auto max-h-96 shadow-md rounded-lg mt-2">
           <table className="divide-y divide-gray-200 w-full">
             <thead className="bg-gray-400 sticky top-0 z-40">
               <tr>
