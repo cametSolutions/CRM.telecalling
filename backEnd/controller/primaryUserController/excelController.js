@@ -44,6 +44,8 @@ export const ExceltoJson = async (req, res) => {
     const category = await Category.find()
     const arr = []
     for (const item of jsonData) {
+      arr.push(item["Party Status"])
+      console.log("arrr", arr)
       const matchingCompany = company.find(
         (company) => company.companyName === "CAMET GROUP"
       )
@@ -52,7 +54,6 @@ export const ExceltoJson = async (req, res) => {
         (product) => product.productName === item["Type"].toUpperCase()
       )
       arr.push(item["Type"])
-      
 
       const matchingBranch = branch.find(
         (branch) => branch.branchName === item["Branch"].toUpperCase()
@@ -174,6 +175,7 @@ export const ExceltoJson = async (req, res) => {
           mobile: item["Mobile"],
           landline: item["Landline"],
           contactPerson: item["Contact Person"],
+          isActive: item["Party Status"],
           selected: selectedData
         })
         await customerData.save()

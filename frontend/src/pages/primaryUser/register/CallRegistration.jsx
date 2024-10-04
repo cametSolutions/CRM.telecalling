@@ -110,9 +110,7 @@ export default function CallRegistration() {
   const fetchCallDetails = async (callId) => {
     console.log("callid", callId)
     // Assuming you have an API to fetch the details
-    const response = await fetch(
-      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
-    )
+    const response = await fetch(`https://www.crm.camet.in/api/customer/getcallregister/${callId}`)
 
     const data = await response.json()
 
@@ -601,8 +599,6 @@ export default function CallRegistration() {
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                               {product?.amcAmount}
                             </td>
-
-                           
                           </>
                         )}
                       </tr>
