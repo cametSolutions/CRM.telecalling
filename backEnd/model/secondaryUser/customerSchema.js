@@ -8,11 +8,11 @@ const CustomerSchema = new mongoose.Schema({
   state: String,
   city: { type: String },
   pincode: {
-    type: Number,
-    validate: {
-      validator: Number.isInteger,
-      message: "{VALUE} is not a valid number!"
-    }
+    type: String
+    // validate: {
+    //   validator: Number.isInteger,
+    //   message: "{VALUE} is not a valid number!"
+    // }
   },
   email: { type: String },
   mobile: { type: String },
