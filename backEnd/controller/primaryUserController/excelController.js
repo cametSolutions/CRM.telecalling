@@ -163,11 +163,12 @@ export const ExceltoJson = async (socket, fileData) => {
             isActive: item["Party Status"],
             selected: selectedData
           })
-          await customerData.save()
-          for (const item of customerData.selected) {
+          const savedCustomer = await customerData.save()
+
+          for (const item of savedCustomer.selected) {
             const license = new License({
               products: item.product_id,
-              customerName: customerData._id, // Using the customer ID from the parent object
+              customerName: savedCustomer._id, // Using the customer ID from the parent object
               licensenumber: item.licensenumber
             })
 
@@ -190,8 +191,6 @@ export const ExceltoJson = async (socket, fileData) => {
   }
 
   if (uploadedCount > 0) {
-    console.log("All data processed successfully.")
-
     socket.emit("conversionComplete", {
       message:
         failedData.length === 0
