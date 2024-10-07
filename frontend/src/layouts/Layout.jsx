@@ -7,10 +7,10 @@ import Mainrouter from "../router/Mainrouter.jsx"
 import { useLocation } from "react-router-dom"
 
 const Layout = () => {
-  let location = useLocation()
+  const location = useLocation()
 
-  let adminHeader = location.pathname.startsWith("/admin")
-  let staffHeader = location.pathname.startsWith("/staff")
+  const adminHeader = location.pathname.startsWith("/admin")
+  const staffHeader = location.pathname.startsWith("/staff")
 
   return (
     <>
