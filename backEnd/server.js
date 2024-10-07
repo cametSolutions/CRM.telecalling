@@ -11,24 +11,44 @@ import authRoutes from "./routes/authRoutes.js"
 import excelRoutes from "./routes/primaryUserRoutes/excelRoutes.js"
 import secondaryUserRoutes from "./routes/secondaryUserRoutes/secondaryUserRoutes.js"
 import productRoutes from "./routes/primaryUserRoutes/productRoutes.js"
+import http from "http"
 import path from "path"
+import { Server } from "socket.io"
 import { fileURLToPath } from "url"
-
+import { ExceltoJson } from "./controller/primaryUserController/excelController.js"
+const app = express()
 dotenv.config()
+const server = http.createServer(app)
 
 // Running port configuration
-const PORT = process.env.PORT || 7000
+const PORT = process.env.PORT
 
 // MongoDB connection getting from config/db.js
 connectDB()
-const app = express()
+
 const corsOptions = {
   // origin: ['http://localhost:5173', 'https://erp.camet.in'],
   // origin:'https://erp.camet.in',
   origin: true,
   credentials: true
 }
+const io = new Server(server, {
+  cors: corsOptions // Apply the same CORS options here
+})
 app.use(cors(corsOptions))
+
+io.on("connection", (socket) => {
+  console.log("New client connected")
+
+  // Handle Excel to JSON conversion
+  socket.on("startConversion", (fileData) => {
+    ExceltoJson(socket, fileData)
+  })
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected")
+  })
+})
 
 // Define __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url)
@@ -102,6 +122,9 @@ if (process.env.NODE_ENV === "production") {
     res.send("Server is Ready")
   })
 }
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server started at http://localhost:${PORT}`)
 })
+// app.listen(PORT, () => {
+//   console.log(`Server started at http://localhost:${PORT}`)
+// })

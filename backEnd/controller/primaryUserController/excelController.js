@@ -1,51 +1,29 @@
-import XLSX from "xlsx"
-
-import Customer from "../../model/secondaryUser/customerSchema.js"
+import XLSX from "xlsx" // Assuming you're using XLSX to parse Excel files
 import Product from "../../model/primaryUser/productSchema.js"
 import Company from "../../model/primaryUser/companySchema.js"
 import Branch from "../../model/primaryUser/branchSchema.js"
+import Customer from "../../model/secondaryUser/customerSchema.js"
 import {
   Brand,
   Category
 } from "../../model/primaryUser/productSubDetailsSchema.js"
-const convertExcelToJson = (filePath) => {
-  const workbook = XLSX.readFile(filePath)
-  const sheetName = workbook.SheetNames[0]
-  const sheet = workbook.Sheets[sheetName]
+export const ExceltoJson = async (socket, fileData) => {
+  // Parse the uploaded Excel file
+  const workbook = XLSX.read(fileData, { type: "buffer" })
+  const sheetName = workbook.SheetNames[0] // Assuming the first sheet
+  const worksheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName])
 
-  const jsonData = XLSX.utils.sheet_to_json(sheet, {
-    raw: false, // Set raw to false to convert dates automatically
-    dateNF: "yyyy-mm-dd", // Specify the desired date format
-    cellDates: true // Keep this to ensure date parsing is applied
-  })
+  const product = await Product.find()
+  const company = await Company.find()
+  const branch = await Branch.find()
+  const brand = await Brand.find()
+  const category = await Category.find()
+  let uploadedCount = 0
+  const totalData = worksheet.length
+  const failedData = []
 
-  return jsonData
-}
-
-export const ExceltoJson = async (req, res) => {
-  console.log("hiii")
-  try {
-    if (!req.file) {
-      return res.status(400).send("No file uploaded.")
-    }
-
-    // Get the path from req.file
-    const filePath = req.file.path
-
-    // Convert the uploaded Excel file to JSON
-    const jsonData = convertExcelToJson(filePath)
-    // console.log("jsnnnnnnn", jsonData)
-    console.log("hiii")
-    // Log the parsed JSON data
-    const product = await Product.find()
-    const company = await Company.find()
-    const branch = await Branch.find()
-    const brand = await Brand.find()
-    const category = await Category.find()
-    const arr = []
-    for (const item of jsonData) {
-      arr.push(item["Party Status"])
-      console.log("arrr", arr)
+  for (const item of worksheet) {
+    try {
       const matchingCompany = company.find(
         (company) => company.companyName === "CAMET GROUP"
       )
@@ -53,7 +31,7 @@ export const ExceltoJson = async (req, res) => {
       const matchingProduct = product.find(
         (product) => product.productName === item["Type"].toUpperCase()
       )
-      arr.push(item["Type"])
+      // arr.push(item["Type"])
 
       const matchingBranch = branch.find(
         (branch) => branch.branchName === item["Branch"].toUpperCase()
@@ -179,12 +157,37 @@ export const ExceltoJson = async (req, res) => {
           selected: selectedData
         })
         await customerData.save()
+        uploadedCount++
+      } else {
+        failedData.push(item)
       }
+
+      socket.emit("conversionProgress", {
+        current: uploadedCount,
+        total: totalData
+      })
+    } catch (error) {
+      console.error("Error saving customer data:", error.message)
+      failedData.push(item) // Capture the item that failed to save
     }
-    console.log("arrr", arr)
-    res.status(200).send("File uploaded and data stored successfully!")
-  } catch (error) {
-    console.error("Error uploading file:", error.message)
-    res.status(500).send("Error processing file.")
+  }
+
+  if (uploadedCount > 0) {
+    console.log("All data processed successfully.")
+
+    socket.emit("conversionComplete", {
+      message:
+        failedData.length === 0
+          ? "conversion completed"
+          : "conversion is partially completed",
+      secondaryMessage: "some files are not saved due to same license number",
+      nonsavingData: failedData // Emit the array of unsaved data
+    })
+  } else {
+    // If no data was uploaded successfully, emit an error
+    socket.emit("conversionError", {
+      message: "This file is already uploaded"
+      // nonsavingData: failedData // Include the failed data in the error message
+    })
   }
 }
