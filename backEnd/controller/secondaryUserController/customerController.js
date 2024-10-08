@@ -158,7 +158,7 @@ export const GetLicense = async (req, res) => {
   }
 }
 
-export const customerCallRegistration = async (req, res) => {
+export const customerCallRegistration = async (req, res, socket) => {
   console.log("reqbody", req)
   try {
     const { customerid, customer } = req.query // Get customerid from query
@@ -191,7 +191,7 @@ export const customerCallRegistration = async (req, res) => {
 
           // Save the updated document
           const updatedCall = await user.save()
-          // socket.emit("updatedCalls")
+          socket.emit("updatedCalls")
           return res.status(200).json({
             status: true,
             message: "New call added successfully",
@@ -206,7 +206,7 @@ export const customerCallRegistration = async (req, res) => {
 
       // Save the updated document
       const updatedCall = await user.save()
-      // socket.emit("updatedCalls")
+      socket.emit("updatedCalls")
       return res.status(200).json({
         status: true,
         message: "New call added successfully",
@@ -222,7 +222,7 @@ export const customerCallRegistration = async (req, res) => {
 
       // Save the new document
       const updatedCall = await newCall.save()
-
+      socket.emit("updatedCalls")
       return res.status(200).json({
         status: true,
         message: "Call registered successfully",
