@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react"
 import { useLocation } from "react-router-dom"
-
+import io from "socket.io-client"
 import { useForm } from "react-hook-form"
 import { formatDistanceToNow, parseISO } from "date-fns"
 import api from "../../../api/api"
@@ -8,6 +8,7 @@ import { formatTime } from "../../../utils/timeUtils"
 import debounce from "lodash.debounce"
 import UseFetch from "../../../hooks/useFetch"
 import Timer from "../../../components/primaryUser/Timer"
+const socket = io("https://www.crm.camet.in")
 export default function CallRegistration() {
   const {
     register,
@@ -110,7 +111,9 @@ export default function CallRegistration() {
   const fetchCallDetails = async (callId) => {
     console.log("callid", callId)
     // Assuming you have an API to fetch the details
-    const response = await fetch(`https://www.crm.camet.in/api/customer/getcallregister/${callId}`)
+    const response = await fetch(
+      `http://localhost:9000/api/customer/getcallregister/${callId}`
+    )
 
     const data = await response.json()
 
@@ -249,12 +252,12 @@ export default function CallRegistration() {
   }
 
   const fetchCustomerData = debounce(async (query) => {
-    const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
-      query
-      )}`
-    // const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
+    // const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
     //   query
     // )}`
+    const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
+      query
+    )}`
 
     try {
       const response = await fetch(url, {

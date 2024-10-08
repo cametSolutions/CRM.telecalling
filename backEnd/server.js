@@ -16,6 +16,7 @@ import path from "path"
 import { Server } from "socket.io"
 import { fileURLToPath } from "url"
 import { ExceltoJson } from "./controller/primaryUserController/excelController.js"
+import { customerCallRegistration } from "./controller/secondaryUserController/customerController.js"
 import CallRegistration from "./model/secondaryUser/CallRegistrationSchema.js"
 const app = express()
 dotenv.config()
@@ -44,11 +45,12 @@ io.on("connection", (socket) => {
     console.log("Received request for initial data")
     try {
       // Fetch all calls from the database
-      const calls = await CallRegistration.find({}).populate({
-        path: "callregistration.product", // Populate the product field inside callregistration array
-        select: "productName" // Optionally select fields from the Product schema you need
-      })
-      .exec()
+      const calls = await CallRegistration.find({})
+        .populate({
+          path: "callregistration.product", // Populate the product field inside callregistration array
+          select: "productName" // Optionally select fields from the Product schema you need
+        })
+        .exec()
       console.log("calls", calls)
       socket.emit("initialData", { calls })
     } catch (error) {
@@ -56,7 +58,9 @@ io.on("connection", (socket) => {
       socket.emit("error", "Error fetching data")
     }
   })
-
+  socket.on("callregisterconversation", () => {
+    customerCallRegistration(socket)
+  })
   // Handle Excel to JSON conversion
   socket.on("startConversion", (fileData) => {
     ExceltoJson(socket, fileData)
@@ -136,4 +140,3 @@ if (process.env.NODE_ENV === "production") {
 server.listen(PORT, () => {
   console.log(`Server started at http://localhost:${PORT}`)
 })
-

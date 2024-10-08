@@ -166,6 +166,7 @@ export const GetLicense = async (req, res) => {
 }
 
 export const customerCallRegistration = async (req, res) => {
+  console.log("req", req)
   try {
     const { customerid, customer } = req.query // Get customerid from query
     const calldata = req.body // Assuming calldata is sent in the body
@@ -199,6 +200,7 @@ export const customerCallRegistration = async (req, res) => {
 
           // Save the updated document
           const updatedCall = await user.save()
+          socket.emit("initialData", { updatedCall })
           return res.status(200).json({
             status: true,
             message: "New call added successfully",
@@ -339,11 +341,13 @@ export const GetallCalls = async (req, res) => {
     console.log("alltok", alltokens)
 
     if (allcalls.length > 0) {
-      res
-        .status(200)
-        .json({ message: "calls found", data:{
-          allcalls, alltokens
-        } })
+      res.status(200).json({
+        message: "calls found",
+        data: {
+          allcalls,
+          alltokens
+        }
+      })
     } else {
       res.status(400).json({ message: "no calls" })
     }
