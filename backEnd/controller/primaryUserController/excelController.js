@@ -56,15 +56,15 @@ export const ExceltoJson = async (socket, fileData) => {
 
         const selectedData = [
           {
-            company_id: matchingCompany ? matchingCompany._id : null,
-            companyName: matchingCompany ? matchingCompany.companyName : "",
-            branch_id: matchingBranch ? matchingBranch._id : null,
-            branchName: matchingBranch ? matchingBranch.branchName : "",
-            product_id: matchingProduct ? matchingProduct._id : null,
-            productName: matchingProduct ? matchingProduct.productName : null,
+            company_id: matchingCompany?._id,
+            companyName: matchingCompany?.companyName,
+            branch_id: matchingBranch?._id,
+            branchName: matchingBranch?.branchName,
+            product_id: matchingProduct?._id,
+            productName: matchingProduct?.productName,
 
-            brandName: matchingBrand ? matchingBrand.brand : null,
-            categoryName: matchingCategory ? matchingCategory.category : null,
+            brandName: matchingBrand?.brand,
+            categoryName: matchingCategory?.category,
             licensenumber: item["CUSTOMER ID"],
             softwareTrade: item["Software Trade"],
             noofusers: item["NoOfUser"],
@@ -87,12 +87,12 @@ export const ExceltoJson = async (socket, fileData) => {
 
         if (item["Wallet Name"]) {
           selectedData.push({
-            company_id: matchingCompany ? matchingCompany._id : null,
-            companyName: matchingCompany ? matchingCompany.name : "",
-            branch_id: matchingBranch ? matchingBranch._id : null,
-            branchName: matchingBranch ? matchingBranch.branchName : "",
-            product_id: matchingProduct ? matchingProduct._id : null,
-            productName: item["Wallet Name"],
+            company_id: matchingCompany?._id,
+            companyName: matchingCompany?.name,
+            branch_id: matchingBranch?._id,
+            branchName: matchingBranch?.branchName,
+            product_id: matchingProduct?._id,
+            productName: matchingProduct?.productName,
             brandName: item["S/W Type"],
             categoryName: item["User"],
             licensenumber: item["Wallet Id"],
@@ -116,12 +116,12 @@ export const ExceltoJson = async (socket, fileData) => {
         }
         if (item["Mobile App Name"]) {
           selectedData.push({
-            company_id: matchingCompany ? matchingCompany._id : null,
-            companyName: matchingCompany ? matchingCompany.name : "",
-            branch_id: matchingBranch ? matchingBranch._id : null,
-            branchName: matchingBranch ? matchingBranch.branchName : "",
-            product_id: matchingProduct ? matchingProduct._id : null,
-            productName: item["Mobile App Name"],
+            company_id: matchingCompany?._id,
+            companyName: matchingCompany?.name,
+            branch_id: matchingBranch?._id,
+            branchName: matchingBranch?.branchName,
+            product_id: matchingProduct?._id,
+            productName: matchingProduct?.productName,
 
             brandName: item["S/W Type"],
             categoryName: item["User"],
@@ -147,7 +147,7 @@ export const ExceltoJson = async (socket, fileData) => {
         const existingCustomer = await Customer.findOne({
           "selected.licensenumber": item["CUSTOMER ID"]
         })
-        const existingLicensenumber = await License
+
         if (!existingCustomer) {
           const customerData = new Customer({
             customerName: item["Party Name"],
@@ -165,27 +165,35 @@ export const ExceltoJson = async (socket, fileData) => {
           })
           const savedCustomer = await customerData.save()
 
-          for (const item of savedCustomer.selected) {
+          // for (const item of savedCustomer.selected) {
+          //   const license = new License({
+          //     products: item.product_id,
+          //     customerName: savedCustomer._id, // Using the customer ID from the parent object
+          //     licensenumber: item.licensenumber
+          //   })
+          if (savedCustomer) {
             const license = new License({
-              products: item.product_id,
+              products: savedCustomer.selected.product_id,
               customerName: savedCustomer._id, // Using the customer ID from the parent object
-              licensenumber: item.licensenumber
+              licensenumber: savedCustomer.selected.licensenumber
             })
-
             await license.save()
           }
+
           uploadedCount++
+
+          socket.emit("conversionProgress", {
+            current: uploadedCount,
+            total: totalData
+          })
         } else {
           failedData.push(item)
         }
-
-        socket.emit("conversionProgress", {
-          current: uploadedCount,
-          total: totalData
-        })
+      } else {
+        failedData.push(item)
       }
     } catch (error) {
-      console.error("Error saving customer data:", error.message)
+      console.error("Error saving customer datasss:", error.message)
       failedData.push(item) // Capture the item that failed to save
     }
   }

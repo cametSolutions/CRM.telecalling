@@ -5,10 +5,6 @@ import mongoose from "mongoose"
 
 export const CustomerRegister = async (req, res) => {
   const { customerData, tabledata = {} } = req.body
-  console.log("table", tabledata)
-  console.log("pin", customerData.pincode)
-  console.log("pinty", typeof customerData.pincode)
-  console.log("tabledata", tabledata)
 
   const {
     customerName,
@@ -63,7 +59,7 @@ export const CustomerRegister = async (req, res) => {
 
     return res.status(200).json({
       status: true,
-      message: "Customer created successfullyddddddddd"
+      message: "Customer created successfully"
     })
   } catch (error) {
     console.log(error.message)
@@ -73,8 +69,7 @@ export const CustomerRegister = async (req, res) => {
 export const CustomerEdit = async (req, res) => {
   const { customerData, tableData } = req.body
   const customerId = req.query.customerid
-  console.log("editdata", customerData)
-  console.log("cusotmerid", customerId)
+
   try {
     if (customerId && customerData) {
       const objectId = new mongoose.Types.ObjectId(customerId)
@@ -116,27 +111,25 @@ export const CustomerEdit = async (req, res) => {
 }
 export const GetCustomer = async (req, res) => {
   const { search } = req.query
-  console.log("hiii")
-  console.log("search", search)
+
   try {
     let searchCriteria = {}
 
     if (!isNaN(search)) {
       // Search by license number or mobile number using partial match
       const searchRegex = new RegExp(`^${search}`, "i")
-      console.log("hiii")
+
       searchCriteria = {
         $or: [{ "selected.license_no": searchRegex }, { mobile: searchRegex }]
       }
     } else {
-      console.log("hls")
       // Search by customer name
       searchCriteria = { customerName: new RegExp(search, "i") }
       console.log("search ", searchCriteria)
     }
 
     let customers = await Customer.find(searchCriteria)
-    console.log("cuatome", customers)
+
     if (customers.length === 0) {
       res.json({ message: "No customer found" })
     } else {
@@ -153,7 +146,7 @@ export const GetCustomer = async (req, res) => {
 export const GetLicense = async (req, res) => {
   try {
     const licensenumber = await License.find()
-    console.log("license number:", licensenumber)
+
     if (licensenumber.length > 0) {
       res
         .status(200)
@@ -166,12 +159,10 @@ export const GetLicense = async (req, res) => {
 }
 
 export const customerCallRegistration = async (req, res) => {
-  console.log("req", req)
+  console.log("reqbody", req)
   try {
     const { customerid, customer } = req.query // Get customerid from query
     const calldata = req.body // Assuming calldata is sent in the body
-    console.log("calldatasssss", calldata)
-    console.log("customeridddd", customerid)
 
     // Convert customerid to ObjectId
     const customerId = new mongoose.Types.ObjectId(customerid)
@@ -200,7 +191,7 @@ export const customerCallRegistration = async (req, res) => {
 
           // Save the updated document
           const updatedCall = await user.save()
-          socket.emit("initialData", { updatedCall })
+          // socket.emit("updatedCalls")
           return res.status(200).json({
             status: true,
             message: "New call added successfully",
@@ -215,7 +206,7 @@ export const customerCallRegistration = async (req, res) => {
 
       // Save the updated document
       const updatedCall = await user.save()
-
+      // socket.emit("updatedCalls")
       return res.status(200).json({
         status: true,
         message: "New call added successfully",
@@ -272,7 +263,6 @@ export const GetCallRegister = async (req, res) => {
           path: "callregistration.product", // Populate the product field inside callregistration array
           model: "Product"
         })
-      console.log("custojmer found", callDetails)
 
       if (!callDetails) {
         return res.status(404).json({ message: "Call not found" })
@@ -292,7 +282,8 @@ export const GetCallRegister = async (req, res) => {
     res.status(500).json({ message: "internal server error" })
   }
 }
-export const GetallCalls = async (req, res) => {
+
+export const GetallCalls = async (req, res, socket) => {
   try {
     let totalTokens = 0
     let pendingCount = 0
@@ -313,7 +304,7 @@ export const GetallCalls = async (req, res) => {
         date.getFullYear() === today.getFullYear()
       )
     }
-    console.log("allcalls", allcalls)
+
     allcalls.forEach((token) => {
       const callRegistrations = token.callregistration
       totalTokens += callRegistrations.length
@@ -331,7 +322,7 @@ export const GetallCalls = async (req, res) => {
         }
       })
     })
-    console.log("token", totalTokens)
+
     const alltokens = {
       totalTokens,
       pendingCount,

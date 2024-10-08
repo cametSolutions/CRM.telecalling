@@ -4,7 +4,7 @@ const LicenseSchema = new mongoose.Schema({
   products: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Product",
-    required: true
+    // required: true
   },
   customerName: {
     type: mongoose.Schema.Types.ObjectId,

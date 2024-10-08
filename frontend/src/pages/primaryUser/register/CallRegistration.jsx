@@ -8,7 +8,7 @@ import { formatTime } from "../../../utils/timeUtils"
 import debounce from "lodash.debounce"
 import UseFetch from "../../../hooks/useFetch"
 import Timer from "../../../components/primaryUser/Timer"
-const socket = io("https://www.crm.camet.in")
+// const socket = io("http://localhost:9000")
 export default function CallRegistration() {
   const {
     register,
@@ -48,23 +48,20 @@ export default function CallRegistration() {
   )
   const location = useLocation()
   const { calldetails, token } = location.state || {}
-  console.log("calldetais", calldetails)
-  console.log("token", token)
+
   useEffect(() => {
     if (calldetails) {
-      console.log("editcalls")
       const userData = localStorage.getItem("user")
       const user = JSON.parse(userData)
       setUser(user)
       // Fetch the call details using the ID
       fetchCallDetails(calldetails)
         .then((callData) => {
-          console.log("calldet", callData)
           const matchingRegistration =
             callData.callDetails.callregistration.find(
               (registration) => registration.timedata.token === token
             )
-          console.log("mtaa", matchingRegistration)
+
           // If a matching registration is found, extract the product details
           const productName = matchingRegistration
             ? matchingRegistration.product.productName
@@ -109,10 +106,9 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
-    console.log("callid", callId)
     // Assuming you have an API to fetch the details
     const response = await fetch(
-      `http://localhost:9000/api/customer/getcallregister/${callId}`
+      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
     )
 
     const data = await response.json()
@@ -121,7 +117,6 @@ export default function CallRegistration() {
   }
 
   useEffect(() => {
-    console.log("hiii")
     if (registeredCall) {
       setCallData(registeredCall.callregistration)
     }
@@ -184,7 +179,7 @@ export default function CallRegistration() {
         timedata: timeData,
         formdata: formData
       }
-
+      // socket.emit("callregisterconversation")
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}`,
         calldata,
@@ -252,12 +247,12 @@ export default function CallRegistration() {
   }
 
   const fetchCustomerData = debounce(async (query) => {
-    // const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
-    //   query
-    // )}`
-    const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
+    const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
       query
     )}`
+    // const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
+    //   query
+    // )}`
 
     try {
       const response = await fetch(url, {
@@ -296,8 +291,6 @@ export default function CallRegistration() {
   }
 
   const handleRowClick = (customer, selectedcustomer) => {
-    console.log("csut", customer)
-    console.log("select", customer.selected)
     setCallData([])
     setSelectedCustomer(customer)
     setSearch(customer.customerName)

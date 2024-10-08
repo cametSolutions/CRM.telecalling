@@ -41,26 +41,26 @@ io.on("connection", (socket) => {
   console.log("New client connected")
 
   //handle initial call data
-  socket.on("initialData", async () => {
-    console.log("Received request for initial data")
-    try {
-      // Fetch all calls from the database
-      const calls = await CallRegistration.find({})
-        .populate({
-          path: "callregistration.product", // Populate the product field inside callregistration array
-          select: "productName" // Optionally select fields from the Product schema you need
-        })
-        .exec()
-      console.log("calls", calls)
-      socket.emit("initialData", { calls })
-    } catch (error) {
-      console.error("Error fetching call data:", error)
-      socket.emit("error", "Error fetching data")
-    }
-  })
-  socket.on("callregisterconversation", () => {
-    customerCallRegistration(socket)
-  })
+  // socket.on("updatedCalls", async () => {
+  //   console.log("Received request for initial data")
+  //   try {
+  //     // Fetch all calls from the database
+  //     const calls = await CallRegistration.find({})
+  //       .populate({
+  //         path: "callregistration.product", // Populate the product field inside callregistration array
+  //         select: "productName" // Optionally select fields from the Product schema you need
+  //       })
+  //       .exec()
+
+  //     socket.emit("updatedCalls", { calls })
+  //   } catch (error) {
+  //     console.error("Error fetching call data:", error)
+  //     socket.emit("error", "Error fetching data")
+  //   }
+  // })
+  // socket.on("callregisterconversation", () => {
+  //   customerCallRegistration(socket)
+  // })
   // Handle Excel to JSON conversion
   socket.on("startConversion", (fileData) => {
     ExceltoJson(socket, fileData)
