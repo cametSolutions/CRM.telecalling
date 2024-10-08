@@ -12,7 +12,7 @@ import "./tailwind.css"
 import Layout from "./layouts/Layout"
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+  <>
     <BrowserRouter>
       <Layout />
     </BrowserRouter>
@@ -29,5 +29,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       rtl={false}
       icon
     />
-  </React.StrictMode>
+  </>
 )

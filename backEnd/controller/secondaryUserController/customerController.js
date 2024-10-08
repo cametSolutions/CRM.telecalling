@@ -164,6 +164,7 @@ export const GetLicense = async (req, res) => {
     res.status(500).send("server error")
   }
 }
+
 export const customerCallRegistration = async (req, res) => {
   try {
     const { customerid, customer } = req.query // Get customerid from query
