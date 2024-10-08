@@ -158,6 +158,141 @@ export const GetLicense = async (req, res) => {
   }
 }
 
+// export const customerCallRegistration = async (reqOrSocket, resOrData) => {
+//   try {
+//     let customerid, calldata;
+
+//     // Check if it's an HTTP request (req/res) or WebSocket (socket/data)
+//     if (reqOrSocket.query && resOrData.json) {
+//       // It's an API call
+//       customerid = reqOrSocket.query.customerid;
+//       calldata = reqOrSocket.body;
+//     } else {
+//       // It's a WebSocket call
+//       customerid = resOrData.customerid;
+//       calldata = resOrData;
+//     }
+
+//     // Convert customerid to ObjectId
+//     const customerId = new mongoose.Types.ObjectId(customerid);
+
+//     if (!mongoose.Types.ObjectId.isValid(customerId)) {
+//       throw new Error("Invalid ObjectId format");
+//     }
+
+//     // Find if there is already a call registration for this customer
+//     const user = await CallRegistration.findOne({ customerid: customerId });
+
+//     if (user) {
+//       const token = calldata.formdata.token;
+//       if (token) {
+//         const callToUpdate = user.callregistration.find(
+//           (call) => call.timedata.token === token
+//         );
+//         if (callToUpdate) {
+//           // Update the fields with the new data
+//           callToUpdate.timedata = calldata.timedata;
+//           callToUpdate.formdata = calldata.formdata;
+//           callToUpdate.userName = calldata.userName;
+//           callToUpdate.product = calldata.product;
+//           callToUpdate.license = calldata.license;
+//           callToUpdate.branchName = calldata.branchName;
+
+//           // Save the updated document
+//           const updatedCall = await user.save();
+
+//           // Send response based on type
+//           if (reqOrSocket.query && resOrData.json) {
+//             // API response
+//             return resOrData.status(200).json({
+//               status: true,
+//               message: "New call updated successfully",
+//               updatedCall,
+//             });
+//           } else {
+//             // WebSocket response
+//             reqOrSocket.emit("initialData", { updatedCall });
+//             return reqOrSocket.emit("success", {
+//               status: true,
+//               message: "New call updated successfully",
+//               updatedCall,
+//             });
+//           }
+//         }
+//       }
+
+//       // If no token matches, push new call data to callregistration array
+//       user.callregistration.push(calldata);
+
+//       // Save the updated document
+//       const updatedCall = await user.save();
+
+//       // Send response based on type
+//       if (reqOrSocket.query && resOrData.json) {
+//         // API response
+//         return resOrData.status(200).json({
+//           status: true,
+//           message: "New call added successfully",
+//           updatedCall,
+//         });
+//       } else {
+//         // WebSocket response
+//         reqOrSocket.emit("initialData", { updatedCall });
+//         return reqOrSocket.emit("success", {
+//           status: true,
+//           message: "New call added successfully",
+//           updatedCall,
+//         });
+//       }
+//     } else {
+//       // If no document is found, create a new one with the given call data
+//       const newCall = new CallRegistration({
+//         customerid: customerId,
+//         customerName: calldata.customer,
+//         callregistration: [calldata], // Wrap calldata in an array
+//       });
+
+//       // Save the new document
+//       const savedCall = await newCall.save();
+
+//       // Send response based on type
+//       if (reqOrSocket.query && resOrData.json) {
+//         // API response
+//         return resOrData.status(200).json({
+//           status: true,
+//           message: "Call registered successfully",
+//           savedCall,
+//         });
+//       } else {
+//         // WebSocket response
+//         reqOrSocket.emit("initialData", { savedCall });
+//         return reqOrSocket.emit("success", {
+//           status: true,
+//           message: "Call registered successfully",
+//           savedCall,
+//         });
+//       }
+//     }
+//   } catch (error) {
+//     console.error("Error saving or updating call registration:", error.message);
+
+//     // Send error based on type
+//     if (reqOrSocket.query && resOrData.json) {
+//       // API error response
+//       return resOrData.status(500).json({
+//         status: false,
+//         message: "Error saving or updating call registration",
+//       });
+//     } else {
+//       // WebSocket error response
+//       return reqOrSocket.emit("error", {
+//         status: false,
+//         message: "Error saving or updating call registration",
+//       });
+//     }
+//   }
+// };
+
 export const customerCallRegistration = async (req, res, socket) => {
   console.log("reqbody", req)
   try {
