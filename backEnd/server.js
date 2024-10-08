@@ -58,9 +58,9 @@ io.on("connection", (socket) => {
       socket.emit("error", "Error fetching data")
     }
   })
-  socket.on("callregisterconversation", () => {
-    customerCallRegistration(socket)
-  })
+  // socket.on("callregisterconversation", () => {
+  //   customerCallRegistration(socket)
+  // })
   // Handle Excel to JSON conversion
   socket.on("startConversion", (fileData) => {
     ExceltoJson(socket, fileData)
