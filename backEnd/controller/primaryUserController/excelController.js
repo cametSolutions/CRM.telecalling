@@ -171,6 +171,7 @@ export const ExceltoJson = async (socket, fileData) => {
               customerName: savedCustomer._id, // Using the customer ID from the parent object
               licensenumber: item.licensenumber
             })
+            await license.save()
           }
 
           uploadedCount++
