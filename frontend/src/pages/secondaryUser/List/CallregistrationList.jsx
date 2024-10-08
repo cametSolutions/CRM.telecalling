@@ -68,7 +68,7 @@ import {
 } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles" // Import the Tile component
 import { useNavigate } from "react-router-dom"
-// const socket = io("http://localhost:9000") // Adjust the URL to your backend
+const socket = io("https://www.crm.camet.in") // Adjust the URL to your backend
 
 const CallregistrationList = () => {
   const navigate = useNavigate()
@@ -128,13 +128,13 @@ const CallregistrationList = () => {
     console.log("hiii")
     setUser(user)
 
-    // socket.emit("updatedCalls")
-    // // Listen for initial data from the server
-    // socket.on("updatedCalls", (data) => {
-    //   console.log("Received updated data:", data)
-    //   setCallList(data.calls) // Set the received data to your call list
-    //   // Set all calls initially
-    // })
+    socket.emit("updatedCalls")
+    // Listen for initial data from the server
+    socket.on("updatedCalls", (data) => {
+      console.log("Received updated data:", data)
+      setCallList(data.calls) // Set the received data to your call list
+      // Set all calls initially
+    })
 
     // Cleanup the socket connection when the component unmounts
     return () => {
