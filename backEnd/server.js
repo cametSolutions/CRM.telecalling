@@ -16,6 +16,7 @@ import path from "path"
 import { Server } from "socket.io"
 import { fileURLToPath } from "url"
 import { ExceltoJson } from "./controller/primaryUserController/excelController.js"
+import CallRegistration from "./model/secondaryUser/CallRegistrationSchema.js"
 const app = express()
 dotenv.config()
 const server = http.createServer(app)
@@ -27,8 +28,6 @@ const PORT = process.env.PORT
 connectDB()
 
 const corsOptions = {
-  // origin: ['http://localhost:5173', 'https://erp.camet.in'],
-  // origin:'https://erp.camet.in',
   origin: true,
   credentials: true
 }
@@ -39,6 +38,24 @@ app.use(cors(corsOptions))
 
 io.on("connection", (socket) => {
   console.log("New client connected")
+
+  //handle initial call data
+  socket.on("initialData", async () => {
+    console.log("Received request for initial data")
+    try {
+      // Fetch all calls from the database
+      const calls = await CallRegistration.find({}).populate({
+        path: "callregistration.product", // Populate the product field inside callregistration array
+        select: "productName" // Optionally select fields from the Product schema you need
+      })
+      .exec()
+      console.log("calls", calls)
+      socket.emit("initialData", { calls })
+    } catch (error) {
+      console.error("Error fetching call data:", error)
+      socket.emit("error", "Error fetching data")
+    }
+  })
 
   // Handle Excel to JSON conversion
   socket.on("startConversion", (fileData) => {
@@ -71,12 +88,6 @@ app.use(
   })
 )
 
-// app.use(
-//   cors({
-//     origin: "http://localhost:5173", // Replace with your frontend URL
-//     credentials: true
-//   })
-// )
 app.use(cookieParser())
 
 // Routes
@@ -125,6 +136,4 @@ if (process.env.NODE_ENV === "production") {
 server.listen(PORT, () => {
   console.log(`Server started at http://localhost:${PORT}`)
 })
-// app.listen(PORT, () => {
-//   console.log(`Server started at http://localhost:${PORT}`)
-// })
+
