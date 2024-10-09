@@ -3,7 +3,7 @@ import mongoose from "mongoose"
 const LicenseSchema = new mongoose.Schema({
   products: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Product",
+    ref: "Product"
     // required: true
   },
   customerName: {
@@ -11,7 +11,7 @@ const LicenseSchema = new mongoose.Schema({
     ref: "Customer",
     required: true
   },
-  licensenumber: { type: String, required: true }
+  licensenumber: { type: String }
 })
 
 export default mongoose.model("License", LicenseSchema)
