@@ -13,7 +13,8 @@ import HsnCreation from "../../../pages/primaryUser/register/HsnCreation"
 import HsnList from "../../../pages/primaryUser/register/HsnList"
 import EditHsn from "../../../pages/primaryUser/edit/EditHsn"
 import ProductMaster from "../../../pages/primaryUser/register/ProductMaster"
-import CustomerList from "../../../pages/primaryUser/List/CustomerList"
+// import CustomerList from "../../../pages/primaryUser/List/CustomerList"
+import CustomerListform from "../../../components/secondaryUser/CustomerListform"
 import ProductList from "../../../pages/primaryUser/List/ProductList"
 
 import PendingCustomer from "../../../components/secondaryUser/PendingCustomer"
@@ -40,7 +41,7 @@ const mastersRoutes = [
   },
 
   { path: "/admin/masters/branchEdit", component: BranchEdit },
-  { path: "/admin/masters/customer", component: CustomerList },
+  { path: "/admin/masters/customer", component: CustomerListform },
   { path: "/admin/masters/pendingCustomer", component: PendingCustomer },
   {
     path: "/admin/masters/customerRegistration",

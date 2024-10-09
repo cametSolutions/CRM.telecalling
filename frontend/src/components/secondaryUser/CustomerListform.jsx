@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useRef } from "react"
 import { CiEdit } from "react-icons/ci"
 import { useNavigate } from "react-router-dom"
-import _ from "lodash"
+import UseFetch from "../../hooks/useFetch"
+import debounce from "lodash.debounce"
 import {
   FaUserPlus,
   FaSearch,
@@ -13,80 +14,97 @@ import {
 } from "react-icons/fa"
 import { Link } from "react-router-dom"
 
-const CustomerListform = ({ customerlist }) => {
-  const navigate = useNavigate()
-  const tableContainerRef = useRef(null) // Ref to track table container scrolling
+const CustomerListform = () => {
+  // const navigate = useNavigate()
+  // const tableContainerRef = useRef(null) // Ref to track table container scrolling
 
   const [searchQuery, setSearchQuery] = useState("")
+  const [load, setLoading] = useState(null)
   const [displayedCustomers, setDisplayedCustomers] = useState([]) // Initially displayed customers
   const [loadMoreCount, setLoadMoreCount] = useState(10)
   const [allCustomers, setAllCustomers] = useState([]) // All customers list
-  const [showFullAddress, setShowFullAddress] = useState({});
+  const [showFullAddress, setShowFullAddress] = useState({})
+  const {
+    data: customerData,
+    loading,
+    error
+  } = UseFetch("/customer/getCustomer")
   useEffect(() => {
-    // Set allCustomers whenever customerlist changes
-    setAllCustomers(customerlist)
-    // On initial load, display the first batch of customers
-    if (customerlist && customerlist.length > 0) {
-      setDisplayedCustomers(customerlist.slice(0, loadMoreCount))
+    if (customerData && customerData.length > 0) {
+      setDisplayedCustomers(customerData)
+      // setDisplayedCustomers(customerlist.slice(0, loadMoreCount))
     }
-  }, [customerlist])
-  console.log("display", displayedCustomers)
+  }, [customerData, displayedCustomers])
 
-  // Handle search with lodash debounce to optimize search performance
-  const handleSearch = _.debounce((query) => {
+  //Handle search with lodash debounce to optimize search performance
+  const handleSearch = debounce((query) => {
+    setSearchQuery(query)
+
     const lowerCaseQuery = query.toLowerCase()
-    const filtered = allCustomers.filter((customer) =>
+    const filtered = displayedCustomers.filter((customer) =>
       customer.customerName.toLowerCase().includes(lowerCaseQuery)
     )
-    setDisplayedCustomers(filtered.slice(0, loadMoreCount)) // Reset to initial count after filtering
+    if (filtered.length > 0) {
+      setDisplayedCustomers(filtered)
+    } else {
+      setDisplayedCustomers(customerData)
+    }
+    console.log("filterd", filtered)
+    // Reset to initial count after filtering
   }, 300)
 
+  // const handleInputChange = (inputValue) => {
+  //   setSearch(inputValue)
+  //   if (inputValue.length > 0) {
+  //     fetchCustomerData(inputValue)
+  //   } else {
+  //     setCustomerData([])
+  //   }
+  // }
+
   // Handle scroll event on the table container to load more data
-  const handleScroll = () => {
-    const tableContainer = tableContainerRef.current
-    if (tableContainer) {
-      const { scrollTop, scrollHeight, clientHeight } = tableContainer
+  // const handleScroll = () => {
+  //   const tableContainer = tableContainerRef.current
+  //   if (tableContainer) {
+  //     const { scrollTop, scrollHeight, clientHeight } = tableContainer
 
-      // Check if user has scrolled to the bottom of the table container
-      if (scrollTop + clientHeight >= scrollHeight - 50) {
-        // Load more customers if available
-        if (displayedCustomers.length < allCustomers.length) {
-          setLoadMoreCount((prev) => prev + 6) // Increase load count by 6 on each scroll
-        }
-      }
-    }
-  }
+  //     // Check if user has scrolled to the bottom of the table container
+  //     if (scrollTop + clientHeight >= scrollHeight - 50) {
+  //       // Load more customers if available
+  //       if (displayedCustomers.length < allCustomers.length) {
+  //         setLoadMoreCount((prev) => prev + 6) // Increase load count by 6 on each scroll
+  //       }
+  //     }
+  //   }
+  // }
 
-  useEffect(() => {
-    const tableContainer = tableContainerRef.current
-    if (tableContainer) {
-      tableContainer.addEventListener("scroll", handleScroll)
-    }
+  // useEffect(() => {
+  //   const tableContainer = tableContainerRef.current
+  //   if (tableContainer) {
+  //     tableContainer.addEventListener("scroll", handleScroll)
+  //   }
 
-    return () => {
-      if (tableContainer) {
-        tableContainer.removeEventListener("scroll", handleScroll) // Clean up event listener
-      }
-    }
-  }, [displayedCustomers])
-
-  useEffect(() => {
-    setDisplayedCustomers(allCustomers.slice(0, loadMoreCount))
-  }, [loadMoreCount, allCustomers])
-  
+  //   return () => {
+  //     if (tableContainer) {
+  //       tableContainer.removeEventListener("scroll", handleScroll) // Clean up event listener
+  //     }
+  //   }
+  // }, [displayedCustomers])
 
   // Function to toggle showing full address
   const handleShowMore = (customerId) => {
     setShowFullAddress((prevState) => ({
       ...prevState,
-      [customerId]: !prevState[customerId], // Toggle the state for the specific customer
-    }));
-  };
+      [customerId]: !prevState[customerId] // Toggle the state for the specific customer
+    }))
+  }
 
   const truncateAddress = (address) => {
-    const maxLength = 20; // Define how many characters to show before truncating
-    return address.length > maxLength ? `${address.slice(0, maxLength)}...` : address;
-  };
+    const maxLength = 20 // Define how many characters to show before truncating
+    return address?.length > maxLength
+      ? `${address?.slice(0, maxLength)}...`
+      : address
+  }
   return (
     <div className=" mx-auto  overflow-y-hidden  ">
       <div className="w-auto shadow-lg rounded p-8 ">
@@ -99,11 +117,8 @@ const CustomerListform = ({ customerlist }) => {
             </div>
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value)
-                handleSearch(e.target.value)
-              }}
+              // value={searchQuery}
+              onChange={(e) => handleSearch(e.target.value)}
               className="w-full border border-gray-300 rounded-full py-1 px-4 pl-10 focus:outline-none"
               placeholder="Search for..."
             />
@@ -138,7 +153,7 @@ const CustomerListform = ({ customerlist }) => {
         </div>
 
         <div
-          ref={tableContainerRef}
+          // ref={tableContainerRef}
           className="overflow-y-auto h-[500px] " // Fixed height for scrolling
         >
           <table className="min-w-full bg-white ">
@@ -163,7 +178,7 @@ const CustomerListform = ({ customerlist }) => {
                 <th className="py-1 px-2 border-b border-gray-300 text-left">
                   Address1
                 </th>
-               
+
                 <th className="py-1 px-2 border-b border-gray-300 text-left">
                   Pin code
                 </th>
@@ -185,7 +200,7 @@ const CustomerListform = ({ customerlist }) => {
               {displayedCustomers.length > 0 ? (
                 displayedCustomers.map((customer, index) =>
                   customer.selected.map((item) => (
-                    <tr key={customer?._id}>
+                    <tr key={item.licensenumber}>
                       <td className="px-2 py-3 text-sm text-black">
                         {index + 1}
                       </td>
@@ -203,33 +218,32 @@ const CustomerListform = ({ customerlist }) => {
                       </td>
 
                       <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
-                      {showFullAddress[customer?._id] ? (
-                        <span>
-                          {customer?.address1}{' '}
-                          <button
-                            onClick={() => handleShowMore(customer?._id)}
-                            className="text-blue-500"
-                          >
-                            Show less
-                          </button>
-                        </span>
-                      ) : (
-                        <span>
-                          {truncateAddress(customer?.address1)}{' '}
-                          {customer?.address1.length > 20 && (
+                        {showFullAddress[customer?._id] ? (
+                          <span>
+                            {customer?.address1}{" "}
                             <button
                               onClick={() => handleShowMore(customer?._id)}
                               className="text-blue-500"
                             >
-                              Show more
+                              Show less
                             </button>
-                          )}
-                        </span>
-                      )}
+                          </span>
+                        ) : (
+                          <span>
+                            {truncateAddress(customer?.address1)}{" "}
+                            {customer?.address1?.length > 20 && (
+                              <button
+                                onClick={() => handleShowMore(customer?._id)}
+                                className="text-blue-500"
+                              >
+                                Show more
+                              </button>
+                            )}
+                          </span>
+                        )}
                         {/* {customer?.address1} */}
                       </td>
 
-                     
                       <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
                         {customer?.pincode}
                       </td>
@@ -265,7 +279,7 @@ const CustomerListform = ({ customerlist }) => {
                     colSpan="11"
                     className="px-4 py-4 text-center text-gray-500"
                   >
-                    No customers found.
+                    {loading ? loading : "No customers found."}
                   </td>
                 </tr>
               )}

@@ -62,11 +62,12 @@ const UseFetch = (url) => {
         const result = await fetchDataFromApi(url)
         if (result.data) {
           setData(result.data)
+          setLoading(false)
         } else {
           setError("Expected data to be an array")
           console.error("Expected data to be an array", result)
         }
-        setLoading(false)
+       
       } catch (err) {
         setLoading(false)
         setError(err.message || "Something went wrong!")

@@ -107,9 +107,7 @@ export default function CallRegistration() {
 
   const fetchCallDetails = async (callId) => {
     // Assuming you have an API to fetch the details
-    const response = await fetch(
-      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
-    )
+    const response = await fetch(`https://www.crm.camet.in/api/customer/getcallregister/${callId}`)
 
     const data = await response.json()
 
