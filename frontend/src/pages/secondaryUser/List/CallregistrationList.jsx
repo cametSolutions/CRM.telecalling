@@ -120,9 +120,7 @@ const CallregistrationList = () => {
       setFilteredCalls(callList)
     }
   }, [callList])
-  console.log("pending,", pendingCallsCount)
-  console.log("solvedcount", solvedCallsCount)
-  console.log("todayscallcount", todayCallsCount)
+
   useEffect(() => {
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
@@ -142,9 +140,8 @@ const CallregistrationList = () => {
     //   socket.off("updatedCalls")
     //   // socket.disconnect()
     // }
-  }, [filterCallData])
-  console.log("calllist", callList)
-  console.log("filteredcalls", filteredCalls)
+  }, [])
+
   const handleSearch = useCallback(
     (query) => {
       const lowerCaseQuery = query.toLowerCase()

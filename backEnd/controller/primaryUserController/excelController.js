@@ -35,19 +35,19 @@ export const ExceltoJson = async (socket, fileData) => {
         )
 
         const matchingProduct = product.find(
-          (product) => product.productName === item["Type"].toUpperCase()
+          (product) => product.productName === item["Type"]?.toUpperCase()
         )
         // arr.push(item["Type"])
 
         const matchingBranch = branch.find(
-          (branch) => branch.branchName === item["Branch"].toUpperCase()
+          (branch) => branch.branchName === item["Branch"]?.toUpperCase()
         )
         const matchingBrand = brand.find(
-          (brand) => brand.brand === item["S/W Type"].toUpperCase()
+          (brand) => brand.brand === item["S/W Type"]?.toUpperCase()
         )
 
         const matchingCategory = category.find(
-          (category) => category.category === item["User"].toUpperCase()
+          (category) => category.category === item["User"]?.toUpperCase()
         )
 
         // Determine the suffix based on the user type
@@ -203,9 +203,16 @@ export const ExceltoJson = async (socket, fileData) => {
     })
   } else {
     // If no data was uploaded successfully, emit an error
-    socket.emit("conversionError", {
-      message: "This file is already uploaded"
-      // nonsavingData: failedData // Include the failed data in the error message
-    })
+    if (failedData.length === totalData) {
+      socket.emit("conversionError", {
+        message: "This file is already uploaded"
+        // nonsavingData: failedData // Include the failed data in the error message
+      })
+    } else {
+      socket.emit("conversionError", {
+        message: "Error occured on uploading"
+        // nonsavingData: failedData // Include the failed data in the error message
+      })
+    }
   }
 }
