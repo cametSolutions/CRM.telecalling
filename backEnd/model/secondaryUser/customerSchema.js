@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
 
 const CustomerSchema = new mongoose.Schema({
-  customerName: { type: mongoose.Schema.Types.Mixed, required: true },
+  customerName: { type: mongoose.Schema.Types.Mixed },
   address1: { type: String },
   address2: { type: String },
   country: String,
