@@ -18,7 +18,7 @@ const CustomerListform = () => {
   // const navigate = useNavigate()
   // const tableContainerRef = useRef(null) // Ref to track table container scrolling
 
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchQuery, setSearchQuery] = useState(true)
   const [load, setLoading] = useState(null)
   const [displayedCustomers, setDisplayedCustomers] = useState([]) // Initially displayed customers
   const [loadMoreCount, setLoadMoreCount] = useState(10)
@@ -34,20 +34,19 @@ const CustomerListform = () => {
       setDisplayedCustomers(customerData)
       // setDisplayedCustomers(customerlist.slice(0, loadMoreCount))
     }
-  }, [customerData, displayedCustomers])
+  }, [customerData, searchQuery])
 
   //Handle search with lodash debounce to optimize search performance
   const handleSearch = debounce((query) => {
-    setSearchQuery(query)
-
     const lowerCaseQuery = query.toLowerCase()
-    const filtered = displayedCustomers.filter((customer) =>
+    const filtered = customerData.filter((customer) =>
       customer.customerName.toLowerCase().includes(lowerCaseQuery)
     )
     if (filtered.length > 0) {
       setDisplayedCustomers(filtered)
     } else {
-      setDisplayedCustomers(customerData)
+      setSearchQuery(false)
+      // setDisplayedCustomers(customerData)
     }
     console.log("filterd", filtered)
     // Reset to initial count after filtering
