@@ -38,19 +38,22 @@ const CustomerListform = () => {
 
   //Handle search with lodash debounce to optimize search performance
   const handleSearch = debounce((query) => {
-    const lowerCaseQuery = query.toLowerCase()
+    const input = query.trim()
+
+    const lowerCaseQuery = input.toLowerCase()
 
     const filteredName = customerData.filter((customer) =>
       customer.customerName.toLowerCase().includes(lowerCaseQuery)
     )
-    const filteredLicensenumber = customerData.filter((customer) =>
-      customer.selected.some((item)=>item.licensenumber.includes(query))
-    )
-    // const filteredCustomers = allCustomers.filter((customer) =>
-    //   customer.selected.some((item) =>
-    //     item.licensenumber.includes(licenseSubstring)
-    //   )
-    // )
+
+    const filteredLicensenumber = customerData
+      .map((customer) => ({
+        ...customer,
+        selected: customer.selected.filter(
+          (item) => item.licensenumber.toString().startsWith(input) // Check if licensenumber starts with query
+        )
+      }))
+      .filter((customer) => customer.selected.length > 0)
 
     if (filteredName.length > 0) {
       setDisplayedCustomers(filteredName)
