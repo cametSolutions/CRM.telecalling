@@ -3,6 +3,7 @@ import io from "socket.io-client"
 import * as XLSX from "xlsx" // Import XLSX for creating the Excel file
 
 const socket = io("https://www.crm.camet.in") // Adjust based on your backend address
+// const socket = io("http://localhost:9000")
 
 const ExcelUploader = () => {
   const [file, setFile] = useState(null)
