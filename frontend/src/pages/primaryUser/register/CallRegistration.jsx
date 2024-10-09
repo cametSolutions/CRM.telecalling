@@ -8,7 +8,9 @@ import { formatTime } from "../../../utils/timeUtils"
 import debounce from "lodash.debounce"
 import UseFetch from "../../../hooks/useFetch"
 import Timer from "../../../components/primaryUser/Timer"
-// const socket = io("https://www.crm.camet.in")
+const socket = io("https://www.crm.camet.in")
+// const socket = io("http://localhost:9000")
+
 export default function CallRegistration() {
   const {
     register,
@@ -108,7 +110,9 @@ export default function CallRegistration() {
   const fetchCallDetails = async (callId) => {
     // Assuming you have an API to fetch the details
     const response = await fetch(`https://www.crm.camet.in/api/customer/getcallregister/${callId}`)
-
+    // const response = await fetch(
+    //   `http://localhost:9000/api/customer/getcallregister/${callId}`
+    // )
     const data = await response.json()
 
     return data
@@ -177,7 +181,7 @@ export default function CallRegistration() {
         timedata: timeData,
         formdata: formData
       }
-      // socket.emit("callregisterconversation")
+
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}`,
         calldata,
@@ -190,6 +194,7 @@ export default function CallRegistration() {
       )
       if (response.status === 200) {
         setCallData(response.data.updatedCall.callregistration)
+        socket.emit("updatedCalls")
       }
     } else {
       const timeData = {

@@ -293,12 +293,12 @@ export const GetLicense = async (req, res) => {
 //   }
 // };
 
-export const customerCallRegistration = async (req, res, socket) => {
-  console.log("reqbody", req)
+export const customerCallRegistration = async (req, res) => {
+  
   try {
     const { customerid, customer } = req.query // Get customerid from query
     const calldata = req.body // Assuming calldata is sent in the body
-
+    console.log("calldata", calldata)
     // Convert customerid to ObjectId
     const customerId = new mongoose.Types.ObjectId(customerid)
 
@@ -308,6 +308,7 @@ export const customerCallRegistration = async (req, res, socket) => {
 
     // Find if there is already a call registration for this customer
     const user = await CallRegistration.findOne({ customerid: customerId })
+    console.log("user", user)
 
     if (user) {
       const token = calldata.formdata.token
@@ -326,7 +327,7 @@ export const customerCallRegistration = async (req, res, socket) => {
 
           // Save the updated document
           const updatedCall = await user.save()
-          socket.emit("updatedCalls")
+
           return res.status(200).json({
             status: true,
             message: "New call added successfully",
@@ -334,14 +335,13 @@ export const customerCallRegistration = async (req, res, socket) => {
           })
           // Return or log the updated call if needed
         }
+      } else {
+        user.callregistration.push(calldata)
       }
-
-      // If a document is found, update it by pushing new call data to callregistration array
-      else user.callregistration.push(calldata)
 
       // Save the updated document
       const updatedCall = await user.save()
-      socket.emit("updatedCalls")
+
       return res.status(200).json({
         status: true,
         message: "New call added successfully",
@@ -357,7 +357,8 @@ export const customerCallRegistration = async (req, res, socket) => {
 
       // Save the new document
       const updatedCall = await newCall.save()
-      socket.emit("updatedCalls")
+      console.log("uadaredcalls", updatedCall)
+
       return res.status(200).json({
         status: true,
         message: "Call registered successfully",

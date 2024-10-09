@@ -68,7 +68,8 @@ import {
 } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles" // Import the Tile component
 import { useNavigate } from "react-router-dom"
-const socket = io("https://www.crm.camet.in") // Adjust the URL to your backend
+const socket = io("https://www.crm.camet.in")
+// const socket = io("http://localhost:9000") // Adjust the URL to your backend
 
 const CallregistrationList = () => {
   const navigate = useNavigate()
@@ -136,7 +137,7 @@ const CallregistrationList = () => {
       // Set all calls initially
     })
 
-    // Cleanup the socket connection when the component unmounts
+    //Cleanup the socket connection when the component unmounts
     return () => {
       socket.off("updatedCalls")
       // socket.disconnect()
