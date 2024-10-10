@@ -109,7 +109,9 @@ export default function CallRegistration() {
 
   const fetchCallDetails = async (callId) => {
     // Assuming you have an API to fetch the details
-    const response = await fetch(`https://www.crm.camet.in/api/customer/getcallregister/${callId}`)
+    const response = await fetch(
+      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
+    )
     // const response = await fetch(
     //   `http://localhost:9000/api/customer/getcallregister/${callId}`
     // )
@@ -194,7 +196,7 @@ export default function CallRegistration() {
       )
       if (response.status === 200) {
         setCallData(response.data.updatedCall.callregistration)
-        // socket.emit("updatedCalls")
+        socket.emit("startCalls")
       }
     } else {
       const timeData = {
