@@ -196,7 +196,7 @@ export default function CallRegistration() {
       )
       if (response.status === 200) {
         setCallData(response.data.updatedCall.callregistration)
-        socket.emit("startCalls")
+        socket.emit("updatedCalls")
       }
     } else {
       const timeData = {
