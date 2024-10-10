@@ -8,8 +8,8 @@ import { formatTime } from "../../../utils/timeUtils"
 import debounce from "lodash.debounce"
 import UseFetch from "../../../hooks/useFetch"
 import Timer from "../../../components/primaryUser/Timer"
-// const socket = io("https://www.crm.camet.in")
-const socket = io("http://localhost:9000")
+const socket = io("https://www.crm.camet.in")
+// const socket = io("http://localhost:9000")
 
 export default function CallRegistration() {
   const {
