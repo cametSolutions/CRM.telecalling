@@ -45,7 +45,7 @@ io.on("connection", (socket) => {
   })
   //handle initial call data
 
-  socket.on("updatedCalls", async () => {
+  socket.on("startCalls", async () => {
     console.log("Received request for initial data")
     try {
       // Fetch all calls from the database
