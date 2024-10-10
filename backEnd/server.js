@@ -40,8 +40,8 @@ app.use(cors(corsOptions))
 io.on("connection", (socket) => {
   console.log("New client connected")
 
-  socket.on('error', (err) => {
-    console.error('Socket.IO error:', err);
+  socket.on("error", (err) => {
+    console.error("Socket.IO error:", err)
   })
   //handle initial call data
 
@@ -56,13 +56,13 @@ io.on("connection", (socket) => {
         })
         .exec()
       console.log("calls", calls)
-      socket.emit("updatedCalls", { calls })
+      io.emit("updatedCalls", { calls })
     } catch (error) {
       console.error("Error fetching call data:", error)
       socket.emit("error", "Error fetching data")
     }
   })
- 
+
   // Handle Excel to JSON conversion
   socket.on("startConversion", (fileData) => {
     ExceltoJson(socket, fileData)
