@@ -9,15 +9,54 @@ import {
   Category
 } from "../../model/primaryUser/productSubDetailsSchema.js"
 
+// const excelDateToFormattedString = (value) => {
+//   // Check if the value is a serial (number) or a string
+//   if (typeof value === 'number') {
+//     // Handle Excel date serials
+//     const date1900 = new Date(1900, 0, 1); // Start date for Excel
+//     const jsDate = new Date(date1900.setDate(date1900.getDate() + value - 1));
+
+//     // Format the date to 'dd-MMM-yyyy'
+//     const options = { day: '2-digit', month: 'short', year: 'numeric' };
+//     return jsDate.toLocaleDateString('en-GB', options).replace(',', '');
+//   } else if (typeof value === 'string') {
+//     // Try to handle different string date formats
+//     let jsDate;
+
+//     // Detect common date formats and parse
+//     if (/\d{2}\/\d{2}\/\d{2,4}/.test(value)) {
+//       // Handle 'dd/MM/yyyy' or 'dd/MM/yy'
+//       jsDate = new Date(value.split('/').reverse().join('-')); // Reformat for JS Date constructor
+//     } else if (/\d{2}-\d{2}-\d{2,4}/.test(value)) {
+//       // Handle 'dd-MM-yyyy' or 'dd-MM-yy'
+//       jsDate = new Date(value.split('-').reverse().join('-')); // Reformat for JS Date constructor
+//     } else if (/\d{2}-[a-zA-Z]{3}-\d{4}/.test(value)) {
+//       // Handle 'dd-MMM-yyyy'
+//       jsDate = new Date(value);
+//     }
+
+//     if (jsDate && !isNaN(jsDate)) {
+//       // Format the date to 'dd-MMM-yyyy'
+//       const options = { day: '2-digit', month: 'short', year: 'numeric' };
+//       return jsDate.toLocaleDateString('en-GB', options).replace(',', '');
+//     } else {
+//       // If parsing fails, return the original value
+//       return value;
+//     }
+//   } else {
+//     // If it's neither a number nor a valid string, return the value as-is
+//     return value;
+//   }
+// };
 const excelDateToFormattedString = (value) => {
   // Check if the value is a serial (number) or a string
   if (typeof value === 'number') {
     // Handle Excel date serials
-    const date1900 = new Date(1900, 0, 1); // Start date for Excel
-    const jsDate = new Date(date1900.setDate(date1900.getDate() + value - 1));
+    const date1900 = Date.UTC(1900, 0, 1); // Start date for Excel in UTC
+    const jsDate = new Date(date1900 + (value - 1) * 24 * 60 * 60 * 1000); // Add days in milliseconds
 
-    // Format the date to 'dd-MMM-yyyy'
-    const options = { day: '2-digit', month: 'short', year: 'numeric' };
+    // Format the date to 'dd-MMM-yyyy' in UTC
+    const options = { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' };
     return jsDate.toLocaleDateString('en-GB', options).replace(',', '');
   } else if (typeof value === 'string') {
     // Try to handle different string date formats
@@ -26,18 +65,20 @@ const excelDateToFormattedString = (value) => {
     // Detect common date formats and parse
     if (/\d{2}\/\d{2}\/\d{2,4}/.test(value)) {
       // Handle 'dd/MM/yyyy' or 'dd/MM/yy'
-      jsDate = new Date(value.split('/').reverse().join('-')); // Reformat for JS Date constructor
+      const [day, month, year] = value.split('/');
+      jsDate = new Date(Date.UTC(year.length === 2 ? `20${year}` : year, month - 1, day));
     } else if (/\d{2}-\d{2}-\d{2,4}/.test(value)) {
       // Handle 'dd-MM-yyyy' or 'dd-MM-yy'
-      jsDate = new Date(value.split('-').reverse().join('-')); // Reformat for JS Date constructor
+      const [day, month, year] = value.split('-');
+      jsDate = new Date(Date.UTC(year.length === 2 ? `20${year}` : year, month - 1, day));
     } else if (/\d{2}-[a-zA-Z]{3}-\d{4}/.test(value)) {
       // Handle 'dd-MMM-yyyy'
       jsDate = new Date(value);
     }
 
     if (jsDate && !isNaN(jsDate)) {
-      // Format the date to 'dd-MMM-yyyy'
-      const options = { day: '2-digit', month: 'short', year: 'numeric' };
+      // Format the date to 'dd-MMM-yyyy' in UTC
+      const options = { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' };
       return jsDate.toLocaleDateString('en-GB', options).replace(',', '');
     } else {
       // If parsing fails, return the original value
@@ -48,6 +89,7 @@ const excelDateToFormattedString = (value) => {
     return value;
   }
 };
+
 
 export const ExceltoJson = async (socket, fileData) => {
   // Parse the uploaded Excel file
