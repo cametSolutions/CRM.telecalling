@@ -75,10 +75,10 @@ export const ExceltoJson = async (socket, fileData) => {
             amcendDate: item["Due On"],
             amcAmount: "",
             amcDescription: "",
-            licenseExpiryDate: "",
+            licenseExpiryDate: item["License Expiry"],
             productAmount: item["Total Amount"],
             productamountDescription: "",
-            tvuexpiryDate: "",
+            tvuexpiryDate: item["TVU Expiry"],
             tvuAmount: "",
             tvuamountDescription: "",
             isActive: item["Party Status"]
@@ -158,7 +158,7 @@ export const ExceltoJson = async (socket, fileData) => {
             pincode: item["OnlineZipCode"],
             email: item["EmailID"],
             mobile: item["Mobile"],
-
+            incomingNumber: item["Incoming Number"],
             contactPerson: item["Contact Person"],
             isActive: item["Party Status"],
             selected: selectedData
