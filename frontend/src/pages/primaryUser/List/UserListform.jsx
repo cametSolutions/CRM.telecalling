@@ -128,7 +128,7 @@ const UserListform = () => {
                     <td className="px-4 py-4 whitespace-nowrap text-xl text-black">
                       <CiEdit
                         onClick={() =>
-                          navigate("/admin/primaryUser/masters/branchEdit", {
+                          navigate("/admin/masters/userEdit", {
                             state: { user: user }
                           })
                         }

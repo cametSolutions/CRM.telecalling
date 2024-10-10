@@ -1,71 +1,7 @@
-// import React, { useState, useCallback, useEffect } from "react"
-// import { CiEdit } from "react-icons/ci"
-// import Tiles from "../../../components/common/Tiles"
-// import { useNavigate } from "react-router-dom"
-// import {
-//   FaUserPlus,
-//   FaSearch,
-//   FaRegFileExcel,
-//   FaFilePdf,
-//   FaPrint,
-//   FaHourglassHalf,
-//   FaPhone
-// } from "react-icons/fa"
-// import UseFetch from "../../../hooks/useFetch"
-// import { Link } from "react-router-dom"
-// import _, { join } from "lodash"
-
-// const CallregistrationList = () => {
-//   const navigate = useNavigate()
-//   const [searchQuery, setSearchQuery] = useState("")
-//   const [user, setUser] = useState([])
-//   const [calllist, setcallList] = useState([])
-//   const [filteredCalls, setFilteredCalls] = useState([])
-//   const { data: registeredcalllist } = UseFetch("/customer/getallCalls")
-//   console.log("dta", registeredcalllist)
-
-//   useEffect(() => {
-//     const userData = localStorage.getItem("user")
-//     const user = JSON.parse(userData)
-//     if (registeredcalllist) {
-//       setcallList(registeredcalllist.allcalls)
-//       setUser(user)
-//     }
-//   }, [registeredcalllist])
-//   console.log("calllist", calllist)
-//   const data = {
-//     pending: 12,
-//     solved: 23,
-//     todayCalls: 4,
-//     totalToken: 48
-//   }
-//   const handleSearch = useCallback(
-//     _.debounce((query) => {
-//       const lowerCaseQuery = query.toLowerCase()
-//       setFilteredCalls(
-//         calllist.filter((calls) =>
-//           calls.customerName.toLowerCase().includes(lowerCaseQuery)
-//         )
-//       )
-//     }, 300),
-//     [registeredcalllist]
-//   )
-
-//   useEffect(() => {
-//     handleSearch(searchQuery)
-//   }, [searchQuery, handleSearch])
 import React, { useState, useEffect, useCallback } from "react"
 
 import io from "socket.io-client" // Import Socket.IO client
-import {
-  FaUserPlus,
-  FaSearch,
-  FaRegFileExcel,
-  FaFilePdf,
-  FaPrint,
-  FaHourglassHalf,
-  FaPhone
-} from "react-icons/fa"
+import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles" // Import the Tile component
 import { useNavigate } from "react-router-dom"
 const socket = io("https://www.crm.camet.in")
