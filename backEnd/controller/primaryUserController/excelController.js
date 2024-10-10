@@ -248,29 +248,41 @@ export const ExceltoJson = async (socket, fileData) => {
             })
 
             const savedCustomer = await customerData.save()
-            // for (const item of savedCustomer.selected) {
-            //   const license = new License({
-            //     products: item.product_id,
-            //     customerName: savedCustomer._id, // Using the customer ID from the parent object
-            //     licensenumber: item.licensenumber
-            //   })
-            //   await license.save()
-            // }
+            console.log("savedcustoCer", savedCustomer)
             if (savedCustomer) {
-              const license = new License({
-                products: savedCustomer?.selected?.product_id,
-                customerName: savedCustomer?._id,
-                licensenumber: savedCustomer?.selected?.licensenumber
-              })
-              const savedLicense = await license.save()
-              if (savedLicense) {
-                uploadedCount++
-                socket.emit("conversionProgress", {
-                  current: uploadedCount,
-                  total: totalData
+
+              for (const item of savedCustomer.selected) {
+                const license = new License({
+                  products: item.product_id,
+                  customerName: savedCustomer._id, // Using the customer ID from the parent object
+                  licensenumber: item.licensenumber
                 })
+                await license.save()
               }
+              uploadedCount++
+              socket.emit("conversionProgress", {
+                current: uploadedCount,
+                total: totalData
+              })
             }
+            
+   
+
+            // if (savedCustomer) {
+            //   const license = new License({
+            //     products: savedCustomer?.selected?.product_id,
+            //     customerName: savedCustomer?._id,
+            //     licensenumber: savedCustomer?.selected?.licensenumber
+            //   })
+            //   const savedLicense = await license.save()
+            //   if (savedLicense) {
+            //     uploadedCount++
+            //     socket.emit("conversionProgress", {
+            //       current: uploadedCount,
+            //       total: totalData
+            //     })
+            //   }
+            // }
           } else {
             failedData.push(item)
           }

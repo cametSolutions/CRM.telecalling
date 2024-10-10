@@ -4,8 +4,8 @@ import io from "socket.io-client" // Import Socket.IO client
 import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles" // Import the Tile component
 import { useNavigate } from "react-router-dom"
-const socket = io("https://www.crm.camet.in")
-// const socket = io("http://localhost:9000") // Adjust the URL to your backend
+// const socket = io("https://www.crm.camet.in")
+const socket = io("http://localhost:9000") // Adjust the URL to your backend
 
 const CallregistrationList = () => {
   const navigate = useNavigate()
