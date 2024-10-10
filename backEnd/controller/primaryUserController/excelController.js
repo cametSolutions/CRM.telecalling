@@ -102,7 +102,10 @@ export const ExceltoJson = async (socket, fileData) => {
 
   // Loop through all the sheets in the workbook
   for (const sheetName of workbook.SheetNames) {
-    const worksheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName])
+    // const worksheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName])
+    const worksheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
+      raw: true, // Keep original data types
+    });
     totalData += worksheet.length
 
     // Fetch necessary data for matching
