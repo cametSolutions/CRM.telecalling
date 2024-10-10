@@ -1,59 +1,3 @@
-// import React, { useState, useCallback, useEffect } from "react"
-// import { CiEdit } from "react-icons/ci"
-// import Tiles from "../../../components/common/Tiles"
-// import { useNavigate } from "react-router-dom"
-// import {
-//   FaUserPlus,
-//   FaSearch,
-//   FaRegFileExcel,
-//   FaFilePdf,
-//   FaPrint,
-//   FaHourglassHalf,
-//   FaPhone
-// } from "react-icons/fa"
-// import UseFetch from "../../../hooks/useFetch"
-// import { Link } from "react-router-dom"
-// import _, { join } from "lodash"
-
-// const CallregistrationList = () => {
-//   const navigate = useNavigate()
-//   const [searchQuery, setSearchQuery] = useState("")
-//   const [user, setUser] = useState([])
-//   const [calllist, setcallList] = useState([])
-//   const [filteredCalls, setFilteredCalls] = useState([])
-//   const { data: registeredcalllist } = UseFetch("/customer/getallCalls")
-//   console.log("dta", registeredcalllist)
-
-//   useEffect(() => {
-//     const userData = localStorage.getItem("user")
-//     const user = JSON.parse(userData)
-//     if (registeredcalllist) {
-//       setcallList(registeredcalllist.allcalls)
-//       setUser(user)
-//     }
-//   }, [registeredcalllist])
-//   console.log("calllist", calllist)
-//   const data = {
-//     pending: 12,
-//     solved: 23,
-//     todayCalls: 4,
-//     totalToken: 48
-//   }
-//   const handleSearch = useCallback(
-//     _.debounce((query) => {
-//       const lowerCaseQuery = query.toLowerCase()
-//       setFilteredCalls(
-//         calllist.filter((calls) =>
-//           calls.customerName.toLowerCase().includes(lowerCaseQuery)
-//         )
-//       )
-//     }, 300),
-//     [registeredcalllist]
-//   )
-
-//   useEffect(() => {
-//     handleSearch(searchQuery)
-//   }, [searchQuery, handleSearch])
 import React, { useState, useEffect, useCallback } from "react"
 
 import io from "socket.io-client" // Import Socket.IO client
@@ -98,21 +42,13 @@ const CallregistrationList = () => {
     const solved = allCallRegistrations.filter(
       (call) => call.formdata.status.toLowerCase() === "solved"
     )
+    const todaysCallsCount = getTodaysCalls(calls)
 
-    // Get today's date
-    const todayDate = new Date().toISOString().slice(0, 10) // Format today's date as YYYY-MM-DD
-    console.log("todaadfdsf", todayDate)
-    // Filter calls created today
-    const today = calls.filter(
-      (call) =>
-        new Date(call.createdAt).toISOString().slice(0, 10) === todayDate // Check createdAt date
-    )
-
-    console.log("callres", allCallRegistrations)
     setPendingCallsCount(pending?.length)
-    setTodayCallsCount(today?.length)
+    setTodayCallsCount(todaysCallsCount)
     setSolvedCallsCount(solved?.length)
   }, [])
+
   useEffect(() => {
     if (callList.length > 0) {
       console.log("calllist", callList)
@@ -162,9 +98,23 @@ const CallregistrationList = () => {
     setFilteredCalls(applyFilter())
   }, [activeFilter, callList])
 
-  // Helper function to filter calls based on their status and other conditions
+  const getTodaysCalls = (calls) => {
+    const today = new Date().toISOString().split("T")[0] // Get today's date in 'YYYY-MM-DD' format
 
-  console.log("pendlen", pendingCallsCount)
+    let todaysCallsCount = 0
+
+    calls.forEach((customer) => {
+      customer.callregistration.forEach((call) => {
+        const callDate = call.timedata.startTime.split("T")[0] // Get the call date in 'YYYY-MM-DD' format
+        if (callDate === today) {
+          todaysCallsCount++
+        }
+      })
+    })
+
+    return todaysCallsCount
+  }
+
   // Function to filter calls based on the active tile clicked
   const applyFilter = () => {
     if (activeFilter === "Pending") {
@@ -242,7 +192,7 @@ const CallregistrationList = () => {
           <Tiles
             title="Online Call"
             color="bg-blue-500"
-            count={todayCallsCount || "0"}
+            count={"0"}
             style={{
               background: `linear-gradient(135deg, rgba(0, 0, 270, 0.8), rgba(128, 128, 255, 0.8))`
             }}
