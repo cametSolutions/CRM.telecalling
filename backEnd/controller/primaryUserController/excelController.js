@@ -23,7 +23,7 @@ export const ExceltoJson = async (socket, fileData) => {
   let uploadedCount = 0
   const totalData = worksheet.length
   const failedData = []
-
+  console.log("jsondata", worksheet)
   for (const item of worksheet) {
     try {
       const matchingLicensenumber = licenseNumber.find(
@@ -70,8 +70,8 @@ export const ExceltoJson = async (socket, fileData) => {
             noofusers: item["NoOfUser"],
             companyusing: item["CompanyUsing"],
             version: item["Version"],
-            customerAddDate: item["Act On"],
-            amcstartDate: item["Software HitDate"],
+            customerAddDate: "",
+            amcstartDate: "",
             amcendDate: item["Due On"],
             amcAmount: "",
             amcDescription: "",
@@ -79,7 +79,7 @@ export const ExceltoJson = async (socket, fileData) => {
             productAmount: item["Total Amount"],
             productamountDescription: "",
             tvuexpiryDate: "",
-            tvuAmount: "666",
+            tvuAmount: "",
             tvuamountDescription: "",
             isActive: item["Party Status"]
           }
@@ -100,8 +100,8 @@ export const ExceltoJson = async (socket, fileData) => {
             noofusers: item["NoOfUser"],
             companyusing: item["CompanyUsing"],
             version: item["Version"],
-            customerAddDate: item["Act On"],
-            amcstartDate: item["Software HitDate"],
+            customerAddDate: "",
+            amcstartDate: "",
             amcendDate: item["Due On"],
             amcAmount: item["Total Amount"],
             amcDescription: "",
@@ -130,8 +130,8 @@ export const ExceltoJson = async (socket, fileData) => {
             noofusers: item["NoOfUser"],
             companyusing: item["CompanyUsing"],
             version: item["Version"],
-            customerAddDate: item["Act On"],
-            amcstartDate: item["Software HitDate"],
+            customerAddDate: "",
+            amcstartDate: "",
             amcendDate: item["Due On"],
             amcAmount: item["Total Amount"],
             amcDescription: "",
@@ -152,27 +152,27 @@ export const ExceltoJson = async (socket, fileData) => {
           const customerData = new Customer({
             customerName: item["Party Name"],
             address1: item["Address"],
-            country: item["Country"],
+
             state: item["State"],
             city: item["City"],
             pincode: item["OnlineZipCode"],
             email: item["EmailID"],
             mobile: item["Mobile"],
-            landline: item["Landline"],
+
             contactPerson: item["Contact Person"],
             isActive: item["Party Status"],
             selected: selectedData
           })
           const savedCustomer = await customerData.save()
 
-          for (const item of savedCustomer.selected) {
-            const license = new License({
-              products: item.product_id,
-              customerName: savedCustomer._id, // Using the customer ID from the parent object
-              licensenumber: item.licensenumber
-            })
-            await license.save()
-          }
+          // for (const item of savedCustomer.selected) {
+          //   const license = new License({
+          //     products: item.product_id,
+          //     customerName: savedCustomer._id, // Using the customer ID from the parent object
+          //     licensenumber: item.licensenumber
+          //   })
+          //   await license.save()
+          // }
 
           uploadedCount++
 

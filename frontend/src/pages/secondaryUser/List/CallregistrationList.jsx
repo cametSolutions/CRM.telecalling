@@ -136,10 +136,10 @@ const CallregistrationList = () => {
     })
 
     //Cleanup the socket connection when the component unmounts
-    // return () => {
-    //   socket.off("updatedCalls")
-    //   // socket.disconnect()
-    // }
+    return () => {
+      socket.off("updatedCalls")
+      // socket.disconnect()
+    }
   }, [])
 
   const handleSearch = useCallback(
