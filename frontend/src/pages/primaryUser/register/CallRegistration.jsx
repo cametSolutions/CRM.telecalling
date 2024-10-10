@@ -78,8 +78,7 @@ export default function CallRegistration() {
           setName(callData.callDetails.customerid.customerName)
 
           setProductDetails(matchingProducts)
-          // setProductDetails(customer.selected)
-          // Set form values with the fetched callData
+         
 
           const editData = {
             incomingNumber: matchingRegistration.formdata.incomingNumber,
@@ -94,12 +93,7 @@ export default function CallRegistration() {
 
           setStartTime(Date.now())
           refreshHook()
-          // setEditformdata(editData)
-          // for (const [key, value] of Object.entries(editData)) {
-          //   console.log("hiii")
-          //   console.log("key,value", key, value)
-          //   setValue(key, value) // Set the form fields
-          // }
+          
         })
         .catch((error) => {
           console.error("Error fetching call details:", error)
@@ -263,9 +257,7 @@ export default function CallRegistration() {
       const response = await fetch(url, {
         method: "GET",
         credentials: "include"
-        // headers: {
-        //   "Content-Type": "application/json"
-        // }
+        
       })
 
       if (response.ok) {
