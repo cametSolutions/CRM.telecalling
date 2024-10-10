@@ -1,15 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react"
 
 import io from "socket.io-client" // Import Socket.IO client
-import {
-  FaUserPlus,
-  FaSearch,
-  FaRegFileExcel,
-  FaFilePdf,
-  FaPrint,
-  FaHourglassHalf,
-  FaPhone
-} from "react-icons/fa"
+import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles" // Import the Tile component
 import { useNavigate } from "react-router-dom"
 const socket = io("https://www.crm.camet.in")

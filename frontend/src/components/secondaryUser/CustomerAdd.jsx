@@ -81,9 +81,6 @@ const CustomerAdd = ({
     }
   })
   useEffect(() => {
-    console.log("products", products)
-    console.log("filterdcompany", filteredCompanies)
-    console.log("filterdbrances", filteredBranches)
     if (selectedProduct) {
       console.log("selcteprro", selectedProduct)
       const product = products.find(
@@ -115,7 +112,7 @@ const CustomerAdd = ({
   }, [products, selectedProduct])
 
   const debouncedLicenseNo = useDebounce(tableObject.licensenumber, 500)
-  console.log("debounce", debouncedLicenseNo)
+
   useEffect(() => {
     const ignored = ["company_id", "branch_id", "product_id"]
     if (selected && customer) {
