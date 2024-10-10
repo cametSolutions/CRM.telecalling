@@ -262,8 +262,8 @@ export const ExceltoJson = async (socket, fileData) => {
                 customerName: savedCustomer?._id,
                 licensenumber: savedCustomer?.selected?.licensenumber
               })
-              const savedLicense=await license.save()
-              if (savedCustomer && savedLicense ){
+              const savedLicense = await license.save()
+              if (savedLicense) {
                 uploadedCount++
                 socket.emit("conversionProgress", {
                   current: uploadedCount,
@@ -271,8 +271,6 @@ export const ExceltoJson = async (socket, fileData) => {
                 })
               }
             }
-            
-               
           } else {
             failedData.push(item)
           }
