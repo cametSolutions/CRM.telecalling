@@ -127,7 +127,7 @@ const CallregistrationList = () => {
     console.log("hiii")
     setUser(user)
 
-    socket.emit("startCalls")
+    socket.emit("updatedCalls")
     // Listen for initial data from the server
     socket.on("updatedCalls", (data) => {
       console.log("Received updated data:", data)
