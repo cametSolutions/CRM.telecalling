@@ -325,7 +325,7 @@ export default function StaffHeader() {
             onMouseLeave={() => setProfileMenuOpen(false)}
           />
           <span className="text-gray-700 mx-4 rounded-md cursor-pointer">
-            {user.name || "Profile"}
+            {user?.name || "Profile"}
           </span>
           {profileMenuOpen && (
             <div
