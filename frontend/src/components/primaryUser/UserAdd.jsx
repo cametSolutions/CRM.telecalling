@@ -5,13 +5,13 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons"
 import Select from "react-select"
 import UseFetch from "../../hooks/useFetch"
-const useTrimmedValues = (setValue, fields) => {
-  useEffect(() => {
-    fields.forEach((field) => {
-      setValue(field, (value) => value.trim())
-    })
-  }, [setValue, fields])
-}
+// const useTrimmedValues = (setValue, fields) => {
+//   useEffect(() => {
+//     fields.forEach((field) => {
+//       setValue(field, (value) => value.trim())
+//     })
+//   }, [setValue, fields])
+// }
 
 const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
   const {
@@ -44,8 +44,9 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
 
     if (UserData) {
       for (const [key, value] of Object.entries(UserData)) {
-        setValue(key, value)
-      }
+        if (key !== 'password') {
+          setValue(key, value); // Skip setting the password field
+        }}
     }
   }, [UserData, setValue])
 
