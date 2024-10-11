@@ -9,7 +9,7 @@ import {
   FaPrint
 } from "react-icons/fa"
 import { Link } from "react-router-dom"
-import _ from "lodash"
+import debounce from "lodash.debounce"
 import UseFetch from "../../../hooks/useFetch"
 
 const UserListform = () => {
@@ -22,20 +22,27 @@ const UserListform = () => {
       setUser(allusers)
     }
   }, [allusers])
-  console.log("usersssssss", users)
-  const handleSearch = useCallback(
-    _.debounce((query) => {
-      const lowerCaseQuery = query.toLowerCase()
-      setFilteredBranches(
-        users.filter((user) => user.name.toLowerCase().includes(lowerCaseQuery))
-      )
-    }, 300),
-    [allusers]
-  )
+  console.log("hiii")
+  const handleSearch = debounce((query) => {
+    const input = query.trim()
 
-  useEffect(() => {
-    handleSearch(searchQuery)
-  }, [searchQuery, handleSearch])
+    const lowerCaseQuery = input.toLowerCase()
+
+    const filteredName = allusers.filter((user) =>
+      user.name.toLowerCase().includes(lowerCaseQuery)
+    )
+    const filteredMobile = allusers.filter((user) =>
+      user.mobileno.toLowerCase().includes(lowerCaseQuery)
+    )
+
+    if (filteredName.length > 0) {
+      setUser(filteredName)
+    } else if (filteredMobile.length > 0) {
+      setUser(filteredMobile)
+    }
+
+    // Reset to initial count after filtering
+  }, 300)
 
   return (
     <div className="container mx-auto min-h-screen py-8 bg-gray-100">
@@ -49,8 +56,7 @@ const UserListform = () => {
             </div>
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               className=" w-full border border-gray-300 rounded-full py-2 px-4 pl-10 focus:outline-none"
               placeholder="Search for..."
             />

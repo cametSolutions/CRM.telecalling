@@ -15,7 +15,7 @@ const staffSchema = new Schema(
       unique: true,
       match: [/\S+@\S+\.\S+/, "Please use a valid email address"]
     },
-    mobileno: {
+    mobile: {
       type: String,
       required: [true, "Mobile number is required"],
       match: /^[0-9]{10}$/ // Example for a 10-digit Indian number
@@ -42,8 +42,8 @@ const staffSchema = new Schema(
       type: Boolean,
       default: true
     },
-    dob: {
-      type: Date
+    dateofbirth: {
+      type: String
     },
     bloodgroup: {
       type: String,
@@ -66,10 +66,10 @@ const staffSchema = new Schema(
       type: String
     },
     pincode: {
-      type: Number
+      type: String
     },
     joiningdate: {
-      type: Date
+      type: String
     },
     designation: {
       type: String
