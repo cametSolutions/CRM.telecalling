@@ -45,13 +45,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
       }
     }
   }, [UserData, setValue])
-  // const countryOptions = Country.getAllCountries().map((country) => ({
-  //   label: country.name,
-  //   value: country.isoCode
-  // }))
-  // const defaultCountry = countryOptions.find(
-  //   (country) => country.value === "INd"
-  // )
+
   const countryOptions = useMemo(
     () =>
       Country.getAllCountries().map((country) => ({
@@ -75,7 +69,16 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
       setSelectedState(null) // Reset state when country changes
     }
   }, [defaultCountry, setValue])
-  const departments = ["HR", "Sales", "Marketing", "Finance", "Administration"]
+
+  useEffect(() => {
+    if (UserData) {
+      Object.keys(UserData).forEach((key) => {
+        // Check if the key is not in the ignored list
+        console.log(key) // Log the key if necessary
+        setValue(key, UserData[key])
+      })
+    }
+  },[])
 
   const stateOptions = selectedCountry
     ? State.getStatesOfCountry(selectedCountry.value).map((state) => ({
@@ -365,7 +368,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
                 <option value="Seniormanager">Senior Manager</option>
               </select>
             </div>
-            <div>
+            {/* <div>
               <label className="block mb-1 font-semibold">Department</label>
               <Controller
                 name="department"
@@ -395,7 +398,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
                   {errors.department.message}
                 </p>
               )}
-            </div>
+            </div> */}
             <div>
               <label htmlFor="assignedto" className="block mb-1 font-semibold">
                 Assigned to

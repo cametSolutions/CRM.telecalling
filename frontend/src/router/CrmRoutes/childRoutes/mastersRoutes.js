@@ -13,10 +13,10 @@ import HsnCreation from "../../../pages/primaryUser/register/HsnCreation"
 import HsnList from "../../../pages/primaryUser/register/HsnList"
 import EditHsn from "../../../pages/primaryUser/edit/EditHsn"
 import ProductMaster from "../../../pages/primaryUser/register/ProductMaster"
-// import CustomerList from "../../../pages/primaryUser/List/CustomerList"
+
 import CustomerListform from "../../../components/secondaryUser/CustomerListform"
 import ProductList from "../../../pages/primaryUser/List/ProductList"
-
+import UserEdit from "../../../pages/primaryUser/edit/UserEdit"
 import PendingCustomer from "../../../components/secondaryUser/PendingCustomer"
 import ProductEdit from "../../../pages/primaryUser/edit/ProductEdit"
 import UserListform from "../../../pages/primaryUser/List/UserListform"
@@ -51,6 +51,10 @@ const mastersRoutes = [
   {
     path: "/admin/masters/userRegistration",
     component: UserRegistration
+  },
+  {
+    path: "/admin/masters/userEdit",
+    component: UserEdit
   },
   {
     path: "/admin/masters/inventory/brandRegistration",

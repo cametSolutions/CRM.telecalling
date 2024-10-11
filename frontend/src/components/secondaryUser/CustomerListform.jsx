@@ -15,7 +15,7 @@ import {
 import { Link } from "react-router-dom"
 
 const CustomerListform = () => {
-  // const navigate = useNavigate()
+  const navigate = useNavigate()
   // const tableContainerRef = useRef(null) // Ref to track table container scrolling
 
   const [searchQuery, setSearchQuery] = useState(true)
