@@ -78,7 +78,6 @@ export default function CallRegistration() {
           setName(callData.callDetails.customerid.customerName)
 
           setProductDetails(matchingProducts)
-         
 
           const editData = {
             incomingNumber: matchingRegistration.formdata.incomingNumber,
@@ -93,7 +92,6 @@ export default function CallRegistration() {
 
           setStartTime(Date.now())
           refreshHook()
-          
         })
         .catch((error) => {
           console.error("Error fetching call details:", error)
@@ -258,7 +256,6 @@ export default function CallRegistration() {
       const response = await fetch(url, {
         method: "GET",
         credentials: "include"
-        
       })
 
       if (response.ok) {
@@ -295,6 +292,13 @@ export default function CallRegistration() {
     setProductDetails(customer.selected)
     setSearching(true)
     if (customer) {
+      reset({
+        incomingNumber: "",
+        token: "",
+        description: "",
+        solution: "",
+        status: ""
+      })
       setIsRunning(true)
 
       setStartTime(Date.now())
