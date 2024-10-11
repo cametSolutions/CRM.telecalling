@@ -3,6 +3,7 @@ import CallRegistration from "../../../pages/primaryUser/register/CallRegistrati
 const transactionsRoutes = [
   { path: "/admin/transaction/lead", title: "Lead" },
   { path: "/admin/transaction/call-registration", component: CallRegistration },
+  
   { path: "/admin/transaction/leave-application", component: LeaveRegister }
 ]
 
