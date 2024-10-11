@@ -44,9 +44,10 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
 
     if (UserData) {
       for (const [key, value] of Object.entries(UserData)) {
-        if (key !== 'password') {
-          setValue(key, value); // Skip setting the password field
-        }}
+        if (key !== "password") {
+          setValue(key, value) // Skip setting the password field
+        }
+      }
     }
   }, [UserData, setValue])
 
