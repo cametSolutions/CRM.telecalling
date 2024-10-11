@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useMemo } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { Country, State } from "country-state-city"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons"
 import Select from "react-select"
 import UseFetch from "../../hooks/useFetch"
 const useTrimmedValues = (setValue, fields) => {
@@ -22,6 +24,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
   } = useForm()
   const selectedRole = watch("role")
   const [formMessage, setFormMessage] = useState("")
+  const [passwordVisible, setPasswordVisible] = useState(false)
   const [branches, setBranch] = useState([])
   const [selectedCountry, setSelectedCountry] = useState(null)
   const [selectedState, setSelectedState] = useState(null)
@@ -78,7 +81,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
         setValue(key, UserData[key])
       })
     }
-  },[])
+  }, [])
 
   const stateOptions = selectedCountry
     ? State.getStatesOfCountry(selectedCountry.value).map((state) => ({
@@ -345,6 +348,12 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
                 })}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
               />
+              <span
+                className="absolute inset-y-0 right-0 flex items-center px-2 cursor-pointer"
+                onClick={() => setPasswordVisible(!passwordVisible)}
+              >
+                <FontAwesomeIcon icon={passwordVisible ? faEyeSlash : faEye} />
+              </span>
               {errors.password && (
                 <p className="text-red-500 text-sm">
                   {errors.password.message}
