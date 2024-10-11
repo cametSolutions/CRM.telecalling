@@ -68,6 +68,7 @@ const CustomerAdd = ({
   const { data: licensenumber, error: licensenumberError } = UseFetch(
     "/customer/getLicensenumber"
   )
+  console.log("date", tableObject)
   useEffect(() => {
     if (productData) {
       setProducts(productData)

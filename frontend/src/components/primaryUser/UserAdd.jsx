@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons"
 import Select from "react-select"
 import UseFetch from "../../hooks/useFetch"
+
 // const useTrimmedValues = (setValue, fields) => {
 //   useEffect(() => {
 //     fields.forEach((field) => {
@@ -24,6 +25,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
   } = useForm()
   const selectedRole = watch("role")
   const [formMessage, setFormMessage] = useState("")
+  const [isEditMode, setIsEditMode] = useState(false)
   const [passwordVisible, setPasswordVisible] = useState(false)
   const [branches, setBranch] = useState([])
   const [selectedCountry, setSelectedCountry] = useState(null)
@@ -34,22 +36,6 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
       setBranch(allbranches)
     }
   }, [allbranches])
-  console.log("allbranches", allbranches)
-  console.log("branch", branches)
-  const a = branches.map((branch) => {
-    console.log(branch.branchName)
-  })
-  useEffect(() => {
-    console.log("log at userdata")
-
-    if (UserData) {
-      for (const [key, value] of Object.entries(UserData)) {
-        if (key !== "password") {
-          setValue(key, value) // Skip setting the password field
-        }
-      }
-    }
-  }, [UserData, setValue])
 
   const countryOptions = useMemo(
     () =>
@@ -57,7 +43,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
         label: country.name,
         value: country.isoCode
       })),
-    []
+    [UserData]
   )
 
   const defaultCountry = useMemo(
@@ -66,31 +52,61 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
   )
 
   // Set state for country and state
-  useEffect(() => {
-    console.log("log at default country")
-    if (defaultCountry) {
-      setSelectedCountry(defaultCountry)
-      setValue("country", defaultCountry.value)
-      setSelectedState(null) // Reset state when country changes
-    }
-  }, [defaultCountry, setValue])
 
-  useEffect(() => {
-    if (UserData) {
-      Object.keys(UserData).forEach((key) => {
-        // Check if the key is not in the ignored list
-        console.log(key) // Log the key if necessary
-        setValue(key, UserData[key])
-      })
-    }
-  }, [])
-
+  console.log("sataer", selectedState)
   const stateOptions = selectedCountry
     ? State.getStatesOfCountry(selectedCountry.value).map((state) => ({
         label: state.name,
         value: state.isoCode
       }))
     : []
+  useEffect(() => {
+    console.log("log at default country")
+    if (defaultCountry) {
+      setSelectedCountry(defaultCountry)
+      setValue("country", defaultCountry.value)
+
+      // setSelectedState() // Reset state when country changes
+    }
+  }, [defaultCountry])
+  console.log("country", defaultCountry)
+  useEffect(() => {
+    if (UserData) {
+      setIsEditMode(true)
+      Object.entries(UserData).forEach(([key, value]) => {
+        if (key === "country") {
+          const country = countryOptions.find((c) => c.value === value)
+          setSelectedCountry(country)
+        }
+        if (key === "state") {
+          const state = stateOptions.find((s) => s.value === value)
+          setSelectedState(state)
+        }
+        if (key !== "password") {
+          setValue(key, value)
+        }
+      })
+    }
+  }, [UserData, countryOptions, selectedCountry])
+
+  // useEffect(() => {
+  //   if (UserData) {
+  //     const arr = []
+  //     setIsEditMode(true)
+  //     for (const [key, value] of Object.entries(UserData)) {
+  //       if (key !== "password") {
+  //         if (key === "state") {
+  //           console.log("value", value)
+  //           const state = stateOptions.find((s) => s.value === value)
+  //           setSelectedState(state)
+  //           setValue(key, value)
+  //         }
+  //         setValue(key, value)
+  //       }
+  //     }
+  //   }
+  // }, [])
+  console.log("state", selectedState)
 
   const onSubmit = (data) => {
     if (process === "Registration") {
@@ -99,6 +115,9 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
         email: data.email.trim(),
         mobile: data.mobile.trim(),
         password: data.password.trim(),
+        address: data.address.trim(),
+        pincode: data.pincode.trim(),
+        designation: data.designation.trim(),
         verified: data.verified
       }
 
@@ -268,7 +287,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
                 onChange={(option) => {
                   setSelectedCountry(option)
                   setValue("country", option.value)
-                  setSelectedState(null) // Reset state when country changes
+                  // setSelectedState(null) // Reset state when country changes
                 }}
               />
               {errors.country && (
@@ -350,14 +369,17 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
                   })}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
                 />
-                <span
-                  className="absolute inset-y-0 right-0 flex items-center px-2 cursor-pointer"
-                  onClick={() => setPasswordVisible(!passwordVisible)}
-                >
-                  <FontAwesomeIcon
-                    icon={passwordVisible ? faEyeSlash : faEye}
-                  />
-                </span>
+                {/* Only show the eye icon if it's not in edit mode */}
+                {!isEditMode && (
+                  <span
+                    className="absolute inset-y-0 right-0 flex items-center px-2 cursor-pointer"
+                    onClick={() => setPasswordVisible(!passwordVisible)}
+                  >
+                    <FontAwesomeIcon
+                      icon={passwordVisible ? faEyeSlash : faEye}
+                    />
+                  </span>
+                )}
               </div>
               {errors.password && (
                 <p className="mt-2 text-sm text-red-600">
@@ -365,34 +387,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
                 </p>
               )}
             </div>
-            {/* <div className="relative">
-              <label htmlFor="password" className="block mb-1 font-semibold">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                {...register("password", {
-                  required: "Password is required",
-                  minLength: {
-                    value: 8,
-                    message: "Password must be at least 8 characters long"
-                  }
-                })}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
-              />
-              <span
-                className="absolute inset-y-0 right-0 flex items-center px-2 cursor-pointer"
-                onClick={() => setPasswordVisible(!passwordVisible)}
-              >
-                <FontAwesomeIcon icon={passwordVisible ? faEyeSlash : faEye} />
-              </span>
-              {errors.password && (
-                <p className="text-red-500 text-sm">
-                  {errors.password.message}
-                </p>
-              )}
-            </div> */}
+
             <div>
               <label htmlFor="role" className="block mb-1 font-semibold">
                 Role

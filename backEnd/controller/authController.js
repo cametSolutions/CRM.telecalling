@@ -7,6 +7,7 @@ import LeaveRequest from "../model/primaryUser/leaveRequestSchema.js"
 
 export const Register = async (req, res) => {
   const { name, email, mobile, password, role, ...otherfields } = req.body
+  console.log("mobile", mobile)
   console.log("body", req.body)
   console.log("role of :", role)
   if (role === "Admin") {
@@ -66,18 +67,18 @@ export const Register = async (req, res) => {
         const staff = new Staff({
           name,
           email,
-          mobileno: mobile,
+          mobile,
           password,
           isVerified: verified === "true",
           role,
-          dob: new Date(dateofbirth),
+          dateofbirth,
           bloodgroup,
           gender,
           address,
           country,
           state,
-          pincode: Number(pincode),
-          joiningdate: new Date(joiningdate),
+          pincode,
+          joiningdate,
           designation,
           department,
           assignedto
