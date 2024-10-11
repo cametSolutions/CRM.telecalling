@@ -332,7 +332,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
                 </span>
               )}
             </div>
-            <div className="mb-4 relative">
+            <div className="relative">
               <label
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700"
