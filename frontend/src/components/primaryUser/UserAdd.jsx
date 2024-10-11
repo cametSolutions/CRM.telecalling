@@ -332,7 +332,38 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
                 </span>
               )}
             </div>
-            <div className="relative">
+            <div className="mb-4 relative">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={passwordVisible ? "text" : "password"}
+                  id="password"
+                  {...register("password", {
+                    required: "Password is required"
+                  })}
+                  className="w-full px-3 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 pr-10"
+                />
+                <span
+                  className="absolute inset-y-0 right-0 flex items-center px-2 cursor-pointer"
+                  onClick={() => setPasswordVisible(!passwordVisible)}
+                >
+                  <FontAwesomeIcon
+                    icon={passwordVisible ? faEyeSlash : faEye}
+                  />
+                </span>
+              </div>
+              {errors.password && (
+                <p className="mt-2 text-sm text-red-600">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+            {/* <div className="relative">
               <label htmlFor="password" className="block mb-1 font-semibold">
                 Password
               </label>
@@ -359,7 +390,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
                   {errors.password.message}
                 </p>
               )}
-            </div>
+            </div> */}
             <div>
               <label htmlFor="role" className="block mb-1 font-semibold">
                 Role
