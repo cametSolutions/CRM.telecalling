@@ -88,7 +88,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
       })
     }
   }, [UserData, countryOptions, selectedCountry])
-
+  console.log("id", UserData._id)
   // useEffect(() => {
   //   if (UserData) {
   //     const arr = []
@@ -133,7 +133,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
       }
       handleUserData(data)
     } else if (process === "Edit") {
-      handleEditedData(data)
+      handleEditedData(data, UserData._id)
     }
   }
   console.log("is visisbel", passwordVisible)
@@ -364,9 +364,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
                 <input
                   type={passwordVisible ? "text" : "password"}
                   id="password"
-                  {...register("password", {
-                    required: "Password is required"
-                  })}
+                  {...register("password")}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
                 />
                 {/* Only show the eye icon if it's not in edit mode */}
@@ -469,7 +467,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
               type="submit"
               className=" mt-7 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300"
             >
-              Register
+              {isEditMode ? "Update" : "Register"}
             </button>
           </div>
         </form>

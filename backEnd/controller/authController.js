@@ -101,6 +101,27 @@ export const Register = async (req, res) => {
     }
   }
 }
+export const UpdateUserandAdmin = async (req, res) => {
+  const { userData, userId } = req.body
+  const { role } = userData
+  try {
+    if (role === "Staff") {
+      const updateStaff = await Staff.findByIdAndUpdate(
+        userId,
+        { $set: userData }, // Updating the fields in userData
+        { new: true } // Return the updated document
+      )
+      if (!updateStaff) {
+        return res.status(404).json({ message: "Staff member not found" })
+      }
+
+      return res.status(200).json({ message: "Staff updated succesfully" })
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    res.status(500).json({ message: "Internal servor error" })
+  }
+}
 
 export const Login = async (req, res) => {
   const { email, password, role } = req.body

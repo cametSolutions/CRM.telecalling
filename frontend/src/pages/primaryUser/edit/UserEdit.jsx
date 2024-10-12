@@ -16,8 +16,8 @@ function UserEdit() {
   const handleSubmit = async (userData, userId) => {
     try {
       const response = await api.post(
-        "/branch/branchEdit",
-        { branchData, branchId },
+        "/auth/branchEdit",
+        { userData, userId },
         {
           withCredentials: true
         }
@@ -30,7 +30,11 @@ function UserEdit() {
   }
   return (
     <div>
-      <UserAdd handleEditedData={handleSubmit} UserData={user} />
+      <UserAdd
+        process={"Edit"}
+        handleEditedData={handleSubmit}
+        UserData={user}
+      />
     </div>
   )
 }
