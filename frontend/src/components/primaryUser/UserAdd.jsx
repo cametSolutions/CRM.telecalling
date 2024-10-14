@@ -27,16 +27,24 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
   const [formMessage, setFormMessage] = useState("")
   const [isEditMode, setIsEditMode] = useState(false)
   const [passwordVisible, setPasswordVisible] = useState(false)
-  const [branches, setBranch] = useState([])
+  const [departments, setDepartment] = useState([])
+  const [selectedDepartment, setSelectedDepartment] = useState(null)
   const [selectedCountry, setSelectedCountry] = useState(null)
   const [selectedState, setSelectedState] = useState(null)
-  const { data: allbranches } = UseFetch("/branch/getBranch")
+  // const { data: allbranches } = UseFetch("/branch/getBranch")
+  const { data: alldepartment } = UseFetch("/master/getDepartmentList")
   useEffect(() => {
-    if (allbranches) {
-      setBranch(allbranches)
+    if (alldepartment) {
+      setDepartment(alldepartment)
     }
-  }, [allbranches])
-
+  }, [alldepartment])
+  // useEffect(() => {
+  //   if (allbranches) {
+  //     setBranch(allbranches)
+  //   }
+  // }, [allbranches])
+  console.log("departmen", departments)
+  console.log("set", selectedDepartment)
   const countryOptions = useMemo(
     () =>
       Country.getAllCountries().map((country) => ({
@@ -82,13 +90,27 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
           const state = stateOptions.find((s) => s.value === value)
           setSelectedState(state)
         }
+        if (key === "department") {
+          console.log("dee", departments)
+          console.log("value", value)
+          const department = departments.find((d) => d._id === value)
+          console.log("deee", department)
+          setSelectedDepartment(department)
+        }
         if (key !== "password") {
           setValue(key, value)
         }
       })
     }
-  }, [UserData, countryOptions, selectedCountry])
-  console.log("id", UserData._id)
+  }, [UserData, countryOptions, selectedCountry, departments])
+  console.log("selecteddepartmen", selectedDepartment)
+  const handledepartmentChange = (e) => {
+    console.log("eventidddd", e.target.value)
+
+    setSelectedDepartment(e.target.value)
+  }
+  
+  console.log("slecdddd", selectedDepartment)
   // useEffect(() => {
   //   if (UserData) {
   //     const arr = []
@@ -133,7 +155,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
       }
       handleUserData(data)
     } else if (process === "Edit") {
-      handleEditedData(data, UserData._id)
+      handleEditedData(data, UserData?._id)
     }
   }
   console.log("is visisbel", passwordVisible)
@@ -200,7 +222,8 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
                 {...register("mobile", {
                   required: "Mobile is required",
                   pattern: {
-                    value: /^[0-9+-\s]*$/,
+                    value: /^[0-9]{10}$/,
+
                     message: "Please enter a valid mobile number"
                   }
                 })}
@@ -401,6 +424,29 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
                 <option value="Assistantmanager">Assistant Manager</option>
 
                 <option value="Seniormanager">Senior Manager</option>
+              </select>
+            </div>
+            <div>
+              <label
+                htmlFor="department"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Department
+              </label>
+
+              <select
+                id="department"
+                {...register("department")}
+                onChange={handledepartmentChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+              >
+                <option value="">-- Select a department --</option>
+
+                {departments?.map((department) => (
+                  <option key={department._id} value={department._id}>
+                    {department.department}
+                  </option>
+                ))}
               </select>
             </div>
             {/* <div>

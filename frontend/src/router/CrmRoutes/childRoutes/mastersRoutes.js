@@ -13,7 +13,7 @@ import HsnCreation from "../../../pages/primaryUser/register/HsnCreation"
 import HsnList from "../../../pages/primaryUser/register/HsnList"
 import EditHsn from "../../../pages/primaryUser/edit/EditHsn"
 import ProductMaster from "../../../pages/primaryUser/register/ProductMaster"
-
+import DepartmentRegistration from "../../../pages/primaryUser/register/DepartmentRegistration"
 import CustomerListform from "../../../components/secondaryUser/CustomerListform"
 import ProductList from "../../../pages/primaryUser/List/ProductList"
 import UserEdit from "../../../pages/primaryUser/edit/UserEdit"
@@ -94,7 +94,7 @@ const mastersRoutes = [
   { path: "/admin/masters/product", title: "Product" },
   { path: "/admin/masters/customerImport", title: "Customer Import" },
   { path: "/admin/masters/partners", title: "Partners" },
-  { path: "/admin/masters/deapartment", title: "Department" }
+  { path: "/admin/masters/department", component: DepartmentRegistration }
 ]
 
 export default mastersRoutes

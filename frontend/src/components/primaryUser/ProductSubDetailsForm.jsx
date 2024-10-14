@@ -42,6 +42,7 @@ export default function ProductSubDetailsForm({ tab }) {
 
       // Remove the deleted item from the items array
       setItems((prevItems) => prevItems.filter((item) => item._id !== id))
+      setValue("")
     } catch (error) {
       console.error("Failed to delete item", error)
       // toast.error("Failed to delete item. Please try again.")
@@ -54,21 +55,25 @@ export default function ProductSubDetailsForm({ tab }) {
 
   const handleSubmit = async () => {
     const formData = {
-      [tab]: value,
+      [tab]: value
     }
 
     try {
       if (editId) {
         // Update the existing item
+
         await api.put(
           `/inventory/productSubdetailsEdit?tab=${tab}&id=${editId}`,
           formData
         )
+
         toast.success(`${tab.toUpperCase()} updated successfully`)
         seteditState(true)
       } else {
         // Create a new item
+
         await api.post("/inventory/productSubdetailsRegistration", formData)
+
         toast.success(`${tab.toUpperCase()} created successfully`)
       }
       // Refresh the list

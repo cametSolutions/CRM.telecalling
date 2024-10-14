@@ -232,3 +232,21 @@ export const GetallLeave = async (req, res) => {
       .json({ error: "An error occurred while fetching leave records" })
   }
 }
+export const DeleteUser = async (req, res) => {
+  const { id } = req.query
+  console.log("id", id)
+
+  try {
+    // Perform the deletion
+    const result = await Staff.findByIdAndDelete(id)
+
+    if (result) {
+      return res.status(200).json({ message: "User deleted successfully" })
+    } else {
+      return res.status(404).json({ message: "User not found" })
+    }
+  } catch (error) {
+    console.error(error)
+    return res.status(500).json({ message: "Server error" })
+  }
+}

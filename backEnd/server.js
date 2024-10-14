@@ -4,6 +4,7 @@ import connectDB from "./config/db.js"
 import cors from "cors"
 import bodyParser from "body-parser"
 import cookieParser from "cookie-parser"
+import departmentRoutes from "./routes/primaryUserRoutes/masterRoutes/departmentRoutes.js"
 import companyRoutes from "./routes/primaryUserRoutes/companyRoutes.js"
 import branchRoutes from "./routes/primaryUserRoutes/branchRoutes.js"
 import inventoryRoutes from "./routes/primaryUserRoutes/inventoryRoutes.js"
@@ -104,6 +105,7 @@ app.use("/api/branch", branchRoutes)
 app.use("/api/inventory", inventoryRoutes)
 app.use("/api/product", productRoutes)
 app.use("/api/customer", secondaryUserRoutes)
+app.use("/api/master", departmentRoutes)
 
 //   console.log(process.env.NODE_ENV) // if (process.env.NODE_ENV === "production") {
 //   console.log("Serving static files from production build")

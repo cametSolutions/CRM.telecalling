@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useEffect } from "react"
 import { CiEdit } from "react-icons/ci"
 import { useNavigate } from "react-router-dom"
+import api from "../../../api/api"
+import DeleteAlert from "../../../components/common/DeleteAlert"
 import {
   FaUserPlus,
   FaSearch,
@@ -43,6 +45,18 @@ const UserListform = () => {
 
     // Reset to initial count after filtering
   }, 300)
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/auth/userDelete?id=${id}`)
+
+      // Remove the deleted item from the items array
+      setUser((prevItems) => prevItems.filter((item) => item._id !== id))
+      setValue("")
+    } catch (error) {
+      console.error("Failed to delete item", error)
+      // toast.error("Failed to delete item. Please try again.")
+    }
+  }
 
   return (
     <div className="container mx-auto min-h-screen py-8 bg-gray-100">
@@ -85,9 +99,9 @@ const UserListform = () => {
           <table className="min-w-full bg-white border border-gray-300">
             <thead className="text-center">
               <tr>
-                <th className="py-2 px-4 border-b border-gray-300 ">
+                {/* <th className="py-2 px-4 border-b border-gray-300 ">
                   Department
-                </th>
+                </th> */}
                 <th className="py-2 px-4 border-b border-gray-300 ">
                   User Name
                 </th>
@@ -102,15 +116,16 @@ const UserListform = () => {
                   AssingnedTo
                 </th>
                 <th className="py-2 px-4 border-b border-gray-300 ">Edit</th>
+                <th className="py-2 px-4 border-b border-gray-300 ">Delete</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 text-center">
               {users?.length > 0 ? (
                 users.map((user) => (
                   <tr key={user?._id}>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
+                    {/* <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
                       {user.department}
-                    </td>
+                    </td> */}
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
                       {user?.name}
                     </td>
@@ -118,7 +133,7 @@ const UserListform = () => {
                       {user?.email}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
-                      {user?.mobileno}
+                      {user?.mobile}
                     </td>
 
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
@@ -140,6 +155,7 @@ const UserListform = () => {
                         }
                       />
                     </td>
+                    <DeleteAlert onDelete={handleDelete} Id={user._id} />
                   </tr>
                 ))
               ) : (

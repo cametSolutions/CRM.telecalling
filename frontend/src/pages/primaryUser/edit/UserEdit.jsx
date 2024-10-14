@@ -16,7 +16,7 @@ function UserEdit() {
   const handleSubmit = async (userData, userId) => {
     try {
       const response = await api.post(
-        "/auth/branchEdit",
+        "/auth/userEdit",
         { userData, userId },
         {
           withCredentials: true
