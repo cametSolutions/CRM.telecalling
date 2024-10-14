@@ -5,11 +5,16 @@ import toast from "react-hot-toast"
 import { useNavigate } from "react-router-dom"
 function UserRegistration() {
   const navigate = useNavigate()
-  const handleSubmit = async (userData) => {
+  const handleSubmit = async (userData, image) => {
+    console.log("image", image)
     try {
-      const response = await api.post("/auth/userRegistration", userData, {
-        withCredentials: true
-      })
+      const response = await api.post(
+        "/auth/userRegistration",
+        { userData, image },
+        {
+          withCredentials: true
+        }
+      )
       toast.success("user created successfully:")
       navigate("/admin/masters/users-&-passwords")
     } catch (error) {

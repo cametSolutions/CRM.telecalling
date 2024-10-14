@@ -319,11 +319,20 @@ export default function StaffHeader() {
 
       <div className="flex flex-grow justify-center items-center">
         <div className="relative flex items-center">
-          <VscAccount
+          {/* <VscAccount
             className="text-2xl"
             onMouseEnter={() => setProfileMenuOpen(true)}
             onMouseLeave={() => setProfileMenuOpen(false)}
-          />
+          /> */}
+          {user?.imageUrl && (
+            <img
+              src={user?.imageUrl}
+              // alt={`${userData.name}'s profile`}
+              onMouseEnter={() => setProfileMenuOpen(true)}
+              onMouseLeave={() => setProfileMenuOpen(false)}
+              className="w-10 h-10 rounded-full" // Add styling as needed
+            />
+          )}
           <span className="text-gray-700 mx-4 rounded-md cursor-pointer">
             {user?.name || "Profile"}
           </span>

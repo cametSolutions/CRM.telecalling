@@ -328,7 +328,19 @@ export default function AdminHeader() {
               onMouseEnter={() => setProfileMenuOpen(true)}
               onMouseLeave={() => setProfileMenuOpen(false)}
             />
-            <span className="text-gray-700 mx-4 rounded-md cursor-pointer">
+            {/* {user?.imageUrl && (
+              <img
+                src={user?.imageUrl}
+                // alt={`${userData.name}'s profile`}
+                onMouseEnter={() => setProfileMenuOpen(true)}
+                onMouseLeave={() => setProfileMenuOpen(false)}
+                className="w-20 h-20 rounded-full" // Add styling as needed
+              />
+            )} */}
+            <span className="text-gray-700 mx-4 rounded-md cursor-pointer"
+             onMouseEnter={() => setProfileMenuOpen(true)}
+             onMouseLeave={() => setProfileMenuOpen(false)}
+             >
               {user?.name || "Profile"}
             </span>
             {profileMenuOpen && (

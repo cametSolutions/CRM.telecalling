@@ -4,6 +4,7 @@ import { Country, State } from "country-state-city"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons"
 import Select from "react-select"
+import ImageInput from "../common/ImageInput"
 import UseFetch from "../../hooks/useFetch"
 
 // const useTrimmedValues = (setValue, fields) => {
@@ -31,13 +32,16 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
   const [selectedDepartment, setSelectedDepartment] = useState(null)
   const [selectedCountry, setSelectedCountry] = useState(null)
   const [selectedState, setSelectedState] = useState(null)
+  const [imageData, setImageData] = useState({
+    imageUrl: ""
+  })
   // const { data: allbranches } = UseFetch("/branch/getBranch")
   const { data: alldepartment } = UseFetch("/master/getDepartmentList")
   useEffect(() => {
     if (alldepartment) {
       setDepartment(alldepartment)
     }
-  }, [alldepartment])
+  }, [alldepartment, imageData])
   // useEffect(() => {
   //   if (allbranches) {
   //     setBranch(allbranches)
@@ -103,16 +107,18 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
       })
     }
   }, [UserData, countryOptions, selectedCountry, departments])
-  console.log("selecteddepartmen", selectedDepartment)
   const handledepartmentChange = (e) => {
     console.log("eventidddd", e.target.value)
 
     setSelectedDepartment(e.target.value)
   }
 
-  console.log("slecdddd", selectedDepartment)
-
-  console.log("state", selectedState)
+  const setImage = (url) => {
+    setImageData((prevData) => ({
+      ...prevData,
+      imageUrl: url
+    }))
+  }
 
   const onSubmit = (data) => {
     if (process === "Registration") {
@@ -137,12 +143,13 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
         setFormMessage("Please fill all required fields correctly.")
         return
       }
-      handleUserData(data)
+      console.log("iii", imageData)
+      handleUserData(data, imageData)
     } else if (process === "Edit") {
       handleEditedData(data, UserData?._id)
     }
   }
-  console.log("is visisbel", passwordVisible)
+
   return (
     <div
       className="flex flex-col justify-center items-center min-h-screen p-8 bg-gray-100"
@@ -450,7 +457,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
               </select>
             </div>
             {/* Verified Field */}
-            <div className="">
+            <div>
               <label className="block mb-1 font-semibold">Verified</label>
               <select
                 {...register("verified", { required: true })}
@@ -460,7 +467,8 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
                 <option value={false}>False</option>
               </select>
             </div>
-            {/* Submit Button */}
+
+            <ImageInput onSelect={setImage} />
           </div>
           <div className="flex justify-center">
             <button
