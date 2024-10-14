@@ -155,7 +155,10 @@ const UserListform = () => {
                         }
                       />
                     </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
                     <DeleteAlert onDelete={handleDelete} Id={user._id} />
+                    </td>
+                    
                   </tr>
                 ))
               ) : (
