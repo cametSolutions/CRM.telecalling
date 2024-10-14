@@ -148,6 +148,7 @@ const UserListform = () => {
 
                     <td className="px-4 py-4 whitespace-nowrap text-xl text-black">
                       <CiEdit
+                        className="mx-auto"
                         onClick={() =>
                           navigate("/admin/masters/userEdit", {
                             state: { user: user }
@@ -156,9 +157,8 @@ const UserListform = () => {
                       />
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
-                    <DeleteAlert onDelete={handleDelete} Id={user._id} />
+                      <DeleteAlert onDelete={handleDelete} Id={user._id} />
                     </td>
-                    
                   </tr>
                 ))
               ) : (
