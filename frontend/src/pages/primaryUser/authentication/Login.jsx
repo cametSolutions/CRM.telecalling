@@ -58,7 +58,36 @@ const Login = () => {
       <div className="w-full max-w-md p-8 space-y-6 bg-white shadow-md rounded-lg">
         <h2 className="text-2xl font-bold text-center">Login</h2>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="mb-4">
+        <div className="mb-4">
+            <label
+              htmlFor="emailOrMobile"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Email or Mobile
+            </label>
+            <input
+              type="text"
+              id="emailOrMobile"
+              {...register("emailOrMobile", {
+                required: "Email or mobile number is required",
+                validate: (value) => {
+                  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+                  const isValidMobile = /^[0-9]{10}$/.test(value);
+                  if (!isValidEmail && !isValidMobile) {
+                    return "Invalid email or mobile number";
+                  }
+                },
+              })}
+              className="w-full px-3 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              autoComplete="off"
+            />
+            {errors.emailOrMobile && (
+              <p className="mt-2 text-sm text-red-600">
+                {errors.emailOrMobile.message}
+              </p>
+            )}
+          </div>
+          {/* <div className="mb-4">
             <label
               htmlFor="email"
               className="block text-sm font-medium text-gray-700"
@@ -83,7 +112,7 @@ const Login = () => {
                 {errors.email.message}
               </p>
             )}
-          </div>
+          </div> */}
           <div className="mb-4 relative">
             <label
               htmlFor="password"
