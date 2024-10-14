@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from "react"
+import React from "react"
 import { useLocation } from "react-router-dom"
 
 import UserAdd from "../../../components/primaryUser/UserAdd"
 import api from "../../../api/api"
-import toast from "react-hot-toast"
+import { toast } from "react-toastify"
 import { useNavigate } from "react-router-dom"
 
 function UserEdit() {
-  const [Branch, setBranch] = useState(null)
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = location.state || {}
@@ -22,9 +21,12 @@ function UserEdit() {
           withCredentials: true
         }
       )
-      toast.success("User updated successfully:")
-      navigate("/admin/masters/userRegistration")
+      if (response) {
+        toast.success("User updated successfully:")
+        navigate("/admin/masters/users-&-passwords")
+      }
     } catch (error) {
+      toast.error("Error in updating")
       console.error("Error updating branch:", error)
     }
   }
