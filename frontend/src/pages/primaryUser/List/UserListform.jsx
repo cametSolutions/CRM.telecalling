@@ -51,7 +51,6 @@ const UserListform = () => {
 
       // Remove the deleted item from the items array
       setUser((prevItems) => prevItems.filter((item) => item._id !== id))
-      setValue("")
     } catch (error) {
       console.error("Failed to delete item", error)
       // toast.error("Failed to delete item. Please try again.")

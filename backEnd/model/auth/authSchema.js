@@ -79,6 +79,9 @@ const staffSchema = new Schema(
     },
     assignedto: {
       type: String
+    },
+    imageUrl: {
+      type: String
     }
     // Other staff-specific fields
   },

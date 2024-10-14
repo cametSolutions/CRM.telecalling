@@ -6,10 +6,10 @@ import generateToken from "../utils/generateToken.js"
 import LeaveRequest from "../model/primaryUser/leaveRequestSchema.js"
 
 export const Register = async (req, res) => {
-  const { name, email, mobile, password, role, ...otherfields } = req.body
-  console.log("mobile", mobile)
-  console.log("body", req.body)
-  console.log("role of :", role)
+  const { userData, image } = req.body
+  const { name, email, mobile, password, role, ...otherfields } = userData
+  const { imageUrl } = image
+
   if (role === "Admin") {
     const admin = await Admin.findOne({ email })
     if (!admin) {
@@ -56,9 +56,8 @@ export const Register = async (req, res) => {
       department,
       assignedto
     } = otherfields
-    console.log("otherfields", otherfields)
+
     const staff = await Staff.findOne({ email })
-    console.log("staffexists", staff)
 
     if (!staff) {
       try {
@@ -81,11 +80,12 @@ export const Register = async (req, res) => {
           joiningdate,
           designation,
           department,
-          assignedto
+          assignedto,
+          imageUrl
         })
-        console.log("newstafff", staff)
+
         const savedstaff = await staff.save()
-        console.log("saved", savedstaff)
+
         res.status(200).json({
           status: true,
           message: "staff created successfully"
@@ -146,7 +146,6 @@ export const Login = async (req, res) => {
         user = await Staff.findOne({ mobile: emailOrMobile })
       }
     }
-    
 
     if (!user) {
       return res.status(400).json({ message: "Invalid login credentials" })
