@@ -109,25 +109,9 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
 
     setSelectedDepartment(e.target.value)
   }
-  
+
   console.log("slecdddd", selectedDepartment)
-  // useEffect(() => {
-  //   if (UserData) {
-  //     const arr = []
-  //     setIsEditMode(true)
-  //     for (const [key, value] of Object.entries(UserData)) {
-  //       if (key !== "password") {
-  //         if (key === "state") {
-  //           console.log("value", value)
-  //           const state = stateOptions.find((s) => s.value === value)
-  //           setSelectedState(state)
-  //           setValue(key, value)
-  //         }
-  //         setValue(key, value)
-  //       }
-  //     }
-  //   }
-  // }, [])
+
   console.log("state", selectedState)
 
   const onSubmit = (data) => {
@@ -449,43 +433,13 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
                 ))}
               </select>
             </div>
-            {/* <div>
-              <label className="block mb-1 font-semibold">Department</label>
-              <Controller
-                name="department"
-                control={control}
-                render={({ field }) => (
-                  <select
-                    {...field}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
-                  >
-                    <option value="">Select Department</option>
-                    {selectedRole === "Staff"
-                      ? branches.map((branch, index) => (
-                          <option key={index} value={branch.branchName}>
-                            {branch.branchName}
-                          </option>
-                        ))
-                      : departments.map((dept, index) => (
-                          <option key={index} value={dept}>
-                            {dept}
-                          </option>
-                        ))}
-                  </select>
-                )}
-              />
-              {errors.department && (
-                <p className="text-red-500 text-sm">
-                  {errors.department.message}
-                </p>
-              )}
-            </div> */}
+
             <div>
               <label htmlFor="assignedto" className="block mb-1 font-semibold">
                 Assigned to
               </label>
               <select
-                {...register("assignedto", { required: true })}
+                {...register("assignedto")}
                 className="w-full mt-1 block border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
               >
                 <option value="Admin">Admin</option>

@@ -124,22 +124,29 @@ export const UpdateUserandAdmin = async (req, res) => {
 }
 
 export const Login = async (req, res) => {
-  const { email, password, role } = req.body
+  const { emailOrMobile, password, role } = req.body
 
   try {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ message: "Invalid login credentials" })
-    }
-
     let user
-    if (role === "Admin") {
-      user = await Admin.findOne({ email })
-      console.log("use", user)
-    } else if (role === "Staff") {
-      user = await Staff.findOne({ email })
-      console.log("uddfff", user)
+
+    // Determine if the input is an email or a mobile number
+    if (emailRegex.test(emailOrMobile)) {
+      // If it's an email
+      if (role === "Admin") {
+        user = await Admin.findOne({ email: emailOrMobile })
+      } else if (role === "Staff") {
+        user = await Staff.findOne({ email: emailOrMobile })
+      }
+    } else {
+      // If it's a mobile number
+      if (role === "Admin") {
+        user = await Admin.findOne({ mobile: emailOrMobile })
+      } else if (role === "Staff") {
+        user = await Staff.findOne({ mobile: emailOrMobile })
+      }
     }
+    
 
     if (!user) {
       return res.status(400).json({ message: "Invalid login credentials" })
