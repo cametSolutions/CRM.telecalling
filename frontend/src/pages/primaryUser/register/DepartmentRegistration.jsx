@@ -11,9 +11,7 @@ export default function DepartmentRegistration() {
   const [value, setValue] = useState("")
   const [items, setItems] = useState([])
   const [editId, setEditId] = useState("")
-  const { data, loading, error, refreshHook } = UseFetch(
-    `/master/departmentList`
-  )
+  const { data, loading, error, refreshHook } = UseFetch(`/master/getDepartmentList`)
   useEffect(() => {
     if (data) {
       setItems(data)

@@ -27,6 +27,7 @@ export const DepartmentRegistration = async (req, res) => {
 export const GetdepartmentList = async (req, res) => {
   try {
     const departmentlist = await Department.find()
+    console.log("list", departmentlist)
     if (departmentlist) {
       res
         .status(200)
