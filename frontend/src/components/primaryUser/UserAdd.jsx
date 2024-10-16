@@ -49,9 +49,10 @@ const UserAdd = ({
   const [selectedCountry, setSelectedCountry] = useState(null)
   const [selectedState, setSelectedState] = useState(null)
   const [tableData, setTableData] = useState([])
-  const [imageData, setImageData] = useState({
-    profileUrl: [],
-    documentUrl: []
+  
+  const [imageData,setImageData]=useState({
+    profileUrl:"",
+    documentUrl:[]
   })
   const [tableObject, setTableObject] = useState({
     company_id: "",
