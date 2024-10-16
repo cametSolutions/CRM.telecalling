@@ -9,6 +9,10 @@ export const Register = async (req, res) => {
   const { userData, image, tabledata } = req.body
   const { name, email, mobile, password, role, ...otherfields } = userData
   const { profileUrl, documentUrl } = image
+  console.log("hiii")
+  // console.log(image)
+  // console.log(profileUrl)
+  // console.log(documentUrl)
 
   console.log("pro,", profileUrl)
 
@@ -89,6 +93,7 @@ export const Register = async (req, res) => {
         })
 
         const savedstaff = await staff.save()
+        console.log(savedstaff)
 
         res.status(200).json({
           status: true,
