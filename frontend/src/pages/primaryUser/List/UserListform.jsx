@@ -18,7 +18,7 @@ const UserListform = () => {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
   const [users, setUser] = useState([])
-  const { data: allusers } = UseFetch("/auth/getallUsers")
+  const { data: allusers, loading } = UseFetch("/auth/getallUsers")
   useEffect(() => {
     if (allusers) {
       setUser(allusers)
@@ -98,9 +98,9 @@ const UserListform = () => {
           <table className="min-w-full bg-white border border-gray-300">
             <thead className="text-center">
               <tr>
-                {/* <th className="py-2 px-4 border-b border-gray-300 ">
-                  Department
-                </th> */}
+                <th className="py-2 px-4 border-b border-gray-300 ">No</th>
+                <th className="py-2 px-4 border-b border-gray-300 ">Branch</th>
+                <th className="py-2 px-4 border-b border-gray-300 ">Access</th>
                 <th className="py-2 px-4 border-b border-gray-300 ">
                   User Name
                 </th>
@@ -119,54 +119,66 @@ const UserListform = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 text-center">
-              {users?.length > 0 ? (
-                users.map((user) => (
-                  <tr key={user?._id}>
-                    {/* <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
-                      {user.department}
-                    </td> */}
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
-                      {user?.name}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
-                      {user?.email}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
-                      {user?.mobile}
-                    </td>
+              {users.length > 0 ? (
+                users.map((user, index) =>
+                  user.selected.map((item, itemIndex) => (
+                    <tr key={`${user._id}-${itemIndex}`}>
+                      <td className="px-2 py-3 text-sm text-black">
+                        {/* {index + 1}
+                         */}
+                        {itemIndex === 0 ? index + 1 : ""}
+                      </td>
+                      <td className="px-2 py-3 text-sm text-black">
+                        {item?.branchName}
+                      </td>
+                      <td className="px-2 py-3 text-sm text-black">
+                        {item?.sectionName}
+                      </td>
+                      <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
+                        {user?.name}
+                      </td>
+                      <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
+                        {user?.email}
+                      </td>
+                      <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
+                        {user?.mobile}
+                      </td>
+                      <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
+                        {user?.designation}
+                      </td>
+                      <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
+                        {user?.role}
+                      </td>
+                      <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
+                        {user?.assignedto}
+                      </td>
 
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
-                      {user?.designation}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
-                      {user?.role}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
-                      {user?.assignedto}
-                    </td>
-
-                    <td className="px-4 py-4 whitespace-nowrap text-xl text-black">
-                      <CiEdit
-                        className="mx-auto"
-                        onClick={() =>
-                          navigate("/admin/masters/userEdit", {
-                            state: { user: user }
-                          })
-                        }
-                      />
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
-                      <DeleteAlert onDelete={handleDelete} Id={user._id} />
-                    </td>
-                  </tr>
-                ))
+                      <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
+                        <CiEdit
+                          onClick={() =>
+                            navigate("/admin/masters/userEdit", {
+                              state: {
+                                user,
+                                selected: item
+                              }
+                            })
+                          }
+                          className="cursor-pointer"
+                        />
+                      </td>
+                      <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
+                        <DeleteAlert onDelete={handleDelete} Id={user._id} />
+                      </td>
+                    </tr>
+                  ))
+                )
               ) : (
                 <tr>
                   <td
-                    colSpan="10"
-                    className="px-6 py-4 text-center text-sm text-gray-500"
+                    colSpan="11"
+                    className="px-4 py-4 text-center text-gray-500"
                   >
-                    No users found in
+                    {loading ? loading : "No customers found."}
                   </td>
                 </tr>
               )}

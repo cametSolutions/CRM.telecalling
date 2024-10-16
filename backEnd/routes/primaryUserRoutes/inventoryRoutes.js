@@ -7,7 +7,8 @@ import {
   CreateHsn,
   GetHsnDetails,
   DeleteHsn,
-  UpdateHsn
+  UpdateHsn,
+  GetBrands
 } from "../../controller/primaryUserController/inventoryConroller.js"
 import authMiddleware from "../../middleware/authMiddleware.js"
 
@@ -25,4 +26,5 @@ router.post("/hsnCreation", authMiddleware, CreateHsn)
 router.get("/hsnlist", authMiddleware, GetHsnDetails)
 router.delete("/hsndelete", authMiddleware, DeleteHsn)
 router.put("/hsnEdit", authMiddleware, UpdateHsn)
+router.get("/getBrand", authMiddleware, GetBrands)
 export default router

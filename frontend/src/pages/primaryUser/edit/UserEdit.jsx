@@ -9,8 +9,9 @@ import { useNavigate } from "react-router-dom"
 function UserEdit() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { user } = location.state || {}
+  const { user, selected } = location.state || {}
   console.log("user", user)
+  console.log("user", selected)
 
   const handleSubmit = async (userData, userId) => {
     try {
@@ -35,7 +36,8 @@ function UserEdit() {
       <UserAdd
         process={"Edit"}
         handleEditedData={handleSubmit}
-        UserData={user}
+        User={user}
+        Selected={selected}
       />
     </div>
   )

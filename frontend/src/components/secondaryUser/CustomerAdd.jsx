@@ -113,7 +113,7 @@ const CustomerAdd = ({
   }, [products, selectedProduct])
 
   const debouncedLicenseNo = useDebounce(tableObject.licensenumber, 500)
-
+  console.log(isLicense)
   useEffect(() => {
     const ignored = ["company_id", "branch_id", "product_id"]
     if (selected && customer) {
@@ -267,79 +267,83 @@ const CustomerAdd = ({
   }, [debouncedLicenseNo])
 
   console.log("typeof dte", tableObject.amcstartDate)
-  const productSelected = watch("productName")
-  const companySelected = watch("companyName")
-  const branchSelected = watch("branchName")
-  // const brandSelected = watch("brandName")
-  const licenseSelected = watch("licensenumber")
-  const softwaretradeSelected = watch("softwareTrade")
-  const noofuserSelected = watch("noofusers")
-  const customerAddDateSelected = watch("customerAddDate")
-  const amcstartDateSelected = watch("amcstartDate")
-  const amcendDateSelected = watch("amcendDate")
-  const amcAmountSelected = watch("amcAmount")
-
+  // const productSelected = watch("productName")
+  // const companySelected = watch("companyName")
+  // const branchSelected = watch("branchName")
+  // // const brandSelected = watch("brandName")
+  // const licenseSelected = watch("licensenumber")
+  // const softwaretradeSelected = watch("softwareTrade")
+  // const noofuserSelected = watch("noofusers")
+  // const customerAddDateSelected = watch("customerAddDate")
+  // const amcstartDateSelected = watch("amcstartDate")
+  // const amcendDateSelected = watch("amcendDate")
+  // const amcAmountSelected = watch("amcAmount")
+  console.log(isLicense)
   const handleTableData = () => {
-    const checklicense = isLicense.find((item) => item === debouncedLicenseNo)
-    const licensecheck = license.find(
-      (item) => item.licensenumber === debouncedLicenseNo
-    )
-    if (checklicense && licensecheck) {
-      setLicenseAvailable(false)
-      console.log("checked false at islicense")
+    // const checklicense = isLicense.find((item) => item === debouncedLicenseNo)
+    // const licensecheck = license.find(
+    //   (item) => item.licensenumber === debouncedLicenseNo
+    // )
+    // console.log(checklicense)
+    // console.log(licensecheck)
+    // if (checklicense) {
+    //   console.log(checklicense)
+    //   console.log(licensecheck)
+    //   setLicenseAvailable(false)
+    //   console.log("checked false at islicense")
 
-      toast.error("license number is already exist")
-    }
+    //   toast.error("license number is already exist")
+    // }
 
-    if (tableObject.company_id.trim() === "") {
-      toast.error("please select a companyssssss")
+    if (!tableObject.company_id.trim() === "") {
+      toast.error("please select a company")
       return
-    } else if (tableObject.branch_id.trim() === "") {
+    } else if (!tableObject.branch_id.trim() === "") {
       toast.error("please select a branch")
       return
-    } else if (tableObject.product_id.trim() === "") {
+    } else if (!tableObject.product_id.trim() === "") {
       toast.error("please select a product")
       return
-    } else if (tableObject.licensenumber.trim() === "") {
+    } else if (!tableObject.licensenumber.trim() === "") {
       toast.error("please add a license number")
       return
-    } else if (tableObject.noofusers.trim() === "") {
-      toast.error("please add users")
+    } else if (!tableObject.noofusers.trim() === "") {
+      toast.error("please add noofusers")
       return
-    } else if (tableObject.version.trim() === "") {
+    } else if (!tableObject.version.trim() === "") {
       toast.error("please add version")
       return
-    } else if (tableObject.customerAddDate.trim() === "") {
+    } else if (!tableObject.customerAddDate.trim() === "") {
       toast.error("please choose a date")
       return
-    } else if (tableObject.amcstartDate.trim() === "") {
+    } else if (!tableObject.amcstartDate.trim() === "") {
       toast.error("please add amc start date")
       return
-    } else if (tableObject.amcendDate.trim() === "") {
+    } else if (!tableObject.amcendDate.trim() === "") {
       toast.error("please select amc end date")
       return
-    } else if (tableObject.amcAmount.trim() === "") {
+    } else if (!tableObject.amcAmount.trim() === "") {
       toast.error("please fill amc amount")
       return
-    } else if (tableObject.amcDescription.trim() === "") {
+    } else if (!tableObject.amcDescription.trim() === "") {
       toast.error("please add amc description")
       return
-    } else if (tableObject.licenseExpiryDate.trim() === "") {
+    } else if (!tableObject.licenseExpiryDate.trim() === "") {
       toast.error("please add license expiryDate")
       return
-    } else if (tableObject.productAmount.trim() === "") {
+    } else if (!tableObject.productAmount.trim() === "") {
       toast.error("please add product amount")
       return
-    } else if (tableObject.productamountDescription.trim() === "") {
+    } else if (!tableObject.productamountDescription.trim() === "") {
       toast.error("please add product description")
       return
-    } else if (tableObject.tvuexpiryDate.trim() === "") {
+    } else if (!tableObject.tvuexpiryDate.trim() === "") {
       toast.error("please add tvu expiryDate")
       return
-    } else if (tableObject.tvuAmount.trim() === "") {
+    } else if (!tableObject.tvuAmount.trim() === "") {
       toast.error("please add tvu amount")
       return
-    } else if (tableObject.tvuamountDescription.trim() === "") {
+    } else if (!tableObject.tvuamountDescription.trim() === "") {
       toast.error("please add tvu description")
       return
     }
@@ -356,25 +360,34 @@ const CustomerAdd = ({
     } else {
       // Otherwise, add a new item
       console.log("tabledta", tableData)
-      console
-      const isIncluded =
-        tableData.some(
-          (item) => JSON.stringify(item) === JSON.stringify(tableObject)
-        ) && isLicense.includes(tableObject.licensenumber)
-
-      if (isIncluded) {
+      console.log(isLicense)
+      const istableobjectInclude = tableData.some(
+        (item) => JSON.stringify(item) === JSON.stringify(tableObject)
+      )
+      console.log(tableObject)
+      console.log(tableData)
+      const islicenseInclude = tableData.some(
+        (item) => item.licensenumber === tableObject.licensenumber
+      )
+      console.log(islicenseInclude)
+      if (istableobjectInclude) {
         toast.error("already added")
+        return
+      }
+      if (islicenseInclude) {
+        toast.error("licensenumber is already exist")
         return
       }
       console.log("tableobject", tableObject)
       setTableData((prev) => [...prev, tableObject])
 
-      setlicenseExist((prev) => [...prev, tableObject.licensenumber])
+      // setlicenseExist((prev) => [...prev, tableObject.licensenumber])
     }
 
     // reset()
   }
-
+  console.log(tableObject)
+  console.log(isLicense)
   useEffect(() => {
     if (productError) {
       toast.error(
@@ -410,13 +423,23 @@ const CustomerAdd = ({
   ]
 
   const handleDelete = (id) => {
+    console.log(id)
     const filtereddData = tableData.filter((product, index) => {
       return index !== id
     })
+    console.log(isLicense)
+    const updatedIslicense = isLicense.filter((license, index) => {
+      return index !== id
+    })
+    console.log(filtereddData)
+    console.log(updatedIslicense)
 
     setTableData(filtereddData)
+    setlicenseExist(updatedIslicense)
+
     reset()
   }
+  console.log(isLicense)
   const handleEdit = (id) => {
     seteditState(true) // Close the edit state (or handle according to your logic)
 
@@ -546,6 +569,7 @@ const CustomerAdd = ({
 
       if (process === "Registration") {
         console.log("tableobject", tableObject)
+        console.log(tableData)
         await handleCustomerData(data, tableData)
         reset()
       } else if (process === "edit") {
@@ -732,7 +756,7 @@ const CustomerAdd = ({
               </label>
               <input
                 type="tel"
-                {...register("mobile", { required: "mobile is required" })}
+                {...register("mobile")}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
                 placeholder="Phone"
               />
@@ -863,7 +887,7 @@ const CustomerAdd = ({
                 <label htmlFor="softwareTrade">Software Trade</label>
                 <select
                   id="softwareTrade"
-                  {...register("softwareTrade", { required: true })}
+                  {...register("softwareTrade")}
                   onChange={
                     (e) =>
                       setTableObject({

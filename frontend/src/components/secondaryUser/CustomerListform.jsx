@@ -212,10 +212,11 @@ const CustomerListform = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {displayedCustomers.length > 0 ? (
                 displayedCustomers.map((customer, index) =>
-                  customer.selected.map((item) => (
+                  customer.selected.map((item, itemIndex) => (
                     <tr key={item.licensenumber}>
                       <td className="px-2 py-3 text-sm text-black">
-                        {index + 1}
+                        {/* {index + 1} */}
+                        {itemIndex === 0 ? index + 1 : ""}
                       </td>
                       <td className="px-2 py-3 text-sm text-black">
                         {item?.branchName}

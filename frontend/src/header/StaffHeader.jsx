@@ -324,9 +324,9 @@ export default function StaffHeader() {
             onMouseEnter={() => setProfileMenuOpen(true)}
             onMouseLeave={() => setProfileMenuOpen(false)}
           /> */}
-          {user?.imageUrl && (
+          {user?.profileUrl && (
             <img
-              src={user?.imageUrl}
+              src={user?.profileUrl}
               // alt={`${userData.name}'s profile`}
               onMouseEnter={() => setProfileMenuOpen(true)}
               onMouseLeave={() => setProfileMenuOpen(false)}

@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useMemo } from "react"
+import { toast } from "react-toastify"
 import { useForm, Controller } from "react-hook-form"
 import { Country, State } from "country-state-city"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons"
+import { FaEdit, FaTrash } from "react-icons/fa"
 import Select from "react-select"
 import ImageInput from "../common/ImageInput"
 import UseFetch from "../../hooks/useFetch"
@@ -15,77 +17,199 @@ import UseFetch from "../../hooks/useFetch"
 //   }, [setValue, fields])
 // }
 
-const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
+const UserAdd = ({
+  process,
+  User,
+  Selected,
+  handleUserData,
+  handleEditedData
+}) => {
   const {
     register,
     handleSubmit,
     setValue,
     formState: { errors },
     control,
-    watch
+    watch,
+    trigger
   } = useForm()
   const selectedRole = watch("role")
   const [formMessage, setFormMessage] = useState("")
+  const [showTable, setShowTable] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
   const [passwordVisible, setPasswordVisible] = useState(false)
   const [departments, setDepartment] = useState([])
+  const [company, setCompanies] = useState([])
+  const [branches, setBranches] = useState([])
+  const [sections, setSections] = useState([])
+  const [selectedCompany, setSelectedCompany] = useState(null)
+  const [selectedBranch, setSelectedBranch] = useState(null)
+  const [selectedSection, setSelectedSection] = useState(null)
   const [selectedDepartment, setSelectedDepartment] = useState(null)
   const [selectedCountry, setSelectedCountry] = useState(null)
   const [selectedState, setSelectedState] = useState(null)
+  const [tableData, setTableData] = useState([])
   const [imageData, setImageData] = useState({
-    imageUrl: ""
+    profileUrl: [],
+    documentUrl: []
   })
-  // const { data: allbranches } = UseFetch("/branch/getBranch")
+  const [tableObject, setTableObject] = useState({
+    company_id: "",
+    companyName: "",
+    branch_id: "",
+    branchName: "",
+    section_id: "",
+    sectionName: ""
+  })
+  const { data: companies } = UseFetch("/company/getCompany")
   const { data: alldepartment } = UseFetch("/master/getDepartmentList")
+  const { data: section } = UseFetch("/inventory/getBrand")
+
   useEffect(() => {
-    if (alldepartment) {
+    if (alldepartment || section || companies) {
       setDepartment(alldepartment)
+      setSections(section)
+      setCompanies(companies)
     }
-  }, [alldepartment, imageData])
-  // useEffect(() => {
-  //   if (allbranches) {
-  //     setBranch(allbranches)
-  //   }
-  // }, [allbranches])
-  console.log("departmen", departments)
-  console.log("set", selectedDepartment)
+  }, [alldepartment, section, companies])
+
   const countryOptions = useMemo(
     () =>
       Country.getAllCountries().map((country) => ({
         label: country.name,
         value: country.isoCode
       })),
-    [UserData]
+    [User, Selected]
   )
 
+  useEffect(() => {
+    if (selectedCompany) {
+      setValue("companyName", selectedCompany)
+      const matchingCompany = company.find(
+        (company) => company._id === selectedCompany
+      )
+
+      if (matchingCompany) {
+        const branch = matchingCompany.branches
+
+        setBranches(branch)
+      }
+    }
+  }, [selectedCompany])
   const defaultCountry = useMemo(
     () => countryOptions.find((country) => country.value === "IN"),
     [countryOptions]
   )
-
-  // Set state for country and state
-
-  console.log("sataer", selectedState)
   const stateOptions = selectedCountry
     ? State.getStatesOfCountry(selectedCountry.value).map((state) => ({
         label: state.name,
         value: state.isoCode
       }))
     : []
+
+  const handleTableData = () => {
+    if (tableObject.company_id.trim() === "") {
+      toast.error("please select a company")
+      return
+    } else if (tableObject.branch_id.trim() === "") {
+      toast.error("please select a branch")
+      return
+    } else if (tableObject.section_id.trim() === "") {
+      toast.error("please select a section")
+      return
+    }
+
+    if (isEditMode) {
+      // If in edit mode, update the existing item
+      setTableData((prev) => {
+        const newData = [...prev]
+        newData[editIndex] = tableObject // Update the specific item
+        return newData
+      })
+      setEditIndex(null)
+      seteditState(false) // Reset the edit index
+    } else {
+      // Otherwise, add a new item
+
+      const isIncluded = tableData.some(
+        (item) => JSON.stringify(item) === JSON.stringify(tableObject)
+      )
+
+      if (isIncluded) {
+        toast.error("already added")
+        return
+      }
+      console.log("tableobject", tableObject)
+      setTableData((prev) => [...prev, tableObject])
+    }
+
+    // reset()
+  }
+  const handleCompanyChange = (e) => {
+    const companyId = e.target.value
+    setSelectedCompany(companyId)
+
+    setValue("companyName", e.target.value)
+    trigger("companyName")
+    const foundCompany = company.find((company) => company._id === companyId)
+
+    setTableObject((prev) => ({
+      ...prev,
+      company_id: companyId,
+      companyName: foundCompany.companyName
+    }))
+  }
+
+  const handleBranchChange = (e) => {
+    const branchId = e.target.value
+    setSelectedBranch(branchId)
+
+    setValue("branchName", e.target.value)
+    trigger("branchName")
+    const foundBranch = branches.find((branch) => branch._id === branchId)
+
+    setTableObject((prev) => ({
+      ...prev,
+      branch_id: branchId,
+      branchName: foundBranch.branchName
+    }))
+  }
+
+  const handleSectionChange = (e) => {
+    const sectionId = e.target.value
+    setSelectedSection(sectionId)
+    setShowTable(true)
+    setValue("sectionName", e.target.value)
+    trigger("sectionName")
+    const foundSection = sections.find((section) => section._id === sectionId)
+
+    setTableObject((prev) => ({
+      ...prev,
+      section_id: sectionId,
+      sectionName: foundSection.brand
+    }))
+  }
+
   useEffect(() => {
-    console.log("log at default country")
     if (defaultCountry) {
       setSelectedCountry(defaultCountry)
       setValue("country", defaultCountry.value)
-
-      // setSelectedState() // Reset state when country changes
     }
   }, [defaultCountry])
-  console.log("country", defaultCountry)
+
   useEffect(() => {
-    if (UserData) {
+    if (
+      User &&
+      countryOptions.length > 0 &&
+      departments &&
+      departments.length > 0 &&
+      company &&
+      company.length > 0 &&
+      sections &&
+      sections.length > 0
+    ) {
       setIsEditMode(true)
-      Object.entries(UserData).forEach(([key, value]) => {
+      Object.entries(User).forEach(([key, value]) => {
         if (key === "country") {
           const country = countryOptions.find((c) => c.value === value)
           setSelectedCountry(country)
@@ -95,61 +219,91 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
           setSelectedState(state)
         }
         if (key === "department") {
-          console.log("dee", departments)
-          console.log("value", value)
           const department = departments.find((d) => d._id === value)
-          console.log("deee", department)
+
           setSelectedDepartment(department)
         }
+
         if (key !== "password") {
           setValue(key, value)
         }
       })
     }
-  }, [UserData, countryOptions, selectedCountry, departments])
-  const handledepartmentChange = (e) => {
-    console.log("eventidddd", e.target.value)
+    if (
+      Selected &&
+      company &&
+      company.length > 0 &&
+      sections &&
+      sections.length > 0 &&
+      countryOptions.length > 0
+    ) {
+      Object.entries(Selected).forEach(([key, value]) => {
+        if (key === "company_id") {
+          const matchingCompany = company.find(
+            (company) => company._id === value
+          )
 
-    setSelectedDepartment(e.target.value)
-  }
+          if (matchingCompany) {
+            setSelectedCompany(value)
+          }
+        }
+        if (key === "branchName") {
+          const branch = branches.find(
+            (branch) => branch._id === Selected.branch_id
+          )
 
-  const setImage = (url) => {
+          if (branch) {
+            setSelectedBranch(branch._id)
+            setValue(key, branch._id)
+          }
+        }
+        if (key === "sectionName") {
+          const section = sections.find(
+            (section) => section._id === Selected.section_id
+          )
+
+          if (section) {
+            setSelectedSection(Selected.section_id)
+            setValue(key, section._id)
+          }
+        }
+      })
+    }
+  }, [User, departments, company, sections])
+
+  const profileImage = (url) => {
     setImageData((prevData) => ({
       ...prevData,
-      imageUrl: url
+      profileUrl: url
+    }))
+  }
+  const documentImage = (url) => {
+    setImageData((prevData) => ({
+      ...prevData,
+      documentUrl: Array.isArray(url)
+        ? [...prevData.documentUrl, ...url] // Append if 'urls' is an array
+        : [...prevData.documentUrl, url] // Add the single URL if it's not an array
     }))
   }
 
   const onSubmit = (data) => {
     if (process === "Registration") {
-      const trimmedData = {
-        name: data.name.trim(),
-        email: data.email.trim(),
-        mobile: data.mobile.trim(),
-        password: data.password.trim(),
-        address: data.address.trim(),
-        pincode: data.pincode.trim(),
-        designation: data.designation.trim(),
-        verified: data.verified
+      if (data) {
+        data.name.trim(),
+          data.email.trim(),
+          data.mobile.trim(),
+          data.password.trim(),
+          data.address.trim(),
+          data.pincode.trim(),
+          data.designation.trim()
       }
 
-      // Check if any trimmed value is empty
-      if (
-        !trimmedData.name ||
-        !trimmedData.email ||
-        !trimmedData.mobile ||
-        !trimmedData.password
-      ) {
-        setFormMessage("Please fill all required fields correctly.")
-        return
-      }
-      console.log("iii", imageData)
-      handleUserData(data, imageData)
+      handleUserData(data, imageData, tableData)
     } else if (process === "Edit") {
       handleEditedData(data, UserData?._id)
     }
   }
-
+  console.log("slectebbb", selectedSection)
   return (
     <div
       className="flex flex-col justify-center items-center min-h-screen p-8 bg-gray-100"
@@ -211,7 +365,6 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
               <input
                 type="tel"
                 {...register("mobile", {
-                  required: "Mobile is required",
                   pattern: {
                     value: /^[0-9]{10}$/,
 
@@ -243,9 +396,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
             <div>
               <label className="block mb-1 font-semibold">Blood Group</label>
               <select
-                {...register("bloodgroup", {
-                  required: "Blood group is required"
-                })}
+                {...register("bloodgroup")}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
               >
                 <option value="">Select a blood group</option>
@@ -284,7 +435,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
               <label className="block mb-1 font-semibold">Address</label>
               <input
                 type="text"
-                {...register("address", { required: "Address is required" })}
+                {...register("address")}
                 placeholder="Enter an address"
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
               />
@@ -329,7 +480,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
               <label className="block mb-1 font-semibold">Pincode</label>
               <input
                 type="number"
-                {...register("pincode", { required: "Pincode is required" })}
+                {...register("pincode")}
                 placeholder="Enter a pincode"
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
               />
@@ -343,7 +494,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
               <input
                 type="date"
                 {...register("joiningdate")}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-2 py-1 sm:text-md focus:border-gray-500 outline-none"
               />
               {errors.joiningdate && (
                 <span className="text-red-500 text-sm">
@@ -378,7 +529,9 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
                 <input
                   type={passwordVisible ? "text" : "password"}
                   id="password"
-                  {...register("password")}
+                  {...register("password", {
+                    required: "Password is Required"
+                  })}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
                 />
                 {/* Only show the eye icon if it's not in edit mode */}
@@ -428,7 +581,7 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
               <select
                 id="department"
                 {...register("department")}
-                onChange={handledepartmentChange}
+                onChange={(e) => setSelectedDepartment(e.target.value)}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
               >
                 <option value="">-- Select a department --</option>
@@ -468,8 +621,180 @@ const UserAdd = ({ process, UserData, handleUserData, handleEditedData }) => {
               </select>
             </div>
 
-            <ImageInput onSelect={setImage} />
+            <ImageInput onSelect={profileImage} tag={"UploadProfile"} />
+            <ImageInput onSelect={documentImage} tag={"UploadDocument"} />
           </div>
+
+          <div className="mt-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ">
+              <div>
+                <label
+                  htmlFor="companyName"
+                  className="block mb-1 font-semibold"
+                >
+                  Select Company
+                </label>
+
+                <select
+                  id="companyName"
+                  {...register("companyName", {
+                    required: "Company is required"
+                  })}
+                  onChange={handleCompanyChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                >
+                  <option value="">-- Select a company --</option>
+
+                  {company?.map((company) => (
+                    <option key={company._id} value={company._id}>
+                      {company.companyName}
+                    </option>
+                  ))}
+                </select>
+                {errors.companyName && (
+                  <p className="text-red-500 text-sm">
+                    {errors.companyName.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label
+                  htmlFor="branchName"
+                  className="block mb-1 font-semibold"
+                >
+                  Select Branch
+                </label>
+
+                <select
+                  id="branchName"
+                  {...register("branchName", {
+                    required: "branch is required"
+                  })}
+                  onChange={handleBranchChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                >
+                  <option value="">-- Select a Branch--</option>
+
+                  {branches?.map((branch) => (
+                    <option key={branch._id} value={branch._id}>
+                      {branch.branchName}
+                    </option>
+                  ))}
+                </select>
+                {errors.branchName && (
+                  <p className="text-red-500 text-sm">
+                    {errors.branchName.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label
+                  htmlFor="sectionName"
+                  className="block mb-1 font-semibold"
+                >
+                  Section
+                </label>
+
+                <select
+                  id="sectionName"
+                  {...register("sectionName", {
+                    required: "Section is required"
+                  })}
+                  onChange={handleSectionChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                >
+                  <option value="">-- Select Section--</option>
+
+                  {sections?.map((section) => (
+                    <option key={section._id} value={section._id}>
+                      {section.brand}
+                    </option>
+                  ))}
+                </select>
+                {errors.sectionName && (
+                  <p className="text-red-500 text-sm">
+                    {errors.sectionName.message}
+                  </p>
+                )}
+              </div>
+            </div>
+            {showTable && (
+              <div>
+                <div className="mt-6">
+                  <button
+                    type="button"
+                    onClick={handleTableData}
+                    className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                  >
+                    {isEditMode ? "UPDATE" : "ADD"}
+                  </button>
+                </div>
+
+                <div className="mt-6 w-lg overflow-y-auto">
+                  <table className="bg-green-300 w-full divide-y divide-gray-200  ">
+                    <thead>
+                      <tr className="text-center">
+                        <th className="  py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Company Name
+                        </th>
+                        <th className=" px-5 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Branch Name
+                        </th>
+                        <th className=" px-5 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Section
+                        </th>
+
+                        <th className="px-4  py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Edit
+                        </th>
+                        <th className="px-5  py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Delete
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200 ">
+                      {tableData?.map((product, index) => (
+                        <tr key={index} className="text-center">
+                          <td className=" py-4 whitespace-nowrap text-sm text-gray-500">
+                            {product?.companyName}
+                          </td>
+
+                          <td className=" py-4 whitespace-nowrap text-sm text-gray-500">
+                            {product?.branchName}
+                          </td>
+
+                          <td className=" py-4 whitespace-nowrap text-sm text-gray-500">
+                            {product?.sectionName}
+                          </td>
+
+                          <td className=" py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              type="button"
+                              className="text-green-600 hover:text-green-900 mr-2" // Adjust styles as needed
+                            >
+                              <FaEdit
+                                onClick={() => handleEdit(product.product_id)}
+                              />
+                            </button>
+                          </td>
+
+                          <td className=" py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              type="button"
+                              className="text-blue-600 hover:text-blue-900"
+                            >
+                              <FaTrash onClick={() => handleDelete(index)} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="flex justify-center">
             <button
               type="submit"
