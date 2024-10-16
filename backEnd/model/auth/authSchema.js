@@ -78,7 +78,7 @@ const staffSchema = new Schema(
       type: String
     },
     profileUrl: {
-      type: [String]
+      type: String
     },
     documentUrl: {
       type: [String]

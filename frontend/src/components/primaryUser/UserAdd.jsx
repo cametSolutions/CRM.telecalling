@@ -297,7 +297,7 @@ const UserAdd = ({
           data.pincode.trim(),
           data.designation.trim()
       }
-
+      console.log(imageData)
       handleUserData(data, imageData, tableData)
     } else if (process === "Edit") {
       handleEditedData(data, UserData?._id)
