@@ -17,7 +17,7 @@ const staffSchema = new Schema(
     },
     mobile: {
       type: String,
-      required: [true, "Mobile number is required"],
+
       match: /^[0-9]{10}$/ // Example for a 10-digit Indian number
     },
 
@@ -47,11 +47,8 @@ const staffSchema = new Schema(
     },
     bloodgroup: {
       type: String,
-      required: [true, "Blood group is required"],
-      enum: {
-        values: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
-        message: "{VALUE} is not a valid blood group"
-      }
+
+      
     },
     gender: {
       type: String
@@ -80,9 +77,22 @@ const staffSchema = new Schema(
     assignedto: {
       type: String
     },
-    imageUrl: {
-      type: String
-    }
+    profileUrl: {
+      type: [String]
+    },
+    documentUrl: {
+      type: [String]
+    },
+    selected: [
+      {
+        company_id: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
+        companyName: { type: String },
+        branch_id: { type: mongoose.Schema.Types.ObjectId, ref: "Branch" },
+        branchName: { type: String },
+        section_id: { type: mongoose.Schema.Types.ObjectId, ref: "Brand" },
+        sectionName: { type: String}
+      }
+    ]
     // Other staff-specific fields
   },
   { timestamps: true }

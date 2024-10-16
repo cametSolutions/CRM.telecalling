@@ -5,12 +5,13 @@ import toast from "react-hot-toast"
 import { useNavigate } from "react-router-dom"
 function UserRegistration() {
   const navigate = useNavigate()
-  const handleSubmit = async (userData, image) => {
+  const handleSubmit = async (userData, image, tabledata) => {
+    console.log(tabledata)
     console.log("image", image)
     try {
       const response = await api.post(
         "/auth/userRegistration",
-        { userData, image },
+        { userData, image, tabledata },
         {
           withCredentials: true
         }

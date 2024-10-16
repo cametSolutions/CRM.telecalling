@@ -6,9 +6,11 @@ import generateToken from "../utils/generateToken.js"
 import LeaveRequest from "../model/primaryUser/leaveRequestSchema.js"
 
 export const Register = async (req, res) => {
-  const { userData, image } = req.body
+  const { userData, image, tabledata } = req.body
   const { name, email, mobile, password, role, ...otherfields } = userData
-  const { imageUrl } = image
+  const { profileUrl, documentUrl } = image
+
+  console.log("pro,", profileUrl)
 
   if (role === "Admin") {
     const admin = await Admin.findOne({ email })
@@ -81,7 +83,9 @@ export const Register = async (req, res) => {
           designation,
           department,
           assignedto,
-          imageUrl
+          profileUrl,
+          documentUrl,
+          selected: tabledata
         })
 
         const savedstaff = await staff.save()
@@ -101,6 +105,7 @@ export const Register = async (req, res) => {
     }
   }
 }
+
 export const UpdateUserandAdmin = async (req, res) => {
   const { userData, userId } = req.body
   const { role } = userData

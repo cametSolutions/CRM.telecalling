@@ -49,7 +49,7 @@ export default function AdminHeader() {
     { to: "/admin/masters/target", label: "Target" },
     { to: "/admin/masters/product", label: "Product" },
     { to: "/admin/masters/inventory", label: "Inventory", hasChildren: true },
-    { to: "/admin/masters/customerImport", label: "Customer Import" },
+
     { to: "/admin/masters/partners", label: "Partners" },
     { to: "/admin/masters/department", label: "Department" }
   ]
@@ -337,10 +337,11 @@ export default function AdminHeader() {
                 className="w-20 h-20 rounded-full" // Add styling as needed
               />
             )} */}
-            <span className="text-gray-700 mx-4 rounded-md cursor-pointer"
-             onMouseEnter={() => setProfileMenuOpen(true)}
-             onMouseLeave={() => setProfileMenuOpen(false)}
-             >
+            <span
+              className="text-gray-700 mx-4 rounded-md cursor-pointer"
+              onMouseEnter={() => setProfileMenuOpen(true)}
+              onMouseLeave={() => setProfileMenuOpen(false)}
+            >
               {user?.name || "Profile"}
             </span>
             {profileMenuOpen && (
