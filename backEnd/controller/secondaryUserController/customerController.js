@@ -180,11 +180,44 @@ export const customerCallRegistration = async (req, res) => {
         const callToUpdate = user.callregistration.find(
           (call) => call.timedata.token === token
         )
+        console.log("calldata", calldata)
+        console.log("calltoupadatae", callToUpdate)
+        // Function to convert "HH:MM:SS" format to total seconds
+        function timeToSeconds(duration) {
+          const parts = duration.split(":").map(Number) // split into [hours, minutes, seconds]
+          const hours = parts[0] || 0
+          const minutes = parts[1] || 0
+          const seconds = parts[2] || 0
+          return hours * 3600 + minutes * 60 + seconds // convert all to seconds
+        }
+
+        // Function to convert total seconds back to "HH:MM:SS" format
+        function secondsToTime(totalSeconds) {
+          const hours = Math.floor(totalSeconds / 3600)
+            .toString()
+            .padStart(2, "0")
+          const minutes = Math.floor((totalSeconds % 3600) / 60)
+            .toString()
+            .padStart(2, "0")
+          const seconds = (totalSeconds % 60).toString().padStart(2, "0")
+          return `${hours}:${minutes}:${seconds}`
+        }
+
+        // Assuming callToUpdate.timedata.duration and calldata.timedata.duration are in "HH:MM:SS" format
+        const duration1InSeconds = timeToSeconds(callToUpdate.timedata.duration)
+        const duration2InSeconds = timeToSeconds(calldata.timedata.duration)
+
+        // Add the durations
+        const totalDurationInSeconds = duration1InSeconds + duration2InSeconds
         if (callToUpdate) {
           // Update the fields with the new data
-          callToUpdate.timedata = callToUpdate.timedata+calldata.timedata
+
+          callToUpdate.timedata.startTime = calldata.timedata.startTime
+          callToUpdate.timedata.endTime = calldata.timedata.endTime
+          // Convert the total duration back to "HH:MM:SS" format
+          callToUpdate.timedata.duration = secondsToTime(totalDurationInSeconds)
+          callToUpdate.timedata.token = calldata.timedata.token
           callToUpdate.formdata = calldata.formdata
-          callToUpdate.userName = calldata.userName
           callToUpdate.product = calldata.product
           callToUpdate.license = calldata.license
           callToUpdate.branchName = calldata.branchName

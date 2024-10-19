@@ -103,6 +103,7 @@ const CallregistrationList = () => {
         }
       })
     })
+    console.log("todayscall", todaysCallsCount)
 
     return todaysCallsCount
   }
@@ -525,12 +526,20 @@ const CallregistrationList = () => {
                               <strong>Description:</strong>{" "}
                               {item?.formdata?.description || "N/A"}
                             </td>
+
                             <td
                               colSpan="4"
                               className="py-1 px-8 text-sm text-black text-left"
                             >
                               <strong>Duration:</strong>{" "}
-                              {item?.formdata?.description || "N/A"}
+                              {/* {item?.timedata?.duration || "N/A"} */}
+                              <span className="ml-2">{`${Math.floor(
+                                (new Date() - new Date(item.calls?.createdAt)) /
+                                  (1000 * 60 * 60 * 24)
+                              )} days`}</span>
+                              <span className="ml-1">
+                                {item?.timedata?.duration || "N/A"}
+                              </span>
                             </td>
                             <td
                               colSpan="4"
@@ -630,14 +639,29 @@ const CallregistrationList = () => {
                             style={{ height: "5px" }}
                           >
                             <td
-                              colSpan="6"
+                              colSpan="4"
                               className="py-1 px-8 text-sm text-black text-left"
                             >
                               <strong>Description:</strong>{" "}
                               {item?.formdata?.description || "N/A"}
                             </td>
                             <td
-                              colSpan="6"
+                              colSpan="4"
+                              className="py-1 px-8 text-sm text-black text-left"
+                            >
+                              <strong>Duration:</strong>
+                              {""}
+                              <span className="ml-2">{`${Math.floor(
+                                (new Date(item.calls?.updatedAt) -
+                                  new Date(item.calls?.createdAt)) /
+                                  (1000 * 60 * 60 * 24)
+                              )} days`}</span>
+                              <span className="ml-1">
+                                {item?.timedata?.duration || "N/A"}
+                              </span>
+                            </td>
+                            <td
+                              colSpan="4"
                               className="py-1 px-12 text-sm text-black text-right"
                             >
                               <strong>Solution:</strong>{" "}
