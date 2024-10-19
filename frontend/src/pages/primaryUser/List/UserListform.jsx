@@ -18,12 +18,13 @@ const UserListform = () => {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
   const [users, setUser] = useState([])
-  const { data: allusers, loading } = UseFetch("/auth/getallUsers")
+  const { data, loading } = UseFetch("/auth/getallUsers")
   useEffect(() => {
-    if (allusers) {
+    if (data) {
+      const { allusers } = data
       setUser(allusers)
     }
-  }, [allusers])
+  }, [data])
   console.log("hiii")
   const handleSearch = debounce((query) => {
     const input = query.trim()
@@ -94,7 +95,209 @@ const UserListform = () => {
             <FaPrint className="mr-2" />
           </button>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-auto">
+          <table className="min-w-full bg-white border border-gray-300 text-center">
+            <thead className="text-center">
+              <tr>
+                <th className="py-2 px-4 border-b border-gray-300">No</th>
+                <th className="py-2 px-4 border-b border-gray-300">Branch</th>
+
+                <th className="py-2 px-4 border-b border-gray-300">
+                  User Name
+                </th>
+                <th className="py-2 px-4 border-b border-gray-300">UserId</th>
+                <th className="py-2 px-4 border-b border-gray-300">Mobile</th>
+                <th className="py-2 px-4 border-b border-gray-300">
+                  Designation
+                </th>
+                <th className="py-2 px-4 border-b border-gray-300">Role</th>
+                <th className="py-2 px-4 border-b border-gray-300">
+                  AssignedTo
+                </th>
+                <th className="py-2 px-4 border-b border-gray-300">Edit</th>
+                <th className="py-2 px-4 border-b border-gray-300">Delete</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200 text-center">
+              {users?.length > 0 ? (
+                users.map((user, index) => {
+                  // If user has a 'selected' array, map over it; otherwise, return a single row with user details
+                  if (user?.selected?.length > 0) {
+                    return user.selected.map((item, itemIndex) => (
+                      <tr
+                        key={`${user._id}-${itemIndex}`}
+                        className="text-center"
+                      >
+                        <td className="py-3 text-sm text-black">
+                          {itemIndex === 0 ? index + 1 : ""}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {item?.branchName}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.name}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.email}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.mobile}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.designation}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.role}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.assignedto}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-xl text-black text-center">
+                          <div className="flex justify-center items-center">
+                            <CiEdit
+                              onClick={() =>
+                                navigate("/admin/masters/userEdit", {
+                                  state: {
+                                    user,
+                                    selected: item
+                                  }
+                                })
+                              }
+                              className="cursor-pointer"
+                            />
+                          </div>
+                        </td>
+                        <td className="py-3 whitespace-nowrap  text-black">
+                          <DeleteAlert onDelete={handleDelete} Id={user._id} />
+                        </td>
+                      </tr>
+                    ))
+                  } else {
+                    // If user has no 'selected' items, render a single row
+                    return (
+                      <tr key={user._id} className="text-center">
+                        <td className="py-3 text-sm text-black">{index + 1}</td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {/* No branchName if 'selected' is empty */}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.name}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.email}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.mobile}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.designation}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.role}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.assignedto}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-xl text-black text-center">
+                          <div className="flex justify-center items-center">
+                            <CiEdit
+                              onClick={() =>
+                                navigate("/admin/masters/userEdit", {
+                                  state: {
+                                    user
+                                  }
+                                })
+                              }
+                              className="cursor-pointer"
+                            />
+                          </div>
+                        </td>
+                        <td className="py-3 whitespace-nowrap  text-black">
+                          <DeleteAlert onDelete={handleDelete} Id={user._id} />
+                        </td>
+                      </tr>
+                    )
+                  }
+                })
+              ) : (
+                <tr>
+                  <td
+                    colSpan="11"
+                    className="px-4 py-4 text-center text-gray-500"
+                  >
+                    {loading ? loading : "No customers found."}
+                  </td>
+                </tr>
+              )}
+
+              {/* {users?.length > 0 ? (
+                users.map((user, index) =>
+                  user?.selected?.map((item, itemIndex) => (
+                    <tr
+                      key={`${user._id}-${itemIndex}`}
+                      className="text-center"
+                    >
+                      <td className="py-3 text-sm text-black">
+                        {itemIndex === 0 ? index + 1 : ""}
+                      </td>
+                      <td className="py-3 whitespace-nowrap text-sm text-black">
+                        {item?.branchName}
+                      </td>
+                     
+                      <td className="py-3 whitespace-nowrap text-sm text-black">
+                        {user?.name}
+                      </td>
+                      <td className="py-3 whitespace-nowrap text-sm text-black">
+                        {user?.email}
+                      </td>
+                      <td className="py-3 whitespace-nowrap text-sm text-black">
+                        {user?.mobile}
+                      </td>
+                      <td className="py-3 whitespace-nowrap text-sm text-black">
+                        {user?.designation}
+                      </td>
+                      <td className="py-3 whitespace-nowrap text-sm text-black">
+                        {user?.role}
+                      </td>
+                      <td className="py-3 whitespace-nowrap text-sm text-black">
+                        {user?.assignedto}
+                      </td>
+                      <td className="py-3 whitespace-nowrap text-xl text-black text-center">
+                        <div className="flex justify-center items-center">
+                          <CiEdit
+                            onClick={() =>
+                              navigate("/admin/masters/userEdit", {
+                                state: {
+                                  user,
+                                  selected: item
+                                }
+                              })
+                            }
+                            className="cursor-pointer"
+                          />
+                        </div>
+                      </td>
+                      <td className="py-3 whitespace-nowrap  text-black">
+                        <DeleteAlert onDelete={handleDelete} Id={user._id} />
+                      </td>
+                    </tr>
+                  ))
+                )
+              ) : (
+                <tr>
+                  <td
+                    colSpan="11"
+                    className="px-4 py-4 text-center text-gray-500"
+                  >
+                    {loading ? loading : "No customers found."}
+                  </td>
+                </tr>
+              )} */}
+            </tbody>
+          </table>
+        </div>
+
+        {/* <div className="overflow-x-auto overflow-y-auto">
           <table className="min-w-full bg-white border border-gray-300">
             <thead className="text-center">
               <tr>
@@ -118,42 +321,44 @@ const UserListform = () => {
                 <th className="py-2 px-4 border-b border-gray-300 ">Delete</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200 text-center">
+            <tbody className="bg-white divide-y divide-gray-200 ">
               {users.length > 0 ? (
                 users.map((user, index) =>
                   user.selected.map((item, itemIndex) => (
-                    <tr key={`${user._id}-${itemIndex}`}>
-                      <td className="px-2 py-3 text-sm text-black">
-                        {/* {index + 1}
-                         */}
+                    <tr
+                      key={`${user._id}-${itemIndex}`}
+                      className="text-center"
+                    >
+                      <td className=" py-3 text-sm text-black text-center">
+                        
                         {itemIndex === 0 ? index + 1 : ""}
                       </td>
-                      <td className="px-2 py-3 text-sm text-black">
+                      <td className=" py-3 text-sm text-black text-center">
                         {item?.branchName}
                       </td>
-                      <td className="px-2 py-3 text-sm text-black">
+                      <td className=" py-3 text-sm text-black text-center">
                         {item?.sectionName}
                       </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
+                      <td className=" py-3 whitespace-nowrap text-sm text-black text-center">
                         {user?.name}
                       </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
+                      <td className=" py-3 whitespace-nowrap text-sm text-black text-center">
                         {user?.email}
                       </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
+                      <td className=" py-3 whitespace-nowrap text-sm text-black text-center">
                         {user?.mobile}
                       </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
+                      <td className="py-3 whitespace-nowrap text-sm text-black text-center">
                         {user?.designation}
                       </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
+                      <td className="py-3 whitespace-nowrap text-sm text-black text-center">
                         {user?.role}
                       </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
+                      <td className=" py-3 whitespace-nowrap text-sm text-black text-center">
                         {user?.assignedto}
                       </td>
 
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
+                      <td className="py-3 whitespace-nowrap text-xl text-black text-center  ">
                         <CiEdit
                           onClick={() =>
                             navigate("/admin/masters/userEdit", {
@@ -163,10 +368,10 @@ const UserListform = () => {
                               }
                             })
                           }
-                          className="cursor-pointer"
+                          className="cursor-pointer "
                         />
                       </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
+                      <td className=" py-3 whitespace-nowrap text-sm text-black text-center">
                         <DeleteAlert onDelete={handleDelete} Id={user._id} />
                       </td>
                     </tr>
@@ -184,7 +389,7 @@ const UserListform = () => {
               )}
             </tbody>
           </table>
-        </div>
+        </div> */}
       </div>
     </div>
   )

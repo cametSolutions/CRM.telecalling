@@ -31,8 +31,9 @@ const CustomerAdd = ({
   const [showTable, setShowTable] = useState(false)
   const [tableData, setTableData] = useState([])
   const [editState, seteditState] = useState(false)
-  const [licenseAvailable, setLicenseAvailable] = useState(true)
+
   const [editIndex, setEditIndex] = useState(null)
+  const [licenseAvailable, setLicenseAvailable] = useState(true)
   const [license, setLicense] = useState([])
 
   const [isLicense, setlicenseExist] = useState([])
@@ -120,7 +121,7 @@ const CustomerAdd = ({
       console.log("selc", selected)
       setTableObject({
         company_id: selected.company_id || "",
-        companyName: selected.comapanyName || "",
+        companyName: selected.companyName || "",
         branch_id: selected.branch_id || "",
         branchName: selected.branchName || "",
         product_id: selected.product_id || "",
@@ -266,35 +267,8 @@ const CustomerAdd = ({
     // checkLicenseNumber(debouncedLicenseNo)
   }, [debouncedLicenseNo])
 
-  console.log("typeof dte", tableObject.amcstartDate)
-  // const productSelected = watch("productName")
-  // const companySelected = watch("companyName")
-  // const branchSelected = watch("branchName")
-  // // const brandSelected = watch("brandName")
-  // const licenseSelected = watch("licensenumber")
-  // const softwaretradeSelected = watch("softwareTrade")
-  // const noofuserSelected = watch("noofusers")
-  // const customerAddDateSelected = watch("customerAddDate")
-  // const amcstartDateSelected = watch("amcstartDate")
-  // const amcendDateSelected = watch("amcendDate")
-  // const amcAmountSelected = watch("amcAmount")
   console.log(isLicense)
   const handleTableData = () => {
-    // const checklicense = isLicense.find((item) => item === debouncedLicenseNo)
-    // const licensecheck = license.find(
-    //   (item) => item.licensenumber === debouncedLicenseNo
-    // )
-    // console.log(checklicense)
-    // console.log(licensecheck)
-    // if (checklicense) {
-    //   console.log(checklicense)
-    //   console.log(licensecheck)
-    //   setLicenseAvailable(false)
-    //   console.log("checked false at islicense")
-
-    //   toast.error("license number is already exist")
-    // }
-
     if (!tableObject.company_id.trim() === "") {
       toast.error("please select a company")
       return
@@ -386,7 +360,8 @@ const CustomerAdd = ({
 
     // reset()
   }
-  console.log(tableObject)
+  console.log("tableobject", tableObject)
+  console.log("tabledata", tableData)
   console.log(isLicense)
   useEffect(() => {
     if (productError) {

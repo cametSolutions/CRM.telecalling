@@ -10,14 +10,13 @@ function UserEdit() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, selected } = location.state || {}
-  console.log("user", user)
-  console.log("user", selected)
+  
 
-  const handleSubmit = async (userData, userId) => {
+  const handleSubmit = async (userData, userId, tabledata) => {
     try {
       const response = await api.post(
         "/auth/userEdit",
-        { userData, userId },
+        { userData,userId,tabledata},
         {
           withCredentials: true
         }

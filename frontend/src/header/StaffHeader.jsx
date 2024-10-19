@@ -16,10 +16,12 @@ export default function StaffHeader() {
   const navigate = useNavigate()
   useEffect(() => {
     const storedUser = localStorage.getItem("user")
+    console.log("localsotoratr", storedUser)
     if (storedUser) {
       setUser(JSON.parse(storedUser)) // Parse the user data from string to object
     }
   }, [])
+  console.log("afiterlogin", user)
   const logout = () => {
     // Clear the authentication token from local storage
     localStorage.removeItem("authToken")
@@ -324,10 +326,10 @@ export default function StaffHeader() {
             onMouseEnter={() => setProfileMenuOpen(true)}
             onMouseLeave={() => setProfileMenuOpen(false)}
           /> */}
-          {user?.profileUrl && (
+          {user?.documentUrl && (
             <img
-              src={user?.profileUrl}
-              // alt={`${userData.name}'s profile`}
+              src={user?.documentUrl}
+              alt={`${user?.name}'s profile`}
               onMouseEnter={() => setProfileMenuOpen(true)}
               onMouseLeave={() => setProfileMenuOpen(false)}
               className="w-10 h-10 rounded-full" // Add styling as needed
