@@ -27,17 +27,9 @@ const staffSchema = new Schema(
       required: [true, "Password is required"]
     },
     role: {
-      type: String,
-      required: [true, "Role is required"],
-      enum: [
-        "Staff",
-        "Admin",
-        "Teamleader",
-        "Hr",
-        "Assistantmanager",
-        "Seniormanager"
-      ]
+      type: String
     },
+
     isVerified: {
       type: Boolean,
       default: true
@@ -46,9 +38,7 @@ const staffSchema = new Schema(
       type: String
     },
     bloodgroup: {
-      type: String,
-
-      
+      type: String
     },
     gender: {
       type: String
@@ -78,7 +68,7 @@ const staffSchema = new Schema(
       type: String
     },
     profileUrl: {
-      type: String
+      type: [String]
     },
     documentUrl: {
       type: [String]
@@ -90,7 +80,7 @@ const staffSchema = new Schema(
         branch_id: { type: mongoose.Schema.Types.ObjectId, ref: "Branch" },
         branchName: { type: String },
         section_id: { type: mongoose.Schema.Types.ObjectId, ref: "Brand" },
-        sectionName: { type: String}
+        sectionName: { type: String }
       }
     ]
     // Other staff-specific fields
@@ -141,6 +131,7 @@ staffSchema.pre("save", async function (next) {
   try {
     const salt = await bcrypt.genSalt(10)
     this.password = await bcrypt.hash(this.password, salt)
+    console.log("pssss", this.password)
     next()
   } catch (error) {
     next(error)

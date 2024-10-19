@@ -158,10 +158,7 @@ export const GetLicense = async (req, res) => {
   }
 }
 
-
-
 export const customerCallRegistration = async (req, res) => {
-  
   try {
     const { customerid, customer } = req.query // Get customerid from query
     const calldata = req.body // Assuming calldata is sent in the body
@@ -185,7 +182,7 @@ export const customerCallRegistration = async (req, res) => {
         )
         if (callToUpdate) {
           // Update the fields with the new data
-          callToUpdate.timedata = calldata.timedata
+          callToUpdate.timedata = callToUpdate.timedata+calldata.timedata
           callToUpdate.formdata = calldata.formdata
           callToUpdate.userName = calldata.userName
           callToUpdate.product = calldata.product

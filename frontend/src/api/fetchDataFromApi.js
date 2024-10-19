@@ -6,7 +6,6 @@ export const fetchDataFromApi = async (url, params) => {
       withCredentials: true
     })
 
-    console.log("responsedata", response.data)
     return response.data
   } catch (error) {
     console.log(error)

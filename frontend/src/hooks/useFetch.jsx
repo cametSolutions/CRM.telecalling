@@ -61,7 +61,6 @@ const UseFetch = (url) => {
       try {
         const result = await fetchDataFromApi(url)
         if (result.data) {
-          console.log("datain usefetfh", result.data)
           setData(result.data)
           setLoading(false)
         } else {
