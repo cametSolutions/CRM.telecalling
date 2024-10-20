@@ -12,6 +12,24 @@ function CustomerEdit() {
   const customerId = customer._id
   console.log("selected", selected)
   console.log(customerId)
+  function formatDateString(dateString) {
+    const dateObject = new Date(dateString)
+    const year = dateObject.getUTCFullYear()
+    const month = String(dateObject.getUTCMonth() + 1).padStart(2, "0") // Months are zero-indexed
+    const day = String(dateObject.getUTCDate()).padStart(2, "0")
+    return `${year}-${month}-${day}`
+  }
+
+  // Iterate over the keys in the selected object
+  for (const key in selected) {
+    if (
+      selected.hasOwnProperty(key) &&
+      key.includes("Date") // Check for date fields
+    ) {
+      // Format the date
+      selected[key] = formatDateString(selected[key])
+    }
+  }
   const handleSubmit = async (customerData, tableData) => {
     try {
       const response = await api.post(

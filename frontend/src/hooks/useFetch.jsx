@@ -45,8 +45,9 @@ import { fetchDataFromApi } from "../api/fetchDataFromApi"
 const UseFetch = (url) => {
   const [refresh, setRefresh] = useState(false)
   const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(null)
+  const [loading, setLoading] = useState("loading...")
   const [error, setError] = useState(null)
+  console.log("hii")
 
   useEffect(() => {
     if (!url) {
@@ -54,20 +55,22 @@ const UseFetch = (url) => {
     }
 
     const fetchData = async () => {
-      setLoading("loading...")
+      // setLoading("loading...")
       setData(null)
       setError(null)
 
       try {
         const result = await fetchDataFromApi(url)
-        if (result.data) {
+        if (result) {
+          
           setData(result.data)
           setLoading(false)
         } else {
           setError("Expected data to be an array")
-          console.error("Expected data to be an array", result)
+          console.error("Error", result)
         }
       } catch (err) {
+        console.log("errrrincatch")
         setLoading(false)
         setError(err.message || "Something went wrong!")
       }
@@ -77,6 +80,7 @@ const UseFetch = (url) => {
   }, [url, refresh])
 
   const refreshHook = () => {
+    console.log("refredh")
     setRefresh(!refresh)
   }
 

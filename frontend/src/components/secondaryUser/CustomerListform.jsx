@@ -30,11 +30,12 @@ const CustomerListform = () => {
     error
   } = UseFetch("/customer/getCustomer")
   useEffect(() => {
+    console.log(customerData)
     if (customerData && customerData.length > 0) {
       setDisplayedCustomers(customerData)
       // setDisplayedCustomers(customerlist.slice(0, loadMoreCount))
     }
-  }, [customerData, searchQuery])
+  }, [customerData])
 
   //Handle search with lodash debounce to optimize search performance
   const handleSearch = debounce((query) => {
@@ -65,44 +66,6 @@ const CustomerListform = () => {
 
     // Reset to initial count after filtering
   }, 300)
-
-  // const handleInputChange = (inputValue) => {
-  //   setSearch(inputValue)
-  //   if (inputValue.length > 0) {
-  //     fetchCustomerData(inputValue)
-  //   } else {
-  //     setCustomerData([])
-  //   }
-  // }
-
-  // Handle scroll event on the table container to load more data
-  // const handleScroll = () => {
-  //   const tableContainer = tableContainerRef.current
-  //   if (tableContainer) {
-  //     const { scrollTop, scrollHeight, clientHeight } = tableContainer
-
-  //     // Check if user has scrolled to the bottom of the table container
-  //     if (scrollTop + clientHeight >= scrollHeight - 50) {
-  //       // Load more customers if available
-  //       if (displayedCustomers.length < allCustomers.length) {
-  //         setLoadMoreCount((prev) => prev + 6) // Increase load count by 6 on each scroll
-  //       }
-  //     }
-  //   }
-  // }
-
-  // useEffect(() => {
-  //   const tableContainer = tableContainerRef.current
-  //   if (tableContainer) {
-  //     tableContainer.addEventListener("scroll", handleScroll)
-  //   }
-
-  //   return () => {
-  //     if (tableContainer) {
-  //       tableContainer.removeEventListener("scroll", handleScroll) // Clean up event listener
-  //     }
-  //   }
-  // }, [displayedCustomers])
 
   // Function to toggle showing full address
   const handleShowMore = (customerId) => {
@@ -139,35 +102,37 @@ const CustomerListform = () => {
         </div>
 
         <hr className="border-t-2 border-gray-300 mb-3" />
+        <div className="flex justify-between">
+          <div className="flex flex-wrap space-x-4 mb-4">
+            <Link
+              to="/admin/masters/customerRegistration"
+              className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center"
+            >
+              <FaUserPlus className="mr-2" />
+            </Link>
+            <button className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center">
+              <FaRegFileExcel className="mr-2" />
+            </button>
+            <button className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center">
+              <FaFilePdf className="mr-2" />
+            </button>
+            <button className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center">
+              <FaPrint className="mr-2" />
+            </button>
 
-        <div className="flex flex-wrap space-x-4 mb-2">
-          <Link
-            to="/admin/masters/customerRegistration"
-            className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center"
-          >
-            <FaUserPlus className="mr-2" />
-          </Link>
-          <button className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center">
-            <FaRegFileExcel className="mr-2" />
-          </button>
-          <button className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center">
-            <FaFilePdf className="mr-2" />
-          </button>
-          <button className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center">
-            <FaPrint className="mr-2" />
-          </button>
-
-          <Link
-            to="/admin/masters/pendingCustomer"
-            className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center"
-          >
-            <FaHourglassHalf className="mr-2" />
-          </Link>
+            <Link
+              to="/admin/masters/pendingCustomer"
+              className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center"
+            >
+              <FaHourglassHalf className="mr-2" />
+            </Link>
+          </div>
+          <label className="px-6">{displayedCustomers?.length}</label>
         </div>
 
         <div
           // ref={tableContainerRef}
-          className="overflow-y-auto h-[500px] " // Fixed height for scrolling
+          className="overflow-y-auto max-h-96" // Fixed height for scrolling
         >
           <table className="min-w-full bg-white ">
             <thead className="bg-gray-200 sticky top-0 z-40">
@@ -250,7 +215,7 @@ const CustomerListform = () => {
                                 onClick={() => handleShowMore(customer?._id)}
                                 className="text-blue-500"
                               >
-                                Show more
+                                ...
                               </button>
                             )}
                           </span>

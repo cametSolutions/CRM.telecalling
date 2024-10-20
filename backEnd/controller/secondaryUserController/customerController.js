@@ -110,30 +110,39 @@ export const CustomerEdit = async (req, res) => {
   }
 }
 export const GetCustomer = async (req, res) => {
+  console.log("hii")
   const { search } = req.query
 
   try {
     let searchCriteria = {}
+    if (search) {
+      if (!isNaN(search)) {
+        // Search by license number or mobile number using partial match
+        const searchRegex = new RegExp(`^${search}`, "i")
 
-    if (!isNaN(search)) {
-      // Search by license number or mobile number using partial match
-      const searchRegex = new RegExp(`^${search}`, "i")
+        searchCriteria = {
+          $or: [{ "selected.license_no": searchRegex }, { mobile: searchRegex }]
+        }
+      } else {
+        // Search by customer name
+        searchCriteria = { customerName: new RegExp(search, "i") }
+        console.log("search ", searchCriteria)
+      }
 
-      searchCriteria = {
-        $or: [{ "selected.license_no": searchRegex }, { mobile: searchRegex }]
+      const customers = await Customer.find(searchCriteria)
+      if (customers.length === 0) {
+        return res.json({ message: "No customer found" })
+      } else {
+        return res.json({ message: "Customer(s) found", data: customers })
       }
     } else {
-      // Search by customer name
-      searchCriteria = { customerName: new RegExp(search, "i") }
-      console.log("search ", searchCriteria)
-    }
+      const customers = await Customer.find()
+       if (customers.length === 0) {
+        return res.json({ message: "No customer found" })
+      } else {
+        return res.json({ message: "Customer(s) found", data: customers })
+      }
 
-    let customers = await Customer.find(searchCriteria)
-
-    if (customers.length === 0) {
-      res.json({ message: "No customer found" })
-    } else {
-      res.json({ message: "Customer(s) found", data: customers })
     }
   } catch (error) {
     console.error("Error fetching customer data:", error.message)

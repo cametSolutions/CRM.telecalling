@@ -114,10 +114,11 @@ const CustomerAdd = ({
   }, [products, selectedProduct])
 
   const debouncedLicenseNo = useDebounce(tableObject.licensenumber, 500)
-  console.log(isLicense)
+  console.log(tableObject)
   useEffect(() => {
     const ignored = ["company_id", "branch_id", "product_id"]
     if (selected && customer) {
+      setShowTable(true)
       console.log("selc", selected)
       setTableObject({
         company_id: selected.company_id || "",
@@ -129,7 +130,7 @@ const CustomerAdd = ({
         licensenumber: selected.licensenumber || "",
         noofusers: selected.noofusers || "",
         version: selected.version || "",
-        customerAddDate: selected.version || "",
+        customerAddDate: selected.customerAddDate || "",
         amcstartDate: selected.amcstartDate || "",
         amcendDate: selected.amcendDate || "",
         amcAmount: selected.amcAmount || "",
@@ -143,10 +144,9 @@ const CustomerAdd = ({
         isActive: selected.isActive || ""
       })
       Object.keys(selected).forEach((key) => {
+        console.log(selected.amcstartDate)
         if (!ignored.includes(key)) {
           if (key === "productName") {
-            console.log("hii")
-            console.log("selcdpror", selected.product_id)
             setSelectedProduct(selected.product_id)
             setValue(key, selected.product_id)
             console.log("selell", selectedProduct)
@@ -155,7 +155,8 @@ const CustomerAdd = ({
             console.log("sdffdf", selected.company_id)
 
             setSelectedCompany(selected.company_id)
-            setValue(key, selected.company_id)
+            console.log(selectedCompany)
+            setValue(key, selectedCompany)
           } else if (key === "branchName") {
             console.log("sdffdf", selected.branch_id)
 
@@ -163,8 +164,12 @@ const CustomerAdd = ({
             setSelectedBranch(selected.branch_id)
             setValue(key, selected.branch_id)
           } else {
-            setValue(key, selected[key])
+            setValue(key, selected[key]) // Set the value as it is
           }
+          //  else {
+          // //   console.log(selected[key])
+          // //   setValue(key, new Date(selected[key]))
+          // // }
         }
       })
     }
@@ -216,13 +221,16 @@ const CustomerAdd = ({
     selectedCompany,
     selectedProduct,
     selectedBranch,
+    filteredCompanies,
+    filteredBranches,
     products
   ])
-
+  console.log("hi")
   useEffect(() => {
     // If there's a debounced license number, check its uniqueness
     console.log("lice", license)
-    if (debouncedLicenseNo) {
+    if (debouncedLicenseNo.length > 0) {
+      console.log("hii")
       if (license.length > 0 && isLicense.length === 0) {
         const checkLicense = license.find(
           (item) => item.licensenumber === debouncedLicenseNo
@@ -258,68 +266,25 @@ const CustomerAdd = ({
             toast.success("license number is available")
           }
         } else {
+          console.log("hii")
           setLicenseAvailable(true)
           toast.success("license number is available")
         }
       }
     }
+    console.log("hii")
 
     // checkLicenseNumber(debouncedLicenseNo)
   }, [debouncedLicenseNo])
 
   console.log(isLicense)
   const handleTableData = () => {
-    if (!tableObject.company_id.trim() === "") {
-      toast.error("please select a company")
-      return
-    } else if (!tableObject.branch_id.trim() === "") {
-      toast.error("please select a branch")
-      return
-    } else if (!tableObject.product_id.trim() === "") {
-      toast.error("please select a product")
-      return
-    } else if (!tableObject.licensenumber.trim() === "") {
-      toast.error("please add a license number")
-      return
-    } else if (!tableObject.noofusers.trim() === "") {
-      toast.error("please add noofusers")
-      return
-    } else if (!tableObject.version.trim() === "") {
-      toast.error("please add version")
-      return
-    } else if (!tableObject.customerAddDate.trim() === "") {
-      toast.error("please choose a date")
-      return
-    } else if (!tableObject.amcstartDate.trim() === "") {
-      toast.error("please add amc start date")
-      return
-    } else if (!tableObject.amcendDate.trim() === "") {
-      toast.error("please select amc end date")
-      return
-    } else if (!tableObject.amcAmount.trim() === "") {
-      toast.error("please fill amc amount")
-      return
-    } else if (!tableObject.amcDescription.trim() === "") {
-      toast.error("please add amc description")
-      return
-    } else if (!tableObject.licenseExpiryDate.trim() === "") {
-      toast.error("please add license expiryDate")
-      return
-    } else if (!tableObject.productAmount.trim() === "") {
-      toast.error("please add product amount")
-      return
-    } else if (!tableObject.productamountDescription.trim() === "") {
-      toast.error("please add product description")
-      return
-    } else if (!tableObject.tvuexpiryDate.trim() === "") {
-      toast.error("please add tvu expiryDate")
-      return
-    } else if (!tableObject.tvuAmount.trim() === "") {
-      toast.error("please add tvu amount")
-      return
-    } else if (!tableObject.tvuamountDescription.trim() === "") {
-      toast.error("please add tvu description")
-      return
+    for (const key in tableObject) {
+      if (typeof tableObject[key] === "string") {
+        tableObject[key] = tableObject[key].trim()
+      } else if (typeof tableObject[key] === "number") {
+        tableObject[key] = String(tableObject[key].trim())
+      }
     }
 
     if (editIndex !== null) {
@@ -354,15 +319,9 @@ const CustomerAdd = ({
       }
       console.log("tableobject", tableObject)
       setTableData((prev) => [...prev, tableObject])
-
-      // setlicenseExist((prev) => [...prev, tableObject.licensenumber])
     }
-
-    // reset()
   }
-  console.log("tableobject", tableObject)
-  console.log("tabledata", tableData)
-  console.log(isLicense)
+
   useEffect(() => {
     if (productError) {
       toast.error(
@@ -492,7 +451,7 @@ const CustomerAdd = ({
     setTableObject((prev) => ({
       ...prev,
       company_id: companyId,
-      companyName: foundCompany.companyName
+      companyName: foundCompany?.companyName
     }))
 
     console.log("hiii")
@@ -512,7 +471,7 @@ const CustomerAdd = ({
     setTableObject((prev) => ({
       ...prev,
       branch_id: branchId,
-      branchName: Branch.branchName
+      branchName: Branch?.branchName
     }))
 
     setShowTable(true)
@@ -521,18 +480,12 @@ const CustomerAdd = ({
   //now created
 
   useEffect(() => {
-    console.log("fittt", filteredCompanies)
-    console.log("filterdbrances", filteredBranches)
-    console.log("prod", products)
-    console.log("selet", selectedCompany)
     const company = filteredCompanies.find(
       (company) => company._id === selectedCompany
     )
     console.log("products", company)
     if (company) {
-      console.log("commmm", company)
       const branch = [company]
-      console.log("branch", branch)
 
       setfilteredBranches(branch)
     }
@@ -554,6 +507,7 @@ const CustomerAdd = ({
       toast.error("Failed to save customer!")
     }
   }
+  // console.log(tableObject.amcstartDate)
 
   return (
     <div className="container justify-center items-center min-h-screen p-8 bg-gray-100">
@@ -976,15 +930,15 @@ const CustomerAdd = ({
                   id="amcstartDate"
                   type="date"
                   {...register("amcstartDate")}
-                  onChange={
-                    (e) =>
-                      setTableObject({
-                        ...tableObject,
-                        amcstartDate: e.target.value
-                      })
+                  onChange={(e) => {
+                    // const dateValue = new Date(e.target.value)
+                    setTableObject({
+                      ...tableObject,
+                      amcstartDate: e.target.value
+                    })
 
                     // Update state on change
-                  }
+                  }}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
                 />
                 {errors.amcstartDate && (
