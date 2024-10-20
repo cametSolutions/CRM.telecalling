@@ -23,6 +23,7 @@ export default function CallRegistration() {
   } = useForm()
 
   const [customerData, setCustomerData] = useState([])
+  const [load, setloading] = useState(false)
   const [name, setName] = useState("")
   const [editform, setEditformdata] = useState({})
   const [productDetails, setProductDetails] = useState([])
@@ -43,7 +44,11 @@ export default function CallRegistration() {
   //   ? UseFetch(`/customer/getcallregister?customerid=${selectedCustomer._id}`)
   //    : { data: null }
 
-  const { data: registeredCall, refreshHook } = UseFetch(
+  const {
+    data: registeredCall,
+    loading,
+    refreshHook
+  } = UseFetch(
     `/customer/getcallregister?customerid=${
       selectedCustomer?._id || null
     }&customer=${selectedCustomer?.customerName || null}`
@@ -114,9 +119,21 @@ export default function CallRegistration() {
 
   useEffect(() => {
     if (registeredCall) {
-      setCallData(registeredCall.callregistration)
+      console.log("registeeredcalllllll", registeredCall)
+      const sortedData = registeredCall.callregistration.sort((a, b) => {
+        if (a.formdata.status === "pending" && b.formdata.status === "solved") {
+          return -1
+        }
+        if (a.formdata.status === "solved" && b.formdata.status === "pending") {
+          return 1
+        }
+        return 0 // No sorting for calls with the same status
+      })
+      setCallData(sortedData)
+      // setCallData(registeredCall.callregistration)
     }
   }, [registeredCall])
+  console.log("hii")
   useEffect(() => {
     // Set the default product if there's only one
     if (productDetails.length === 1) {
@@ -187,7 +204,9 @@ export default function CallRegistration() {
         }
       )
       if (response.status === 200) {
-        setCallData(response.data.updatedCall.callregistration)
+        refreshHook()
+        // setCallData(response.data.updatedCall.callregistration)
+
         socket.emit("updatedCalls")
       }
     } else {
@@ -220,12 +239,12 @@ export default function CallRegistration() {
         }
       )
       if (response.status === 200) {
-        setCallData(response.data.updatedCall.callregistration)
+        refreshHook()
+        // setCallData(response.data.updatedCall.callregistration)
+
         socket.emit("updatedCalls")
       }
     }
-
-    //callregistration api
   }
 
   const formatDateTime = (date) => {
@@ -326,6 +345,7 @@ export default function CallRegistration() {
     }
     setFormData(updatedData)
   }
+  console.log("CALLDATA", callData)
 
   return (
     <div className="container  justify-center items-center p-8 bg-gray-100">
@@ -740,135 +760,127 @@ export default function CallRegistration() {
                 </form>
 
                 <div className="mt-12 overflow-y-auto w-full max-h-60">
-                  <table className=" w-full divide-y divide-gray-200 rounded-xl ">
-                    <thead className="sticky top-0 z-30  bg-[#48CFCB] shadow">
-                      <tr className="">
-                        <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
-                          Token No
-                        </th>
-                        <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
-                          Start Time
-                        </th>
-                        <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
-                          End Time
-                        </th>
-                        <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
-                          Duration
-                        </th>
-                        <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
-                          Incoming Number
-                        </th>
-                        {/* <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
-                          Description
-                        </th>
-                        <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
-                          Solution
-                        </th> */}
-                        <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
-                          AttendedBy
-                        </th>
-                        <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
-                          CompletedBy
-                        </th>
-                        <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
-                          Status
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="  divide-gray-500">
-                      {callData?.map((call, index) => {
-                        const today = new Date().toISOString().split("T")[0]
-                        const startTimeRaw = call?.timedata?.startTime
-                        const callDate = startTimeRaw
-                          ? new Date(startTimeRaw.split(" ")[0])
-                              .toISOString()
-                              .split("T")[0]
-                          : null
-                        return (
-                          <>
-                            <tr
-                              key={index}
-                              className={`border border-b-0 ${
-                                call.formdata.status === "solved"
-                                  ? "bg-[#88D66C]"
-                                  : call?.formdata?.status === "pending"
-                                  ? callDate === today
-                                    ? "bg-orange-300"
-                                    : "bg-red-400"
-                                  : "bg-red-400"
-                              }`}
-                            >
-                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                {call.timedata.token}
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                {call.timedata.startTime}
-                              </td>
+                  {loading ? (
+                    <div className="text-center py-4">Loading...</div> // Show loading state
+                  ) : (
+                    <table className=" w-full divide-y divide-gray-200 rounded-xl ">
+                      <thead className="sticky top-0 z-30  bg-[#48CFCB] shadow">
+                        <tr className="">
+                          <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
+                            Token No
+                          </th>
+                          <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
+                            Start Time
+                          </th>
+                          <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
+                            End Time
+                          </th>
+                          <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
+                            Duration
+                          </th>
+                          <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
+                            Incoming Number
+                          </th>
 
-                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                {call.timedata.endTime}
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                {call.timedata.duration}
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                {call.formdata.incomingNumber}
-                              </td>
-                              {/* <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                              {call.formdata.description}
-                            </td>
-                            <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                              {call.formdata.solution}
-                            </td> */}
-                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                {call.formdata.attendedBy}
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                {call.formdata.completedBy}
-                              </td>
-                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                {call.formdata.status}
-                              </td>
-                            </tr>
-                            <tr
-                              className={`text-center border-t-0 border-gray-500 ${
-                                call?.formdata?.status === "solved"
-                                  ? "bg-[#88D66C]"
-                                  : call?.formdata?.status === "pending"
-                                  ? callDate === today
-                                    ? "bg-orange-300"
+                          <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
+                            AttendedBy
+                          </th>
+                          <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
+                            CompletedBy
+                          </th>
+                          <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
+                            Status
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="  divide-gray-500">
+                        {callData?.map((call, index) => {
+                          const today = new Date().toISOString().split("T")[0]
+                          const startTimeRaw = call?.timedata?.startTime
+                          const callDate = startTimeRaw
+                            ? new Date(startTimeRaw.split(" ")[0])
+                                .toISOString()
+                                .split("T")[0]
+                            : null
+                          return (
+                            <>
+                              <tr
+                                key={index}
+                                className={`border border-b-0 ${
+                                  call.formdata.status === "solved"
+                                    ? "bg-green-400"
+                                    : call?.formdata?.status === "pending"
+                                    ? callDate === today
+                                      ? "bg-yellow-400"
+                                      : "bg-red-400"
                                     : "bg-red-400"
-                                  : "bg-red-400"
-                              }`}
-                              style={{ height: "5px" }}
-                            >
-                              <td
-                                colSpan="3"
-                                className="py-1 px-8 text-sm text-black text-left"
+                                }`}
                               >
-                                <strong>Description:</strong>{" "}
-                                {call?.formdata?.description || "N/A"}
-                              </td>
-                              <td
-                                colSpan="3"
-                                className="py-1 px-12 text-sm text-black text-left"
+                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                  {call.timedata.token}
+                                </td>
+                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                  {/* {call.timedata.startTime} */}
+                                  {call?.createdAt
+                                    ? new Date(call?.createdAt)
+                                        .toISOString()
+                                        .split("T")[0]
+                                    : "N/A"}
+                                </td>
+
+                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                  {call.timedata.endTime}
+                                </td>
+                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                  {call.timedata.duration}
+                                </td>
+                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                  {call.formdata.incomingNumber}
+                                </td>
+
+                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                  {call.formdata.attendedBy}
+                                </td>
+                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                  {call.formdata.completedBy}
+                                </td>
+                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                  {call.formdata.status}
+                                </td>
+                              </tr>
+                              <tr
+                                className={`text-center border-t-0 border-gray-500 ${
+                                  call?.formdata?.status === "solved"
+                                    ? "bg-green-400"
+                                    : call?.formdata?.status === "pending"
+                                    ? callDate === today
+                                      ? "bg-yellow-400"
+                                      : "bg-red-400"
+                                    : "bg-red-400"
+                                }`}
+                                style={{ height: "5px" }}
                               >
-                                <strong>Solution:</strong>{" "}
-                                {call?.formdata?.solution || "N/A"}
-                              </td>
-                              <td
-                                colSpan="2"
-                                className="py-1 px-12 text-sm text-black text-left"
-                              >
-                                <strong>Incoming Number:</strong>{" "}
-                                {call?.formdata?.incomingNumber || "N/A"}
-                              </td>
-                            </tr>
-                          </>
-                        )
-                      })}
-                    </tbody>
-                  </table>
+                                <td
+                                  colSpan="4"
+                                  className="py-1 px-8 text-sm text-black text-left"
+                                >
+                                  <strong>Description:</strong>{" "}
+                                  {call?.formdata?.description || "N/A"}
+                                </td>
+                                <td
+                                  colSpan="4"
+                                  className="py-1 px-12 text-sm text-black text-left"
+                                >
+                                  <strong>Solution:</strong>{" "}
+                                  {call?.formdata?.solution || "N/A"}
+                                </td>
+                              </tr>
+                            </>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
             </div>

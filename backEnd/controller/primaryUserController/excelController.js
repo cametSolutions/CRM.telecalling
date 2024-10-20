@@ -9,98 +9,60 @@ import {
   Category
 } from "../../model/primaryUser/productSubDetailsSchema.js"
 
-// const excelDateToFormattedString = (value) => {
-//   // Check if the value is a serial (number) or a string
-//   if (typeof value === 'number') {
-//     // Handle Excel date serials
-//     const date1900 = new Date(1900, 0, 1); // Start date for Excel
-//     const jsDate = new Date(date1900.setDate(date1900.getDate() + value - 1));
-
-//     // Format the date to 'dd-MMM-yyyy'
-//     const options = { day: '2-digit', month: 'short', year: 'numeric' };
-//     return jsDate.toLocaleDateString('en-GB', options).replace(',', '');
-//   } else if (typeof value === 'string') {
-//     // Try to handle different string date formats
-//     let jsDate;
-
-//     // Detect common date formats and parse
-//     if (/\d{2}\/\d{2}\/\d{2,4}/.test(value)) {
-//       // Handle 'dd/MM/yyyy' or 'dd/MM/yy'
-//       jsDate = new Date(value.split('/').reverse().join('-')); // Reformat for JS Date constructor
-//     } else if (/\d{2}-\d{2}-\d{2,4}/.test(value)) {
-//       // Handle 'dd-MM-yyyy' or 'dd-MM-yy'
-//       jsDate = new Date(value.split('-').reverse().join('-')); // Reformat for JS Date constructor
-//     } else if (/\d{2}-[a-zA-Z]{3}-\d{4}/.test(value)) {
-//       // Handle 'dd-MMM-yyyy'
-//       jsDate = new Date(value);
-//     }
-
-//     if (jsDate && !isNaN(jsDate)) {
-//       // Format the date to 'dd-MMM-yyyy'
-//       const options = { day: '2-digit', month: 'short', year: 'numeric' };
-//       return jsDate.toLocaleDateString('en-GB', options).replace(',', '');
-//     } else {
-//       // If parsing fails, return the original value
-//       return value;
-//     }
-//   } else {
-//     // If it's neither a number nor a valid string, return the value as-is
-//     return value;
-//   }
-// };
-const excelDateToFormattedString = (value) => {
+const excelDateToFormatNumber = (value) => {
   // Check if the value is a serial (number) or a string
   if (typeof value === "number") {
+    console.log("number")
     // Handle Excel date serials
-    const date1900 = Date.UTC(1900, 0, 1) // Start date for Excel in UTC
-    const jsDate = new Date(date1900 + (value - 1) * 24 * 60 * 60 * 1000) // Add days in milliseconds
+    // const date1900 = Date.UTC(1900, 0, 1) // Start date for Excel in UTC
+    // const jsDate = new Date(date1900 + (value - 2) * 24 * 60 * 60 * 1000) // Add days in milliseconds
+    // // Get the components of the date
+    // const year = jsDate.getUTCFullYear()
+    // const month = String(jsDate.getUTCMonth() + 1).padStart(2, "0") // Months are zero-indexed
+    // const day = String(jsDate.getUTCDate()).padStart(2, "0")
+    const date1900 = new Date(Date.UTC(1900, 0, 1))
+    const jsDate = new Date(date1900.getTime() + (value - 2) * 86400000) // Subtract 2 for 1900 leap year bug
 
-    // Format the date to 'dd-MMM-yyyy' in UTC
-    const options = {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      timeZone: "UTC"
-    }
-    return jsDate.toLocaleDateString("en-GB", options).replace(",", "")
-  } else if (typeof value === "string") {
+    const year = jsDate.getUTCFullYear()
+    const month = String(jsDate.getUTCMonth() + 1).padStart(2, "0")
+    const day = String(jsDate.getUTCDate()).padStart(2, "0")
+    // Construct the date string in 'YYYY-MM-DD' format
+    const formattedDate = `${year}-${month}-${day}`
+
+    return formattedDate // Return the formatted date
+  } else {
+    console.log("hiiiiiiiii")
+  }
+}
+
+export const excelDateToFormatString = (value) => {
+  if (typeof value === "string") {
     // Try to handle different string date formats
     let jsDate
 
     // Detect common date formats and parse
     if (/\d{2}\/\d{2}\/\d{2,4}/.test(value)) {
       // Handle 'dd/MM/yyyy' or 'dd/MM/yy'
-      const [day, month, year] = value.split("/")
-      jsDate = new Date(
-        Date.UTC(year.length === 2 ? `20${year}` : year, month - 1, day)
-      )
+      jsDate = new Date(value.split("/").reverse().join("-")) // Reformat for JS Date constructor
     } else if (/\d{2}-\d{2}-\d{2,4}/.test(value)) {
       // Handle 'dd-MM-yyyy' or 'dd-MM-yy'
-      const [day, month, year] = value.split("-")
-      jsDate = new Date(
-        Date.UTC(year.length === 2 ? `20${year}` : year, month - 1, day)
-      )
+      jsDate = new Date(value.split("-").reverse().join("-")) // Reformat for JS Date constructor
     } else if (/\d{2}-[a-zA-Z]{3}-\d{4}/.test(value)) {
       // Handle 'dd-MMM-yyyy'
       jsDate = new Date(value)
     }
 
     if (jsDate && !isNaN(jsDate)) {
-      // Format the date to 'dd-MMM-yyyy' in UTC
-      const options = {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        timeZone: "UTC"
-      }
-      return jsDate.toLocaleDateString("en-GB", options).replace(",", "")
+      const year = jsDate.getUTCFullYear()
+      const month = String(jsDate.getUTCMonth() + 1).padStart(2, "0") // Months are zero-indexed
+      const day = String(jsDate.getUTCDate()).padStart(2, "0")
+
+      // Construct the date string in 'YYYY-MM-DD' format
+      return `${year}-${month}-${day}`
     } else {
       // If parsing fails, return the original value
       return value
     }
-  } else {
-    // If it's neither a number nor a valid string, return the value as-is
-    return value
   }
 }
 
@@ -136,7 +98,15 @@ export const ExceltoJson = async (socket, fileData) => {
           item["Software HitDate"] &&
           typeof item["Software HitDate"] === "number"
         ) {
-          item["Software HitDate"] = excelDateToFormattedString(
+          item["Software HitDate"] = excelDateToFormatNumber(
+            item["Software HitDate"]
+          )
+        } else if (
+          item["Software HitDate"] &&
+          typeof item["Software HitDate"] === "string"
+        ) {
+          console.log("stringgg")
+          item["Software HitDate"] = excelDateToFormatString(
             item["Software HitDate"]
           )
         }
@@ -145,24 +115,41 @@ export const ExceltoJson = async (socket, fileData) => {
           item["License Expiry"] &&
           typeof item["License Expiry"] === "number"
         ) {
-          item["License Expiry"] = excelDateToFormattedString(
+          item["License Expiry"] = excelDateToFormatNumber(
+            item["License Expiry"]
+          )
+        } else if (
+          item["License Expiry"] &&
+          typeof item["License Expiry"] === "string"
+        ) {
+          item["License Expiry"] = excelDateToFormatString(
             item["License Expiry"]
           )
         }
 
         if (item["Due On"] && typeof item["Due On"] === "number") {
-          item["Due On"] = excelDateToFormattedString(item["Due On"])
+          item["Due On"] = excelDateToFormatNumber(item["Due On"])
+        } else if (item["Due On"] && typeof item["Due On"] === "string") {
+          item["Due On"] = excelDateToFormatString(item["Due On"])
         }
 
         if (item["Act On"] && typeof item["Act On"] === "number") {
-          item["Act On"] = excelDateToFormattedString(item["Act On"])
+          item["Act On"] = excelDateToFormatNumber(item["Act On"])
+        } else if (item["Act On"] && typeof item["Act On"] === "string") {
+          item["Act On"] = excelDateToFormatString(item["Act On"])
         }
 
         if (item["TVU Expiry"] && typeof item["TVU Expiry"] === "number") {
-          item["TVU Expiry"] = excelDateToFormattedString(item["TVU Expiry"])
+          item["TVU Expiry"] = excelDateToFormatNumber(item["TVU Expiry"])
+        } else if (
+          item["TVU Expiry"] &&
+          typeof item["TVU Expiry"] === "string"
+        ) {
+          item["TVU Expiry"] = excelDateToFormatString(item["TVU Expiry"])
         }
         const matchingLicensenumber = licenseNumber.find(
-          (license) => license.licensenumber === item["CUSTOMER ID"]
+          (license) =>
+            license.licensenumber === item["CUSTOMER ID"] || item["Wallet Id"]
         )
 
         if (!matchingLicensenumber) {
@@ -173,6 +160,7 @@ export const ExceltoJson = async (socket, fileData) => {
           const matchingProduct = product.find(
             (product) => product.productName === item["Type"]?.toUpperCase()
           )
+
           const matchingBranch = branch.find(
             (branch) => branch.branchName === item["Branch"]?.toUpperCase()
           )
@@ -210,20 +198,27 @@ export const ExceltoJson = async (socket, fileData) => {
           ]
 
           if (item["Wallet Name"]) {
-            selectedData.push({
-              company_id: matchingCompany?._id,
-              companyName: matchingCompany?.name,
-              branch_id: matchingBranch?._id,
-              branchName: matchingBranch?.branchName,
-              product_id: matchingProduct?._id,
-              productName: matchingProduct?.productName,
-              brandName: item["S/W Type"],
-              categoryName: item["User"],
-              licensenumber: item["Wallet Id"],
-              amcendDate: item["Due On"],
-              amcAmount: item["Total Amount"],
-              isActive: item["Party Status"]
-            })
+            const walletName = item["Wallet Name"]?.toUpperCase().trim() || ""
+            const matchingWallet = product.find(
+              (product) =>
+                product.productName.toUpperCase().trim() === walletName
+            )
+            if (matchingWallet) {
+              selectedData.push({
+                company_id: matchingCompany?._id,
+                companyName: matchingCompany?.name,
+                branch_id: matchingBranch?._id,
+                branchName: matchingBranch?.branchName,
+                product_id: matchingWallet?._id,
+                productName: matchingWallet?.productName,
+                brandName: item["S/W Type"],
+                categoryName: item["User"],
+                licensenumber: item["Wallet Id"],
+                amcendDate: item["Due On"],
+                amcAmount: item["Total Amount"],
+                isActive: item["Party Status"]
+              })
+            }
           }
 
           // Check if customer with this license already exists
@@ -248,9 +243,8 @@ export const ExceltoJson = async (socket, fileData) => {
             })
 
             const savedCustomer = await customerData.save()
-            console.log("savedcustoCer", savedCustomer)
-            if (savedCustomer) {
 
+            if (savedCustomer) {
               for (const item of savedCustomer.selected) {
                 const license = new License({
                   products: item.product_id,
@@ -259,30 +253,13 @@ export const ExceltoJson = async (socket, fileData) => {
                 })
                 await license.save()
               }
+
               uploadedCount++
               socket.emit("conversionProgress", {
                 current: uploadedCount,
                 total: totalData
               })
             }
-            
-   
-
-            // if (savedCustomer) {
-            //   const license = new License({
-            //     products: savedCustomer?.selected?.product_id,
-            //     customerName: savedCustomer?._id,
-            //     licensenumber: savedCustomer?.selected?.licensenumber
-            //   })
-            //   const savedLicense = await license.save()
-            //   if (savedLicense) {
-            //     uploadedCount++
-            //     socket.emit("conversionProgress", {
-            //       current: uploadedCount,
-            //       total: totalData
-            //     })
-            //   }
-            // }
           } else {
             failedData.push(item)
           }

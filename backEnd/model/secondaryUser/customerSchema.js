@@ -15,7 +15,7 @@ const CustomerSchema = new mongoose.Schema({
     // }
   },
   email: { type: String },
-  incomingNumber:{type:String},
+  incomingNumber: { type: String },
   mobile: { type: String },
   landline: String,
   isActive: {
@@ -40,15 +40,15 @@ const CustomerSchema = new mongoose.Schema({
       licensenumber: { type: Number },
       noofusers: { type: Number }, // Ensure this is a number
       version: { type: mongoose.Schema.Types.Mixed },
-      customerAddDate: { type: String },
-      amcstartDate: { type: String },
-      amcendDate: { type: String },
+      customerAddDate: { type: Date },
+      amcstartDate: { type: Date },
+      amcendDate: { type: Date },
       amcAmount: { type: Number }, // Ensure this is a number
       amcDescription: { type: String },
-      licenseExpiryDate: { type: String },
+      licenseExpiryDate: { type: Date },
       productAmount: { type: Number }, // Ensure this is a number
       productamountDescription: { type: String },
-      tvuexpiryDate: { type: String },
+      tvuexpiryDate: { type: Date },
       tvuAmount: { type: Number }, // Ensure this is a number
       tvuamountDescription: { type: String },
       isActive: {
