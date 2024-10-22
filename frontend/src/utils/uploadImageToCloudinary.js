@@ -2,7 +2,6 @@ import { toast } from "react-toastify"
 
 const upload_preset = import.meta.env.VITE_UPLOAD_PRESET
 const cloud_name = import.meta.env.VITE_CLOUD_NAME
-const api_key = import.meta.env.VITE_API_KEY
 
 const uploadImageToCloudinary = async (file) => {
   try {

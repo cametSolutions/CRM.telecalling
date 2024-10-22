@@ -95,7 +95,7 @@ const UserListform = () => {
             <FaPrint className="mr-2" />
           </button>
         </div>
-        <div className="overflow-x-auto overflow-y-auto">
+        <div className="max-h-64 md:max-h-80 lg:max-h-96 xl:max-h-[600px] overflow-x-auto overflow-y-auto">
           <table className="min-w-full bg-white border border-gray-300 text-center">
             <thead className="text-center">
               <tr>

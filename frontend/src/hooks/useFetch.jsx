@@ -45,9 +45,8 @@ import { fetchDataFromApi } from "../api/fetchDataFromApi"
 const UseFetch = (url) => {
   const [refresh, setRefresh] = useState(false)
   const [data, setData] = useState(null)
-  const [loading, setLoading] = useState("loading...")
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  console.log("hii")
 
   useEffect(() => {
     if (!url) {
@@ -55,14 +54,14 @@ const UseFetch = (url) => {
     }
 
     const fetchData = async () => {
-      // setLoading("loading...")
+      setLoading("loading...")
       setData(null)
       setError(null)
 
       try {
         const result = await fetchDataFromApi(url)
+
         if (result) {
-          
           setData(result.data)
           setLoading(false)
         } else {
