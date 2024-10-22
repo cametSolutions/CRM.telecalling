@@ -191,7 +191,7 @@ export default function AdminHeader() {
               CRM
             </text>
           </svg>
-          <span className="text-3xl font-bold text-green-600">CAMET</span>
+          <span className="text-2xl font-bold text-green-600">MANAGEMENT</span>
         </div>
         <div className="flex flex-grow justify-center items-center">
           <nav className="hidden md:flex items-center gap-3 space-x-4">
@@ -321,14 +321,13 @@ export default function AdminHeader() {
           </nav>
         </div>
 
-        <div className="flex flex-grow justify-center items-center">
-          <div className="relative flex items-center">
-            <VscAccount
-              className="text-2xl"
-              onMouseEnter={() => setProfileMenuOpen(true)}
-              onMouseLeave={() => setProfileMenuOpen(false)}
-            />
-            {/* {user?.imageUrl && (
+        <div className="relative flex items-center flex-grow">
+          <VscAccount
+            className="text-2xl"
+            onMouseEnter={() => setProfileMenuOpen(true)}
+            onMouseLeave={() => setProfileMenuOpen(false)}
+          />
+          {/* {user?.imageUrl && (
               <img
                 src={user?.imageUrl}
                 // alt={`${userData.name}'s profile`}
@@ -337,59 +336,33 @@ export default function AdminHeader() {
                 className="w-20 h-20 rounded-full" // Add styling as needed
               />
             )} */}
-            <span
-              className="text-gray-700 mx-4 rounded-md cursor-pointer"
+          <span
+            className="text-gray-700 mx-4 rounded-md cursor-pointer"
+            onMouseEnter={() => setProfileMenuOpen(true)}
+            onMouseLeave={() => setProfileMenuOpen(false)}
+          >
+            {user?.name || "Profile"}
+          </span>
+          {profileMenuOpen && (
+            <div
               onMouseEnter={() => setProfileMenuOpen(true)}
               onMouseLeave={() => setProfileMenuOpen(false)}
+              className="absolute bg-white border rounded top-full l-0 mt-0  w-40 shadow-lg"
             >
-              {user?.name || "Profile"}
-            </span>
-            {profileMenuOpen && (
-              <div
-                onMouseEnter={() => setProfileMenuOpen(true)}
-                onMouseLeave={() => setProfileMenuOpen(false)}
-                className="absolute bg-white border rounded top-full mt-0 right-8 w-40 shadow-lg"
+              <Link
+                to="/admin/profile"
+                className="block px-4 py-2 hover:bg-gray-200 cursor-pointer"
               >
-                <Link
-                  to="/admin/crm/crm"
-                  onMouseEnter={() => setCrmMenuOpen(true)}
-                  onMouseLeave={() => setCrmMenuOpen(false)}
-                  className="block px-4 py-2 hover:bg-gray-200 cursor-pointer"
-                >
-                  CRM
-                </Link>
-                {crmMenuOpen && (
-                  <div
-                    onMouseEnter={() => setCrmMenuOpen(true)}
-                    onMouseLeave={() => setCrmMenuOpen(false)}
-                    className="absolute bg-white border rounded top-full mt-0 left-full w-40 shadow-lg"
-                  >
-                    <Link
-                      to="/admin/crm/crm/activity"
-                      className="block px-4 py-2 hover:bg-gray-200 cursor-pointer"
-                    >
-                      Activity
-                    </Link>
-                  </div>
-                )}
-                <Link
-                  to="/admin/profile"
-                  className="block px-4 py-2 hover:bg-gray-200 cursor-pointer"
-                >
-                  View Profile
-                </Link>
-                <button
-                  onClick={logout}
-                  className="block px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 w-full text-left"
-                >
-                  Logout
-                </button>
-              </div>
-            )}
-          </div>
-          {/* <span>
-          <FaSearch className="h-3 text-gray-500 ml-12 cursor-pointer" />
-        </span> */}
+                View Profile
+              </Link>
+              <button
+                onClick={logout}
+                className="block px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 w-full text-left"
+              >
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </header>
     </>

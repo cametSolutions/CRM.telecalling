@@ -30,9 +30,7 @@ const Login = () => {
           }
         })
         localStorage.setItem("authToken", token)
-
         localStorage.setItem("user", JSON.stringify(user))
-
         setTimeout(() => {
           if (role === "Admin") {
             navigate("/admin/home")
@@ -56,6 +54,7 @@ const Login = () => {
       className="flex items-center justify-center min-h-screen bg-cover bg-center"
       style={{ backgroundImage: "url('/background.jpg')" }}
     >
+     
       <div className="w-full max-w-md p-8 space-y-6 bg-white shadow-md rounded-lg">
         <h2 className="text-2xl font-bold text-center">Login</h2>
         <form onSubmit={handleSubmit(onSubmit)}>

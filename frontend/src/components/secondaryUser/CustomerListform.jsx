@@ -4,6 +4,9 @@ import { CiEdit } from "react-icons/ci"
 import { useNavigate } from "react-router-dom"
 import UseFetch from "../../hooks/useFetch"
 import debounce from "lodash.debounce"
+import { useDispatch } from "react-redux"
+import { setSearch, removeSearch } from "../../../slices/search"
+import useSearch from "../../hooks/useSearch"
 import {
   FaUserPlus,
   FaSearch,
@@ -16,6 +19,7 @@ import { Link } from "react-router-dom"
 
 const CustomerListform = () => {
   const navigate = useNavigate()
+  const dispatch = useDispatch()
   // const tableContainerRef = useRef(null) // Ref to track table container scrolling
 
   const [searchQuery, setSearchQuery] = useState(true)
@@ -24,48 +28,30 @@ const CustomerListform = () => {
   const [loadMoreCount, setLoadMoreCount] = useState(10)
   const [allCustomers, setAllCustomers] = useState([]) // All customers list
   const [showFullAddress, setShowFullAddress] = useState({})
+  const [searchAfterData, setAfterSearchData] = useState([])
+  const [stringCustomers, setStringCustomers] = useState([])
   const {
     data: customerData,
     loading,
     error
   } = UseFetch("/customer/getCustomer")
+
+  //custom hook is used for search
+  const searchData = useSearch({ fullData: customerData })
   useEffect(() => {
-    console.log(customerData)
-    if (customerData && customerData.length > 0) {
-      setDisplayedCustomers(customerData)
-      // setDisplayedCustomers(customerlist.slice(0, loadMoreCount))
+    if (searchData) {
+      setAfterSearchData(searchData)
     }
-  }, [customerData])
+  }, [searchData])
 
   //Handle search with lodash debounce to optimize search performance
   const handleSearch = debounce((query) => {
-    const input = query.trim()
-
-    const lowerCaseQuery = input.toLowerCase()
-
-    const filteredName = customerData.filter((customer) =>
-      customer.customerName.toLowerCase().includes(lowerCaseQuery)
-    )
-
-    const filteredLicensenumber = customerData
-      .map((customer) => ({
-        ...customer,
-        selected: customer.selected.filter(
-          (item) => item.licensenumber.toString().startsWith(input) // Check if licensenumber starts with query
-        )
-      }))
-      .filter((customer) => customer.selected.length > 0)
-
-    if (filteredName.length > 0) {
-      setDisplayedCustomers(filteredName)
-    } else if (filteredLicensenumber.length > 0) {
-      setDisplayedCustomers(filteredLicensenumber)
+    if (query.trim() === "") {
+      dispatch(removeSearch())
     } else {
-      setSearchQuery(false)
+      dispatch(setSearch(query))
     }
-
-    // Reset to initial count after filtering
-  }, 300)
+  }, 100)
 
   // Function to toggle showing full address
   const handleShowMore = (customerId) => {
@@ -127,7 +113,7 @@ const CustomerListform = () => {
               <FaHourglassHalf className="mr-2" />
             </Link>
           </div>
-          <label className="px-6">{displayedCustomers?.length}</label>
+          <label className="px-6">{searchAfterData?.length}</label>
         </div>
 
         <div
@@ -175,8 +161,8 @@ const CustomerListform = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {displayedCustomers.length > 0 ? (
-                displayedCustomers.map((customer, index) =>
+              {searchAfterData?.length > 0 ? (
+                searchAfterData?.map((customer, index) =>
                   customer.selected.map((item, itemIndex) => (
                     <tr key={item.licensenumber}>
                       <td className="px-2 py-3 text-sm text-black">
