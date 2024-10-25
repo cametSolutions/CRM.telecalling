@@ -225,7 +225,7 @@ const UserListform = () => {
                     colSpan="11"
                     className="px-4 py-4 text-center text-gray-500"
                   >
-                    {loading ? loading : "No customers found."}
+                    {loading ? loading : "No users found."}
                   </td>
                 </tr>
               )}

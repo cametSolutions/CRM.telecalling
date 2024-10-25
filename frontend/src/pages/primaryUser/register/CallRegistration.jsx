@@ -37,12 +37,8 @@ export default function CallRegistration() {
   const [endTime, setEndTime] = useState(null)
   const [formData, setFormData] = useState(null)
   const [callData, setCallData] = useState([])
-  // const { data: userData, error: userError } = UseFetch("//getallProducts")
-  //timer for page loading
+
   const [tokenData, setTokenData] = useState(null)
-  //  const { data: registeredCall, refreshHook } = selectedCustomer?._id
-  //   ? UseFetch(`/customer/getcallregister?customerid=${selectedCustomer._id}`)
-  //    : { data: null }
 
   const {
     data: registeredCall,
@@ -119,7 +115,6 @@ export default function CallRegistration() {
 
   useEffect(() => {
     if (registeredCall) {
-      console.log("registeeredcalllllll", registeredCall)
       const sortedData = registeredCall.callregistration.sort((a, b) => {
         if (a.formdata.status === "pending" && b.formdata.status === "solved") {
           return -1
@@ -133,7 +128,7 @@ export default function CallRegistration() {
       // setCallData(registeredCall.callregistration)
     }
   }, [registeredCall])
-  console.log("hii")
+
   useEffect(() => {
     // Set the default product if there's only one
     if (productDetails.length === 1) {

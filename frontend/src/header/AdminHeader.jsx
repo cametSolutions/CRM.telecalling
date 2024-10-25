@@ -40,71 +40,173 @@ export default function AdminHeader() {
   ]
 
   const masters = [
-    { to: "/admin/masters/company", label: "Company" },
-    { to: "/admin/masters/branch", label: "Branch" },
-    { to: "/admin/masters/customer", label: "Customer" },
-    { to: "/admin/masters/users-&-passwords", label: "Users & Passwords" },
-    { to: "/admin/masters/menuRights", label: "Menu Rights" },
-    { to: "/admin/masters/voucherMaster", label: "Voucher Master" },
-    { to: "/admin/masters/target", label: "Target" },
-    { to: "/admin/masters/product", label: "Product" },
-    { to: "/admin/masters/inventory", label: "Inventory", hasChildren: true },
+    {
+      to: "/admin/masters/company",
+      label: "Company"
+      // control: user.permissions[0].Company
+    },
+    {
+      to: "/admin/masters/branch",
+      label: "Branch"
+      // control: user.permissions[0].Branch
+    },
+    {
+      to: "/admin/masters/customer",
+      label: "Customer"
+      // control: user.permissions[0].Customer
+    },
+    {
+      to: "/admin/masters/users-&-passwords",
+      label: "users & Passwords"
+      // control: user.permissions[0].UsersAndPasswords
+    },
+    {
+      to: "/admin/masters/menuRights",
+      label: "Menu Rights"
+      // control: user.permissions[0].MenuRights
+    },
+    {
+      to: "/admin/masters/voucherMaster",
+      label: "Voucher Master"
+      // control: user.permissions[0].VoucherMaster
+    },
+    {
+      to: "/admin/masters/target",
+      label: "Target"
+      // control: user.permissions[0].Target
+    },
+    {
+      to: "/admin/masters/product",
+      label: "Product"
+      // control: user.permissions[0].Product
+    },
+    {
+      to: "/admin/masters/inventory",
+      label: "Inventory",
+      hasChildren: true
+      // control: user.permissions[0].Inventory
+    },
 
-    { to: "/admin/masters/partners", label: "Partners" },
-    { to: "/admin/masters/department", label: "Department" }
+    {
+      to: "/admin/masters/partners",
+      label: "Partners"
+      // control: user.permissions[0].Partners
+    },
+    {
+      to: "/admin/masters/department",
+      label: "Department"
+      // control: user.permissions[0].Department
+    }
   ]
 
   const inventorys = [
-    { to: "/admin/masters/inventory/brandRegistration", label: "Brand" },
-    { to: "/admin/masters/inventory/categoryRegistration", label: "Category" },
-    { to: "/admin/masters/inventory/hsnlist", label: "HSN" }
+    {
+      to: "/admin/masters/inventory/brandRegistration",
+      label: "Brand"
+      // control: user.permissions[0].Brand
+    },
+    {
+      to: "/admin/masters/inventory/categoryRegistration",
+      label: "Category"
+      // control: user.permissions[0].Category
+    },
+    {
+      to: "/admin/masters/inventory/hsnlist",
+      label: "HSN"
+      // control: user.permissions[0].HSN
+    }
   ]
+
   const transactions = [
-    { to: "/admin/transaction/lead", label: "Lead" },
+    {
+      to: "/admin/transaction/lead",
+      label: "Lead"
+      // control: user.permissions[0].Lead
+    },
     {
       to: "/admin/transaction/call-registration",
       label: "Call Registration"
+      // control: user.permissions[0].CallRegistration
     },
     {
       to: "/admin/transaction/leave-application",
       label: "Leave Application"
+      // control: user.permissions[0].LeaveApplication
     }
   ]
   const tasks = [
-    { to: "/admin/tasks/signUp-custmer", label: "Sign Up Custmer" },
-    { to: "/admin/tasks/productMerge", label: "Product Merge" },
+    {
+      to: "/admin/tasks/signUp-custmer",
+      label: "Sign Up Custmer"
+      // control: user.permissions[0].SignUpCustomer
+    },
+    {
+      to: "/admin/tasks/productMerge",
+      label: "Product Merge"
+      // control: user.permissions[0].ProductMerge
+    },
     {
       to: "/admin/tasks/productAllocation-Pending",
       label: "Product Allocation Pending"
+      // control: user.permissions[0].ProductAllocationPending
     },
     {
       to: "/admin/tasks/leaveApproval-pending",
       label: "Leave Approval Pending"
+      // control: user.permissions[0].LeaveApprovalPending
     },
-    { to: "/admin/tasks/workAllocation", label: "Work Allocation" },
-    { to: "/admin/tasks/excelconverter", label: "Excel Converter" }
+    {
+      to: "/admin/tasks/workAllocation",
+      label: "Work Allocation"
+      // control: user.permissions[0].WorkAllocation
+    },
+    {
+      to: "/admin/tasks/excelconverter",
+      label: "Excel Converter"
+      // control: user.permissions[0].ExcelConverter
+    }
   ]
   const reports = [
-    { to: "/admin/reports/summary", label: "Summary" },
-    { to: "/admin/reports/expiry-register", label: "Expiry Register" },
+    {
+      to: "/admin/reports/summary",
+      label: "Summary"
+      // control: user.permissions[0].Summary
+    },
+    {
+      to: "/admin/reports/expiry-register",
+      label: "Expiry Register"
+      // control: user.permissions[0].ExpiryRegister
+    },
     {
       to: "/admin/reports/expired-custmerCalls",
       label: "Expired Customer Calls"
+      // control: user.permissions[0].ExpiredCustomerCalls
     },
     {
       to: "/admin/reports/customer-callsSummary",
       label: "Customer Calls Summary"
+      // control: user.permissions[0].CustomerCallsSummary
     },
     {
       to: "/admin/reports/customer-contacts",
       label: "Customer Contacts"
+      // control: user.permissions[0].CustomerContact
     },
     {
       to: "/admin/reports/customer-actionsummary",
       label: "Customer Action Summary"
+      // control: user.permissions[0].CustomerActionSummary
     },
-    { to: "/adminr/eports/account-search", label: "Account Search" },
-    { to: "/admin/reports/leave-summary", label: "Leave Summary" }
+    {
+      to: "/adminr/eports/account-search",
+      label: "Account Search"
+      // control: user.permissions[0].AccountSearch
+    },
+    {
+      to: "/admin/reports/leave-summary",
+      label: "Leave Summary"
+      // control: user.permissions[0].LeaveSummary
+    }
   ]
 
   return (

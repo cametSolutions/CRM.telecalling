@@ -73,6 +73,41 @@ const staffSchema = new Schema(
     documentUrl: {
       type: [String]
     },
+    permissions: [
+      {
+        Company: Boolean,
+        Branch: Boolean,
+        Customer: Boolean,
+        UsersAndPasswords: Boolean,
+        MenuRights: Boolean,
+        VoucherMaster: Boolean,
+        Target: Boolean,
+        Product: Boolean,
+        Inventory: Boolean,
+        Partners: Boolean,
+        Department: Boolean,
+        Brand: Boolean,
+        Category: Boolean,
+        HSN: Boolean,
+        Lead: Boolean,
+        CallRegistration: Boolean,
+        LeaveApplication: Boolean,
+        SignUpCustomer: Boolean,
+        ProductMerge: Boolean,
+        ProductAllocationPending: Boolean,
+        LeaveApprovalPending: Boolean,
+        WorkAllocation: Boolean,
+        ExcelConverter: Boolean,
+        Summary: Boolean,
+        ExpiryRegister: Boolean,
+        ExpiredCustomerCalls: Boolean,
+        CustomerCallsSummary: Boolean,
+        CustomerContacts: Boolean,
+        CustomerActionSummary: Boolean,
+        AccountSearch: Boolean,
+        LeaveSummary: Boolean
+      }
+    ],
     selected: [
       {
         company_id: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
