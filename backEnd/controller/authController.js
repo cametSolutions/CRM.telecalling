@@ -186,29 +186,15 @@ export const StaffRegister = async (req, res) => {
 
 export const UpdateUserandAdmin = async (req, res) => {
   const { userId, userData, tabledata } = req.body
-  console.log("table", tabledata)
-  console.log("userdata", userData)
 
   const { role } = userData
+
   const { selected, password, ...filteredUserData } = userData
 
   console.log("role", role)
 
   try {
     if (role === "Staff") {
-      // const updateStaff = await Staff.findByIdAndUpdate(
-      //   userId,
-      //   { $set: data }, // Updating the fields in userData
-      //   { new: true } // Return the updated document
-      // )
-      // const updateStaff = await Staff.findByIdAndUpdate(
-      //   userId,
-      //   {
-      //     $set: filteredData // Set the fields from userData
-      //   },
-      //   { new: true } // Return the updated document
-      // )
-
       const updateQuery = {
         $set: filteredUserData // Set the fields from userData without 'selected'
       }
@@ -283,10 +269,47 @@ export const Login = async (req, res) => {
     res.status(500).json({ message: "Server error" })
   }
 }
+export const UpdateUserPermission = async (req, res) => {
+  try {
+    const  userPermissions = req.body
+
+    console.log("prmsisson", userPermissions)
+    const { Userid } = req.query
+    console.log("userid", Userid)
+    // Validate input
+    if (!Userid || !userPermissions) {
+      return res
+        .status(400)
+        .json({ message: "User ID and permissions are required." })
+    }
+
+    // Find the user by ID
+    const user = await Staff.findById(Userid)
+    if (!user) {
+      return res.status(404).json({ message: "User not found." })
+    }
+
+    // Update user permissions
+    user.permissions = userPermissions // Assuming `permissions` is the field in your User schema
+    await user.save()
+
+    // Respond with the updated user information
+    return res
+      .status(200)
+      .json({ message: "Permissions updated successfully.", user })
+  } catch (error) {
+    console.log("Error:", error.message)
+  }
+}
 
 export const GetallUsers = async (req, res) => {
   try {
-    const allusers = await Staff.find()
+    const allusers = await Staff.find().populate({
+      path: "department",
+      model: "Department",
+      select: "department"
+    })
+    console.log("indoallusrs", allusers)
     const allAdmins = await Admin.find()
 
     if (allusers.length || allAdmins.length) {

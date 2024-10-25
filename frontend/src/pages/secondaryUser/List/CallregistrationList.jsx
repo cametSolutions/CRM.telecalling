@@ -23,7 +23,6 @@ const CallregistrationList = () => {
   const [activeFilter, setActiveFilter] = useState("All")
 
   const filterCallData = useCallback((calls) => {
-    console.log("callsinfunction", calls)
     const allCallRegistrations = calls.flatMap((call) => call.callregistration)
 
     // Filter based on status
@@ -43,7 +42,6 @@ const CallregistrationList = () => {
 
   useEffect(() => {
     if (callList.length > 0) {
-      console.log("calllist", callList)
       filterCallData(callList) // Filter call data for counts
       setFilteredCalls(callList)
     }
@@ -52,7 +50,7 @@ const CallregistrationList = () => {
   useEffect(() => {
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
-    console.log("hiii")
+
     setUser(user)
 
     socket.emit("updatedCalls")
@@ -103,7 +101,6 @@ const CallregistrationList = () => {
         }
       })
     })
-    console.log("todayscall", todaysCallsCount)
 
     return todaysCallsCount
   }

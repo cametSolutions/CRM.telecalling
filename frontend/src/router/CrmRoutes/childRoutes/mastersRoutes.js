@@ -20,7 +20,7 @@ import UserEdit from "../../../pages/primaryUser/edit/UserEdit"
 import PendingCustomer from "../../../components/secondaryUser/PendingCustomer"
 import ProductEdit from "../../../pages/primaryUser/edit/ProductEdit"
 import UserListform from "../../../pages/primaryUser/List/UserListform"
-import UserPermissionsDropdown from "../../../pages/primaryUser/List/UserPermissionsDropdown"
+import UserPermissions from "../../../pages/primaryUser/List/UserPermissions"
 
 const mastersRoutes = [
   {
@@ -89,7 +89,7 @@ const mastersRoutes = [
   { path: "/admin/masters/productRegistration", component: ProductMaster },
   { path: "/admin/masters/users-&-passwords", component: UserListform },
 
-  { path: "/admin/masters/menurights", component: UserPermissionsDropdown },
+  { path: "/admin/masters/menurights", component: UserPermissions },
 
   { path: "/admin/masters/vouchermaster", title: "Voucher Master" },
   { path: "/admin/masters/target", title: "Target" },
