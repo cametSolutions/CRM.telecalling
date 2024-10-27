@@ -91,7 +91,7 @@ const staffSchema = new Schema(
         HSN: Boolean,
         Lead: Boolean,
         CallRegistration: Boolean,
-        LeaveApplication: Boolean,
+        LeaveApplication: { type: Boolean, default: true },
         SignUpCustomer: Boolean,
         ProductMerge: Boolean,
         ProductAllocationPending: Boolean,
