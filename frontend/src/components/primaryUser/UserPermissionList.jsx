@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react"
 import api from "../../api/api"
 import { toast } from "react-toastify"
-const UserPermissionList = ({ user, closeModal }) => {
+const UserPermissionList = ({ user, closeModal, Loader }) => {
   const [userPermissions, setUserPermissions] = useState({
     Company: false,
     Branch: false,
@@ -19,7 +19,7 @@ const UserPermissionList = ({ user, closeModal }) => {
     HSN: false,
     Lead: false,
     CallRegistration: false,
-    LeaveApplication: true,
+    LeaveApplication: false,
     SignUpCustomer: false,
     ProductMerge: false,
     ProductAllocationPending: false,
@@ -35,6 +35,8 @@ const UserPermissionList = ({ user, closeModal }) => {
     AccountSearch: false,
     LeaveSummary: false
   })
+  const [selectAll, setSelectAll] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     // Initialize user permissions based on the user object
@@ -49,20 +51,57 @@ const UserPermissionList = ({ user, closeModal }) => {
         })
       })
 
+      // Check if all permissions are true
+      const allPermissionsTrue = Object.keys(updatedPermissions).every(
+        (key) => updatedPermissions[key] === true
+      )
+      console.log(allPermissionsTrue)
+      // Set selectAll based on whether all permissions are true
+      setSelectAll(allPermissionsTrue)
+
       setUserPermissions(updatedPermissions)
     }
   }, [user])
 
   const handleChange = (e) => {
     const { name, checked } = e.target
-    setUserPermissions((prev) => ({
-      ...prev,
+    // Update the user permissions
+    const updatedPermissions = {
+      ...userPermissions,
       [name]: checked
-    }))
+    }
+
+    setUserPermissions(updatedPermissions)
+
+    // Check if all permissions are now true
+    const allPermissionsTrue = Object.keys(updatedPermissions).every(
+      (key) => updatedPermissions[key] === true
+    )
+
+    // Update the selectAll state based on the updated permissions
+    setSelectAll(allPermissionsTrue)
   }
+  const handleSelectAll = (e) => {
+    const checked = e.target.checked
+
+    setSelectAll(checked)
+
+    // Set all permissions to the value of the "Select All" checkbox
+    const updatedPermissions = Object.keys(userPermissions).reduce(
+      (acc, key) => {
+        acc[key] = checked
+        return acc
+      },
+      {}
+    )
+
+    setUserPermissions(updatedPermissions)
+  }
+  console.log(selectAll)
 
   const handleSubmit = async () => {
     try {
+      setLoading(true)
       const response = await api.post(
         `/auth/userPermissionUpdate?Userid=${user._id}`,
         userPermissions,
@@ -73,6 +112,8 @@ const UserPermissionList = ({ user, closeModal }) => {
       if (response.status === 200 || response.status === 201) {
         // Display success toast and navigate
         toast.success(response.data.message)
+        setLoading(false)
+        closeModal()
       } else {
         // Handle unexpected status codes (other than 200 or 201)
         toast.error("Unexpected response from the server")
@@ -82,6 +123,7 @@ const UserPermissionList = ({ user, closeModal }) => {
       toast.error("error saving customer")
     }
   }
+  console.log(userPermissions)
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
@@ -90,7 +132,12 @@ const UserPermissionList = ({ user, closeModal }) => {
 
         {/* Select All Checkbox */}
         <label className="flex items-center px-2 py-1">
-          <input type="checkbox" className="w-4 h-4" checked="" onChange="" />
+          <input
+            type="checkbox"
+            className="w-4 h-4"
+            checked={selectAll}
+            onChange={handleSelectAll}
+          />
           <span className="ml-2">Select All</span>
         </label>
 
@@ -104,7 +151,8 @@ const UserPermissionList = ({ user, closeModal }) => {
                 name={key}
                 className="w-4 h-4"
                 checked={userPermissions[key]}
-                onChange={(e) => handleChange(e)}
+                //
+                onChange={handleChange}
               />
               <span className="ml-2">{key}</span>
             </label>
@@ -112,18 +160,19 @@ const UserPermissionList = ({ user, closeModal }) => {
         </div>
 
         {/* Modal actions */}
-        <div className="mt-4 flex justify-end space-x-2">
+        <div className="mt-4 flex justify-center space-x-2">
           <button
-            onClick={closeModal} // Close the modal on Cancel
-            className="bg-gray-300 px-4 py-2 rounded-lg"
+            onClick={closeModal} // Submit logic can go here
+            className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
           >
             Cancel
           </button>
+
           <button
             onClick={handleSubmit} // Submit logic can go here
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
           >
-            Submit
+            {loading ? "Loading..." : "SUBMIT"}
           </button>
         </div>
       </div>
