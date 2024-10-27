@@ -4,7 +4,7 @@ import CompanyRegistration from "../../pages/primaryUser/register/CompanyRegistr
 import BranchRegistration from "../../pages/primaryUser/register/BranchRegistration"
 import CustomerRegistration from "../../pages/secondaryUser/register/CustomerRegistration"
 import CustomerEdit from "../../pages/secondaryUser/edit/CustomerEdit"
-import UserRegistration from "../../pages/primaryUser/register/UserRegistration"
+
 import BranchList from "../../pages/primaryUser/List/BranchList"
 import CompanyEdit from "../../pages/primaryUser/edit/CompanyEdit"
 import BranchEdit from "../../pages/primaryUser/edit/BranchEdit"
@@ -14,12 +14,12 @@ import HsnCreation from "../../pages/primaryUser/register/HsnCreation"
 import HsnList from "../../pages/primaryUser/register/HsnList"
 import EditHsn from "../../pages/primaryUser/edit/EditHsn"
 import ProductMaster from "../../pages/primaryUser/register/ProductMaster"
-// import CustomerList from "../../pages/primaryUser/List/CustomerList"
 import CustomerListform from "../../components/secondaryUser/CustomerListform"
 import ProductList from "../../pages/primaryUser/List/ProductList"
 
 import PendingCustomer from "../../components/secondaryUser/PendingCustomer"
 import ProductEdit from "../../pages/primaryUser/edit/ProductEdit"
+import UserListform from "../../pages/primaryUser/List/UserListform"
 const staffmastersRoutes = [
   {
     path: "/staff/masters/company",
@@ -41,16 +41,13 @@ const staffmastersRoutes = [
   },
   { path: "/staff/masters/branchEdit", component: BranchEdit },
   { path: "/staff/masters/customer", component: CustomerListform },
+  { path: "/staff/masters/customerEdit", component: CustomerEdit },
   { path: "/staff/masters/pendingCustomer", component: PendingCustomer },
   {
     path: "/staff/masters/customerRegistration",
     component: CustomerRegistration
   },
-  { path: "/staff/maseters/customerEdit", component: CustomerEdit },
-  {
-    path: "/staff/masters/users&passwords",
-    component: UserRegistration
-  },
+
   {
     path: "/staff/masters/inventory/brandRegistration",
     component: BrandRegistration
@@ -80,7 +77,7 @@ const staffmastersRoutes = [
   },
   { path: "/staff/masters/productEdit", component: ProductEdit },
   { path: "/staff/masters/productRegistration", component: ProductMaster },
-  { path: "/staff/masters/users-&-passwords", component: UserRegistration },
+  { path: "/staff/masters/users-&-passwords", component: UserListform },
 
   { path: "/staff/masters/menurights", title: "Menu Rights" },
 
