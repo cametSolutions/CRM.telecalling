@@ -271,7 +271,7 @@ export const Login = async (req, res) => {
 }
 export const UpdateUserPermission = async (req, res) => {
   try {
-    const  userPermissions = req.body
+    const userPermissions = req.body
 
     console.log("prmsisson", userPermissions)
     const { Userid } = req.query
@@ -304,12 +304,38 @@ export const UpdateUserPermission = async (req, res) => {
 
 export const GetallUsers = async (req, res) => {
   try {
-    const allusers = await Staff.find().populate({
-      path: "department",
-      model: "Department",
-      select: "department"
-    })
+    const allusers = await Staff.find().populate([
+      {
+        path: "department",
+        model: "Department",
+        select: "department"
+      },
+      { path: "assignedto", model: "Admin", select: "name" }
+    ])
+
     console.log("indoallusrs", allusers)
+    // const populatedUsers = await Promise.all(
+    //   allusers.map(async (user) => {
+    //     if (user.assignedtoModel === "Admin") {
+    //       // If assignedtoModel is "Admin", populate from Admin collection
+    //       await user.populate({
+    //         path: "assignedto",
+    //         model: "Admin", // Directly specify the model
+    //         select: "name"
+    //       })
+    //     } else if (user.assignedtoModel === "Staff") {
+    //       // If assignedtoModel is "Staff", populate from Staff collection
+    //       await user.populate({
+    //         path: "assignedto",
+    //         model: "Staff", // Directly specify the model
+    //         select: "name"
+    //       })
+    //     }
+    //     return user // Return the populated user
+    //   })
+    // )
+    // console.log("populatedusers", populatedUsers)
+
     const allAdmins = await Admin.find()
 
     if (allusers.length || allAdmins.length) {
