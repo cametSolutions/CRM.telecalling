@@ -62,10 +62,19 @@ const staffSchema = new Schema(
       type: String
     },
     department: {
-      type: String
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+     required: false, // This makes it optional
+      default: null
+
     },
     assignedto: {
-      type: String
+      type: mongoose.Schema.Types.ObjectId,
+      refPath: "assignedtoModel" // Reference model is dynamically set
+    },
+    assignedtoModel: {
+      type: String,
+      enum: ["Staff", "Admin"] // Only these two models are allowed
     },
     profileUrl: {
       type: [String]

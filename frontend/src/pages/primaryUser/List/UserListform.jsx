@@ -150,7 +150,10 @@ const UserListform = () => {
                           {user?.role}
                         </td>
                         <td className="py-3 whitespace-nowrap text-sm text-black">
-                          {user?.assignedto}
+                          {/* {user?.assignedto} */}
+                          {user.assignedto
+                            ? user.assignedto.name
+                            : "Not assigned"}
                         </td>
                         <td className="py-3 whitespace-nowrap text-xl text-black text-center">
                           <div className="flex justify-center items-center">
@@ -196,7 +199,10 @@ const UserListform = () => {
                           {user?.role}
                         </td>
                         <td className="py-3 whitespace-nowrap text-sm text-black">
-                          {user?.assignedto}
+                          {/* {user?.assignedto} */}
+                          {user.assignedto
+                            ? user.assignedto.name
+                            : "Not assigned"}
                         </td>
                         <td className="py-3 whitespace-nowrap text-xl text-black text-center">
                           <div className="flex justify-center items-center">
@@ -229,167 +235,9 @@ const UserListform = () => {
                   </td>
                 </tr>
               )}
-
-              {/* {users?.length > 0 ? (
-                users.map((user, index) =>
-                  user?.selected?.map((item, itemIndex) => (
-                    <tr
-                      key={`${user._id}-${itemIndex}`}
-                      className="text-center"
-                    >
-                      <td className="py-3 text-sm text-black">
-                        {itemIndex === 0 ? index + 1 : ""}
-                      </td>
-                      <td className="py-3 whitespace-nowrap text-sm text-black">
-                        {item?.branchName}
-                      </td>
-                     
-                      <td className="py-3 whitespace-nowrap text-sm text-black">
-                        {user?.name}
-                      </td>
-                      <td className="py-3 whitespace-nowrap text-sm text-black">
-                        {user?.email}
-                      </td>
-                      <td className="py-3 whitespace-nowrap text-sm text-black">
-                        {user?.mobile}
-                      </td>
-                      <td className="py-3 whitespace-nowrap text-sm text-black">
-                        {user?.designation}
-                      </td>
-                      <td className="py-3 whitespace-nowrap text-sm text-black">
-                        {user?.role}
-                      </td>
-                      <td className="py-3 whitespace-nowrap text-sm text-black">
-                        {user?.assignedto}
-                      </td>
-                      <td className="py-3 whitespace-nowrap text-xl text-black text-center">
-                        <div className="flex justify-center items-center">
-                          <CiEdit
-                            onClick={() =>
-                              navigate("/admin/masters/userEdit", {
-                                state: {
-                                  user,
-                                  selected: item
-                                }
-                              })
-                            }
-                            className="cursor-pointer"
-                          />
-                        </div>
-                      </td>
-                      <td className="py-3 whitespace-nowrap  text-black">
-                        <DeleteAlert onDelete={handleDelete} Id={user._id} />
-                      </td>
-                    </tr>
-                  ))
-                )
-              ) : (
-                <tr>
-                  <td
-                    colSpan="11"
-                    className="px-4 py-4 text-center text-gray-500"
-                  >
-                    {loading ? loading : "No customers found."}
-                  </td>
-                </tr>
-              )} */}
             </tbody>
           </table>
         </div>
-
-        {/* <div className="overflow-x-auto overflow-y-auto">
-          <table className="min-w-full bg-white border border-gray-300">
-            <thead className="text-center">
-              <tr>
-                <th className="py-2 px-4 border-b border-gray-300 ">No</th>
-                <th className="py-2 px-4 border-b border-gray-300 ">Branch</th>
-                <th className="py-2 px-4 border-b border-gray-300 ">Access</th>
-                <th className="py-2 px-4 border-b border-gray-300 ">
-                  User Name
-                </th>
-                <th className="py-2 px-4 border-b border-gray-300 ">UserId</th>
-                <th className="py-2 px-4 border-b border-gray-300 ">Mobile</th>
-
-                <th className="py-2 px-4 border-b border-gray-300 ">
-                  Designation
-                </th>
-                <th className="py-2 px-4 border-b border-gray-300 ">Role</th>
-                <th className="py-2 px-4 border-b border-gray-300 ">
-                  AssingnedTo
-                </th>
-                <th className="py-2 px-4 border-b border-gray-300 ">Edit</th>
-                <th className="py-2 px-4 border-b border-gray-300 ">Delete</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200 ">
-              {users.length > 0 ? (
-                users.map((user, index) =>
-                  user.selected.map((item, itemIndex) => (
-                    <tr
-                      key={`${user._id}-${itemIndex}`}
-                      className="text-center"
-                    >
-                      <td className=" py-3 text-sm text-black text-center">
-                        
-                        {itemIndex === 0 ? index + 1 : ""}
-                      </td>
-                      <td className=" py-3 text-sm text-black text-center">
-                        {item?.branchName}
-                      </td>
-                      <td className=" py-3 text-sm text-black text-center">
-                        {item?.sectionName}
-                      </td>
-                      <td className=" py-3 whitespace-nowrap text-sm text-black text-center">
-                        {user?.name}
-                      </td>
-                      <td className=" py-3 whitespace-nowrap text-sm text-black text-center">
-                        {user?.email}
-                      </td>
-                      <td className=" py-3 whitespace-nowrap text-sm text-black text-center">
-                        {user?.mobile}
-                      </td>
-                      <td className="py-3 whitespace-nowrap text-sm text-black text-center">
-                        {user?.designation}
-                      </td>
-                      <td className="py-3 whitespace-nowrap text-sm text-black text-center">
-                        {user?.role}
-                      </td>
-                      <td className=" py-3 whitespace-nowrap text-sm text-black text-center">
-                        {user?.assignedto}
-                      </td>
-
-                      <td className="py-3 whitespace-nowrap text-xl text-black text-center  ">
-                        <CiEdit
-                          onClick={() =>
-                            navigate("/admin/masters/userEdit", {
-                              state: {
-                                user,
-                                selected: item
-                              }
-                            })
-                          }
-                          className="cursor-pointer "
-                        />
-                      </td>
-                      <td className=" py-3 whitespace-nowrap text-sm text-black text-center">
-                        <DeleteAlert onDelete={handleDelete} Id={user._id} />
-                      </td>
-                    </tr>
-                  ))
-                )
-              ) : (
-                <tr>
-                  <td
-                    colSpan="11"
-                    className="px-4 py-4 text-center text-gray-500"
-                  >
-                    {loading ? loading : "No customers found."}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div> */}
       </div>
     </div>
   )

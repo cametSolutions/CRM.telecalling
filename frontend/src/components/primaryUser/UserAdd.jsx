@@ -367,8 +367,13 @@ const UserAdd = ({
           data.pincode.trim(),
           data.designation.trim()
       }
+      const formattedData = {
+        ...data,
+        department: data.department || null, // Set to null if empty
+        assignedto: data.assignedto || null // Set to null if empty
+      }
 
-      handleUserData(data, imageData, tableData)
+      handleUserData(formattedData, imageData, tableData)
     } else if (process === "Edit") {
       handleEditedData(data, User?._id, tableData)
     }
