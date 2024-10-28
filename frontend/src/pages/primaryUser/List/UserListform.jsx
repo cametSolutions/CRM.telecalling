@@ -150,7 +150,6 @@ const UserListform = () => {
                           {user?.role}
                         </td>
                         <td className="py-3 whitespace-nowrap text-sm text-black">
-                          {/* {user?.assignedto} */}
                           {user.assignedto
                             ? user.assignedto.name
                             : "Not assigned"}
@@ -199,7 +198,6 @@ const UserListform = () => {
                           {user?.role}
                         </td>
                         <td className="py-3 whitespace-nowrap text-sm text-black">
-                          {/* {user?.assignedto} */}
                           {user.assignedto
                             ? user.assignedto.name
                             : "Not assigned"}

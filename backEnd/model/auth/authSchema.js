@@ -64,9 +64,8 @@ const staffSchema = new Schema(
     department: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Department",
-     required: false, // This makes it optional
+      required: false, // This makes it optional
       default: null
-
     },
     assignedto: {
       type: mongoose.Schema.Types.ObjectId,
@@ -74,7 +73,7 @@ const staffSchema = new Schema(
     },
     assignedtoModel: {
       type: String,
-      enum: ["Staff", "Admin"] // Only these two models are allowed
+      enum: ["Staff","Admin"] // Only these two models are allowed
     },
     profileUrl: {
       type: [String]
@@ -162,7 +161,7 @@ const adminSchema = new Schema(
       type: Boolean,
       default: false
     }
-    // Other admin-specific fields
+    // Other admin-specific fieldss
   },
   { timestamps: true }
 )
