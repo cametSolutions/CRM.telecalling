@@ -111,6 +111,27 @@ export const StaffRegister = async (req, res) => {
 
   try {
     const { userData, image, tabledata } = req.body
+    const assignedtoId = req.body.userData.assignedto // Assuming assignedto is coming from userDat
+    let assignedtoModel
+    // Check if assignedto corresponds to a Staff
+    const isStaff = await Staff.exists({ _id: assignedtoId })
+
+    // Check if assignedto corresponds to an Admin
+    const isAdmin = await Admin.exists({ _id: assignedtoId })
+
+    // Set assignedtoModel based on the checks
+    if (isStaff) {
+      assignedtoModel = "Staff"
+    } else if (isAdmin) {
+      assignedtoModel = "Admin"
+    } else {
+      // Handle the case where assignedto is neither Staff nor Admin
+      console.log("Assigned to does not exist in either model")
+      return res
+        .status(400)
+        .json({ message: "Assigned to user does not exist." })
+    }
+
     const {
       name,
       email,
@@ -156,6 +177,7 @@ export const StaffRegister = async (req, res) => {
           designation,
           department,
           assignedto,
+          assignedtoModel,
           profileUrl,
           documentUrl,
           selected: tabledata
@@ -302,6 +324,129 @@ export const UpdateUserPermission = async (req, res) => {
   }
 }
 
+// export const GetallUsers = async (req, res) => {
+//   try {
+//     // const allusers = await Staff.find()
+//     //   .populate({
+//     //     path: "department",
+//     //     model: "Department",
+//     //     select: "department" // Select only the department field
+//     //   })
+//     //   .populate({
+//     //     path: "assignedto", // Mongoose will handle the model based on assignedtoModel
+//     //     select: "name" // Select only the name field
+//     //   })
+//     //   .then((data) => {
+//     //     console.log("Fetched all users:", JSON.stringify(data, null, 2))
+//     //     return data
+//     //   })
+//     //   .catch((error) => {
+//     //     console.error("Error fetching users:", error)
+//     //     throw error // Rethrow error if necessary
+//     //   })
+//     const allusers = await Staff.find().lean() // Convert to plain JavaScript objects
+//     console.log(
+//       "Raw users before population:",
+//       JSON.stringify(allusers, null, 2)
+//     )
+
+//     // Populate the data after fetching
+//     const populatedUsers = await Staff.populate(allusers, [
+//       {
+//         path: "department",
+//         model: "Department",
+//         select: "department"
+//       },
+//       {
+//         path: "assignedto",
+//         select: "name" // Ensure this is correctly referencing the assigned model
+//       }
+//     ])
+//     console.log("indoallusrs", populatedUsers)
+//     // const allusers = await Staff.find()
+//     //   .populate({
+//     //     path: "department",
+//     //     model: "Department",
+//     //     select: "department" // Select only the department field
+//     //   })
+//     //   .populate({
+//     //     path: "assignedto",
+//     //     model: function (doc) {
+//     //       return doc.assignedModel
+//     //     }
+//     //   })
+
+//     // const allusers = await Staff.find()
+//     //   .populate({
+//     //     path: "department",
+//     //     model: "Department",
+//     //     select: "department"
+//     //   })
+//     //   .populate({
+//     //     path: "assignedto", // This will use refPath to determine the correct model
+//     //     select: "name" // Select only the name field from either Staff or Admin
+//     //   })
+//     //   .then((data) => console.log(data))
+//     //   .catch((error) => console.log(error))
+
+//     // const populatedUsers = await Promise.all(
+//     //   allusers.map(async (user) => {
+//     //     if (user.assignedtoModel === "Admin") {
+//     //       // If assignedtoModel is "Admin", populate from Admin collection
+//     //       await user.populate({
+//     //         path: "assignedto",
+//     //         model: "Admin", // Directly specify the model
+//     //         select: "name"
+//     //       })
+//     //     } else if (user.assignedtoModel === "Staff") {
+//     //       // If assignedtoModel is "Staff", populate from Staff collection
+//     //       await user.populate({
+//     //         path: "assignedto",
+//     //         model: "Staff", // Directly specify the model
+//     //         select: "name"
+//     //       })
+//     //     }
+//     //     return user // Return the populated user
+//     //   })
+//     // )
+//     // console.log("populatedusers", populatedUsers)
+
+//     const allAdmins = await Admin.find()
+
+//     if (allusers.length || allAdmins.length) {
+//       const data = {}
+
+//       if (allusers.length) {
+//         data.allusers = allusers
+//       }
+
+//       if (allAdmins.length) {
+//         data.allAdmins = allAdmins
+//       }
+//       console.log("alldata", data)
+//       return res.status(200).json({
+//         message: "Users found",
+//         data: data
+//       })
+//     } else {
+//       return res.status(404).json({ message: "No users or admins found" })
+//     }
+
+//     // const allusers = await Staff.find()
+//     // const allAdmins = await Admin.find()
+//     // if (allusers || allAdmins) {
+//     //   return res
+//     //     .status(200)
+//     //     .json({ message: " users found", data: { allusers, allAdmins } })
+//     // } else {
+//     //   res.status(400).json({ message: "users not found" })
+//     // }
+//   } catch (error) {
+//     console.log("error:", error)
+//     res.status(500).json({ message: "server error" })
+//   }
+// }
+
 export const GetallUsers = async (req, res) => {
   try {
     const allusers = await Staff.find().populate([
@@ -310,31 +455,18 @@ export const GetallUsers = async (req, res) => {
         model: "Department",
         select: "department"
       },
-      { path: "assignedto", model: "Admin", select: "name" }
+      {
+        path: "assignedto",
+        select: "name"
+      }
     ])
+    allusers.forEach((user) => {
+      console.log(
+        `User: ${user.name}, Assigned To Model: ${user.assignedtoModel}`
+      )
+    })
 
-    console.log("indoallusrs", allusers)
-    // const populatedUsers = await Promise.all(
-    //   allusers.map(async (user) => {
-    //     if (user.assignedtoModel === "Admin") {
-    //       // If assignedtoModel is "Admin", populate from Admin collection
-    //       await user.populate({
-    //         path: "assignedto",
-    //         model: "Admin", // Directly specify the model
-    //         select: "name"
-    //       })
-    //     } else if (user.assignedtoModel === "Staff") {
-    //       // If assignedtoModel is "Staff", populate from Staff collection
-    //       await user.populate({
-    //         path: "assignedto",
-    //         model: "Staff", // Directly specify the model
-    //         select: "name"
-    //       })
-    //     }
-    //     return user // Return the populated user
-    //   })
-    // )
-    // console.log("populatedusers", populatedUsers)
+    // console.log("allusers", populatedUsers)
 
     const allAdmins = await Admin.find()
 
@@ -356,21 +488,12 @@ export const GetallUsers = async (req, res) => {
     } else {
       return res.status(404).json({ message: "No users or admins found" })
     }
-
-    // const allusers = await Staff.find()
-    // const allAdmins = await Admin.find()
-    // if (allusers || allAdmins) {
-    //   return res
-    //     .status(200)
-    //     .json({ message: " users found", data: { allusers, allAdmins } })
-    // } else {
-    //   res.status(400).json({ message: "users not found" })
-    // }
   } catch (error) {
-    console.log("error:", error.message)
+    console.log("error:", error)
     res.status(500).json({ message: "server error" })
   }
 }
+
 export const LeaveApply = async (req, res) => {
   const updatedData = req.body
   console.log("body", req.body)
