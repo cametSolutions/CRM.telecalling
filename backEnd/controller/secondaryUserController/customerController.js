@@ -22,7 +22,6 @@ export const CustomerRegister = async (req, res) => {
 
   // Check if user already exists
   const customerExists = await Customer.findOne({ customerName })
-  console.log("ecit", customerExists)
 
   if (customerExists) {
     return res.status(400).json({ message: "Customer already registered" })
@@ -43,23 +42,22 @@ export const CustomerRegister = async (req, res) => {
       isActive,
       selected: tabledata
     })
-    console.log("customerrrrrrr", customer)
+
     const customerData = await customer.save()
-    console.log("customerdataaaaaaaaaaa", customerData)
 
     if (tabledata) {
       for (const item of customerData.selected) {
         const license = new License({
           products: item.product_id,
           customerName: customerData._id, // Using the customer ID from the parent object
-          license_no: item.license_no
+          licensenumber: item.licensenumber
         })
 
         await license.save()
       }
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       status: true,
       message: "Customer created successfully"
     })
@@ -68,31 +66,84 @@ export const CustomerRegister = async (req, res) => {
     res.status(500).json({ message: "server error" })
   }
 }
-export const GetCustomer = async (req, res) => {
-  const { search } = req.query
+export const CustomerEdit = async (req, res) => {
+  const { customerData, tableData } = req.body
+  const customerId = req.query.customerid
 
   try {
-    let searchCriteria = {}
+    if (customerId && customerData) {
+      const objectId = new mongoose.Types.ObjectId(customerId)
 
-    if (!isNaN(search)) {
-      // Search by license number or mobile number using partial match
-      const searchRegex = new RegExp(`^${search}`, "i")
+      const existingCustomer = await Customer.findById(objectId)
 
-      searchCriteria = {
-        $or: [{ "selected.license_no": searchRegex }, { mobile: searchRegex }]
+      if (!existingCustomer) {
+        return res.status(404).json({ message: "Customer not found" })
       }
-    } else {
-      // Search by customer name
-      searchCriteria = { customerName: new RegExp(search, "i") }
-    }
 
-    let customers = await Customer.find(searchCriteria)
+      existingCustomer.selected = tableData
+      existingCustomer.customerName =
+        customerData.customerName || existingCustomer.customerName
+      existingCustomer.address1 =
+        customerData.address1 || existingCustomer.landline
 
-    if (customers.length === 0) {
-      res.json({ message: "No customer found" })
-    } else {
-      res.json({ message: "Customer(s) found", data: customers })
+      existingCustomer.address2 =
+        customerData.address2 || existingCustomer.address2
+      existingCustomer.country =
+        customerData.country || existingCustomer.country
+      existingCustomer.state = customerData.state || existingCustomer.state
+      existingCustomer.city = customerData.city || existingCustomer.city
+      existingCustomer.pincode =
+        customerData.pincode || existingCustomer.pincode
+      existingCustomer.email = customerData.email || existingCustomer.email
+      existingCustomer.mobile = customerData.mobile || existingCustomer.mobile
+      existingCustomer.landline =
+        customerData.landline || existingCustomer.landline
+      existingCustomer.isActive =
+        customerData.isActive || existingCustomer.isActive
+      // Step 3: Save the changes to the database
+      await existingCustomer.save()
+      res.status(200).json({ message: "Customer updated succesfully" })
     }
+  } catch (error) {
+    console.log("Error:", error.message)
+    res.status(500).json({ message: "Error updating customer" })
+  }
+}
+export const GetCustomer = async (req, res) => {
+  console.log("hii")
+  // const { search } = req.query
+
+  try {
+    // let searchCriteria = {}
+    // if (search) {
+    //   if (!isNaN(search)) {
+    //     // Search by license number or mobile number using partial match
+    //     const searchRegex = new RegExp(`^${search}`, "i")
+
+    //     searchCriteria = {
+    //       $or: [{ "selected.license_no": searchRegex }, { mobile: searchRegex }]
+    //     }
+    //   } else {
+    //     // Search by customer name
+    //     searchCriteria = { customerName: new RegExp(search, "i") }
+    //     console.log("search ", searchCriteria)
+    //   }
+
+    //   const customers = await Customer.find(searchCriteria)
+    //   if (customers.length === 0) {
+    //     return res.json({ message: "No customer found" })
+    //   } else {
+    //     return res.json({ message: "Customer(s) found", data: customers })
+    //   }
+    // }  
+      const customers = await Customer.find()
+       if (customers.length === 0) {
+        return res.json({ message: "No customer found" })
+      } else {
+        return res.json({ message: "Customer(s) found", data: customers })
+      }
+
+    
   } catch (error) {
     console.error("Error fetching customer data:", error.message)
     res
@@ -104,7 +155,7 @@ export const GetCustomer = async (req, res) => {
 export const GetLicense = async (req, res) => {
   try {
     const licensenumber = await License.find()
-    console.log("license number:", licensenumber)
+
     if (licensenumber.length > 0) {
       res
         .status(200)
@@ -115,21 +166,22 @@ export const GetLicense = async (req, res) => {
     res.status(500).send("server error")
   }
 }
+
 export const customerCallRegistration = async (req, res) => {
   try {
     const { customerid, customer } = req.query // Get customerid from query
     const calldata = req.body // Assuming calldata is sent in the body
     console.log("calldata", calldata)
-
     // Convert customerid to ObjectId
     const customerId = new mongoose.Types.ObjectId(customerid)
-    console.log("howww")
+
     if (!mongoose.Types.ObjectId.isValid(customerId)) {
       throw new Error("Invalid ObjectId format")
     }
 
     // Find if there is already a call registration for this customer
     const user = await CallRegistration.findOne({ customerid: customerId })
+    console.log("user", user)
 
     if (user) {
       const token = calldata.formdata.token
@@ -137,17 +189,51 @@ export const customerCallRegistration = async (req, res) => {
         const callToUpdate = user.callregistration.find(
           (call) => call.timedata.token === token
         )
+        console.log("calldata", calldata)
+        console.log("calltoupadatae", callToUpdate)
+        // Function to convert "HH:MM:SS" format to total seconds
+        function timeToSeconds(duration) {
+          const parts = duration.split(":").map(Number) // split into [hours, minutes, seconds]
+          const hours = parts[0] || 0
+          const minutes = parts[1] || 0
+          const seconds = parts[2] || 0
+          return hours * 3600 + minutes * 60 + seconds // convert all to seconds
+        }
+
+        // Function to convert total seconds back to "HH:MM:SS" format
+        function secondsToTime(totalSeconds) {
+          const hours = Math.floor(totalSeconds / 3600)
+            .toString()
+            .padStart(2, "0")
+          const minutes = Math.floor((totalSeconds % 3600) / 60)
+            .toString()
+            .padStart(2, "0")
+          const seconds = (totalSeconds % 60).toString().padStart(2, "0")
+          return `${hours}:${minutes}:${seconds}`
+        }
+
+        // Assuming callToUpdate.timedata.duration and calldata.timedata.duration are in "HH:MM:SS" format
+        const duration1InSeconds = timeToSeconds(callToUpdate.timedata.duration)
+        const duration2InSeconds = timeToSeconds(calldata.timedata.duration)
+
+        // Add the durations
+        const totalDurationInSeconds = duration1InSeconds + duration2InSeconds
         if (callToUpdate) {
           // Update the fields with the new data
-          callToUpdate.timedata = calldata.timedata
+
+          callToUpdate.timedata.startTime = calldata.timedata.startTime
+          callToUpdate.timedata.endTime = calldata.timedata.endTime
+          // Convert the total duration back to "HH:MM:SS" format
+          callToUpdate.timedata.duration = secondsToTime(totalDurationInSeconds)
+          callToUpdate.timedata.token = calldata.timedata.token
           callToUpdate.formdata = calldata.formdata
-          callToUpdate.userName = calldata.userName
           callToUpdate.product = calldata.product
           callToUpdate.license = calldata.license
           callToUpdate.branchName = calldata.branchName
 
           // Save the updated document
           const updatedCall = await user.save()
+
           return res.status(200).json({
             status: true,
             message: "New call added successfully",
@@ -155,10 +241,9 @@ export const customerCallRegistration = async (req, res) => {
           })
           // Return or log the updated call if needed
         }
+      } else {
+        user.callregistration.push(calldata)
       }
-
-      // If a document is found, update it by pushing new call data to callregistration array
-      else user.callregistration.push(calldata)
 
       // Save the updated document
       const updatedCall = await user.save()
@@ -178,6 +263,7 @@ export const customerCallRegistration = async (req, res) => {
 
       // Save the new document
       const updatedCall = await newCall.save()
+      console.log("uadaredcalls", updatedCall)
 
       return res.status(200).json({
         status: true,
@@ -186,7 +272,7 @@ export const customerCallRegistration = async (req, res) => {
       })
     }
   } catch (error) {
-    console.error("Error saving or updating call registration:", error)
+    console.error("Error saving or updating call registration:", error.message)
     return res.status(500).json({
       status: false,
       message: "Error saving or updating call registration"
@@ -198,6 +284,7 @@ export const GetCallRegister = async (req, res) => {
   try {
     const { customerid, customer } = req.query
     const { callId } = req.params
+    console.log("idsssssssss", callId)
 
     if (customerid !== "null" && customerid) {
       const customerId = new mongoose.Types.ObjectId(customerid)
@@ -218,7 +305,6 @@ export const GetCallRegister = async (req, res) => {
           path: "callregistration.product", // Populate the product field inside callregistration array
           model: "Product"
         })
-      console.log("custojmer found", callDetails)
 
       if (!callDetails) {
         return res.status(404).json({ message: "Call not found" })
@@ -238,8 +324,13 @@ export const GetCallRegister = async (req, res) => {
     res.status(500).json({ message: "internal server error" })
   }
 }
-export const GetallCalls = async (req, res) => {
+
+export const GetallCalls = async (req, res, socket) => {
   try {
+    let totalTokens = 0
+    let pendingCount = 0
+    let solvedCount = 0
+    let todayCallsCount = 0
     const allcalls = await CallRegistration.find()
       .populate({
         path: "callregistration.product", // Populate the product field inside callregistration array
@@ -247,8 +338,49 @@ export const GetallCalls = async (req, res) => {
       })
       .exec()
 
+    const isToday = (date) => {
+      const today = new Date()
+      return (
+        date.getDate() === today.getDate() &&
+        date.getMonth() === today.getMonth() &&
+        date.getFullYear() === today.getFullYear()
+      )
+    }
+
+    allcalls.forEach((token) => {
+      const callRegistrations = token.callregistration
+      totalTokens += callRegistrations.length
+
+      callRegistrations.forEach((call) => {
+        if (call.formdata.status === "pending") {
+          pendingCount++
+        } else {
+          solvedCount++
+        }
+
+        const startTime = new Date(call.timedata.startTime)
+        if (isToday(startTime)) {
+          todayCallsCount++
+        }
+      })
+    })
+
+    const alltokens = {
+      totalTokens,
+      pendingCount,
+      solvedCount,
+      todayCallsCount
+    }
+    console.log("alltok", alltokens)
+
     if (allcalls.length > 0) {
-      res.status(200).json({ message: "calls found", data: allcalls })
+      res.status(200).json({
+        message: "calls found",
+        data: {
+          allcalls,
+          alltokens
+        }
+      })
     } else {
       res.status(400).json({ message: "no calls" })
     }

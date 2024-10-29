@@ -45,7 +45,7 @@ import { fetchDataFromApi } from "../api/fetchDataFromApi"
 const UseFetch = (url) => {
   const [refresh, setRefresh] = useState(false)
   const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(null)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -60,14 +60,16 @@ const UseFetch = (url) => {
 
       try {
         const result = await fetchDataFromApi(url)
-        if (result.data) {
-          setData(result.data) // Accessing the `data` key from the response
+
+        if (result) {
+          setData(result.data)
+          setLoading(false)
         } else {
           setError("Expected data to be an array")
-          console.error("Expected data to be an array", result)
+          console.error("Error", result)
         }
-        setLoading(false)
       } catch (err) {
+        console.log("errrrincatch")
         setLoading(false)
         setError(err.message || "Something went wrong!")
       }
@@ -77,6 +79,7 @@ const UseFetch = (url) => {
   }, [url, refresh])
 
   const refreshHook = () => {
+    console.log("refredh")
     setRefresh(!refresh)
   }
 

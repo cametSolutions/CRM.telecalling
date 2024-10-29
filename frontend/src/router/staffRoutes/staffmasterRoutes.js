@@ -1,93 +1,92 @@
-import CompanyList from "../../../pages/primaryUser/List/CompanyList"
-import CompanyRegistration from "../../../pages/primaryUser/register/CompanyRegistration"
-import BranchRegistration from "../../../pages/primaryUser/register/BranchRegistration"
-import CustomerRegistration from "../../../pages/secondaryUser/register/CustomerRegistration"
-import CustomerEdit from "../../../pages/secondaryUser/edit/CustomerEdit"
-import UserRegistration from "../../../pages/primaryUser/register/UserRegistration"
-import BranchList from "../../../pages/primaryUser/List/BranchList"
-import CompanyEdit from "../../../pages/primaryUser/edit/CompanyEdit"
-import BranchEdit from "../../../pages/primaryUser/edit/BranchEdit"
-import BrandRegistration from "../../../pages/primaryUser/register/BrandRegistration"
-import CategoryRegistration from "../../../pages/primaryUser/register/CategoryRegistration"
-import HsnCreation from "../../../pages/primaryUser/register/HsnCreation"
-import HsnList from "../../../pages/primaryUser/register/HsnList"
-import EditHsn from "../../../pages/primaryUser/edit/EditHsn"
-import ProductMaster from "../../../pages/primaryUser/register/ProductMaster"
-import CustomerList from "../../../pages/primaryUser/List/CustomerList"
-import ProductList from "../../../pages/primaryUser/List/ProductList"
+// import CompanyList from "../../pages/primaryUser/List/CompanyList"
+import CompanyList from "../../pages/primaryUser/List/CompanyList"
+import CompanyRegistration from "../../pages/primaryUser/register/CompanyRegistration"
+import BranchRegistration from "../../pages/primaryUser/register/BranchRegistration"
+import CustomerRegistration from "../../pages/secondaryUser/register/CustomerRegistration"
+import CustomerEdit from "../../pages/secondaryUser/edit/CustomerEdit"
 
-import PendingCustomer from "../../../components/secondaryUser/PendingCustomer"
-import ProductEdit from "../../../pages/primaryUser/edit/ProductEdit"
+import BranchList from "../../pages/primaryUser/List/BranchList"
+import CompanyEdit from "../../pages/primaryUser/edit/CompanyEdit"
+import BranchEdit from "../../pages/primaryUser/edit/BranchEdit"
+import BrandRegistration from "../../pages/primaryUser/register/BrandRegistration"
+import CategoryRegistration from "../../pages/primaryUser/register/CategoryRegistration"
+import HsnCreation from "../../pages/primaryUser/register/HsnCreation"
+import HsnList from "../../pages/primaryUser/register/HsnList"
+import EditHsn from "../../pages/primaryUser/edit/EditHsn"
+import ProductMaster from "../../pages/primaryUser/register/ProductMaster"
+import CustomerListform from "../../components/secondaryUser/CustomerListform"
+import ProductList from "../../pages/primaryUser/List/ProductList"
+
+import PendingCustomer from "../../components/secondaryUser/PendingCustomer"
+import ProductEdit from "../../pages/primaryUser/edit/ProductEdit"
+import UserListform from "../../pages/primaryUser/List/UserListform"
 const staffmastersRoutes = [
   {
-    path: "/admin/masters/company",
+    path: "/staff/masters/company",
 
     component: CompanyList
   },
   {
-    path: "/admin/masters/companyRegistration",
+    path: "/staff/masters/companyRegistration",
 
     component: CompanyRegistration
   },
-  { path: "/admin/masters/companyEdit", component: CompanyEdit },
+  { path: "/staff/masters/companyEdit", component: CompanyEdit },
 
-  { path: "/admin/masters/branch", component: BranchList },
+  { path: "/staff/masters/branch", component: BranchList },
   {
-    path: "/admin/masters/branchRegistration",
+    path: "/staff/masters/branchRegistration",
 
     component: BranchRegistration
   },
-  { path: "/admin/masters/branchEdit", component: BranchEdit },
-  { path: "/admin/masters/customer", component: CustomerList },
-  { path: "/admin/masters/pendingCustomer", component: PendingCustomer },
+  { path: "/staff/masters/branchEdit", component: BranchEdit },
+  { path: "/staff/masters/customer", component: CustomerListform },
+  { path: "/staff/masters/customerEdit", component: CustomerEdit },
+  { path: "/staff/masters/pendingCustomer", component: PendingCustomer },
   {
-    path: "/admin/masters/customerRegistration",
+    path: "/staff/masters/customerRegistration",
     component: CustomerRegistration
   },
-  { path: "/admin/maseters/customerEdit", component: CustomerEdit },
+
   {
-    path: "/admin/masters/users&passwords",
-    component: UserRegistration
-  },
-  {
-    path: "/admin/masters/inventory/brandRegistration",
+    path: "/staff/masters/inventory/brandRegistration",
     component: BrandRegistration
   },
 
   {
-    path: "/admin/masters/inventory/categoryRegistration",
+    path: "/staff/masters/inventory/categoryRegistration",
 
     component: CategoryRegistration
   },
   {
-    path: "/admin/masters/inventory/hsnCreation",
+    path: "/staff/masters/inventory/hsnCreation",
 
     component: HsnCreation
   },
   {
-    path: "/admin/masters/inventory/hsnlist",
+    path: "/staff/masters/inventory/hsnlist",
     component: HsnList
   },
   {
-    path: "/admin/masters/inventory/editHsn",
+    path: "/staff/masters/inventory/editHsn",
     component: EditHsn
   },
   {
-    path: "/admin/masters/product",
+    path: "/staff/masters/product",
     component: ProductList
   },
-  { path: "/admin/masters/productEdit", component: ProductEdit },
-  { path: "/admin/masters/productRegistration", component: ProductMaster },
-  { path: "/admin/masters/users-&-passwords", component: UserRegistration },
+  { path: "/staff/masters/productEdit", component: ProductEdit },
+  { path: "/staff/masters/productRegistration", component: ProductMaster },
+  { path: "/staff/masters/users-&-passwords", component: UserListform },
 
-  { path: "/admin/masters/menurights", title: "Menu Rights" },
+  { path: "/staff/masters/menurights", title: "Menu Rights" },
 
-  { path: "/admin/masters/vouchermaster", title: "Voucher Master" },
-  { path: "/admin/masters/target", title: "Target" },
-  { path: "/admin/masters/product", title: "Product" },
-  { path: "/admin/masters/customerImport", title: "Customer Import" },
-  { path: "/admin/masters/partners", title: "Partners" },
-  { path: "/admin/masters/deapartment", title: "Department" }
+  { path: "/staff/masters/vouchermaster", title: "Voucher Master" },
+  { path: "/staff/masters/target", title: "Target" },
+  { path: "/staff/masters/product", title: "Product" },
+  { path: "/staff/masters/customerImport", title: "Customer Import" },
+  { path: "/staff/masters/partners", title: "Partners" },
+  { path: "/staff/masters/deapartment", title: "Department" }
 ]
 
 export default staffmastersRoutes

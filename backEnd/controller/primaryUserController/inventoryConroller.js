@@ -1,7 +1,7 @@
 import {
   Brand,
   Category,
-  Hsn,
+  Hsn
 } from "../../model/primaryUser/productSubDetailsSchema.js"
 
 export const ProductSubdetailsRegistration = async (req, res) => {
@@ -15,13 +15,13 @@ export const ProductSubdetailsRegistration = async (req, res) => {
     case "brand":
       data = {
         model: Brand,
-        field: "brand",
+        field: "brand"
       }
       break
     case "category":
       data = {
         model: Category,
-        field: "category",
+        field: "category"
       }
       break
     default:
@@ -37,7 +37,7 @@ export const ProductSubdetailsRegistration = async (req, res) => {
   try {
     // Create and save new item
     const collection = new data.model({
-      [data.field]: value,
+      [data.field]: value
     })
     console.log("collection:", collection)
     await collection.save()
@@ -45,7 +45,7 @@ export const ProductSubdetailsRegistration = async (req, res) => {
     res.status(200).json({
       status: true,
       message: `${tab} created successfully`,
-      data: collection,
+      data: collection
     })
   } catch (error) {
     console.log(error)
@@ -114,7 +114,7 @@ export const GetproductsubDetails = async (req, res) => {
 
     if (!items || items.length === 0) {
       return res.status(404).json({
-        message: `${tab.charAt(0).toUpperCase() + tab.slice(1)}s not found`,
+        message: `${tab.charAt(0).toUpperCase() + tab.slice(1)}s not found`
       })
     }
 
@@ -126,7 +126,7 @@ export const GetproductsubDetails = async (req, res) => {
       data: items,
       totalItems, // Total number of items
       totalPages, // Total number of pages
-      currentPage: parseInt(page), // Current page number
+      currentPage: parseInt(page) // Current page number
     })
   } catch (error) {
     console.error(error.message)
@@ -240,13 +240,13 @@ export const UpdateHsn = async (req, res) => {
     // Check if another user already has this description
     const nameAlreadyExists = await HsnModel.findOne({
       hsnSac,
-      owner: { $ne: ownerId },
+      owner: { $ne: ownerId }
     })
 
     if (nameAlreadyExists) {
       return res.status(400).json({
         success: false,
-        message: "Hsn already exists",
+        message: "Hsn already exists"
       })
     } else {
       // Update the user type
@@ -256,20 +256,20 @@ export const UpdateHsn = async (req, res) => {
           hsnSac: hsnSac,
           description: description,
           onValue: onValue,
-          onItem: onItem,
+          onItem: onItem
         }
       )
 
       if (!updateHsn) {
         return res.status(404).json({
           success: false,
-          message: "Hsn update failed",
+          message: "Hsn update failed"
         })
       }
 
       return res.status(200).json({
         success: true,
-        message: "Hsn updated successfully",
+        message: "Hsn updated successfully"
       })
     }
   } catch (error) {
@@ -277,7 +277,7 @@ export const UpdateHsn = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Error updating Hsn",
-      error: error.message,
+      error: error.message
     })
   }
 }
@@ -302,7 +302,18 @@ export const DeleteHsn = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Error deleting Hsn",
-      error: error.message,
+      error: error.message
     })
+  }
+}
+export const GetBrands = async (req, res) => {
+  try {
+    const brands = await Brand.find()
+    if (brands.length > 0) {
+      res.status(200).json({ message: "Brands found", data: brands })
+    }
+  } catch (error) {
+    console.log("Error:", error.message)
+    res.status(500).json({ message: "Internal server error" })
   }
 }

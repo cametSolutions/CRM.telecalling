@@ -19,44 +19,46 @@ const CustomerAdd = ({
     setError,
     clearErrors,
     setValue,
+    watch,
     formState: { errors }
   } = useForm()
 
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [selectedCompany, setSelectedCompany] = useState(null)
   const [selectedBranch, setSelectedBranch] = useState(null)
-  const [companyData, setCompanyData] = useState([])
-  const [branchData, setBranchData] = useState([])
+  const [filteredCompanies, setfilteredCompanies] = useState([])
+  const [filteredBranches, setfilteredBranches] = useState([])
   const [showTable, setShowTable] = useState(false)
   const [tableData, setTableData] = useState([])
   const [editState, seteditState] = useState(false)
-  const [licenseAvailable, setLicenseAvailable] = useState(true)
+
   const [editIndex, setEditIndex] = useState(null)
+  const [licenseAvailable, setLicenseAvailable] = useState(true)
   const [license, setLicense] = useState([])
 
   const [isLicense, setlicenseExist] = useState([])
   const [products, setProducts] = useState([])
   const [tableObject, setTableObject] = useState({
     company_id: "",
-    company_name: "",
+    companyName: "",
     branch_id: "",
-    branch_name: "",
+    branchName: "",
     product_id: "",
-    product_name: "",
-    license_no: "",
-    no_of_users: "",
+    productName: "",
+    licensenumber: "",
+    noofusers: "",
     version: "",
-    customer_addDate: "",
-    amc_startDate: "",
-    amc_endDate: "",
-    amc_amount: "",
-    amc_description: "",
-    license_expiryDate: "",
-    product_amount: "",
-    product_description: "",
-    tvu_expiryDate: "",
-    tvu_amount: "",
-    tvu_description: "",
+    customerAddDate: "",
+    amcstartDate: "",
+    amcendDate: "",
+    amcAmount: "",
+    amcDescription: "",
+    licenseExpiryDate: "",
+    productAmount: "",
+    productamountDescription: "",
+    tvuexpiryDate: "",
+    tvuAmount: "",
+    tvuamountDescription: "",
     isActive: ""
   })
   //now created
@@ -67,21 +69,171 @@ const CustomerAdd = ({
   const { data: licensenumber, error: licensenumberError } = UseFetch(
     "/customer/getLicensenumber"
   )
-  // Debounce license number input
+  console.log("date", tableObject)
+  useEffect(() => {
+    if (productData) {
+      setProducts(productData)
+      console.log("products")
+    } // Directly set products to productData
+  }, [productData])
+
   useEffect(() => {
     if (licensenumber) {
       setLicense(licensenumber)
     }
   })
+  useEffect(() => {
+    if (selectedProduct) {
+      console.log("selcteprro", selectedProduct)
+      const product = products.find(
+        (product) => product._id === selectedProduct
+      )
+      console.log("products", product)
+      if (product) {
+        // Using a Set to track unique company IDs
+        const uniqueCompanyIds = new Set()
+        const uniqueCompanies = product.selected
 
-  const debouncedLicenseNo = useDebounce(tableObject.license_no, 500)
+          .filter((item) => {
+            if (!uniqueCompanyIds.has(item.company_id)) {
+              uniqueCompanyIds.add(item.company_id)
+              return true // Include this item in the filtered array
+            }
+            return false // Skip this item as it has a duplicate company_id
+          })
+          .map((item) => ({
+            _id: item.company_id,
+            companyName: item.companyName,
+            branch_id: item.branch_id,
+            branchName: item.branchName
+          }))
+        console.log("uni", uniqueCompanies)
+        setfilteredCompanies(uniqueCompanies)
+      }
+    }
+  }, [products, selectedProduct])
 
+  const debouncedLicenseNo = useDebounce(tableObject.licensenumber, 500)
+  console.log(tableObject)
+  useEffect(() => {
+    const ignored = ["company_id", "branch_id", "product_id"]
+    if (selected && customer) {
+      setShowTable(true)
+      console.log("selc", selected)
+      setTableObject({
+        company_id: selected.company_id || "",
+        companyName: selected.companyName || "",
+        branch_id: selected.branch_id || "",
+        branchName: selected.branchName || "",
+        product_id: selected.product_id || "",
+        productName: selected.productName || "",
+        licensenumber: selected.licensenumber || "",
+        noofusers: selected.noofusers || "",
+        version: selected.version || "",
+        customerAddDate: selected.customerAddDate || "",
+        amcstartDate: selected.amcstartDate || "",
+        amcendDate: selected.amcendDate || "",
+        amcAmount: selected.amcAmount || "",
+        amcDescription: selected.amcDescription || "",
+        licenseExpiryDate: selected.licenseExpiryDate || "",
+        productAmount: selected.productAmount || "",
+        productamountDescription: selected.productamountDescription || "",
+        tvuexpiryDate: selected.tvuexpiryDate || "",
+        tvuAmount: selected.tvuAmount || "",
+        tvuamountDescription: selected.tvuamountDescription || "",
+        isActive: selected.isActive || ""
+      })
+      Object.keys(selected).forEach((key) => {
+        console.log(selected.amcstartDate)
+        if (!ignored.includes(key)) {
+          if (key === "productName") {
+            setSelectedProduct(selected.product_id)
+            setValue(key, selected.product_id)
+            console.log("selell", selectedProduct)
+          } else if (key === "companyName") {
+            console.log("hii")
+            console.log("sdffdf", selected.company_id)
+
+            setSelectedCompany(selected.company_id)
+            console.log(selectedCompany)
+            setValue(key, selectedCompany)
+          } else if (key === "branchName") {
+            console.log("sdffdf", selected.branch_id)
+
+            console.log("selbrac", selected.branch_id)
+            setSelectedBranch(selected.branch_id)
+            setValue(key, selected.branch_id)
+          } else {
+            setValue(key, selected[key]) // Set the value as it is
+          }
+          //  else {
+          // //   console.log(selected[key])
+          // //   setValue(key, new Date(selected[key]))
+          // // }
+        }
+      })
+    }
+    // Add the keys you want to ignore here
+    const ignoredKeys = [
+      "company_id",
+      "companyName",
+      "branch_id",
+      "branchName",
+      "product_id",
+      "productName",
+      "licensenumber",
+      "noofusers",
+      "version",
+      "customerAddDate",
+      "amcstartDate",
+      "amcendDate",
+      "amcAmount",
+      "amcDescription",
+      "licenseExpiryDate",
+      "productAmount",
+      "productamountDescription",
+      "tvuexpiryDate",
+      "tvuAmount",
+      "tvuamountDescription",
+      "isActive",
+      "softwareTrade",
+      "_id"
+    ]
+
+    if (customer) {
+      Object.keys(customer).forEach((key) => {
+        if (!ignoredKeys.includes(key)) {
+          // Check if the key is not in the ignored list
+          console.log(key) // Log the key if necessary
+          setValue(key, customer[key])
+          setTableObject((prev) => ({
+            ...prev,
+
+            key: customer[key]
+          }))
+        }
+      })
+    }
+    // setTableData((prev) => [...prev, tableObject])
+  }, [
+    customer,
+    selected,
+    selectedCompany,
+    selectedProduct,
+    selectedBranch,
+    filteredCompanies,
+    filteredBranches,
+    products
+  ])
+  console.log("hi")
   useEffect(() => {
     // If there's a debounced license number, check its uniqueness
-    if (debouncedLicenseNo) {
+    console.log("lice", license)
+    if (debouncedLicenseNo.length > 0) {
+      console.log("hii")
       if (license.length > 0 && isLicense.length === 0) {
         const checkLicense = license.find(
-          (item) => item.license_no === debouncedLicenseNo
+          (item) => item.licensenumber === debouncedLicenseNo
         )
         if (checkLicense) {
           setLicenseAvailable(false)
@@ -90,6 +242,7 @@ const CustomerAdd = ({
           toast.error("license number already exits")
         } else {
           setLicenseAvailable(true)
+          setlicenseExist((prevState) => [...prevState, debouncedLicenseNo])
           console.log("checked false at licesnes")
           toast.success("license number is available")
         }
@@ -100,7 +253,7 @@ const CustomerAdd = ({
             (item) => item === debouncedLicenseNo
           )
           const licensecheck = license.find(
-            (item) => item.license_no === debouncedLicenseNo
+            (item) => item.licensenumber === debouncedLicenseNo
           )
           if (checklicense || licensecheck) {
             setLicenseAvailable(false)
@@ -113,75 +266,25 @@ const CustomerAdd = ({
             toast.success("license number is available")
           }
         } else {
+          console.log("hii")
           setLicenseAvailable(true)
           toast.success("license number is available")
         }
       }
     }
+    console.log("hii")
 
     // checkLicenseNumber(debouncedLicenseNo)
   }, [debouncedLicenseNo])
 
-  useEffect(() => {
-    if (productData) setProducts(productData) // Directly set products to productData
-  }, [productData])
-
+  console.log(isLicense)
   const handleTableData = () => {
-    if (!licenseAvailable) {
-      toast.error("license number is already exists")
-      return
-    }
-    if (tableObject.company_id.trim() === "") {
-      toast.error("please select a company")
-      return
-    } else if (tableObject.branch_id.trim() === "") {
-      toast.error("please select a branch")
-      return
-    } else if (tableObject.product_id.trim() === "") {
-      toast.error("please select a product")
-      return
-    } else if (tableObject.license_no.trim() === "") {
-      toast.error("please add a license number")
-      return
-    } else if (tableObject.no_of_users.trim() === "") {
-      toast.error("please add users")
-      return
-    } else if (tableObject.version.trim() === "") {
-      toast.error("please add version")
-      return
-    } else if (tableObject.customer_addDate.trim() === "") {
-      toast.error("please choose a date")
-      return
-    } else if (tableObject.amc_startDate.trim() === "") {
-      toast.error("please add amc start date")
-      return
-    } else if (tableObject.amc_amount.trim() === "") {
-      toast.error("please select amc end date")
-      return
-    } else if (tableObject.amc_amount.trim() === "") {
-      toast.error("please fill amc amount")
-      return
-    } else if (tableObject.amc_description.trim() === "") {
-      toast.error("please add amc description")
-      return
-    } else if (tableObject.license_expiryDate.trim() === "") {
-      toast.error("please add license expiryDate")
-      return
-    } else if (tableObject.product_amount.trim() === "") {
-      toast.error("please add product amount")
-      return
-    } else if (tableObject.product_description.trim() === "") {
-      toast.error("please add product description")
-      return
-    } else if (tableObject.tvu_expiryDate.trim() === "") {
-      toast.error("please add tvu expiryDate")
-      return
-    } else if (tableObject.tvu_amount.trim() === "") {
-      toast.error("please add tvu amount")
-      return
-    } else if (tableObject.tvu_description.trim() === "") {
-      toast.error("please add tvu description")
-      return
+    for (const key in tableObject) {
+      if (typeof tableObject[key] === "string") {
+        tableObject[key] = tableObject[key].trim()
+      } else if (typeof tableObject[key] === "number") {
+        tableObject[key] = String(tableObject[key].trim())
+      }
     }
 
     if (editIndex !== null) {
@@ -195,21 +298,28 @@ const CustomerAdd = ({
       seteditState(false) // Reset the edit index
     } else {
       // Otherwise, add a new item
-      const isIncluded = tableData.some(
+      console.log("tabledta", tableData)
+      console.log(isLicense)
+      const istableobjectInclude = tableData.some(
         (item) => JSON.stringify(item) === JSON.stringify(tableObject)
       )
-
-      if (isIncluded) {
+      console.log(tableObject)
+      console.log(tableData)
+      const islicenseInclude = tableData.some(
+        (item) => item.licensenumber === tableObject.licensenumber
+      )
+      console.log(islicenseInclude)
+      if (istableobjectInclude) {
         toast.error("already added")
         return
       }
-
+      if (islicenseInclude) {
+        toast.error("licensenumber is already exist")
+        return
+      }
+      console.log("tableobject", tableObject)
       setTableData((prev) => [...prev, tableObject])
-
-      setlicenseExist((prev) => [...prev, tableObject.license_no])
     }
-
-    // reset()
   }
 
   useEffect(() => {
@@ -219,6 +329,7 @@ const CustomerAdd = ({
       )
     }
   }, [productError])
+
   const softwareTrades = [
     "Agriculture",
     "Business Services",
@@ -246,13 +357,23 @@ const CustomerAdd = ({
   ]
 
   const handleDelete = (id) => {
+    console.log(id)
     const filtereddData = tableData.filter((product, index) => {
       return index !== id
     })
+    console.log(isLicense)
+    const updatedIslicense = isLicense.filter((license, index) => {
+      return index !== id
+    })
+    console.log(filtereddData)
+    console.log(updatedIslicense)
 
     setTableData(filtereddData)
+    setlicenseExist(updatedIslicense)
+
     reset()
   }
+  console.log(isLicense)
   const handleEdit = (id) => {
     seteditState(true) // Close the edit state (or handle according to your logic)
 
@@ -293,124 +414,100 @@ const CustomerAdd = ({
     }
   }
 
-  const handleProductChange = (selectedOption) => {
-    const productId = selectedOption.value
-    const productName = selectedOption.label
+  const handleProductChange = (e) => {
+    console.log("eventidddd", e.target.value)
 
+    const productId = e.target.value
+    const selectedProduct = products.find(
+      (product) => product._id === productId
+    )
+    console.log("pp", selectedProduct)
     setTableObject((prev) => ({
       ...prev,
       product_id: productId,
-      product_name: productName
+      productName: selectedProduct.productName
     }))
+    console.log("id", productId)
 
     setSelectedProduct(productId)
-
-    setValue("product", productId) // Update the value in react-hook-form
   }
 
-  const handleCompanyChange = (selectedOption) => {
-    const companyId = selectedOption.value
-    const companyName = selectedOption.label
-
+  const handleCompanyChange = (e) => {
+    const companyId = e.target.value
+    console.log("compiddddddd", companyId)
+    console.log("products", products)
+    console.log("seletedprrp", selectedProduct)
+    // consolele.log("selectd", selectedCompany)
+    const Company = products.find((product) => product._id === selectedProduct)
+    // console.log("daf", selectedCompany)
+    // const foundCompany = Company.selected.find(
+    //   (company) => company.company_id === companyId
+    // )
+    console.log("selcedcom", Company.selected)
+    const foundCompany = Company.selected.find(
+      (company) => company.company_id === companyId
+    )
+    console.log("foundCompany", foundCompany)
     setTableObject((prev) => ({
       ...prev,
       company_id: companyId,
-      company_name: companyName
+      companyName: foundCompany?.companyName
     }))
-    setValue("company", selectedOption?.value || "")
-    setSelectedCompany(selectedOption.value)
+
+    console.log("hiii")
+    setSelectedCompany(companyId)
   }
   ///now created
 
-  const handleBranchChange = (selectedOption) => {
-    const branchId = selectedOption.value
-    const branchName = selectedOption.label
+  const handleBranchChange = (e) => {
+    const branchId = e.target.value
+    console.log("branchid", branchId)
+    console.log("filete", filteredBranches)
+    const Branch = filteredBranches.find(
+      (branch) => branch.branch_id === branchId
+    )
+    console.log("ss", Branch)
 
     setTableObject((prev) => ({
       ...prev,
       branch_id: branchId,
-      branch_name: branchName
+      branchName: Branch?.branchName
     }))
-    setValue("branch", selectedOption?.value || "")
-    setSelectedBranch(true)
+
+    setShowTable(true)
   }
 
-  const productOptions = useMemo(() => {
-    return products?.map((product) => ({
-      value: product._id,
-      label: product.productName
-    }))
-  }, [products])
   //now created
-  const filteredCompanies = useMemo(() => {
-    const product = products.find((product) => product._id === selectedProduct)
-    if (product) {
-      // Using a Set to track unique company IDs
-      const uniqueCompanyIds = new Set()
-      const uniqueCompanies = product.selected
-        .filter((item) => {
-          if (!uniqueCompanyIds.has(item.company_id)) {
-            uniqueCompanyIds.add(item.company_id)
-            return true // Include this item in the filtered array
-          }
-          return false // Skip this item as it has a duplicate company_id
-        })
-        .map((item) => ({
-          _id: item.company_id,
-          name: item.company_name
-        }))
-      return uniqueCompanies
+
+  useEffect(() => {
+    const company = filteredCompanies.find(
+      (company) => company._id === selectedCompany
+    )
+    console.log("products", company)
+    if (company) {
+      const branch = [company]
+
+      setfilteredBranches(branch)
     }
-    return []
-  }, [products, selectedProduct])
+  }, [products, selectedProduct, filteredCompanies, selectedCompany])
 
-  // Mapping filtered companies to options for a dropdown
-  const companyOptions = useMemo(() => {
-    return filteredCompanies.map((company) => ({
-      value: company._id,
-      label: company.name
-    }))
-  }, [filteredCompanies])
-
-  //now created
-  const filteredBranches = useMemo(() => {
-    if (!selectedCompany) return [] // No branches if no company is selected
-    const product = products.find((product) => product._id === selectedProduct)
-    if (product) {
-      return product.selected
-        .filter((item) => item.company_id === selectedCompany)
-        .map((item) => ({
-          _id: item.branch_id,
-          name: item.branch_name
-        }))
-    }
-    return []
-  }, [products, selectedProduct, selectedCompany])
-  //now created
-  const branchOptions = useMemo(() => {
-    return filteredBranches.map((branch) => ({
-      value: branch._id,
-      label: branch.name
-    }))
-  }, [filteredBranches])
-
-  const onSubmit = async (formData) => {
+  const onSubmit = async (data) => {
     try {
-      if (!licenseAvailable) {
-        toast.error("license number is already exists")
-        return
-      }
+      console.log("form", data)
+
       if (process === "Registration") {
-        await handleCustomerData(formData, tableData)
+        console.log("tableobject", tableObject)
+        console.log(tableData)
+        await handleCustomerData(data, tableData)
         reset()
-      } else if (process === "Edit") {
-        await handleEditedData(formData)
+      } else if (process === "edit") {
+        await handleEditedData(data, tableObject)
       }
-      toast.success("Customer saved successfully!")
     } catch (error) {
       toast.error("Failed to save customer!")
     }
   }
+  // console.log(tableObject.amcstartDate)
 
   return (
     <div className="container justify-center items-center min-h-screen p-8 bg-gray-100">
@@ -528,7 +625,7 @@ const CustomerAdd = ({
                 Pincode
               </label>
               <input
-                type="text"
+                type="number"
                 {...register("pincode")}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
                 placeholder="Pincode"
@@ -588,7 +685,7 @@ const CustomerAdd = ({
               </label>
               <input
                 type="tel"
-                {...register("mobile", { required: "mobile is required" })}
+                {...register("mobile")}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
                 placeholder="Phone"
               />
@@ -615,6 +712,7 @@ const CustomerAdd = ({
               )}
             </div>
           </div>
+
           <div>
             <h1 className="text-2xl font-semibold mb-6">Product Details</h1>
             <div className="  grid grid-cols-1 sm:grid-cols-4 gap-6 m-5">
@@ -625,13 +723,21 @@ const CustomerAdd = ({
                 >
                   Select Product
                 </label>
-                <Select
+
+                <select
                   id="productName"
-                  options={productOptions}
+                  {...register("productName")}
                   onChange={handleProductChange}
-                  className=""
-                  placeholder="Select a product..."
-                />
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                >
+                  <option value="">-- Select a product --</option>
+
+                  {products?.map((product) => (
+                    <option key={product._id} value={product._id}>
+                      {product.productName}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label
@@ -640,13 +746,20 @@ const CustomerAdd = ({
                 >
                   Associated Company
                 </label>
-                <Select
+
+                <select
                   id="companyName"
-                  options={companyOptions}
+                  {...register("companyName")}
                   onChange={handleCompanyChange}
-                  className=""
-                  placeholder="Select a product..."
-                />
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                >
+                  <option value="">-- Select a company --</option>
+                  {filteredCompanies?.map((company) => (
+                    <option key={company._id} value={company._id}>
+                      {company.companyName}
+                    </option>
+                  ))}
+                </select>
               </div>
               {/* Branch Display */}
               <div>
@@ -656,13 +769,21 @@ const CustomerAdd = ({
                 >
                   Associated Branch
                 </label>
-                <Select
+
+                <select
                   id="branchName"
-                  options={branchOptions}
+                  {...register("branchName")}
                   onChange={handleBranchChange}
-                  className=""
-                  placeholder="Select a product..."
-                />
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                >
+                  <option value="">-- Select a branch --</option>
+
+                  {filteredBranches?.map((branch) => (
+                    <option key={branch._id} value={branch.branch_id}>
+                      {branch.branchName}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label
@@ -679,7 +800,7 @@ const CustomerAdd = ({
                     (e) =>
                       setTableObject({
                         ...tableObject,
-                        license_no: e.target.value
+                        licensenumber: e.target.value
                       }) // Update state on change
                   }
                   className="mt-0 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
@@ -695,7 +816,7 @@ const CustomerAdd = ({
                 <label htmlFor="softwareTrade">Software Trade</label>
                 <select
                   id="softwareTrade"
-                  {...register("softwareTrade", { required: true })}
+                  {...register("softwareTrade")}
                   onChange={
                     (e) =>
                       setTableObject({
@@ -727,18 +848,18 @@ const CustomerAdd = ({
                 </label>
                 <input
                   type="number"
-                  {...register("noofuser")}
+                  {...register("noofusers")}
                   onChange={
                     (e) =>
                       setTableObject({
                         ...tableObject,
-                        no_of_users: e.target.value
+                        noofusers: e.target.value
                       }) // Update state on change
                   }
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
                   placeholder="No of users.."
                 />
-                {errors.noofuser && (
+                {errors.noofusers && (
                   <span className="mt-2 text-sm text-red-600">
                     {errors.noofuser.message}
                   </span>
@@ -787,7 +908,7 @@ const CustomerAdd = ({
                     (e) =>
                       setTableObject({
                         ...tableObject,
-                        customer_addDate: e.target.value
+                        customerAddDate: e.target.value
                       }) // Update state on change
                   }
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
@@ -809,13 +930,15 @@ const CustomerAdd = ({
                   id="amcstartDate"
                   type="date"
                   {...register("amcstartDate")}
-                  onChange={
-                    (e) =>
-                      setTableObject({
-                        ...tableObject,
-                        amc_startDate: e.target.value
-                      }) // Update state on change
-                  }
+                  onChange={(e) => {
+                    // const dateValue = new Date(e.target.value)
+                    setTableObject({
+                      ...tableObject,
+                      amcstartDate: e.target.value
+                    })
+
+                    // Update state on change
+                  }}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
                 />
                 {errors.amcstartDate && (
@@ -835,13 +958,14 @@ const CustomerAdd = ({
                   id="amcendDate"
                   type="date"
                   {...register("amcendDate")}
-                  onChange={
-                    (e) =>
-                      setTableObject({
-                        ...tableObject,
-                        amc_endDate: e.target.value
-                      }) // Update state on change
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value
+
+                    setTableObject((prev) => ({
+                      ...prev,
+                      amcendDate: value // Update local state if needed
+                    }))
+                  }}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
                 />
                 {errors.amcendDate && (
@@ -864,7 +988,7 @@ const CustomerAdd = ({
                     (e) =>
                       setTableObject({
                         ...tableObject,
-                        amc_amount: e.target.value
+                        amcAmount: e.target.value
                       }) // Update state on change
                   }
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
@@ -896,7 +1020,7 @@ const CustomerAdd = ({
                     (e) =>
                       setTableObject({
                         ...tableObject,
-                        amc_description: e.target.value
+                        amcDescription: e.target.value
                       }) // Update state on change
                   }
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
@@ -923,7 +1047,7 @@ const CustomerAdd = ({
                     (e) =>
                       setTableObject({
                         ...tableObject,
-                        license_expiryDate: e.target.value
+                        licenseExpiryDate: e.target.value
                       }) // Update state on change
                   }
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
@@ -949,7 +1073,7 @@ const CustomerAdd = ({
                     (e) =>
                       setTableObject({
                         ...tableObject,
-                        product_amount: e.target.value
+                        productAmount: e.target.value
                       }) // Update state on change
                   }
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
@@ -981,7 +1105,7 @@ const CustomerAdd = ({
                     (e) =>
                       setTableObject({
                         ...tableObject,
-                        product_description: e.target.value
+                        productamountDescription: e.target.value
                       }) // Update state on change
                   }
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
@@ -1008,7 +1132,7 @@ const CustomerAdd = ({
                     (e) =>
                       setTableObject({
                         ...tableObject,
-                        tvu_expiryDate: e.target.value
+                        tvuexpiryDate: e.target.value
                       }) // Update state on change
                   }
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
@@ -1034,7 +1158,7 @@ const CustomerAdd = ({
                     (e) =>
                       setTableObject({
                         ...tableObject,
-                        tvu_amount: e.target.value
+                        tvuAmount: e.target.value
                       }) // Update state on change
                   }
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
@@ -1066,7 +1190,7 @@ const CustomerAdd = ({
                     (e) =>
                       setTableObject({
                         ...tableObject,
-                        tvu_description: e.target.value
+                        tvuamountDescription: e.target.value
                       }) // Update state on change
                   }
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
@@ -1098,8 +1222,8 @@ const CustomerAdd = ({
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
                 >
                   <option value="">Select Status</option>
-                  <option value="true">Active</option>
-                  <option value="false">Inactive</option>
+                  <option value="Running">Active</option>
+                  <option value="Deactive">Deactive</option>
                 </select>
                 {errors.isActive && (
                   <p className="text-red-500">
@@ -1108,7 +1232,7 @@ const CustomerAdd = ({
                 )}
               </div>
             </div>
-            {selectedBranch && (
+            {showTable && (
               <div>
                 <div className="mt-6">
                   <button
@@ -1182,47 +1306,47 @@ const CustomerAdd = ({
                       {tableData?.map((product, index) => (
                         <tr key={index}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.product_name}
+                            {product?.productName}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.company_name}
+                            {product?.companyName}
                           </td>
 
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.branch_name}
+                            {product?.branchName}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.license_no}
+                            {product?.licensenumber}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.no_of_users}
+                            {product?.noofusers}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {product?.version}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.customer_addDate}
+                            {product?.customerAddDate}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.amc_startDate}
+                            {product?.amcstartDate}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.amc_endDate}
+                            {product?.amcendDate}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.amc_amount}
+                            {product?.amcAmount}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.license_expiryDate}
+                            {product?.licenseExpiryDate}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.product_amount}
+                            {product?.productAmount}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.tvu_expiryDate}
+                            {product?.tvuexpiryDate}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.tvu_amount}
+                            {product?.tvuAmount}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             {" "}

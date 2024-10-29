@@ -4,6 +4,7 @@ import connectDB from "./config/db.js"
 import cors from "cors"
 import bodyParser from "body-parser"
 import cookieParser from "cookie-parser"
+import departmentRoutes from "./routes/primaryUserRoutes/masterRoutes/departmentRoutes.js"
 import companyRoutes from "./routes/primaryUserRoutes/companyRoutes.js"
 import branchRoutes from "./routes/primaryUserRoutes/branchRoutes.js"
 import inventoryRoutes from "./routes/primaryUserRoutes/inventoryRoutes.js"
@@ -11,25 +12,67 @@ import authRoutes from "./routes/authRoutes.js"
 import excelRoutes from "./routes/primaryUserRoutes/excelRoutes.js"
 import secondaryUserRoutes from "./routes/secondaryUserRoutes/secondaryUserRoutes.js"
 import productRoutes from "./routes/primaryUserRoutes/productRoutes.js"
+import http from "http"
 import path from "path"
+import { Server } from "socket.io"
 import { fileURLToPath } from "url"
-
+import { ExceltoJson } from "./controller/primaryUserController/excelController.js"
+import { customerCallRegistration } from "./controller/secondaryUserController/customerController.js"
+import CallRegistration from "./model/secondaryUser/CallRegistrationSchema.js"
+const app = express()
 dotenv.config()
+const server = http.createServer(app)
 
 // Running port configuration
-const PORT = process.env.PORT || 7000
+const PORT = process.env.PORT
 
 // MongoDB connection getting from config/db.js
 connectDB()
 
-// const corsOptions = {
-//   // origin: ['http://localhost:5173', 'https://erp.camet.in'],
-//   // origin:'https://erp.camet.in',
-//   origin: true,
-//   credentials: true
-// }
+const corsOptions = {
+  origin: true,
+  credentials: true
+}
+const io = new Server(server, {
+  cors: corsOptions // Apply the same CORS options here
+})
+app.use(cors(corsOptions))
 
-const app = express()
+io.on("connection", (socket) => {
+  console.log("New client connected")
+
+  socket.on("error", (err) => {
+    console.error("Socket.IO error:", err)
+  })
+  //handle initial call data
+
+  socket.on("updatedCalls", async () => {
+    console.log("Received request for initial data")
+    try {
+      // Fetch all calls from the database
+      const calls = await CallRegistration.find({})
+        .populate({
+          path: "callregistration.product", // Populate the product field inside callregistration array
+          select: "productName" // Optionally select fields from the Product schema you need
+        })
+        .exec()
+      console.log("calls", calls)
+      io.emit("updatedCalls", { calls })
+    } catch (error) {
+      console.error("Error fetching call data:", error)
+      socket.emit("error", "Error fetching data")
+    }
+  })
+
+  // Handle Excel to JSON conversion
+  socket.on("startConversion", (fileData) => {
+    ExceltoJson(socket, fileData)
+  })
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected")
+  })
+})
 
 // Define __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url)
@@ -51,13 +94,7 @@ app.use(
     parameterLimit: 50000
   })
 )
-// app.use(cors(corsOptions))
-app.use(
-  cors({
-    origin: "http://localhost:5173", // Replace with your frontend URL
-    credentials: true
-  })
-)
+
 app.use(cookieParser())
 
 // Routes
@@ -68,6 +105,7 @@ app.use("/api/branch", branchRoutes)
 app.use("/api/inventory", inventoryRoutes)
 app.use("/api/product", productRoutes)
 app.use("/api/customer", secondaryUserRoutes)
+app.use("/api/master", departmentRoutes)
 
 //   console.log(process.env.NODE_ENV) // if (process.env.NODE_ENV === "production") {
 //   console.log("Serving static files from production build")
@@ -87,6 +125,22 @@ app.use((err, req, res, next) => {
   res.status(500).send("Something broke!")
 })
 
-app.listen(PORT, () => {
+if (process.env.NODE_ENV === "production") {
+  console.log(process.env.NODE_ENV)
+  console.log("hai")
+  const __dirname = path.resolve()
+  //  const parentDir = path.join(__dirname ,'..');
+  const parentDir = path.join(__dirname, "..")
+  console.log(parentDir)
+  app.use(express.static(path.join(parentDir, "/frontend/dist")))
+  app.get("*", (req, res) =>
+    res.sendFile(path.resolve(parentDir, "frontend", "dist", "index.html"))
+  )
+} else {
+  app.get("/", (req, res) => {
+    res.send("Server is Ready")
+  })
+}
+server.listen(PORT, () => {
   console.log(`Server started at http://localhost:${PORT}`)
 })

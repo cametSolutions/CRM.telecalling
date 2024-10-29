@@ -6,13 +6,14 @@ const BranchAdd = ({
   process,
   BranchData,
   handleBranchData,
-  handleEditedData,
+  handleEditData,
+  branchdata
 }) => {
   const {
     register,
     handleSubmit,
     setValue,
-    formState: { errors },
+    formState: { errors }
   } = useForm()
 
   const [companies, SetCompanies] = useState([])
@@ -24,6 +25,22 @@ const BranchAdd = ({
       SetCompanies(companyData)
     }
   }, [companyData])
+  useEffect(() => {
+    if (branchdata && companies.length > 0) {
+      console.log("brrrr", branchdata)
+      console.log("com", companies)
+      setValue("companyName", branchdata.companyName._id)
+      setValue("branchName", branchdata.branchName)
+      setValue("address", branchdata.address)
+      setValue("city", branchdata.city)
+      setValue("pincode", branchdata.pincode)
+      setValue("country", branchdata.country)
+      setValue("state", branchdata.state)
+      setValue("mobile", branchdata.mobile)
+      setValue("landlineno", branchdata.landlineno)
+      setValue("email", branchdata.email)
+    }
+  }, [companies])
 
   useEffect(() => {
     if (error) {
@@ -38,11 +55,10 @@ const BranchAdd = ({
   const onSubmit = (data) => {
     if (process === "Registration") {
       handleBranchData(data)
-    } else if (process === "Edit") {
-      handleEditedData(data)
+    } else if (process === "edit") {
+      handleEditData(data, branchdata._id)
     }
   }
-  console.log(companies)
 
   return (
     <div className="container justify-center items-center min-h-screen py-8 bg-gray-100">
@@ -55,22 +71,23 @@ const BranchAdd = ({
         >
           <div>
             <label
-              htmlFor="company"
+              htmlFor="companyName"
               className="block text-sm font-medium text-gray-700"
             >
               Select Company
             </label>
             <select
-              id="company"
-              {...register("company", {
-                required: "Company name is required",
+              id="companyName"
+              {...register("companyName", {
+                required: "Company name is required"
               })}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
             >
-              <option value="">-- Select a comapany --</option>
-              {companies.map((company) => (
+              <option value="">-- Select a company --</option>
+
+              {companies?.map((company) => (
                 <option key={company._id} value={company._id}>
-                  {company.name}
+                  {company.companyName}
                 </option>
               ))}
             </select>
@@ -82,49 +99,34 @@ const BranchAdd = ({
             <input
               type="text"
               {...register("branchName", {
-                required: "Branch name is required",
+                required: "Branch name is required"
               })}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
               placeholder="Enter a branch Name"
             />
-            {errors.name && (
+            {errors.branchName && (
               <span className="mt-2 text-sm text-red-600">
-                {errors.name.message}
+                {errors.branchName.message}
               </span>
             )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Address 1
+              Address
             </label>
             <input
               type="text"
-              {...register("address1")}
+              {...register("address")}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
               placeholder="Address"
             />
-            {errors.address1 && (
+            {errors.address && (
               <span className="mt-2 text-sm text-red-600">
-                {errors.address1.message}
+                {errors.address.message}
               </span>
             )}
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Address 2
-            </label>
-            <input
-              type="text"
-              {...register("address2")}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
-              placeholder="Address"
-            />
-            {errors.address2 && (
-              <span className="mt-2 text-sm text-red-600">
-                {errors.address2.message}
-              </span>
-            )}
-          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700">
               City
@@ -199,8 +201,8 @@ const BranchAdd = ({
                 required: "Email is required",
                 pattern: {
                   value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-                  message: "Invalid email address",
-                },
+                  message: "Invalid email address"
+                }
               })}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
               placeholder="Email"
@@ -213,7 +215,7 @@ const BranchAdd = ({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Phone
+              Mobile
             </label>
             <input
               type="tel"
@@ -227,22 +229,7 @@ const BranchAdd = ({
               </span>
             )}
           </div>
-          <div className="">
-            <label className="block text-sm font-medium text-gray-700">
-              Website
-            </label>
-            <input
-              type="url"
-              {...register("website")}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
-              placeholder="Website"
-            />
-            {errors.website && (
-              <span className="mt-2 text-sm text-red-600">
-                {errors.website.message}
-              </span>
-            )}
-          </div>
+
           <div className="">
             <label className="block text-sm font-medium text-gray-700">
               Landline

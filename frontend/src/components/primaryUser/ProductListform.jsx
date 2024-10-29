@@ -6,7 +6,7 @@ import {
   FaSearch,
   FaRegFileExcel,
   FaFilePdf,
-  FaPrint,
+  FaPrint
 } from "react-icons/fa"
 import { Link } from "react-router-dom"
 import _ from "lodash"
@@ -93,107 +93,40 @@ const ProductListform = ({ productlist }) => {
                 <th className="py-2 px-4 border-b border-gray-300 text-left">
                   Hsn
                 </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
+                {/* <th className="py-2 px-4 border-b border-gray-300 text-left">
                   Status
-                </th>
+                </th> */}
                 <th className="py-2 px-4 border-b border-gray-300 text-left">
                   Edit
                 </th>
               </tr>
             </thead>
-            {/* <tbody className="bg-white divide-y divide-gray-200">
-              {filteredProducts?.length > 0 ? (
-                filteredProducts.map((product) => (
-                  <tr key={product?._id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {product.company?.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {branch?.branchName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {branch?.address1}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {branch?.address2}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {branch?.city}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {branch?.pincode}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {branch?.mobile}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {branch?.landlineno}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {branch?.email}
-                    </td>
 
-                    <Link to="https://www.flipkart.com/">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-700">
-                        {branch?.website}
-                      </td>
-                    </Link>
-                    <td
-                      className={`px-6 py-4 whitespace-nowrap text-sm ${
-                        branch?.status === "Active"
-                          ? "text-blue-700"
-                          : "text-red-700"
-                      }`}
-                    >
-                      {branch?.status}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xl text-black">
-                      <CiEdit
-                        onClick={() =>
-                          navigate("/admin/primaryUser/masters/branchEdit", {
-                            state: { branch: branch },
-                          })
-                        }
-                      />
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan="10"
-                    className="px-6 py-4 text-center text-sm text-gray-500"
-                  >
-                    No branches found in
-                  </td>
-                </tr>
-              )}
-            </tbody> */}
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredProducts?.length > 0 ? (
                 filteredProducts.map((product) =>
                   product.selected.map((item) => (
                     <tr key={`${product._id}-${item.branch_id}`}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                        {item.company_name}
+                        {item.companyName}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                        {item.branch_name}
+                        {item.branchName}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                         {product.productName}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                         {/* You can replace these with actual brand, category, and HSN data */}
-                        {item.brand_name}
+                        {item.brandName}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                        {item.category_name}
+                        {item.categoryName}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                        {item.hsn_name}
+                        {item.hsnName}
                       </td>
-                      <td
+                      {/* <td
                         className={`px-6 py-4 whitespace-nowrap text-sm ${
                           item.status === "Active"
                             ? "text-blue-700"
@@ -201,15 +134,16 @@ const ProductListform = ({ productlist }) => {
                         }`}
                       >
                         {item.status || "N/A"}
-                      </td>
+                      </td> */}
                       <td className="px-6 py-4 whitespace-nowrap text-xl text-black">
                         {/* Add actions like Edit/Delete here */}
                         <CiEdit
                           onClick={() =>
                             navigate("/admin/masters/productEdit", {
                               state: {
-                                productData: product,
-                              }, // pass the correct data here
+                                product: product,
+                                selected: item
+                              } // pass the correct data here
                             })
                           }
                         />

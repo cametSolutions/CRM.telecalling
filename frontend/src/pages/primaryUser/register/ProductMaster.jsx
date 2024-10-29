@@ -2,10 +2,10 @@ import React from "react"
 
 import api from "../../../api/api"
 import { toast } from "react-toastify"
-//import { useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import ProductAdd from "../../../components/primaryUser/ProductAdd"
 function ProductMaster() {
-  //const navigate = useNavigate()
+  const navigate = useNavigate()
   const handleSubmit = async (productData, tableData) => {
     try {
       const response = await api.post(
@@ -17,7 +17,7 @@ function ProductMaster() {
       )
 
       toast.success(response && response.data && response.data.message)
-      //navigate("/admin/masters/company")
+      navigate("/admin/masters/product")
     } catch (error) {
       console.error("Error creating product:", error)
       if (

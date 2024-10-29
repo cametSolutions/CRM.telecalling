@@ -3,6 +3,8 @@ import ReactDOM from "react-dom/client"
 import { BrowserRouter } from "react-router-dom"
 import { ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
+import { store } from "../app/store"
+import { Provider } from "react-redux"
 //import Header from "./header/Header"
 //import { Provider } from "react-redux"
 //import Router from "./router/Router"
@@ -12,9 +14,11 @@ import "./tailwind.css"
 import Layout from "./layouts/Layout"
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
+  <>
     <BrowserRouter>
-      <Layout />
+      <Provider store={store}>
+        <Layout />
+      </Provider>
     </BrowserRouter>
     <ToastContainer
       theme="dark"
@@ -29,5 +33,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       rtl={false}
       icon
     />
-  </React.StrictMode>
+  </>
 )

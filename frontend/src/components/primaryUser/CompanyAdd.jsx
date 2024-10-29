@@ -5,13 +5,13 @@ const CompanyAdd = ({
   process,
   CompanyData,
   handleCompanyData,
-  handleEditedData,
+  handleEditedData
 }) => {
   const {
     register,
     handleSubmit,
     setValue,
-    formState: { errors },
+    formState: { errors }
   } = useForm()
 
   useEffect(() => {
@@ -59,13 +59,15 @@ const CompanyAdd = ({
             </label>
             <input
               type="text"
-              {...register("name", { required: "Company name is required" })}
+              {...register("companyName", {
+                required: "Company name is required"
+              })}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
               placeholder="Company Name"
             />
-            {errors.name && (
+            {errors.companyName && (
               <span className="mt-2 text-sm text-red-600">
-                {errors.name.message}
+                {errors.companyName.message}
               </span>
             )}
           </div>
@@ -176,8 +178,8 @@ const CompanyAdd = ({
                 required: "Email is required",
                 pattern: {
                   value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-                  message: "Invalid email address",
-                },
+                  message: "Invalid email address"
+                }
               })}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
               placeholder="Email"

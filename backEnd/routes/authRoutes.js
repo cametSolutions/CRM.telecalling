@@ -1,19 +1,25 @@
 import express from "express"
-
+import authMiddleware from "../middleware/authMiddleware.js"
 import {
   Login,
-  Register,
+  StaffRegister,
   GetallUsers,
   LeaveApply,
-  GetallLeave
+  GetallLeave,
+  UpdateUserandAdmin,
+  UpdateUserPermission,
+  DeleteUser
 } from "../controller/authController.js"
 const router = express.Router()
 
 router.post("/login", Login)
-router.post("/register", Register)
-router.post("/userRegistration", Register)
-router.get("/getallUsers", GetallUsers)
-router.post("/leave", LeaveApply)
-router.get("/getallLeave", GetallLeave)
+
+router.post("/userEdit", authMiddleware, UpdateUserandAdmin)
+router.post("/userPermissionUpdate", authMiddleware,  UpdateUserPermission)
+router.post("/userRegistration", authMiddleware, StaffRegister)
+router.delete("/userDelete", authMiddleware, DeleteUser)
+router.get("/getallUsers", authMiddleware, GetallUsers)
+router.post("/leave", authMiddleware, LeaveApply)
+router.get("/getallLeave", authMiddleware, GetallLeave)
 
 export default router

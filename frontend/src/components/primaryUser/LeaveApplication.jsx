@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react"
 import tippy from "tippy.js"
 import UseFetch from "../../hooks/useFetch"
+// import api from "../../api/api"
 import "tippy.js/dist/tippy.css"
 
 import FullCalendar from "@fullcalendar/react"
@@ -18,6 +19,7 @@ function LeaveApplication() {
     onsite: false,
     reason: ""
   })
+  console.log("formdaata", formData)
   const [isOnsite, setIsOnsite] = useState(formData.onsite)
   const [tableRows, setTableRows] = useState([])
 
@@ -41,14 +43,13 @@ function LeaveApplication() {
     }))
   }
   useEffect(() => {
-    console.log("lecc", leaves)
     if (leaves) {
       const formattedEvents = formatEventData(leaves)
       console.log(formattedEvents)
       setEvents(formattedEvents)
     }
   }, [leaves])
-  console.log("e", events)
+
   const labels = [
     {
       title: "Half Day",
@@ -75,7 +76,6 @@ function LeaveApplication() {
       className: "bg-gradient-to-r from-purple-400 to-purple-600"
     }
   ]
-  console.log("ositeeee", formData.onsite)
 
   const handleOnsiteChange = () => {
     setIsOnsite(!isOnsite)
@@ -219,7 +219,7 @@ function LeaveApplication() {
       )
 
       const responseData = await response.json()
-      console.log("resda", responseData)
+
       if (!response.ok) {
         throw new Error("Failed to apply for leave")
       }

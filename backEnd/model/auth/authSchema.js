@@ -15,9 +15,9 @@ const staffSchema = new Schema(
       unique: true,
       match: [/\S+@\S+\.\S+/, "Please use a valid email address"]
     },
-    mobileno: {
+    mobile: {
       type: String,
-      required: [true, "Mobile number is required"],
+
       match: /^[0-9]{10}$/ // Example for a 10-digit Indian number
     },
 
@@ -27,31 +27,18 @@ const staffSchema = new Schema(
       required: [true, "Password is required"]
     },
     role: {
-      type: String,
-      required: [true, "Role is required"],
-      enum: [
-        "Staff",
-        "Admin",
-        "Teamleader",
-        "Hr",
-        "Assistantmanager",
-        "Seniormanager"
-      ]
+      type: String
     },
+
     isVerified: {
       type: Boolean,
       default: true
     },
-    dob: {
-      type: Date
+    dateofbirth: {
+      type: String
     },
     bloodgroup: {
-      type: String,
-      required: [true, "Blood group is required"],
-      enum: {
-        values: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
-        message: "{VALUE} is not a valid blood group"
-      }
+      type: String
     },
     gender: {
       type: String
@@ -66,20 +53,79 @@ const staffSchema = new Schema(
       type: String
     },
     pincode: {
-      type: Number
+      type: String
     },
     joiningdate: {
-      type: Date
+      type: String
     },
     designation: {
       type: String
     },
     department: {
-      type: String
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+      required: false, // This makes it optional
+      default: null
     },
     assignedto: {
-      type: String
-    }
+      type: mongoose.Schema.Types.ObjectId,
+      refPath: "assignedtoModel" // Reference model is dynamically set
+    },
+    assignedtoModel: {
+      type: String,
+      enum: ["Staff","Admin"] // Only these two models are allowed
+    },
+    profileUrl: {
+      type: [String]
+    },
+    documentUrl: {
+      type: [String]
+    },
+    permissions: [
+      {
+        Company: Boolean,
+        Branch: Boolean,
+        Customer: Boolean,
+        UsersAndPasswords: Boolean,
+        MenuRights: Boolean,
+        VoucherMaster: Boolean,
+        Target: Boolean,
+        Product: Boolean,
+        Inventory: Boolean,
+        Partners: Boolean,
+        Department: Boolean,
+        Brand: Boolean,
+        Category: Boolean,
+        HSN: Boolean,
+        Lead: Boolean,
+        CallRegistration: Boolean,
+        LeaveApplication: { type: Boolean, default: true },
+        SignUpCustomer: Boolean,
+        ProductMerge: Boolean,
+        ProductAllocationPending: Boolean,
+        LeaveApprovalPending: Boolean,
+        WorkAllocation: Boolean,
+        ExcelConverter: Boolean,
+        Summary: Boolean,
+        ExpiryRegister: Boolean,
+        ExpiredCustomerCalls: Boolean,
+        CustomerCallsSummary: Boolean,
+        CustomerContacts: Boolean,
+        CustomerActionSummary: Boolean,
+        AccountSearch: Boolean,
+        LeaveSummary: Boolean
+      }
+    ],
+    selected: [
+      {
+        company_id: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
+        companyName: { type: String },
+        branch_id: { type: mongoose.Schema.Types.ObjectId, ref: "Branch" },
+        branchName: { type: String },
+        section_id: { type: mongoose.Schema.Types.ObjectId, ref: "Brand" },
+        sectionName: { type: String }
+      }
+    ]
     // Other staff-specific fields
   },
   { timestamps: true }
@@ -115,7 +161,7 @@ const adminSchema = new Schema(
       type: Boolean,
       default: false
     }
-    // Other admin-specific fields
+    // Other admin-specific fieldss
   },
   { timestamps: true }
 )
@@ -128,6 +174,7 @@ staffSchema.pre("save", async function (next) {
   try {
     const salt = await bcrypt.genSalt(10)
     this.password = await bcrypt.hash(this.password, salt)
+    console.log("pssss", this.password)
     next()
   } catch (error) {
     next(error)

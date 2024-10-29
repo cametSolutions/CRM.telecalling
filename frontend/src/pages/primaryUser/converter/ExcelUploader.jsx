@@ -1,133 +1,136 @@
-// import React, { useState } from "react";
-// import * as XLSX from "xlsx";
+import React, { useState, useEffect } from "react"
+import io from "socket.io-client"
+import * as XLSX from "xlsx" // Import XLSX for creating the Excel file
 
-// const ExcelUploader = () => {
-//   const [data, setData] = useState([]);
-
-//   // Handle file upload
-//   const handleFileUpload = (event) => {
-//     const file = event.target.files[0];
-
-//     if (file) {
-//       const reader = new FileReader();
-
-//       reader.onload = (e) => {
-//         const binaryStr = e.target.result;
-//         const workbook = XLSX.read(binaryStr, { type: "binary" });
-
-//         // Get the first sheet from the workbook
-//         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-
-//         // Convert sheet to JSON
-//         const sheetData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
-
-//         // Set the parsed data
-//         setData(sheetData);
-//       };
-
-//       reader.readAsBinaryString(file);
-//     }
-//   };
-
-//   return (
-//     <div className="excel-uploader">
-//       <h2>Upload Excel File</h2>
-//       <input type="file" accept=".xls,.xlsx" onChange={handleFileUpload} />
-
-//       {data.length > 0 && (
-//         <table>
-//           <thead>
-//             <tr>
-//               {data[0].map((col, index) => (
-//                 <th key={index}>{col}</th>
-//               ))}
-//             </tr>
-//           </thead>
-//           <tbody>
-//             {data.slice(1).map((row, rowIndex) => (
-//               <tr key={rowIndex}>
-//                 {row.map((cell, cellIndex) => (
-//                   <td key={cellIndex}>{cell}</td>
-//                 ))}
-//               </tr>
-//             ))}
-//           </tbody>
-//         </table>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default ExcelUploader;
-import React, { useState } from "react"
+const socket = io("https://www.crm.camet.in") // Adjust based on your backend address
+// const socket = io("http://localhost:9000")
 
 const ExcelUploader = () => {
   const [file, setFile] = useState(null)
+  const [progress, setProgress] = useState({ current: 0, total: 0 })
   const [message, setMessage] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [failMessage, setFailMessage] = useState("")
+  const [success, setSuccess] = useState(false)
+  const [nonsavedData, setNonsavedData] = useState([])
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0])
+  const handleFileUpload = (e) => {
+    const selectedFile = e.target.files[0]
+    if (selectedFile) {
+      setFile(selectedFile) // Save the selected file in state
+    }
   }
 
-  const handleUpload = async () => {
-    if (!file) {
-      setMessage("Please select a file.")
-      return
-    }
-    console.log("files", file)
+  const handleUpload = () => {
+    if (file) {
+      setLoading(true) // Set loading state to true
+      setSuccess(false) // Reset success state
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const fileData = event.target.result
 
-    const formData = new FormData()
-    formData.append("file", file)
-
-    try {
-      const response = await fetch(
-        "http://localhost:5000/api/excel/uploadExcel",
-        {
-          method: "POST",
-          body: formData
-        }
-      )
-
-      if (response.ok) {
-        setMessage("File uploaded successfullydddd!")
-      } else {
-        setMessage("File upload failed.")
+        // Emit event to start the conversion
+        socket.emit("startConversion", fileData)
       }
-    } catch (error) {
-      console.error("Error uploading file:", error)
-      setMessage("Error uploading file.")
+      reader.readAsArrayBuffer(file)
+    }
+  }
+
+  // Listen for progress updates
+  useEffect(() => {
+    socket.on("conversionProgress", (data) => {
+      setProgress({
+        current: data.current,
+        total: data.total
+      })
+    })
+
+    // Listen for completion message
+    socket.on("conversionComplete", (data) => {
+      setLoading(false) // Set loading to false on completion
+      setMessage(data.message)
+      setFailMessage(data.secondaryMessage)
+      setNonsavedData(data.nonsavingData) // Store failed data
+      setSuccess(true)
+      setFile(null) // Reset file selection after conversion
+    })
+
+    // Listen for error messages
+    socket.on("conversionError", (error) => {
+      setLoading(false) // Set loading to false on error
+      setMessage(error.message)
+      // setNonsavedData(error.nonsavingData) // Store failed data
+      setSuccess(false)
+    })
+
+    // Cleanup on component unmount
+    return () => {
+      socket.off("conversionProgress")
+      socket.off("conversionComplete")
+      socket.off("conversionError")
+    }
+  }, [])
+
+  const handleDownloadFailedData = () => {
+    if (nonsavedData.length > 0) {
+      // Create a new workbook
+      const workbook = XLSX.utils.book_new()
+
+      // Convert failed data to sheet
+      const worksheet = XLSX.utils.json_to_sheet(nonsavedData)
+
+      // Append sheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Failed Data")
+
+      // Generate Excel file and trigger download
+      XLSX.writeFile(workbook, "failed_data.xlsx")
     }
   }
 
   return (
-    // <div>
-    //   <h2>Upload Excel File</h2>
-    //   <input type="file" accept=".xls,.xlsx" onChange={handleFileChange} />
-    //   <button onClick={handleUpload}>Upload</button>
-    //   <p>{message}</p>
-    // </div>
-    <div className="max-w-md mx-auto mt-8 p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-semibold mb-4 text-gray-800">
-        Upload Excel File
-      </h2>
-
-      <div className="mb-4">
+    <div className="w-full flex  justify-center items-center h-96">
+      <div className=" w-2/6 mx-auto p-6   bg-gray-100 rounded-lg shadow-md text-center">
+        <h1 className="text-2xl font-semibold mb-4 text-gray-800">
+          Excel to JSON Conversion
+        </h1>
         <input
           type="file"
-          accept=".xls,.xlsx"
-          onChange={handleFileChange}
+          onChange={handleFileUpload}
           className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
         />
+        {progress.total > 0 && (
+          <div>
+            <p className="text-blue-600 font-bold text-md">
+              Uploaded {progress.current} of {progress.total}
+            </p>
+          </div>
+        )}
+        <button
+          onClick={handleUpload}
+          disabled={!file || loading}
+          className="w-2/5 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors duration-300 mt-5"
+        >
+          {loading ? "Uploading..." : "Upload"}
+        </button>
+
+        {message && (
+          <div className={success ? "text-green-500" : "text-red-500"}>
+            {message}
+          </div>
+        )}
+
+        {nonsavedData.length > 0 && (
+          <div className="mt-4 flex">
+            <p className="text-red-400">{failMessage}</p>
+            <button
+              onClick={handleDownloadFailedData}
+              className="bg-green-400 text-white py-2 px-4 rounded-lg hover:bg-green-500 transition-colors duration-300"
+            >
+              Download Failed Data
+            </button>
+          </div>
+        )}
       </div>
-
-      <button
-        onClick={handleUpload}
-        className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors duration-300"
-      >
-        Upload
-      </button>
-
-      {message && <p className="mt-4 text-green-600 text-sm">{message}</p>}
     </div>
   )
 }

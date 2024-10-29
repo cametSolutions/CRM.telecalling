@@ -13,12 +13,15 @@ import HsnCreation from "../../../pages/primaryUser/register/HsnCreation"
 import HsnList from "../../../pages/primaryUser/register/HsnList"
 import EditHsn from "../../../pages/primaryUser/edit/EditHsn"
 import ProductMaster from "../../../pages/primaryUser/register/ProductMaster"
-import CustomerList from "../../../pages/primaryUser/List/CustomerList"
+import DepartmentRegistration from "../../../pages/primaryUser/register/DepartmentRegistration"
+import CustomerListform from "../../../components/secondaryUser/CustomerListform"
 import ProductList from "../../../pages/primaryUser/List/ProductList"
-
+import UserEdit from "../../../pages/primaryUser/edit/UserEdit"
 import PendingCustomer from "../../../components/secondaryUser/PendingCustomer"
 import ProductEdit from "../../../pages/primaryUser/edit/ProductEdit"
 import UserListform from "../../../pages/primaryUser/List/UserListform"
+import UserPermissions from "../../../pages/primaryUser/List/UserPermissions"
+
 const mastersRoutes = [
   {
     path: "/admin/masters/company",
@@ -38,8 +41,9 @@ const mastersRoutes = [
 
     component: BranchRegistration
   },
+
   { path: "/admin/masters/branchEdit", component: BranchEdit },
-  { path: "/admin/masters/customer", component: CustomerList },
+  { path: "/admin/masters/customer", component: CustomerListform },
   { path: "/admin/masters/pendingCustomer", component: PendingCustomer },
   {
     path: "/admin/masters/customerRegistration",
@@ -49,6 +53,10 @@ const mastersRoutes = [
   {
     path: "/admin/masters/userRegistration",
     component: UserRegistration
+  },
+  {
+    path: "/admin/masters/userEdit",
+    component: UserEdit
   },
   {
     path: "/admin/masters/inventory/brandRegistration",
@@ -81,14 +89,14 @@ const mastersRoutes = [
   { path: "/admin/masters/productRegistration", component: ProductMaster },
   { path: "/admin/masters/users-&-passwords", component: UserListform },
 
-  { path: "/admin/masters/menurights", title: "Menu Rights" },
+  { path: "/admin/masters/menurights", component: UserPermissions },
 
   { path: "/admin/masters/vouchermaster", title: "Voucher Master" },
   { path: "/admin/masters/target", title: "Target" },
   { path: "/admin/masters/product", title: "Product" },
   { path: "/admin/masters/customerImport", title: "Customer Import" },
   { path: "/admin/masters/partners", title: "Partners" },
-  { path: "/admin/masters/deapartment", title: "Department" }
+  { path: "/admin/masters/department", component: DepartmentRegistration }
 ]
 
 export default mastersRoutes

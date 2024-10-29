@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useEffect } from "react"
 import { CiEdit } from "react-icons/ci"
 import { useNavigate } from "react-router-dom"
+import api from "../../../api/api"
+import DeleteAlert from "../../../components/common/DeleteAlert"
 import {
   FaUserPlus,
   FaSearch,
@@ -9,33 +11,52 @@ import {
   FaPrint
 } from "react-icons/fa"
 import { Link } from "react-router-dom"
-import _ from "lodash"
+import debounce from "lodash.debounce"
 import UseFetch from "../../../hooks/useFetch"
 
 const UserListform = () => {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
   const [users, setUser] = useState([])
-  const { data: allusers } = UseFetch("/auth/getallUsers")
+  const { data, loading } = UseFetch("/auth/getallUsers")
   useEffect(() => {
-    if (allusers) {
+    if (data) {
+      const { allusers } = data
       setUser(allusers)
     }
-  }, [allusers])
-  console.log("usersssssss", users)
-  const handleSearch = useCallback(
-    _.debounce((query) => {
-      const lowerCaseQuery = query.toLowerCase()
-      setFilteredBranches(
-        users.filter((user) => user.name.toLowerCase().includes(lowerCaseQuery))
-      )
-    }, 300),
-    [allusers]
-  )
+  }, [data])
+  console.log("hiii")
+  const handleSearch = debounce((query) => {
+    const input = query.trim()
 
-  useEffect(() => {
-    handleSearch(searchQuery)
-  }, [searchQuery, handleSearch])
+    const lowerCaseQuery = input.toLowerCase()
+
+    const filteredName = allusers.filter((user) =>
+      user.name.toLowerCase().includes(lowerCaseQuery)
+    )
+    const filteredMobile = allusers.filter((user) =>
+      user.mobileno.toLowerCase().includes(lowerCaseQuery)
+    )
+
+    if (filteredName.length > 0) {
+      setUser(filteredName)
+    } else if (filteredMobile.length > 0) {
+      setUser(filteredMobile)
+    }
+
+    // Reset to initial count after filtering
+  }, 300)
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/auth/userDelete?id=${id}`)
+
+      // Remove the deleted item from the items array
+      setUser((prevItems) => prevItems.filter((item) => item._id !== id))
+    } catch (error) {
+      console.error("Failed to delete item", error)
+      // toast.error("Failed to delete item. Please try again.")
+    }
+  }
 
   return (
     <div className="container mx-auto min-h-screen py-8 bg-gray-100">
@@ -49,8 +70,7 @@ const UserListform = () => {
             </div>
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               className=" w-full border border-gray-300 rounded-full py-2 px-4 pl-10 focus:outline-none"
               placeholder="Search for..."
             />
@@ -75,74 +95,141 @@ const UserListform = () => {
             <FaPrint className="mr-2" />
           </button>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-300">
+        <div className="max-h-64 md:max-h-80 lg:max-h-96 xl:max-h-[600px] overflow-x-auto overflow-y-auto">
+          <table className="min-w-full bg-white border border-gray-300 text-center">
             <thead className="text-center">
               <tr>
-                <th className="py-2 px-4 border-b border-gray-300 ">
-                  Department
-                </th>
-                <th className="py-2 px-4 border-b border-gray-300 ">
+                <th className="py-2 px-4 border-b border-gray-300">No</th>
+                <th className="py-2 px-4 border-b border-gray-300">Branch</th>
+
+                <th className="py-2 px-4 border-b border-gray-300">
                   User Name
                 </th>
-                <th className="py-2 px-4 border-b border-gray-300 ">UserId</th>
-                <th className="py-2 px-4 border-b border-gray-300 ">Mobile</th>
-
-                <th className="py-2 px-4 border-b border-gray-300 ">
+                <th className="py-2 px-4 border-b border-gray-300">UserId</th>
+                <th className="py-2 px-4 border-b border-gray-300">Mobile</th>
+                <th className="py-2 px-4 border-b border-gray-300">
                   Designation
                 </th>
-                <th className="py-2 px-4 border-b border-gray-300 ">Role</th>
-                <th className="py-2 px-4 border-b border-gray-300 ">
-                  AssingnedTo
+                <th className="py-2 px-4 border-b border-gray-300">Role</th>
+                <th className="py-2 px-4 border-b border-gray-300">
+                  AssignedTo
                 </th>
-                <th className="py-2 px-4 border-b border-gray-300 ">Edit</th>
+                <th className="py-2 px-4 border-b border-gray-300">Edit</th>
+                <th className="py-2 px-4 border-b border-gray-300">Delete</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 text-center">
               {users?.length > 0 ? (
-                users.map((user) => (
-                  <tr key={user?._id}>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
-                      {user.department}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
-                      {user?.name}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
-                      {user?.email}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
-                      {user?.mobileno}
-                    </td>
-
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
-                      {user?.designation}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
-                      {user?.role}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
-                      {user?.assignedto}
-                    </td>
-
-                    <td className="px-4 py-4 whitespace-nowrap text-xl text-black">
-                      <CiEdit
-                        onClick={() =>
-                          navigate("/admin/primaryUser/masters/branchEdit", {
-                            state: { user: user }
-                          })
-                        }
-                      />
-                    </td>
-                  </tr>
-                ))
+                users.map((user, index) => {
+                  // If user has a 'selected' array, map over it; otherwise, return a single row with user details
+                  if (user?.selected?.length > 0) {
+                    return user.selected.map((item, itemIndex) => (
+                      <tr
+                        key={`${user._id}-${itemIndex}`}
+                        className="text-center"
+                      >
+                        <td className="py-3 text-sm text-black">
+                          {itemIndex === 0 ? index + 1 : ""}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {item?.branchName}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.name}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.email}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.mobile}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.designation}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.role}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user.assignedto
+                            ? user.assignedto.name
+                            : "Not assigned"}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-xl text-black text-center">
+                          <div className="flex justify-center items-center">
+                            <CiEdit
+                              onClick={() =>
+                                navigate("/admin/masters/userEdit", {
+                                  state: {
+                                    user,
+                                    selected: item
+                                  }
+                                })
+                              }
+                              className="cursor-pointer"
+                            />
+                          </div>
+                        </td>
+                        <td className="py-3 whitespace-nowrap  text-black">
+                          <DeleteAlert onDelete={handleDelete} Id={user._id} />
+                        </td>
+                      </tr>
+                    ))
+                  } else {
+                    // If user has no 'selected' items, render a single row
+                    return (
+                      <tr key={user._id} className="text-center">
+                        <td className="py-3 text-sm text-black">{index + 1}</td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {/* No branchName if 'selected' is empty */}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.name}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.email}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.mobile}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.designation}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user?.role}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-sm text-black">
+                          {user.assignedto
+                            ? user.assignedto.name
+                            : "Not assigned"}
+                        </td>
+                        <td className="py-3 whitespace-nowrap text-xl text-black text-center">
+                          <div className="flex justify-center items-center">
+                            <CiEdit
+                              onClick={() =>
+                                navigate("/admin/masters/userEdit", {
+                                  state: {
+                                    user
+                                  }
+                                })
+                              }
+                              className="cursor-pointer"
+                            />
+                          </div>
+                        </td>
+                        <td className="py-3 whitespace-nowrap  text-black">
+                          <DeleteAlert onDelete={handleDelete} Id={user._id} />
+                        </td>
+                      </tr>
+                    )
+                  }
+                })
               ) : (
                 <tr>
                   <td
-                    colSpan="10"
-                    className="px-6 py-4 text-center text-sm text-gray-500"
+                    colSpan="11"
+                    className="px-4 py-4 text-center text-gray-500"
                   >
-                    No users found in
+                    {loading ? loading : "No users found."}
                   </td>
                 </tr>
               )}

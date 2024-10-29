@@ -6,7 +6,7 @@ import {
   FaSearch,
   FaRegFileExcel,
   FaFilePdf,
-  FaPrint,
+  FaPrint
 } from "react-icons/fa"
 import { Link } from "react-router-dom"
 import _ from "lodash"
@@ -15,7 +15,7 @@ const BranchListform = ({ branchlist }) => {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredBranches, setFilteredBranches] = useState(branchlist)
-
+  console.log("branchlist", branchlist)
   const handleSearch = useCallback(
     _.debounce((query) => {
       const lowerCaseQuery = query.toLowerCase()
@@ -114,9 +114,9 @@ const BranchListform = ({ branchlist }) => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredBranches?.length > 0 ? (
                 filteredBranches.map((branch) => (
-                  <tr key={branch?._id}>
+                  <tr key={branch?.companyName?._id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                      {branch.company?.name}
+                      {branch?.companyName?.companyName}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                       {branch?.branchName}
@@ -160,8 +160,8 @@ const BranchListform = ({ branchlist }) => {
                     <td className="px-6 py-4 whitespace-nowrap text-xl text-black">
                       <CiEdit
                         onClick={() =>
-                          navigate("/admin/primaryUser/masters/branchEdit", {
-                            state: { branch: branch },
+                          navigate("/admin/masters/branchEdit", {
+                            state: { branch: branch }
                           })
                         }
                       />
