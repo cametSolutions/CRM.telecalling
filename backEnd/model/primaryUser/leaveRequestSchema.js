@@ -8,14 +8,11 @@ const leaveRequestSchema = new Schema(
       ref: "User", // Reference to the user who made the request
       required: true
     },
-    startDate: {
+    leaveDate: {
       type: Date,
       required: true
     },
-    endDate: {
-      type: Date,
-      required: true
-    },
+    
     leaveType: {
       type: String,
       enum: ["Half Day", "Full Day"],

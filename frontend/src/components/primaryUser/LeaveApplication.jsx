@@ -27,11 +27,12 @@ function LeaveApplication() {
     `/auth/getallLeave?userid=${user._id}`
   )
   const formatEventData = (events) => {
+    console.log(events)
     return events.map((event) => ({
       id: event._id,
       title: event.leaveType, // Display leave type as the title
-      start: event.startDate.split("T")[0], // Convert to YYYY-MM-DD format
-      end: event.endDate.split("T")[0], // Convert to YYYY-MM-DD format
+      leaveDate: event.leaveDate.split("T")[0], // Convert to YYYY-MM-DD format
+
       extendedProps: {
         reason: event.reason
       },
@@ -43,6 +44,7 @@ function LeaveApplication() {
     console.log("lecc", leaves)
     if (leaves) {
       const formattedEvents = formatEventData(leaves)
+      console.log(formattedEvents)
       setEvents(formattedEvents)
     }
   }, [leaves])
@@ -122,7 +124,7 @@ function LeaveApplication() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(updatedData)
+        body: JSON.stringify(formData)
       })
 
       if (!response.ok) {
@@ -202,53 +204,54 @@ function LeaveApplication() {
   }
   const handleApply = async () => {
     try {
-      console.log("fome", formData)
-
-      let updatedData = { ...formData, userid: user._id }
-      console.log("up", updatedData)
-
-      console.log("newform", formData)
+      console.log("formin", formData)
       // Assuming you have an API endpoint for creating leave requests
-      const response = await fetch("http://localhost:5000/api/auth/leave", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(updatedData)
-      })
+      const response = await fetch(
+        `http://localhost:9000/api/auth/leave?Userid=${user._id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(formData),
+          credentials: "include"
+        }
+      )
 
       const responseData = await response.json()
       console.log("resda", responseData)
       if (!response.ok) {
         throw new Error("Failed to apply for leave")
       }
-      console.log("ressafdadfdf", responseData.data.startDate)
+      refreshHook()
+      // console.log("ressafdadfdf", responseData.data.leaveDate)
 
-      // Update calendar with new event (simplified example)
-      const newEvent = {
-        title: responseData.data.leaveType,
+      // // Update calendar with new event (simplified example)
+      // const newEvent = {
+      //   title: responseData.data.leaveType,
 
-        start: responseData.data.startDate,
-        end: responseData.data.endDate,
-        extendedProps: {
-          reason: responseData.data.reason // Store the reason in extendedProps
-        },
-        classNames: responseData.data.verified
-          ? "verified-event"
-          : "unverified-event",
-        allDay: true
-      }
-      setEvents([...events, newEvent])
+      //   leaveDate: responseData.data.leaveDate,
+
+      //   extendedProps: {
+      //     reason: responseData.data.reason // Store the reason in extendedProps
+      //   },
+      //   classNames: responseData.data.verified
+      //     ? "verified-event"
+      //     : "unverified-event",
+      //   allDay: true
+      // }
+      // setEvents([...events, newEvent])
       setShowModal(false)
-
-      // Close the modal
-      setShowModal(false)
+      setFormData((prev) => ({
+        ...prev,
+        reason: ""
+      }))
     } catch (error) {
       console.error("Error applying for leave:", error)
     }
   }
 
-  console.log("eventss", events)
+  console.log(events)
 
   return (
     <div className="flex p-8">
@@ -268,7 +271,7 @@ function LeaveApplication() {
             })
           }}
           eventClassNames={({ event }) => {
-            return event.classNames || "default-event-class"
+             return event.classNames || "default-event-class"
             // return event.classNames ? event.classNames : "my-custom-event-class"
           }}
           // eventClassNames={() => "my-custom-event-class"}
