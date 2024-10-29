@@ -115,7 +115,13 @@ const UserAdd = ({
     if (selectedBranch) {
       setValue("branchName", selectedBranch)
     }
-  }, [selectedCompany, selectedBranch])
+    if (selectedDepartment) {
+      setValue("department", selectedDepartment)
+    }
+    if (selectedAssignedto) {
+      setValue("assignedto", selectedAssignedto)
+    }
+  }, [selectedCompany, selectedBranch, selectedDepartment])
 
   const defaultCountry = useMemo(
     () => countryOptions.find((country) => country.value === "IN"),
@@ -128,7 +134,7 @@ const UserAdd = ({
         value: state.isoCode
       }))
     : []
-  console.log("tableobject", tableObject)
+
   const handleTableData = () => {
     if (tableObject.company_id.trim() === "") {
       toast.error("please select a company")
@@ -142,7 +148,6 @@ const UserAdd = ({
       const isIncluded = tableData.some(
         (item) => JSON.stringify(item) === JSON.stringify(tableObject)
       )
-      console.log("isinclui", isIncluded)
 
       if (isIncluded) {
         toast.error("already added")
@@ -173,7 +178,6 @@ const UserAdd = ({
   }
 
   const handleCompanyChange = (e) => {
-    console.log("e", e.target.value)
     if (isEditMode) {
       // settableEdit(true)
     }
@@ -240,14 +244,15 @@ const UserAdd = ({
           setSelectedState(state)
         }
         if (key === "department") {
-          const department = departments.find((d) => d._id === value)
+          const department = departments.find((d) => d._id === value._id)
 
-          setSelectedDepartment(department)
+          setSelectedDepartment(department._id)
+          // setValue(key, department._id)
         }
         if (key === "assignedto") {
-          const assigned = users.find((item) => item._id === value)
+          const assigned = users.find((item) => item._id === value._id)
 
-          setSelectedAssignedto(assigned)
+          setSelectedAssignedto(assigned._id)
         }
         if (key !== "password") {
           setValue(key, value)
@@ -305,8 +310,15 @@ const UserAdd = ({
       // setTableData((prev) => [...prev, tableObject])
       // setTableData(() => tableObject)
     }
-  }, [User, departments, company, selectedCompany, branches, users])
-
+  }, [
+    User,
+    departments,
+    company,
+    selectedCompany,
+    branches,
+    users,
+    selectedDepartment
+  ])
   const handleEdit = (id) => {
     settableEdit(true) // Close the edit state (or handle according to your logic)
 
@@ -346,7 +358,7 @@ const UserAdd = ({
       profileUrl: url
     }))
   }
-  console.log("profilleima", imageData)
+
   const documentImage = (url) => {
     setImageData((prevData) => ({
       ...prevData,
