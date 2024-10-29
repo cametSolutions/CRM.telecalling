@@ -460,11 +460,6 @@ export const GetallUsers = async (req, res) => {
         select: "name"
       }
     ])
-    allusers.forEach((user) => {
-      console.log(
-        `User: ${user.name}, Assigned To Model: ${user.assignedtoModel}`
-      )
-    })
 
     // console.log("allusers", populatedUsers)
 
@@ -495,10 +490,11 @@ export const GetallUsers = async (req, res) => {
 }
 
 export const LeaveApply = async (req, res) => {
-  const updatedData = req.body
-  console.log("body", req.body)
-  console.log("up", updatedData)
-  const { startDate, endDate, leaveType, onsite, reason, userid } = updatedData
+  console.log("hlwererer")
+  const formData = req.body
+  const { Userid } = req.query
+
+  const { startDate, endDate, leaveType, onsite, reason } = formData
 
   try {
     const leave = new LeaveRequest({
@@ -507,7 +503,7 @@ export const LeaveApply = async (req, res) => {
       leaveType,
       onsite,
       reason,
-      userId: userid
+      userId: Userid
     })
     const leaveSubmit = await leave.save()
     console.log(leaveSubmit)

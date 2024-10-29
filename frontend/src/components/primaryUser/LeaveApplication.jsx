@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react"
 import tippy from "tippy.js"
 import UseFetch from "../../hooks/useFetch"
+// import api from "../../api/api"
 import "tippy.js/dist/tippy.css"
 
 import FullCalendar from "@fullcalendar/react"
@@ -18,6 +19,7 @@ function LeaveApplication() {
     onsite: false,
     reason: ""
   })
+  console.log("formdaata", formData)
   const [isOnsite, setIsOnsite] = useState(formData.onsite)
   const [tableRows, setTableRows] = useState([])
 
@@ -200,16 +202,22 @@ function LeaveApplication() {
   }
   const handleApply = async () => {
     try {
-      let updatedData = { ...formData, userid: user._id }
-
+      // let updatedData = { ...formData, userid: user._id }
+      console.log("hii")
+      // https://www.crm.camet.in/api
       // Assuming you have an API endpoint for creating leave requests
-      const response = await fetch("https://www.crm.camet.in/api/auth/leave", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(updatedData)
-      })
+
+      const response = await fetch(
+        `http://localhost:9000/api/auth/leave?Userid=${user._id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(formData),
+          credentials: "include"
+        }
+      )
 
       const responseData = await response.json()
 
@@ -233,13 +241,17 @@ function LeaveApplication() {
       }
       setEvents([...events, newEvent])
       setShowModal(false)
-
+      setFormData((prev) => ({
+        ...prev,
+        reason: ""
+      }))
       // Close the modal
       setShowModal(false)
     } catch (error) {
       console.error("Error applying for leave:", error)
     }
   }
+  console.log("formdata", formData)
 
   return (
     <div className="flex p-8">
