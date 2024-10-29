@@ -17,9 +17,10 @@ function LeaveApplication() {
     endDate: "",
     leaveType: "Full Day",
     onsite: false,
-    reason: ""
+    reason: "",
+    description: ""
   })
-  console.log("formdaata", formData)
+  console.log(formData)
   const [isOnsite, setIsOnsite] = useState(formData.onsite)
   const [tableRows, setTableRows] = useState([])
 
@@ -29,23 +30,50 @@ function LeaveApplication() {
     `/auth/getallLeave?userid=${user._id}`
   )
   const formatEventData = (events) => {
-    console.log(events)
-    return events.map((event) => ({
-      id: event._id,
-      title: event.leaveType, // Display leave type as the title
-      leaveDate: event.leaveDate.split("T")[0], // Convert to YYYY-MM-DD format
-
-      extendedProps: {
-        reason: event.reason
-      },
-      classNames: event.verified ? "verified-event" : "unverified-event",
-      allDay: true // Since the events are all-day
-    }))
+    return events.map((event) => {
+      console.log(
+        "Formatted classNames:",
+        event.verified ? "verified-event" : "unverified-event"
+      )
+      const date = new Date(event.leaveDate) // Convert to Date object
+      const formattedDate = date.toISOString().split("T")[0] // Format as YYYY-MM-DD
+      // Determine classNames based on conditions
+      let classNames = "unverified-event" // Default class
+      if (event.adminverified && event.status === "HR/Onsite Approved") {
+        classNames = "fully-verified-event"
+      } else if (
+        event.departmentverified &&
+        event.status === "Dept. Approved"
+      ) {
+        classNames = "dept-approved-event"
+      } else if (event.onsite && event.status === "HR/Onsite Approved") {
+        classNames = "onsite-approved-event"
+      } else if (event.onsite) {
+        classNames = "onsite-pending-event"
+      } else if (
+        event.status === "Cancel Request" ||
+        event.status === "Cancelled"
+      ) {
+        classNames = "cancelled-event"
+      }
+      return {
+        id: event._id,
+        title: event.leaveType, // Display leave type as the title
+        start: formattedDate, // Use formatted date
+        extendedProps: {
+          reason: event.reason
+        },
+        classNames,
+        allDay: true // Since the events are all-day
+      }
+    })
   }
+  // const formatEventData = (events) => {
+
   useEffect(() => {
     if (leaves) {
       const formattedEvents = formatEventData(leaves)
-      console.log(formattedEvents)
+      console.log("formatedevent", formattedEvents)
       setEvents(formattedEvents)
     }
   }, [leaves])
@@ -271,7 +299,8 @@ function LeaveApplication() {
             })
           }}
           eventClassNames={({ event }) => {
-             return event.classNames || "default-event-class"
+            console.log("class", event.classNames)
+            return event.classNames || "default-event-class"
             // return event.classNames ? event.classNames : "my-custom-event-class"
           }}
           // eventClassNames={() => "my-custom-event-class"}
@@ -290,9 +319,19 @@ function LeaveApplication() {
   align-items: center;
   border:none;
 }
-
 .unverified-event {
   background: linear-gradient(to right, #ff4d4d, #ff0000)!important; /* Red for unverified */
+  color: white !important;
+  // width: %;
+  // height: %;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border:none;
+}
+  .onsite-pending-event {
+  background: linear-gradient(to right, #fb923c, #ea580c)!important; /* orange for unverified onsite*/
+
   color: white !important;
   // width: %;
   // height: %;
@@ -348,7 +387,10 @@ button {
           Cancelled
         </label>
         <label className="bg-gradient-to-r from-purple-400 to-purple-600 py-1 rounded-md shadow-xl transform hover:scale-105 transition duration-300 px-4">
-          Onsite
+          Onsite Approval
+        </label>
+        <label className="bg-gradient-to-r from-orange-400 to-orange-600 py-1 rounded-md shadow-xl transform hover:scale-105 transition duration-300 px-4">
+          Onsite Pending
         </label>
       </div>
 
@@ -528,18 +570,33 @@ button {
                 >
                   Add Row
                 </button>
+                <div>
+                  <div className="mb-4">
+                    <label className="block mb-2">Description</label>
+                    <textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      rows="4"
+                      className="border p-2 rounded w-full"
+                    ></textarea>
+                  </div>
+                </div>
               </div>
             )}
-            <div className="mb-4">
-              <label className="block mb-2">Reason</label>
-              <textarea
-                name="reason"
-                value={formData.reason}
-                onChange={handleInputChange}
-                rows="4"
-                className="border p-2 rounded w-full"
-              ></textarea>
-            </div>
+            {!isOnsite && (
+              <div className="mb-4">
+                <label className="block mb-2">Reason</label>
+                <textarea
+                  name="reason"
+                  value={formData.reason}
+                  onChange={handleInputChange}
+                  rows="4"
+                  className="border p-2 rounded w-full"
+                ></textarea>
+              </div>
+            )}
+
             <div className="flex justify-end space-x-2">
               <button
                 className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"

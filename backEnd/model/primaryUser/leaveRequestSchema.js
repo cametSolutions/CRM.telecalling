@@ -12,7 +12,7 @@ const leaveRequestSchema = new Schema(
       type: Date,
       required: true
     },
-    
+
     leaveType: {
       type: String,
       enum: ["Half Day", "Full Day"],
@@ -25,18 +25,25 @@ const leaveRequestSchema = new Schema(
         return this.leaveType === "Half Day" // Only required if leaveType is Half Day
       }
     },
+    reason: {
+      type: String,
+      required: function() {
+        return !this.onsite; // `reason` is required only if `onsite` is false
+      }
+    },
+    description: {
+      type: String
+    },
     onsite: {
       type: Boolean,
       default: false
     },
-    reason: {
-      type: String,
-      required: true
-    },
-    verified: {
+
+    adminverified: {
       type: Boolean,
       default: false
     },
+    departmentverified: { type: Boolean, default: false },
     status: {
       type: String,
       enum: [

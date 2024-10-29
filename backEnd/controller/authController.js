@@ -493,7 +493,8 @@ export const LeaveApply = async (req, res) => {
   const formData = req.body
   const { Userid } = req.query
 
-  const { startDate, endDate, leaveType, onsite, reason } = formData
+  const { startDate, endDate, leaveType, onsite, reason, description } =
+    formData
   console.log("startdate", startDate)
   const start = new Date(startDate)
   console.log("start", start)
@@ -514,21 +515,18 @@ export const LeaveApply = async (req, res) => {
         leaveDate,
         leaveType,
         onsite,
-        reason,
+
+        description,
         userId: Userid
       })
+      // Only add 'reason' if 'onsite' is false
+      if (!onsite) {
+        console.log("isonsite")
+        leave.reason = reason
+      }
       await leave.save()
     }
-    // const leave = new LeaveRequest({
-    //   startDate,
-    //   endDate,
-    //   leaveType,
-    //   onsite,
-    //   reason,
-    //   userId: userid
-    // })
-    // const leaveSubmit = await leave.save()
-    // console.log(leaveSubmit)
+
     const leaveSubmit = await LeaveRequest.find({ userId: Userid })
     console.log("leavesub", leaveSubmit)
     return res

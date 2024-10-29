@@ -30,7 +30,7 @@ const UserPermissions = () => {
       <h1 className="text-2xl font-bold mb-1">User/Admin Permissions</h1>
 
       {/* Outer div with max height for scrolling the user list */}
-      <div className="text-center  z-30">
+      <div className="text-center max-h-60 sm:max-h-80 md:max-h-96 lg:max-h-[500px] overflow-y-auto ">
         <table className="min-w-full table-auto">
           <thead className="bg-gray-300 sticky top-0 z-40">
             <tr>

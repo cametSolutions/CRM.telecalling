@@ -197,7 +197,7 @@ const CallregistrationList = () => {
           <table className="divide-y divide-gray-200 w-full">
             <thead className="bg-gray-400 sticky top-0 z-40">
               <tr>
-                {user.role === "Admin" && (
+                {user?.role === "Admin" && (
                   <th className="px-4 py-3 border-b border-gray-300 text-center">
                     Branch Name
                   </th>
