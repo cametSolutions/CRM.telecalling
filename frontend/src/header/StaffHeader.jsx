@@ -38,59 +38,59 @@ export default function StaffHeader() {
     {
       to: "/staff/masters/company",
       label: "Company",
-      control: user?.permissions[0]?.Company
+      control: user?.permissions?.[0]?.Company ?? false
     },
     {
       to: "/staff/masters/branch",
       label: "Branch",
-      control: user?.permissions[0]?.Branch
+      control: user?.permissions?.[0]?.Branch ?? false
     },
     {
       to: "/staff/masters/customer",
       label: "Customer",
-      control: user?.permissions[0]?.Customer
+      control: user?.permissions?.[0]?.Customer ?? false
     },
     {
       to: "/staff/masters/users-&-passwords",
       label: "users & Passwords",
-      control: user?.permissions[0]?.UsersAndPasswords
+      control: user?.permissions?.[0]?.UsersAndPasswords ?? false
     },
     {
       to: "/staff/masters/menuRights",
       label: "Menu Rights",
-      control: user?.permissions[0]?.MenuRights
+      control: user?.permissions?.[0]?.MenuRights ?? false
     },
     {
       to: "/staff/masters/voucherMaster",
       label: "Voucher Master",
-      control: user?.permissions[0]?.VoucherMaster
+      control: user?.permissions?.[0]?.voucherMaster ?? false
     },
     {
       to: "/staff/masters/target",
       label: "Target",
-      control: user?.permissions[0]?.Target
+      control: user?.permissions?.[0]?.Target ?? false
     },
     {
       to: "/staff/masters/product",
       label: "Product",
-      control: user?.permissions[0]?.Product
+      control: user?.permissions?.[0]?.Product ?? false
     },
     {
       to: "/staff/masters/inventory",
       label: "Inventory",
       hasChildren: true,
-      control: user?.permissions[0]?.Inventory
+      control: user?.permissions?.[0]?.Inventory ?? false
     },
 
     {
       to: "/staff/masters/partners",
       label: "Partners",
-      control: user?.permissions[0]?.Partners
+      control: user?.permissions?.[0]?.Partners ?? false
     },
     {
       to: "/staff/masters/department",
       label: "Department",
-      control: user?.permissions[0]?.Department
+      control: user?.permissions?.[0]?.Department ?? false
     }
   ]
   const inventorys = [
@@ -114,91 +114,91 @@ export default function StaffHeader() {
     {
       to: "/staff/reports/summary",
       label: "Summary",
-      control: user?.permissions[0]?.Summary
+      control: user?.permissions?.[0]?.Summary ?? false
     },
     {
       to: "/staff/reports/expiry-register",
       label: "Expiry Register",
-      control: user?.permissions[0]?.ExpiryRegister
+      control: user?.permissions?.[0]?.ExpiryRegister ?? false
     },
     {
       to: "/staff/reports/expired-custmerCalls",
       label: "Expired Customer Calls",
-      control: user?.permissions[0]?.ExpiredCustomerCalls
+      control: user?.permissions?.[0]?.ExpiredCustomerCalls ?? false
     },
     {
       to: "/staff/reports/customer-callsSummary",
       label: "Customer Calls Summary",
-      control: user?.permissions[0]?.CustomerCallsSummary
+      control: user?.permissions?.[0]?.CustomerCallsSummary ?? false
     },
     {
       to: "/staff/reports/customer-contacts",
       label: "Customer Contacts",
-      control: user?.permissions[0]?.CustomerContact
+      control: user?.permissions?.[0]?.CustomerContact ?? false
     },
     {
       to: "/staff/reports/customer-actionsummary",
       label: "Customer Action Summary",
-      control: user?.permissions[0]?.CustomerActionSummary
+      control: user?.permissions?.[0]?.CustomerActionSummary ?? false
     },
     {
       to: "/adminr/eports/account-search",
       label: "Account Search",
-      control: user?.permissions[0]?.AccountSearch
+      control: user?.permissions?.[0]?.AccountSearch ?? false
     },
     {
       to: "/staff/reports/leave-summary",
       label: "Leave Summary",
-      control: user?.permissions[0]?.LeaveSummary
+      control: user?.permissions?.[0]?.LeaveSummary ?? false
     }
   ]
   const transactions = [
     {
       to: "/staff/transaction/lead",
       label: "Lead",
-      control: user?.permissions[0]?.Lead
+      control: user?.permissions?.[0]?.Lead ?? false
     },
     {
       to: "/staff/transaction/call-registration",
       label: "Call Registration",
-      control: user?.permissions[0]?.CallRegistration
+      control: user?.permissions?.[0]?.CallRegistration ?? false
     },
     {
       to: "/staff/transaction/leave-application",
       label: "Leave Application",
-      control: user?.permissions[0]?.LeaveApplication
+      control: user?.permissions?.[0]?.LeaveApplication ?? false
     }
   ]
   const tasks = [
     {
       to: "/staff/tasks/signUp-custmer",
       label: "Sign Up Custmer",
-      control: user?.permissions[0]?.SignUpCustomer
+      control: user?.permissions?.[0]?.SignUpCustomer
     },
     {
       to: "/staff/tasks/productMerge",
       label: "Product Merge",
-      control: user?.permissions[0]?.ProductMerge
+      control: user?.permissions?.[0]?.UsersAndPasswords ?? false
     },
     {
       to: "/staff/tasks/productAllocation-Pending",
       label: "Product Allocation Pending",
-      control: user?.permissions[0]?.ProductAllocationPending
+      control: user?.permissions?.[0]?.ProductAllocationPending ?? false
     },
     {
       to: "/staff/tasks/leaveApproval-pending",
       label: "Leave Approval Pending",
-      control: user?.permissions[0]?.LeaveApprovalPending
+      control: user?.permissions?.[0]?.LeaveApprovalPending ?? false
     },
     {
       to: "/staff/tasks/workAllocation",
       label: "Work Allocation",
-      control: user?.permissions[0]?.WorkAllocation
+      control: user?.permissions?.[0]?.WorkAllocation ?? false
     },
     {
       to: "/staff/tasks/excelconverter",
       label: "Excel Converter",
-      control: user?.permissions[0]?.ExcelConverter
+      control: user?.permissions?.[0]?.ExcelConverter ?? false
     }
   ]
 

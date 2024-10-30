@@ -59,8 +59,8 @@ const UserListform = () => {
   }
 
   return (
-    <div className="container mx-auto min-h-screen py-8 bg-gray-100">
-      <div className="w-auto  bg-white shadow-lg rounded p-8  h-screen mx-8">
+    <div className="container mx-auto h-screen py-8 bg-gray-100">
+      <div className="w-auto  bg-white shadow-lg rounded p-8 h-auto mx-8">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-4">
           <h3 className="text-2xl text-black font-bold">Users List</h3>
           {/* Search Bar for large screens */}
@@ -95,9 +95,9 @@ const UserListform = () => {
             <FaPrint className="mr-2" />
           </button>
         </div>
-        <div className="max-h-64 md:max-h-80 lg:max-h-96 xl:max-h-[600px] overflow-x-auto overflow-y-auto">
-          <table className="min-w-full bg-white border border-gray-300 text-center">
-            <thead className="text-center">
+        <div className="max-h-64 md:max-h-80 lg:max-h-96 overflow-x-auto overflow-y-auto">
+          <table className="min-w-full bg-white text-center">
+            <thead className="text-center  sticky top-0 z-10 bg-green-300">
               <tr>
                 <th className="py-2 px-4 border-b border-gray-300">No</th>
                 <th className="py-2 px-4 border-b border-gray-300">Branch</th>

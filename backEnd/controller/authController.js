@@ -490,23 +490,45 @@ export const GetallUsers = async (req, res) => {
 }
 
 export const LeaveApply = async (req, res) => {
-  console.log("hlwererer")
   const formData = req.body
   const { Userid } = req.query
 
-  const { startDate, endDate, leaveType, onsite, reason } = formData
-
+  const { startDate, endDate, leaveType, onsite, reason, description } =
+    formData
+  console.log("startdate", startDate)
+  const start = new Date(startDate)
+  console.log("start", start)
   try {
-    const leave = new LeaveRequest({
-      startDate,
-      endDate,
-      leaveType,
-      onsite,
-      reason,
-      userId: Userid
-    })
-    const leaveSubmit = await leave.save()
-    console.log(leaveSubmit)
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    const dates = []
+
+    let current = new Date(start)
+    while (current <= end) {
+      dates.push(new Date(current).toISOString().split("T")[0]) // Format as 'YYYY-MM-DD'
+      current.setDate(current.getDate() + 1) // Increment by one day
+    }
+
+    // Save each date as a separate document
+    for (const leaveDate of dates) {
+      const leave = new LeaveRequest({
+        leaveDate,
+        leaveType,
+        onsite,
+
+        description,
+        userId: Userid
+      })
+      // Only add 'reason' if 'onsite' is false
+      if (!onsite) {
+        console.log("isonsite")
+        leave.reason = reason
+      }
+      await leave.save()
+    }
+
+    const leaveSubmit = await LeaveRequest.find({ userId: Userid })
+    console.log("leavesub", leaveSubmit)
     return res
       .status(200)
       .json({ message: "leave submitted", data: leaveSubmit })
