@@ -1,3 +1,4 @@
+import LeaveApprovalAndPending from "../../../components/common/LeaveApprovalAndPending"
 import ExcelUploader from "../../../pages/primaryUser/converter/ExcelUploader"
 
 const tasksRoutes = [
@@ -10,7 +11,7 @@ const tasksRoutes = [
   },
   {
     path: "/admin/tasks/leaveApproval-pending",
-    title: "Leave Approval Pending"
+    component: LeaveApprovalAndPending
   },
   { path: "/admin/tasks/workAllocation", title: "Work Allocation" },
   { path: "/admin/tasks/excelconverter", component: ExcelUploader }

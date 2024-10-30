@@ -568,6 +568,14 @@ export const GetallLeave = async (req, res) => {
       .json({ error: "An error occurred while fetching leave records" })
   }
 }
+export const GetAllLeaveRequest = async(req, res)=>{
+  try{
+
+  }catch(error){
+    
+  }
+}
+
 export const DeleteUser = async (req, res) => {
   const { id } = req.query
   console.log("id", id)

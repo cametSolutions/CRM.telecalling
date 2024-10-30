@@ -15,11 +15,12 @@ const router = express.Router()
 router.post("/login", Login)
 
 router.post("/userEdit", authMiddleware, UpdateUserandAdmin)
-router.post("/userPermissionUpdate", authMiddleware,  UpdateUserPermission)
+router.post("/userPermissionUpdate", authMiddleware, UpdateUserPermission)
 router.post("/userRegistration", authMiddleware, StaffRegister)
 router.delete("/userDelete", authMiddleware, DeleteUser)
 router.get("/getallUsers", authMiddleware, GetallUsers)
 router.post("/leave", authMiddleware, LeaveApply)
 router.get("/getallLeave", authMiddleware, GetallLeave)
+router.get("leaveList", authMiddleware, GetAllLeaveRequest)
 
 export default router

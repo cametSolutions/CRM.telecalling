@@ -27,6 +27,7 @@ const UserListform = () => {
   }, [data])
   console.log("hiii")
   const handleSearch = debounce((query) => {
+    const { allusers } = data
     const input = query.trim()
 
     const lowerCaseQuery = input.toLowerCase()
@@ -34,8 +35,9 @@ const UserListform = () => {
     const filteredName = allusers.filter((user) =>
       user.name.toLowerCase().includes(lowerCaseQuery)
     )
+    console.log("filteredname", filteredName)
     const filteredMobile = allusers.filter((user) =>
-      user.mobileno.toLowerCase().includes(lowerCaseQuery)
+      user.mobile.toString().toLowerCase().includes(lowerCaseQuery)
     )
 
     if (filteredName.length > 0) {
