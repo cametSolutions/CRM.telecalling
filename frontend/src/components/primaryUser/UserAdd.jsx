@@ -212,6 +212,7 @@ const UserAdd = ({
       branchName: foundBranch.branchName
     }))
   }
+  console.log("usere", User)
 
   useEffect(() => {
     if (defaultCountry) {
@@ -244,15 +245,15 @@ const UserAdd = ({
           setSelectedState(state)
         }
         if (key === "department") {
-          const department = departments.find((d) => d._id === value._id)
+          const department = departments.find((d) => d._id === value?._id)
 
-          setSelectedDepartment(department._id)
+          setSelectedDepartment(department?._id)
           // setValue(key, department._id)
         }
         if (key === "assignedto") {
-          const assigned = users.find((item) => item._id === value._id)
+          const assigned = users.find((item) => item._id === value?._id)
 
-          setSelectedAssignedto(assigned._id)
+          setSelectedAssignedto(assigned?._id)
         }
         if (key !== "password") {
           setValue(key, value)
