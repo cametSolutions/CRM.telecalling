@@ -59,9 +59,9 @@ const UserListform = () => {
   }
 
   return (
-    <div className="container mx-auto h-screen py-8 bg-gray-100">
-      <div className="w-auto  bg-white shadow-lg rounded p-8 h-auto mx-8">
-        <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-4">
+    <div className="container  mx-auto  p-8 bg-gray-100">
+      <div className="w-full  bg-white shadow-lg rounded p-10  ">
+        <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
           <h3 className="text-2xl text-black font-bold">Users List</h3>
           {/* Search Bar for large screens */}
           <div className="mx-4 md:block">
@@ -77,8 +77,8 @@ const UserListform = () => {
           </div>
         </div>
 
-        <hr className="border-t-2 border-gray-300 mb-4" />
-        <div className="flex flex-wrap space-x-4 mb-4">
+        <hr className="border-t-2 border-gray-300 mb-3" />
+        <div className="flex flex-wrap space-x-4 mb-2">
           <Link
             to="/admin/masters/userRegistration"
             className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center"
@@ -95,8 +95,8 @@ const UserListform = () => {
             <FaPrint className="mr-2" />
           </button>
         </div>
-        <div className="max-h-64 md:max-h-80 lg:max-h-96 overflow-x-auto overflow-y-auto">
-          <table className="min-w-full bg-white text-center">
+        <div className="max-h-60 sm:max-h-80 md:max-h-96 lg:max-h-[400px]  overflow-x-auto overflow-y-auto">
+          <table className="min-w-full text-center ">
             <thead className="text-center  sticky top-0 z-10 bg-green-300">
               <tr>
                 <th className="py-2 px-4 border-b border-gray-300">No</th>
