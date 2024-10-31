@@ -8,7 +8,8 @@ import {
   GetallLeave,
   UpdateUserandAdmin,
   UpdateUserPermission,
-  DeleteUser
+  DeleteUser,
+  GetAllLeaveRequest
 } from "../controller/authController.js"
 const router = express.Router()
 

@@ -1,21 +1,22 @@
+import ComingSoon from "../../../pages/common/ComingSoon"
 const reportsRoutes = [
-  { path: "/admin/reports/summary", title: "Summary" },
-  { path: "/admin/reports/expiry-register", title: "Expiry Register" },
+  { path: "/admin/reports/summary", component: ComingSoon },
+  { path: "/admin/reports/expiry-register", component: ComingSoon },
   {
     path: "/admin/reports/expired-customerCalls",
-    title: "Expired Customer Calls",
+    component: ComingSoon
   },
   {
     path: "/admin/reports/customer-callSummary",
-    title: "Customer Call Summary",
+    component: ComingSoon
   },
-  { path: "/admin/reports/customer-contact", title: "Customer Contact" },
+  { path: "/admin/reports/customer-contact", component: ComingSoon },
   {
     path: "/admin/reports/customer-actionSummary",
-    title: "Customer Action Summary",
+    component: ComingSoon
   },
-  { path: "/admin/reports/account-search", title: "Account Search" },
-  { path: "/admin/reports/leave-summary", title: "Leave Summary" },
+  { path: "/admin/reports/account-search", component: ComingSoon },
+  { path: "/admin/reports/leave-summary", component: ComingSoon }
 ]
 
 export default reportsRoutes

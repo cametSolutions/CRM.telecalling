@@ -21,6 +21,7 @@ import PendingCustomer from "../../../components/secondaryUser/PendingCustomer"
 import ProductEdit from "../../../pages/primaryUser/edit/ProductEdit"
 import UserListform from "../../../pages/primaryUser/List/UserListform"
 import UserPermissions from "../../../pages/primaryUser/List/UserPermissions"
+import ComingSoon from "../../../pages/common/ComingSoon"
 
 const mastersRoutes = [
   {
@@ -91,11 +92,10 @@ const mastersRoutes = [
 
   { path: "/admin/masters/menurights", component: UserPermissions },
 
-  { path: "/admin/masters/vouchermaster", title: "Voucher Master" },
-  { path: "/admin/masters/target", title: "Target" },
-  { path: "/admin/masters/product", title: "Product" },
-  { path: "/admin/masters/customerImport", title: "Customer Import" },
-  { path: "/admin/masters/partners", title: "Partners" },
+  { path: "/admin/masters/vouchermaster", component: ComingSoon },
+  { path: "/admin/masters/target", component: ComingSoon },
+
+  { path: "/admin/masters/partners", component: ComingSoon },
   { path: "/admin/masters/department", component: DepartmentRegistration }
 ]
 

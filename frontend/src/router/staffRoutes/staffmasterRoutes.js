@@ -20,6 +20,9 @@ import ProductList from "../../pages/primaryUser/List/ProductList"
 import PendingCustomer from "../../components/secondaryUser/PendingCustomer"
 import ProductEdit from "../../pages/primaryUser/edit/ProductEdit"
 import UserListform from "../../pages/primaryUser/List/UserListform"
+import UserPermissions from "../../pages/primaryUser/List/UserPermissions"
+import ComingSoon from "../../pages/common/ComingSoon"
+import DepartmentRegistration from "../../pages/primaryUser/register/DepartmentRegistration"
 const staffmastersRoutes = [
   {
     path: "/staff/masters/company",
@@ -79,14 +82,14 @@ const staffmastersRoutes = [
   { path: "/staff/masters/productRegistration", component: ProductMaster },
   { path: "/staff/masters/users-&-passwords", component: UserListform },
 
-  { path: "/staff/masters/menurights", title: "Menu Rights" },
+  { path: "/staff/masters/menurights", component: UserPermissions },
 
-  { path: "/staff/masters/vouchermaster", title: "Voucher Master" },
-  { path: "/staff/masters/target", title: "Target" },
-  { path: "/staff/masters/product", title: "Product" },
-  { path: "/staff/masters/customerImport", title: "Customer Import" },
-  { path: "/staff/masters/partners", title: "Partners" },
-  { path: "/staff/masters/deapartment", title: "Department" }
+  { path: "/staff/masters/vouchermaster", component: ComingSoon },
+  { path: "/staff/masters/target", component: ComingSoon },
+  { path: "/staff/masters/product", component: ProductList },
+
+  { path: "/staff/masters/partners", component: ComingSoon },
+  { path: "/staff/masters/deapartment", component: DepartmentRegistration }
 ]
 
 export default staffmastersRoutes
