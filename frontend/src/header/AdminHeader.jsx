@@ -136,7 +136,7 @@ export default function AdminHeader() {
   ]
   const tasks = [
     {
-      to: "/admin/tasks/signUp-custmer",
+      to: "/admin/tasks/signUp-customer",
       label: "Sign Up Custmer"
       // control: user.permissions[0].SignUpCustomer
     },
@@ -178,12 +178,12 @@ export default function AdminHeader() {
       // control: user.permissions[0].ExpiryRegister
     },
     {
-      to: "/admin/reports/expired-custmerCalls",
+      to: "/admin/reports/expired-customerCalls",
       label: "Expired Customer Calls"
       // control: user.permissions[0].ExpiredCustomerCalls
     },
     {
-      to: "/admin/reports/customer-callsSummary",
+      to: "/admin/reports/customer-callSummary",
       label: "Customer Calls Summary"
       // control: user.permissions[0].CustomerCallsSummary
     },
@@ -198,7 +198,7 @@ export default function AdminHeader() {
       // control: user.permissions[0].CustomerActionSummary
     },
     {
-      to: "/adminr/eports/account-search",
+      to: "/admin/reports/account-search",
       label: "Account Search"
       // control: user.permissions[0].AccountSearch
     },

@@ -89,7 +89,7 @@ const staffmastersRoutes = [
   { path: "/staff/masters/product", component: ProductList },
 
   { path: "/staff/masters/partners", component: ComingSoon },
-  { path: "/staff/masters/deapartment", component: DepartmentRegistration }
+  { path: "/staff/masters/department", component: DepartmentRegistration }
 ]
 
 export default staffmastersRoutes

@@ -101,13 +101,13 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
-    // Assuming you have an API to fetch the details
-    const response = await fetch(
-      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
-    )
+    //Assuming you have an API to fetch the details
     // const response = await fetch(
-    //   `http://localhost:9000/api/customer/getcallregister/${callId}`
+    //   `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
     // )
+    const response = await fetch(
+      `http://localhost:9000/api/customer/getcallregister/${callId}`
+    )
     const data = await response.json()
 
     return data
@@ -259,12 +259,12 @@ export default function CallRegistration() {
   }
 
   const fetchCustomerData = debounce(async (query) => {
-    const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
-      query
-    )}`
-    // const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
+    // const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
     //   query
     // )}`
+    const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
+      query
+    )}`
 
     try {
       const response = await fetch(url, {

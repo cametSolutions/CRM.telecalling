@@ -3,7 +3,8 @@ import ComingSoon from "../../../pages/common/ComingSoon"
 import ExcelUploader from "../../../pages/primaryUser/converter/ExcelUploader"
 
 const tasksRoutes = [
-  { path: "/admin/tasks/signup-customer", component: ComingSoon },
+  { path: "/admin/tasks/signUp-customer", component: ComingSoon },
+  
   { path: "/admin/tasks/productMerge", component: ComingSoon },
 
   {

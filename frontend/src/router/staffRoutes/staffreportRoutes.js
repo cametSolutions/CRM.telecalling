@@ -3,7 +3,8 @@ const staffreportsRoutes = [
   { path: "/staff/reports/summary", component: ComingSoon },
   { path: "/staff/reports/expiry-register", component: ComingSoon },
   {
-    path: "/staff/reports/expired-customerCalls",
+    path: "/staff/reports/expired-custmerCalls",
+
     component: ComingSoon
   },
   {

@@ -25,7 +25,7 @@ const UserListform = () => {
       setUser(allusers)
     }
   }, [data])
-  console.log("hiii")
+  
   const handleSearch = debounce((query) => {
     const { allusers } = data
     const input = query.trim()

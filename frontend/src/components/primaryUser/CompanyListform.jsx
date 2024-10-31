@@ -33,8 +33,8 @@ const CompanyListForm = ({ companies }) => {
   }, [searchQuery, handleSearch])
 
   return (
-    <div className="container mx-auto min-h-screen py-8 bg-gray-100">
-      <div className="w-auto  bg-white shadow-lg rounded p-8  h-screen mx-8">
+    <div className="container mx-auto min-h-screen p-8 bg-gray-100">
+      <div className="w-auto  bg-white shadow-lg rounded p-8 ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-4">
           <h3 className="text-2xl text-black font-bold">CompanyList</h3>
           {/* Search Bar for large screens */}
@@ -75,38 +75,26 @@ const CompanyListForm = ({ companies }) => {
             </button>
           </Link> */}
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-auto text-center max-h-60 sm:max-h-80 md:max-h-96 lg:max-h-[420px]">
           <table className="min-w-full bg-white border border-gray-300">
-            <thead>
+            <thead className="bg-green-300 sticky top-0 z-10">
               <tr>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
+                <th className="py-2 px-4 border-b border-gray-300 ">
                   Company Name
                 </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
-                  Address
-                </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
-                  City
-                </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
+                <th className="py-2 px-4 border-b border-gray-300 ">Address</th>
+                <th className="py-2 px-4 border-b border-gray-300 ">City</th>
+                <th className="py-2 px-4 border-b border-gray-300 ">
                   Pin code
                 </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
-                  Mobile
-                </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
+                <th className="py-2 px-4 border-b border-gray-300">Mobile</th>
+                <th className="py-2 px-4 border-b border-gray-300 ">
                   Telephone
                 </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
-                  Email
-                </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
-                  Website
-                </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
-                  Status
-                </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left"></th>
+                <th className="py-2 px-4 border-b border-gray-300 ">Email</th>
+                <th className="py-2 px-4 border-b border-gray-300 ">Website</th>
+                <th className="py-2 px-4 border-b border-gray-300 ">Status</th>
+                <th className="py-2 px-4 border-b border-gray-300 ">Edit</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
