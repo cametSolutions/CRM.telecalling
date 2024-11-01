@@ -142,6 +142,7 @@ export const GetCustomer = async (req, res) => {
     } else {
       console.log("seaerhcinelse")
       const customers = await Customer.find()
+      // .sort({ customerName: 1 })
       if (customers.length === 0) {
         return res.json({ message: "No customer found" })
       } else {

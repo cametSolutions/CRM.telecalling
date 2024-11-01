@@ -21,6 +21,10 @@ const CallregistrationList = () => {
 
   // State to track the active filter
   const [activeFilter, setActiveFilter] = useState("All")
+  const userData = localStorage.getItem("user")
+  const users = JSON.parse(userData)
+
+  console.log(user)
 
   const filterCallData = useCallback((calls) => {
     const allCallRegistrations = calls.flatMap((call) => call.callregistration)
@@ -33,6 +37,7 @@ const CallregistrationList = () => {
     const solved = allCallRegistrations.filter(
       (call) => call.formdata.status.toLowerCase() === "solved"
     )
+    console.log("solved", solved.length)
     const todaysCallsCount = getTodaysCalls(calls)
 
     setPendingCallsCount(pending?.length)
@@ -41,17 +46,35 @@ const CallregistrationList = () => {
   }, [])
 
   useEffect(() => {
-    if (callList.length > 0) {
-      filterCallData(callList) // Filter call data for counts
-      setFilteredCalls(callList)
+    if (callList.length > 0 && user) {
+      if (user.role === "Admin") {
+        filterCallData(callList) // Filter call data for counts
+        setFilteredCalls(callList)
+
+        console.log(callList)
+      } else {
+        const userBranchName = new Set(
+          users.selected.map((branch) => branch.branchName)
+        )
+        console.log(callList)
+        const branchNamesArray = Array.from(userBranchName)
+        console.log(branchNamesArray)
+
+        // Filter calls to keep only those where branchName matches branchNamesArray
+        const filteredCalls = callList.filter((call) =>
+          call.callregistration.some((registration) =>
+            branchNamesArray.includes(registration.branchName)
+          )
+        )
+        console.log(filteredCalls)
+        filterCallData(filteredCalls) // Filter call data for counts
+        setFilteredCalls(filteredCalls)
+      }
     }
-  }, [callList])
+  }, [callList, user])
 
   useEffect(() => {
-    const userData = localStorage.getItem("user")
-    const user = JSON.parse(userData)
-
-    setUser(user)
+    setUser(users)
 
     socket.emit("updatedCalls")
     // Listen for initial data from the server
