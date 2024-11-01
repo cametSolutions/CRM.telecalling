@@ -211,16 +211,17 @@ export const UpdateUserandAdmin = async (req, res) => {
 
   const { role } = userData
 
-  const { selected, password, ...filteredUserData } = userData
+  const { selected, ...filteredUserData } = userData
+  const { password } = filteredUserData
 
   console.log("role", role)
-
+  console.log("pass", password)
   try {
     if (role === "Staff") {
       const updateQuery = {
         $set: filteredUserData // Set the fields from userData without 'selected'
       }
-      console.log("tabledata", tabledata)
+      // console.log("tabledata", tabledata)
 
       // Check if tableData is empty or not, and update the selected field accordingly
       if (tabledata.length === 0) {
@@ -228,7 +229,14 @@ export const UpdateUserandAdmin = async (req, res) => {
       } else {
         updateQuery.$set.selected = tabledata // Add items to selected field if not empty
       }
-
+      // console.log("qury", updateQuery.$set.password)
+      if (updateQuery.$set.password) {
+        const salt = await bcrypt.genSalt(10)
+        const hashedPassword = await bcrypt.hash(password, salt)
+        updateQuery.$set.password = hashedPassword
+      } else {
+        delete updateQuery.$set.password
+      }
       // Perform the update with findByIdAndUpdate
       const updateStaff = await Staff.findByIdAndUpdate(
         userId,
@@ -475,7 +483,7 @@ export const GetallUsers = async (req, res) => {
       if (allAdmins.length) {
         data.allAdmins = allAdmins
       }
-      console.log("alldata", data)
+      // console.log("alldata", data)
       return res.status(200).json({
         message: "Users found",
         data: data
@@ -568,12 +576,9 @@ export const GetallLeave = async (req, res) => {
       .json({ error: "An error occurred while fetching leave records" })
   }
 }
-export const GetAllLeaveRequest = async(req, res)=>{
-  try{
-
-  }catch(error){
-    
-  }
+export const GetAllLeaveRequest = async (req, res) => {
+  try {
+  } catch (error) {}
 }
 
 export const DeleteUser = async (req, res) => {
