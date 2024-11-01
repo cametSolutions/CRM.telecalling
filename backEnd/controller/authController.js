@@ -291,12 +291,12 @@ export const Login = async (req, res) => {
     const token = generateToken(res, user.id)
     console.log("userssbckkkk", user)
     console.log("role", user.role)
-    if(token){
+    console.log("token", token)
+    if (token) {
       res
-      .status(200)
-      .json({ message: "Login successful", token, role: user.role, user })
+        .status(200)
+        .json({ message: "Login successful", token, role: user.role, user })
     }
-  
   } catch (error) {
     console.error("Login error:", error.message)
     res.status(500).json({ message: "Server error" })

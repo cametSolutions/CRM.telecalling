@@ -664,7 +664,6 @@ const UserAdd = ({
               </label>
               <select
                 {...register("role", { required: true })}
-                // value={User && User.role}
                 className="w-full mt-1 block border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
               >
                 <option value="Staff">Staff</option>

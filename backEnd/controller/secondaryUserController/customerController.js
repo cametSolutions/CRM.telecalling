@@ -111,7 +111,6 @@ export const CustomerEdit = async (req, res) => {
 }
 export const GetCustomer = async (req, res) => {
   const { search } = req.query
-  console.log("seatrj", search)
 
   try {
     let searchCriteria = {}
@@ -129,20 +128,17 @@ export const GetCustomer = async (req, res) => {
       } else {
         // Search by customer name
         searchCriteria = { customerName: new RegExp(search, "i") }
-        console.log("search ", searchCriteria)
       }
 
       const customers = await Customer.find(searchCriteria)
-      // console.log("customeresincontrol", customers)
+
       if (customers.length === 0) {
         return res.json({ message: "No customer found" })
       } else {
         return res.json({ message: "Customer(s) found", data: customers })
       }
     } else {
-      console.log("seaerhcinelse")
-      const customers = await Customer.find()
-      // .sort({ customerName: 1 })
+      const customers = await Customer.find().sort({ customerName: 1 })
       if (customers.length === 0) {
         return res.json({ message: "No customer found" })
       } else {
@@ -176,7 +172,7 @@ export const customerCallRegistration = async (req, res) => {
   try {
     const { customerid, customer } = req.query // Get customerid from query
     const calldata = req.body // Assuming calldata is sent in the body
-    console.log("calldata", calldata)
+
     // Convert customerid to ObjectId
     const customerId = new mongoose.Types.ObjectId(customerid)
 
@@ -186,7 +182,6 @@ export const customerCallRegistration = async (req, res) => {
 
     // Find if there is already a call registration for this customer
     const user = await CallRegistration.findOne({ customerid: customerId })
-    console.log("user", user)
 
     if (user) {
       const token = calldata.formdata.token
@@ -194,8 +189,7 @@ export const customerCallRegistration = async (req, res) => {
         const callToUpdate = user.callregistration.find(
           (call) => call.timedata.token === token
         )
-        console.log("calldata", calldata)
-        console.log("calltoupadatae", callToUpdate)
+
         // Function to convert "HH:MM:SS" format to total seconds
         function timeToSeconds(duration) {
           const parts = duration.split(":").map(Number) // split into [hours, minutes, seconds]
@@ -268,11 +262,6 @@ export const customerCallRegistration = async (req, res) => {
 
       // Save the new document
       const updatedCall = await newCall.save()
-      // const customer = await Customer({
-      //   callregistration: updatedCall._id
-      // })
-      // await customer.save()
-      console.log("uadaredcalls", updatedCall)
 
       return res.status(200).json({
         status: true,
@@ -293,7 +282,6 @@ export const GetCallRegister = async (req, res) => {
   try {
     const { customerid, customer } = req.query
     const { callId } = req.params
-    console.log("idsssssssss", callId)
 
     if (customerid !== "null" && customerid) {
       const customerId = new mongoose.Types.ObjectId(customerid)
@@ -307,7 +295,6 @@ export const GetCallRegister = async (req, res) => {
           .json({ message: "registered call found", data: registeredCall })
       }
     } else if (callId) {
-      console.log("callid", callId)
       const callDetails = await CallRegistration.findById(callId)
         .populate("customerid")
         .populate({
@@ -380,7 +367,6 @@ export const GetallCalls = async (req, res, socket) => {
       solvedCount,
       todayCallsCount
     }
-    console.log("alltok", alltokens)
 
     if (allcalls.length > 0) {
       res.status(200).json({
