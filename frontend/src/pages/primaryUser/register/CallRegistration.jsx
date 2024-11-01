@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react"
-import { useLocation } from "react-router-dom"
+import { useLocation,Link } from "react-router-dom"
 import io from "socket.io-client"
 import { useForm } from "react-hook-form"
 import { formatDistanceToNow, parseISO } from "date-fns"
@@ -8,8 +8,8 @@ import { formatTime } from "../../../utils/timeUtils"
 import debounce from "lodash.debounce"
 import UseFetch from "../../../hooks/useFetch"
 import Timer from "../../../components/primaryUser/Timer"
-// const socket = io("https://www.crm.camet.in")
-const socket = io("http://localhost:9000")
+const socket = io("https://www.crm.camet.in")
+// const socket = io("http://localhost:9000")
 
 export default function CallRegistration() {
   const {
@@ -49,7 +49,7 @@ export default function CallRegistration() {
       selectedCustomer?._id || null
     }&customer=${selectedCustomer?.customerName || null}`
   )
-  console.log("statuslo", loading)
+
   const location = useLocation()
   const { calldetails, token } = location.state || {}
 
@@ -103,12 +103,12 @@ export default function CallRegistration() {
 
   const fetchCallDetails = async (callId) => {
     //Assuming you have an API to fetch the details
-    // const response = await fetch(
-    //   `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
-    // )
     const response = await fetch(
-      `http://localhost:9000/api/customer/getcallregister/${callId}`
+      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
     )
+    // const response = await fetch(
+    //   `http://localhost:9000/api/customer/getcallregister/${callId}`
+    // )
     const data = await response.json()
 
     return data
@@ -260,12 +260,12 @@ export default function CallRegistration() {
   }
 
   const fetchCustomerData = debounce(async (query) => {
-    // const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
-    //   query
-    // )}`
-    const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
+    const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
       query
     )}`
+    // const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
+    //   query
+    // )}`
 
     try {
       const response = await fetch(url, {
@@ -290,7 +290,7 @@ export default function CallRegistration() {
       setSearching(false)
     }
   }, 300)
-  console.log("customerdata", customerData)
+  
 
   const handleInputChange = (inputValue) => {
     setSearch(inputValue)
@@ -342,9 +342,7 @@ export default function CallRegistration() {
     }
     setFormData(updatedData)
   }
-  const newdata = customerData.filter(
-    (customer) => customer.customerName === "CAPSON MARKETING"
-  )
+  
 
   return (
     <div className="container  justify-center items-center p-8 bg-gray-100">
@@ -757,8 +755,13 @@ export default function CallRegistration() {
                     </div>
                   )}
                 </form>
+                <div className="flex justify-end">
+                <Link to="/admin/home" className="text-blue-600">Go Home</Link>
+                
+                </div>
+               
 
-                <div className="mt-12 overflow-y-auto w-full max-h-60 text-center">
+                <div className="mt-8 overflow-y-auto w-full max-h-60 text-center">
                   <table className=" w-full divide-y divide-gray-200 rounded-xl ">
                     <thead className="sticky top-0 z-30  bg-[#48CFCB] shadow">
                       <tr className="">
