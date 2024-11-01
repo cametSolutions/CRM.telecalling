@@ -13,6 +13,7 @@ import stafftransactionsRoutes from "./staffRoutes/stafftransactionRoutes.js"
 import CallregistrationList from "../pages/secondaryUser/List/CallregistrationList.jsx"
 import stafftasksRoutes from "./staffRoutes/stafftaskRoutes.js"
 import staffmastersRoutes from "./staffRoutes/staffmasterRoutes.js"
+import staffreportsRoutes from "./staffRoutes/staffreportRoutes.js"
 
 const Mainrouter = () => {
   const allRoutes = [
@@ -22,7 +23,8 @@ const Mainrouter = () => {
     ...transactionsRoutes,
     ...staffmastersRoutes,
     ...stafftransactionsRoutes,
-    ...stafftasksRoutes
+    ...stafftasksRoutes,
+    ...staffreportsRoutes
   ]
   return (
     <div>

@@ -110,40 +110,44 @@ export const CustomerEdit = async (req, res) => {
   }
 }
 export const GetCustomer = async (req, res) => {
-  console.log("hii")
-  // const { search } = req.query
+  const { search } = req.query
+  console.log("seatrj", search)
 
   try {
-    // let searchCriteria = {}
-    // if (search) {
-    //   if (!isNaN(search)) {
-    //     // Search by license number or mobile number using partial match
-    //     const searchRegex = new RegExp(`^${search}`, "i")
+    let searchCriteria = {}
+    if (search) {
+      if (!isNaN(search)) {
+        // Search by license number or mobile number using partial match
+        const searchRegex = new RegExp(`^${search}`, "i")
 
-    //     searchCriteria = {
-    //       $or: [{ "selected.license_no": searchRegex }, { mobile: searchRegex }]
-    //     }
-    //   } else {
-    //     // Search by customer name
-    //     searchCriteria = { customerName: new RegExp(search, "i") }
-    //     console.log("search ", searchCriteria)
-    //   }
+        searchCriteria = {
+          $or: [
+            { "selected.licensenumber": searchRegex },
+            { mobile: searchRegex }
+          ]
+        }
+      } else {
+        // Search by customer name
+        searchCriteria = { customerName: new RegExp(search, "i") }
+        console.log("search ", searchCriteria)
+      }
 
-    //   const customers = await Customer.find(searchCriteria)
-    //   if (customers.length === 0) {
-    //     return res.json({ message: "No customer found" })
-    //   } else {
-    //     return res.json({ message: "Customer(s) found", data: customers })
-    //   }
-    // }  
-      const customers = await Customer.find()
-       if (customers.length === 0) {
+      const customers = await Customer.find(searchCriteria)
+      // console.log("customeresincontrol", customers)
+      if (customers.length === 0) {
         return res.json({ message: "No customer found" })
       } else {
         return res.json({ message: "Customer(s) found", data: customers })
       }
-
-    
+    } else {
+      console.log("seaerhcinelse")
+      const customers = await Customer.find()
+      if (customers.length === 0) {
+        return res.json({ message: "No customer found" })
+      } else {
+        return res.json({ message: "Customer(s) found", data: customers })
+      }
+    }
   } catch (error) {
     console.error("Error fetching customer data:", error.message)
     res
@@ -263,6 +267,10 @@ export const customerCallRegistration = async (req, res) => {
 
       // Save the new document
       const updatedCall = await newCall.save()
+      // const customer = await Customer({
+      //   callregistration: updatedCall._id
+      // })
+      // await customer.save()
       console.log("uadaredcalls", updatedCall)
 
       return res.status(200).json({

@@ -1,19 +1,21 @@
+import ComingSoon from "../../pages/common/ComingSoon"
 import SiteVisit from "../../pages/common/SiteVisit"
-
+import ExcelUploader from "../../pages/primaryUser/converter/ExcelUploader"
 const stafftasksRoutes = [
-  { path: "/staff/tasks/signup-customer", title: "SignUp Customer" },
-  { path: "/staff/tasks/productMerge", title: "Product Merge" },
+  { path: "/staff/tasks/signup-customer", component: ComingSoon },
+  { path: "/staff/tasks/productMerge", component: ComingSoon },
 
   {
     path: "/staff/tasks/productAllocation-Pending",
-    title: "Product Allocation Pending"
+    component: ComingSoon
   },
   {
     path: "/staff/tasks/leaveApproval-pending",
-    title: "Leave Approval Pending"
+    component: ComingSoon
   },
-  { path: "/staff/tasks/workAllocation", title: "Work Allo{cation" },
-  { path: "/staff/tasks/location", component: SiteVisit}
+  { path: "/staff/tasks/workAllocation", component: ComingSoon },
+  { path: "/staff/tasks/location", component: SiteVisit },
+  { path: "/staff/tasks/excelconverter", component: ExcelUploader }
 ]
 
 export default stafftasksRoutes

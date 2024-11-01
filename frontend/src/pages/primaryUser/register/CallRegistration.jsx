@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react"
-import { useLocation } from "react-router-dom"
+import { useLocation,Link } from "react-router-dom"
 import io from "socket.io-client"
 import { useForm } from "react-hook-form"
 import { formatDistanceToNow, parseISO } from "date-fns"
@@ -23,7 +23,7 @@ export default function CallRegistration() {
   } = useForm()
 
   const [customerData, setCustomerData] = useState([])
-  const [load, setloading] = useState(false)
+  // const [loading, setloading] = useState(false)
   const [name, setName] = useState("")
   const [editform, setEditformdata] = useState({})
   const [productDetails, setProductDetails] = useState([])
@@ -49,6 +49,7 @@ export default function CallRegistration() {
       selectedCustomer?._id || null
     }&customer=${selectedCustomer?.customerName || null}`
   )
+
   const location = useLocation()
   const { calldetails, token } = location.state || {}
 
@@ -101,7 +102,7 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
-    // Assuming you have an API to fetch the details
+    //Assuming you have an API to fetch the details
     const response = await fetch(
       `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
     )
@@ -289,6 +290,7 @@ export default function CallRegistration() {
       setSearching(false)
     }
   }, 300)
+  
 
   const handleInputChange = (inputValue) => {
     setSearch(inputValue)
@@ -299,7 +301,7 @@ export default function CallRegistration() {
     }
   }
 
-  const handleRowClick = (customer, selectedcustomer) => {
+  const handleRowClick = (customer) => {
     setCallData([])
     setSelectedCustomer(customer)
     setSearch(customer.customerName)
@@ -316,7 +318,7 @@ export default function CallRegistration() {
       setIsRunning(true)
 
       setStartTime(Date.now())
-      refreshHook()
+       refreshHook()
     } else {
       setIsRunning(false)
       setTime(0) // Reset the timer when no customer is selected
@@ -340,7 +342,7 @@ export default function CallRegistration() {
     }
     setFormData(updatedData)
   }
-  console.log("CALLDATA", callData)
+  
 
   return (
     <div className="container  justify-center items-center p-8 bg-gray-100">
@@ -476,67 +478,67 @@ export default function CallRegistration() {
                 </h3>
               </div>
 
-              <div className="m-5 w-lg max-h-30 overflow-x-auto overflow-y-auto">
+              <div className="m-5 w-lg max-h-30 overflow-x-auto text-center overflow-y-auto">
                 <table className=" m-w-full divide-y divide-gray-200 shadow">
                   <thead className="sticky  top-0 z-30 bg-green-300">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                         select
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Product Name
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Installed Date
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                         License No
                       </th>
-                      {/* <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {/* <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                         License expiry
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                         License Remaing
                       </th> */}
 
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Amc startDate
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Amc endDate
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Amc Remaining
                       </th>
 
-                      {/* <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {/* <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Tvu expiry
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Tvu Remaining
                       </th> */}
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                         No.of Users
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Version
                       </th>
 
                       {user.role === "Admin" && (
                         <>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Company Name
                           </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Branch Name
                           </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Product Amount
                           </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Tvu Amount
                           </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Amc Amount
                           </th>
                         </>
@@ -550,8 +552,8 @@ export default function CallRegistration() {
                           <input
                             className="form-checkbox h-4 w-4 text-blue-600 hover:bg-blue-200 focus:ring-blue-500 cursor-pointer"
                             checked={
-                              selectedProducts.productName ===
-                              product.productName
+                              selectedProducts?.productName ===
+                              product?.productName
                             }
                             type="checkbox"
                             onChange={(e) => handleCheckboxChange(e, product)}
@@ -753,129 +755,130 @@ export default function CallRegistration() {
                     </div>
                   )}
                 </form>
+                <div className="flex justify-end">
+                <Link to="/admin/home" className="text-blue-600">Go Home</Link>
+                
+                </div>
+               
 
-                <div className="mt-12 overflow-y-auto w-full max-h-60">
-                  {loading ? (
-                    <div className="text-center py-4">Loading...</div> // Show loading state
-                  ) : (
-                    <table className=" w-full divide-y divide-gray-200 rounded-xl ">
-                      <thead className="sticky top-0 z-30  bg-[#48CFCB] shadow">
-                        <tr className="">
-                          <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            Token No
-                          </th>
-                          <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            Start Time
-                          </th>
-                          <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            End Time
-                          </th>
-                          <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            Duration
-                          </th>
-                          <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            Incoming Number
-                          </th>
+                <div className="mt-8 overflow-y-auto w-full max-h-60 text-center">
+                  <table className=" w-full divide-y divide-gray-200 rounded-xl ">
+                    <thead className="sticky top-0 z-30  bg-[#48CFCB] shadow">
+                      <tr className="">
+                        <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
+                          Token No
+                        </th>
+                        <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
+                          Start Time
+                        </th>
+                        <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
+                          End Time
+                        </th>
+                        <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
+                          Duration
+                        </th>
+                        <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
+                          Incoming Number
+                        </th>
 
-                          <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            AttendedBy
-                          </th>
-                          <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            CompletedBy
-                          </th>
-                          <th className="px-6 py-5 text-left text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="  divide-gray-500">
-                        {callData?.map((call, index) => {
-                          const today = new Date().toISOString().split("T")[0]
-                          const startTimeRaw = call?.timedata?.startTime
-                          const callDate = startTimeRaw
-                            ? new Date(startTimeRaw.split(" ")[0])
-                                .toISOString()
-                                .split("T")[0]
-                            : null
-                          return (
-                            <>
-                              <tr
-                                key={index}
-                                className={`border border-b-0 ${
-                                  call.formdata.status === "solved"
-                                    ? "bg-green-400"
-                                    : call?.formdata?.status === "pending"
-                                    ? callDate === today
-                                      ? "bg-yellow-400"
-                                      : "bg-red-400"
+                        <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
+                          AttendedBy
+                        </th>
+                        <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
+                          CompletedBy
+                        </th>
+                        <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="  divide-gray-500">
+                      {callData?.map((call, index) => {
+                        const today = new Date().toISOString().split("T")[0]
+                        const startTimeRaw = call?.timedata?.startTime
+                        const callDate = startTimeRaw
+                          ? new Date(startTimeRaw.split(" ")[0])
+                              .toISOString()
+                              .split("T")[0]
+                          : null
+                        return (
+                          <>
+                            <tr
+                              key={index}
+                              className={`border border-b-0 ${
+                                call.formdata.status === "solved"
+                                  ? "bg-green-400"
+                                  : call?.formdata?.status === "pending"
+                                  ? callDate === today
+                                    ? "bg-yellow-400"
                                     : "bg-red-400"
-                                }`}
-                              >
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                  {call.timedata.token}
-                                </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                  {/* {call.timedata.startTime} */}
-                                  {call?.createdAt
-                                    ? new Date(call?.createdAt)
-                                        .toISOString()
-                                        .split("T")[0]
-                                    : "N/A"}
-                                </td>
+                                  : "bg-red-400"
+                              }`}
+                            >
+                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                {call.timedata.token}
+                              </td>
+                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                {/* {call.timedata.startTime} */}
+                                {call?.createdAt
+                                  ? new Date(call?.createdAt)
+                                      .toISOString()
+                                      .split("T")[0]
+                                  : "N/A"}
+                              </td>
 
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                  {call.timedata.endTime}
-                                </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                  {call.timedata.duration}
-                                </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                  {call.formdata.incomingNumber}
-                                </td>
+                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                {call.timedata.endTime}
+                              </td>
+                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                {call.timedata.duration}
+                              </td>
+                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                {call.formdata.incomingNumber}
+                              </td>
 
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                  {call.formdata.attendedBy}
-                                </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                  {call.formdata.completedBy}
-                                </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                  {call.formdata.status}
-                                </td>
-                              </tr>
-                              <tr
-                                className={`text-center border-t-0 border-gray-500 ${
-                                  call?.formdata?.status === "solved"
-                                    ? "bg-green-400"
-                                    : call?.formdata?.status === "pending"
-                                    ? callDate === today
-                                      ? "bg-yellow-400"
-                                      : "bg-red-400"
+                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                {call.formdata.attendedBy}
+                              </td>
+                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                {call.formdata.completedBy}
+                              </td>
+                              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                {call.formdata.status}
+                              </td>
+                            </tr>
+                            <tr
+                              className={`text-center border-t-0 border-gray-500 ${
+                                call?.formdata?.status === "solved"
+                                  ? "bg-green-400"
+                                  : call?.formdata?.status === "pending"
+                                  ? callDate === today
+                                    ? "bg-yellow-400"
                                     : "bg-red-400"
-                                }`}
-                                style={{ height: "5px" }}
+                                  : "bg-red-400"
+                              }`}
+                              style={{ height: "5px" }}
+                            >
+                              <td
+                                colSpan="4"
+                                className="py-1 px-8 text-sm text-black text-left"
                               >
-                                <td
-                                  colSpan="4"
-                                  className="py-1 px-8 text-sm text-black text-left"
-                                >
-                                  <strong>Description:</strong>{" "}
-                                  {call?.formdata?.description || "N/A"}
-                                </td>
-                                <td
-                                  colSpan="4"
-                                  className="py-1 px-12 text-sm text-black text-left"
-                                >
-                                  <strong>Solution:</strong>{" "}
-                                  {call?.formdata?.solution || "N/A"}
-                                </td>
-                              </tr>
-                            </>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  )}
+                                <strong>Description:</strong>{" "}
+                                {call?.formdata?.description || "N/A"}
+                              </td>
+                              <td
+                                colSpan="4"
+                                className="py-1 px-12 text-sm text-black text-left"
+                              >
+                                <strong>Solution:</strong>{" "}
+                                {call?.formdata?.solution || "N/A"}
+                              </td>
+                            </tr>
+                          </>
+                        )
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>

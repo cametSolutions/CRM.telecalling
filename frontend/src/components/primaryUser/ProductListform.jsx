@@ -12,7 +12,6 @@ import { Link } from "react-router-dom"
 import _ from "lodash"
 
 const ProductListform = ({ productlist }) => {
-  console.log("productlist in list:", productlist)
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredProducts, setFilteredProducts] = useState(productlist)
@@ -34,9 +33,9 @@ const ProductListform = ({ productlist }) => {
   }, [searchQuery, handleSearch])
 
   return (
-    <div className="container mx-auto min-h-screen py-8 bg-gray-100">
-      <div className="w-auto  bg-white shadow-lg rounded p-8  h-screen mx-8">
-        <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-4">
+    <div className="container mx-auto  p-8 ">
+      <div className="w-full  bg-white shadow-lg rounded p-6  h-fit ">
+        <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
           <h3 className="text-2xl text-black font-bold">Product List</h3>
           {/* Search Bar for large screens */}
           <div className="mx-4 md:block">
@@ -53,8 +52,8 @@ const ProductListform = ({ productlist }) => {
           </div>
         </div>
 
-        <hr className="border-t-2 border-gray-300 mb-4" />
-        <div className="flex flex-wrap space-x-4 mb-4">
+        <hr className="border-t-2 border-gray-300 mb-2" />
+        <div className="flex flex-wrap space-x-4 mb-2">
           <Link
             to="/admin/masters/productRegistration"
             className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center"
@@ -71,63 +70,57 @@ const ProductListform = ({ productlist }) => {
             <FaPrint className="mr-2" />
           </button>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-300">
-            <thead>
+        <div className="overflow-x-auto overflow-y-auto text-center max-h-60 sm:max-h-80 md:max-h-96 lg:max-h-[420px]">
+          <table className="min-w-full  border border-t-0">
+            <thead className="sticky top-0 z-10 bg-green-300 ">
               <tr>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
+                <th className="py-3 px-4 border-b border-gray-300 ">
                   Company Name
                 </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
+                <th className="py-3 px-4 border-b border-gray-300 ">
                   Branch Name
                 </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
+                <th className="py-3 px-4 border-b border-gray-300 ">
                   Product Name
                 </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
-                  Brand
-                </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
+                <th className="py-3 px-4 border-b border-gray-300 ">Brand</th>
+                <th className="py-3 px-4 border-b border-gray-300 ">
                   Category
                 </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
-                  Hsn
-                </th>
-                {/* <th className="py-2 px-4 border-b border-gray-300 text-left">
+                <th className="py-3 px-4 border-b border-gray-300 ">Hsn</th>
+                {/* <th className="py-3 px-4 border-b border-gray-300 ">
                   Status
                 </th> */}
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
-                  Edit
-                </th>
+                <th className="py-3 px-4 border-b border-gray-300 ">Edit</th>
               </tr>
             </thead>
 
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-200 ">
               {filteredProducts?.length > 0 ? (
                 filteredProducts.map((product) =>
                   product.selected.map((item) => (
                     <tr key={`${product._id}-${item.branch_id}`}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                      <td className="px-6 py-3     whitespace-nowrap text-sm text-black">
                         {item.companyName}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                      <td className="px-6 py-3     whitespace-nowrap text-sm text-black">
                         {item.branchName}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                      <td className="px-6 py-3     whitespace-nowrap text-sm text-black">
                         {product.productName}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                      <td className="px-6 py-3     whitespace-nowrap text-sm text-black">
                         {/* You can replace these with actual brand, category, and HSN data */}
                         {item.brandName}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                      <td className="px-6 py-3     whitespace-nowrap text-sm text-black">
                         {item.categoryName}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                      <td className="px-6 py-3     whitespace-nowrap text-sm text-black">
                         {item.hsnName}
                       </td>
                       {/* <td
-                        className={`px-6 py-4 whitespace-nowrap text-sm ${
+                        className={`px-6 py-3     whitespace-nowrap text-sm ${
                           item.status === "Active"
                             ? "text-blue-700"
                             : "text-red-700"
@@ -135,9 +128,11 @@ const ProductListform = ({ productlist }) => {
                       >
                         {item.status || "N/A"}
                       </td> */}
-                      <td className="px-6 py-4 whitespace-nowrap text-xl text-black">
+                      <td className="px-6 py-3 whitespace-nowrap text-xl text-black ">
                         {/* Add actions like Edit/Delete here */}
+
                         <CiEdit
+                          className="mx-auto"
                           onClick={() =>
                             navigate("/admin/masters/productEdit", {
                               state: {

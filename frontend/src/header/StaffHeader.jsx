@@ -127,7 +127,7 @@ export default function StaffHeader() {
       control: user?.permissions?.[0]?.ExpiredCustomerCalls ?? false
     },
     {
-      to: "/staff/reports/customer-callsSummary",
+      to: "/staff/reports/customer-callSummary",
       label: "Customer Calls Summary",
       control: user?.permissions?.[0]?.CustomerCallsSummary ?? false
     },
@@ -142,7 +142,7 @@ export default function StaffHeader() {
       control: user?.permissions?.[0]?.CustomerActionSummary ?? false
     },
     {
-      to: "/adminr/eports/account-search",
+      to: "/staff/reports/account-search",
       label: "Account Search",
       control: user?.permissions?.[0]?.AccountSearch ?? false
     },
@@ -171,7 +171,7 @@ export default function StaffHeader() {
   ]
   const tasks = [
     {
-      to: "/staff/tasks/signUp-custmer",
+      to: "/staff/tasks/signUp-customer",
       label: "Sign Up Custmer",
       control: user?.permissions?.[0]?.SignUpCustomer
     },
