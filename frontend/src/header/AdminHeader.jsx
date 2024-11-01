@@ -33,10 +33,10 @@ export default function AdminHeader() {
   }
   const links = [
     { to: "/admin/home", label: "Home" },
-    { to: "/admin/masters", label: "Masters" },
-    { to: "/admin/transactions", label: "Transactions" },
-    { to: "/admin/report", label: "Reports" },
-    { to: "/admin/task", label: "Task" }
+    { label: "Masters" },
+    { label: "Transactions" },
+    { label: "Reports" },
+    { label: "Task" }
   ]
 
   const masters = [
@@ -252,8 +252,8 @@ export default function AdminHeader() {
           </div>
           <div className="block leading-10 text-blue-600 mt-5">
             {links.map((link) => (
-              <div key={link.to}>
-                <Link to={link.to} className="block px-4 hover:bg-gray-300">
+              <div key={link?.to}>
+                <Link to={link?.to} className="block px-4 hover:bg-gray-300">
                   {link.label}
                 </Link>
               </div>
