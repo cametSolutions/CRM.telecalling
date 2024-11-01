@@ -122,7 +122,7 @@ const CallregistrationList = () => {
   }
 
   return (
-    <div className="container mx-auto h-screen p-4 bg-gray-300 ">
+    <div className="container mx-auto  p-8 ">
       <div className="w-auto  bg-white shadow-lg rounded p-4  h-full ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
           {/* Search Bar for large screens */}
@@ -193,7 +193,7 @@ const CallregistrationList = () => {
           />
         </div>
 
-        <div className="overflow-y-auto max-h-96 shadow-md rounded-lg mt-2">
+        <div className="overflow-y-auto max-h-60 sm:max-h-80 md:max-h-[380px] lg:max-h-[398px] shadow-md rounded-lg mt-2">
           <table className="divide-y divide-gray-200 w-full">
             <thead className="bg-gray-400 sticky top-0 z-40">
               <tr>
