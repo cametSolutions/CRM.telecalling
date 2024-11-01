@@ -21,6 +21,8 @@ const CallregistrationList = () => {
 
   // State to track the active filter
   const [activeFilter, setActiveFilter] = useState("All")
+  const userData = localStorage.getItem("user")
+  const users = JSON.parse(userData)
 
   const filterCallData = useCallback((calls) => {
     const allCallRegistrations = calls.flatMap((call) => call.callregistration)
@@ -29,10 +31,11 @@ const CallregistrationList = () => {
     const pending = allCallRegistrations.filter(
       (call) => call.formdata.status.toLowerCase() === "pending"
     )
-    console.log("pendingfuction", pending.length)
+
     const solved = allCallRegistrations.filter(
       (call) => call.formdata.status.toLowerCase() === "solved"
     )
+
     const todaysCallsCount = getTodaysCalls(calls)
 
     setPendingCallsCount(pending?.length)
@@ -41,22 +44,36 @@ const CallregistrationList = () => {
   }, [])
 
   useEffect(() => {
-    if (callList.length > 0) {
-      filterCallData(callList) // Filter call data for counts
-      setFilteredCalls(callList)
+    if (callList.length > 0 && user) {
+      if (user.role === "Admin") {
+        filterCallData(callList) // Filter call data for counts
+        setFilteredCalls(callList)
+      } else {
+        const userBranchName = new Set(
+          users.selected.map((branch) => branch.branchName)
+        )
+
+        const branchNamesArray = Array.from(userBranchName)
+
+        // Filter calls to keep only those where branchName matches branchNamesArray
+        const filteredCalls = callList.filter((call) =>
+          call.callregistration.some((registration) =>
+            branchNamesArray.includes(registration.branchName)
+          )
+        )
+
+        filterCallData(filteredCalls) // Filter call data for counts
+        setFilteredCalls(filteredCalls)
+      }
     }
-  }, [callList])
+  }, [callList, user])
 
   useEffect(() => {
-    const userData = localStorage.getItem("user")
-    const user = JSON.parse(userData)
-
-    setUser(user)
+    setUser(users)
 
     socket.emit("updatedCalls")
     // Listen for initial data from the server
     socket.on("updatedCalls", (data) => {
-      console.log("Received updated data:", data)
       setCallList(data.calls) // Set the received data to your call list
       // Set all calls initially
     })
@@ -195,46 +212,46 @@ const CallregistrationList = () => {
 
         <div className="overflow-y-auto max-h-60 sm:max-h-80 md:max-h-[380px] lg:max-h-[398px] shadow-md rounded-lg mt-2">
           <table className="divide-y divide-gray-200 w-full">
-            <thead className="bg-gray-400 sticky top-0 z-40">
+            <thead className="bg-purple-200 sticky top-0 z-40">
               <tr>
                 {user?.role === "Admin" && (
-                  <th className="px-4 py-3 border-b border-gray-300 text-center">
+                  <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
                     Branch Name
                   </th>
                 )}
-                <th className="px-4 py-3 border-b border-gray-300 text-center">
+                <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
                   Token No
                 </th>
-                <th className="px-4 py-3 border-b border-gray-300 text-center">
+                <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
                   Customer Name
                 </th>
-                <th className="px-4 py-3 border-b border-gray-300 text-center">
+                <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
                   Product Name
                 </th>
-                <th className="px-4 py-3 border-b border-gray-300 text-center">
+                <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
                   License No
                 </th>
 
-                <th className="px-9 py-3 border-b border-gray-300 text-center">
+                <th className="px-9 py-3 border-b border-gray-300 text-sm text-center">
                   Start
                 </th>
-                <th className="px-10 py-3 border-b border-gray-300 text-center">
+                <th className="px-10 py-3 border-b border-gray-300 text-sm text-center">
                   End
                 </th>
-                <th className="px-4 py-3 border-b border-gray-300 text-center">
+                <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
                   Incoming No
                 </th>
-                <th className="px-4 py-3 border-b border-gray-300 text-center">
+                <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
                   Status
                 </th>
 
-                <th className="px-4 py-3 border-b border-gray-300 text-center">
+                <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
                   Attended By
                 </th>
-                <th className="px-4 py-3 border-b border-gray-300 text-center">
+                <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
                   Completed By
                 </th>
-                <th className="px-4 py-3 border-b border-gray-300 text-center">
+                <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
                   Call
                 </th>
               </tr>
@@ -410,7 +427,7 @@ const CallregistrationList = () => {
                             key={item.calls?._id}
                             className={`text-center border border-b-0 border-gray-300 ${
                               callDate === today
-                                ? "bg-yellow-400"
+                                ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
                                 : "bg-red-400"
                             }`}
                           >
@@ -510,7 +527,7 @@ const CallregistrationList = () => {
                                 ? "bg-green-400"
                                 : item?.formdata?.status === "pending"
                                 ? callDate === today
-                                  ? "bg-yellow-400"
+                                  ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
                                   : "bg-red-400"
                                 : "bg-red-400"
                             }`}
@@ -561,7 +578,7 @@ const CallregistrationList = () => {
                         <>
                           <tr
                             key={item.calls?._id}
-                            className="text-center border border-b-0 border-gray-300 bg-green-400"
+                            className="text-center border border-b-0 border-gray-300 bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
                           >
                             {/* Add your table columns for solved calls */}
                             {user.role === "Admin" && (
@@ -626,10 +643,10 @@ const CallregistrationList = () => {
                           <tr
                             className={`text-center border-t-0 border-gray-300 ${
                               item?.formdata?.status === "solved"
-                                ? "bg-green-400"
+                                ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
                                 : item?.formdata?.status === "pending"
                                 ? callDate === today
-                                  ? "bg-yellow-400"
+                                  ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
                                   : "bg-red-400"
                                 : "bg-red-400"
                             }`}

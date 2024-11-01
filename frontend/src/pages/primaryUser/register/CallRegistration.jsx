@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react"
-import { useLocation,Link } from "react-router-dom"
+import { useLocation, Link } from "react-router-dom"
 import io from "socket.io-client"
 import { useForm } from "react-hook-form"
 import { formatDistanceToNow, parseISO } from "date-fns"
@@ -8,6 +8,7 @@ import { formatTime } from "../../../utils/timeUtils"
 import debounce from "lodash.debounce"
 import UseFetch from "../../../hooks/useFetch"
 import Timer from "../../../components/primaryUser/Timer"
+import { toast } from "react-toastify"
 const socket = io("https://www.crm.camet.in")
 // const socket = io("http://localhost:9000")
 
@@ -55,6 +56,7 @@ export default function CallRegistration() {
 
   useEffect(() => {
     if (calldetails) {
+      console.log("hii")
       const userData = localStorage.getItem("user")
       const user = JSON.parse(userData)
       setUser(user)
@@ -141,7 +143,8 @@ export default function CallRegistration() {
     if (e.target.checked) {
       setSelectedProducts(product)
     } else if (selectedProducts.productName === product.productName) {
-      setSelectedProducts(null) // Deselect if it was previously selected
+      setSelectedProducts([]) // Deselect if it was previously selected
+      console.log("hii")
     }
   }
 
@@ -163,6 +166,7 @@ export default function CallRegistration() {
   }
 
   const stopTimer = async (time) => {
+    console.log("timere")
     const endTime = Date.now()
 
     localStorage.setItem("timer", time)
@@ -290,12 +294,12 @@ export default function CallRegistration() {
       setSearching(false)
     }
   }, 300)
-  
 
-  const handleInputChange = (inputValue) => {
-    setSearch(inputValue)
-    if (inputValue.length > 0) {
-      fetchCustomerData(inputValue)
+  const handleInputChange = (e) => {
+    const value = e.target.value
+    setSearch(value)
+    if (value) {
+      fetchCustomerData(value)
     } else {
       setCustomerData([])
     }
@@ -312,13 +316,12 @@ export default function CallRegistration() {
         incomingNumber: "",
         token: "",
         description: "",
-        solution: "",
-        status: ""
+        solution: ""
       })
       setIsRunning(true)
 
       setStartTime(Date.now())
-       refreshHook()
+      refreshHook()
     } else {
       setIsRunning(false)
       setTime(0) // Reset the timer when no customer is selected
@@ -328,7 +331,17 @@ export default function CallRegistration() {
   }
 
   const onSubmit = async (data) => {
-    setIsRunning(false)
+    if (selectedProducts && selectedProducts.length === 0) {
+      console.log("hllw")
+      // alert("please select aprodut")
+      toast.error("Please select a product", {
+        position: "top-center",
+        autoClose: 3000 // 3 seconds
+      })
+      return
+    } else {
+      setIsRunning(false)
+    }
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
     let updatedData = { ...data }
@@ -342,7 +355,6 @@ export default function CallRegistration() {
     }
     setFormData(updatedData)
   }
-  
 
   return (
     <div className="container  justify-center items-center p-8 bg-gray-100">
@@ -361,7 +373,7 @@ export default function CallRegistration() {
               type="text"
               id="customerName"
               value={search}
-              onChange={(e) => handleInputChange(e.target.value)}
+              onChange={handleInputChange}
               className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
               placeholder="Enter name or license..."
             />
@@ -735,11 +747,12 @@ export default function CallRegistration() {
                         Status
                       </label>
                       <select
-                        {...register("status")}
+                        {...register("status", { required: true })}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
                       >
-                        <option value="">-- Select status--</option>
-                        <option value="pending">Pending</option>
+                        <option value="pending" selected>
+                          Pending
+                        </option>
                         <option value="solved">Solved</option>
                       </select>
                     </div>
@@ -756,10 +769,10 @@ export default function CallRegistration() {
                   )}
                 </form>
                 <div className="flex justify-end">
-                <Link to="/admin/home" className="text-blue-600">Go Home</Link>
-                
+                  <Link to="/admin/home" className="text-blue-600">
+                    Go Home
+                  </Link>
                 </div>
-               
 
                 <div className="mt-8 overflow-y-auto w-full max-h-60 text-center">
                   <table className=" w-full divide-y divide-gray-200 rounded-xl ">
