@@ -203,7 +203,7 @@ export default function StaffHeader() {
   ]
 
   return (
-    <header className="sticky top-0 z-50 flex bg-white shadow-md h-24 items-center">
+    <header className="sticky top-0 z-50 flex bg-white shadow-md py-4 items-center">
       {/* Mobile menu button */}
       <div className="md:hidden flex justify-between py-2 px-4">
         <button
@@ -287,7 +287,7 @@ export default function StaffHeader() {
             CRM
           </text>
         </svg>
-        <span className="text-3xl font-bold text-green-600">CAMET</span>
+        <span className="text-3xl font-bold text-green-600">MANAGEMENT</span>
       </div>
       <div className="flex flex-grow justify-center items-center">
         <nav className="hidden md:flex  items-center gap-3 space-x-4">
