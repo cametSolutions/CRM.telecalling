@@ -323,6 +323,7 @@ export const GetCallRegister = async (req, res) => {
 
 export const GetallCalls = async (req, res, socket) => {
   try {
+    console.log("hiii")
     let totalTokens = 0
     let pendingCount = 0
     let solvedCount = 0

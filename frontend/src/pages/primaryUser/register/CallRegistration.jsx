@@ -9,8 +9,8 @@ import debounce from "lodash.debounce"
 import UseFetch from "../../../hooks/useFetch"
 import Timer from "../../../components/primaryUser/Timer"
 import { toast } from "react-toastify"
-const socket = io("https://www.crm.camet.in")
-// const socket = io("http://localhost:9000")
+// const socket = io("https://www.crm.camet.in")
+const socket = io("http://localhost:9000")
 
 export default function CallRegistration() {
   const {
@@ -28,7 +28,7 @@ export default function CallRegistration() {
   const [name, setName] = useState("")
   const [editform, setEditformdata] = useState({})
   const [productDetails, setProductDetails] = useState([])
-  const [user, setUser] = useState(false)
+  // const [user, setUser] = useState(false)
   const [searching, setSearching] = useState(true)
   const [search, setSearch] = useState("")
   const [selectedCustomer, setSelectedCustomer] = useState(null)
@@ -53,13 +53,12 @@ export default function CallRegistration() {
 
   const location = useLocation()
   const { calldetails, token } = location.state || {}
-
+  const userData = localStorage.getItem("user")
+  const user = JSON.parse(userData)
   useEffect(() => {
     if (calldetails) {
       console.log("hii")
-      const userData = localStorage.getItem("user")
-      const user = JSON.parse(userData)
-      setUser(user)
+
       // Fetch the call details using the ID
       fetchCallDetails(calldetails)
         .then((callData) => {
@@ -105,12 +104,12 @@ export default function CallRegistration() {
 
   const fetchCallDetails = async (callId) => {
     //Assuming you have an API to fetch the details
-    const response = await fetch(
-      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
-    )
     // const response = await fetch(
-    //   `http://localhost:9000/api/customer/getcallregister/${callId}`
+    //   `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
     // )
+    const response = await fetch(
+      `http://localhost:9000/api/customer/getcallregister/${callId}`
+    )
     const data = await response.json()
 
     return data
@@ -181,14 +180,14 @@ export default function CallRegistration() {
         duration: formatTime(time),
         token: uniqueToken
       }
-      const userData = localStorage.getItem("user")
-      const user = JSON.parse(userData)
+      // const userData = localStorage.getItem("user")
+      // const user = JSON.parse(userData)
 
       const calldata = {
         userName: user.name,
         product: selectedProducts.product_id,
         license: selectedProducts.licensenumber,
-        branchName: selectedProducts.branchName,
+        branchName: user.selected.map((branch) => branch.branchName),
         timedata: timeData,
         formdata: formData
       }
@@ -216,17 +215,18 @@ export default function CallRegistration() {
         duration: formatTime(time),
         token: token
       }
-      const userData = localStorage.getItem("user")
-      const user = JSON.parse(userData)
+      // const userData = localStorage.getItem("user")
+      // const user = JSON.parse(userData)
 
       const calldata = {
         userName: user.name,
         product: selectedProducts.product_id,
         license: selectedProducts.licensenumber,
-        branchName: selectedProducts.branchName,
+        branchName: user.selected.map((branch) => branch.branchName),
         timedata: timeData,
         formdata: formData
       }
+      console.log("callldataaaaaaaaaa", calldata)
 
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}`,
@@ -264,12 +264,12 @@ export default function CallRegistration() {
   }
 
   const fetchCustomerData = debounce(async (query) => {
-    const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
-      query
-    )}`
-    // const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
+    // const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
     //   query
     // )}`
+    const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
+      query
+    )}`
 
     try {
       const response = await fetch(url, {

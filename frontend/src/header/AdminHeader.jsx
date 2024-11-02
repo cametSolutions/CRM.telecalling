@@ -293,7 +293,7 @@ export default function AdminHeader() {
               CRM
             </text>
           </svg>
-          <span className="text-2xl font-bold text-green-600">MANAGEMENT</span>
+          <span className="text-3xl font-bold text-green-600">MANAGEMENT</span>
         </div>
         <div className="flex flex-grow justify-center items-center">
           <nav className="hidden md:flex items-center gap-3 space-x-4">

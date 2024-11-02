@@ -122,8 +122,7 @@ const staffSchema = new Schema(
         companyName: { type: String },
         branch_id: { type: mongoose.Schema.Types.ObjectId, ref: "Branch" },
         branchName: { type: String },
-        section_id: { type: mongoose.Schema.Types.ObjectId, ref: "Brand" },
-        sectionName: { type: String }
+       
       }
     ]
     // Other staff-specific fields
