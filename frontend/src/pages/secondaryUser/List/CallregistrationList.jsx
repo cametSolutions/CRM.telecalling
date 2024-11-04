@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react"
-
+import debounce from "lodash.debounce"
+import api from "../../../api/api"
 import io from "socket.io-client" // Import Socket.IO client
 import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles" // Import the Tile component
@@ -10,9 +11,11 @@ const socket = io("https://www.crm.camet.in")
 const CallregistrationList = () => {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
+  const [users, setUser] = useState(null)
+  const [totalcall, setTotalcalls] = useState(0)
+  const [search, setSearch] = useState(true)
   const [callList, setCallList] = useState([])
   const [filteredCalls, setFilteredCalls] = useState([])
-  const [user, setUser] = useState("")
 
   // Define states for filtered call counts
   const [pendingCallsCount, setPendingCallsCount] = useState(0)
@@ -21,19 +24,23 @@ const CallregistrationList = () => {
 
   // State to track the active filter
   const [activeFilter, setActiveFilter] = useState("All")
-  const userData = localStorage.getItem("user")
-  const users = JSON.parse(userData)
+
+  useEffect(() => {
+    const userData = localStorage.getItem("user")
+    const users = JSON.parse(userData)
+    setUser(users)
+  }, [])
 
   const filterCallData = useCallback((calls) => {
     const allCallRegistrations = calls.flatMap((call) => call.callregistration)
 
     // Filter based on status
     const pending = allCallRegistrations.filter(
-      (call) => call.formdata.status.toLowerCase() === "pending"
+      (call) => call.formdata?.status?.toLowerCase() === "pending"
     )
 
     const solved = allCallRegistrations.filter(
-      (call) => call.formdata.status.toLowerCase() === "solved"
+      (call) => call.formdata?.status?.toLowerCase() === "solved"
     )
 
     const todaysCallsCount = getTodaysCalls(calls)
@@ -44,66 +51,136 @@ const CallregistrationList = () => {
   }, [])
 
   useEffect(() => {
-    if (callList.length > 0 && user) {
-      if (user.role === "Admin") {
-        filterCallData(callList) // Filter call data for counts
-        setFilteredCalls(callList)
-      } else {
-        const userBranchName = new Set(
-          users.selected.map((branch) => branch.branchName)
-        )
+    if (callList.length > 0 && users) {
+      setFilteredCalls(callList)
+      filterCallData(callList)
+    }
+  }, [callList])
 
-        const branchNamesArray = Array.from(userBranchName)
-
-        // Filter calls to keep only those where branchName matches branchNamesArray
-        const filteredCalls = callList.filter((call) =>
-          call.callregistration.some((registration) =>
-            branchNamesArray.includes(registration.branchName)
+  useEffect(() => {
+    if (users) {
+      socket.emit("updatedCalls")
+      // Listen for initial data from the server
+      socket.on("updatedCalls", (data) => {
+        if (users.role === "Admin") {
+          const allCallRegistrations = data.calls.flatMap(
+            (call) => call.callregistration
           )
-        )
 
-        filterCallData(filteredCalls) // Filter call data for counts
-        setFilteredCalls(filteredCalls)
+          setTotalcalls(allCallRegistrations.length)
+          setCallList(data.calls)
+          // filterCallData(data.calls) // Filter call data for counts
+          // setFilteredCalls(data.calls)
+        } else {
+          const userBranchName = new Set(
+            users.selected.map((branch) => branch.branchName)
+          )
+
+          const branchNamesArray = Array.from(userBranchName)
+
+          const filtered = data.calls.filter((call) =>
+            call.callregistration.some((registration) => {
+              const hasMatchingBranch = registration.branchName.some(
+                (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
+              )
+
+              // If user has only one branch, ensure it matches exactly and no extra branches
+              if (branchNamesArray.length === 1) {
+                return (
+                  hasMatchingBranch &&
+                  registration.branchName.length === 1 &&
+                  registration.branchName[0] === branchNamesArray[0]
+                )
+              }
+
+              // If user has more than one branch, just check for any match
+              return hasMatchingBranch
+            })
+          )
+          const allCallRegistrations = filtered.flatMap(
+            (call) => call.callregistration
+          )
+
+          setTotalcalls(allCallRegistrations.length)
+
+          setCallList(filtered)
+        }
+      })
+
+      //Cleanup the socket connection when the component unmounts
+      return () => {
+        socket.off("updatedCalls")
+        // socket.disconnect()
       }
     }
-  }, [callList, user])
+  }, [users])
 
-  useEffect(() => {
-    setUser(users)
+  // const fetchData = async () => {
+  //   console.log("hii")
+  //   try {
+  //     console.log(users)
+  //     const response = await api.post("/customer/updatedbranch", users, {
+  //       withCredentials: true,
+  //       headers: {
+  //         "Content-Type": "application/json" // Ensure the correct content type
+  //       }
+  //     })
+  //   } catch (err) {
+  //     console.log(err)
+  //     // setError(err) // Set error state if fetching fails
+  //   } finally {
+  //     // setLoading(false) // Set loading to false after fetch is complete
+  //   }
+  // }
 
-    socket.emit("updatedCalls")
-    // Listen for initial data from the server
-    socket.on("updatedCalls", (data) => {
-      setCallList(data.calls) // Set the received data to your call list
-      // Set all calls initially
-    })
-
-    //Cleanup the socket connection when the component unmounts
-    return () => {
-      socket.off("updatedCalls")
-      // socket.disconnect()
+  const handleSearch = debounce((search) => {
+    const searchQuery = search.toLowerCase().trim()
+    if (searchQuery === "") {
+      setFilteredCalls(callList)
+      // setSearch(false)
     }
-  }, [])
+    const isNumber = !isNaN(searchQuery) && !isNaN(parseFloat(searchQuery))
+    if (isNumber) {
+      const sortedcalls = callList.filter((call) =>
+        call.callregistration.some((registration) => {
+          const license = registration?.license
 
-  const handleSearch = useCallback(
-    (query) => {
-      const lowerCaseQuery = query.toLowerCase()
-      setFilteredCalls(
-        applyFilter().filter((calls) =>
-          calls.customerName.toLowerCase().includes(lowerCaseQuery)
-        )
+          // Check if the license is a string and includes the search query
+          return (
+            typeof license === "number" &&
+            license.toString().includes(searchQuery)
+          )
+
+          // registration.license.toString().toLowerCase().includes(searchQuery)
+        })
       )
-    },
-    [callList, activeFilter]
-  )
-  useEffect(() => {
-    handleSearch(searchQuery)
-  }, [searchQuery, handleSearch])
+      const allCallRegistrations = sortedcalls.flatMap(
+        (call) => call.callregistration
+      )
+      setTotalcalls(allCallRegistrations.length)
+      setFilteredCalls(sortedcalls)
+    } else if (!searchQuery == "") {
+      const sortedcalls = callList.filter((calls) =>
+        calls.customerName.toLowerCase().includes(searchQuery)
+      )
+      const allCallRegistrations = sortedcalls.flatMap(
+        (call) => call.callregistration
+      )
+      setTotalcalls(allCallRegistrations.length)
+      setFilteredCalls(sortedcalls)
+    }
+  }, 300)
+
+  const handleChange = (e) => handleSearch(e.target.value)
+
+  // useEffect(() => {
+  //   handleSearch(searchQuery)
+  // }, [searchQuery, handleSearch])
 
   // Update the filteredCalls whenever activeFilter changes
-  useEffect(() => {
-    setFilteredCalls(applyFilter())
-  }, [activeFilter, callList])
+  // useEffect(() => {
+  //   setFilteredCalls(applyFilter())
+  // }, [activeFilter, callList])
 
   const getTodaysCalls = (calls) => {
     const today = new Date().toISOString().split("T")[0] // Get today's date in 'YYYY-MM-DD' format
@@ -149,12 +226,14 @@ const CallregistrationList = () => {
             </div>
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              // value={searchQuery}
+              onChange={handleChange}
               className=" w-full border border-gray-300 rounded-full py-1 px-4 pl-10 focus:outline-none"
               placeholder="Search for..."
             />
           </div>
+          {/* <label>{totalcall}</label> */}
+          {/* <button onClick={fetchData}>update</button> */}
         </div>
 
         <hr className="border-t-2 border-gray-300 mb-2 " />
@@ -214,11 +293,13 @@ const CallregistrationList = () => {
           <table className="divide-y divide-gray-200 w-full">
             <thead className="bg-purple-200 sticky top-0 z-40">
               <tr>
-                {user?.role === "Admin" && (
+                {users?.role === "Admin" && (
                   <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
                     Branch Name
                   </th>
                 )}
+
+                
                 <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
                   Token No
                 </th>
@@ -409,7 +490,10 @@ const CallregistrationList = () => {
                   {/* Filter and display pending calls first */}
                   {filteredCalls
                     .flatMap((calls) =>
-                      calls.callregistration.map((item) => ({ ...item, calls }))
+                      calls.callregistration.map((item) => ({
+                        ...item,
+                        calls
+                      }))
                     )
                     .filter((item) => item?.formdata?.status === "pending")
                     .map((item) => {
@@ -428,16 +512,18 @@ const CallregistrationList = () => {
                             className={`text-center border border-b-0 border-gray-300 ${
                               callDate === today
                                 ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
-                                : "bg-red-400"
+                                : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                             }`}
                           >
                             {/* Add your table columns for pending calls */}
 
-                            {user.role === "Admin" && (
+                            {users?.role === "Admin" && (
                               <td className="px-4 py-2 text-sm text-[#010101]">
                                 {item.branchName}
                               </td>
                             )}
+
+                           
                             <td className="px-4 py-2 text-sm text-[#010101]">
                               {item?.timedata.token}
                             </td>
@@ -495,7 +581,7 @@ const CallregistrationList = () => {
                               {item?.formdata?.status !== "solved" ? (
                                 <FaPhone
                                   onClick={() =>
-                                    user.role === "Admin"
+                                    users.role === "Admin"
                                       ? navigate(
                                           "/admin/transaction/call-registration",
                                           {
@@ -524,12 +610,12 @@ const CallregistrationList = () => {
                           <tr
                             className={`text-center border-t-0 border-gray-300 ${
                               item?.formdata?.status === "solved"
-                                ? "bg-green-400"
+                                ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
                                 : item?.formdata?.status === "pending"
                                 ? callDate === today
                                   ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
-                                  : "bg-red-400"
-                                : "bg-red-400"
+                                  : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
+                                : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                             }`}
                             style={{ height: "5px" }}
                           >
@@ -580,12 +666,14 @@ const CallregistrationList = () => {
                             key={item.calls?._id}
                             className="text-center border border-b-0 border-gray-300 bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
                           >
-                            {/* Add your table columns for solved calls */}
-                            {user.role === "Admin" && (
+                            {/*Add your table columns for solved calls */}
+                             {users.role === "Admin" && (
                               <td className="px-4 py-2 text-sm text-[#010101]">
                                 {item.branchName}
                               </td>
                             )}
+
+                           
                             <td className="px-4 py-2 text-sm text-[#010101]">
                               {item?.timedata.token}
                             </td>
@@ -647,8 +735,8 @@ const CallregistrationList = () => {
                                 : item?.formdata?.status === "pending"
                                 ? callDate === today
                                   ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
-                                  : "bg-red-400"
-                                : "bg-red-400"
+                                  : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
+                                : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                             }`}
                             style={{ height: "5px" }}
                           >

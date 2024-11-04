@@ -55,11 +55,13 @@ export default function CallRegistration() {
   const { calldetails, token } = location.state || {}
 
   useEffect(() => {
+    const userData = localStorage.getItem("user")
+    const user = JSON.parse(userData)
+    setUser(user)
+  }, [])
+
+  useEffect(() => {
     if (calldetails) {
-      console.log("hii")
-      const userData = localStorage.getItem("user")
-      const user = JSON.parse(userData)
-      setUser(user)
       // Fetch the call details using the ID
       fetchCallDetails(calldetails)
         .then((callData) => {
@@ -144,7 +146,6 @@ export default function CallRegistration() {
       setSelectedProducts(product)
     } else if (selectedProducts.productName === product.productName) {
       setSelectedProducts([]) // Deselect if it was previously selected
-      console.log("hii")
     }
   }
 
@@ -166,7 +167,6 @@ export default function CallRegistration() {
   }
 
   const stopTimer = async (time) => {
-    console.log("timere")
     const endTime = Date.now()
 
     localStorage.setItem("timer", time)
@@ -181,17 +181,19 @@ export default function CallRegistration() {
         duration: formatTime(time),
         token: uniqueToken
       }
-      const userData = localStorage.getItem("user")
-      const user = JSON.parse(userData)
 
       const calldata = {
         userName: user.name,
         product: selectedProducts.product_id,
         license: selectedProducts.licensenumber,
-        branchName: selectedProducts.branchName,
+        branchName:
+          user.role === "Admin"
+            ? user.branchName.map((branch) => branch)
+            : user.selected.map((branch) => branch.branchName),
         timedata: timeData,
         formdata: formData
       }
+      // user.selected.map((branch) => branch.branchName)
 
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}`,
@@ -216,14 +218,15 @@ export default function CallRegistration() {
         duration: formatTime(time),
         token: token
       }
-      const userData = localStorage.getItem("user")
-      const user = JSON.parse(userData)
 
       const calldata = {
         userName: user.name,
         product: selectedProducts.product_id,
         license: selectedProducts.licensenumber,
-        branchName: selectedProducts.branchName,
+        branchName:
+          user.role === "Admin"
+            ? user.branchName.map((branch) => branch)
+            : user.selected.map((branch) => branch.branchName),
         timedata: timeData,
         formdata: formData
       }
@@ -332,7 +335,6 @@ export default function CallRegistration() {
 
   const onSubmit = async (data) => {
     if (selectedProducts && selectedProducts.length === 0) {
-      console.log("hllw")
       // alert("please select aprodut")
       toast.error("Please select a product", {
         position: "top-center",

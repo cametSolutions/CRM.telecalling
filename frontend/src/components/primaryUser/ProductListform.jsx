@@ -51,25 +51,28 @@ const ProductListform = ({ productlist }) => {
             />
           </div>
         </div>
-
         <hr className="border-t-2 border-gray-300 mb-2" />
-        <div className="flex flex-wrap space-x-4 mb-2">
-          <Link
-            to="/admin/masters/productRegistration"
-            className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center"
-          >
-            <FaUserPlus className="mr-2" />
-          </Link>
-          <button className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center">
-            <FaRegFileExcel className="mr-2" />
-          </button>
-          <button className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center">
-            <FaFilePdf className="mr-2" />
-          </button>
-          <button className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center">
-            <FaPrint className="mr-2" />
-          </button>
+        <div className="flex justify-between">
+          <div className="flex flex-wrap space-x-4 mb-2">
+            <Link
+              to="/admin/masters/productRegistration"
+              className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center"
+            >
+              <FaUserPlus className="mr-2" />
+            </Link>
+            <button className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center">
+              <FaRegFileExcel className="mr-2" />
+            </button>
+            <button className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center">
+              <FaFilePdf className="mr-2" />
+            </button>
+            <button className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center">
+              <FaPrint className="mr-2" />
+            </button>
+          </div>
+          <label className="mx-8"> {filteredProducts.length}</label>
         </div>
+
         <div className="overflow-x-auto overflow-y-auto text-center max-h-60 sm:max-h-80 md:max-h-96 lg:max-h-[420px]">
           <table className="min-w-full  border border-t-0">
             <thead className="sticky top-0 z-10 bg-green-300 ">

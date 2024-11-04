@@ -1,4 +1,6 @@
 import models from "../model/auth/authSchema.js"
+
+import Branch from "../model/primaryUser/branchSchema.js"
 const { Staff, Admin } = models
 import bcrypt from "bcrypt"
 
@@ -24,10 +26,6 @@ export const Register = async (req, res) => {
     department,
     assignedto
   } = otherfields
-  console.log("hiii")
-  // console.log(image)
-  // console.log(profileUrl)
-  // console.log(documentUrl)
 
   const admin = await Admin.findOne({ email })
   if (!admin) {
@@ -56,7 +54,7 @@ export const Register = async (req, res) => {
       .status(409)
       .json({ message: "Admin with this email already exists" })
   }
-  console.log(isaved)
+
   if (!isaved) {
     const staff = await Staff.findOne({ email })
 
@@ -88,7 +86,6 @@ export const Register = async (req, res) => {
         })
 
         const savedstaff = await staff.save()
-        console.log(savedstaff)
 
         return res.status(200).json({
           status: true,
@@ -107,8 +104,6 @@ export const Register = async (req, res) => {
 }
 
 export const StaffRegister = async (req, res) => {
-  console.log("hiii")
-
   try {
     const { userData, image, tabledata } = req.body
     const assignedtoId = req.body.userData.assignedto // Assuming assignedto is coming from userDat
@@ -157,7 +152,6 @@ export const StaffRegister = async (req, res) => {
 
     if (!isStaffExist) {
       try {
-        console.log("hiii")
         // Create and save new user
         const staff = new Staff({
           name,
@@ -184,7 +178,7 @@ export const StaffRegister = async (req, res) => {
         })
 
         const savedstaff = await staff.save()
-        console.log(savedstaff)
+
         if (savedstaff) {
           return res.status(200).json({
             status: true,
@@ -214,8 +208,6 @@ export const UpdateUserandAdmin = async (req, res) => {
   const { selected, ...filteredUserData } = userData
   const { password } = filteredUserData
 
-  console.log("role", role)
-  console.log("pass", password)
   try {
     if (role === "Staff") {
       const updateQuery = {
@@ -262,20 +254,21 @@ export const Login = async (req, res) => {
   try {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     let user
+    let branch
     // Determine if the input is an email or a mobile number
     if (emailRegex.test(emailOrMobile)) {
       // If it's an email
 
-      user = await Admin.findOne({ email: emailOrMobile })
+      user = await Admin.findOne({ email: emailOrMobile }).lean()
       if (!user) {
-        user = await Staff.findOne({ email: emailOrMobile })
+        user = await Staff.findOne({ email: emailOrMobile }).lean()
       }
     } else {
       // If it's a mobile number
 
-      user = await Admin.findOne({ mobile: emailOrMobile })
+      user = await Admin.findOne({ mobile: emailOrMobile }).lean()
       if (!user) {
-        user = await Staff.findOne({ mobile: emailOrMobile })
+        user = await Staff.findOne({ mobile: emailOrMobile }).lean()
       }
     }
 
@@ -289,13 +282,23 @@ export const Login = async (req, res) => {
     }
 
     const token = generateToken(res, user.id)
-    console.log("userssbckkkk", user)
-    console.log("role", user.role)
-    console.log("token", token)
+    if (user.role === "Admin") {
+      const allbranches = await Branch.find()
+      const branch = allbranches.map((branch) => branch.branchName)
+
+      user.branchName = branch
+    }
+
     if (token) {
-      res
-        .status(200)
-        .json({ message: "Login successful", token, role: user.role, user })
+      const { password, ...userwithoutpassword } = user
+
+      res.status(200).json({
+        message: "Login successful",
+        token,
+
+        User: userwithoutpassword,
+        branch
+      })
     }
   } catch (error) {
     console.error("Login error:", error.message)
@@ -306,9 +309,8 @@ export const UpdateUserPermission = async (req, res) => {
   try {
     const userPermissions = req.body
 
-    console.log("prmsisson", userPermissions)
     const { Userid } = req.query
-    console.log("userid", Userid)
+
     // Validate input
     if (!Userid || !userPermissions) {
       return res
@@ -532,26 +534,22 @@ export const LeaveApply = async (req, res) => {
       })
       // Only add 'reason' if 'onsite' is false
       if (!onsite) {
-        console.log("isonsite")
         leave.reason = reason
       }
       await leave.save()
     }
 
     const leaveSubmit = await LeaveRequest.find({ userId: Userid })
-    console.log("leavesub", leaveSubmit)
+
     return res
       .status(200)
       .json({ message: "leave submitted", data: leaveSubmit })
   } catch (error) {
-    console.log("error", error.message)
     res.status(500).json({ message: "internal server error" })
   }
 }
 export const GetallLeave = async (req, res) => {
   const { userid } = req.query // Extract userid from query parameters
-
-  console.log("userid", userid)
 
   try {
     // Validate userid
@@ -568,7 +566,6 @@ export const GetallLeave = async (req, res) => {
         .status(404)
         .json({ message: "No leave records found for this user" })
     }
-    console.log("leavessss", leaves)
 
     // Send the leave records as a JSON response
     res.status(200).json({ message: "leaves found", data: leaves })
@@ -586,7 +583,6 @@ export const GetAllLeaveRequest = async (req, res) => {
 
 export const DeleteUser = async (req, res) => {
   const { id } = req.query
-  console.log("id", id)
 
   try {
     // Perform the deletion

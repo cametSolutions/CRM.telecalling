@@ -7,13 +7,30 @@ function ProductList() {
   const {
     data: productData,
     loading,
-    error,
+    error
   } = UseFetch("/product/getallProducts")
-
+  const userData = localStorage.getItem("user")
+  const user = JSON.parse(userData)
   useEffect(() => {
     if (productData) {
-      // Set the data to the state when it is fetched
-      setProducts(productData)
+      if (user.role === "Admin") {
+        setProducts(productData)
+      } else {
+        const userBranchName = new Set(
+          user.selected.map((branch) => branch.branchName)
+        )
+
+        const branchNamesArray = Array.from(userBranchName)
+
+        // Filter calls to keep only those where branchName matches branchNamesArray
+        const filteredProducts = productData.filter((product) =>
+          product.selected.some((item) =>
+            branchNamesArray.includes(item.branchName)
+          )
+        )
+        // Set the data to the state when it is fetched
+        setProducts(filteredProducts)
+      }
     }
   }, [productData])
   console.log("products in backend :", products)

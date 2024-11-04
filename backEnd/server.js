@@ -56,7 +56,7 @@ io.on("connection", (socket) => {
           select: "productName" // Optionally select fields from the Product schema you need
         })
         .exec()
-      console.log("calls", calls)
+      
       io.emit("updatedCalls", { calls })
     } catch (error) {
       console.error("Error fetching call data:", error)

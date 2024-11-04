@@ -18,7 +18,7 @@ const CallRegistrationSchema = new mongoose.Schema(
           ref: "Product" // Reference to Product schema
         },
         license: Number,
-        branchName: String,
+        branchName:[],
         timedata: {
           startTime: Date,
           endTime: Date,
