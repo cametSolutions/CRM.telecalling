@@ -20,5 +20,6 @@ router.post("/callRegistration", authMiddleware, customerCallRegistration)
 router.get("/getcallregister/:callId", GetCallRegister)
 router.get("/getcallregister/", GetCallRegister)
 router.get("/getallcalls", authMiddleware, GetallCalls)
+// router.post("/updatedbranch", authMiddleware, updateBranchNames)
 
 export default router

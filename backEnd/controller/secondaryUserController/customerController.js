@@ -385,3 +385,67 @@ export const GetallCalls = async (req, res, socket) => {
     res.status(500).json({ message: "server error" })
   }
 }
+
+// export const updateBranchNames = async (req, res) => {
+//   const users = req.body // Expecting customerName and newBranchNames array in request body
+//   console.log("hiiiiiiiii")
+//   console.log("usersfss", users)
+//   const branches = users.selected.map((item) => item.branchName)
+//   console.log("branchessssss", branches)
+//   try {
+//     // const newBranchNames = ["CAMET", "ACCUANET"]
+//     // Find the document by customerName
+//     const document = await CallRegistration.find({
+//       "callregistration.userName": "Fathima Nazrin CM"
+//     })
+//     console.log("docccccccccc", document)
+//     console.log("doclength", document.length)
+
+//     if (!document) {
+//       return res.status(404).json({ message: "No document found" })
+//     }
+
+//     // // Update branchName by assigning the newBranchNames array
+//     // document.callregistration = document.callregistration.map(
+//     //   (registration) => {
+//     //     return {
+//     //       ...registration,
+//     //       branchName: branches // Assign the entire newBranchNames array
+//     //     }
+//     //   }
+//     // )
+//     /////
+//     const updatedDocuments = document.map((document) => {
+//       // Update the callregistration array for each document
+//       document.callregistration = document.callregistration.map(
+//         (registration) => {
+//           if (registration.userName === "Fathima Nazrin CM") {
+//             return {
+//               ...registration,
+//               branchName: branches // Assign the new branch names
+//             }
+//           }
+//         }
+//       )
+//       return document // Return the updated document
+//     })
+//     console.log("updateddoc", updatedDocuments)
+//     const a = updatedDocuments.map((item) => item.callregistration)
+//     console.log("abhidas", a)
+//     console.log("updoc", updatedDocuments)
+
+//     await Promise.all(updatedDocuments.map((doc) => doc.save()))
+
+//     // Save the updated document
+//     // await document.save()
+//     console.log("documme", document)
+//     return res
+//       .status(200)
+//       .json({ message: "Branch names updated successfully", document })
+//   } catch (error) {
+//     console.error(error)
+//     return res
+//       .status(500)
+//       .json({ message: "Server error", error: error.message })
+//   }
+// }

@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useCallback } from "react"
 import debounce from "lodash.debounce"
+import api from "../../../api/api"
 import io from "socket.io-client" // Import Socket.IO client
 import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles" // Import the Tile component
 import { useNavigate } from "react-router-dom"
-// const socket = io("https://www.crm.camet.in")
-const socket = io("http://localhost:9000") // Adjust the URL to your backend
+const socket = io("https://www.crm.camet.in")
+// const socket = io("http://localhost:9000") // Adjust the URL to your backend
 
 const CallregistrationList = () => {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
+  const [users, setUser] = useState(null)
   const [totalcall, setTotalcalls] = useState(0)
   const [search, setSearch] = useState(true)
   const [callList, setCallList] = useState([])
@@ -22,21 +24,24 @@ const CallregistrationList = () => {
 
   // State to track the active filter
   const [activeFilter, setActiveFilter] = useState("All")
-  const userData = localStorage.getItem("user")
-  const users = JSON.parse(userData)
+
+  useEffect(() => {
+    const userData = localStorage.getItem("user")
+    const users = JSON.parse(userData)
+    setUser(users)
+  }, [])
 
   const filterCallData = useCallback((calls) => {
     const allCallRegistrations = calls.flatMap((call) => call.callregistration)
-    console.log(allCallRegistrations.length)
+
     // Filter based on status
     const pending = allCallRegistrations.filter(
-      (call) => call.formdata.status.toLowerCase() === "pending"
+      (call) => call.formdata?.status?.toLowerCase() === "pending"
     )
 
     const solved = allCallRegistrations.filter(
-      (call) => call.formdata.status.toLowerCase() === "solved"
+      (call) => call.formdata?.status?.toLowerCase() === "solved"
     )
-    console.log("solved", solved)
 
     const todaysCallsCount = getTodaysCalls(calls)
 
@@ -44,88 +49,99 @@ const CallregistrationList = () => {
     setTodayCallsCount(todaysCallsCount)
     setSolvedCallsCount(solved?.length)
   }, [])
-  console.log(search)
+
   useEffect(() => {
-    console.log("ii")
     if (callList.length > 0 && users) {
-      if (users.role === "Admin") {
-        const allCallRegistrations = callList.flatMap(
-          (call) => call.callregistration
-        )
-        setTotalcalls(allCallRegistrations.length)
-        filterCallData(callList) // Filter call data for counts
-        setFilteredCalls(callList)
-        console.log("hii")
-      } else {
-        console.log("hii")
+      setFilteredCalls(callList)
+      filterCallData(callList)
+    }
+  }, [callList])
 
-        const userBranchName = new Set(
-          users.selected.map((branch) => branch.branchName)
-        )
-        console.log("userbardh", userBranchName)
+  useEffect(() => {
+    if (users) {
+      socket.emit("updatedCalls")
+      // Listen for initial data from the server
+      socket.on("updatedCalls", (data) => {
+        if (users.role === "Admin") {
+          const allCallRegistrations = data.calls.flatMap(
+            (call) => call.callregistration
+          )
 
-        const branchNamesArray = Array.from(userBranchName)
-        console.log(branchNamesArray)
+          setTotalcalls(allCallRegistrations.length)
+          setCallList(data.calls)
+          // filterCallData(data.calls) // Filter call data for counts
+          // setFilteredCalls(data.calls)
+        } else {
+          const userBranchName = new Set(
+            users.selected.map((branch) => branch.branchName)
+          )
 
-        // Filter calls to keep only those where branchName matches branchNamesArray
-        // const filteredCalls = callList.filter((call) =>
-        //   call.callregistration.some((registration) =>
-        //     // branchNamesArray.includes(registration.branchName)
-        //     registration.branchName.includes(branchNamesArray)
-        //   )
-        // )
-        const filtered = callList.filter((call) =>
-          call.callregistration.some((registration) => {
-            const hasMatchingBranch = registration.branchName.some(
-              (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
-            )
+          const branchNamesArray = Array.from(userBranchName)
 
-            // If user has only one branch, ensure it matches exactly and no extra branches
-            if (branchNamesArray.length === 1) {
-              return (
-                hasMatchingBranch &&
-                registration.branchName.length === 1 &&
-                registration.branchName[0] === branchNamesArray[0]
+          const filtered = data.calls.filter((call) =>
+            call.callregistration.some((registration) => {
+              const hasMatchingBranch = registration.branchName.some(
+                (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
               )
-            }
 
-            // If user has more than one branch, just check for any match
-            return hasMatchingBranch
-          })
-        )
-        console.log(filtered)
-        filterCallData(filtered) // Filter call data for counts
-        setFilteredCalls(filtered)
+              // If user has only one branch, ensure it matches exactly and no extra branches
+              if (branchNamesArray.length === 1) {
+                return (
+                  hasMatchingBranch &&
+                  registration.branchName.length === 1 &&
+                  registration.branchName[0] === branchNamesArray[0]
+                )
+              }
+
+              // If user has more than one branch, just check for any match
+              return hasMatchingBranch
+            })
+          )
+          const allCallRegistrations = filtered.flatMap(
+            (call) => call.callregistration
+          )
+
+          setTotalcalls(allCallRegistrations.length)
+
+          setCallList(filtered)
+        }
+      })
+
+      //Cleanup the socket connection when the component unmounts
+      return () => {
+        socket.off("updatedCalls")
+        // socket.disconnect()
       }
     }
-  }, [callList, search])
-  console.log(filteredCalls.length)
-  useEffect(() => {
-    socket.emit("updatedCalls")
-    // Listen for initial data from the server
-    socket.on("updatedCalls", (data) => {
-      console.log(data.calls.length)
-      setCallList(data.calls) // Set the received data to your call list
-      // Set all calls initially
-    })
+  }, [users])
 
-    //Cleanup the socket connection when the component unmounts
-    return () => {
-      socket.off("updatedCalls")
-      // socket.disconnect()
-    }
-  }, [])
+  // const fetchData = async () => {
+  //   console.log("hii")
+  //   try {
+  //     console.log(users)
+  //     const response = await api.post("/customer/updatedbranch", users, {
+  //       withCredentials: true,
+  //       headers: {
+  //         "Content-Type": "application/json" // Ensure the correct content type
+  //       }
+  //     })
+  //   } catch (err) {
+  //     console.log(err)
+  //     // setError(err) // Set error state if fetching fails
+  //   } finally {
+  //     // setLoading(false) // Set loading to false after fetch is complete
+  //   }
+  // }
 
   const handleSearch = debounce((search) => {
     const searchQuery = search.toLowerCase().trim()
     if (searchQuery === "") {
-      setSearch(false)
+      setFilteredCalls(callList)
+      // setSearch(false)
     }
     const isNumber = !isNaN(searchQuery) && !isNaN(parseFloat(searchQuery))
     if (isNumber) {
-      console.log(searchQuery)
-
-      const a = callList.filter((call) =>
+      const sortedcalls = callList.filter((call) =>
         call.callregistration.some((registration) => {
           const license = registration?.license
 
@@ -138,17 +154,23 @@ const CallregistrationList = () => {
           // registration.license.toString().toLowerCase().includes(searchQuery)
         })
       )
-      setFilteredCalls(a)
-      console.log(a)
-    } else if (!searchQuery == "") {
-      console.log("hii")
-      setFilteredCalls(
-        callList.filter((calls) =>
-          calls.customerName.toLowerCase().includes(searchQuery)
-        )
+      const allCallRegistrations = sortedcalls.flatMap(
+        (call) => call.callregistration
       )
+      setTotalcalls(allCallRegistrations.length)
+      setFilteredCalls(sortedcalls)
+    } else if (!searchQuery == "") {
+      const sortedcalls = callList.filter((calls) =>
+        calls.customerName.toLowerCase().includes(searchQuery)
+      )
+      const allCallRegistrations = sortedcalls.flatMap(
+        (call) => call.callregistration
+      )
+      setTotalcalls(allCallRegistrations.length)
+      setFilteredCalls(sortedcalls)
     }
   }, 300)
+
   const handleChange = (e) => handleSearch(e.target.value)
 
   // useEffect(() => {
@@ -179,7 +201,6 @@ const CallregistrationList = () => {
 
   // Function to filter calls based on the active tile clicked
   const applyFilter = () => {
-    console.log("hii")
     if (activeFilter === "Pending") {
       return callList.filter((call) => call.status === "Pending")
     } else if (activeFilter === "Solved") {
@@ -211,7 +232,8 @@ const CallregistrationList = () => {
               placeholder="Search for..."
             />
           </div>
-          <label>{totalcall}</label>
+          {/* <label>{totalcall}</label> */}
+          {/* <button onClick={fetchData}>update</button> */}
         </div>
 
         <hr className="border-t-2 border-gray-300 mb-2 " />
@@ -271,15 +293,13 @@ const CallregistrationList = () => {
           <table className="divide-y divide-gray-200 w-full">
             <thead className="bg-purple-200 sticky top-0 z-40">
               <tr>
-                {/* {users?.role === "Admin" && (
+                {users?.role === "Admin" && (
                   <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
                     Branch Name
                   </th>
-                )} */}
+                )}
 
-                <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
-                  Branch Name
-                </th>
+                
                 <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
                   Token No
                 </th>
@@ -492,20 +512,18 @@ const CallregistrationList = () => {
                             className={`text-center border border-b-0 border-gray-300 ${
                               callDate === today
                                 ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
-                                : "bg-red-400"
+                                : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                             }`}
                           >
                             {/* Add your table columns for pending calls */}
 
-                            {/* {users?.role === "Admin" && (
+                            {users?.role === "Admin" && (
                               <td className="px-4 py-2 text-sm text-[#010101]">
                                 {item.branchName}
                               </td>
-                            )} */}
+                            )}
 
-                            <td className="px-4 py-2 text-sm text-[#010101]">
-                              {item.branchName}
-                            </td>
+                           
                             <td className="px-4 py-2 text-sm text-[#010101]">
                               {item?.timedata.token}
                             </td>
@@ -563,7 +581,7 @@ const CallregistrationList = () => {
                               {item?.formdata?.status !== "solved" ? (
                                 <FaPhone
                                   onClick={() =>
-                                    user.role === "Admin"
+                                    users.role === "Admin"
                                       ? navigate(
                                           "/admin/transaction/call-registration",
                                           {
@@ -592,12 +610,12 @@ const CallregistrationList = () => {
                           <tr
                             className={`text-center border-t-0 border-gray-300 ${
                               item?.formdata?.status === "solved"
-                                ? "bg-green-400"
+                                ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
                                 : item?.formdata?.status === "pending"
                                 ? callDate === today
                                   ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
-                                  : "bg-red-400"
-                                : "bg-red-400"
+                                  : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
+                                : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                             }`}
                             style={{ height: "5px" }}
                           >
@@ -648,16 +666,14 @@ const CallregistrationList = () => {
                             key={item.calls?._id}
                             className="text-center border border-b-0 border-gray-300 bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
                           >
-                            {/* Add your table columns for solved calls */}
-                            {/* {users.role === "Admin" && (
+                            {/*Add your table columns for solved calls */}
+                             {users.role === "Admin" && (
                               <td className="px-4 py-2 text-sm text-[#010101]">
                                 {item.branchName}
                               </td>
-                            )} */}
+                            )}
 
-                            <td className="px-4 py-2 text-sm text-[#010101]">
-                              {item.branchName}
-                            </td>
+                           
                             <td className="px-4 py-2 text-sm text-[#010101]">
                               {item?.timedata.token}
                             </td>
@@ -719,8 +735,8 @@ const CallregistrationList = () => {
                                 : item?.formdata?.status === "pending"
                                 ? callDate === today
                                   ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
-                                  : "bg-red-400"
-                                : "bg-red-400"
+                                  : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
+                                : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                             }`}
                             style={{ height: "5px" }}
                           >
