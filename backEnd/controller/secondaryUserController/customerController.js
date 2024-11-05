@@ -109,40 +109,77 @@ export const CustomerEdit = async (req, res) => {
     res.status(500).json({ message: "Error updating customer" })
   }
 }
+
 export const GetCustomer = async (req, res) => {
   const { search } = req.query
 
   try {
-    let searchCriteria = {}
     if (search) {
       if (!isNaN(search)) {
-        // Search by license number or mobile number using partial match
         const searchRegex = new RegExp(`^${search}`, "i")
 
-        searchCriteria = {
-          $or: [
-            { "selected.licensenumber": searchRegex },
-            { mobile: searchRegex }
-          ]
+        const mobileCustomer = await Customer.find({
+          mobile: searchRegex
+        }).lean()
+
+        const licenseCustomer = await Customer.find({
+          $expr: {
+            $gt: [
+              {
+                $size: {
+                  $filter: {
+                    input: "$selected",
+                    as: "item",
+                    cond: {
+                      $regexMatch: {
+                        input: { $toString: "$$item.licensenumber" }, // Convert to string
+                        regex: search, // your regex pattern
+                        options: "i" // case-insensitive if needed
+                      }
+                    }
+                  }
+                }
+              },
+              0
+            ]
+          }
+        }).lean()
+        const customers = [...mobileCustomer, ...licenseCustomer]
+
+        if (customers.length === 0) {
+          return res
+            .status(404)
+            .json({ message: "No customer found", data: [] })
+        } else {
+          return res
+            .status(200)
+            .json({ message: "Customer(s) found", data: customers })
         }
       } else {
         // Search by customer name
-        searchCriteria = { customerName: new RegExp(search, "i") }
-      }
+        
+        const searchRegex = new RegExp(`^${search}`, "i")
+        const customers = await Customer.find({ customerName: searchRegex })
 
-      const customers = await Customer.find(searchCriteria)
-
-      if (customers.length === 0) {
-        return res.json({ message: "No customer found" })
-      } else {
-        return res.json({ message: "Customer(s) found", data: customers })
+        if (customers.length === 0) {
+          
+          return res
+            .status(404)
+            .json({ message: "No customer found", data: [] })
+        } else {
+          return res
+            .status(200)
+            .json({ message: "Customer(s) found", data: customers })
+        }
       }
     } else {
       const customers = await Customer.find().sort({ customerName: 1 })
       if (customers.length === 0) {
-        return res.json({ message: "No customer found" })
+        return res.status(404).json({ message: "No customer found", data: [] })
       } else {
-        return res.json({ message: "Customer(s) found", data: customers })
+        return res
+          .status(200)
+          .json({ message: "Customer(s) found", data: customers })
       }
     }
   } catch (error) {
