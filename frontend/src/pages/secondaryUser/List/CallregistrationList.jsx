@@ -214,6 +214,34 @@ const CallregistrationList = () => {
     }
     return callList // Return all if no specific filter is applied
   }
+  // const fetchData = async () => {
+  //   try {
+  //     const calldata = {
+  //       userName: "Akhila thomas",
+  //       product: "67051e69c6d1805013e91797",
+
+  //       license: 737805573,
+  //       branchName: ["CAMET"],
+  //       timedata: {
+  //         startTime: "2024-November-01 08:38:58",
+  //         endTime: "2024-November-01 08:47:09",
+  //         duration: "00:08:11",
+  //         token: "6902297019"
+  //       },
+  //       formdata: {
+  //         incomingNumber: "46646",
+  //         token: "",
+  //         description: "dfdfdf",
+  //         solution: "",
+  //         status: "pending",
+  //         attendedBy: "abhi",
+  //         completedBy: ""
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.log(error)
+  //   }
+  // }
 
   return (
     <div className="container mx-auto  p-8 ">
@@ -233,7 +261,6 @@ const CallregistrationList = () => {
             />
           </div>
           {/* <label>{totalcall}</label> */}
-          {/* <button onClick={fetchData}>update</button> */}
         </div>
 
         <hr className="border-t-2 border-gray-300 mb-2 " />
@@ -289,202 +316,56 @@ const CallregistrationList = () => {
           />
         </div>
 
-        <div className="overflow-y-auto max-h-60 sm:max-h-80 md:max-h-[380px] lg:max-h-[398px] shadow-md rounded-lg mt-2">
+        <div className="overflow-y-auto max-h-60 sm:max-h-80 md:max-h-[380px] lg:max-h-[398px] shadow-md rounded-lg mt-2 ">
           <table className="divide-y divide-gray-200 w-full">
             <thead className="bg-purple-200 sticky top-0 z-40">
               <tr>
                 {users?.role === "Admin" && (
-                  <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
+                  <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
                     Branch Name
                   </th>
                 )}
 
-                
-                <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
                   Token No
                 </th>
-                <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
                   Customer Name
                 </th>
-                <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
                   Product Name
                 </th>
-                <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
                   License No
                 </th>
 
-                <th className="px-9 py-3 border-b border-gray-300 text-sm text-center">
-                  Start
+                <th className="px-10 py-3 border-b border-gray-300 text-sm text-center">
+                  Start <br />
+                  (D-M-Y)
                 </th>
                 <th className="px-10 py-3 border-b border-gray-300 text-sm text-center">
-                  End
+                  End <br />
+                  (D-M-Y)
                 </th>
-                <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
                   Incoming No
                 </th>
-                <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
                   Status
                 </th>
 
-                <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
                   Attended By
                 </th>
-                <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
                   Completed By
                 </th>
-                <th className="px-4 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
                   Call
                 </th>
               </tr>
             </thead>
             <tbody className="divide-gray-200">
-              {/* {filteredCalls?.length > 0 ? (
-                filteredCalls.map((calls) =>
-                  calls.callregistration.map((item) => {
-                    const today = new Date().toISOString().split("T")[0]
-                    const startTimeRaw = item?.timedata?.startTime
-                    const callDate = startTimeRaw
-                      ? new Date(startTimeRaw.split(" ")[0])
-                          .toISOString()
-                          .split("T")[0]
-                      : null
-
-                    return (
-                      <>
-                        <tr
-                          key={calls?._id}
-                          className={`text-center border border-b-0 border-gray-300 ${
-                            item?.formdata?.status === "solved"
-                              ? "bg-green-400"
-                              : item?.formdata?.status === "pending"
-                              ? callDate === today
-                                ? "bg-yellow-400"
-                                : "bg-red-400"
-                              : "bg-red-400"
-                          }`}
-                        >
-                          {user.role === "Admin" && (
-                            <td className="px-4 py-2 text-sm text-[#010101]">
-                              {item.branchName}
-                            </td>
-                          )}
-
-                          <td className="px-4 py-2 text-sm text-[#010101]">
-                            {item?.timedata.token}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-[#010101]">
-                            {calls?.customerName}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-[#010101]">
-                            {item?.product?.productName}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-[#010101]">
-                            {item?.license}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-[#010101]">
-                        
-                            {new Date(
-                              item?.timedata?.startTime
-                            ).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              second: "2-digit"
-                            })}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-[#010101]">
-                            
-                            {new Date(
-                              item?.timedata?.endTime
-                            ).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              second: "2-digit"
-                            })}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-[#010101']">
-                            {item?.formdata?.incomingNumber}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-[#010101]">
-                            {item?.formdata?.status}
-                          </td>
-                         
-                          <td className="px-4 py-2 text-sm text-[#010101]">
-                            {item?.formdata?.attendedBy}
-                          </td>
-                          <td className="px-4 py-2 text-sm text-[#010101]">
-                            {item?.formdata?.completedBy}
-                          </td>
-                          <td className="px-4 py-2 text-xl text-blue-800">
-                            {item?.formdata?.status !== "solved" ? (
-                              <FaPhone
-                                onClick={() =>
-                                  user.role === "Admin"
-                                    ? navigate(
-                                        "/admin/transaction/call-registration",
-                                        {
-                                          state: {
-                                            calldetails: calls._id,
-                                            token: item.timedata.token
-                                          }
-                                        }
-                                      )
-                                    : navigate(
-                                        "/staff/transaction/call-registration",
-                                        {
-                                          state: {
-                                            calldetails: calls._id,
-                                            token: item.timedata.token
-                                          }
-                                        }
-                                      )
-                                }
-                              />
-                            ) : (
-                              ""
-                            )}
-                          </td>
-                        </tr>
-                        <tr
-                          className={`text-center border-t-0 border-gray-300 ${
-                            item?.formdata?.status === "solved"
-                              ? "bg-green-400"
-                              : item?.formdata?.status === "pending"
-                              ? callDate === today
-                                ? "bg-yellow-400"
-                                : "bg-red-400"
-                              : "bg-red-400"
-                          }`}
-                          style={{ height: "5px" }}
-                        >
-                          <td
-                            colSpan="6"
-                            className="py-1 px-8 text-sm text-black text-left"
-                          >
-                            <strong>Description:</strong>{" "}
-                            {item?.formdata?.description || "N/A"}
-                          </td>
-                          <td
-                            colSpan="6"
-                            className="py-1 px-12 text-sm text-black text-right"
-                          >
-                            <strong>Solution:</strong>{" "}
-                            {item?.formdata?.solution || "N/A"}
-                          </td>
-                        </tr>
-                      </>
-                    )
-                  })
-                )
-              ) : (
-                <tr>
-                  <td
-                    colSpan="10"
-                    className="px-4 py-4 text-center text-sm text-gray-500"
-                  >
-                    No calls found
-                  </td>
-                </tr>
-              )} */}
               {filteredCalls?.length > 0 ? (
                 <>
                   {/* Filter and display pending calls first */}
@@ -518,66 +399,54 @@ const CallregistrationList = () => {
                             {/* Add your table columns for pending calls */}
 
                             {users?.role === "Admin" && (
-                              <td className="px-4 py-2 text-sm text-[#010101]">
+                              <td className="px-2 py-2 w-12 text-sm text-[#010101]">
                                 {item.branchName}
                               </td>
                             )}
 
-                           
-                            <td className="px-4 py-2 text-sm text-[#010101]">
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.timedata.token}
                             </td>
-                            <td className="px-4 py-2 text-sm text-[#010101]">
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item.calls?.customerName}
                             </td>
-                            <td className="px-4 py-2 text-sm text-[#010101]">
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.product?.productName}
                             </td>
-                            <td className="px-4 py-2 text-sm text-[#010101]">
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.license}
                             </td>
-                            <td className="px-4 py-2 text-sm text-[#010101]">
-                              {/* {new Date(
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                              {new Date(
                                 item?.timedata?.startTime
-                              ).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                second: "2-digit"
-                              })} */}
-
-                              {item.calls?.createdAt
-                                ? new Date(item.calls?.createdAt)
-                                    .toISOString()
-                                    .split("T")[0]
-                                : "N/A"}
+                              ).toLocaleDateString("en-GB", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric"
+                              })}
                             </td>
-                            <td className="px-4 py-2 text-sm text-[#010101]">
-                              {/* {new Date(
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                              {new Date(
                                 item?.timedata?.endTime
-                              ).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                second: "2-digit"
-                              })} */}
-                              {/* {item.calls?.updatedAt
-                                ? new Date(item.calls?.updatedAt)
-                                    .toISOString()
-                                    .split("T")[0]
-                                : "N/A"} */}
+                              ).toLocaleDateString("en-GB", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric"
+                              })}
                             </td>
-                            <td className="px-4 py-2 text-sm text-[#010101]">
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.formdata?.incomingNumber}
                             </td>
-                            <td className="px-4 py-2 text-sm text-[#010101]">
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.formdata?.status}
                             </td>
-                            <td className="px-4 py-2 text-sm text-[#010101]">
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.formdata?.attendedBy}
                             </td>
-                            <td className="px-4 py-2 text-sm text-[#010101]">
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.formdata?.completedBy}
                             </td>
-                            <td className="px-4 py-2 text-xl text-blue-800">
+                            <td className="px-2 py-2 text-xlw-12 text-blue-800">
                               {item?.formdata?.status !== "solved" ? (
                                 <FaPhone
                                   onClick={() =>
@@ -667,66 +536,55 @@ const CallregistrationList = () => {
                             className="text-center border border-b-0 border-gray-300 bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
                           >
                             {/*Add your table columns for solved calls */}
-                             {users.role === "Admin" && (
-                              <td className="px-4 py-2 text-sm text-[#010101]">
+                            {users.role === "Admin" && (
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                                 {item.branchName}
                               </td>
                             )}
 
-                           
-                            <td className="px-4 py-2 text-sm text-[#010101]">
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.timedata.token}
                             </td>
-                            <td className="px-4 py-2 text-sm text-[#010101]">
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item.calls?.customerName}
                             </td>
-                            <td className="px-4 py-2 text-sm text-[#010101]">
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.product?.productName}
                             </td>
-                            <td className="px-4 py-2 text-sm text-[#010101]">
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.license}
                             </td>
-                            <td className="px-4 py-2 text-sm text-[#010101]">
-                              {/* {new Date(
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                              {new Date(
                                 item?.timedata?.startTime
-                              ).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                second: "2-digit"
-                              })} */}
-                              {item?.calls?.createdAt
-                                ? new Date(item.calls?.createdAt)
-                                    .toISOString()
-                                    .split("T")[0]
-                                : "N/A"}
+                              ).toLocaleDateString("en-GB", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric"
+                              })}
                             </td>
-                            <td className="px-4 py-2 text-sm text-[#010101]">
-                              {/* {new Date(
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                              {new Date(
                                 item?.timedata?.endTime
-                              ).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                second: "2-digit"
-                              })} */}
-                              {item?.calls?.updatedAt
-                                ? new Date(item.calls?.updatedAt)
-                                    .toISOString()
-                                    .split("T")[0]
-                                : "N/A"}
+                              ).toLocaleDateString("en-GB", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric"
+                              })}
                             </td>
-                            <td className="px-4 py-2 text-sm text-[#010101]">
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.formdata?.incomingNumber}
                             </td>
-                            <td className="px-4 py-2 text-sm text-[#010101]">
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.formdata?.status}
                             </td>
-                            <td className="px-4 py-2 text-sm text-[#010101]">
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.formdata?.attendedBy}
                             </td>
-                            <td className="px-4 py-2 text-sm text-[#010101]">
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.formdata?.completedBy}
                             </td>
-                            <td className="px-4 py-2 text-xl text-blue-800"></td>
+                            <td className="px-2 py-2 text-xl w-12 text-blue-800"></td>
                           </tr>
                           <tr
                             className={`text-center border-t-0 border-gray-300 ${

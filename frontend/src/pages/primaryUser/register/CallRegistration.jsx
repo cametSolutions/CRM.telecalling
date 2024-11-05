@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo, useCallback } from "react"
 import { useLocation, Link } from "react-router-dom"
+import ClipLoader from "react-spinners/ClipLoader"
 import io from "socket.io-client"
 import { useForm } from "react-hook-form"
 import { formatDistanceToNow, parseISO } from "date-fns"
 import api from "../../../api/api"
 import { formatTime } from "../../../utils/timeUtils"
-import debounce from "lodash.debounce"
+// import debounce from "lodash.debounce"
+import { debounce } from "lodash"
 import UseFetch from "../../../hooks/useFetch"
 import Timer from "../../../components/primaryUser/Timer"
 import { toast } from "react-toastify"
@@ -24,12 +26,13 @@ export default function CallRegistration() {
   } = useForm()
 
   const [customerData, setCustomerData] = useState([])
-  // const [loading, setloading] = useState(false)
+  const [loading, setloading] = useState(false)
   const [name, setName] = useState("")
+  const [message, setMessage] = useState("")
   const [editform, setEditformdata] = useState({})
   const [productDetails, setProductDetails] = useState([])
   const [user, setUser] = useState(false)
-  const [searching, setSearching] = useState(true)
+  const [searching, setSearching] = useState(false)
   const [search, setSearch] = useState("")
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   const [selectedProducts, setSelectedProducts] = useState([])
@@ -43,7 +46,7 @@ export default function CallRegistration() {
 
   const {
     data: registeredCall,
-    loading,
+
     refreshHook
   } = UseFetch(
     `/customer/getcallregister?customerid=${
@@ -59,6 +62,21 @@ export default function CallRegistration() {
     const user = JSON.parse(userData)
     setUser(user)
   }, [])
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (search) {
+        fetchCustomerData(search)
+        setloading(true)
+      } else {
+        setloading(false)
+        setCustomerData([])
+      }
+    }, 300)
+
+    return () => {
+      clearTimeout(handler) // Cleanup the timeout on unmount or before the next call
+    }
+  }, [search]) // Only re-run the effect if search changes
 
   useEffect(() => {
     if (calldetails) {
@@ -106,7 +124,6 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
-    //Assuming you have an API to fetch the details
     const response = await fetch(
       `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
     )
@@ -175,6 +192,7 @@ export default function CallRegistration() {
     if (!token) {
       const uniqueToken = generateUniqueNumericToken()
       setTokenData(uniqueToken)
+
       const timeData = {
         startTime: formatDateTime(new Date(startTime)),
         endTime: formatDateTime(new Date(endTime)),
@@ -193,11 +211,11 @@ export default function CallRegistration() {
         timedata: timeData,
         formdata: formData
       }
-      // user.selected.map((branch) => branch.branchName)
 
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}`,
         calldata,
+
         {
           withCredentials: true,
           headers: {
@@ -266,46 +284,52 @@ export default function CallRegistration() {
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
   }
 
-  const fetchCustomerData = debounce(async (query) => {
-    const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
-      query
-    )}`
-    // const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
-    //   query
-    // )}`
+  const fetchCustomerData = useCallback(
+    debounce(async (query) => {
+      // const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
+      //   query
+      // )}`
+      const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
+        query
+      )}`
 
-    try {
-      const response = await fetch(url, {
-        method: "GET",
-        credentials: "include"
-      })
+      try {
+        const response = await fetch(url, {
+          method: "GET",
+          credentials: "include"
+        })
 
-      if (response.ok) {
-        const result = await response.json()
+        if (response.ok) {
+          const result = await response.json()
 
-        setCustomerData(result.data)
-        const userData = localStorage.getItem("user")
-        const user = JSON.parse(userData)
-        setUser(user)
-      } else {
-        const errorData = await response.json()
-        console.error("Error fetching customer data:", errorData.message)
+          setCustomerData(result.data)
+          setSearching(true)
+          const userData = localStorage.getItem("user")
+          const user = JSON.parse(userData)
+          setUser(user)
+        } else {
+          const errorData = await response.json()
+
+          setMessage(errorData.message)
+          console.error("Error fetching customer data:", errorData.message)
+        }
+      } catch (error) {
+        console.error("Error fetching customer data:", error.message)
+      } finally {
+        setloading(false)
+        // setSearching(false)
       }
-    } catch (error) {
-      console.error("Error fetching customer data:", error.message)
-    } finally {
-      setSearching(false)
-    }
-  }, 300)
-
+    }, 300),
+    [] // The empty dependency array ensures that debounce is created only once
+  )
   const handleInputChange = (e) => {
     const value = e.target.value
-    setSearch(value)
-    if (value) {
-      fetchCustomerData(value)
-    } else {
+
+    if (!value) {
+      setMessage("")
       setCustomerData([])
     }
+    setSearch(value)
   }
 
   const handleRowClick = (customer) => {
@@ -357,6 +381,61 @@ export default function CallRegistration() {
     }
     setFormData(updatedData)
   }
+  // const fetchData = async () => {
+  //   const uniqueToken = generateUniqueNumericToken()
+
+  //   const startDate = new Date("2024-11-01T10:46:00")
+  //   startDate.setHours(15, 46, 0, 0)
+  //   // Set the end date by adding 66 seconds (66 * 1000 milliseconds) to the start date
+  //   const endDate = new Date(startDate.getTime() + 66 * 1000)
+
+  //   // Optionally, log in ISO format for reference
+  //   console.log("Start Date (ISO):", startDate.toISOString())
+  //   console.log("End Date (ISO):", endDate.toISOString())
+  //   const timeDatasss = {
+  //     startTime: startDate.toISOString(),
+  //     endTime: endDate.toISOString(),
+  //     duration: formatTime(66),
+  //     token: uniqueToken
+  //   }
+  //   console.log("timedatafffuhh", timeDatasss)
+  //   const form = {
+  //     incomingNumber: "9846008802",
+  //     token: "",
+  //     description: "Excel import module",
+  //     solution: "Cleared",
+  //     status: "solved",
+  //     attendedBy: "Akhila thomas",
+  //     completedBy: "Akhila thomas"
+  //   }
+  //   console.log("forms", form)
+
+  //   const editcall = {
+  //     userName: "Akhila thomas",
+  //     product: "67051e69c6d1805013e91797",
+  //     license: 737805573,
+  //     branchName: ["CAMET"],
+  //     timedata: timeDatasss,
+  //     formdata: form
+  //   }
+  //   console.log("calllldddddaataa", editcall)
+  //   const response = await api.post(
+  //     `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}`,
+  //     editcall,
+  //     {
+  //       withCredentials: true,
+  //       headers: {
+  //         "Content-Type": "application/json" // Ensure the correct content type
+  //       }
+  //     }
+  //   )
+  //   if (response.status === 200) {
+  //     console.log("okkk")
+  //     // refreshHook()
+  //     // // setCallData(response.data.updatedCall.callregistration)
+  //     // socket.emit("updatedCalls")
+  //   }
+  // }
 
   return (
     <div className="container  justify-center items-center p-8 bg-gray-100">
@@ -364,27 +443,32 @@ export default function CallRegistration() {
         <h2 className="text-2xl font-semibold mb-6">Call Registration</h2>
         <hr className="border-t-2 border-gray-300 mb-4"></hr>
         <div className="w-2/4 ml-5">
-          <div>
+          <div className="relative">
             <label
               htmlFor="customerName"
               className="block text-sm font-medium text-gray-700"
             >
               Search Customer
             </label>
-            <input
-              type="text"
-              id="customerName"
-              value={search}
-              onChange={handleInputChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
-              placeholder="Enter name or license..."
-            />
+            <div className="relative">
+              <input
+                type="text"
+                id="customerName"
+                // value={inputValue}
+                onChange={handleInputChange}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 pr-10 sm:text-sm focus:border-gray-500 outline-none"
+                placeholder="Enter name or license..."
+              />
+              {loading && (
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <ClipLoader color="#36D7B7" loading={loading} size={20} />
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {searching ? (
-          ""
-        ) : (
+        {searching && customerData.length > 0 ? (
           <div className="ml-5 w-2/4 max-h-40 overflow-y-auto overflow-x-auto  mt-4 border border-gray-200 shadow-md rounded-lg">
             {/* Wrap the table in a div with border */}
             <table className="min-w-full bg-white">
@@ -424,6 +508,10 @@ export default function CallRegistration() {
                 )}
               </tbody>
             </table>
+          </div>
+        ) : (
+          <div className="text-red-500 ml-5">
+            {customerData.length === 0 ? message : "ff"}
           </div>
         )}
 
@@ -490,6 +578,7 @@ export default function CallRegistration() {
                 <h3 className="text-lg font-medium text-gray-900">
                   Product Details List
                 </h3>
+                {/* <button onClick={fetchData}>update</button>c */}
               </div>
 
               <div className="m-5 w-lg max-h-30 overflow-x-auto text-center overflow-y-auto">
