@@ -7,16 +7,37 @@ import { formatTime } from "../../utils/timeUtils"
 const Timer = ({ isRunning, startTime, onStop }) => {
   const [time, setTime] = useState(0)
   const wasRunning = useRef(isRunning)
-
+  console.log(startTime)
   useEffect(() => {
     console.log("isrunnning", isRunning)
     console.log("starttime", startTime)
-   
+
     let interval = null
 
     if (isRunning) {
       interval = setInterval(() => {
-        setTime(Math.floor((Date.now() - startTime) / 1000))
+        // Get the current time and calculate the difference in seconds
+        const currentTime = new Date()
+        const elapsedTime = Math.floor((currentTime - startTime) / 1000)
+        console.log(elapsedTime)
+        if (isNaN(elapsedTime)) {
+          console.error("Invalid elapsed time", currentTime, startTime)
+          return
+        }
+        console.log("hii")
+
+        // Calculate hours, minutes, and seconds from elapsed time
+        const hours = Math.floor(elapsedTime / 3600)
+        const minutes = Math.floor((elapsedTime % 3600) / 60)
+        const seconds = elapsedTime % 60
+
+        // Format the time as hh:mm:ss (with leading zeros for single digit values)
+        const formattedTime = `${String(hours).padStart(2, "0")}:${String(
+          minutes
+        ).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+
+        setTime(formattedTime)
+        // setTime(Math.floor(new Date() - startTime / 1000))
       }, 1000)
     } else {
       if (interval) clearInterval(interval)
@@ -39,7 +60,7 @@ const Timer = ({ isRunning, startTime, onStop }) => {
   return (
     <div className="flex container justify-center items-center">
       <p className="text-2xl font-extrabold text-gray-900 mb-4 bg-gradient-to-r from-blue-500 to-purple-600 text-transparent bg-clip-text">
-        Call Duration: {formatTime(time)}
+        Call Duration: {time}
       </p>
     </div>
   )

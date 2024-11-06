@@ -5,22 +5,23 @@ import io from "socket.io-client" // Import Socket.IO client
 import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles" // Import the Tile component
 import { useNavigate } from "react-router-dom"
-const socket = io("https://www.crm.camet.in")
-// const socket = io("http://localhost:9000") // Adjust the URL to your backend
+import { isNumber } from "lodash"
+// const socket = io("https://www.crm.camet.in")
+const socket = io("http://localhost:9000") // Adjust the URL to your backend
 
 const CallregistrationList = () => {
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState("")
+
+  const [today, setToday] = useState(null)
   const [users, setUser] = useState(null)
-  const [totalcall, setTotalcalls] = useState(0)
-  const [search, setSearch] = useState(true)
+
   const [callList, setCallList] = useState([])
   const [filteredCalls, setFilteredCalls] = useState([])
 
   // Define states for filtered call counts
   const [pendingCallsCount, setPendingCallsCount] = useState(0)
   const [todayCallsCount, setTodayCallsCount] = useState(0)
-  const [solvedCallsCount, setSolvedCallsCount] = useState(0)
+  const [solvedCallsCount, setTodaysSolvedCount] = useState(0)
 
   // State to track the active filter
   const [activeFilter, setActiveFilter] = useState("All")
@@ -39,19 +40,20 @@ const CallregistrationList = () => {
       (call) => call.formdata?.status?.toLowerCase() === "pending"
     )
 
-    const solved = allCallRegistrations.filter(
-      (call) => call.formdata?.status?.toLowerCase() === "solved"
-    )
+    const todaysSolvedCount = getTodaysSolved(calls)
 
     const todaysCallsCount = getTodaysCalls(calls)
 
     setPendingCallsCount(pending?.length)
     setTodayCallsCount(todaysCallsCount)
-    setSolvedCallsCount(solved?.length)
+    setTodaysSolvedCount(todaysSolvedCount)
   }, [])
 
   useEffect(() => {
     if (callList.length > 0 && users) {
+      const today = new Date().toISOString().split("T")[0]
+      setToday(today)
+
       setFilteredCalls(callList)
       filterCallData(callList)
     }
@@ -67,10 +69,7 @@ const CallregistrationList = () => {
             (call) => call.callregistration
           )
 
-          setTotalcalls(allCallRegistrations.length)
           setCallList(data.calls)
-          // filterCallData(data.calls) // Filter call data for counts
-          // setFilteredCalls(data.calls)
         } else {
           const userBranchName = new Set(
             users.selected.map((branch) => branch.branchName)
@@ -97,11 +96,6 @@ const CallregistrationList = () => {
               return hasMatchingBranch
             })
           )
-          const allCallRegistrations = filtered.flatMap(
-            (call) => call.callregistration
-          )
-
-          setTotalcalls(allCallRegistrations.length)
 
           setCallList(filtered)
         }
@@ -134,41 +128,46 @@ const CallregistrationList = () => {
   // }
 
   const handleSearch = debounce((search) => {
-    const searchQuery = search.toLowerCase().trim()
-    if (searchQuery === "") {
-      setFilteredCalls(callList)
-      // setSearch(false)
-    }
-    const isNumber = !isNaN(searchQuery) && !isNaN(parseFloat(searchQuery))
-    if (isNumber) {
-      const sortedcalls = callList.filter((call) =>
+    // Step 1: Filter for today's solved calls and all pending calls
+    const relevantCalls = callList.filter((call) =>
+      call.callregistration.some((registration) => {
+        const isTodaySolved =
+          registration.formdata?.status === "solved" &&
+          registration.timedata?.startTime?.split("T")[0] === today
+        const isPending = registration.formdata?.status === "pending"
+        return isTodaySolved || isPending
+      })
+    )
+
+    // Step 2: Filter based on search query
+    let sortedCalls
+    if (!isNaN(search)) {
+      // Search by license if it's a number
+      sortedCalls = relevantCalls.filter((call) =>
         call.callregistration.some((registration) => {
           const license = registration?.license
-
-          // Check if the license is a string and includes the search query
           return (
-            typeof license === "number" &&
-            license.toString().includes(searchQuery)
+            typeof license === "number" && license.toString().includes(search)
           )
-
-          // registration.license.toString().toLowerCase().includes(searchQuery)
         })
       )
-      const allCallRegistrations = sortedcalls.flatMap(
-        (call) => call.callregistration
+      // sortedCalls = relevantCalls.filter((call) => {
+      //   call.callregistration.some((registration) => {
+      //     const token = registration?.formdata.token
+      //     return token.includes(search)
+      //   })
+      // })
+    } else if (search) {
+      // Search by customer name if searchQuery is not empty
+      sortedCalls = relevantCalls.filter((call) =>
+        call.customerName.toLowerCase().includes(search.toLowerCase())
       )
-      setTotalcalls(allCallRegistrations.length)
-      setFilteredCalls(sortedcalls)
-    } else if (!searchQuery == "") {
-      const sortedcalls = callList.filter((calls) =>
-        calls.customerName.toLowerCase().includes(searchQuery)
-      )
-      const allCallRegistrations = sortedcalls.flatMap(
-        (call) => call.callregistration
-      )
-      setTotalcalls(allCallRegistrations.length)
-      setFilteredCalls(sortedcalls)
+    } else {
+      // If no search query, just use the relevant calls
+      sortedCalls = relevantCalls
     }
+
+    setFilteredCalls(sortedCalls)
   }, 300)
 
   const handleChange = (e) => handleSearch(e.target.value)
@@ -181,6 +180,23 @@ const CallregistrationList = () => {
   // useEffect(() => {
   //   setFilteredCalls(applyFilter())
   // }, [activeFilter, callList])
+  const getTodaysSolved = (calls) => {
+    const today = new Date().toISOString().split("T")[0]
+    let todaysSolvedCount = 0
+
+    calls.forEach((customer) => {
+      customer.callregistration.forEach((call) => {
+        if (call.formdata.status === "solved") {
+          const callDate = call.timedata.endTime.split("T")[0]
+          if (callDate === today) {
+            todaysSolvedCount++
+          }
+        }
+      })
+    })
+
+    return todaysSolvedCount
+  }
 
   const getTodaysCalls = (calls) => {
     const today = new Date().toISOString().split("T")[0] // Get today's date in 'YYYY-MM-DD' format
@@ -260,7 +276,6 @@ const CallregistrationList = () => {
               placeholder="Search for..."
             />
           </div>
-          {/* <label>{totalcall}</label> */}
         </div>
 
         <hr className="border-t-2 border-gray-300 mb-2 " />
@@ -316,7 +331,7 @@ const CallregistrationList = () => {
           />
         </div>
 
-        <div className="overflow-y-auto max-h-60 sm:max-h-80 md:max-h-[380px] lg:max-h-[398px] shadow-md rounded-lg mt-2 ">
+        <div className="overflow-y-auto max-h-60 sm:max-h-80 md:max-h-[380px] lg:max-h-[398px] shadow-md rounded-lg mt-2 overflow-x-auto ">
           <table className="divide-y divide-gray-200 w-full">
             <thead className="bg-purple-200 sticky top-0 z-40">
               <tr>
@@ -377,6 +392,25 @@ const CallregistrationList = () => {
                       }))
                     )
                     .filter((item) => item?.formdata?.status === "pending")
+                    .sort((a, b) => {
+                      const today = new Date().toISOString().split("T")[0]
+                      const aDate = new Date(a?.timedata?.startTime)
+                        .toISOString()
+                        .split("T")[0]
+                      const bDate = new Date(b?.timedata?.startTime)
+                        .toISOString()
+                        .split("T")[0]
+
+                      // Prioritize today's date
+                      if (aDate === today && bDate !== today) return -1
+                      if (aDate !== today && bDate === today) return 1
+
+                      // For both calls not on today, order by descending date
+                      return (
+                        new Date(b?.timedata?.startTime) -
+                        new Date(a?.timedata?.startTime)
+                      )
+                    })
                     .map((item) => {
                       const today = new Date().toISOString().split("T")[0]
                       const startTimeRaw = item?.timedata?.startTime
@@ -396,8 +430,6 @@ const CallregistrationList = () => {
                                 : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                             }`}
                           >
-                            {/* Add your table columns for pending calls */}
-
                             {users?.role === "Admin" && (
                               <td className="px-2 py-2 w-12 text-sm text-[#010101]">
                                 {item.branchName}
@@ -420,20 +452,13 @@ const CallregistrationList = () => {
                               {new Date(
                                 item?.timedata?.startTime
                               ).toLocaleDateString("en-GB", {
+                                timeZone: "UTC",
                                 day: "2-digit",
                                 month: "2-digit",
                                 year: "numeric"
                               })}
                             </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {new Date(
-                                item?.timedata?.endTime
-                              ).toLocaleDateString("en-GB", {
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric"
-                              })}
-                            </td>
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]"></td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.formdata?.incomingNumber}
                             </td>
@@ -446,7 +471,7 @@ const CallregistrationList = () => {
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.formdata?.completedBy}
                             </td>
-                            <td className="px-2 py-2 text-xlw-12 text-blue-800">
+                            <td className="px-2 py-2 text-xl w-12 text-blue-800">
                               {item?.formdata?.status !== "solved" ? (
                                 <FaPhone
                                   onClick={() =>
@@ -497,11 +522,10 @@ const CallregistrationList = () => {
                             </td>
 
                             <td
-                              colSpan="4"
+                              colSpan="2"
                               className="py-1 px-8 text-sm text-black text-left"
                             >
                               <strong>Duration:</strong>{" "}
-                              {/* {item?.timedata?.duration || "N/A"} */}
                               <span className="ml-2">{`${Math.floor(
                                 (new Date() - new Date(item.calls?.createdAt)) /
                                   (1000 * 60 * 60 * 24)
@@ -511,7 +535,7 @@ const CallregistrationList = () => {
                               </span>
                             </td>
                             <td
-                              colSpan="4"
+                              colSpan="6"
                               className="py-1 px-12 text-sm text-black text-right"
                             >
                               <strong>Solution:</strong>{" "}
@@ -527,7 +551,35 @@ const CallregistrationList = () => {
                     .flatMap((calls) =>
                       calls.callregistration.map((item) => ({ ...item, calls }))
                     )
-                    .filter((item) => item?.formdata?.status === "solved")
+                    .filter((item) => {
+                      // Ensure 'status' is 'solved'
+                      const isSolved = item?.formdata?.status === "solved"
+
+                      // Check if 'startTime' date matches today's date
+                      const startTimeRaw = item?.timedata?.startTime
+                      const callDate = startTimeRaw
+                        ? new Date(startTimeRaw.split(" ")[0])
+                            .toISOString()
+                            .split("T")[0]
+                        : null
+
+                      const isToday = callDate === today
+
+                      return isSolved && isToday // Filter condition for both 'solved' and 'today'
+                    })
+
+                    .sort((a, b) => {
+                      const endTimeA = new Date(a?.timedata?.endTime).getTime()
+                      const endTimeB = new Date(b?.timedata?.endTime).getTime()
+                      const startTimeA = new Date(
+                        a?.timedata?.startTime
+                      ).getTime()
+                      const startTimeB = new Date(
+                        b?.timedata?.startTime
+                      ).getTime()
+
+                      return endTimeB - endTimeA || startTimeB - startTimeA
+                    })
                     .map((item) => {
                       return (
                         <>
@@ -535,7 +587,6 @@ const CallregistrationList = () => {
                             key={item.calls?._id}
                             className="text-center border border-b-0 border-gray-300 bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
                           >
-                            {/*Add your table columns for solved calls */}
                             {users.role === "Admin" && (
                               <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                                 {item.branchName}
@@ -554,19 +605,23 @@ const CallregistrationList = () => {
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.license}
                             </td>
+
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {new Date(
                                 item?.timedata?.startTime
                               ).toLocaleDateString("en-GB", {
+                                timeZone: "UTC",
                                 day: "2-digit",
                                 month: "2-digit",
                                 year: "numeric"
                               })}
                             </td>
+
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {new Date(
                                 item?.timedata?.endTime
                               ).toLocaleDateString("en-GB", {
+                                timeZone: "UTC",
                                 day: "2-digit",
                                 month: "2-digit",
                                 year: "numeric"
@@ -606,7 +661,7 @@ const CallregistrationList = () => {
                               {item?.formdata?.description || "N/A"}
                             </td>
                             <td
-                              colSpan="4"
+                              colSpan="2"
                               className="py-1 px-8 text-sm text-black text-left"
                             >
                               <strong>Duration:</strong>
@@ -621,7 +676,7 @@ const CallregistrationList = () => {
                               </span>
                             </td>
                             <td
-                              colSpan="4"
+                              colSpan="6"
                               className="py-1 px-12 text-sm text-black text-right"
                             >
                               <strong>Solution:</strong>{" "}
