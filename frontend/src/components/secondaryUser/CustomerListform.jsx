@@ -43,6 +43,7 @@ const CustomerListform = () => {
       setAfterSearchData(searchData)
     }
   }, [searchData])
+  
 
   //Handle search with lodash debounce to optimize search performance
   const handleSearch = debounce((query) => {
