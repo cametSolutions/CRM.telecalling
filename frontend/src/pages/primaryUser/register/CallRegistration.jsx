@@ -184,9 +184,7 @@ export default function CallRegistration() {
   }
 
   const stopTimer = async (time) => {
-    const endTime = Date.now()
-
-    localStorage.setItem("timer", time)
+    const endTime = new Date().toISOString()
 
     // Save timer value in local storage
     if (!token) {
@@ -194,9 +192,9 @@ export default function CallRegistration() {
       setTokenData(uniqueToken)
 
       const timeData = {
-        startTime: formatDateTime(new Date(startTime)),
-        endTime: formatDateTime(new Date(endTime)),
-        duration: formatTime(time),
+        startTime: startTime.toISOString(),
+        endTime: endTime,
+        duration: time,
         token: uniqueToken
       }
 
@@ -231,9 +229,9 @@ export default function CallRegistration() {
       }
     } else {
       const timeData = {
-        startTime: formatDateTime(new Date(startTime)),
-        endTime: formatDateTime(new Date(endTime)),
-        duration: formatTime(time),
+        startTime: startTime.toISOString(),
+        endTime: endTime,
+        duration: time,
         token: token
       }
 
@@ -346,8 +344,9 @@ export default function CallRegistration() {
         solution: ""
       })
       setIsRunning(true)
+      const currentTime = new Date()
 
-      setStartTime(Date.now())
+      setStartTime(currentTime)
       refreshHook()
     } else {
       setIsRunning(false)
