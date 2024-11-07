@@ -331,51 +331,51 @@ const CallregistrationList = () => {
           />
         </div>
 
-        <div className="overflow-y-auto max-h-60 sm:max-h-80 md:max-h-[380px] lg:max-h-[398px] shadow-md rounded-lg mt-2 overflow-x-auto ">
+        <div className="overflow-y-auto overflow-x-auto max-h-60 sm:max-h-80 md:max-h-[380px] lg:max-h-[398px] shadow-md rounded-lg mt-2 ">
           <table className="divide-y divide-gray-200 w-full">
-            <thead className="bg-purple-200 sticky top-0 z-40">
+            <thead className="bg-purple-300 sticky top-0 z-40  ">
               <tr>
                 {users?.role === "Admin" && (
-                  <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
+                  <th className="px-2 py-3 border-b border-gray-300 text-sm text-center whitespace-nowrap">
                     Branch Name
                   </th>
                 )}
 
-                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center whitespace-nowrap">
                   Token No
                 </th>
-                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center whitespace-nowrap">
                   Customer Name
                 </th>
-                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center whitespace-nowrap">
                   Product Name
                 </th>
-                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center whitespace-nowrap">
                   License No
                 </th>
 
-                <th className="px-10 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-10 py-3 border-b border-gray-300 text-sm text-center whitespace-nowrap">
                   Start <br />
                   (D-M-Y)
                 </th>
-                <th className="px-10 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-10 py-3 border-b border-gray-300 text-sm text-center whitespace-nowrap">
                   End <br />
                   (D-M-Y)
                 </th>
-                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center whitespace-nowrap">
                   Incoming No
                 </th>
-                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center whitespace-nowrap">
                   Status
                 </th>
 
-                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center whitespace-nowrap">
                   Attended By
                 </th>
-                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center whitespace-nowrap">
                   Completed By
                 </th>
-                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center">
+                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center whitespace-nowrap">
                   Call
                 </th>
               </tr>
@@ -383,7 +383,6 @@ const CallregistrationList = () => {
             <tbody className="divide-gray-200">
               {filteredCalls?.length > 0 ? (
                 <>
-                  {/* Filter and display pending calls first */}
                   {filteredCalls
                     .flatMap((calls) =>
                       calls.callregistration.map((item) => ({
@@ -424,7 +423,7 @@ const CallregistrationList = () => {
                         <>
                           <tr
                             key={item.calls?._id}
-                            className={`text-center border border-b-0 border-gray-300 ${
+                            className={`text-center border border-b-0  bg-gray-300 ${
                               callDate === today
                                 ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
                                 : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
@@ -526,10 +525,21 @@ const CallregistrationList = () => {
                               className="py-1 px-8 text-sm text-black text-left"
                             >
                               <strong>Duration:</strong>{" "}
-                              <span className="ml-2">{`${Math.floor(
-                                (new Date() - new Date(item.calls?.createdAt)) /
-                                  (1000 * 60 * 60 * 24)
-                              )} days`}</span>
+                              <span className="ml-2">
+                                {`${Math.floor(
+                                  (new Date(
+                                    item?.formdata?.status === "solved"
+                                      ? item.timedata?.endTime // Use end date if the call is solved
+                                      : new Date().setHours(0, 0, 0, 0) // Use today's date at midnight if not solved
+                                  ) -
+                                    new Date(
+                                      new Date(
+                                        item.timedata?.startTime
+                                      ).setHours(0, 0, 0, 0)
+                                    )) /
+                                    (1000 * 60 * 60 * 24)
+                                )} days`}
+                              </span>
                               <span className="ml-1">
                                 {item?.timedata?.duration || "N/A"}
                               </span>
@@ -546,7 +556,6 @@ const CallregistrationList = () => {
                       )
                     })}
 
-                  {/* Now filter and display solved calls */}
                   {filteredCalls
                     .flatMap((calls) =>
                       calls.callregistration.map((item) => ({ ...item, calls }))
@@ -665,12 +674,7 @@ const CallregistrationList = () => {
                               className="py-1 px-8 text-sm text-black text-left"
                             >
                               <strong>Duration:</strong>
-                              {""}
-                              <span className="ml-2">{`${Math.floor(
-                                (new Date(item.calls?.updatedAt) -
-                                  new Date(item.calls?.createdAt)) /
-                                  (1000 * 60 * 60 * 24)
-                              )} days`}</span>
+
                               <span className="ml-1">
                                 {item?.timedata?.duration || "N/A"}
                               </span>

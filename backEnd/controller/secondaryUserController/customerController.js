@@ -157,12 +157,11 @@ export const GetCustomer = async (req, res) => {
         }
       } else {
         // Search by customer name
-        
+
         const searchRegex = new RegExp(`^${search}`, "i")
         const customers = await Customer.find({ customerName: searchRegex })
 
         if (customers.length === 0) {
-          
           return res
             .status(404)
             .json({ message: "No customer found", data: [] })
@@ -317,7 +316,8 @@ export const customerCallRegistration = async (req, res) => {
 
 export const GetCallRegister = async (req, res) => {
   try {
-    const { customerid, customer } = req.query
+    const { customerid } = req.query
+   
     const { callId } = req.params
 
     if (customerid !== "null" && customerid) {
@@ -355,71 +355,6 @@ export const GetCallRegister = async (req, res) => {
   } catch (error) {
     console.log(error.message)
     res.status(500).json({ message: "internal server error" })
-  }
-}
-
-export const GetallCalls = async (req, res, socket) => {
-  try {
-    console.log("hiii")
-    let totalTokens = 0
-    let pendingCount = 0
-    let solvedCount = 0
-    let todayCallsCount = 0
-    const allcalls = await CallRegistration.find()
-      .populate({
-        path: "callregistration.product", // Populate the product field inside callregistration array
-        select: "productName" // Optionally select fields from the Product schema you need
-      })
-      .exec()
-
-    const isToday = (date) => {
-      const today = new Date()
-      return (
-        date.getDate() === today.getDate() &&
-        date.getMonth() === today.getMonth() &&
-        date.getFullYear() === today.getFullYear()
-      )
-    }
-
-    allcalls.forEach((token) => {
-      const callRegistrations = token.callregistration
-      totalTokens += callRegistrations.length
-
-      callRegistrations.forEach((call) => {
-        if (call.formdata.status === "pending") {
-          pendingCount++
-        } else {
-          solvedCount++
-        }
-
-        const startTime = new Date(call.timedata.startTime)
-        if (isToday(startTime)) {
-          todayCallsCount++
-        }
-      })
-    })
-
-    const alltokens = {
-      totalTokens,
-      pendingCount,
-      solvedCount,
-      todayCallsCount
-    }
-
-    if (allcalls.length > 0) {
-      res.status(200).json({
-        message: "calls found",
-        data: {
-          allcalls,
-          alltokens
-        }
-      })
-    } else {
-      res.status(400).json({ message: "no calls" })
-    }
-  } catch (error) {
-    console.log("error:", error.message)
-    res.status(500).json({ message: "server error" })
   }
 }
 
