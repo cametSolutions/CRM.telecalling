@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react"
+import React, { useState, useEffect, useRef, useCallback } from "react"
 import { useLocation, Link } from "react-router-dom"
 import { flushSync } from "react-dom"
 import ClipLoader from "react-spinners/ClipLoader"
@@ -56,9 +56,14 @@ export default function CallRegistration() {
       `/customer/getcallregister?customerid=${selectedCustomer?._id || null}`
   )
 
+  // useRef to keep track of the latest timeout for debouncing
+  const debounceTimeoutRef = useRef(null)
   const location = useLocation()
   const { calldetails, token } = location.state || {}
-
+  // Cleanup the timeout if the component unmounts
+  useEffect(() => {
+    return () => clearTimeout(debounceTimeoutRef.current)
+  }, [])
   useEffect(() => {
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
@@ -73,7 +78,7 @@ export default function CallRegistration() {
         setloading(false)
         setCustomerData([])
       }
-    }, 300)
+    }, 500)
 
     return () => {
       clearTimeout(handler) // Cleanup the timeout on unmount or before the next call
@@ -320,7 +325,7 @@ export default function CallRegistration() {
           setUser(user)
         } else {
           const errorData = await response.json()
-
+          setCustomerData(errorData.data)
           setMessage(errorData.message)
           console.error("Error fetching customer data:", errorData.message)
         }
@@ -333,16 +338,43 @@ export default function CallRegistration() {
     }, 300),
     [] // The empty dependency array ensures that debounce is created only once
   )
-  const handleInputChange = (e) => {
-    setSelectedCustomer(null)
+  const handleInputChange = useCallback((e) => {
     const value = e.target.value
 
-    if (!value) {
-      flushSync(() => setMessage(""))
-      flushSync(() => setCustomerData([]))
-    }
     setSearch(value)
-  }
+
+    // Clear the existing timeout whenever the user types
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current)
+    }
+
+    // Set a new timeout to update `message` and `customerData`
+    debounceTimeoutRef.current = setTimeout(() => {
+      if (value === "") {
+        flushSync(() => {
+          setMessage("")
+          setCustomerData([])
+        })
+      }
+    }, 300) // Adjust the delay time to your preference (e.g., 300 ms)
+  }, [])
+
+  // const handleInputChange = (e) => {
+  //   setSelectedCustomer(null)
+  //   const value = e.target.value
+
+  //   // Clear previous timeout if the user is still typing
+  //   if (typingTimeout) clearTimeout(typingTimeout)
+
+  //   // Set a new timeout to handle the state updates after a short delay
+  //   typingTimeout = setTimeout(() => {
+  //     if (value === "") {
+  //       setMessage("")
+  //       setCustomerData([])
+  //     }
+  //   }, 200) // Adjust delay (in ms) as needed
+  //   setSearch(value)
+  // }
 
   const handleRowClick = (customer) => {
     // setSearching(false)
@@ -689,12 +721,12 @@ export default function CallRegistration() {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                           {/* {product?.customerAddDate} */}
-                          {product?.licenseExpiryDate}
+                          {formatDate(product?.licenseExpiryDate)}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                           {/* {product?.customerAddDate} */}
                           {product?.licenseExpiryDate
-                            ? formatDate(product?.licenseEXpiryDate)
+                            ? calculateRemainingDays(product?.licenseExpiryDate)
                             : ""}
                         </td>
 
