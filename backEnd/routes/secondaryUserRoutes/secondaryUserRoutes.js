@@ -6,7 +6,7 @@ import {
   GetLicense,
   customerCallRegistration,
   GetCallRegister,
-  GetallCalls,
+  
   CustomerEdit
 } from "../../controller/secondaryUserController/customerController.js"
 
@@ -19,7 +19,7 @@ router.get("/getCustomer", authMiddleware, GetCustomer)
 router.post("/callRegistration", customerCallRegistration)
 router.get("/getcallregister/:callId", GetCallRegister)
 router.get("/getcallregister/", GetCallRegister)
-router.get("/getallcalls", authMiddleware, GetallCalls)
+// router.get("/getallcalls", authMiddleware, GetallCalls)
 // router.post("/updatedbranch", authMiddleware, updateBranchNames)
 
 export default router
