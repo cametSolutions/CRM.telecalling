@@ -153,7 +153,7 @@ const UserListform = () => {
                         </td>
                         <td className="py-3 whitespace-nowrap text-sm text-black">
                           {user.assignedto
-                            ? user.assignedto.name
+                            ? user.assignedto?.name
                             : "Not assigned"}
                         </td>
                         <td className="py-3 whitespace-nowrap text-xl text-black text-center">

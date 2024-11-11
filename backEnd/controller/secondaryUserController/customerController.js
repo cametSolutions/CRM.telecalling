@@ -5,6 +5,7 @@ import mongoose from "mongoose"
 
 export const CustomerRegister = async (req, res) => {
   const { customerData, tabledata = {} } = req.body
+  console.log("tabledataaaa", tabledata)
 
   const {
     customerName,
@@ -14,10 +15,10 @@ export const CustomerRegister = async (req, res) => {
     state,
     city,
     pincode,
+    contactPerson,
     email,
     mobile,
-    landline,
-    isActive
+    landline
   } = customerData
 
   // Check if user already exists
@@ -39,7 +40,7 @@ export const CustomerRegister = async (req, res) => {
       email,
       mobile,
       landline,
-      isActive,
+      contactPerson,
       selected: tabledata
     })
 
@@ -75,32 +76,54 @@ export const CustomerEdit = async (req, res) => {
       const objectId = new mongoose.Types.ObjectId(customerId)
 
       const existingCustomer = await Customer.findById(objectId)
+      // Now handle the update of `selected` data
+      if (tableData.length > 0) {
+        // Iterate over the new selected data (tabledata)
+        for (const item of tableData) {
+          // Find the index of the entry in `customer.selected` array that matches the product_id
+          const selectedIndex = existingCustomer.selected.findIndex(
+            (selectedItem) =>
+              selectedItem.product_id.toString() === item.product_id.toString()
+          )
+
+          if (selectedIndex !== -1) {
+            // If we found the product in the existingCustomer's `selected` array, update it
+            existingCustomer.selected[selectedIndex] = {
+              ...existingCustomer.selected[selectedIndex], // Retain other data
+              ...item // Update with new data from tabledata
+            }
+          } else {
+            // If the product_id doesn't exist in the existingCustomer's selected array, push a new entry
+            existingCustomer.selected.push(item)
+          }
+        }
+      }
 
       if (!existingCustomer) {
         return res.status(404).json({ message: "Customer not found" })
       }
 
-      existingCustomer.selected = tableData
-      existingCustomer.customerName =
-        customerData.customerName || existingCustomer.customerName
-      existingCustomer.address1 =
-        customerData.address1 || existingCustomer.landline
+      // existingCustomer.selected = tableData
+      // existingCustomer.customerName =
+      //   customerData.customerName || existingCustomer.customerName
+      // existingCustomer.address1 =
+      //   customerData.address1 || existingCustomer.landline
 
-      existingCustomer.address2 =
-        customerData.address2 || existingCustomer.address2
-      existingCustomer.country =
-        customerData.country || existingCustomer.country
-      existingCustomer.state = customerData.state || existingCustomer.state
-      existingCustomer.city = customerData.city || existingCustomer.city
-      existingCustomer.pincode =
-        customerData.pincode || existingCustomer.pincode
-      existingCustomer.email = customerData.email || existingCustomer.email
-      existingCustomer.mobile = customerData.mobile || existingCustomer.mobile
-      existingCustomer.landline =
-        customerData.landline || existingCustomer.landline
-      existingCustomer.isActive =
-        customerData.isActive || existingCustomer.isActive
-      // Step 3: Save the changes to the database
+      // existingCustomer.address2 =
+      //   customerData.address2 || existingCustomer.address2
+      // existingCustomer.country =
+      //   customerData.country || existingCustomer.country
+      // existingCustomer.state = customerData.state || existingCustomer.state
+      // existingCustomer.city = customerData.city || existingCustomer.city
+      // existingCustomer.pincode =
+      //   customerData.pincode || existingCustomer.pincode
+      // existingCustomer.email = customerData.email || existingCustomer.email
+      // existingCustomer.mobile = customerData.mobile || existingCustomer.mobile
+      // existingCustomer.landline =
+      //   customerData.landline || existingCustomer.landline
+      // existingCustomer.isActive =
+      //   customerData.isActive || existingCustomer.isActive
+      // // Step 3: Save the changes to the database
       await existingCustomer.save()
       res.status(200).json({ message: "Customer updated succesfully" })
     }
@@ -317,7 +340,7 @@ export const customerCallRegistration = async (req, res) => {
 export const GetCallRegister = async (req, res) => {
   try {
     const { customerid } = req.query
-   
+
     const { callId } = req.params
 
     if (customerid !== "null" && customerid) {

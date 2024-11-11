@@ -30,6 +30,13 @@ function CustomerEdit() {
       selected[key] = formatDateString(selected[key])
     }
   }
+  // const updatedCustomer = Object.assign({}, customer, {
+  //   selected: { ...selected } // Merge selected object into the customer
+  // })
+  // Safely merge selected into customer, ensuring selected is not undefined or null
+  const updatedCustomer = Object.assign({}, customer, {
+    selected: selected || {} // If selected is falsy, fall back to an empty object
+  })
   const handleSubmit = async (customerData, tableData) => {
     try {
       const response = await api.post(
@@ -51,8 +58,7 @@ function CustomerEdit() {
       <CustomerAdd
         process="edit"
         handleEditedData={handleSubmit}
-        customer={customer}
-        selected={selected}
+        customer={updatedCustomer}
       />
     </div>
   )

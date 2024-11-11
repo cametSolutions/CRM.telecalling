@@ -131,7 +131,10 @@ const PendingCustomer = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredCustomer?.length > 0 && filteredCustomer.filter((customer) => customer.selected.length === 0).length > 0 ? (
+              {filteredCustomer?.length > 0 &&
+              filteredCustomer.filter(
+                (customer) => customer.selected.length === 0
+              ).length > 0 ? (
                 filteredCustomer
                   .filter((customer) => customer.selected.length === 0) // Filter customers with an empty selected array
                   .map((customer) => (
@@ -164,12 +167,16 @@ const PendingCustomer = () => {
                         {customer.email}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-xl text-black">
+                        
                         <CiEdit
                           onClick={() =>
                             navigate("/admin/masters/customerEdit", {
-                              state: { customer: customer._id }
+                              state: {
+                                customer: customer
+                              }
                             })
                           }
+                          className="cursor-pointer"
                         />
                       </td>
                     </tr>

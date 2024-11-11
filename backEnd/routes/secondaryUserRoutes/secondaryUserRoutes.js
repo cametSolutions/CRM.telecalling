@@ -6,7 +6,6 @@ import {
   GetLicense,
   customerCallRegistration,
   GetCallRegister,
-  
   CustomerEdit
 } from "../../controller/secondaryUserController/customerController.js"
 

@@ -462,19 +462,9 @@ export const UpdateUserPermission = async (req, res) => {
 
 export const GetallUsers = async (req, res) => {
   try {
-    const allusers = await Staff.find().populate([
-      {
-        path: "department",
-        model: "Department",
-        select: "department"
-      },
-      {
-        path: "assignedto",
-        select: "name"
-      }
-    ])
-
-    // console.log("allusers", populatedUsers)
+    const allusers = await Staff.find()
+      .populate({ path: "department", select: "department" })
+      .populate({ path: "assignedto", select: "name" })
 
     const allAdmins = await Admin.find()
 
@@ -488,7 +478,7 @@ export const GetallUsers = async (req, res) => {
       if (allAdmins.length) {
         data.allAdmins = allAdmins
       }
-      // console.log("alldata", data)
+      console.log("alldata", data)
       return res.status(200).json({
         message: "Users found",
         data: data
