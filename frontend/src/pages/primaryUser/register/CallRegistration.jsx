@@ -132,7 +132,7 @@ export default function CallRegistration() {
 
   const fetchCallDetails = async (callId) => {
     const response = await fetch(
-       `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
+        `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
     )
     // const response = await fetch(
     //   `http://localhost:9000/api/customer/getcallregister/${callId}`

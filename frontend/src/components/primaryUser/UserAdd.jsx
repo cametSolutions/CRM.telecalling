@@ -227,6 +227,7 @@ const UserAdd = ({
       users &&
       users.length > 0
     ) {
+      console.log(User)
       setIsEditMode(true)
       setValue("name", User.name)
       setValue("email", User.email)
@@ -545,6 +546,7 @@ const UserAdd = ({
                 options={stateOptions}
                 value={selectedState}
                 onChange={(option) => {
+                  console.log("hii")
                   setSelectedState(option)
                   setValue("state", option.value)
                 }}

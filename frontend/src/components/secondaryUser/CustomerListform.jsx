@@ -40,10 +40,11 @@ const CustomerListform = () => {
   const searchData = useSearch({ fullData: customerData })
   useEffect(() => {
     if (searchData) {
+      const a = searchData.filter((customer) => customer.customerName === "a")
+      console.log(a)
       setAfterSearchData(searchData)
     }
   }, [searchData])
-  
 
   //Handle search with lodash debounce to optimize search performance
   const handleSearch = debounce((query) => {
