@@ -18,8 +18,8 @@ import { debounce } from "lodash"
 import UseFetch from "../../../hooks/useFetch"
 import Timer from "../../../components/primaryUser/Timer"
 import { toast } from "react-toastify"
-// const socket = io("https://www.crm.camet.in")
-const socket = io("http://localhost:9000")
+const socket = io("https://www.crm.camet.in")
+// const socket = io("http://localhost:9000")
 
 export default function CallRegistration() {
   const {
@@ -131,12 +131,12 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
-    // const response = await fetch(
-    //     `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
-    // )
     const response = await fetch(
-      `http://localhost:9000/api/customer/getcallregister/${callId}`
+        `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
     )
+    // const response = await fetch(
+    //   `http://localhost:9000/api/customer/getcallregister/${callId}`
+    // )
     const data = await response.json()
 
     return data
@@ -302,12 +302,12 @@ export default function CallRegistration() {
 
   const fetchCustomerData = useCallback(
     debounce(async (query) => {
-      const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
-        query
-      )}`
-      // const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
+      // const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
       //   query
       // )}`
+      const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
+        query
+      )}`
 
       try {
         const response = await fetch(url, {

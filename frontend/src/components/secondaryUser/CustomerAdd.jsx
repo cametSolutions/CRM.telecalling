@@ -53,7 +53,7 @@ const CustomerAdd = ({
     }
   })
 
-  const [selectedBranch, setSelectedBranch] = useState(false)
+  // const [selectedBranch, setSelectedBranch] = useState(false)
   const [productOptions, setProductOptions] = useState([])
   const [companyOptions, setCompanyOptions] = useState([])
   const [branchOptions, setBranchOptions] = useState([])
@@ -112,7 +112,7 @@ const CustomerAdd = ({
         if (customer.selected.length > 0) {
           setShowTable(true)
         }
-        console.log(customer)
+
         reset({
           customerName: customer.customerName,
           address1: customer.address1,
@@ -256,7 +256,6 @@ const CustomerAdd = ({
         }
       }
     }
-    console.log("hii")
 
     // checkLicenseNumber(debouncedLicenseNo)
   }, [debouncedLicenseNo])
@@ -349,41 +348,37 @@ const CustomerAdd = ({
     const itemToEdit = tableData.find((item) => item.product_id === id) // Find the product to edit
 
     if (itemToEdit) {
-      // Set the form values
-      const fieldsToSet = {
-        productName: itemToEdit.product_name,
-        companyName: itemToEdit.company_name,
-        branchName: itemToEdit.branch_name,
-        productAmount: itemToEdit.product_amount,
-        tvuamountDescription: itemToEdit.tvu_description,
-
-        licensenumber: itemToEdit.license_no,
-        noofuser: itemToEdit.no_of_users,
-        version: itemToEdit.version,
-        customerAddDate: itemToEdit.customer_addDate,
-        amcstartDate: itemToEdit.amc_startDate,
-        amcendDate: itemToEdit.amc_endDate,
-        amcAmount: itemToEdit.amc_amount,
-        amcDescription: itemToEdit.amc_description,
-        licenseExpiryDate: itemToEdit.license_expiryDate,
-        productamountDescription: itemToEdit.product_description,
-        tvuexpiryDate: itemToEdit.tvu_expiryDate,
-        tvuAmount: itemToEdit.tvu_amount,
-        tuvamountDescription: itemToEdit.tvu_description
-      }
-
       // Set form values using setValue
-      Object.entries(fieldsToSet).forEach(([key, value]) =>
-        setValue(key, value)
-      )
+      Object.entries(itemToEdit).forEach(([key, value]) => setValue(key, value))
+      // Set React Select fields (assuming product, company, and branch are React Select fields)
+      if (itemToEdit.product_id) {
+        setValue("productName", {
+          value: itemToEdit.product_id,
+          label: itemToEdit.productName
+        })
+      }
+      if (itemToEdit.company_id) {
+        setValue("companyName", {
+          value: itemToEdit.company_id,
+          label: itemToEdit.companyName
+        })
+      }
+      if (itemToEdit.branch_id) {
+        setValue("branchName", {
+          value: itemToEdit.branch_id,
+          label: itemToEdit.branchName
+        })
+      }
 
       // Find index of the item being edited and set it to the state
       const index = tableData.findIndex((item) => item.product_id === id)
+
       setEditIndex(index)
     }
   }
   const handleProductChange = (selectedOption, onEdit = false) => {
     setValue("productName", selectedOption)
+    setShowTable(true)
     setTableObject((prev) => ({
       ...prev,
       product_id: selectedOption.value,
@@ -449,21 +444,16 @@ const CustomerAdd = ({
   ///now created
 
   const handleBranchChange = (selectedOption) => {
-    setSelectedBranch(true)
-
     setTableObject((prev) => ({
       ...prev,
       branch_id: selectedOption.value,
       branchName: selectedOption.label
     }))
-
-    setShowTable(true)
   }
 
   const onSubmit = async (data) => {
     try {
       if (process === "Registration") {
-     
         await handleCustomerData(data, tableData)
         reset()
       } else if (process === "edit") {
@@ -476,7 +466,6 @@ const CustomerAdd = ({
       toast.error("Failed to save customer!")
     }
   }
-
 
   return (
     <div className="container justify-center items-center min-h-screen p-8 bg-gray-100">

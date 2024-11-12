@@ -4,7 +4,7 @@ import ExcelUploader from "../../../pages/primaryUser/converter/ExcelUploader"
 
 const tasksRoutes = [
   { path: "/admin/tasks/signUp-customer", component: ComingSoon },
-  
+
   { path: "/admin/tasks/productMerge", component: ComingSoon },
 
   {
@@ -13,7 +13,7 @@ const tasksRoutes = [
   },
   {
     path: "/admin/tasks/leaveApproval-pending",
-    component: LeaveApprovalAndPending
+    component: ComingSoon
   },
   { path: "/admin/tasks/workAllocation", component: ComingSoon },
   { path: "/admin/tasks/excelconverter", component: ExcelUploader }

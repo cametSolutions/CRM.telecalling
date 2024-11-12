@@ -135,6 +135,7 @@ export const CustomerEdit = async (req, res) => {
 
 export const GetCustomer = async (req, res) => {
   const { search } = req.query
+  console.log("search")
 
   try {
     if (search) {
