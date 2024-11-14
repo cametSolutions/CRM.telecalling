@@ -31,7 +31,7 @@ const CallRegistrationSchema = new mongoose.Schema(
           description: String,
           solution: String,
           status: String,
-          attendedBy: String,
+          attendedBy: [],
           completedBy: String
         }
       }

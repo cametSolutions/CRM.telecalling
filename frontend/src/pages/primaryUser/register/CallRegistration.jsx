@@ -18,8 +18,8 @@ import { debounce } from "lodash"
 import UseFetch from "../../../hooks/useFetch"
 import Timer from "../../../components/primaryUser/Timer"
 import { toast } from "react-toastify"
-const socket = io("https://www.crm.camet.in")
-// const socket = io("http://localhost:9000")
+// const socket = io("https://www.crm.camet.in")
+const socket = io("http://localhost:9000")
 
 export default function CallRegistration() {
   const {
@@ -131,12 +131,12 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
-    const response = await fetch(
-        `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
-    )
     // const response = await fetch(
-    //   `http://localhost:9000/api/customer/getcallregister/${callId}`
+    //   `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
     // )
+    const response = await fetch(
+      `http://localhost:9000/api/customer/getcallregister/${callId}`
+    )
     const data = await response.json()
 
     return data
@@ -202,6 +202,8 @@ export default function CallRegistration() {
   }
 
   const stopTimer = async (time) => {
+    const userData = localStorage.getItem("user")
+    const user = JSON.parse(userData)
     const endTime = new Date().toISOString()
 
     // Save timer value in local storage
@@ -215,6 +217,25 @@ export default function CallRegistration() {
         duration: time,
         token: uniqueToken
       }
+      console.log(formData)
+      const updatedformData = { ...formData }
+      console.log(updatedformData)
+      if (updatedformData.status === "pending") {
+        updatedformData.attendedBy = {
+          name: user.name,
+          duration: timeData.duration
+        }
+        console.log(updatedformData)
+        updatedformData.completedBy = "" // Clear completedBy if status is pending
+      } else if (updatedformData.status === "solved") {
+        updatedformData.attendedBy = {
+          name: user.name,
+          duration: timeData.duration
+        }
+        // Set both attendedBy and completedBy if status is solved
+      }
+      console.log(updatedformData)
+      // setFormData(updatedformData)
 
       const calldata = {
         userName: user.name,
@@ -225,7 +246,7 @@ export default function CallRegistration() {
             ? user.branchName.map((branch) => branch)
             : user.selected.map((branch) => branch.branchName),
         timedata: timeData,
-        formdata: formData
+        formdata: updatedformData
       }
 
       const response = await api.post(
@@ -252,7 +273,24 @@ export default function CallRegistration() {
         duration: time,
         token: token
       }
+      const updatedformData = { ...formData }
+      console.log(updatedformData)
+      if (updatedformData.status === "pending") {
+        updatedformData.attendedBy = {
+          name: user.name,
+          duration: timeData.duration
+        }
+        console.log(updatedformData)
+        updatedformData.completedBy = "" // Clear completedBy if status is pending
+      } else if (updatedformData.status === "solved") {
+        updatedformData.attendedBy = {
+          name: user.name,
+          duration: timeData.duration
+        }
+        // Set both attendedBy and completedBy if status is solved
+      }
 
+      console.log(user.name)
       const calldata = {
         userName: user.name,
         product: selectedProducts.product_id,
@@ -262,7 +300,7 @@ export default function CallRegistration() {
             ? user.branchName.map((branch) => branch)
             : user.selected.map((branch) => branch.branchName),
         timedata: timeData,
-        formdata: formData
+        formdata: updatedformData
       }
 
       const response = await api.post(
@@ -276,10 +314,13 @@ export default function CallRegistration() {
         }
       )
       if (response.status === 200) {
+        toast.success(response.message)
         refreshHook()
         // setCallData(response.data.updatedCall.callregistration)
 
         socket.emit("updatedCalls")
+      } else {
+        toast.error(response.message)
       }
     }
   }
@@ -302,12 +343,12 @@ export default function CallRegistration() {
 
   const fetchCustomerData = useCallback(
     debounce(async (query) => {
-      // const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
-      //   query
-      // )}`
-      const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
+      const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
         query
       )}`
+      // const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
+      //   query
+      // )}`
 
       try {
         const response = await fetch(url, {
@@ -317,7 +358,7 @@ export default function CallRegistration() {
 
         if (response.ok) {
           const result = await response.json()
-
+          setMessage("")
           setCustomerData(result.data)
           setSearching(true)
           const userData = localStorage.getItem("user")
@@ -417,18 +458,9 @@ export default function CallRegistration() {
     } else {
       setIsRunning(false)
     }
-    const userData = localStorage.getItem("user")
-    const user = JSON.parse(userData)
-    let updatedData = { ...data }
 
-    if (updatedData.status === "pending") {
-      updatedData.attendedBy = user.name
-      updatedData.completedBy = "" // Clear completedBy if status is pending
-    } else if (updatedData.status === "solved") {
-      updatedData.attendedBy = user.name
-      updatedData.completedBy = user.name // Set both attendedBy and completedBy if status is solved
-    }
-    setFormData(updatedData)
+    // let updatedData = { ...data }
+    setFormData(data)
   }
   // const fetchData = async () => {
   //   const uniqueToken = generateUniqueNumericToken()
@@ -994,7 +1026,12 @@ export default function CallRegistration() {
                               </td>
 
                               <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                {call.formdata?.attendedBy}
+                                {/* {call.formdata?.attendedBy} */}
+                                {Array.isArray(call?.formdata?.attendedBy)
+                                  ? call.formdata?.attendedBy
+                                      .map((attendee) => attendee.name)
+                                      .join(", ")
+                                  : call.formdata?.attendedBy}
                               </td>
                               <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
                                 {call.formdata?.completedBy}

@@ -6,8 +6,8 @@ import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles" // Import the Tile component
 import { useNavigate } from "react-router-dom"
 
-const socket = io("https://www.crm.camet.in")
-// const socket = io("http://localhost:9000") // Adjust the URL to your backend
+// const socket = io("https://www.crm.camet.in")
+const socket = io("http://localhost:9000") // Adjust the URL to your backend
 
 const CallregistrationList = () => {
   const navigate = useNavigate()
@@ -465,7 +465,12 @@ const CallregistrationList = () => {
                               {item?.formdata?.status}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {item?.formdata?.attendedBy}
+                              {/* {item?.formdata?.attendedBy} */}
+                              {Array.isArray(item?.formdata?.attendedBy)
+                                ? item.formdata?.attendedBy
+                                    .map((attendee) => attendee.name)
+                                    .join(", ")
+                                : item.formdata?.attendedBy}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.formdata?.completedBy}
@@ -643,7 +648,12 @@ const CallregistrationList = () => {
                               {item?.formdata?.status}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {item?.formdata?.attendedBy}
+                              {/* {item?.formdata?.attendedBy} */}
+                              {Array.isArray(item?.formdata?.attendedBy)
+                                ? item.formdata?.attendedBy
+                                    .map((attendee) => attendee.name)
+                                    .join(", ")
+                                : item.formdata?.attendedBy}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.formdata?.completedBy}
