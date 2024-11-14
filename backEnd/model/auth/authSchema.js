@@ -165,6 +165,13 @@ const adminSchema = new Schema(
     isVerified: {
       type: Boolean,
       default: false
+    },
+    callstatus: {
+      totalCall: { type: Number, default: 0 },
+      solvedCalls: { type: Number, default: 0 },
+      colleagueSolved: { type: Number, default: 0 },
+      pendingCalls: { type: Number, default: 0 },
+      totalDuration: { type: Number,default:0 }
     }
     // Other admin-specific fieldss
   },

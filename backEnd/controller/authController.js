@@ -1,12 +1,36 @@
 import models from "../model/auth/authSchema.js"
-
+import mongoose from "mongoose"
 import Branch from "../model/primaryUser/branchSchema.js"
 const { Staff, Admin } = models
 import bcrypt from "bcrypt"
 
 import generateToken from "../utils/generateToken.js"
 import LeaveRequest from "../model/primaryUser/leaveRequestSchema.js"
+export const resetCallStatus = async (req, res) => {
+  const { adminid } = req.query
 
+  const objectId = new mongoose.Types.ObjectId(adminid)
+  try {
+    const a = await Admin.updateOne(
+      { _id: objectId }, // Find the user by their ID
+      {
+        $set: {
+          "callstatus.colleagueSolved": 0,
+          "callstatus.pendingCalls": 0,
+          "callstatus.solvedCalls": 0,
+          "callstatus.totalCall": 0,
+          "callstatus.totalDuration": 0
+        }
+      }
+    )
+    if (a) {
+      res.status(200).json({ message: "Admin status updated" })
+    }
+  } catch (error) {
+    console.error("Error resetting call status fields:", error)
+  }
+}
+/////
 export const Register = async (req, res) => {
   let isaved = false
   const { userData, image, tabledata } = req.body
@@ -478,7 +502,7 @@ export const GetallUsers = async (req, res) => {
       if (allAdmins.length) {
         data.allAdmins = allAdmins
       }
-      console.log("alldata", data)
+
       return res.status(200).json({
         message: "Users found",
         data: data
@@ -498,9 +522,9 @@ export const LeaveApply = async (req, res) => {
 
   const { startDate, endDate, leaveType, onsite, reason, description } =
     formData
-  console.log("startdate", startDate)
+
   const start = new Date(startDate)
-  console.log("start", start)
+
   try {
     const start = new Date(startDate)
     const end = new Date(endDate)

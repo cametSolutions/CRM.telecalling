@@ -19,6 +19,9 @@ import { fileURLToPath } from "url"
 import { ExceltoJson } from "./controller/primaryUserController/excelController.js"
 import { customerCallRegistration } from "./controller/secondaryUserController/customerController.js"
 import CallRegistration from "./model/secondaryUser/CallRegistrationSchema.js"
+import mongoose from "mongoose"
+import models from "./model/auth/authSchema.js"
+const { Staff, Admin } = models
 const app = express()
 dotenv.config()
 const server = http.createServer(app)
@@ -46,8 +49,9 @@ io.on("connection", (socket) => {
   })
   //handle initial call data
 
-  socket.on("updatedCalls", async () => {
+  socket.on("updatedCalls", async (userId) => {
     console.log("Received request for initial data")
+    let user
     try {
       // Fetch all calls from the database
       const calls = await CallRegistration.find({})
@@ -56,8 +60,21 @@ io.on("connection", (socket) => {
           select: "productName" // Optionally select fields from the Product schema you need
         })
         .exec()
-      
-      io.emit("updatedCalls", { calls })
+      console.log(userId)
+      const objectId = new mongoose.Types.ObjectId(userId)
+      const staff = await Staff.findOne({ _id: objectId })
+      if (staff) {
+        console.log("useridin",userId)
+        console.log("staff", staff)
+        console.log("oljljljlllj")
+        user = staff
+      } else {
+        console.log("hiiiiiii")
+        const admin = await Admin.findOne({ _id: objectId })
+        user = admin
+      }
+
+      io.emit("updatedCalls", { calls, user })
     } catch (error) {
       console.error("Error fetching call data:", error)
       socket.emit("error", "Error fetching data")

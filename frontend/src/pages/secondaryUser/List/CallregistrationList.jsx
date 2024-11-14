@@ -1,20 +1,21 @@
 import React, { useState, useEffect, useCallback } from "react"
 import debounce from "lodash.debounce"
 import api from "../../../api/api"
+import { toast } from "react-toastify"
 import io from "socket.io-client" // Import Socket.IO client
 import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles" // Import the Tile component
 import { useNavigate } from "react-router-dom"
 
-// const socket = io("https://www.crm.camet.in")
-const socket = io("http://localhost:9000") // Adjust the URL to your backend
+const socket = io("https://www.crm.camet.in")
+// const socket = io("http://localhost:9000") // Adjust the URL to your backend
 
 const CallregistrationList = () => {
   const navigate = useNavigate()
 
   const [today, setToday] = useState(null)
   const [users, setUser] = useState(null)
-
+  const [userCallStatus, setUserCallstatus] = useState([])
   const [callList, setCallList] = useState([])
   const [filteredCalls, setFilteredCalls] = useState([])
 
@@ -61,15 +62,17 @@ const CallregistrationList = () => {
 
   useEffect(() => {
     if (users) {
-      socket.emit("updatedCalls")
+      const userId = users._id
+      socket.emit("updatedCalls", userId)
       // Listen for initial data from the server
-      socket.on("updatedCalls", (data) => {
+      socket.on("updatedCalls", ({ calls, user }) => {
         if (users.role === "Admin") {
-          const allCallRegistrations = data.calls.flatMap(
+          const allCallRegistrations = calls.flatMap(
             (call) => call.callregistration
           )
 
-          setCallList(data.calls)
+          setCallList(calls)
+          setUserCallstatus(user.callstatus)
         } else {
           const userBranchName = new Set(
             users.selected.map((branch) => branch.branchName)
@@ -77,7 +80,7 @@ const CallregistrationList = () => {
 
           const branchNamesArray = Array.from(userBranchName)
 
-          const filtered = data.calls.filter((call) =>
+          const filtered = calls.filter((call) =>
             call.callregistration.some((registration) => {
               const hasMatchingBranch = registration.branchName.some(
                 (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
@@ -98,6 +101,7 @@ const CallregistrationList = () => {
           )
 
           setCallList(filtered)
+          setUserCallstatus(user.callstatus)
         }
       })
 
@@ -259,9 +263,36 @@ const CallregistrationList = () => {
   //   }
   // }
 
+  // const handleupdateadmin = async () => {
+  //   const id = users._id
+
+  //   const url = `http://localhost:9000/api/auth/resetAdminstatus?adminid=${encodeURIComponent(
+  //     id
+  //   )}`
+
+  //   const response = await fetch(url, {
+  //     method: "POST",
+  //     credentials: "include"
+  //   })
+  //   const b = await response.json()
+  //   if (response.ok) {
+  //     toast.success(b.message)
+  //   }
+  // }
+
+  const formatDuration = (seconds) => {
+    if (!seconds || isNaN(seconds)) {
+      return "0 hr 0 min 0 sec"
+    }
+    const hrs = Math.floor(seconds / 3600)
+    const mins = Math.floor((seconds % 3600) / 60)
+    const secs = seconds % 60
+    return `${hrs} hr ${mins} min ${secs} sec`
+  }
+
   return (
-    <div className="container mx-auto  p-8 ">
-      <div className="w-auto  bg-white shadow-lg rounded p-4  h-full ">
+    <div className="container mx-auto  p-5 ">
+      <div className="w-auto  bg-white shadow-lg rounded p-4 pt-1 h-full ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
           {/* Search Bar for large screens */}
           <div className="mx-4 md:block items-center">
@@ -276,7 +307,80 @@ const CallregistrationList = () => {
               placeholder="Search for..."
             />
           </div>
+          <div>
+            <table className="text-center">
+              <tbody>
+                <tr>
+                  <td
+                    style={{
+                      padding: "2px",
+                      color: "#010bff",
+                      fontWeight: "bold"
+                    }}
+                  >
+                    Total Calls
+                  </td>
+                  <td
+                    style={{
+                      padding: "2px",
+                      color: "#800080",
+                      fontWeight: "bold"
+                    }}
+                  >
+                    Colleague Solved
+                  </td>
+                  <td
+                    style={{
+                      padding: "2px",
+                      color: "#dc3545",
+                      fontWeight: "bold"
+                    }}
+                  >
+                    Pending Calls
+                  </td>
+                  <td
+                    style={{
+                      padding: "2px",
+                      color: "#28a745",
+                      fontWeight: "bold"
+                    }}
+                  >
+                    Solved Calls
+                  </td>
+                  <td
+                    style={{
+                      padding: "2px",
+                      color: "#6c757d",
+                      fontWeight: "bold"
+                    }}
+                  >
+                    Total Duration
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ padding: "2px", color: "#010bff" }}>
+                    {userCallStatus?.totalCall}
+                  </td>
+                  <td style={{ padding: "2px", color: "#800080" }}>
+                    {userCallStatus?.colleagueSolved}
+                  </td>
+                  <td style={{ padding: "2px", color: "#dc3545" }}>
+                    {userCallStatus?.pendingCalls}
+                  </td>
+                  <td style={{ padding: "2px", color: "#28a745" }}>
+                    {userCallStatus?.solvedCalls}
+                  </td>
+                  <td style={{ padding: "2px", color: "#6c757d" }}>
+                    {formatDuration(userCallStatus?.totalDuration)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
+        {/* <div>
+          <button onClick={handleupdateadmin}>update</button>
+        </div> */}
 
         <hr className="border-t-2 border-gray-300 mb-2 " />
         {/* <Tiles datas={registeredcalllist?.alltokens} /> */}
@@ -330,7 +434,6 @@ const CallregistrationList = () => {
             }}
           />
         </div>
-
         <div className="overflow-y-auto overflow-x-auto max-h-60 sm:max-h-80 md:max-h-[380px] lg:max-h-[398px] shadow-md rounded-lg mt-2 ">
           <table className="divide-y divide-gray-200 w-full">
             <thead className="bg-purple-300 sticky top-0 z-40  ">
@@ -465,12 +568,13 @@ const CallregistrationList = () => {
                               {item?.formdata?.status}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {/* {item?.formdata?.attendedBy} */}
                               {Array.isArray(item?.formdata?.attendedBy)
-                                ? item.formdata?.attendedBy
-                                    .map((attendee) => attendee.name)
+                                ? item.formdata.attendedBy
+                                    .map(
+                                      (attendee) => attendee.name || attendee
+                                    )
                                     .join(", ")
-                                : item.formdata?.attendedBy}
+                                : item.formdata.attendedBy}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.formdata?.completedBy}
@@ -649,11 +753,18 @@ const CallregistrationList = () => {
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {/* {item?.formdata?.attendedBy} */}
-                              {Array.isArray(item?.formdata?.attendedBy)
-                                ? item.formdata?.attendedBy
+                              {/* {Array.isArray(item?.formdata?.attendedBy)
+                                ? item.formdata.attendedBy
                                     .map((attendee) => attendee.name)
                                     .join(", ")
-                                : item.formdata?.attendedBy}
+                                : item.formdata.attendedBy} */}
+                              {Array.isArray(item?.formdata?.attendedBy)
+                                ? item.formdata.attendedBy
+                                    .map(
+                                      (attendee) => attendee.name || attendee
+                                    )
+                                    .join(", ")
+                                : ""}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.formdata?.completedBy}
