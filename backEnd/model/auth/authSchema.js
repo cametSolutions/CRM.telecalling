@@ -73,13 +73,20 @@ const staffSchema = new Schema(
     },
     assignedtoModel: {
       type: String,
-      enum: ["Staff","Admin"] // Only these two models are allowed
+      enum: ["Staff", "Admin"] // Only these two models are allowed
     },
     profileUrl: {
       type: [String]
     },
     documentUrl: {
       type: [String]
+    },
+    callstatus: {
+      totalCall: { type: Number, default: 0 },
+      solvedCalls: { type: Number, default: 0 },
+      colleagueSolved: { type: Number, default: 0 },
+      pendingCalls: { type: Number, default: 0 },
+      totalDuration: { type: Number,default:0 }
     },
     permissions: [
       {
@@ -121,8 +128,7 @@ const staffSchema = new Schema(
         company_id: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
         companyName: { type: String },
         branch_id: { type: mongoose.Schema.Types.ObjectId, ref: "Branch" },
-        branchName: { type: String },
-       
+        branchName: { type: String }
       }
     ]
     // Other staff-specific fields
@@ -159,6 +165,13 @@ const adminSchema = new Schema(
     isVerified: {
       type: Boolean,
       default: false
+    },
+    callstatus: {
+      totalCall: { type: Number, default: 0 },
+      solvedCalls: { type: Number, default: 0 },
+      colleagueSolved: { type: Number, default: 0 },
+      pendingCalls: { type: Number, default: 0 },
+      totalDuration: { type: Number,default:0 }
     }
     // Other admin-specific fieldss
   },

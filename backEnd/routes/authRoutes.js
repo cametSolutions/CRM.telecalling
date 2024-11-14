@@ -9,12 +9,13 @@ import {
   UpdateUserandAdmin,
   UpdateUserPermission,
   DeleteUser,
-  GetAllLeaveRequest
+  GetAllLeaveRequest,
+  resetCallStatus
 } from "../controller/authController.js"
 const router = express.Router()
 
 router.post("/login", Login)
-
+router.post("/resetAdminstatus", authMiddleware, resetCallStatus)
 router.post("/userEdit", authMiddleware, UpdateUserandAdmin)
 router.post("/userPermissionUpdate", authMiddleware, UpdateUserPermission)
 router.post("/userRegistration", authMiddleware, StaffRegister)
