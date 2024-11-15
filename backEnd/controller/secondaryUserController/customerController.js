@@ -211,7 +211,26 @@ export const customerCallRegistration = async (req, res) => {
   try {
     const { customerid, customer } = req.query // Get customerid from query
     const calldata = req.body // Assuming calldata is sent in the body
-
+    // Convert attendedBy.callerId to ObjectId
+    if (
+      calldata.formdata &&
+      calldata.formdata.attendedBy &&
+      calldata.formdata.attendedBy.callerId
+    ) {
+      calldata.formdata.attendedBy.callerId = new mongoose.Types.ObjectId(
+        calldata.formdata.attendedBy.callerId
+      )
+    }
+    if (
+      calldata.formdata &&
+      calldata.formdata.completedBy &&
+      calldata.formdata.completedBy.callerId
+    ) {
+      calldata.formdata.completedBy.callerId = new mongoose.Types.ObjectId(
+        calldata.formdata.completedBy.callerId
+      )
+    }
+   
     // Convert customerid to ObjectId
     const customerId = new mongoose.Types.ObjectId(customerid)
 
@@ -237,8 +256,8 @@ export const customerCallRegistration = async (req, res) => {
           callToUpdate.timedata.startTime = calldata.timedata.startTime
           callToUpdate.timedata.endTime = calldata.timedata.endTime
           // Convert the total duration back to "HH:MM:SS" format
-          callToUpdate.timedata.duration =
-            callToUpdate.timedata.duration + calldata.timedata.duration
+          callToUpdate.timedata.duration += calldata.timedata.duration
+
           callToUpdate.timedata.token = calldata.timedata.token
           callToUpdate.formdata.incomingNumber =
             calldata.formdata.incomingNumber
@@ -247,6 +266,11 @@ export const customerCallRegistration = async (req, res) => {
           callToUpdate.formdata.solution = calldata.formdata.solution
           callToUpdate.formdata.status = calldata.formdata.status
           callToUpdate.formdata.attendedBy.push(calldata.formdata.attendedBy)
+          if (calldata.formdata.status === "solved") {
+            callToUpdate.formdata.completedBy.push(
+              calldata.formdata.completedBy
+            )
+          }
           callToUpdate.formdata.completedBy = calldata.formdata.completedBy
           callToUpdate.license = calldata.license
           callToUpdate.branchName = calldata.branchName
@@ -256,41 +280,30 @@ export const customerCallRegistration = async (req, res) => {
           const updatedCall = await user.save()
 
           if (updatedCall) {
-            const Name = calldata.userName
+            const Id = calldata.formdata.attendedBy.callerId
 
             const staffCaller = await Staff.findOne({
-              name: Name
+              _id: Id
             })
             if (staffCaller) {
               if (calldata.formdata.status === "pending") {
-                staffCaller.callstatus.totalCall =
-                  staffCaller.callstatus.totalCall + 1
+                staffCaller.callstatus.totalCall += 1
 
-                staffCaller.callstatus.pendingCalls =
-                  staffCaller.callstatus.pendingCalls + 1
-                staffCaller.callstatus.solvedCalls =
-                  staffCaller.callstatus.solvedCalls
-                staffCaller.callstatus.colleagueSolved =
-                  staffCaller.callstatus.colleagueSolved
-                staffCaller.callstatus.totalDuration =
-                  staffCaller.callstatus.totalDuration +
+                staffCaller.callstatus.pendingCalls += 1
+
+                staffCaller.callstatus.totalDuration +=
                   calldata.timedata.duration
+
                 const pendingSavedStaff = await staffCaller.save()
                 if (pendingSavedStaff) {
                   return res.status(200).json({ message: "all successed" })
                 }
               } else if (calldata.formdata.status === "solved") {
-                staffCaller.callstatus.totalCall =
-                  staffCaller.callstatus.totalCall + 1
+                staffCaller.callstatus.totalCall += 1
 
-                staffCaller.callstatus.solvedCalls =
-                  staffCaller.callstatus.solvedCalls + 1
+                staffCaller.callstatus.solvedCalls += 1
 
-                staffCaller.callstatus.pendingCalls =
-                  staffCaller.callstatus.pendingCalls
-
-                staffCaller.callstatus.totalDuration =
-                  staffCaller.callstatus.totalDuration +
+                staffCaller.callstatus.totalDuration +=
                   calldata.timedata.duration
 
                 const saved = await staffCaller.save()
@@ -299,16 +312,17 @@ export const customerCallRegistration = async (req, res) => {
                     (call) => call.timedata.token === token
                   )
 
-                  const stringDoc = JSON.stringify(matchingDoc, null, 2)
-                  const parsedDoc = JSON.parse(stringDoc)
+                  // const stringDoc = JSON.stringify(matchingDoc, null, 2)
+                  // const parsedDoc = JSON.parse(stringDoc)
 
-                  const processedAttendedBy = parsedDoc.formdata.attendedBy
+                  const processedAttendedBy = matchingDoc.formdata.attendedBy
                     .slice(0, -1)
                     .map((item) => item)
 
                   try {
                     const results = await updateProcessedAttendees(
-                      processedAttendedBy
+                      processedAttendedBy,
+                      Id
                     )
 
                     // Check if there are any items with a status other than "success"
@@ -339,40 +353,27 @@ export const customerCallRegistration = async (req, res) => {
               }
             } else {
               const adminCaller = await Admin.findOne({
-                name: Name
+                _id: Id
               })
               if (adminCaller) {
                 if (calldata.formdata.status === "pending") {
-                  adminCaller.callstatus.totalCall =
-                    adminCaller.callstatus.totalCall + 1
+                  adminCaller.callstatus.totalCall += 1
 
-                  adminCaller.callstatus.pendingCalls =
-                    adminCaller.callstatus.pendingCalls + 1
-                  adminCaller.callstatus.solvedCalls =
-                    adminCaller.callstatus.solvedCalls
-                  adminCaller.callstatus.colleagueSolved =
-                    adminCaller.callstatus.colleagueSolved
-                  adminCaller.callstatus.totalDuration =
-                    adminCaller.callstatus.totalDuration +
+                  adminCaller.callstatus.pendingCalls += 1
+
+                  adminCaller.callstatus.totalDuration +=
                     calldata.timedata.duration
+
                   const pendingAdminSaved = await adminCaller.save()
                   if (pendingAdminSaved) {
                     return res.status(200).json({ message: "All success" })
                   }
                 } else if (calldata.formdata.status === "solved") {
-                  adminCaller.callstatus.totalCall =
-                    adminCaller.callstatus.totalCall + 1
+                  adminCaller.callstatus.totalCall += 1
 
-                  adminCaller.callstatus.solvedCalls =
-                    adminCaller.callstatus.solvedCalls + 1
-                  adminCaller.callstatus.colleagueSolved =
-                    adminCaller.callstatus.colleagueSolved
+                  adminCaller.callstatus.solvedCalls += 1
 
-                  adminCaller.callstatus.pendingCalls =
-                    adminCaller.callstatus.pendingCalls
-
-                  adminCaller.callstatus.totalDuration =
-                    adminCaller.callstatus.totalDuration +
+                  adminCaller.callstatus.totalDuration +=
                     calldata.timedata.duration
 
                   const saved = await adminCaller.save()
@@ -381,16 +382,17 @@ export const customerCallRegistration = async (req, res) => {
                       (call) => call.timedata.token === token
                     )
 
-                    const stringDoc = JSON.stringify(matchingDoc, null, 2)
-                    const parsedDoc = JSON.parse(stringDoc)
+                    // const stringDoc = JSON.stringify(matchingDoc, null, 2)
+                    // const parsedDoc = JSON.parse(stringDoc)
 
-                    const processedAttendedBy = parsedDoc.formdata.attendedBy
+                    const processedAttendedBy = matchingDoc.formdata.attendedBy
                       .slice(0, -1)
                       .map((item) => item)
 
                     try {
                       const results = await updateProcessedAttendees(
-                        processedAttendedBy
+                        processedAttendedBy,
+                        Id
                       )
 
                       // Check if there are any items with a status other than "success"
@@ -429,45 +431,31 @@ export const customerCallRegistration = async (req, res) => {
       } else {
         user.callregistration.push(calldata)
         const updatedCall = await user.save()
-
-        const Name = calldata.userName
+        const Id = calldata.formdata.attendedBy.callerId
 
         if (updatedCall) {
           const staffCaller = await Staff.findOne({
-            name: Name
+            _id: Id
           })
 
           if (staffCaller) {
             if (calldata.formdata.status === "pending") {
-              staffCaller.callstatus.totalCall =
-                staffCaller.callstatus.totalCall + 1
+              staffCaller.callstatus.totalCall += 1
 
-              staffCaller.callstatus.pendingCalls =
-                staffCaller.callstatus.pendingCalls + 1
-              staffCaller.callstatus.solvedCalls =
-                staffCaller.callstatus.solvedCalls
-              staffCaller.callstatus.colleagueSolved =
-                staffCaller.callstatus.colleagueSolved
-              staffCaller.callstatus.totalDuration =
-                staffCaller.callstatus.totalDuration +
-                calldata.timedata.duration
+              staffCaller.callstatus.pendingCalls += 1
+
+              staffCaller.callstatus.totalDuration += calldata.timedata.duration
+
               const pendingSavedStaff = await staffCaller.save()
               if (pendingSavedStaff) {
                 return res.status(200).json({ message: "all successed" })
               }
             } else if (calldata.formdata.status === "solved") {
-              staffCaller.callstatus.totalCall =
-                staffCaller.callstatus.totalCall + 1
+              staffCaller.callstatus.totalCall += 1
 
-              staffCaller.callstatus.solvedCalls =
-                staffCaller.callstatus.solvedCalls + 1
+              staffCaller.callstatus.solvedCalls += 1
 
-              staffCaller.callstatus.pendingCalls =
-                staffCaller.callstatus.pendingCalls
-
-              staffCaller.callstatus.totalDuration =
-                staffCaller.callstatus.totalDuration +
-                calldata.timedata.duration
+              staffCaller.callstatus.totalDuration += calldata.timedata.duration
 
               const saved = await staffCaller.save()
               if (saved) {
@@ -476,40 +464,27 @@ export const customerCallRegistration = async (req, res) => {
             }
           } else {
             const adminCaller = await Admin.findOne({
-              name: Name
+              _id: Id
             })
             if (adminCaller) {
               if (calldata.formdata.status === "pending") {
-                adminCaller.callstatus.totalCall =
-                  adminCaller.callstatus.totalCall + 1
+                adminCaller.callstatus.totalCall += 1
 
-                adminCaller.callstatus.pendingCalls =
-                  adminCaller.callstatus.pendingCalls + 1
-                adminCaller.callstatus.solvedCalls =
-                  adminCaller.callstatus.solvedCalls
-                adminCaller.callstatus.colleagueSolved =
-                  adminCaller.callstatus.colleagueSolved
-                adminCaller.callstatus.totalDuration =
-                  adminCaller.callstatus.totalDuration +
+                adminCaller.callstatus.pendingCalls += 1
+
+                adminCaller.callstatus.totalDuration +=
                   calldata.timedata.duration
+
                 const pendingAdminSaved = await adminCaller.save()
                 if (pendingAdminSaved) {
                   return res.status(200).json({ message: "All success" })
                 }
               } else if (calldata.formdata.status === "solved") {
-                adminCaller.callstatus.totalCall =
-                  adminCaller.callstatus.totalCall + 1
+                adminCaller.callstatus.totalCall += 1
 
-                adminCaller.callstatus.solvedCalls =
-                  adminCaller.callstatus.solvedCalls + 1
-                adminCaller.callstatus.colleagueSolved =
-                  adminCaller.callstatus.colleagueSolved
+                adminCaller.callstatus.solvedCalls += 1
 
-                adminCaller.callstatus.pendingCalls =
-                  adminCaller.callstatus.pendingCalls
-
-                adminCaller.callstatus.totalDuration =
-                  adminCaller.callstatus.totalDuration +
+                adminCaller.callstatus.totalDuration +=
                   calldata.timedata.duration
 
                 const saved = await adminCaller.save()
@@ -523,6 +498,7 @@ export const customerCallRegistration = async (req, res) => {
       }
     } else {
       //If no document is found, create a new one with the given call data
+
       const newCall = new CallRegistration({
         customerid: customerId,
         customerName: customer,
@@ -532,43 +508,32 @@ export const customerCallRegistration = async (req, res) => {
       // Save the new document
       const updatedCall = await newCall.save()
       if (updatedCall) {
-        const Name = calldata.userName
+        const Id = calldata.formdata.attendedBy.callerId
 
         const staffCaller = await Staff.findOne({
-          name: Name
+          _id: Id
         })
 
         ////
         if (staffCaller) {
           if (calldata.formdata.status === "pending") {
-            staffCaller.callstatus.totalCall =
-              staffCaller.callstatus.totalCall + 1
+            staffCaller.callstatus.totalCall += 1
 
-            staffCaller.callstatus.pendingCalls =
-              staffCaller.callstatus.pendingCalls + 1
-            staffCaller.callstatus.solvedCalls =
-              staffCaller.callstatus.solvedCalls
-            staffCaller.callstatus.colleagueSolved =
-              staffCaller.callstatus.colleagueSolved
-            staffCaller.callstatus.totalDuration =
-              staffCaller.callstatus.totalDuration + calldata.timedata.duration
+            staffCaller.callstatus.pendingCalls += 1
+
+            staffCaller.callstatus.totalDuration += calldata.timedata.duration
+
             const pendingSavedStaff = await staffCaller.save()
 
             if (pendingSavedStaff) {
               return res.status(200).json({ message: "all successed" })
             }
           } else if (calldata.formdata.status === "solved") {
-            staffCaller.callstatus.totalCall =
-              staffCaller.callstatus.totalCall + 1
+            staffCaller.callstatus.totalCall += 1
 
-            staffCaller.callstatus.solvedCalls =
-              staffCaller.callstatus.solvedCalls + 1
+            staffCaller.callstatus.solvedCalls += 1
 
-            staffCaller.callstatus.pendingCalls =
-              staffCaller.callstatus.pendingCalls
-
-            staffCaller.callstatus.totalDuration =
-              staffCaller.callstatus.totalDuration + calldata.timedata.duration
+            staffCaller.callstatus.totalDuration += calldata.timedata.duration
 
             const saved = await staffCaller.save()
             if (saved) {
@@ -577,41 +542,26 @@ export const customerCallRegistration = async (req, res) => {
           }
         } else {
           const adminCaller = await Admin.findOne({
-            name: Name
+            _id: Id
           })
           if (adminCaller) {
             if (calldata.formdata.status === "pending") {
-              adminCaller.callstatus.totalCall =
-                adminCaller.callstatus.totalCall + 1
+              adminCaller.callstatus.totalCall += 1
 
-              adminCaller.callstatus.pendingCalls =
-                adminCaller.callstatus.pendingCalls + 1
-              adminCaller.callstatus.solvedCalls =
-                adminCaller.callstatus.solvedCalls
-              adminCaller.callstatus.colleagueSolved =
-                adminCaller.callstatus.colleagueSolved
-              adminCaller.callstatus.totalDuration =
-                adminCaller.callstatus.totalDuration +
-                calldata.timedata.duration
+              adminCaller.callstatus.pendingCalls += 1
+
+              adminCaller.callstatus.totalDuration += calldata.timedata.duration
+
               const pendingAdminSaved = await adminCaller.save()
               if (pendingAdminSaved) {
                 return res.status(200).json({ message: "All success" })
               }
             } else if (calldata.formdata.status === "solved") {
-              adminCaller.callstatus.totalCall =
-                adminCaller.callstatus.totalCall + 1
+              adminCaller.callstatus.totalCall += 1
 
-              adminCaller.callstatus.solvedCalls =
-                adminCaller.callstatus.solvedCalls + 1
-              adminCaller.callstatus.colleagueSolved =
-                adminCaller.callstatus.colleagueSolved
+              adminCaller.callstatus.solvedCalls += 1
 
-              adminCaller.callstatus.pendingCalls =
-                adminCaller.callstatus.pendingCalls
-
-              adminCaller.callstatus.totalDuration =
-                adminCaller.callstatus.totalDuration +
-                calldata.timedata.duration
+              adminCaller.callstatus.totalDuration += calldata.timedata.duration
 
               const saved = await adminCaller.save()
               if (saved) {
@@ -630,44 +580,106 @@ export const customerCallRegistration = async (req, res) => {
     })
   }
 }
-
-const updateProcessedAttendees = async (processedAttendedBy) => {
+const updateProcessedAttendees = async (processedAttendedBy, attendedId) => {
   const updateResults = []
 
+  // Helper function to update call status
+  const updateCallStatus = async (user, callerId) => {
+    user.callstatus.pendingCalls -= 1
+    user.callstatus.colleagueSolved = callerId.equals(attendedId)
+      ? user.callstatus.colleagueSolved
+      : user.callstatus.colleagueSolved + 1
+    user.callstatus.solvedCalls = callerId.equals(attendedId)
+      ? user.callstatus.solvedCalls + 1
+      : user.callstatus.solvedCalls
+    // Save the updated document
+    await user.save()
+  }
+
   for (const item of processedAttendedBy) {
-    const { name } = item
+    const { callerId } = item
 
     try {
-      // Find the staff member by name
-      let staff = await Staff.findOne({ name })
+      // Try finding staff with the given callerId
+      let user = await Staff.findOne({ _id: callerId })
 
-      if (staff) {
-        // Update the pendingCalls and colleagueSolved fields
-        staff.callstatus.pendingCalls = staff.callstatus.pendingCalls - 1
-        staff.callstatus.colleagueSolved = staff.callstatus.colleagueSolved + 1
-        staff.callstatus.solvedCalls = staff.callstatus.solvedCalls
-        staff.callstatus.totalCall = staff.callstatus.totalCall
-        staff.callstatus.totalDuration = staff.callstatus.totalDuration
-        // Save the updated document
-        await staff.save()
+      // If not found in Staff, search in Admin
+      if (!user) {
+        user = await Admin.findOne({ _id: callerId })
+      }
+
+      // If either staff or admin is found, update their call status
+      if (user) {
+        const a = await updateCallStatus(user, callerId)
 
         // Record success status for this item
-        updateResults.push({ name, status: "success" })
+        updateResults.push({ callerId, status: "success" })
       } else {
-        console.error(`Staff member not found with name: ${name}`)
-        // Record failure status for this item
-        updateResults.push({ name, status: "not found" })
+        // Record not found status if neither staff nor admin is found
+        updateResults.push({ callerId, status: "not found" })
       }
     } catch (error) {
-      console.error(`Error updating call status for ${name}:`, error)
+      console.error(`Error updating call status for ${callerId}:`, error)
       // Record error status for this item
-      updateResults.push({ name, status: "error", error: error.message })
+      updateResults.push({ callerId, status: "error", error: error.message })
     }
   }
 
   // Return the final status after all updates
   return updateResults
 }
+
+// const updateProcessedAttendees = async (processedAttendedBy, attendedId) => {
+//   const updateResults = []
+
+//   for (const item of processedAttendedBy) {
+//     const { callerId } = item
+
+//     try {
+//       // Find the staff member by name
+//       let staff = await Staff.findOne({ _id: callerId })
+
+//       if (staff) {
+//         // Update the pendingCalls and colleagueSolved fields
+//         staff.callstatus.pendingCalls = staff.callstatus.pendingCalls - 1
+//         staff.callstatus.colleagueSolved = callerId.equals(attendedId)
+//           ? staff.callstatus.colleagueSolved
+//           : staff.callstatus.colleagueSolved + 1
+//         staff.callstatus.solvedCalls = staff.callstatus.solvedCalls
+//         staff.callstatus.totalCall = staff.callstatus.totalCall
+//         staff.callstatus.totalDuration = staff.callstatus.totalDuration
+//         // Save the updated document
+//         await staff.save()
+
+//         // Record success status for this item
+//         updateResults.push({ callerId, status: "success" })
+//       }
+//       let admin = await Admin.findOne({ _id: callerId })
+//       if (admin) {
+//         // Update the pendingCalls and colleagueSolved fields
+//         admin.callstatus.pendingCalls-=1
+//         admin.callstatus.colleagueSolved = callerId.equals(attendedId)
+//           ? admin.callstatus.colleagueSolved
+//           : admin.callstatus.colleagueSolved + 1
+//         admin.callstatus.solvedCalls = admin.callstatus.solvedCalls
+//         admin.callstatus.totalCall = admin.callstatus.totalCall
+//         admin.callstatus.totalDuration = admin.callstatus.totalDuration
+//         // Save the updated document
+//         await admin.save()
+
+//         // Record success status for this item
+//         updateResults.push({ callerId, status: "success" })
+//       }
+//     } catch (error) {
+//       console.error(`Error updating call status for ${callerId}:`, error)
+//       // Record error status for this item
+//       updateResults.push({ callerId, status: "error", error: error.message })
+//     }
+//   }
+
+//   // Return the final status after all updates
+//   return updateResults
+// }
 
 export const GetCallRegister = async (req, res) => {
   try {
