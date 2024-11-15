@@ -61,7 +61,6 @@ io.on("connection", (socket) => {
 
       // Function to batch populate the attendedBy field
       async function populateAttendedBy(attendedByArray) {
-      
         const callerIds = attendedByArray
           .filter((attendee) => attendee.callerId)
           .map((attendee) => attendee.callerId)
@@ -120,9 +119,10 @@ io.on("connection", (socket) => {
             )
           }
 
-          if (callEntry.formdata.completedBy) {
+          if (callEntry.formdata.completedBy.length>0) {
+            console.log("mid", callEntry.formdata.completedBy)
             // Populate completedBy field (single object)
-            const { callerId, role } = callEntry.formdata.completedBy[0]
+            const { callerId, role } = callEntry?.formdata?.completedBy[0]
 
             if (callerId) {
               const model = role === "Staff" ? "Staff" : "Admin"

@@ -70,10 +70,11 @@ const CallregistrationList = () => {
           const allCallRegistrations = calls.flatMap(
             (call) => call.callregistration
           )
-
+          console.log(calls)
           setCallList(calls)
           setUserCallstatus(user.callstatus)
         } else {
+          console.log(calls)
           const userBranchName = new Set(
             users.selected.map((branch) => branch.branchName)
           )
@@ -291,7 +292,6 @@ const CallregistrationList = () => {
     const secs = seconds % 60
     return `${hrs} hr ${mins} min ${secs} sec`
   }
-  
 
   return (
     <div className="container mx-auto  p-5 ">
@@ -759,22 +759,26 @@ const CallregistrationList = () => {
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {Array.isArray(item?.formdata?.attendedBy)
                                 ? item.formdata.attendedBy
-                                    .map(
-                                      (attendee) =>
-                                        attendee.callerId.name || attendee
-                                    )
+                                    ?.map((attendee) => {
+                                      console.log(attendee)
+
+                                      return attendee?.name || attendee
+                                    })
                                     .join(", ")
-                                : item.formdata.attendedBy}
+                                : item?.formdata?.attendedBy}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {/* {item?.formdata?.completedBy?.name} */}
                               {Array.isArray(item?.formdata?.completedBy)
                                 ? item.formdata.completedBy
-                                    .map(
-                                      (attendee) => attendee.name || attendee
-                                    )
+                                    ?.map((attendee) => {
+                                      console.log(attendee)
+                                      return (
+                                        attendee?.callerId?.name || attendee
+                                      )
+                                    })
                                     .join(", ")
-                                : item.formdata.completedBy}
+                                : item?.formdata?.completedBy}
                             </td>
                             <td className="px-2 py-2 text-xl w-12 text-blue-800"></td>
                           </tr>
