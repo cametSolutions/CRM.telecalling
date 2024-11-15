@@ -6,6 +6,7 @@ import bcrypt from "bcrypt"
 
 import generateToken from "../utils/generateToken.js"
 import LeaveRequest from "../model/primaryUser/leaveRequestSchema.js"
+import CallRegistration from "../model/secondaryUser/CallRegistrationSchema.js"
 export const resetCallStatus = async (req, res) => {
   const { adminid } = req.query
 
@@ -610,5 +611,89 @@ export const DeleteUser = async (req, res) => {
   } catch (error) {
     console.error(error)
     return res.status(500).json({ message: "Server error" })
+  }
+}
+export const GetStaffCallList = async (req, res) => {
+  try {
+    const staff = await Staff.find()
+    if (staff) {
+      return res.status(200).json({ message: "Staff founds", data: staff })
+    }
+  } catch (error) {
+    console.log(error.message)
+    return res.status(500).json({ message: "internal server error" })
+  }
+}
+export const GetindividualStaffCall = async (req, res) => {
+  try {
+    const startDate = new Date("2024-11-15T00:00:00.000Z")
+
+    const calls = await CallRegistration.aggregate([
+      {
+        $project: {
+          _id: 1, // Include the _id field
+          customerid: 1, // Include the customerid field
+          callregistration: {
+            $filter: {
+              input: "$callregistration", // The array to filter
+              as: "call", // Alias for each element in the array
+              cond: { $gte: ["$$call.timedata.startTime", startDate] } // Condition to match startTime
+            }
+          }
+        }
+      },
+      {
+        // Optionally, you can add a match stage to exclude documents without any valid calls in the array
+        $match: {
+          "callregistration.0": { $exists: true } // Ensure there is at least one matching call in the array
+        }
+      }
+    ])
+    // Now use populate to fetch customer details using the customerid
+    const populatedCalls = await CallRegistration.populate(calls, {
+      path: "customerid", // The field you want to populate
+      select: "customerName " // Fields to include in the populated customer
+    })
+    // const calls = await CallRegistration.aggregate([
+    //   {
+    //     $project: {
+    //       // Only include the calls that match the startDate in the 'callregistration' array
+    //       callregistration: {
+    //         $filter: {
+    //           input: "$callregistration", // The array to filter
+    //           as: "call", // Alias for each element in the array
+    //           cond: { $gte: ["$$call.timedata.startTime", startDate] } // Condition to match startTime
+    //         }
+    //       }
+    //     }
+    //   },
+    //   {
+    //     // Optionally, you can add a match stage to exclude documents without any valid calls in the array
+    //     $match: {
+    //       "callregistration.0": { $exists: true } // Ensure there is at least one matching call in the array
+    //     }
+    //   }
+    // ]);
+    ////
+    // const startDate = new Date("2024-11-15").toISOString().split("T")[0]
+    // const calls = await CallRegistration.find({
+    //   "callregistration.timedata.startTime": {
+    //     $gte: startDate // Fetch calls with startTime greater than or equal to this date
+    //   }
+    // })
+
+    console.log("abhiiiiii")
+    console.log("calllsddddd", calls)
+    if (calls) {
+      // Respond with the filtered call data
+      return res
+        .status(200)
+        .json({ message: "Matched calls found", data: populatedCalls })
+    }
+  } catch (error) {
+    console.error("Error fetching staff call data:", error)
+    return res
+      .status(500)
+      .json({ message: "An error occurred while fetching data." })
   }
 }

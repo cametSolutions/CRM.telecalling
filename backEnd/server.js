@@ -119,8 +119,7 @@ io.on("connection", (socket) => {
             )
           }
 
-          if (callEntry.formdata.completedBy.length>0) {
-            console.log("mid", callEntry.formdata.completedBy)
+          if (callEntry.formdata.completedBy.length > 0) {
             // Populate completedBy field (single object)
             const { callerId, role } = callEntry?.formdata?.completedBy[0]
 

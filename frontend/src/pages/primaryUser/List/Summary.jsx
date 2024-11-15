@@ -1,25 +1,37 @@
 import { useEffect, useState } from "react"
+import api from "../../../api/api"
 import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles"
 import UseFetch from "../../../hooks/useFetch"
 import io from "socket.io-client" // Import Socket.IO client
-// const socket = io("http://localhost:9000")
+const socket = io("http://localhost:9000")
 
 const Summary = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   const [pendingCallsCount, setPendingCallsCount] = useState(0)
   const [todayCallsCount, setTodayCallsCount] = useState(0)
   const [solvedCallsCount, setTodaysSolvedCount] = useState(0)
+  const [selectedUser, setSelectedUser] = useState(null)
   const [Calls, setCalls] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [customerSummary, setCustomerSummary] = useState([])
   const [customerCalls, setCustomerCalls] = useState([])
   const [callList, setCallList] = useState([])
+  const [userList, setUserList] = useState([])
   const [branch, setBranch] = useState([])
+  const [indiviDualCallList, setIndividualCallList] = useState([])
   const { data: branches } = UseFetch("/branch/getBranch")
   const [users, setUsers] = useState(null)
   const [selectedBranch, setSelectedBranch] = useState("All")
   const [isToggled, setIsToggled] = useState(false)
+  const [data, setData] = useState([])
+  const { data: staffCallList } = UseFetch("/auth/staffcallList")
+  useEffect(() => {
+    if (staffCallList) {
+      console.log(staffCallList)
+      setIndividualCallList(staffCallList)
+    }
+  }, [staffCallList])
 
   useEffect(() => {
     if (branches) {
@@ -31,59 +43,84 @@ const Summary = () => {
   }, [branches])
 
   useEffect(() => {
-    if(isToggled){
-      
-
-    }else{
-      const customerSummaries = callList
-      .filter(
-        (customer) =>
-          selectedBranch === "All" ||
-          customer.callregistration.some((call) =>
-            call.branchName.includes(selectedBranch)
-          )
-      )
-      .map((customer) => {
-        const totalCalls = customer.callregistration.length
-        const solvedCalls = customer.callregistration.filter(
-          (call) => call.formdata.status === "solved"
-        ).length
-
-        const pendingCalls = totalCalls - solvedCalls
-        const today = new Date().toISOString().split("T")[0]
-        console.log(today)
-        const todaysCalls = customer.callregistration.filter(
-          (call) =>
-            new Date(call?.timedata?.startTime).toISOString().split("T")[0] ===
-            today
-        ).length
-        console.log(todaysCalls)
-
-        return {
-          customerId: customer._id,
-          customerName: customer.customerName,
-          totalCalls,
-          solvedCalls,
-          pendingCalls,
-          todaysCalls
-        }
-      })
-
-    setCustomerSummary(customerSummaries)
+    const fetchUserList = async () => {
+      try {
+        const response = await api.get("/auth/getStaffCallStatus")
+        setData(response.data.data)
+        setUserList(response.data.data)
+      } catch (error) {
+        console.error("Error fetching user list:", error)
+      }
     }
-   
+    if (isToggled) {
+      if (userList && userList.length > 0) {
+        const staffCallStatus = userList.filter((user) => {
+          if (selectedBranch === "All") {
+            return true // Include all users if "All" is selected
+          }
+
+          const branchMatch = user.selected.some((item) => {
+            return item.branchName === selectedBranch
+          })
+
+          return branchMatch
+        })
+
+        if (staffCallStatus) {
+          setUserList(staffCallStatus)
+        }
+      } else {
+        fetchUserList()
+      }
+    } else {
+      const customerSummaries = callList
+        .filter(
+          (customer) =>
+            selectedBranch === "All" ||
+            customer.callregistration.some((call) =>
+              call.branchName.includes(selectedBranch)
+            )
+        )
+        .map((customer) => {
+          const totalCalls = customer.callregistration.length
+          const solvedCalls = customer.callregistration.filter(
+            (call) => call.formdata.status === "solved"
+          ).length
+
+          const pendingCalls = totalCalls - solvedCalls
+          const today = new Date().toISOString().split("T")[0]
+
+          const todaysCalls = customer.callregistration.filter(
+            (call) =>
+              new Date(call?.timedata?.startTime)
+                .toISOString()
+                .split("T")[0] === today
+          ).length
+
+          return {
+            customerId: customer._id,
+            customerName: customer.customerName,
+            totalCalls,
+            solvedCalls,
+            pendingCalls,
+            todaysCalls
+          }
+        })
+
+      setCustomerSummary(customerSummaries)
+    }
   }, [callList, selectedBranch, isToggled])
-  
+
   useEffect(() => {
     if (isModalOpen && selectedCustomer) {
       const customerData = callList
         .filter((customer) => customer._id === selectedCustomer) // Filter for the selected customer
         .map((customer) => {
           const today = new Date().toISOString().slice(0, 10) // Get today's date in YYYY-MM-DD format
-          console.log(today)
+
           // Get all calls for the selected customer
           const allCalls = customer.callregistration.map((call) => call)
-          console.log(allCalls)
+
           // Calculate summary counts
           const totalCalls = allCalls.length
           const solvedCalls = allCalls.filter(
@@ -106,7 +143,7 @@ const Summary = () => {
             allCalls // Detailed call records for listing in a table
           }
         })[0] // Assuming there's only one customer with this name
-      console.log(customerData)
+
       // Get today's date in YYYY-MM-DD format
       const today = new Date().toISOString().slice(0, 10)
       // Sort calls: pending calls first, today's calls second, and solved calls last
@@ -129,12 +166,69 @@ const Summary = () => {
       })
       setCustomerCalls(customerData)
       setCalls(sortedCalls)
+    }
+    if (isModalOpen && selectedUser) {
+      const today = new Date().toISOString().split("T")[0] // Today's date in 'YYYY-MM-DD' format
 
-      console.log(sortedCalls)
+      // Filter the list by customerid
+      const customerData = individuallist.filter(
+        (item) => item.customerid._id === selectedUser
+      )
+
+      // Initialize counters for different types of calls
+      let pendingCalls = 0
+      let solvedCalls = 0
+      let colleagueSolvedCalls = 0 // For calls solved by a colleague
+      let todaysCalls = 0
+      let totalCalls = 0
+
+      // Map through the call registrations and categorize them
+      const callStats = customerData.map((customer) => {
+        const calls = customer.callregistration.map((call) => {
+          // Increment total calls
+          totalCalls++
+
+          // Check if it's today's call
+          const callDate = new Date(call.timedata.startTime)
+            .toISOString()
+            .split("T")[0]
+          if (callDate === today) {
+            todaysCalls++
+          }
+
+          // Check if the last item in attendedBy array has the selected customer's callerId
+          const lastAttendedBy =
+            call.formdata.attendedBy[call.formdata.attendedBy.length - 1]
+
+          if (call.formdata.status === "solved") {
+            if (
+              lastAttendedBy &&
+              lastAttendedBy.callerId === selectedCustomerId
+            ) {
+              solvedCalls++ // Increment solved calls for the selected customer
+            } else {
+              colleagueSolvedCalls++ // Increment colleague's solved calls
+            }
+          } else {
+            pendingCalls++ // Increment pending calls
+          }
+
+          return call // Return the call object if needed for further processing
+        })
+
+        // Return stats for this customer
+        return {
+          customerid: customer.customerid._id,
+          totalCalls,
+          solvedCalls,
+          colleagueSolvedCalls,
+          pendingCalls,
+          todaysCalls
+        }
+      })
     }
   }, [isModalOpen])
-  console.log(customerCalls)
-  console.log(customerSummary)
+
   useEffect(() => {
     if (branch) {
       socket.emit("updatedCalls")
@@ -174,8 +268,9 @@ const Summary = () => {
       }
     }
   }, [branch, users])
-  console.log(customerSummary)
+
   const handleChange = (event) => {
+    setUserList(data)
     const selected = event.target.value
     if (selected === "All") {
       setSelectedBranch("All")
@@ -184,17 +279,18 @@ const Summary = () => {
       setSelectedBranch(branchDetails ? branchDetails.branchName : "All")
     }
   }
-  console.log(customerSummary)
+
   const toggle = () => setIsToggled(!isToggled)
-  const openModal = (customerid) => {
-    console.log(customerid)
-    setSelectedCustomer(customerid)
+  const openModal = (id) => {
+    if (isToggled) {
+      setSelectedUser(id)
+    } else {
+      setSelectedCustomer(id)
+    }
     setIsModalOpen(true)
   }
-  console.log(customerSummary)
 
   const closeModal = () => {
-    console.log("hii")
     setIsModalOpen(false)
     setSelectedCustomer(null)
   }
@@ -253,7 +349,10 @@ const Summary = () => {
         </div>
         <div className="flex justify-between">
           <div className="text-blue-700">
-            {customerSummary.length} Total Customers
+            {/* {customerSummary.length} Total Customers */}
+            {isToggled
+              ? `Total Staff-${userList.length}`
+              : `Total customer-${customerSummary.length}`}
           </div>
           <div></div>
         </div>
@@ -275,16 +374,74 @@ const Summary = () => {
                   <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
                     Pending Calls
                   </th>
-                  <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
-                    Today's Calls
-                  </th>
+                  {isToggled && (
+                    <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                      Colleague Solved
+                    </th>
+                  )}
+                  {!isToggled && (
+                    <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                      Today's Calls
+                    </th>
+                  )}
+
                   <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
                     View
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {customerSummary.map((customer) => (
+                {Array.isArray(isToggled ? userList : customerSummary) ? (
+                  (isToggled ? userList : customerSummary).map((item) => (
+                    <tr key={item._id || item.customerId}>
+                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm">
+                        {isToggled ? item.name : item.customerName}
+                      </td>
+                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                        {isToggled
+                          ? item.callstatus.totalCall
+                          : item.totalCalls}
+                      </td>
+                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                        {isToggled
+                          ? item.callstatus.solvedCalls
+                          : item.solvedCalls}
+                      </td>
+                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                        {isToggled
+                          ? item.callstatus.pendingCalls
+                          : item.pendingCalls}
+                      </td>
+                      {isToggled && (
+                        <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                          {item.callstatus.colleagueSolved}
+                        </td>
+                      )}
+                      {!isToggled && (
+                        <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                          {item.todaysCalls}
+                        </td>
+                      )}
+
+                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                        <button
+                          onClick={() => openModal(item._id || item.customerId)}
+                          className="text-blue-500 hover:text-blue-700"
+                        >
+                          View Calls
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="7" className="text-center py-4">
+                      No data available
+                    </td>
+                  </tr>
+                )}
+
+                {/* {customerSummary.map((customer) => (
                   <tr key={customer.customerName}>
                     <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm">
                       {customer.customerName}
@@ -310,7 +467,7 @@ const Summary = () => {
                       </button>
                     </td>
                   </tr>
-                ))}
+                ))} */}
               </tbody>
             </table>
           </div>
@@ -439,9 +596,7 @@ const Summary = () => {
 
                       const isCompletedToday = call.formdata.status === "solved"
                       const isPast = callDate < today
-                      console.log(isCompletedToday)
-                      console.log(isToday)
-                      console.log(isPast)
+
                       // Determine row color based on conditions
                       const rowColor = isCompletedToday
                         ? "linear-gradient(135deg, rgba(0, 140, 0, 1), rgba(128, 255, 128, 1))"
