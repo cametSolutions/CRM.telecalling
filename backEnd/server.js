@@ -61,7 +61,7 @@ io.on("connection", (socket) => {
 
       // Function to batch populate the attendedBy field
       async function populateAttendedBy(attendedByArray) {
-        console.log("attttednnnd")
+      
         const callerIds = attendedByArray
           .filter((attendee) => attendee.callerId)
           .map((attendee) => attendee.callerId)
@@ -119,22 +119,19 @@ io.on("connection", (socket) => {
               callEntry.formdata.attendedBy
             )
           }
-          console.log("hiiii")
 
           if (callEntry.formdata.completedBy) {
-            console.log("commmmmmm")
             // Populate completedBy field (single object)
             const { callerId, role } = callEntry.formdata.completedBy[0]
-            console.log("calleriedssdsdsds",callEntry.formdata.completedBy)
+
             if (callerId) {
-              console.log("callerid", callerId)
               const model = role === "Staff" ? "Staff" : "Admin"
               try {
                 const populatedCompletedBy = await mongoose
                   .model(model)
                   .findById(callerId)
                   .select("name")
-                console.log("completedbu", populatedCompletedBy)
+
                 callEntry.formdata.completedBy = populatedCompletedBy
               } catch (error) {
                 console.error("Error populating completedBy:", error)
