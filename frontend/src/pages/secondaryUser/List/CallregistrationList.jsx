@@ -264,7 +264,9 @@ const CallregistrationList = () => {
   // }
 
   // const handleupdateadmin = async () => {
+  //   console.log(users._id)
   //   const id = users._id
+  //   // const id ="67220ce51c400b86242fe178"
 
   //   const url = `http://localhost:9000/api/auth/resetAdminstatus?adminid=${encodeURIComponent(
   //     id
@@ -289,6 +291,7 @@ const CallregistrationList = () => {
     const secs = seconds % 60
     return `${hrs} hr ${mins} min ${secs} sec`
   }
+  
 
   return (
     <div className="container mx-auto  p-5 ">
@@ -571,7 +574,8 @@ const CallregistrationList = () => {
                               {Array.isArray(item?.formdata?.attendedBy)
                                 ? item.formdata.attendedBy
                                     .map(
-                                      (attendee) => attendee.name || attendee
+                                      (attendee) =>
+                                        attendee.callerId?.name || attendee
                                     )
                                     .join(", ")
                                 : item.formdata.attendedBy}
@@ -630,7 +634,7 @@ const CallregistrationList = () => {
                             </td>
 
                             <td
-                              colSpan="2"
+                              colSpan="3"
                               className="py-1 px-8 text-sm text-black text-left"
                             >
                               <strong>Duration:</strong>{" "}
@@ -650,11 +654,12 @@ const CallregistrationList = () => {
                                 )} days`}
                               </span>
                               <span className="ml-1">
-                                {item?.timedata?.duration || "N/A"}
+                                {formatDuration(item?.timedata?.duration) ||
+                                  "N/A"}
                               </span>
                             </td>
                             <td
-                              colSpan="6"
+                              colSpan="5"
                               className="py-1 px-12 text-sm text-black text-right"
                             >
                               <strong>Solution:</strong>{" "}
@@ -752,22 +757,24 @@ const CallregistrationList = () => {
                               {item?.formdata?.status}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {/* {item?.formdata?.attendedBy} */}
-                              {/* {Array.isArray(item?.formdata?.attendedBy)
-                                ? item.formdata.attendedBy
-                                    .map((attendee) => attendee.name)
-                                    .join(", ")
-                                : item.formdata.attendedBy} */}
                               {Array.isArray(item?.formdata?.attendedBy)
                                 ? item.formdata.attendedBy
+                                    .map(
+                                      (attendee) =>
+                                        attendee.callerId.name || attendee
+                                    )
+                                    .join(", ")
+                                : item.formdata.attendedBy}
+                            </td>
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                              {/* {item?.formdata?.completedBy?.name} */}
+                              {Array.isArray(item?.formdata?.completedBy)
+                                ? item.formdata.completedBy
                                     .map(
                                       (attendee) => attendee.name || attendee
                                     )
                                     .join(", ")
-                                : ""}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {item?.formdata?.completedBy}
+                                : item.formdata.completedBy}
                             </td>
                             <td className="px-2 py-2 text-xl w-12 text-blue-800"></td>
                           </tr>
@@ -791,17 +798,33 @@ const CallregistrationList = () => {
                               {item?.formdata?.description || "N/A"}
                             </td>
                             <td
-                              colSpan="2"
+                              colSpan="3"
                               className="py-1 px-8 text-sm text-black text-left"
                             >
                               <strong>Duration:</strong>
+                              <span className="ml-2">
+                                {`${Math.floor(
+                                  (new Date(
+                                    item?.formdata?.status === "solved"
+                                      ? item.timedata?.endTime // Use end date if the call is solved
+                                      : new Date().setHours(0, 0, 0, 0) // Use today's date at midnight if not solved
+                                  ) -
+                                    new Date(
+                                      new Date(
+                                        item.timedata?.startTime
+                                      ).setHours(0, 0, 0, 0)
+                                    )) /
+                                    (1000 * 60 * 60 * 24)
+                                )} days`}
+                              </span>
 
                               <span className="ml-1">
-                                {item?.timedata?.duration || "N/A"}
+                                {formatDuration(item?.timedata?.duration) ||
+                                  "N/A"}
                               </span>
                             </td>
                             <td
-                              colSpan="6"
+                              colSpan="5"
                               className="py-1 px-12 text-sm text-black text-right"
                             >
                               <strong>Solution:</strong>{" "}

@@ -12,7 +12,7 @@ const CallRegistrationSchema = new mongoose.Schema(
     },
     callregistration: [
       {
-        userName: String,
+        
         product: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Product" // Reference to Product schema
@@ -32,7 +32,7 @@ const CallRegistrationSchema = new mongoose.Schema(
           solution: String,
           status: String,
           attendedBy: [],
-          completedBy: String
+          completedBy: []
         }
       }
     ]

@@ -229,21 +229,26 @@ export default function CallRegistration() {
 
       if (updatedformData.status === "pending") {
         updatedformData.attendedBy = {
-          name: user.name,
+          callerId: user._id,
+          role: user.role,
           duration: timeData.duration
         }
 
         updatedformData.completedBy = "" // Clear completedBy if status is pending
       } else if (updatedformData.status === "solved") {
         updatedformData.attendedBy = {
-          name: user.name,
+          callerId: user._id,
+          role: user.role,
           duration: timeData.duration
+        }
+        updatedformData.completedBy = {
+          callerId: user._id,
+          role: user.role
         }
         // Set both attendedBy and completedBy if status is solved
       }
 
       const calldata = {
-        userName: user.name,
         product: selectedProducts.product_id,
         license: selectedProducts.licensenumber,
         branchName:
@@ -269,6 +274,8 @@ export default function CallRegistration() {
         toast.success(response.data.message)
         socket.emit("updatedCalls")
         refreshHook()
+      } else {
+        toast.error(response.data.message)
       }
     } else {
       const timeData = {
@@ -281,21 +288,26 @@ export default function CallRegistration() {
 
       if (updatedformData.status === "pending") {
         updatedformData.attendedBy = {
-          name: user.name,
+          callerId: user._id,
+          role: user.role,
           duration: timeData.duration
         }
 
         updatedformData.completedBy = "" // Clear completedBy if status is pending
       } else if (updatedformData.status === "solved") {
         updatedformData.attendedBy = {
-          name: user.name,
+          callerId: user._id,
+          role: user.role,
           duration: timeData.duration
+        }
+        updatedformData.completedBy = {
+          callerId: user._id,
+          role: user.role
         }
         // Set both attendedBy and completedBy if status is solved
       }
 
       const calldata = {
-        userName: user.name,
         product: selectedProducts.product_id,
         license: selectedProducts.licensenumber,
         branchName:
@@ -324,7 +336,7 @@ export default function CallRegistration() {
 
         socket.emit("updatedCalls")
       } else {
-        toast.error(response.message)
+        toast.error(response.data.message)
       }
     }
   }
@@ -1037,7 +1049,7 @@ export default function CallRegistration() {
                                     : call.formdata?.attendedBy}
                                 </td>
                                 <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                  {call.formdata?.completedBy}
+                                  {/* {call.formdata?.completedBy} */}
                                 </td>
                                 <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
                                   {call.formdata?.status}
