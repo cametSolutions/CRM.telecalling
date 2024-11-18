@@ -12,7 +12,7 @@ export const resetCallStatus = async (req, res) => {
 
   const objectId = new mongoose.Types.ObjectId(adminid)
   try {
-    const a = await Staff.updateOne(
+    const a = await Admin.updateOne(
       { _id: objectId }, // Find the user by their ID
       {
         $set: {
@@ -626,7 +626,7 @@ export const GetStaffCallList = async (req, res) => {
 }
 export const GetindividualStaffCall = async (req, res) => {
   try {
-    const startDate = new Date("2024-11-15T00:00:00.000Z")
+    const startDate = new Date("2024-11-16T00:00:00.000Z")
 
     const calls = await CallRegistration.aggregate([
       {
@@ -650,10 +650,54 @@ export const GetindividualStaffCall = async (req, res) => {
       }
     ])
     // Now use populate to fetch customer details using the customerid
-    const populatedCalls = await CallRegistration.populate(calls, {
-      path: "customerid", // The field you want to populate
-      select: "customerName " // Fields to include in the populated customer
-    })
+    const populatedCalls = await CallRegistration.populate(calls, [
+      {
+        path: "customerid", // The field you want to populate
+        select: "customerName " // Fields to include in the populated customer
+      },
+      {
+        path: "callregistration.product", // Populate the product field inside callregistration array
+        select: "productName" // Optionally select fields from the Product schema you need
+      }
+    ])
+    for (const call of populatedCalls) {
+      for (const registration of call.callregistration) {
+        // Ensure attendedBy is an array
+        if (Array.isArray(registration.formdata.attendedBy)) {
+          // Fetch attendedBy details
+          registration.formdata.attendedBy = await Promise.all(
+            registration.formdata.attendedBy.map(async (attended) => {
+              const user = await Staff.findById(attended.callerId).select(
+                "name"
+              )
+              return {
+                callerId: user?.name
+              }
+            })
+          )
+        } else {
+          registration.attendedBy = [] // Default to an empty array if undefined
+        }
+
+        // Ensure completedBy is an array
+        if (Array.isArray(registration.formdata.completedBy)) {
+          // Fetch completedBy details
+          registration.formdata.completedBy = await Promise.all(
+            registration.formdata.completedBy.map(async (completed) => {
+              const user = await Staff.findById(completed.callerId).select(
+                "name"
+              )
+              return {
+                callerId: user?.name
+              }
+            })
+          )
+        } else {
+          registration.completedBy = [] // Default to an empty array if undefined
+        }
+      }
+    }
+
     // const calls = await CallRegistration.aggregate([
     //   {
     //     $project: {
@@ -683,7 +727,7 @@ export const GetindividualStaffCall = async (req, res) => {
     // })
 
     console.log("abhiiiiii")
-    console.log("calllsddddd", calls)
+
     if (calls) {
       // Respond with the filtered call data
       return res

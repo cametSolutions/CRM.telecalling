@@ -4,6 +4,7 @@ import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles"
 import UseFetch from "../../../hooks/useFetch"
 import io from "socket.io-client" // Import Socket.IO client
+import { UNSAFE_useScrollRestoration } from "react-router-dom"
 const socket = io("http://localhost:9000")
 
 const Summary = () => {
@@ -16,7 +17,9 @@ const Summary = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [customerSummary, setCustomerSummary] = useState([])
   const [customerCalls, setCustomerCalls] = useState([])
+  const [userCalls, setUserCalls] = useState([])
   const [callList, setCallList] = useState([])
+  const [result, setResult] = useState({})
   const [userList, setUserList] = useState([])
   const [branch, setBranch] = useState([])
   const [indiviDualCallList, setIndividualCallList] = useState([])
@@ -25,10 +28,12 @@ const Summary = () => {
   const [selectedBranch, setSelectedBranch] = useState("All")
   const [isToggled, setIsToggled] = useState(false)
   const [data, setData] = useState([])
+  const [loading, setLoading] = useState(true)
   const { data: staffCallList } = UseFetch("/auth/staffcallList")
   useEffect(() => {
     if (staffCallList) {
       console.log(staffCallList)
+
       setIndividualCallList(staffCallList)
     }
   }, [staffCallList])
@@ -73,42 +78,54 @@ const Summary = () => {
         fetchUserList()
       }
     } else {
-      const customerSummaries = callList
-        .filter(
-          (customer) =>
-            selectedBranch === "All" ||
-            customer.callregistration.some((call) =>
-              call.branchName.includes(selectedBranch)
-            )
-        )
-        .map((customer) => {
-          const totalCalls = customer.callregistration.length
-          const solvedCalls = customer.callregistration.filter(
-            (call) => call.formdata.status === "solved"
-          ).length
+      console.log(callList)
+      console.log(loading)
+      console.log(branch)
+      if (callList) {
+        const customerSummaries = callList
+          .filter(
+            (customer) =>
+              selectedBranch === "All" ||
+              customer?.callregistration?.some((call) =>
+                call?.branchName?.includes(selectedBranch)
+              )
+          )
+          .map((customer) => {
+            const totalCalls = customer.callregistration.length
+            const solvedCalls = customer.callregistration.filter(
+              (call) => call.formdata.status === "solved"
+            ).length
 
-          const pendingCalls = totalCalls - solvedCalls
-          const today = new Date().toISOString().split("T")[0]
+            const pendingCalls = totalCalls - solvedCalls
+            const today = new Date().toISOString().split("T")[0]
 
-          const todaysCalls = customer.callregistration.filter(
-            (call) =>
-              new Date(call?.timedata?.startTime)
-                .toISOString()
-                .split("T")[0] === today
-          ).length
+            const todaysCalls = customer.callregistration.filter(
+              (call) =>
+                new Date(call?.timedata?.startTime)
+                  .toISOString()
+                  .split("T")[0] === today
+            ).length
 
-          return {
-            customerId: customer._id,
-            customerName: customer.customerName,
-            totalCalls,
-            solvedCalls,
-            pendingCalls,
-            todaysCalls
-          }
-        })
-
-      setCustomerSummary(customerSummaries)
+            return {
+              customerId: customer._id,
+              customerName: customer.customerName,
+              totalCalls,
+              solvedCalls,
+              pendingCalls,
+              todaysCalls
+            }
+          })
+        if (customerSummaries) {
+          console.log(loading)
+          setCustomerSummary(customerSummaries)
+          // setLoading(false)
+        }
+        console.log(loading)
+      }
     }
+    console.log(callList)
+    console.log(selectedBranch)
+    console.log(isToggled)
   }, [callList, selectedBranch, isToggled])
 
   useEffect(() => {
@@ -164,76 +181,147 @@ const Summary = () => {
 
         return 0
       })
+      console.log(sortedCalls)
       setCustomerCalls(customerData)
       setCalls(sortedCalls)
     }
     if (isModalOpen && selectedUser) {
       const today = new Date().toISOString().split("T")[0] // Today's date in 'YYYY-MM-DD' format
-
+      // Get today's date in YYYY-MM-DD format
+      // const today = new Date().toISOString().slice(0, 10)
       // Filter the list by customerid
-      const customerData = individuallist.filter(
-        (item) => item.customerid._id === selectedUser
-      )
+      console.log(indiviDualCallList)
+      const filteredCalls = indiviDualCallList
+        .map((item) => {
+          const matchedCallregistration = item.callregistration.filter((call) =>
+            call.formdata.attendedBy.some(
+              (attendee) => attendee.callerId === selectedUser
+            )
+          )
 
-      // Initialize counters for different types of calls
-      let pendingCalls = 0
-      let solvedCalls = 0
-      let colleagueSolvedCalls = 0 // For calls solved by a colleague
-      let todaysCalls = 0
-      let totalCalls = 0
-
-      // Map through the call registrations and categorize them
-      const callStats = customerData.map((customer) => {
-        const calls = customer.callregistration.map((call) => {
-          // Increment total calls
-          totalCalls++
-
-          // Check if it's today's call
-          const callDate = new Date(call.timedata.startTime)
-            .toISOString()
-            .split("T")[0]
-          if (callDate === today) {
-            todaysCalls++
-          }
-
-          // Check if the last item in attendedBy array has the selected customer's callerId
-          const lastAttendedBy =
-            call.formdata.attendedBy[call.formdata.attendedBy.length - 1]
-
-          if (call.formdata.status === "solved") {
-            if (
-              lastAttendedBy &&
-              lastAttendedBy.callerId === selectedCustomerId
-            ) {
-              solvedCalls++ // Increment solved calls for the selected customer
-            } else {
-              colleagueSolvedCalls++ // Increment colleague's solved calls
+          if (matchedCallregistration.length > 0) {
+            return {
+              ...item, // Include other fields of the item
+              callregistration: matchedCallregistration // Include only matched calls
             }
-          } else {
-            pendingCalls++ // Increment pending calls
           }
 
-          return call // Return the call object if needed for further processing
+          return null // Exclude calls without matches
+        })
+        .filter((item) => item !== null) // Remove `null` entries from the final array
+      console.log(filteredCalls)
+
+      const result = filteredCalls.reduce(
+        (acc, item) => {
+          item.callregistration.forEach((call) => {
+            const startTimeRaw = call?.timedata?.startTime
+            const callDate = startTimeRaw
+              ? new Date(startTimeRaw.split(" ")[0]).toISOString().split("T")[0]
+              : null
+            acc.totalCalls++ // Increment total calls
+            console.log(today)
+            console.log(call.timedata.startTime)
+            if (today === callDate) {
+              console.log(today)
+              acc.todaysCall++
+            }
+
+            if (call.formdata.status.toLowerCase() === "solved") {
+              const attendedByCallerIds = call.formdata.completedBy.map(
+                (attendee) => attendee.callerId === selectedUser
+              )
+              if (attendedByCallerIds) {
+                acc.solvedCalls++
+              } else {
+                acc.colleagueSolvedCalls++
+              }
+            } else {
+              acc.pendingCalls++ // Increment pending calls
+            }
+          })
+          return acc
+        },
+        {
+          totalCalls: 0,
+          solvedCalls: 0,
+          pendingCalls: 0,
+          todaysCall: 0,
+          colleagueSolvedCalls: 0
+        } // Initialize counters
+      )
+      console.log(result)
+      setResult(result)
+
+      // Helper function to check if a date is today's date
+      const isToday = (dateString) => {
+        const today = new Date()
+        const date = new Date(dateString)
+        return (
+          today.getFullYear() === date.getFullYear() &&
+          today.getMonth() === date.getMonth() &&
+          today.getDate() === date.getDate()
+        )
+      }
+
+      // Sort calls
+      const sortedCalls = filteredCalls
+        .map((call) => {
+          // Flatten call registrations with their parent
+          return call.callregistration.map((registration) => ({
+            ...registration,
+            customerName: call.customerid.customerName,
+            customerId: call.customerid._id
+          }))
+        })
+        .flat()
+        .sort((a, b) => {
+          // Priority: Pending, Today's Calls, Solved
+          const getPriority = (registration) => {
+            if (registration.formdata.status !== "solved") return 1 // Pending
+            if (isToday(registration.timedata.startTime)) return 2 // Today's calls
+            return 3 // Solved
+          }
+
+          return getPriority(a) - getPriority(b)
         })
 
-        // Return stats for this customer
-        return {
-          customerid: customer.customerid._id,
-          totalCalls,
-          solvedCalls,
-          colleagueSolvedCalls,
-          pendingCalls,
-          todaysCalls
+      // Group back by customer
+      const groupedCalls = sortedCalls.reduce((acc, registration) => {
+        const customerId = registration.customerId
+        if (!acc[customerId]) {
+          acc[customerId] = {
+            customerid: {
+              _id: customerId,
+              customerName: registration.customerName
+            },
+            callregistration: []
+          }
         }
-      })
+        acc[customerId].callregistration.push(registration)
+        return acc
+      }, {})
+
+      const finalResult = Object.values(groupedCalls)
+
+      console.log(finalResult)
+      if (finalResult) {
+        setCustomerCalls(result)
+        setUserCalls(finalResult)
+        console.log(loading)
+        setLoading(false)
+      }
     }
   }, [isModalOpen])
+  console.log(customerCalls)
+  console.log(Calls)
 
   useEffect(() => {
     if (branch) {
+      console.log("hiii")
       socket.emit("updatedCalls")
       // Listen for initial data from the server
       socket.on("updatedCalls", (data) => {
+        console.log("hiii")
         if (users.role === "Admin") {
           setCallList(data.calls)
         } else {
@@ -291,10 +379,16 @@ const Summary = () => {
   }
 
   const closeModal = () => {
+    setLoading(true)
     setIsModalOpen(false)
     setSelectedCustomer(null)
   }
-
+  console.log(result)
+  console.log(customerCalls)
+  console.log(customerSummary)
+  console.log(Calls)
+  console.log(selectedCustomer)
+  console.log(customerCalls.pendingCalls)
   return (
     <div className="antialiased font-sans container mx-auto px-4 sm:px-8">
       <div className="py-8">
@@ -391,55 +485,58 @@ const Summary = () => {
                 </tr>
               </thead>
               <tbody>
-                {Array.isArray(isToggled ? userList : customerSummary) ? (
-                  (isToggled ? userList : customerSummary).map((item) => (
-                    <tr key={item._id || item.customerId}>
-                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm">
-                        {isToggled ? item.name : item.customerName}
-                      </td>
-                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                        {isToggled
-                          ? item.callstatus.totalCall
-                          : item.totalCalls}
-                      </td>
-                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                        {isToggled
-                          ? item.callstatus.solvedCalls
-                          : item.solvedCalls}
-                      </td>
-                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                        {isToggled
-                          ? item.callstatus.pendingCalls
-                          : item.pendingCalls}
-                      </td>
-                      {isToggled && (
-                        <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                          {item.callstatus.colleagueSolved}
+                {Array.isArray(isToggled ? userList : customerSummary) &&
+                  ((isToggled ? userList : customerSummary).length > 0 ? (
+                    (isToggled ? userList : customerSummary).map((item) => (
+                      <tr key={item._id || item.customerId}>
+                        <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm">
+                          {isToggled ? item.name : item.customerName}
                         </td>
-                      )}
-                      {!isToggled && (
                         <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                          {item.todaysCalls}
+                          {isToggled
+                            ? item.callstatus.totalCall
+                            : item.totalCalls}
                         </td>
-                      )}
+                        <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                          {isToggled
+                            ? item.callstatus.solvedCalls
+                            : item.solvedCalls}
+                        </td>
+                        <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                          {isToggled
+                            ? item.callstatus.pendingCalls
+                            : item.pendingCalls}
+                        </td>
+                        {isToggled && (
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            {item.callstatus.colleagueSolved}
+                          </td>
+                        )}
+                        {!isToggled && (
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            {item.todaysCalls}
+                          </td>
+                        )}
 
-                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                        <button
-                          onClick={() => openModal(item._id || item.customerId)}
-                          className="text-blue-500 hover:text-blue-700"
-                        >
-                          View Calls
-                        </button>
+                        <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                          <button
+                            onClick={() =>
+                              openModal(isToggled ? item.name : item.customerId)
+                            }
+                            className="text-blue-500 hover:text-blue-700"
+                          >
+                            View Calls
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="7" className="text-center py-4">
+                        {loading ? "Loading..." : "N data"}
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="7" className="text-center py-4">
-                      No data available
-                    </td>
-                  </tr>
-                )}
+                  ))}
 
                 {/* {customerSummary.map((customer) => (
                   <tr key={customer.customerName}>
@@ -497,7 +594,7 @@ const Summary = () => {
               <div className="flex justify-around">
                 <Tiles
                   title="Pending Calls"
-                  count={customerCalls.pendingCalls}
+                  count={result?.pendingCalls || customerCalls?.pendingCalls}
                   style={{
                     background: `linear-gradient(135deg, rgba(255, 0, 0, 1), rgba(255, 128, 128, 1))` // Adjust gradient here
                   }}
@@ -510,7 +607,7 @@ const Summary = () => {
                 <Tiles
                   title="Solved Calls"
                   color="bg-green-500"
-                  count={customerCalls.solvedCalls}
+                  count={result?.solvedCalls || customerCalls?.solvedCalls}
                   style={{
                     background: `linear-gradient(135deg, rgba(0, 140, 0, 1), rgba(128, 255, 128,1 ))`
                   }}
@@ -522,7 +619,7 @@ const Summary = () => {
                 <Tiles
                   title="Today's Calls"
                   color="bg-yellow-500"
-                  count={customerCalls.todaysCalls}
+                  count={result?.todaysCall || customerCalls?.todaysCall}
                   style={{
                     background: `linear-gradient(135deg, rgba(255, 255, 1, 1), rgba(255, 255, 128, 1))`
                   }}
@@ -532,9 +629,9 @@ const Summary = () => {
                   // }}
                 />
                 <Tiles
-                  title="Online Call"
+                  title={isToggled ? "Colleague Solved" : "Online Call"}
                   color="bg-blue-500"
-                  count={"0"}
+                  count={isToggled ? result?.colleagueSolvedCalls : "0"}
                   style={{
                     background: `linear-gradient(135deg, rgba(0, 0, 270, 0.8), rgba(128, 128, 255, 0.8))`
                   }}
@@ -551,6 +648,11 @@ const Summary = () => {
                       <th className="px-2 py-3 border-b border-gray-300 text-sm text-center whitespace-nowrap">
                         Token No
                       </th>
+                      {isToggled && (
+                        <th className="px-2 py-3 border-b border-gray-300 text-sm text-center whitespace-nowrap">
+                          Customer Name
+                        </th>
+                      )}
 
                       <th className="px-2 py-3 border-b border-gray-300 text-sm text-center whitespace-nowrap">
                         Product Name
@@ -583,7 +685,311 @@ const Summary = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-gray-200">
-                    {Calls.map((call) => {
+                    {isToggled ? (
+                      userCalls?.length > 0 ? (
+                        userCalls?.map((call) =>
+                          call?.callregistration.map((reg) => {
+                            const startTimeRaw = reg?.timedata?.startTime
+                            const callDate = startTimeRaw
+                              ? new Date(startTimeRaw.split(" ")[0])
+                                  .toISOString()
+                                  .split("T")[0]
+                              : null
+                            const today = new Date().toISOString().split("T")[0]
+
+                            const isToday = callDate === today
+                            const isCompletedToday =
+                              reg?.formdata?.status === "solved"
+                            const isPast = callDate < today
+
+                            // Determine row color based on conditions
+                            const rowColor = isCompletedToday
+                              ? "linear-gradient(135deg, rgba(0, 140, 0, 1), rgba(128, 255, 128, 1))"
+                              : isToday
+                              ? "linear-gradient(135deg,rgba(255,255,1,1),rgba(255,255,128,1))"
+                              : isPast
+                              ? "linear-gradient(135deg,rgba(255,0,0,1),rgba(255,128,128,1))"
+                              : ""
+                            return (
+                              <>
+                                <tr
+                                  key={reg._id}
+                                  style={{ background: rowColor }}
+                                  className="border border-b-0 "
+                                >
+                                  <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                    {reg?.timedata?.token}
+                                  </td>
+                                  <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                    {call?.customerid?.customerName}
+                                  </td>
+
+                                  <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                    {reg?.product?.productName}
+                                  </td>
+                                  <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                    {reg?.license}
+                                  </td>
+                                  <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                    {new Date(
+                                      reg?.timedata?.startTime
+                                    ).toLocaleString()}
+                                  </td>
+
+                                  <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                    {new Date(
+                                      reg?.timedata?.endTime
+                                    ).toLocaleString()}
+                                  </td>
+                                  {/* <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                    {reg.timedata.duration}
+                                  </td>
+                                  <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                    {reg.formdata.description}
+                                  </td>
+                                  <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                    {reg.formdata.solution}
+                                  </td> */}
+                                  <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                    {reg?.formdata?.incomingNumber}
+                                  </td>
+                                  <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                    {reg?.formdata?.status}
+                                  </td>
+                                  <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                    {reg?.formdata?.attendedBy
+                                      ?.map((attendee) => attendee?.callerId)
+                                      .join(", ")}
+                                  </td>
+                                  <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                    {reg?.formdata?.completedBy
+                                      ?.map((completer) => completer?.callerId)
+                                      .join(", ")}
+                                  </td>
+                                </tr>
+                                <tr
+                                  className={`text-center border-t-0 border-gray-300 ${
+                                    reg?.formdata?.status === "solved"
+                                      ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
+                                      : reg?.formdata?.status === "pending"
+                                      ? callDate === today
+                                        ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                        : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
+                                      : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
+                                  }`}
+                                  style={{ height: "5px" }}
+                                >
+                                  <td
+                                    colSpan="4"
+                                    className="py-2 px-8 text-sm text-black text-left"
+                                  >
+                                    <strong>Description:</strong>{" "}
+                                    {reg?.formdata?.description || "N/A"}
+                                  </td>
+
+                                  <td
+                                    colSpan="2"
+                                    className="py-2 px-8 text-sm text-black text-left"
+                                  >
+                                    <strong>Duration:</strong>{" "}
+                                    <span className="ml-2">
+                                      {`${Math.floor(
+                                        (new Date(
+                                          reg?.formdata?.status === "solved"
+                                            ? reg.timedata?.endTime // Use end date if the call is solved
+                                            : new Date().setHours(0, 0, 0, 0) // Use today's date at midnight if not solved
+                                        ) -
+                                          new Date(
+                                            new Date(
+                                              reg.timedata?.startTime
+                                            ).setHours(0, 0, 0, 0)
+                                          )) /
+                                          (1000 * 60 * 60 * 24)
+                                      )} days`}
+                                    </span>
+                                    <span className="ml-1">
+                                      {reg?.timedata?.duration || "N/A"}
+                                    </span>
+                                  </td>
+                                  <td
+                                    colSpan="6"
+                                    className="py-2 px-12 text-sm text-black text-right"
+                                  >
+                                    <strong>Solution:</strong>{" "}
+                                    {reg?.formdata?.solution || "N/A"}
+                                  </td>
+                                </tr>
+                              </>
+                            )
+                          })
+                        )
+                      ) : (
+                        <tr>
+                          <td colSpan={5}>
+                            {loading ? "Loading..." : "No calls"}
+                          </td>
+                        </tr>
+                      )
+                    ) : (
+                      Calls.map((call) => {
+                        const startTimeRaw = call?.timedata?.startTime
+                        const callDate = startTimeRaw
+                          ? new Date(startTimeRaw.split(" ")[0])
+                              .toISOString()
+                              .split("T")[0]
+                          : null
+                        const today = new Date().toISOString().split("T")[0]
+
+                        const isToday = callDate === today
+                        const isCompletedToday =
+                          call?.formdata?.status === "solved"
+                        const isPast = callDate < today
+
+                        // Determine row color based on conditions
+                        const rowColor = isCompletedToday
+                          ? "linear-gradient(135deg, rgba(0, 140, 0, 1), rgba(128, 255, 128, 1))"
+                          : isToday
+                          ? "linear-gradient(135deg,rgba(255,255,1,1),rgba(255,255,128,1))"
+                          : isPast
+                          ? "linear-gradient(135deg,rgba(255,0,0,1),rgba(255,128,128,1))"
+                          : ""
+
+                        return (
+                          <>
+                            <tr
+                              key={call._id}
+                              style={{ background: rowColor }}
+                              className="border border-b-0 "
+                            >
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {call?.timedata?.token}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {call?.product?.productName}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {call?.license}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {new Date(
+                                  call?.timedata?.startTime
+                                ).toLocaleDateString("en-GB", {
+                                  timeZone: "UTC",
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric"
+                                })}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {call?.formdata?.status === "solved"
+                                  ? new Date(
+                                      call?.timedata?.endTime
+                                    ).toLocaleDateString("en-GB", {
+                                      timeZone: "UTC",
+                                      day: "2-digit",
+                                      month: "2-digit",
+                                      year: "numeric"
+                                    })
+                                  : ""}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {call?.formdata?.incomingNumber}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {call?.formdata?.status}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {Array.isArray(call?.formdata?.attendedBy)
+                                  ? call?.formdata?.attendedBy
+                                      .map(
+                                        (attendee) =>
+                                          attendee?.callerId?.name ||
+                                          attendee?.name
+                                      )
+                                      .join(", ")
+                                  : call?.formdata?.attendedBy?.callerId
+                                      ?.name ||
+                                    call?.formdata?.attendedBy ||
+                                    call?.formdata?.attendedBy?.name}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {call?.formdata?.status === "solved"
+                                  ? Array.isArray(call?.formdata?.completedBy)
+                                    ? call?.formdata?.completedBy.map(
+                                        (attendee) =>
+                                          // console.log(
+                                          //   call.formdata.status,
+                                          //   attendee
+                                          // )
+                                          // console.log(attendee)
+                                          attendee?.callerId?.name ||
+                                          attendee?.name
+                                      )
+                                    : call?.formdata?.completedBy?.callerId
+                                        ?.name ||
+                                      call?.formdata?.completedBy ||
+                                      call?.formdata?.completedBy?.name
+                                  : ""}
+                              </td>
+                            </tr>
+                            <tr
+                              className={`text-center border-t-0 border-gray-300 ${
+                                call?.formdata?.status === "solved"
+                                  ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
+                                  : call?.formdata?.status === "pending"
+                                  ? callDate === today
+                                    ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                    : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
+                                  : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
+                              }`}
+                              style={{ height: "5px" }}
+                            >
+                              <td
+                                colSpan="4"
+                                className="py-2 px-8 text-sm text-black text-left"
+                              >
+                                <strong>Description:</strong>{" "}
+                                {call?.formdata?.description || "N/A"}
+                              </td>
+
+                              <td
+                                colSpan="2"
+                                className="py-2 px-8 text-sm text-black text-left"
+                              >
+                                <strong>Duration:</strong>{" "}
+                                <span className="ml-2">
+                                  {`${Math.floor(
+                                    (new Date(
+                                      call?.formdata?.status === "solved"
+                                        ? call.timedata?.endTime // Use end date if the call is solved
+                                        : new Date().setHours(0, 0, 0, 0) // Use today's date at midnight if not solved
+                                    ) -
+                                      new Date(
+                                        new Date(
+                                          call.timedata?.startTime
+                                        ).setHours(0, 0, 0, 0)
+                                      )) /
+                                      (1000 * 60 * 60 * 24)
+                                  )} days`}
+                                </span>
+                                <span className="ml-1">
+                                  {call?.timedata?.duration || "N/A"}
+                                </span>
+                              </td>
+                              <td
+                                colSpan="6"
+                                className="py-2 px-12 text-sm text-black text-right"
+                              >
+                                <strong>Solution:</strong>{" "}
+                                {call?.formdata?.solution || "N/A"}
+                              </td>
+                            </tr>
+                          </>
+                        )
+                      })
+                    )}
+
+                    {/* {Calls.map((call) => {
                       const startTimeRaw = call?.timedata?.startTime
                       const callDate = startTimeRaw
                         ? new Date(startTimeRaw.split(" ")[0])
@@ -594,7 +1000,8 @@ const Summary = () => {
 
                       const isToday = callDate === today
 
-                      const isCompletedToday = call.formdata.status === "solved"
+                      const isCompletedToday =
+                        call?.formdata?.status === "solved"
                       const isPast = callDate < today
 
                       // Determine row color based on conditions
@@ -650,12 +1057,8 @@ const Summary = () => {
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {call?.formdata?.status}
                             </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {call?.formdata?.attendedBy}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {call?.formdata?.completedBy}
-                            </td>
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]"></td>
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]"></td>
                           </tr>
                           <tr
                             className={`text-center border-t-0 border-gray-300 ${
@@ -711,7 +1114,7 @@ const Summary = () => {
                           </tr>
                         </>
                       )
-                    })}
+                    })} */}
                   </tbody>
                 </table>
               </div>

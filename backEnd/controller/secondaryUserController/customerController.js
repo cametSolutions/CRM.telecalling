@@ -230,7 +230,7 @@ export const customerCallRegistration = async (req, res) => {
         calldata.formdata.completedBy.callerId
       )
     }
-   
+
     // Convert customerid to ObjectId
     const customerId = new mongoose.Types.ObjectId(customerid)
 
@@ -299,7 +299,54 @@ export const customerCallRegistration = async (req, res) => {
                   return res.status(200).json({ message: "all successed" })
                 }
               } else if (calldata.formdata.status === "solved") {
-                staffCaller.callstatus.totalCall += 1
+                ///////
+                const mapAndCheckAttendedBy = (data, selectedId) => {
+                  // Count how many times callerId matches selectedId
+                  const matchCount = data.formdata.attendedBy.filter(
+                    (attendee) => attendee.callerId === selectedId
+                  ).length
+
+                  // Return true if matchCount >= 2, otherwise false
+                  return matchCount >= 2
+                }
+
+                // Example operation
+                const findMatchingDocAndCheckCallerId = (
+                  updatedCall,
+                  token,
+                  selectedId
+                ) => {
+                  // Find the matching doc
+                  const matchingDoc = updatedCall.callregistration.find(
+                    (call) => call.timedata.token === token
+                  )
+
+                  // If a matching doc is found, call the mapAndCheckAttendedBy function
+                  if (matchingDoc) {
+                    const isCallerIdMatched = mapAndCheckAttendedBy(
+                      matchingDoc,
+                      selectedId
+                    )
+                    return { matchingDoc, isCallerIdMatched }
+                  }
+
+                  // Return false if no matching doc is found
+                  return false
+                }
+                //
+                const { matchingDoc, isCallerIdMatched } =
+                  findMatchingDocAndCheckCallerId(
+                    updatedCall,
+                    token,
+                    calldata?.formdata?.attendedBy?.callerId
+                  )
+                //
+                if (isCallerIdMatched) {
+                  console.log(isCallerIdMatched)
+                }
+                staffCaller.callstatus.totalCall = isCallerIdMatched
+                  ? staffCaller.callstatus.totalCall
+                  : staffCaller.callstatus.totalCall + 1
 
                 staffCaller.callstatus.solvedCalls += 1
 
@@ -308,10 +355,6 @@ export const customerCallRegistration = async (req, res) => {
 
                 const saved = await staffCaller.save()
                 if (saved) {
-                  const matchingDoc = updatedCall.callregistration.find(
-                    (call) => call.timedata.token === token
-                  )
-
                   // const stringDoc = JSON.stringify(matchingDoc, null, 2)
                   // const parsedDoc = JSON.parse(stringDoc)
 
@@ -352,6 +395,7 @@ export const customerCallRegistration = async (req, res) => {
                 }
               }
             } else {
+              console.log("adminnnnnn")
               const adminCaller = await Admin.findOne({
                 _id: Id
               })
@@ -369,7 +413,54 @@ export const customerCallRegistration = async (req, res) => {
                     return res.status(200).json({ message: "All success" })
                   }
                 } else if (calldata.formdata.status === "solved") {
-                  adminCaller.callstatus.totalCall += 1
+                  const mapAndCheckAttendedBy = (data, selectedId) => {
+                    // Count how many times callerId matches selectedId
+                    const matchCount = data?.formdata?.attendedBy?.filter(
+                      (attendee) => attendee?.callerId === selectedId
+                    ).length
+
+                    // Return true if matchCount >= 2, otherwise false
+                    return matchCount >= 2
+                  }
+
+                  // Example operation
+                  const findMatchingDocAndCheckCallerId = (
+                    updatedCall,
+                    token,
+                    selectedId
+                  ) => {
+                    // Find the matching doc
+                    const matchingDoc = updatedCall.callregistration.find(
+                      (call) => call?.timedata?.token === token
+                    )
+
+                    // If a matching doc is found, call the mapAndCheckAttendedBy function
+                    if (matchingDoc) {
+                      const isCallerIdMatched = mapAndCheckAttendedBy(
+                        matchingDoc,
+                        selectedId
+                      )
+                      return { matchingDoc, isCallerIdMatched }
+                    }
+
+                    // Return false if no matching doc is found
+                    return false
+                  }
+                  //
+                  const { matchingDoc, isCallerIdMatched } =
+                    findMatchingDocAndCheckCallerId(
+                      updatedCall,
+                      token,
+                      calldata?.formdata?.attendedBy?.callerId
+                    )
+                  //
+                  console.log(isCallerIdMatched)
+                  if (isCallerIdMatched) {
+                    console.log(isCallerIdMatched)
+                  }
+                  adminCaller.callstatus.totalCall = isCallerIdMatched
+                    ? adminCaller.callstatus.totalCall
+                    : adminCaller.callstatus.totalCall + 1
 
                   adminCaller.callstatus.solvedCalls += 1
 
@@ -378,13 +469,6 @@ export const customerCallRegistration = async (req, res) => {
 
                   const saved = await adminCaller.save()
                   if (saved) {
-                    const matchingDoc = updatedCall.callregistration.find(
-                      (call) => call.timedata.token === token
-                    )
-
-                    // const stringDoc = JSON.stringify(matchingDoc, null, 2)
-                    // const parsedDoc = JSON.parse(stringDoc)
-
                     const processedAttendedBy = matchingDoc.formdata.attendedBy
                       .slice(0, -1)
                       .map((item) => item)
@@ -589,9 +673,7 @@ const updateProcessedAttendees = async (processedAttendedBy, attendedId) => {
     user.callstatus.colleagueSolved = callerId.equals(attendedId)
       ? user.callstatus.colleagueSolved
       : user.callstatus.colleagueSolved + 1
-    user.callstatus.solvedCalls = callerId.equals(attendedId)
-      ? user.callstatus.solvedCalls + 1
-      : user.callstatus.solvedCalls
+
     // Save the updated document
     await user.save()
   }
