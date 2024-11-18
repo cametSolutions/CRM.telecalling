@@ -298,7 +298,7 @@ const Summary = () => {
         setLoading(false)
       }
     }
-  }, [isModalOpen])
+  }, [isModalOpen, selectedUser, selectedCustomer])
 
   useEffect(() => {
     if (branch) {
@@ -352,6 +352,7 @@ const Summary = () => {
   }
 
   const toggle = () => setIsToggled(!isToggled)
+
   const openModal = (id) => {
     if (isToggled) {
       setSelectedUser(id)
@@ -365,11 +366,8 @@ const Summary = () => {
     setLoading(true)
     setIsModalOpen(false)
     setSelectedCustomer(null)
+    setSelectedUser(null)
   }
-  console.log(customerCalls)
-  console.log(customerCalls?.pendingCalls)
-  console.log(customerCalls?.todaysCalls)
-  console.log(result)
 
   return (
     <div className="antialiased font-sans container mx-auto px-4 sm:px-8">
@@ -574,18 +572,21 @@ const Summary = () => {
               <hr className="border-t-2 border-gray-300 mb-2 " />
               {/* <Tiles datas={registeredcalllist?.alltokens} /> */}
               <div className="flex justify-around">
-                <Tiles
-                  title="Pending Calls"
-                  // count={result?.pendingCalls || customerCalls?.pendingCalls}
-                  count={customerCalls?.pendingCalls ?? 0}
-                  style={{
-                    background: `linear-gradient(135deg, rgba(255, 0, 0, 1), rgba(255, 128, 128, 1))` // Adjust gradient here
-                  }}
-                  // onClick={() => {
-                  //   setActiveFilter("Pending")
-                  //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
-                  // }}
-                />
+                {!isToggled && (
+                  <Tiles
+                    title="Pending Calls"
+                    // count={result?.pendingCalls || customerCalls?.pendingCalls}
+                    count={customerCalls?.pendingCalls ?? 0}
+                    style={{
+                      background: `linear-gradient(135deg, rgba(255, 0, 0, 1), rgba(255, 128, 128, 1))` // Adjust gradient here
+                    }}
+                    // onClick={() => {
+                    //   setActiveFilter("Pending")
+                    //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
+                    // }}
+                  />
+                )}
+
                 {isToggled && (
                   <Tiles
                     title="Pending Calls"
@@ -600,20 +601,23 @@ const Summary = () => {
                     // }}
                   />
                 )}
-                <Tiles
-                  title="Solved Calls"
-                  color="bg-green-500"
-                  // count={result?.solvedCalls ?? 0 || customerCalls?.solvedCalls??0}
-                  count={customerCalls?.solvedCalls ?? 0}
-                  style={{
-                    background: `linear-gradient(135deg, rgba(0, 140, 0, 1), rgba(128, 255, 128,1 ))`
-                  }}
-                  // onClick={() => {
-                  //   setActiveFilter("Solved")
+                {!isToggled && (
+                  <Tiles
+                    title="Solved Calls"
+                    color="bg-green-500"
+                    // count={result?.solvedCalls ?? 0 || customerCalls?.solvedCalls??0}
+                    count={customerCalls?.solvedCalls ?? 0}
+                    style={{
+                      background: `linear-gradient(135deg, rgba(0, 140, 0, 1), rgba(128, 255, 128,1 ))`
+                    }}
+                    // onClick={() => {
+                    //   setActiveFilter("Solved")
 
-                  //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
-                  // }}
-                />
+                    //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
+                    // }}
+                  />
+                )}
+
                 {isToggled && (
                   <Tiles
                     title="Solved Calls"
@@ -635,7 +639,7 @@ const Summary = () => {
                     title="Today's Calls"
                     color="bg-yellow-500"
                     // count={result?.todaysCall || customerCalls?.todaysCalls}
-                    count={result?.todayCall ?? 0}
+                    count={result?.todaysCall ?? 0}
                     style={{
                       background: `linear-gradient(135deg, rgba(255, 255, 1, 1), rgba(255, 255, 128, 1))`
                     }}
@@ -645,20 +649,21 @@ const Summary = () => {
                     // }}
                   />
                 )}
-
-                <Tiles
-                  title="Today's Calls"
-                  color="bg-yellow-500"
-                  // count={result?.todaysCall || customerCalls?.todaysCalls}
-                  count={customerCalls?.todayCalls ?? 0}
-                  style={{
-                    background: `linear-gradient(135deg, rgba(255, 255, 1, 1), rgba(255, 255, 128, 1))`
-                  }}
-                  // onClick={() => {
-                  //   setActiveFilter("Today")
-                  //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
-                  // }}
-                />
+                {!isToggled && (
+                  <Tiles
+                    title="Today's Calls"
+                    color="bg-yellow-500"
+                    // count={result?.todaysCall || customerCalls?.todaysCalls}
+                    count={customerCalls?.todaysCalls ?? 0}
+                    style={{
+                      background: `linear-gradient(135deg, rgba(255, 255, 1, 1), rgba(255, 255, 128, 1))`
+                    }}
+                    // onClick={() => {
+                    //   setActiveFilter("Today")
+                    //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
+                    // }}
+                  />
+                )}
 
                 <Tiles
                   title={isToggled ? "Colleague Solved" : "Online Call"}
