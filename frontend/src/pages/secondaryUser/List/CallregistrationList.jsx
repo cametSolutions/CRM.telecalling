@@ -18,6 +18,7 @@ const CallregistrationList = () => {
   const [userCallStatus, setUserCallstatus] = useState([])
   const [callList, setCallList] = useState([])
   const [filteredCalls, setFilteredCalls] = useState([])
+  const [loading, setLoading] = useState(true)
 
   // Define states for filtered call counts
   const [pendingCallsCount, setPendingCallsCount] = useState(0)
@@ -51,12 +52,13 @@ const CallregistrationList = () => {
   }, [])
 
   useEffect(() => {
-    if (callList.length > 0 && users) {
+    if (callList && callList.length > 0 && users) {
       const today = new Date().toISOString().split("T")[0]
       setToday(today)
 
       setFilteredCalls(callList)
       filterCallData(callList)
+      setLoading(false)
     }
   }, [callList])
 
@@ -65,23 +67,18 @@ const CallregistrationList = () => {
       const userId = users._id
       socket.emit("updatedCalls", userId)
       // Listen for initial data from the server
-      socket.on("updatedCalls", ({ calls, user }) => {
+      socket.on("updatedCalls", ({ filteredCalls, user }) => {
         if (users.role === "Admin") {
-          const allCallRegistrations = calls.flatMap(
-            (call) => call.callregistration
-          )
-          console.log(calls)
-          setCallList(calls)
+          setCallList(filteredCalls)
           setUserCallstatus(user.callstatus)
         } else {
-          console.log(calls)
           const userBranchName = new Set(
             users.selected.map((branch) => branch.branchName)
           )
 
           const branchNamesArray = Array.from(userBranchName)
 
-          const filtered = calls.filter((call) =>
+          const filtered = filteredCalls.filter((call) =>
             call.callregistration.some((registration) => {
               const hasMatchingBranch = registration.branchName.some(
                 (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
@@ -265,9 +262,8 @@ const CallregistrationList = () => {
   // }
 
   // const handleupdateadmin = async () => {
-  //   console.log(users._id)
   //   const id = users._id
-  //   // const id ="67220ce51c400b86242fe178"
+  //   // const id = "66af560dfa230b0b30e69c9c"
 
   //   const url = `http://localhost:9000/api/auth/resetAdminstatus?adminid=${encodeURIComponent(
   //     id
@@ -487,6 +483,7 @@ const CallregistrationList = () => {
               </tr>
             </thead>
             <tbody className="divide-gray-200">
+              {/* ///for pending calls/// */}
               {filteredCalls?.length > 0 ? (
                 <>
                   {filteredCalls
@@ -575,13 +572,15 @@ const CallregistrationList = () => {
                                 ? item.formdata.attendedBy
                                     .map(
                                       (attendee) =>
-                                        attendee.callerId?.name || attendee
+                                        attendee?.callerId?.name ||
+                                        attendee?.name ||
+                                        "abi"
                                     )
                                     .join(", ")
-                                : item.formdata.attendedBy}
+                                : item?.formdata?.attendedBy?.callerId?.name}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {item?.formdata?.completedBy}
+                              {/* {item?.formdata?.completedBy} */}
                             </td>
                             <td className="px-2 py-2 text-xl w-12 text-blue-800">
                               {item?.formdata?.status !== "solved" ? (
@@ -759,26 +758,24 @@ const CallregistrationList = () => {
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {Array.isArray(item?.formdata?.attendedBy)
                                 ? item.formdata.attendedBy
-                                    ?.map((attendee) => {
-                                      console.log(attendee)
-
-                                      return attendee?.name || attendee
-                                    })
+                                    ?.map(
+                                      (attendee) =>
+                                        attendee?.callerId?.name ||
+                                        attendee?.name
+                                    )
                                     .join(", ")
-                                : item?.formdata?.attendedBy}
+                                : item?.formdata?.attendedBy?.callerId?.name}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {/* {item?.formdata?.completedBy?.name} */}
                               {Array.isArray(item?.formdata?.completedBy)
                                 ? item.formdata.completedBy
-                                    ?.map((attendee) => {
-                                      console.log(attendee)
-                                      return (
-                                        attendee?.callerId?.name || attendee
-                                      )
-                                    })
+                                    ?.map(
+                                      (attendee) =>
+                                        attendee?.callerId?.name ||
+                                        attendee?.name
+                                    )
                                     .join(", ")
-                                : item?.formdata?.completedBy}
+                                : item?.formdata?.completedBy.callerId?.name}
                             </td>
                             <td className="px-2 py-2 text-xl w-12 text-blue-800"></td>
                           </tr>
@@ -845,7 +842,7 @@ const CallregistrationList = () => {
                     colSpan="10"
                     className="px-4 py-4 text-center text-sm text-gray-500"
                   >
-                    No calls found
+                    {loading ? "Loading..." : "No Calls"}
                   </td>
                 </tr>
               )}
