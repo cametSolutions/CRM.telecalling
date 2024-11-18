@@ -5,7 +5,8 @@ import Tiles from "../../../components/common/Tiles"
 import UseFetch from "../../../hooks/useFetch"
 import io from "socket.io-client" // Import Socket.IO client
 import { UNSAFE_useScrollRestoration } from "react-router-dom"
-const socket = io("http://localhost:9000")
+// const socket = io("http://localhost:9000")
+const socket = io("https://www.crm.camet.in")
 
 const Summary = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null)
@@ -32,8 +33,6 @@ const Summary = () => {
   const { data: staffCallList } = UseFetch("/auth/staffcallList")
   useEffect(() => {
     if (staffCallList) {
-      console.log(staffCallList)
-
       setIndividualCallList(staffCallList)
     }
   }, [staffCallList])
@@ -78,9 +77,6 @@ const Summary = () => {
         fetchUserList()
       }
     } else {
-      console.log(callList)
-      console.log(loading)
-      console.log(branch)
       if (callList) {
         const customerSummaries = callList
           .filter(
@@ -116,16 +112,11 @@ const Summary = () => {
             }
           })
         if (customerSummaries) {
-          console.log(loading)
           setCustomerSummary(customerSummaries)
           // setLoading(false)
         }
-        console.log(loading)
       }
     }
-    console.log(callList)
-    console.log(selectedBranch)
-    console.log(isToggled)
   }, [callList, selectedBranch, isToggled])
 
   useEffect(() => {
@@ -181,7 +172,7 @@ const Summary = () => {
 
         return 0
       })
-      console.log(sortedCalls)
+
       setCustomerCalls(customerData)
       setCalls(sortedCalls)
     }
@@ -190,7 +181,7 @@ const Summary = () => {
       // Get today's date in YYYY-MM-DD format
       // const today = new Date().toISOString().slice(0, 10)
       // Filter the list by customerid
-      console.log(indiviDualCallList)
+
       const filteredCalls = indiviDualCallList
         .map((item) => {
           const matchedCallregistration = item.callregistration.filter((call) =>
@@ -209,7 +200,6 @@ const Summary = () => {
           return null // Exclude calls without matches
         })
         .filter((item) => item !== null) // Remove `null` entries from the final array
-      console.log(filteredCalls)
 
       const result = filteredCalls.reduce(
         (acc, item) => {
@@ -219,10 +209,8 @@ const Summary = () => {
               ? new Date(startTimeRaw.split(" ")[0]).toISOString().split("T")[0]
               : null
             acc.totalCalls++ // Increment total calls
-            console.log(today)
-            console.log(call.timedata.startTime)
+
             if (today === callDate) {
-              console.log(today)
               acc.todaysCall++
             }
 
@@ -249,7 +237,7 @@ const Summary = () => {
           colleagueSolvedCalls: 0
         } // Initialize counters
       )
-      console.log(result)
+
       setResult(result)
 
       // Helper function to check if a date is today's date
@@ -303,25 +291,20 @@ const Summary = () => {
 
       const finalResult = Object.values(groupedCalls)
 
-      console.log(finalResult)
       if (finalResult) {
         setCustomerCalls(result)
         setUserCalls(finalResult)
-        console.log(loading)
+
         setLoading(false)
       }
     }
   }, [isModalOpen])
-  console.log(customerCalls)
-  console.log(Calls)
 
   useEffect(() => {
     if (branch) {
-      console.log("hiii")
       socket.emit("updatedCalls")
       // Listen for initial data from the server
       socket.on("updatedCalls", (data) => {
-        console.log("hiii")
         if (users.role === "Admin") {
           setCallList(data.calls)
         } else {
@@ -383,12 +366,11 @@ const Summary = () => {
     setIsModalOpen(false)
     setSelectedCustomer(null)
   }
-  console.log(result)
   console.log(customerCalls)
-  console.log(customerSummary)
-  console.log(Calls)
-  console.log(selectedCustomer)
-  console.log(customerCalls.pendingCalls)
+  console.log(customerCalls?.pendingCalls)
+  console.log(customerCalls?.todaysCalls)
+  console.log(result)
+
   return (
     <div className="antialiased font-sans container mx-auto px-4 sm:px-8">
       <div className="py-8">
@@ -594,7 +576,8 @@ const Summary = () => {
               <div className="flex justify-around">
                 <Tiles
                   title="Pending Calls"
-                  count={result?.pendingCalls || customerCalls?.pendingCalls}
+                  // count={result?.pendingCalls || customerCalls?.pendingCalls}
+                  count={customerCalls?.pendingCalls ?? 0}
                   style={{
                     background: `linear-gradient(135deg, rgba(255, 0, 0, 1), rgba(255, 128, 128, 1))` // Adjust gradient here
                   }}
@@ -603,23 +586,71 @@ const Summary = () => {
                   //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
                   // }}
                 />
-
+                {isToggled && (
+                  <Tiles
+                    title="Pending Calls"
+                    // count={result?.pendingCalls || customerCalls?.pendingCalls}
+                    count={result?.pendingCalls ?? 0}
+                    style={{
+                      background: `linear-gradient(135deg, rgba(255, 0, 0, 1), rgba(255, 128, 128, 1))` // Adjust gradient here
+                    }}
+                    // onClick={() => {
+                    //   setActiveFilter("Pending")
+                    //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
+                    // }}
+                  />
+                )}
                 <Tiles
                   title="Solved Calls"
                   color="bg-green-500"
-                  count={result?.solvedCalls || customerCalls?.solvedCalls}
+                  // count={result?.solvedCalls ?? 0 || customerCalls?.solvedCalls??0}
+                  count={customerCalls?.solvedCalls ?? 0}
                   style={{
                     background: `linear-gradient(135deg, rgba(0, 140, 0, 1), rgba(128, 255, 128,1 ))`
                   }}
                   // onClick={() => {
                   //   setActiveFilter("Solved")
+
                   //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
                   // }}
                 />
+                {isToggled && (
+                  <Tiles
+                    title="Solved Calls"
+                    color="bg-green-500"
+                    // count={result?.solvedCalls ?? 0 || customerCalls?.solvedCalls??0}
+                    count={result?.solvedCalls ?? 0}
+                    style={{
+                      background: `linear-gradient(135deg, rgba(0, 140, 0, 1), rgba(128, 255, 128,1 ))`
+                    }}
+                    // onClick={() => {
+                    //   setActiveFilter("Solved")
+                    //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
+                    // }}
+                  />
+                )}
+
+                {isToggled && (
+                  <Tiles
+                    title="Today's Calls"
+                    color="bg-yellow-500"
+                    // count={result?.todaysCall || customerCalls?.todaysCalls}
+                    count={result?.todayCall ?? 0}
+                    style={{
+                      background: `linear-gradient(135deg, rgba(255, 255, 1, 1), rgba(255, 255, 128, 1))`
+                    }}
+                    // onClick={() => {
+                    //   setActiveFilter("Today")
+                    //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
+                    // }}
+                  />
+                )}
+
                 <Tiles
                   title="Today's Calls"
                   color="bg-yellow-500"
-                  count={result?.todaysCall || customerCalls?.todaysCall}
+                  // count={result?.todaysCall || customerCalls?.todaysCalls}
+                  count={customerCalls?.todayCalls ?? 0}
                   style={{
                     background: `linear-gradient(135deg, rgba(255, 255, 1, 1), rgba(255, 255, 128, 1))`
                   }}
@@ -628,6 +659,7 @@ const Summary = () => {
                   //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
                   // }}
                 />
+
                 <Tiles
                   title={isToggled ? "Colleague Solved" : "Online Call"}
                   color="bg-blue-500"
@@ -917,11 +949,6 @@ const Summary = () => {
                                   ? Array.isArray(call?.formdata?.completedBy)
                                     ? call?.formdata?.completedBy.map(
                                         (attendee) =>
-                                          // console.log(
-                                          //   call.formdata.status,
-                                          //   attendee
-                                          // )
-                                          // console.log(attendee)
                                           attendee?.callerId?.name ||
                                           attendee?.name
                                       )

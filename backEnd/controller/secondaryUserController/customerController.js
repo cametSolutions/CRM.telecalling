@@ -299,11 +299,10 @@ export const customerCallRegistration = async (req, res) => {
                   return res.status(200).json({ message: "all successed" })
                 }
               } else if (calldata.formdata.status === "solved") {
-                ///////
                 const mapAndCheckAttendedBy = (data, selectedId) => {
-                  // Count how many times callerId matches selectedId
+                  //  Count how many times callerId matches selectedId
                   const matchCount = data.formdata.attendedBy.filter(
-                    (attendee) => attendee.callerId === selectedId
+                    (attendee) => attendee.callerId.equals(selectedId)
                   ).length
 
                   // Return true if matchCount >= 2, otherwise false
@@ -341,9 +340,7 @@ export const customerCallRegistration = async (req, res) => {
                     calldata?.formdata?.attendedBy?.callerId
                   )
                 //
-                if (isCallerIdMatched) {
-                  console.log(isCallerIdMatched)
-                }
+
                 staffCaller.callstatus.totalCall = isCallerIdMatched
                   ? staffCaller.callstatus.totalCall
                   : staffCaller.callstatus.totalCall + 1
@@ -395,7 +392,6 @@ export const customerCallRegistration = async (req, res) => {
                 }
               }
             } else {
-              console.log("adminnnnnn")
               const adminCaller = await Admin.findOne({
                 _id: Id
               })
@@ -415,10 +411,9 @@ export const customerCallRegistration = async (req, res) => {
                 } else if (calldata.formdata.status === "solved") {
                   const mapAndCheckAttendedBy = (data, selectedId) => {
                     // Count how many times callerId matches selectedId
-                    const matchCount = data?.formdata?.attendedBy?.filter(
-                      (attendee) => attendee?.callerId === selectedId
+                    const matchCount = data.formdata.attendedBy.filter(
+                      (attendee) => attendee.callerId.equals(selectedId)
                     ).length
-
                     // Return true if matchCount >= 2, otherwise false
                     return matchCount >= 2
                   }
@@ -454,10 +449,7 @@ export const customerCallRegistration = async (req, res) => {
                       calldata?.formdata?.attendedBy?.callerId
                     )
                   //
-                  console.log(isCallerIdMatched)
-                  if (isCallerIdMatched) {
-                    console.log(isCallerIdMatched)
-                  }
+
                   adminCaller.callstatus.totalCall = isCallerIdMatched
                     ? adminCaller.callstatus.totalCall
                     : adminCaller.callstatus.totalCall + 1

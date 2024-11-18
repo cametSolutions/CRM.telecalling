@@ -7,8 +7,8 @@ import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles" // Import the Tile component
 import { useNavigate } from "react-router-dom"
 
-// const socket = io("https://www.crm.camet.in")
-const socket = io("http://localhost:9000") // Adjust the URL to your backend
+const socket = io("https://www.crm.camet.in")
+// const socket = io("http://localhost:9000") // Adjust the URL to your backend
 
 const CallregistrationList = () => {
   const navigate = useNavigate()
@@ -52,7 +52,7 @@ const CallregistrationList = () => {
   }, [])
 
   useEffect(() => {
-    if (callList.length > 0 && users) {
+    if (callList && callList.length > 0 && users) {
       const today = new Date().toISOString().split("T")[0]
       setToday(today)
 
@@ -69,11 +69,9 @@ const CallregistrationList = () => {
       // Listen for initial data from the server
       socket.on("updatedCalls", ({ filteredCalls, user }) => {
         if (users.role === "Admin") {
-          console.log(filteredCalls)
           setCallList(filteredCalls)
           setUserCallstatus(user.callstatus)
         } else {
-          console.log(filteredCalls)
           const userBranchName = new Set(
             users.selected.map((branch) => branch.branchName)
           )
@@ -198,7 +196,6 @@ const CallregistrationList = () => {
         }
       })
     })
-    console.log(todaysSolvedCount)
 
     return todaysSolvedCount
   }
@@ -264,24 +261,23 @@ const CallregistrationList = () => {
   //   }
   // }
 
-  const handleupdateadmin = async () => {
-    console.log(users._id)
-    // const id = users._id
-    const id = "66af560dfa230b0b30e69c9c"
+  // const handleupdateadmin = async () => {
+  //   const id = users._id
+  //   // const id = "66af560dfa230b0b30e69c9c"
 
-    const url = `http://localhost:9000/api/auth/resetAdminstatus?adminid=${encodeURIComponent(
-      id
-    )}`
+  //   const url = `http://localhost:9000/api/auth/resetAdminstatus?adminid=${encodeURIComponent(
+  //     id
+  //   )}`
 
-    const response = await fetch(url, {
-      method: "POST",
-      credentials: "include"
-    })
-    const b = await response.json()
-    if (response.ok) {
-      toast.success(b.message)
-    }
-  }
+  //   const response = await fetch(url, {
+  //     method: "POST",
+  //     credentials: "include"
+  //   })
+  //   const b = await response.json()
+  //   if (response.ok) {
+  //     toast.success(b.message)
+  //   }
+  // }
 
   const formatDuration = (seconds) => {
     if (!seconds || isNaN(seconds)) {
@@ -381,9 +377,9 @@ const CallregistrationList = () => {
             </table>
           </div>
         </div>
-        <div>
+        {/* <div>
           <button onClick={handleupdateadmin}>update</button>
-        </div>
+        </div> */}
 
         <hr className="border-t-2 border-gray-300 mb-2 " />
         {/* <Tiles datas={registeredcalllist?.alltokens} /> */}
@@ -762,27 +758,22 @@ const CallregistrationList = () => {
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {Array.isArray(item?.formdata?.attendedBy)
                                 ? item.formdata.attendedBy
-                                    ?.map((attendee) => {
-                                      console.log(attendee)
-
-                                      return (
+                                    ?.map(
+                                      (attendee) =>
                                         attendee?.callerId?.name ||
                                         attendee?.name
-                                      )
-                                    })
+                                    )
                                     .join(", ")
                                 : item?.formdata?.attendedBy?.callerId?.name}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {Array.isArray(item?.formdata?.completedBy)
                                 ? item.formdata.completedBy
-                                    ?.map((attendee) => {
-                                      console.log(attendee)
-                                      return (
+                                    ?.map(
+                                      (attendee) =>
                                         attendee?.callerId?.name ||
                                         attendee?.name
-                                      )
-                                    })
+                                    )
                                     .join(", ")
                                 : item?.formdata?.completedBy.callerId?.name}
                             </td>
