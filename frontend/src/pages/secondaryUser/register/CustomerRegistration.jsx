@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom"
 function CustomerRegistration() {
   const navigate = useNavigate()
   const handleSubmit = async (customerData, tabledata) => {
-    console.log("tabledata", tabledata)
     try {
       const response = await api.post(
         "/customer/customerRegistration",

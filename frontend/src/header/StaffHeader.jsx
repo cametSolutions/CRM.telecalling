@@ -126,21 +126,8 @@ export default function StaffHeader() {
       label: "Expired Customer Calls",
       control: user?.permissions?.[0]?.ExpiredCustomerCalls ?? false
     },
-    {
-      to: "/staff/reports/customer-callSummary",
-      label: "Customer Calls Summary",
-      control: user?.permissions?.[0]?.CustomerCallsSummary ?? false
-    },
-    {
-      to: "/staff/reports/customer-contacts",
-      label: "Customer Contacts",
-      control: user?.permissions?.[0]?.CustomerContact ?? false
-    },
-    {
-      to: "/staff/reports/customer-actionsummary",
-      label: "Customer Action Summary",
-      control: user?.permissions?.[0]?.CustomerActionSummary ?? false
-    },
+   
+    
     {
       to: "/staff/reports/account-search",
       label: "Account Search",

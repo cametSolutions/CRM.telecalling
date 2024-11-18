@@ -1,5 +1,6 @@
 import ComingSoon from "../../../pages/common/ComingSoon"
 import Summary from "../../../pages/primaryUser/List/Summary"
+import ExpiryRegister from "../../../pages/primaryUser/List/ExpiryRegister"
 const reportsRoutes = [
   { path: "/admin/reports/summary", component: Summary },
 

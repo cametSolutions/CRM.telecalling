@@ -140,16 +140,7 @@ export default function AdminHeader() {
       label: "Sign Up Custmer"
       // control: user.permissions[0].SignUpCustomer
     },
-    {
-      to: "/admin/tasks/productMerge",
-      label: "Product Merge"
-      // control: user.permissions[0].ProductMerge
-    },
-    {
-      to: "/admin/tasks/productAllocation-Pending",
-      label: "Product Allocation Pending"
-      // control: user.permissions[0].ProductAllocationPending
-    },
+
     {
       to: "/admin/tasks/leaveApproval-pending",
       label: "Leave Approval Pending"
@@ -182,21 +173,7 @@ export default function AdminHeader() {
       label: "Expired Customer Calls"
       // control: user.permissions[0].ExpiredCustomerCalls
     },
-    {
-      to: "/admin/reports/customer-callSummary",
-      label: "Customer Calls Summary"
-      // control: user.permissions[0].CustomerCallsSummary
-    },
-    {
-      to: "/admin/reports/customer-contacts",
-      label: "Customer Contacts"
-      // control: user.permissions[0].CustomerContact
-    },
-    {
-      to: "/admin/reports/customer-actionsummary",
-      label: "Customer Action Summary"
-      // control: user.permissions[0].CustomerActionSummary
-    },
+
     {
       to: "/admin/reports/account-search",
       label: "Account Search"

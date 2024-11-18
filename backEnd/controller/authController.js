@@ -12,7 +12,7 @@ export const resetCallStatus = async (req, res) => {
 
   const objectId = new mongoose.Types.ObjectId(adminid)
   try {
-    const a = await Admin.updateOne(
+    const a = await Staff.updateOne(
       { _id: objectId }, // Find the user by their ID
       {
         $set: {
@@ -85,7 +85,6 @@ export const Register = async (req, res) => {
 
     if (!staff) {
       try {
-        console.log("hiii")
         // Create and save new user
         const staff = new Staff({
           name,
@@ -238,7 +237,6 @@ export const UpdateUserandAdmin = async (req, res) => {
       const updateQuery = {
         $set: filteredUserData // Set the fields from userData without 'selected'
       }
-      // console.log("tabledata", tabledata)
 
       // Check if tableData is empty or not, and update the selected field accordingly
       if (tabledata.length === 0) {
@@ -246,7 +244,7 @@ export const UpdateUserandAdmin = async (req, res) => {
       } else {
         updateQuery.$set.selected = tabledata // Add items to selected field if not empty
       }
-      // console.log("qury", updateQuery.$set.password)
+
       if (updateQuery.$set.password) {
         const salt = await bcrypt.genSalt(10)
         const hashedPassword = await bcrypt.hash(password, salt)
@@ -697,36 +695,6 @@ export const GetindividualStaffCall = async (req, res) => {
         }
       }
     }
-
-    // const calls = await CallRegistration.aggregate([
-    //   {
-    //     $project: {
-    //       // Only include the calls that match the startDate in the 'callregistration' array
-    //       callregistration: {
-    //         $filter: {
-    //           input: "$callregistration", // The array to filter
-    //           as: "call", // Alias for each element in the array
-    //           cond: { $gte: ["$$call.timedata.startTime", startDate] } // Condition to match startTime
-    //         }
-    //       }
-    //     }
-    //   },
-    //   {
-    //     // Optionally, you can add a match stage to exclude documents without any valid calls in the array
-    //     $match: {
-    //       "callregistration.0": { $exists: true } // Ensure there is at least one matching call in the array
-    //     }
-    //   }
-    // ]);
-    ////
-    // const startDate = new Date("2024-11-15").toISOString().split("T")[0]
-    // const calls = await CallRegistration.find({
-    //   "callregistration.timedata.startTime": {
-    //     $gte: startDate // Fetch calls with startTime greater than or equal to this date
-    //   }
-    // })
-
-    console.log("abhiiiiii")
 
     if (calls) {
       // Respond with the filtered call data

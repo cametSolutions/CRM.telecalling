@@ -18,6 +18,7 @@ const CustomerAdd = ({
     control,
     setError,
     clearErrors,
+    getValues,
     setValue,
     watch,
     formState: { errors }
@@ -49,7 +50,7 @@ const CustomerAdd = ({
       tvuexpiryDate: "",
       tvuAmount: "",
       tvuamountDescription: "",
-      isActive: null
+      isActive: "Running"
     }
   })
 
@@ -101,6 +102,10 @@ const CustomerAdd = ({
 
   useEffect(() => {
     if (productData) {
+      setTableObject({
+        ...tableObject,
+        isActive: "Running"
+      })
       setProductOptions(
         productData.map((product) => ({
           label: product.productName,
@@ -184,6 +189,34 @@ const CustomerAdd = ({
           tvuamountDescription: customer?.selected?.tvuamountDescription || "",
           isActive: customer?.selected?.isActive || ""
         })
+
+        setTableData([
+          {
+            company_id: customer?.selected?.company_id || "",
+            companyName: customer?.selected?.companyName || "",
+            branch_id: customer?.selected?.branch_id || "",
+            branchName: customer?.selected?.branchName || "",
+            product_id: customer?.selected?.product_id || "",
+            productName: customer?.selected?.productName || "",
+            licensenumber: customer?.selected?.licensenumber || "",
+            noofusers: customer?.selected?.noofusers || "",
+            version: customer?.selected?.version || "",
+            customerAddDate: customer?.selected?.customerAddDate || "",
+            amcstartDate: customer?.selected?.amcstartDate || "",
+            amcendDate: customer?.selected?.amcendDate || "",
+            amcAmount: customer?.selected?.amcAmount || "",
+            amcDescription: customer?.selected?.amcDescription || "",
+            licenseExpiryDate: customer?.selected?.licenseExpiryDate || "",
+            productAmount: customer?.selected?.productAmount || "",
+            productamountDescription:
+              customer?.selected?.productamountDescription || "",
+            tvuexpiryDate: customer?.selected?.tvuexpiryDate || "",
+            tvuAmount: customer?.selected?.tvuAmount || "",
+            tvuamountDescription:
+              customer?.selected?.tvuamountDescription || "",
+            isActive: customer?.selected?.isActive || ""
+          }
+        ])
         // setTableData((prev) => [...prev, tableObject])
         if (customer?.selected?.productName)
           handleProductChange(
@@ -207,39 +240,47 @@ const CustomerAdd = ({
     // Directly set products to productData
   }, [productData, reset, customer])
 
+
   useEffect(() => {
     if (licensenumber) {
       setLicense(licensenumber)
     }
   }, [licensenumber])
 
-  const debouncedLicenseNo = useDebounce(tableObject.licensenumber, 500)
+  const debouncedLicenseNo = useDebounce(tableObject.licensenumber, 1000)
 
   useEffect(() => {
     // If there's a debounced license number, check its uniqueness
 
     if (debouncedLicenseNo.length > 0) {
-      if (license.length > 0 && isLicense.length === 0) {
+      debouncedLicenseNo.trim()
+      
+      if (
+        license &&
+        license.length > 0 &&
+        isLicense &&
+        isLicense.length === 0
+      ) {
         const checkLicense = license.find(
-          (item) => item.licensenumber === debouncedLicenseNo
+          (item) => item?.licensenumber.toString() === debouncedLicenseNo
         )
+
         if (checkLicense) {
           setLicenseAvailable(false)
 
           toast.error("license number already exits")
         } else {
           setLicenseAvailable(true)
-          setlicenseExist((prevState) => [...prevState, debouncedLicenseNo])
 
-          toast.success("license number is available")
+          toast.success("license number is availablesssssss")
         }
       } else {
-        if (isLicense.length > 0) {
+        if (isLicense && isLicense.length > 0) {
           const checklicense = isLicense.find(
             (item) => item === debouncedLicenseNo
           )
           const licensecheck = license.find(
-            (item) => item.licensenumber === debouncedLicenseNo
+            (item) => item?.licensenumber.toString() === debouncedLicenseNo
           )
           if (checklicense || licensecheck) {
             setLicenseAvailable(false)
@@ -268,6 +309,12 @@ const CustomerAdd = ({
         newData[editIndex] = tableObject // Update the specific item
         return newData
       })
+      setlicenseExist((prevState) => {
+        const updatedLicenses = [...prevState]
+        updatedLicenses[editIndex] = tableObject.licensenumber // Update the license at the editIndex
+        return updatedLicenses
+      })
+
       setEditIndex(null)
       seteditState(false) // Reset the edit index
     } else {
@@ -289,6 +336,7 @@ const CustomerAdd = ({
         toast.error("licensenumber is already exist")
         return
       }
+      setlicenseExist((prevState) => [...prevState, tableObject.licensenumber])
 
       setTableData((prev) => [...prev, tableObject])
     }
@@ -339,9 +387,13 @@ const CustomerAdd = ({
 
     setTableData(filtereddData)
     setlicenseExist(updatedIslicense)
+    if (filtereddData && filtereddData.length === 0) {
+      setShowTable(false)
+    }
 
     reset()
   }
+  
   const handleEdit = (id) => {
     seteditState(true) // Close the edit state (or handle according to your logic)
 
@@ -466,6 +518,8 @@ const CustomerAdd = ({
       toast.error("Failed to save customer!")
     }
   }
+  const activeStatus = getValues("isActive")
+  // Ensure this logs "Running"
 
   return (
     <div className="container justify-center items-center min-h-screen p-8 bg-gray-100">
@@ -814,17 +868,25 @@ const CustomerAdd = ({
                 <input
                   id="licensenumber"
                   type="text"
-                  {...register("licensenumber")}
+                  {...register("licensenumber", {
+                    required: selectedProduct
+                      ? "License number is required"
+                      : false,
+                    validate: (value) =>
+                      selectedProduct && String(value).trim() === ""
+                        ? "License number is required for the selected product"
+                        : true
+                  })}
                   onBlur={(e) =>
                     setValue("licensenumber", e.target.value.trim())
                   }
-                  onChange={
-                    (e) =>
-                      setTableObject({
-                        ...tableObject,
-                        licensenumber: e.target.value
-                      }) // Update state on change
-                  }
+                  onChange={(e) => {
+                    clearErrors("licensenumber")
+                    setTableObject({
+                      ...tableObject,
+                      licensenumber: e.target.value
+                    }) // Update state on change
+                  }}
                   className="mt-0 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
                   placeholder="License No..."
                 />
@@ -1250,7 +1312,9 @@ const CustomerAdd = ({
                   </label>
                   <select
                     id="isActive"
-                    {...register("isActive", { required: true })}
+                    {...register("isActive", {
+                      required: "Status is Required"
+                    })}
                     onChange={
                       (e) =>
                         setTableObject({
@@ -1260,14 +1324,12 @@ const CustomerAdd = ({
                     }
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
                   >
-                    <option value="">Select Status</option>
+                    <option>select a status</option>
                     <option value="Running">Active</option>
                     <option value="Deactive">Deactive</option>
                   </select>
                   {errors.isActive && (
-                    <p className="text-red-500">
-                      Please select a status for the customer.
-                    </p>
+                    <p className="text-red-500">{errors.isActive.message}</p>
                   )}
                 </div>
               )}
@@ -1277,7 +1339,21 @@ const CustomerAdd = ({
                 <div className="mt-6">
                   <button
                     type="button"
-                    onClick={handleTableData}
+                    onClick={() => {
+                      const licenseValue = String(getValues("licensenumber"))
+
+                      if (selectedProduct && !licenseValue.trim()) {
+                        // Set error if the license number is missing for a selected product
+                        setError("licensenumber", {
+                          type: "manual",
+                          message:
+                            "License number is required for the selected product"
+                        })
+                        return // Prevent adding to table
+                      }
+
+                      handleTableData()
+                    }}
                     className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
                   >
                     {editState ? "UPDATE" : "ADD"}
@@ -1343,76 +1419,82 @@ const CustomerAdd = ({
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {tableData?.map((product, index) => (
-                        <tr key={index}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.productName}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.companyName}
-                          </td>
+                      {tableData && tableData.length > 0
+                        ? tableData.map((product, index) => (
+                            <tr key={index}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {product?.productName}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {product?.companyName}
+                              </td>
 
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.branchName}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.licensenumber}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.noofusers}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.version}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.customerAddDate}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.amcstartDate}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.amcendDate}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.amcAmount}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.licenseExpiryDate}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.productAmount}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.tvuexpiryDate}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {product?.tvuAmount}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            {" "}
-                            <button
-                              type="button"
-                              className="text-green-600 hover:text-green-900 mr-2" // Adjust styles as needed
-                              // onClick={() => handleEdit(index)}
-                            >
-                              <FaEdit
-                                onClick={() => handleEdit(product.product_id)}
-                              />
-                            </button>
-                          </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {product?.branchName}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {product?.licensenumber}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {product?.noofusers}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {product?.version}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {product?.customerAddDate}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {product?.amcstartDate}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {product?.amcendDate}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {product?.amcAmount}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {product?.licenseExpiryDate}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {product?.productAmount}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {product?.tvuexpiryDate}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {product?.tvuAmount}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                {" "}
+                                <button
+                                  type="button"
+                                  className="text-green-600 hover:text-green-900 mr-2" // Adjust styles as needed
+                                  // onClick={() => handleEdit(index)}
+                                >
+                                  <FaEdit
+                                    onClick={() =>
+                                      handleEdit(product.product_id)
+                                    }
+                                  />
+                                </button>
+                              </td>
 
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button
-                              type="button"
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              <FaTrash onClick={() => handleDelete(index)} />
-                            </button>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <button
+                                  type="button"
+                                  className="text-blue-600 hover:text-blue-900"
+                                >
+                                  <FaTrash
+                                    onClick={() => handleDelete(index)}
+                                  />
+                                </button>
 
-                            {/* Add delete button */}
-                          </td>
-                        </tr>
-                      ))}
+                                {/* Add delete button */}
+                              </td>
+                            </tr>
+                          ))
+                        : ""}
                     </tbody>
                   </table>
                 </div>
