@@ -861,3 +861,35 @@ export const GetCallRegister = async (req, res) => {
 //       .json({ message: "Server error", error: error.message })
 //   }
 // }
+export const GetAllExpiryRegister = async (req, res) => {
+  try {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const expiredCustomers = await Customer.find({
+      selected: {
+        $elemMatch: {
+          $or: [
+            { licenseExpiryDate: { $lt: today } }, // License expiry in the past
+            { tvuexpiryDate: { $lt: today } }, // TVU expiry in the past
+            { amcendDate: { $lt: today } } // AMC end in the past
+          ]
+        }
+      }
+    })
+
+    if (expiredCustomers) {
+      return res.status(200).json({
+        message: "Customers found with expiry",
+        data: expiredCustomers
+      })
+    } else {
+      return res
+        .status(404)
+        .json({ message: "No customers with expired Dates", data: [] })
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}

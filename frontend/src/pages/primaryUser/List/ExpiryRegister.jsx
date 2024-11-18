@@ -1,14 +1,13 @@
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import api from "../../../api/api"
 import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles"
 import UseFetch from "../../../hooks/useFetch"
-import io from "socket.io-client" // Import Socket.IO client
 import { UNSAFE_useScrollRestoration } from "react-router-dom"
 // const socket = io("http://localhost:9000")
-const socket = io("https://www.crm.camet.in")
+// const socket = io("https://www.crm.camet.in")
 
-const Summary = () => {
+const ExpiryRegister = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   const [pendingCallsCount, setPendingCallsCount] = useState(0)
   const [todayCallsCount, setTodayCallsCount] = useState(0)
@@ -23,20 +22,22 @@ const Summary = () => {
   const [result, setResult] = useState({})
   const [userList, setUserList] = useState([])
   const [branch, setBranch] = useState([])
-  const [indiviDualCallList, setIndividualCallList] = useState([])
+  const [expiredCustomerList, setexpiryRegisterList] = useState([])
   const { data: branches } = UseFetch("/branch/getBranch")
   const [users, setUsers] = useState(null)
   const [selectedBranch, setSelectedBranch] = useState("All")
   const [isToggled, setIsToggled] = useState(false)
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
-  const { data: staffCallList } = UseFetch("/auth/staffcallList")
+  const { data: expiryRegisterCustomer } = UseFetch(
+    "/customer/getallExpiryregisterCustomer"
+  )
+
   useEffect(() => {
-    if (staffCallList) {
-      setIndividualCallList(staffCallList)
+    if (expiryRegisterCustomer) {
+      setexpiryRegisterList(expiryRegisterCustomer)
     }
-  }, [staffCallList])
- 
+  }, [expiryRegisterCustomer])
 
   useEffect(() => {
     if (branches) {
@@ -121,62 +122,62 @@ const Summary = () => {
   }, [callList, selectedBranch, isToggled])
 
   useEffect(() => {
-    if (isModalOpen && selectedCustomer) {
-      const customerData = callList
-        .filter((customer) => customer._id === selectedCustomer) // Filter for the selected customer
-        .map((customer) => {
-          const today = new Date().toISOString().slice(0, 10) // Get today's date in YYYY-MM-DD format
+    // if (isModalOpen && selectedCustomer) {
+    //   const customerData = callList
+    //     .filter((customer) => customer._id === selectedCustomer) // Filter for the selected customer
+    //     .map((customer) => {
+    //       const today = new Date().toISOString().slice(0, 10) // Get today's date in YYYY-MM-DD format
 
-          // Get all calls for the selected customer
-          const allCalls = customer.callregistration.map((call) => call)
+    //       // Get all calls for the selected customer
+    //       const allCalls = customer.callregistration.map((call) => call)
 
-          // Calculate summary counts
-          const totalCalls = allCalls.length
-          const solvedCalls = allCalls.filter(
-            (call) => call.formdata?.status === "solved"
-          ).length
-          const pendingCalls = totalCalls - solvedCalls
-          const todaysCalls = allCalls.filter((call) => {
-            const callDate = new Date(call?.timedata?.startTime)
-              .toISOString()
-              .split("T")[0] // Extracts only the date
-            return callDate === today
-          }).length
+    //       // Calculate summary counts
+    //       const totalCalls = allCalls.length
+    //       const solvedCalls = allCalls.filter(
+    //         (call) => call.formdata?.status === "solved"
+    //       ).length
+    //       const pendingCalls = totalCalls - solvedCalls
+    //       const todaysCalls = allCalls.filter((call) => {
+    //         const callDate = new Date(call?.timedata?.startTime)
+    //           .toISOString()
+    //           .split("T")[0] // Extracts only the date
+    //         return callDate === today
+    //       }).length
 
-          return {
-            customerName: customer.customerName,
-            totalCalls,
-            solvedCalls,
-            pendingCalls,
-            todaysCalls,
-            allCalls // Detailed call records for listing in a table
-          }
-        })[0] // Assuming there's only one customer with this name
+    //       return {
+    //         customerName: customer.customerName,
+    //         totalCalls,
+    //         solvedCalls,
+    //         pendingCalls,
+    //         todaysCalls,
+    //         allCalls // Detailed call records for listing in a table
+    //       }
+    //     })[0] // Assuming there's only one customer with this name
 
-      // Get today's date in YYYY-MM-DD format
-      const today = new Date().toISOString().slice(0, 10)
-      // Sort calls: pending calls first, today's calls second, and solved calls last
-      const sortedCalls = customerData.allCalls.sort((a, b) => {
-        const isAPending = a.formdata?.status === "pending"
-        const isBPending = b.formdata?.status === "pending"
-        const isAToday = a.timedata?.startTime?.slice(0, 10) === today
-        const isBToday = b.timedata?.startTime?.slice(0, 10) === today
-        const isASolved = a.formdata?.status === "solved"
-        const isBSolved = b.formdata?.status === "solved"
+    //   // Get today's date in YYYY-MM-DD format
+    //   const today = new Date().toISOString().slice(0, 10)
+    //   // Sort calls: pending calls first, today's calls second, and solved calls last
+    //   const sortedCalls = customerData.allCalls.sort((a, b) => {
+    //     const isAPending = a.formdata?.status === "pending"
+    //     const isBPending = b.formdata?.status === "pending"
+    //     const isAToday = a.timedata?.startTime?.slice(0, 10) === today
+    //     const isBToday = b.timedata?.startTime?.slice(0, 10) === today
+    //     const isASolved = a.formdata?.status === "solved"
+    //     const isBSolved = b.formdata?.status === "solved"
 
-        if (isAPending && !isBPending) return -1
-        if (!isAPending && isBPending) return 1
-        if (isAToday && !isBToday) return -1
-        if (!isAToday && isBToday) return 1
-        if (isASolved && !isBSolved) return 1
-        if (!isASolved && isBSolved) return -1
+    //     if (isAPending && !isBPending) return -1
+    //     if (!isAPending && isBPending) return 1
+    //     if (isAToday && !isBToday) return -1
+    //     if (!isAToday && isBToday) return 1
+    //     if (isASolved && !isBSolved) return 1
+    //     if (!isASolved && isBSolved) return -1
 
-        return 0
-      })
+    //     return 0
+    //   })
 
-      setCustomerCalls(customerData)
-      setCalls(sortedCalls)
-    }
+    //   setCustomerCalls(customerData)
+    //   setCalls(sortedCalls)
+    // }
     if (isModalOpen && selectedUser) {
       const today = new Date().toISOString().split("T")[0] // Today's date in 'YYYY-MM-DD' format
       // Get today's date in YYYY-MM-DD format
@@ -301,45 +302,45 @@ const Summary = () => {
     }
   }, [isModalOpen, selectedUser, selectedCustomer])
 
-  useEffect(() => {
-    if (branch) {
-      socket.emit("updatedCalls")
-      // Listen for initial data from the server
-      socket.on("updatedCalls", (data) => {
-        if (users?.role === "Admin") {
-          setCallList(data.calls)
-        } else {
-          const userBranchName = new Set(
-            users?.selected.map((branch) => branch.branchName)
-          )
-          const branchNamesArray = Array.from(userBranchName)
-          const filtered = data.calls.filter((call) =>
-            call.callregistration.some((registration) => {
-              const hasMatchingBranch = registration.branchName.some((branch) =>
-                branchNamesArray.includes(branch)
-              )
-              // If user has only one branch, ensure it matches exactly and no extra branches
-              if (branchNamesArray.length === 1) {
-                return (
-                  hasMatchingBranch &&
-                  registration.branchName.length === 1 &&
-                  registration.branchName[0] === branchNamesArray[0]
-                )
-              }
-              // If user has more than one branch, just check for any match
-              return hasMatchingBranch
-            })
-          )
-          setCallList(filtered)
-        }
-      })
+  // useEffect(() => {
+  //   if (branch) {
+  //     socket.emit("updatedCalls")
+  //     // Listen for initial data from the server
+  //     socket.on("updatedCalls", (data) => {
+  //       if (users.role === "Admin") {
+  //         setCallList(data.calls)
+  //       } else {
+  //         const userBranchName = new Set(
+  //           users.selected.map((branch) => branch.branchName)
+  //         )
+  //         const branchNamesArray = Array.from(userBranchName)
+  //         const filtered = data.calls.filter((call) =>
+  //           call.callregistration.some((registration) => {
+  //             const hasMatchingBranch = registration.branchName.some((branch) =>
+  //               branchNamesArray.includes(branch)
+  //             )
+  //             // If user has only one branch, ensure it matches exactly and no extra branches
+  //             if (branchNamesArray.length === 1) {
+  //               return (
+  //                 hasMatchingBranch &&
+  //                 registration.branchName.length === 1 &&
+  //                 registration.branchName[0] === branchNamesArray[0]
+  //               )
+  //             }
+  //             // If user has more than one branch, just check for any match
+  //             return hasMatchingBranch
+  //           })
+  //         )
+  //         setCallList(filtered)
+  //       }
+  //     })
 
-      // Cleanup the socket connection when the component unmounts
-      return () => {
-        socket.off("updatedCalls")
-      }
-    }
-  }, [branch, users])
+  //     // Cleanup the socket connection when the component unmounts
+  //     return () => {
+  //       socket.off("updatedCalls")
+  //     }
+  //   }
+  // }, [branch, users])
 
   const handleChange = (event) => {
     setUserList(data)
@@ -372,7 +373,14 @@ const Summary = () => {
 
   return (
     <div className="antialiased font-sans container mx-auto px-4 sm:px-8">
-      <div className="py-8">
+      <div className="py-4 ">
+        <div className="flex justify-center text-2xl font-semibold ">
+          {/* <h1 className="text-yellow-400">Expiry Registered Customer</h1>
+           */}
+          <h1 className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-red-500 to-pink-600">
+            Expired Register Customer
+          </h1>
+        </div>
         <h2 className="text-xl font-semibold leading-tight">Branches</h2>
 
         <div className="my-2 flex sm:flex-row flex-col">
@@ -406,6 +414,7 @@ const Summary = () => {
               className="appearance-none rounded-r rounded-l sm:rounded-l-none border border-gray-400 border-b block pl-8 pr-6 py-2 w-full bg-white text-sm placeholder-gray-400 text-gray-700 focus:bg-white focus:placeholder-gray-600 focus:text-gray-700 focus:outline-none"
             />
           </div>
+
           <div className="flex justify-end flex-grow">
             <span className="text-gray-600 mr-4 font-bold">User</span>
             <button
@@ -427,125 +436,145 @@ const Summary = () => {
             {/* {customerSummary.length} Total Customers */}
             {isToggled
               ? `Total Staff-${userList.length}`
-              : `Total customer-${customerSummary.length}`}
+              : `Total customer-${expiredCustomerList.length}`}
           </div>
-          <div></div>
         </div>
-
         <div className="w-full mx-auto shadow-lg mt-6">
           <div className="inline-block w-full mx-auto shadow rounded-lg overflow-x-auto lg:max-h-[440px] overflow-y-auto md:max-h-[390px]">
-            <table className="min-w-full leading-normal text-left max-w-7xl mx-auto">
+            <table className="min-w-full leading-normal text-left max-w-7xl mx-auto table-fixed">
               <thead className="sticky top-0 z-30 bg-purple-300">
                 <tr>
-                  <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="w-1/12 px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
                     Customer Name
                   </th>
-                  <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
-                    Total Calls
+                  <th className="w-1/12 px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                    Mobile/Phn
                   </th>
-                  <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
-                    Solved Calls
+                  <th className="w-1/12 px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                    Product Name
                   </th>
-                  <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
-                    Pending Calls
+                  <th className="w-1/12 px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                    License No
                   </th>
-                  {isToggled && (
-                    <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
-                      Colleague Solved
-                    </th>
-                  )}
-                  {!isToggled && (
-                    <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
-                      Today's Calls
-                    </th>
-                  )}
-
-                  <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                  <th className="w-1/12 px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                    Amc Start
+                    <br />
+                    (D-M-Y)
+                  </th>
+                  <th className="w-1/12 px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                    Amc End
+                    <br />
+                    (D-M-Y)
+                  </th>
+                  <th className="w-1/12 px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                    Tuv Expiry
+                    <br />
+                    (D-M-Y)
+                  </th>
+                  <th className="w-1/12 px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                    License Expiry
+                    <br />
+                    (D-M-Y)
+                  </th>
+                  <th className="w-1/12 px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                    Status
+                  </th>
+                  <th className="w-1/12 px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
                     View
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {Array.isArray(isToggled ? userList : customerSummary) &&
-                  ((isToggled ? userList : customerSummary).length > 0 ? (
-                    (isToggled ? userList : customerSummary).map((item) => (
-                      <tr key={item._id || item.customerId}>
-                        <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm">
-                          {isToggled ? item.name : item.customerName}
-                        </td>
-                        <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                          {isToggled
-                            ? item.callstatus.totalCall
-                            : item.totalCalls}
-                        </td>
-                        <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                          {isToggled
-                            ? item.callstatus.solvedCalls
-                            : item.solvedCalls}
-                        </td>
-                        <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                          {isToggled
-                            ? item.callstatus.pendingCalls
-                            : item.pendingCalls}
-                        </td>
-                        {isToggled && (
-                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                            {item.callstatus.colleagueSolved}
-                          </td>
-                        )}
-                        {!isToggled && (
-                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                            {item.todaysCalls}
-                          </td>
-                        )}
-
-                        <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                          <button
-                            onClick={() =>
-                              openModal(isToggled ? item.name : item.customerId)
-                            }
-                            className="text-blue-500 hover:text-blue-700"
+                {Array.isArray(expiredCustomerList) &&
+                  (expiredCustomerList.length > 0 ? (
+                    expiredCustomerList.map((customer) =>
+                      Array.isArray(customer.selected) &&
+                      customer.selected.length > 0 ? (
+                        customer.selected.map((item) => (
+                          <tr key={`${customer._id}-${item._id}`}>
+                            {/* Customer data */}
+                            <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm text-center">
+                              {customer?.customerName || "N/A"}
+                            </td>
+                            <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm text-center">
+                              {customer?.mobile || "N/A"}
+                            </td>
+                            <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm text-center">
+                              {customer?.isActive || "N/A"}
+                            </td>
+                            {/* Selected item data */}
+                            <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                              {item?.licensenumber || "N/A"}
+                            </td>
+                            <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                              {new Date(item?.amcstartDate).toLocaleDateString(
+                                "en-GB",
+                                {
+                                  timeZone: "UTC",
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric"
+                                }
+                              )}
+                            </td>
+                            <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                              {new Date(item?.amcendDate).toLocaleDateString(
+                                "en-GB",
+                                {
+                                  timeZone: "UTC",
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric"
+                                }
+                              )}
+                            </td>
+                            <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                              {item?.licenseExpiryDate
+                                ? new Date(
+                                    item?.licenseExpiryDate
+                                  ).toLocaleDateString()
+                                : "N/A"}
+                            </td>
+                            <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                              {item?.tvuexpiryDate
+                                ? new Date(
+                                    item?.tvuexpiryDate
+                                  ).toLocaleDateString()
+                                : "N/A"}
+                            </td>
+                            <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                              {customer?.isActive || "N/A"}
+                            </td>
+                            <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                              <button
+                                onClick={() =>
+                                  openModal(customer?.customerName)
+                                }
+                                className="text-blue-500 hover:text-blue-700"
+                              >
+                                View Details
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr key={customer?._id}>
+                          <td
+                            colSpan="8"
+                            className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm"
                           >
-                            View Calls
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                            No Products Selected
+                          </td>
+                        </tr>
+                      )
+                    )
                   ) : (
                     <tr>
-                      <td colSpan="7" className="text-center py-4">
-                        {loading ? "Loading..." : "N data"}
+                      <td colSpan="11" className="text-center py-4">
+                        {loading ? "Loading..." : "No expired customers"}
                       </td>
                     </tr>
                   ))}
-
-                {/* {customerSummary.map((customer) => (
-                  <tr key={customer.customerName}>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm">
-                      {customer.customerName}
-                    </td>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      {customer.totalCalls}
-                    </td>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      {customer.solvedCalls}
-                    </td>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      {customer.pendingCalls}
-                    </td>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      {customer.todaysCalls}
-                    </td>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      <button
-                        onClick={() => openModal(customer.customerId)}
-                        className="text-blue-500 hover:text-blue-700"
-                      >
-                        View Calls
-                      </button>
-                    </td>
-                  </tr>
-                ))} */}
               </tbody>
             </table>
           </div>
@@ -572,113 +601,7 @@ const Summary = () => {
               </div>
               <hr className="border-t-2 border-gray-300 mb-2 " />
               {/* <Tiles datas={registeredcalllist?.alltokens} /> */}
-              <div className="flex justify-around">
-                {!isToggled && (
-                  <Tiles
-                    title="Pending Calls"
-                    // count={result?.pendingCalls || customerCalls?.pendingCalls}
-                    count={customerCalls?.pendingCalls ?? 0}
-                    style={{
-                      background: `linear-gradient(135deg, rgba(255, 0, 0, 1), rgba(255, 128, 128, 1))` // Adjust gradient here
-                    }}
-                    // onClick={() => {
-                    //   setActiveFilter("Pending")
-                    //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
-                    // }}
-                  />
-                )}
 
-                {isToggled && (
-                  <Tiles
-                    title="Pending Calls"
-                    // count={result?.pendingCalls || customerCalls?.pendingCalls}
-                    count={result?.pendingCalls ?? 0}
-                    style={{
-                      background: `linear-gradient(135deg, rgba(255, 0, 0, 1), rgba(255, 128, 128, 1))` // Adjust gradient here
-                    }}
-                    // onClick={() => {
-                    //   setActiveFilter("Pending")
-                    //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
-                    // }}
-                  />
-                )}
-                {!isToggled && (
-                  <Tiles
-                    title="Solved Calls"
-                    color="bg-green-500"
-                    // count={result?.solvedCalls ?? 0 || customerCalls?.solvedCalls??0}
-                    count={customerCalls?.solvedCalls ?? 0}
-                    style={{
-                      background: `linear-gradient(135deg, rgba(0, 140, 0, 1), rgba(128, 255, 128,1 ))`
-                    }}
-                    // onClick={() => {
-                    //   setActiveFilter("Solved")
-
-                    //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
-                    // }}
-                  />
-                )}
-
-                {isToggled && (
-                  <Tiles
-                    title="Solved Calls"
-                    color="bg-green-500"
-                    // count={result?.solvedCalls ?? 0 || customerCalls?.solvedCalls??0}
-                    count={result?.solvedCalls ?? 0}
-                    style={{
-                      background: `linear-gradient(135deg, rgba(0, 140, 0, 1), rgba(128, 255, 128,1 ))`
-                    }}
-                    // onClick={() => {
-                    //   setActiveFilter("Solved")
-                    //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
-                    // }}
-                  />
-                )}
-
-                {isToggled && (
-                  <Tiles
-                    title="Today's Calls"
-                    color="bg-yellow-500"
-                    // count={result?.todaysCall || customerCalls?.todaysCalls}
-                    count={result?.todaysCall ?? 0}
-                    style={{
-                      background: `linear-gradient(135deg, rgba(255, 255, 1, 1), rgba(255, 255, 128, 1))`
-                    }}
-                    // onClick={() => {
-                    //   setActiveFilter("Today")
-                    //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
-                    // }}
-                  />
-                )}
-                {!isToggled && (
-                  <Tiles
-                    title="Today's Calls"
-                    color="bg-yellow-500"
-                    // count={result?.todaysCall || customerCalls?.todaysCalls}
-                    count={customerCalls?.todaysCalls ?? 0}
-                    style={{
-                      background: `linear-gradient(135deg, rgba(255, 255, 1, 1), rgba(255, 255, 128, 1))`
-                    }}
-                    // onClick={() => {
-                    //   setActiveFilter("Today")
-                    //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
-                    // }}
-                  />
-                )}
-
-                <Tiles
-                  title={isToggled ? "Colleague Solved" : "Online Call"}
-                  color="bg-blue-500"
-                  count={isToggled ? result?.colleagueSolvedCalls : "0"}
-                  style={{
-                    background: `linear-gradient(135deg, rgba(0, 0, 270, 0.8), rgba(128, 128, 255, 0.8))`
-                  }}
-                  // onClick={() => {
-                  //   setActiveFilter("Online")
-                  //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
-                  // }}
-                />
-              </div>
               <div className="overflow-y-auto overflow-x-auto max-h-60 sm:max-h-80 md:max-h-[380px] lg:max-h-[398px] shadow-md rounded-lg mt-2 ">
                 <table className="divide-y divide-gray-200 w-full text-center">
                   <thead className="bg-purple-300 sticky top-0 z-40  ">
@@ -723,7 +646,7 @@ const Summary = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-gray-200">
-                    {isToggled ? (
+                    {/* {isToggled ? (
                       userCalls?.length > 0 ? (
                         userCalls?.map((call) =>
                           call?.callregistration.map((reg) => {
@@ -779,15 +702,7 @@ const Summary = () => {
                                       reg?.timedata?.endTime
                                     ).toLocaleString()}
                                   </td>
-                                  {/* <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                                    {reg.timedata.duration}
-                                  </td>
-                                  <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                                    {reg.formdata.description}
-                                  </td>
-                                  <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                                    {reg.formdata.solution}
-                                  </td> */}
+                                 
                                   <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                                     {reg?.formdata?.incomingNumber}
                                   </td>
@@ -1020,134 +935,7 @@ const Summary = () => {
                           </>
                         )
                       })
-                    )}
-
-                    {/* {Calls.map((call) => {
-                      const startTimeRaw = call?.timedata?.startTime
-                      const callDate = startTimeRaw
-                        ? new Date(startTimeRaw.split(" ")[0])
-                            .toISOString()
-                            .split("T")[0]
-                        : null
-                      const today = new Date().toISOString().split("T")[0]
-
-                      const isToday = callDate === today
-
-                      const isCompletedToday =
-                        call?.formdata?.status === "solved"
-                      const isPast = callDate < today
-
-                      // Determine row color based on conditions
-                      const rowColor = isCompletedToday
-                        ? "linear-gradient(135deg, rgba(0, 140, 0, 1), rgba(128, 255, 128, 1))"
-                        : isToday
-                        ? "linear-gradient(135deg,rgba(255,255,1,1),rgba(255,255,128,1))"
-                        : isPast
-                        ? "linear-gradient(135deg,rgba(255,0,0,1),rgba(255,128,128,1))"
-                        : ""
-
-                      return (
-                        <>
-                          <tr
-                            key={call._id}
-                            style={{ background: rowColor }}
-                            className="border border-b-0 "
-                          >
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {call?.timedata?.token}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {call?.product?.productName}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {call?.license}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {new Date(
-                                call?.timedata?.startTime
-                              ).toLocaleDateString("en-GB", {
-                                timeZone: "UTC",
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric"
-                              })}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {call?.formdata?.status === "solved"
-                                ? new Date(
-                                    call?.timedata?.endTime
-                                  ).toLocaleDateString("en-GB", {
-                                    timeZone: "UTC",
-                                    day: "2-digit",
-                                    month: "2-digit",
-                                    year: "numeric"
-                                  })
-                                : ""}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {call?.formdata?.incomingNumber}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {call?.formdata?.status}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]"></td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]"></td>
-                          </tr>
-                          <tr
-                            className={`text-center border-t-0 border-gray-300 ${
-                              call?.formdata?.status === "solved"
-                                ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
-                                : call?.formdata?.status === "pending"
-                                ? callDate === today
-                                  ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
-                                  : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                            }`}
-                            style={{ height: "5px" }}
-                          >
-                            <td
-                              colSpan="4"
-                              className="py-2 px-8 text-sm text-black text-left"
-                            >
-                              <strong>Description:</strong>{" "}
-                              {call?.formdata?.description || "N/A"}
-                            </td>
-
-                            <td
-                              colSpan="2"
-                              className="py-2 px-8 text-sm text-black text-left"
-                            >
-                              <strong>Duration:</strong>{" "}
-                              <span className="ml-2">
-                                {`${Math.floor(
-                                  (new Date(
-                                    call?.formdata?.status === "solved"
-                                      ? call.timedata?.endTime // Use end date if the call is solved
-                                      : new Date().setHours(0, 0, 0, 0) // Use today's date at midnight if not solved
-                                  ) -
-                                    new Date(
-                                      new Date(
-                                        call.timedata?.startTime
-                                      ).setHours(0, 0, 0, 0)
-                                    )) /
-                                    (1000 * 60 * 60 * 24)
-                                )} days`}
-                              </span>
-                              <span className="ml-1">
-                                {call?.timedata?.duration || "N/A"}
-                              </span>
-                            </td>
-                            <td
-                              colSpan="6"
-                              className="py-2 px-12 text-sm text-black text-right"
-                            >
-                              <strong>Solution:</strong>{" "}
-                              {call?.formdata?.solution || "N/A"}
-                            </td>
-                          </tr>
-                        </>
-                      )
-                    })} */}
+                    )} */}
                   </tbody>
                 </table>
               </div>
@@ -1167,4 +955,4 @@ const Summary = () => {
   )
 }
 
-export default Summary
+export default ExpiryRegister
