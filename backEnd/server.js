@@ -178,44 +178,7 @@ io.on("connection", (socket) => {
         ])
       )
 
-      // calls.forEach((call) =>
-      //   call.callregistration.forEach((entry) => {
-      //     // Handle attendedBy field
-      //     if (Array.isArray(entry?.formdata?.attendedBy)) {
-      //       entry.formdata.attendedBy = entry?.formdata?.attendedBy?.map(
-      //         (attendee) =>
-      //           userMap.has(attendee.callerId.toString())
-      //             ? {
-      //                 ...attendee,
-      //                 callerId: { name: userMap.get(attendee?.callerId) }
-      //               }
-      //             : attendee
-      //       )
-      //     } else if (typeof entry?.formdata?.attendedBy === "string") {
-      //       // If attendedBy is a string, map it to the name if it exists in userMap
-      //       const name = userMap.get(entry?.formdata?.attendedBy)
-      //       entry.formdata.attendedBy = name
-      //         ? { callerId: { name } }
-      //         : { callerId: entry?.formdata?.attendedBy }
-      //     }
-
-      //     // Handle completedBy field
-      //     if (entry?.formdata?.completedBy?.length) {
-      //       const completedUser = userMap.get(
-      //         entry?.formdata?.completedBy[0]?.callerId?.toString()
-      //       )
-      //       entry.formdata.completedBy = completedUser
-      //         ? [{ ...entry?.formdata?.completedBy[0], name: completedUser }]
-      //         : entry.formdata.completedBy
-      //     } else if (typeof entry.formdata.completedBy === "string") {
-      //       // If completedBy is a string, map it to the name if it exists in userMap
-      //       const name = userMap.get(entry?.formdata?.completedBy)
-      //       entry.formdata.completedBy = name
-      //         ? { callerId: { name } }
-      //         : { callerId: entry?.formdata?.completedBy }
-      //     }
-      //   })
-      // )
+      
       calls.forEach((call) =>
         call.callregistration.forEach((entry) => {
           // Handle attendedBy field

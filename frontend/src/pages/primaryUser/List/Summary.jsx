@@ -5,14 +5,12 @@ import Tiles from "../../../components/common/Tiles"
 import UseFetch from "../../../hooks/useFetch"
 import io from "socket.io-client" // Import Socket.IO client
 import { UNSAFE_useScrollRestoration } from "react-router-dom"
-// const socket = io("http://localhost:9000")
-const socket = io("https://www.crm.camet.in")
+const socket = io("http://localhost:9000")
+// const socket = io("https://www.crm.camet.in")
 
 const Summary = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null)
-  const [pendingCallsCount, setPendingCallsCount] = useState(0)
-  const [todayCallsCount, setTodayCallsCount] = useState(0)
-  const [solvedCallsCount, setTodaysSolvedCount] = useState(0)
+ 
   const [selectedUser, setSelectedUser] = useState(null)
   const [Calls, setCalls] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -519,33 +517,7 @@ const Summary = () => {
                     </tr>
                   ))}
 
-                {/* {customerSummary.map((customer) => (
-                  <tr key={customer.customerName}>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm">
-                      {customer.customerName}
-                    </td>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      {customer.totalCalls}
-                    </td>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      {customer.solvedCalls}
-                    </td>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      {customer.pendingCalls}
-                    </td>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      {customer.todaysCalls}
-                    </td>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      <button
-                        onClick={() => openModal(customer.customerId)}
-                        className="text-blue-500 hover:text-blue-700"
-                      >
-                        View Calls
-                      </button>
-                    </td>
-                  </tr>
-                ))} */}
+               
               </tbody>
             </table>
           </div>

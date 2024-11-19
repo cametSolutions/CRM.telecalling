@@ -18,8 +18,8 @@ import { debounce } from "lodash"
 import UseFetch from "../../../hooks/useFetch"
 import Timer from "../../../components/primaryUser/Timer"
 import { toast } from "react-toastify"
-const socket = io("https://www.crm.camet.in")
-// const socket = io("http://localhost:9000")
+// const socket = io("https://www.crm.camet.in")
+const socket = io("http://localhost:9000")
 
 export default function CallRegistration() {
   const {
@@ -132,12 +132,12 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
-    const response = await fetch(
-      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
-    )
     // const response = await fetch(
-    //   `http://localhost:9000/api/customer/getcallregister/${callId}`
+    //   `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
     // )
+    const response = await fetch(
+      `http://localhost:9000/api/customer/getcallregister/${callId}`
+    )
     const data = await response.json()
 
     return data
@@ -359,12 +359,12 @@ export default function CallRegistration() {
 
   const fetchCustomerData = useCallback(
     debounce(async (query) => {
-      // const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
-      //   query
-      // )}`
-      const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
+      const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
         query
       )}`
+      // const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
+      //   query
+      // )}`
 
       try {
         const response = await fetch(url, {
@@ -674,7 +674,6 @@ export default function CallRegistration() {
                 </h3>
                 {/* <button onClick={fetchData}>update</button>c */}
               </div>
-
               <div className="m-5 w-lg max-h-30 overflow-x-auto text-center overflow-y-auto">
                 <table className=" m-w-full divide-y divide-gray-200 shadow">
                   <thead className="sticky  top-0 z-30 bg-green-300">
@@ -826,6 +825,7 @@ export default function CallRegistration() {
                   </tbody>
                 </table>
               </div>
+              ///
               <div className=" container mt-12 ">
                 <div className="flex container justify-center items-center">
                   <Timer
