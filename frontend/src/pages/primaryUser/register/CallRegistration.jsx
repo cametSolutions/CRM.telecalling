@@ -533,6 +533,7 @@ export default function CallRegistration() {
   //     // socket.emit("updatedCalls")
   //   }
   // }
+  console.log(selectedCustomer)
 
   return (
     <div className="container  justify-center items-center p-8 bg-gray-100">
@@ -659,7 +660,9 @@ export default function CallRegistration() {
                 <h4 className="text-md font-bold text-white">Status</h4>
                 <p
                   className={` ${
-                    selectedCustomer.isActive
+                    selectedCustomer.selected.some(
+                      (item) => item.isActive === "Running"
+                    )
                       ? "text-green-500"
                       : "text-red-500"
                   }`}
