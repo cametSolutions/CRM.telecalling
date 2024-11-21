@@ -1470,6 +1470,9 @@ const CustomerAdd = ({
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {product?.tvuAmount}
                               </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {product?.isActive}
+                              </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 {" "}
                                 <button
