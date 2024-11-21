@@ -2,9 +2,12 @@ import React from "react"
 import CustomerAdd from "../../../components/secondaryUser/CustomerAdd"
 import { useLocation, useNavigate } from "react-router-dom"
 import api from "../../../api/api"
+import { removeSearch } from "../../../../slices/search"
+import { useDispatch } from "react-redux"
 import { toast } from "react-toastify"
 
 function CustomerEdit() {
+  const dispatch = useDispatch()
   const navigate = useNavigate()
   const location = useLocation()
   const customer = location.state?.customer
@@ -47,6 +50,7 @@ function CustomerEdit() {
         }
       )
       toast.success(response.data.message)
+      dispatch(removeSearch(""))
       navigate("/admin/masters/customer")
     } catch (error) {
       console.error("Error updating branch:", error)

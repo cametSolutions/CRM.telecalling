@@ -10,9 +10,7 @@ const socket = io("https://www.crm.camet.in")
 
 const Summary = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null)
-  const [pendingCallsCount, setPendingCallsCount] = useState(0)
-  const [todayCallsCount, setTodayCallsCount] = useState(0)
-  const [solvedCallsCount, setTodaysSolvedCount] = useState(0)
+ 
   const [selectedUser, setSelectedUser] = useState(null)
   const [Calls, setCalls] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -519,33 +517,7 @@ const Summary = () => {
                     </tr>
                   ))}
 
-                {/* {customerSummary.map((customer) => (
-                  <tr key={customer.customerName}>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm">
-                      {customer.customerName}
-                    </td>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      {customer.totalCalls}
-                    </td>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      {customer.solvedCalls}
-                    </td>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      {customer.pendingCalls}
-                    </td>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      {customer.todaysCalls}
-                    </td>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      <button
-                        onClick={() => openModal(customer.customerId)}
-                        className="text-blue-500 hover:text-blue-700"
-                      >
-                        View Calls
-                      </button>
-                    </td>
-                  </tr>
-                ))} */}
+               
               </tbody>
             </table>
           </div>
@@ -1022,132 +994,7 @@ const Summary = () => {
                       })
                     )}
 
-                    {/* {Calls.map((call) => {
-                      const startTimeRaw = call?.timedata?.startTime
-                      const callDate = startTimeRaw
-                        ? new Date(startTimeRaw.split(" ")[0])
-                            .toISOString()
-                            .split("T")[0]
-                        : null
-                      const today = new Date().toISOString().split("T")[0]
-
-                      const isToday = callDate === today
-
-                      const isCompletedToday =
-                        call?.formdata?.status === "solved"
-                      const isPast = callDate < today
-
-                      // Determine row color based on conditions
-                      const rowColor = isCompletedToday
-                        ? "linear-gradient(135deg, rgba(0, 140, 0, 1), rgba(128, 255, 128, 1))"
-                        : isToday
-                        ? "linear-gradient(135deg,rgba(255,255,1,1),rgba(255,255,128,1))"
-                        : isPast
-                        ? "linear-gradient(135deg,rgba(255,0,0,1),rgba(255,128,128,1))"
-                        : ""
-
-                      return (
-                        <>
-                          <tr
-                            key={call._id}
-                            style={{ background: rowColor }}
-                            className="border border-b-0 "
-                          >
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {call?.timedata?.token}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {call?.product?.productName}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {call?.license}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {new Date(
-                                call?.timedata?.startTime
-                              ).toLocaleDateString("en-GB", {
-                                timeZone: "UTC",
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric"
-                              })}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {call?.formdata?.status === "solved"
-                                ? new Date(
-                                    call?.timedata?.endTime
-                                  ).toLocaleDateString("en-GB", {
-                                    timeZone: "UTC",
-                                    day: "2-digit",
-                                    month: "2-digit",
-                                    year: "numeric"
-                                  })
-                                : ""}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {call?.formdata?.incomingNumber}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {call?.formdata?.status}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]"></td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]"></td>
-                          </tr>
-                          <tr
-                            className={`text-center border-t-0 border-gray-300 ${
-                              call?.formdata?.status === "solved"
-                                ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
-                                : call?.formdata?.status === "pending"
-                                ? callDate === today
-                                  ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
-                                  : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                            }`}
-                            style={{ height: "5px" }}
-                          >
-                            <td
-                              colSpan="4"
-                              className="py-2 px-8 text-sm text-black text-left"
-                            >
-                              <strong>Description:</strong>{" "}
-                              {call?.formdata?.description || "N/A"}
-                            </td>
-
-                            <td
-                              colSpan="2"
-                              className="py-2 px-8 text-sm text-black text-left"
-                            >
-                              <strong>Duration:</strong>{" "}
-                              <span className="ml-2">
-                                {`${Math.floor(
-                                  (new Date(
-                                    call?.formdata?.status === "solved"
-                                      ? call.timedata?.endTime // Use end date if the call is solved
-                                      : new Date().setHours(0, 0, 0, 0) // Use today's date at midnight if not solved
-                                  ) -
-                                    new Date(
-                                      new Date(
-                                        call.timedata?.startTime
-                                      ).setHours(0, 0, 0, 0)
-                                    )) /
-                                    (1000 * 60 * 60 * 24)
-                                )} days`}
-                              </span>
-                              <span className="ml-1">
-                                {call?.timedata?.duration || "N/A"}
-                              </span>
-                            </td>
-                            <td
-                              colSpan="6"
-                              className="py-2 px-12 text-sm text-black text-right"
-                            >
-                              <strong>Solution:</strong>{" "}
-                              {call?.formdata?.solution || "N/A"}
-                            </td>
-                          </tr>
-                        </>
-                      )
-                    })} */}
+                  
                   </tbody>
                 </table>
               </div>

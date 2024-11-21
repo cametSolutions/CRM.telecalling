@@ -1,21 +1,12 @@
 import ComingSoon from "../../pages/common/ComingSoon"
+import Summary from "../../pages/primaryUser/List/Summary"
+import ExpiredCustomer from "../../pages/primaryUser/List/ExpiredCustomer"
 const staffreportsRoutes = [
-  { path: "/staff/reports/summary", component: ComingSoon },
-  { path: "/staff/reports/expiry-register", component: ComingSoon },
-  {
-    path: "/staff/reports/expired-custmerCalls",
+  { path: "/staff/reports/summary", component: Summary },
+  { path: "/staff/reports/expiry-register", component: ExpiredCustomer },
 
-    component: ComingSoon
-  },
-  {
-    path: "/staff/reports/customer-callSummary",
-    component: ComingSoon
-  },
   { path: "/staff/reports/customer-contact", component: ComingSoon },
-  {
-    path: "/staff/reports/customer-actionSummary",
-    component: ComingSoon
-  },
+
   { path: "/staff/reports/account-search", component: ComingSoon },
   { path: "/staff/reports/leave-summary", component: ComingSoon }
 ]

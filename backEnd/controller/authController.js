@@ -12,7 +12,7 @@ export const resetCallStatus = async (req, res) => {
 
   const objectId = new mongoose.Types.ObjectId(adminid)
   try {
-    const a = await Staff.updateOne(
+    const a = await Admin.updateOne(
       { _id: objectId }, // Find the user by their ID
       {
         $set: {

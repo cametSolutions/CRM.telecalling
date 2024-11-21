@@ -273,6 +273,7 @@ export default function CallRegistration() {
       if (response.status === 200) {
         toast.success(response.data.message)
         socket.emit("updatedCalls")
+        socket.emit("updateUserCallStatus")
         refreshHook()
       } else {
         toast.error(response.data.message)
@@ -674,7 +675,6 @@ export default function CallRegistration() {
                 </h3>
                 {/* <button onClick={fetchData}>update</button>c */}
               </div>
-
               <div className="m-5 w-lg max-h-30 overflow-x-auto text-center overflow-y-auto">
                 <table className=" m-w-full divide-y divide-gray-200 shadow">
                   <thead className="sticky  top-0 z-30 bg-green-300">
@@ -826,6 +826,7 @@ export default function CallRegistration() {
                   </tbody>
                 </table>
               </div>
+
               <div className=" container mt-12 ">
                 <div className="flex container justify-center items-center">
                   <Timer

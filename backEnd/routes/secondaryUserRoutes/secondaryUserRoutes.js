@@ -7,7 +7,8 @@ import {
   customerCallRegistration,
   GetCallRegister,
   CustomerEdit,
-  GetAllExpiryRegister
+  GetAllExpiryRegister,
+  getallExpiredCustomerCalls
 } from "../../controller/secondaryUserController/customerController.js"
 
 const router = express.Router()
@@ -24,6 +25,7 @@ router.get(
   authMiddleware,
   GetAllExpiryRegister
 )
+router.post("/getallExpiredCustomerCalls", authMiddleware, getallExpiredCustomerCalls)
 // router.get("/getallcalls", authMiddleware, GetallCalls)
 // router.post("/updatedbranch", authMiddleware, updateBranchNames)
 

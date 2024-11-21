@@ -62,8 +62,6 @@ const UseFetch = (url) => {
         const result = await fetchDataFromApi(url)
 
         if (result) {
-          console.log("hi")
-          console.log(result.data)
           setData(result.data)
           setLoading(false)
         } else {
@@ -71,7 +69,6 @@ const UseFetch = (url) => {
           console.error("Error", result)
         }
       } catch (err) {
-        console.log("errrrincatch")
         setLoading(false)
         setError(err.message || "Something went wrong!")
       }
