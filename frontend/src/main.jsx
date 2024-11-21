@@ -32,6 +32,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       newestOnTop
       rtl={false}
       icon
+    
     />
   </>
 )

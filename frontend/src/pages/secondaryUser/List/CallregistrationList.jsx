@@ -334,7 +334,7 @@ const CallregistrationList = () => {
                   `/${users.role.toLowerCase()}/transaction/call-registration`
                 )
               }
-              className="text-lg font-medium text-green-700 ml-4"
+              className="text-lg font-medium text-white ml-4 bg-blue-600 px-4 rounded-md hover:bg-blue-800 shadow-lg"
             >
               Call
             </label>

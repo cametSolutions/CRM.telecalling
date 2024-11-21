@@ -548,7 +548,18 @@ export default function CallRegistration() {
   return (
     <div className="container  justify-center items-center p-8 bg-gray-100">
       <div className="w-auto bg-white shadow-lg rounded min-h-screen p-8 mx-auto">
-        <h2 className="text-2xl font-semibold mb-6">Call Registration</h2>
+        <div className="flex justify-between ">
+          <h2 className="text-2xl font-semibold mb-4">Call Registration</h2>
+          <div>
+            <Link
+              to={user?.role === "Admin" ? "/admin/home" : "/staff/home"}
+              className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 px-2 py-1 rounded-md shadow-lg cursor-pointer"
+            >
+              Go Home
+            </Link>
+          </div>
+        </div>
+
         <hr className="border-t-2 border-gray-300 mb-4"></hr>
         <div className="w-2/4 ml-5">
           <div className="relative">
@@ -684,6 +695,14 @@ export default function CallRegistration() {
                     : "Inactive"}
                 </p>
               </div>
+              <div className="">
+                <h4 className="text-md font-bold text-white">
+                  Reason of Status
+                </h4>
+                <p className="text-white">
+                  {selectedCustomer.reasonofStatus || "N/A"}
+                </p>
+              </div>
             </div>
             <div className="mt-6 w-lg ">
               <div className="mb-2 ml-5">
@@ -808,9 +827,11 @@ export default function CallRegistration() {
                           {product?.tvuexpiryDate}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {product?.tvuexpiryDate
+                          {/* {product?.tvuexpiryDate
                             ? formatDate(product?.tvuexpiryDate)
-                            : ""}
+                            : ""} */}
+
+                          {calculateRemainingDays(product?.tvuexpiryDate)}
                         </td>
 
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
@@ -980,7 +1001,10 @@ export default function CallRegistration() {
                   )}
                 </form>
                 <div className="flex justify-end">
-                  <Link to="/admin/home" className="text-blue-600">
+                  <Link
+                    to={user?.role === "Admin" ? "/admin/home" : "/staff/home"}
+                    className="text-blue-600"
+                  >
                     Go Home
                   </Link>
                 </div>
