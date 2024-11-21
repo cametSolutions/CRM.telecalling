@@ -8,6 +8,7 @@ import { toast } from "react-toastify"
 
 const Login = () => {
   const [passwordVisible, setPasswordVisible] = useState(false)
+  const [loading, setLoading] = useState(false)
   const {
     register,
     handleSubmit,
@@ -17,6 +18,7 @@ const Login = () => {
 
   const onSubmit = async (data) => {
     try {
+      setLoading(true)
       const response = await api.post(`/auth/login`, data)
       const datas = await response.data
       const { token, User, role } = datas
@@ -34,8 +36,10 @@ const Login = () => {
 
         setTimeout(() => {
           if (User.role === "Admin") {
+            setLoading(false)
             navigate("/admin/home")
           } else if (User.role === "Staff") {
+            setLoading(false)
             navigate("/staff/home")
           }
         }, 1000)
@@ -129,7 +133,10 @@ const Login = () => {
               />
               <span
                 className="absolute inset-y-0 right-0 flex items-center px-2 cursor-pointer"
-                onClick={() => setPasswordVisible(!passwordVisible)}
+                onClick={() => 
+                  setPasswordVisible(!passwordVisible)
+                 
+                }
               >
                 <FontAwesomeIcon icon={passwordVisible ? faEyeSlash : faEye} />
               </span>
@@ -140,35 +147,12 @@ const Login = () => {
               </p>
             )}
           </div>
-          {/* <div className="mb-6">
-            <label
-              htmlFor="role"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Role
-            </label>
-            <select
-              id="role"
-              {...register("role", { required: "Role is required" })}
-              className="w-full px-3 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="">Select a role</option>
-              <option value="Admin">Admin</option>
-              <option value="Staff">Staff</option>
-              <option value="Seniormanager">Senior Manager</option>
-              <option value="Assistantmanager">Assistant Manager</option>
-              <option value="Hr">HR</option>
-              <option value="Teamleader">Team Leader</option>
-            </select>
-            {errors.role && (
-              <p className="mt-2 text-sm text-red-600">{errors.role.message}</p>
-            )}
-          </div> */}
+
           <button
             type="submit"
             className="w-full px-4 py-2 font-semibold text-white bg-indigo-500 rounded-md hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
-            Login
+            {loading ? "Loading..." : "Login"}
           </button>
         </form>
         {/* <p className="mt-4 text-center">

@@ -18,11 +18,8 @@ const CustomerSchema = new mongoose.Schema({
   incomingNumber: { type: String },
   mobile: { type: String },
   landline: String,
-  isActive: {
-    type: String,
+  industry: { type: String },
 
-    enum: ["Running", "Deactive"]
-  },
   contactPerson: {
     type: String
   },
@@ -56,6 +53,7 @@ const CustomerSchema = new mongoose.Schema({
 
         enum: ["Running", "Deactive"]
       },
+      reasonofStatus:{type:String},
       softwareTrade: { type: String }
     }
   ],

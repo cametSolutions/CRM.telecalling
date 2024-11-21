@@ -21,7 +21,7 @@ const CustomerAdd = ({
     getValues,
     setValue,
     watch,
-    formState: { errors }
+    formState: { errors, isSubmitting }
   } = useForm({
     defaultValues: {
       productName: null,
@@ -50,7 +50,8 @@ const CustomerAdd = ({
       tvuexpiryDate: "",
       tvuAmount: "",
       tvuamountDescription: "",
-      isActive: "Running"
+      isActive: "Running",
+      reasonofStatus: ""
     }
   })
 
@@ -89,7 +90,9 @@ const CustomerAdd = ({
     tvuexpiryDate: "",
     tvuAmount: "",
     tvuamountDescription: "",
-    isActive: ""
+    isActive: "",
+    industry: "",
+    reasonofStatus: ""
   })
   //now created
   const [isChecking, setIsChecking] = useState(false)
@@ -130,6 +133,7 @@ const CustomerAdd = ({
           email: customer.email,
           mobile: customer.mobile,
           landline: customer.landline,
+          industry: customer.industry,
           productName: customer?.selected?.product_id
             ? {
                 label: customer?.selected?.productName,
@@ -162,7 +166,8 @@ const CustomerAdd = ({
           tvuexpiryDate: customer?.selected?.tvuexpiryDate,
           tvuAmount: customer?.selected?.tvuAmount,
           tvuamountDescription: customer?.selected?.tvuamountDescription,
-          isActive: customer?.selected?.isActive
+          isActive: customer?.selected?.isActive,
+          reasonofStatus: customer?.selected?.reasonofStatus
         })
 
         setTableObject({
@@ -187,7 +192,8 @@ const CustomerAdd = ({
           tvuexpiryDate: customer?.selected?.tvuexpiryDate || "",
           tvuAmount: customer?.selected?.tvuAmount || "",
           tvuamountDescription: customer?.selected?.tvuamountDescription || "",
-          isActive: customer?.selected?.isActive || ""
+          isActive: customer?.selected?.isActive || "",
+          reasonofStatus: customer?.selected?.reasonofStatus || ""
         })
 
         setTableData([
@@ -214,7 +220,9 @@ const CustomerAdd = ({
             tvuAmount: customer?.selected?.tvuAmount || "",
             tvuamountDescription:
               customer?.selected?.tvuamountDescription || "",
-            isActive: customer?.selected?.isActive || ""
+            isActive: customer?.selected?.isActive || "",
+            industry: customer?.selected?.industry || "",
+            reasonofStatus: customer?.selected?.reasonofStatus || ""
           }
         ])
         // setTableData((prev) => [...prev, tableObject])
@@ -271,7 +279,7 @@ const CustomerAdd = ({
         } else {
           setLicenseAvailable(true)
 
-          toast.success("license number is availablesssssss")
+          toast.success("license number is available")
         }
       } else {
         if (isLicense && isLicense.length > 0) {
@@ -373,6 +381,14 @@ const CustomerAdd = ({
     "Pipes",
     "Tubes & Fittings"
     // Add more trades as needed
+  ]
+
+  const Industries = [
+    "Whole sailor/Distributors",
+    "Retailer",
+    "Manufacturer",
+    "Service",
+    "Works Contact"
   ]
 
   const handleDelete = (id) => {
@@ -517,8 +533,6 @@ const CustomerAdd = ({
       toast.error("Failed to save customer!")
     }
   }
-  const activeStatus = getValues("isActive")
-  // Ensure this logs "Running"
 
   return (
     <div className="container justify-center items-center min-h-screen p-8 bg-gray-100">
@@ -730,6 +744,28 @@ const CustomerAdd = ({
               {errors.landline && (
                 <span className="mt-2 text-sm text-red-600">
                   {errors.landline.message}
+                </span>
+              )}
+            </div>
+            <div className="">
+              <label className="block text-sm font-medium text-gray-700">
+                Type's of Industry
+              </label>
+              <select
+                id="industry"
+                {...register("industry")}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+              >
+                <option value="">Select Industry</option>
+                {Industries.map((industry, index) => (
+                  <option key={index} value={industry}>
+                    {industry}
+                  </option>
+                ))}
+              </select>
+              {errors.industry && (
+                <span className="mt-2 text-sm text-red-600">
+                  {errors.industry.message}
                 </span>
               )}
             </div>
@@ -1302,35 +1338,71 @@ const CustomerAdd = ({
                 )}
               </div>
               {showTable && (
-                <div>
-                  <label
-                    htmlFor="isActive"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Status
-                  </label>
-                  <select
-                    id="isActive"
-                    {...register("isActive", {
-                      required: "Status is Required"
-                    })}
-                    onChange={
-                      (e) =>
-                        setTableObject({
-                          ...tableObject,
-                          isActive: e.target.value
-                        }) // Update state on change
-                    }
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
-                  >
-                    <option>select a status</option>
-                    <option value="Running">Active</option>
-                    <option value="Deactive">Deactive</option>
-                  </select>
-                  {errors.isActive && (
-                    <p className="text-red-500">{errors.isActive.message}</p>
-                  )}
-                </div>
+                <>
+                  <div>
+                    <label
+                      htmlFor="isActive"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Status
+                    </label>
+                    <select
+                      id="isActive"
+                      {...register("isActive", {
+                        required: "Status is Required"
+                      })}
+                      onChange={
+                        (e) =>
+                          setTableObject({
+                            ...tableObject,
+                            isActive: e.target.value
+                          }) // Update state on change
+                      }
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                    >
+                      <option>select a status</option>
+                      <option value="Running">Active</option>
+                      <option value="Deactive">Deactive</option>
+                    </select>
+                    {errors.isActive && (
+                      <p className="text-red-500">{errors.isActive.message}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label
+                      id="reasonofStatus"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Reason of Status
+                    </label>
+                    <textarea
+                      id="reasonofStatus"
+                      rows="1"
+                      {...register("reasonofStatus", {
+                        maxLength: {
+                          value: 500,
+                          message: "Description cannot exceed 500 characters"
+                        },
+                        onBlur: (e) =>
+                          setValue("reasonofStatus", e.target.value.trim())
+                      })}
+                      onChange={
+                        (e) =>
+                          setTableObject({
+                            ...tableObject,
+                            reasonofStatus: e.target.value
+                          }) // Update state on change
+                      }
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                      placeholder="Enter a description..."
+                    />
+                    {errors.reasonofStatus && (
+                      <span className="mt-2 text-sm text-red-600">
+                        {errors.reasonofStatus.message}
+                      </span>
+                    )}
+                  </div>
+                </>
               )}
             </div>
             {showTable && (
@@ -1513,11 +1585,48 @@ const CustomerAdd = ({
 
             {/* Submit Button */}
             <div className="mt-6">
-              <button
+              {/* <button
                 type="submit"
                 className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
               >
                 {process === "Registration" ? "Save" : "Update "}
+              </button> */}
+              <button
+                type="submit"
+                className={`flex items-center justify-center bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 ${
+                  isSubmitting && "bg-blue-400 cursor-not-allowed"
+                }`}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center">
+                    <svg
+                      className="animate-spin h-5 w-5 mr-2 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      ></path>
+                    </svg>
+                    Submitting...
+                  </span>
+                ) : process === "Registration" ? (
+                  "Save"
+                ) : (
+                  "Update"
+                )}
               </button>
             </div>
           </div>

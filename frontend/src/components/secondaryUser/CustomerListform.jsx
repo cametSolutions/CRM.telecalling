@@ -23,7 +23,7 @@ const CustomerListform = () => {
   // const tableContainerRef = useRef(null) // Ref to track table container scrolling
 
   const [searchQuery, setSearchQuery] = useState(true)
-  const [load, setLoading] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [displayedCustomers, setDisplayedCustomers] = useState([]) // Initially displayed customers
   const [loadMoreCount, setLoadMoreCount] = useState(10)
   const [allCustomers, setAllCustomers] = useState([]) // All customers list
@@ -33,7 +33,7 @@ const CustomerListform = () => {
   const [user, setUser] = useState(null)
   const {
     data: customerData,
-    loading,
+
     error
   } = UseFetch("/customer/getCustomer")
   useEffect(() => {
@@ -54,6 +54,11 @@ const CustomerListform = () => {
       setAfterSearchData(searchData)
     }
   }, [searchData])
+  useEffect(() => {
+    if (searchAfterData) {
+      setLoading(false)
+    }
+  }, [searchAfterData])
 
   //Handle search with lodash debounce to optimize search performance
   const handleSearch = debounce((query) => {
@@ -256,7 +261,7 @@ const CustomerListform = () => {
                     colSpan="11"
                     className="px-4 py-4 text-center text-gray-500"
                   >
-                    {loading ? loading : "No customers found."}
+                    Loading...
                   </td>
                 </tr>
               )}
