@@ -145,6 +145,7 @@ export default function CallRegistration() {
 
   useEffect(() => {
     if (registeredCall) {
+      console.log(registeredCall)
       const sortedData = registeredCall.callregistration.sort((a, b) => {
         if (a.formdata.status === "pending" && b.formdata.status === "solved") {
           return -1
@@ -396,6 +397,15 @@ export default function CallRegistration() {
     }, 300),
     [] // The empty dependency array ensures that debounce is created only once
   )
+  const formatDuration = (seconds) => {
+    if (!seconds || isNaN(seconds)) {
+      return "0 hr 0 min 0 sec"
+    }
+    const hrs = Math.floor(seconds / 3600)
+    const mins = Math.floor((seconds % 3600) / 60)
+    const secs = seconds % 60
+    return `${hrs} hr ${mins} min ${secs} sec`
+  }
   const handleInputChange = useCallback((e) => {
     setSelectedCustomer(null)
 
@@ -659,13 +669,13 @@ export default function CallRegistration() {
               <div className="">
                 <h4 className="text-md font-bold text-white">Status</h4>
                 <p
-                  className={` ${
+                  className={`bg-clip-text text-transparent ${
                     selectedCustomer.selected.some(
                       (item) => item.isActive === "Running"
                     )
-                      ? "text-green-500"
-                      : "text-red-500"
-                  }`}
+                      ? "bg-gradient-to-r from-lime-400 via-green-500 to-emerald-600"
+                      : "bg-gradient-to-r from-red-400 via-red-500 to-orange-600"
+                  } text-lg font-bold `}
                 >
                   {selectedCustomer.selected.some(
                     (item) => item.isActive === "Running"
@@ -983,6 +993,9 @@ export default function CallRegistration() {
                             Token No
                           </th>
                           <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
+                            Product Name
+                          </th>
+                          <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
                             Start Date
                           </th>
                           <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
@@ -1033,6 +1046,9 @@ export default function CallRegistration() {
                                   {call.timedata?.token}
                                 </td>
                                 <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                  {call.product?.productName}
+                                </td>
+                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
                                   {formatDate(call.timedata?.startTime)}
                                 </td>
 
@@ -1042,22 +1058,38 @@ export default function CallRegistration() {
                                     : ""}
                                 </td>
                                 <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                  {call.timedata?.duration}
+                                  {formatDuration(call?.timedata?.duration) ||
+                                    "N/A"}
                                 </td>
                                 <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
                                   {call.formdata?.incomingNumber}
                                 </td>
 
                                 <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                  {/* {call.formdata?.attendedBy} */}
                                   {Array.isArray(call?.formdata?.attendedBy)
-                                    ? call.formdata?.attendedBy
-                                        .map((attendee) => attendee.name)
+                                    ? call?.formdata?.attendedBy
+                                        ?.map(
+                                          (attendee) =>
+                                            attendee?.callerId?.name ||
+                                            attendee?.name
+                                        )
                                         .join(", ")
-                                    : call.formdata?.attendedBy}
+                                    : call?.formdata?.attendedBy?.callerId
+                                        ?.name}
                                 </td>
                                 <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
-                                  {/* {call.formdata?.completedBy} */}
+                                  {call?.formdata.status
+                                    ? Array.isArray(call?.formdata?.completedBy)
+                                      ? call?.formdata?.completedBy
+                                          ?.map(
+                                            (attendee) =>
+                                              attendee?.callerId?.name ||
+                                              attendee?.name
+                                          )
+                                          .join(", ")
+                                      : call?.formdata?.completedBy?.callerId
+                                          ?.name
+                                    : ""}
                                 </td>
                                 <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
                                   {call.formdata?.status}
@@ -1076,7 +1108,7 @@ export default function CallRegistration() {
                                 style={{ height: "5px" }}
                               >
                                 <td
-                                  colSpan="4"
+                                  colSpan="5"
                                   className="py-1 px-8 text-sm text-black text-left"
                                 >
                                   <strong>Description:</strong>{" "}

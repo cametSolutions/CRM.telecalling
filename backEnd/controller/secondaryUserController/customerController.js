@@ -765,6 +765,153 @@ export const GetCallRegister = async (req, res) => {
       const customerId = new mongoose.Types.ObjectId(customerid)
       const registeredCall = await CallRegistration.findOne({
         customerid: customerId
+      }).populate({ path: "callregistration.product", select: "productName" })
+
+      const attendedByIds = new Set()
+      const completedByIds = new Set()
+      registeredCall.callregistration.map((entry) => {
+        // Handle `attendedBy`
+        const attendedBy = entry.formdata.attendedBy
+        if (Array.isArray(attendedBy)) {
+          // If it's an array, iterate over it
+          attendedBy.forEach((attendee) => {
+            if (attendee.callerId) {
+              attendedByIds.add(attendee.callerId.toString())
+            } else if (attendee.name) {
+              attendedByIds.add(attendee.name)
+            }
+          })
+        } else if (typeof attendedBy === "string") {
+          // If it's a string, add it directly
+          attendedByIds.add(attendedBy)
+        }
+
+        // Handle `completedBy`
+        const completedBy = entry.formdata.completedBy
+        if (Array.isArray(completedBy) && completedBy.length > 0) {
+          const completedByEntry = completedBy[0]
+          if (completedByEntry.callerId) {
+            completedByIds.add(completedByEntry.callerId.toString())
+          } else if (completedByEntry.name) {
+            completedByIds.add(completedByEntry.name)
+            // Optionally, handle cases where only the name exists
+            console.warn(
+              `CompletedBy has name but no callerId: ${completedByEntry.name}`
+            )
+          }
+        } else if (typeof completedBy === "string") {
+          // If it's a string, add it directly
+          completedByIds.add(completedBy)
+        }
+      })
+
+      // Separate IDs and names from the Sets
+      const attendedByIdsArray = Array.from(attendedByIds)
+      const attendedByObjectIds = attendedByIdsArray.filter((id) =>
+        mongoose.Types.ObjectId.isValid(id)
+      )
+
+      const attendedByNames = attendedByIdsArray
+        .filter((id) => !mongoose.Types.ObjectId.isValid(id)) // Filter invalid ObjectIds (names)
+        .map((name) => ({ name })) // Transform them into objects with a "name" property
+
+      const completedByIdsArray = Array.from(completedByIds)
+      const completedByObjectIds = completedByIdsArray.filter((id) =>
+        mongoose.Types.ObjectId.isValid(id)
+      )
+
+      const completedByNames = completedByIdsArray
+        .filter((id) => !mongoose.Types.ObjectId.isValid(id)) // Filter invalid ObjectIds (names)
+        .map((name) => ({ name })) // Transform them into objects with a "name" property
+
+      // Query for ObjectIds (staff/admin users)
+      const [
+        attendedByStaff,
+        attendedByAdmin,
+        completedByStaff,
+        completedByAdmin
+      ] = await Promise.all([
+        // Search attendedBy IDs in Staff
+        mongoose
+          .model("Staff")
+          .find({ _id: { $in: attendedByObjectIds } })
+          .select("name _id ")
+          .lean(),
+
+        // Search attendedBy IDs in Admin
+        mongoose
+          .model("Admin")
+          .find({ _id: { $in: attendedByObjectIds } })
+          .select("name _id ")
+          .lean(),
+
+        // Search completedBy IDs in Staff
+        mongoose
+          .model("Staff")
+          .find({ _id: { $in: completedByObjectIds } })
+          .select("name _id ")
+          .lean(),
+
+        // Search completedBy IDs in Admin
+        mongoose
+          .model("Admin")
+          .find({ _id: { $in: completedByObjectIds } })
+          .select("name _id ")
+          .lean()
+      ])
+
+      // Combine results for attendedBy and completedBy
+      const attendedByUsers = [...attendedByStaff, ...attendedByAdmin]
+      const completedByUsers = [...completedByStaff, ...completedByAdmin]
+
+      // Optionally handle name-based entries as well
+      const attendedByCombined = [...attendedByUsers, ...attendedByNames]
+
+      const completedByCombined = [...completedByUsers, ...completedByNames]
+      const userMap = new Map(
+        [...attendedByCombined, ...completedByCombined].map((user) => [
+          user._id ? user._id.toString() : user.name,
+          user.name
+        ])
+      )
+
+      registeredCall.callregistration.forEach((entry) => {
+        // Handle attendedBy field
+        if (Array.isArray(entry?.formdata?.attendedBy)) {
+          entry.formdata.attendedBy = entry.formdata.attendedBy
+            .flat() // Flatten the array
+            .map((attendee) => {
+              const name = userMap.get(attendee?.callerId?.toString())
+              // If name is found, attach it to the callerId
+              return name ? { ...attendee, callerId: { name } } : attendee // Keep original if no name found
+            })
+        } else if (typeof entry?.formdata?.attendedBy === "string") {
+          // If attendedBy is a string (not an array), map it to the name if it exists in userMap
+          const name = userMap.get(entry?.formdata?.attendedBy)
+          entry.formdata.attendedBy = name
+            ? { callerId: { name } } // Map the string to an object with a name
+            : { callerId: entry?.formdata?.attendedBy } // Keep the original if no name found
+        }
+
+        // Handle completedBy field
+        if (
+          Array.isArray(entry?.formdata?.completedBy) &&
+          entry?.formdata?.completedBy.length > 0
+        ) {
+          // If completedBy is an array, map over each entry (assuming one entry)
+          const completedUser = userMap.get(
+            entry?.formdata?.completedBy[0]?.callerId?.toString()
+          )
+          entry.formdata.completedBy = completedUser
+            ? [{ ...entry?.formdata?.completedBy[0], name: completedUser }] // Add the name to the first item
+            : entry.formdata.completedBy // Keep as is if no name found
+        } else if (typeof entry?.formdata?.completedBy === "string") {
+          // If completedBy is a string, map it to the name if it exists in userMap
+          const name = userMap.get(entry?.formdata?.completedBy)
+          entry.formdata.completedBy = name
+            ? { callerId: { name } } // Map the string to an object with a name
+            : { callerId: entry?.formdata?.completedBy } // Keep the original if no name found
+        }
       })
 
       if (registeredCall) {
@@ -781,6 +928,153 @@ export const GetCallRegister = async (req, res) => {
           path: "callregistration.product", // Populate the product field inside callregistration array
           model: "Product"
         })
+
+      const attendedByIds = new Set()
+      const completedByIds = new Set()
+      callDetails.callregistration.map((entry) => {
+        // Handle `attendedBy`
+        const attendedBy = entry.formdata.attendedBy
+        if (Array.isArray(attendedBy)) {
+          // If it's an array, iterate over it
+          attendedBy.forEach((attendee) => {
+            if (attendee.callerId) {
+              attendedByIds.add(attendee.callerId.toString())
+            } else if (attendee.name) {
+              attendedByIds.add(attendee.name)
+            }
+          })
+        } else if (typeof attendedBy === "string") {
+          // If it's a string, add it directly
+          attendedByIds.add(attendedBy)
+        }
+
+        // Handle `completedBy`
+        const completedBy = entry.formdata.completedBy
+        if (Array.isArray(completedBy) && completedBy.length > 0) {
+          const completedByEntry = completedBy[0]
+          if (completedByEntry.callerId) {
+            completedByIds.add(completedByEntry.callerId.toString())
+          } else if (completedByEntry.name) {
+            completedByIds.add(completedByEntry.name)
+            // Optionally, handle cases where only the name exists
+            console.warn(
+              `CompletedBy has name but no callerId: ${completedByEntry.name}`
+            )
+          }
+        } else if (typeof completedBy === "string") {
+          // If it's a string, add it directly
+          completedByIds.add(completedBy)
+        }
+      })
+
+      // Separate IDs and names from the Sets
+      const attendedByIdsArray = Array.from(attendedByIds)
+      const attendedByObjectIds = attendedByIdsArray.filter((id) =>
+        mongoose.Types.ObjectId.isValid(id)
+      )
+
+      const attendedByNames = attendedByIdsArray
+        .filter((id) => !mongoose.Types.ObjectId.isValid(id)) // Filter invalid ObjectIds (names)
+        .map((name) => ({ name })) // Transform them into objects with a "name" property
+
+      const completedByIdsArray = Array.from(completedByIds)
+      const completedByObjectIds = completedByIdsArray.filter((id) =>
+        mongoose.Types.ObjectId.isValid(id)
+      )
+
+      const completedByNames = completedByIdsArray
+        .filter((id) => !mongoose.Types.ObjectId.isValid(id)) // Filter invalid ObjectIds (names)
+        .map((name) => ({ name })) // Transform them into objects with a "name" property
+
+      // Query for ObjectIds (staff/admin users)
+      const [
+        attendedByStaff,
+        attendedByAdmin,
+        completedByStaff,
+        completedByAdmin
+      ] = await Promise.all([
+        // Search attendedBy IDs in Staff
+        mongoose
+          .model("Staff")
+          .find({ _id: { $in: attendedByObjectIds } })
+          .select("name _id ")
+          .lean(),
+
+        // Search attendedBy IDs in Admin
+        mongoose
+          .model("Admin")
+          .find({ _id: { $in: attendedByObjectIds } })
+          .select("name _id ")
+          .lean(),
+
+        // Search completedBy IDs in Staff
+        mongoose
+          .model("Staff")
+          .find({ _id: { $in: completedByObjectIds } })
+          .select("name _id ")
+          .lean(),
+
+        // Search completedBy IDs in Admin
+        mongoose
+          .model("Admin")
+          .find({ _id: { $in: completedByObjectIds } })
+          .select("name _id ")
+          .lean()
+      ])
+
+      // Combine results for attendedBy and completedBy
+      const attendedByUsers = [...attendedByStaff, ...attendedByAdmin]
+      const completedByUsers = [...completedByStaff, ...completedByAdmin]
+
+      // Optionally handle name-based entries as well
+      const attendedByCombined = [...attendedByUsers, ...attendedByNames]
+
+      const completedByCombined = [...completedByUsers, ...completedByNames]
+      const userMap = new Map(
+        [...attendedByCombined, ...completedByCombined].map((user) => [
+          user._id ? user._id.toString() : user.name,
+          user.name
+        ])
+      )
+
+      callDetails.callregistration.forEach((entry) => {
+        // Handle attendedBy field
+        if (Array.isArray(entry?.formdata?.attendedBy)) {
+          entry.formdata.attendedBy = entry.formdata.attendedBy
+            .flat() // Flatten the array
+            .map((attendee) => {
+              const name = userMap.get(attendee?.callerId?.toString())
+              // If name is found, attach it to the callerId
+              return name ? { ...attendee, callerId: { name } } : attendee // Keep original if no name found
+            })
+        } else if (typeof entry?.formdata?.attendedBy === "string") {
+          // If attendedBy is a string (not an array), map it to the name if it exists in userMap
+          const name = userMap.get(entry?.formdata?.attendedBy)
+          entry.formdata.attendedBy = name
+            ? { callerId: { name } } // Map the string to an object with a name
+            : { callerId: entry?.formdata?.attendedBy } // Keep the original if no name found
+        }
+
+        // Handle completedBy field
+        if (
+          Array.isArray(entry?.formdata?.completedBy) &&
+          entry?.formdata?.completedBy.length > 0
+        ) {
+          // If completedBy is an array, map over each entry (assuming one entry)
+          const completedUser = userMap.get(
+            entry?.formdata?.completedBy[0]?.callerId?.toString()
+          )
+          entry.formdata.completedBy = completedUser
+            ? [{ ...entry?.formdata?.completedBy[0], name: completedUser }] // Add the name to the first item
+            : entry.formdata.completedBy // Keep as is if no name found
+        } else if (typeof entry?.formdata?.completedBy === "string") {
+          // If completedBy is a string, map it to the name if it exists in userMap
+          const name = userMap.get(entry?.formdata?.completedBy)
+          entry.formdata.completedBy = name
+            ? { callerId: { name } } // Map the string to an object with a name
+            : { callerId: entry?.formdata?.completedBy } // Keep the original if no name found
+        }
+      })
 
       if (!callDetails) {
         return res.status(404).json({ message: "Calls not found" })
