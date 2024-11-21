@@ -30,12 +30,21 @@ const CustomerListform = () => {
   const [showFullAddress, setShowFullAddress] = useState({})
   const [searchAfterData, setAfterSearchData] = useState([])
   const [stringCustomers, setStringCustomers] = useState([])
+  const [user, setUser] = useState(null)
   const {
     data: customerData,
     loading,
     error
   } = UseFetch("/customer/getCustomer")
-
+  useEffect(() => {
+    const userData = localStorage.getItem("user")
+    const user = JSON.parse(userData)
+    if (user && user.role) {
+      setUser(user.role.toLowerCase())
+    } else {
+      setUser(null) // Handle case where user or role doesn't exist
+    }
+  }, [])
   //custom hook is used for search
   const searchData = useSearch({ fullData: customerData })
   useEffect(() => {
@@ -228,7 +237,7 @@ const CustomerListform = () => {
                       <td className="px-2 py-3 text-xl text-black">
                         <CiEdit
                           onClick={() =>
-                            navigate("/admin/masters/customerEdit", {
+                            navigate(`/${user}/masters/customerEdit`, {
                               state: {
                                 customer: customer,
                                 selected: item

@@ -31,6 +31,7 @@ const CallregistrationList = () => {
   useEffect(() => {
     const userData = localStorage.getItem("user")
     const users = JSON.parse(userData)
+
     setUser(users)
   }, [])
 
@@ -78,7 +79,7 @@ const CallregistrationList = () => {
           const branchNamesArray = Array.from(userBranchName)
 
           const filtered = calls.filter((call) =>
-            call.callregistration.some((registration) => {
+            call?.callregistration?.some((registration) => {
               const hasMatchingBranch = registration.branchName.some(
                 (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
               )
@@ -301,7 +302,7 @@ const CallregistrationList = () => {
       <div className="w-auto  bg-white shadow-lg rounded p-4 pt-1 h-full ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
           {/* Search Bar for large screens */}
-          <div className="mx-4 flex items-center">
+          {/* <div className="mx-4 flex items-center">
             <div className="relative">
               <FaSearch className="absolute w-5 h-5 left-2 top-2 text-gray-500" />
             </div>
@@ -313,7 +314,32 @@ const CallregistrationList = () => {
               placeholder="Search for..."
             />
             <label>call</label>
+          </div> */}
+          <div className="mx-4 flex items-center space-x-4">
+            {/* Search Input Wrapper */}
+            <div className="relative flex items-center w-full">
+              <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
+              <input
+                type="text"
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-full py-2 px-4 pl-10 focus:outline-none"
+                placeholder="Search for..."
+              />
+            </div>
+
+            {/* Label for Call */}
+            <label
+              onClick={() =>
+                navigate(
+                  `/${users.role.toLowerCase()}/transaction/call-registration`
+                )
+              }
+              className="text-lg font-medium text-green-700 ml-4"
+            >
+              Call
+            </label>
           </div>
+
           <div>
             <table className="text-center">
               <tbody>
