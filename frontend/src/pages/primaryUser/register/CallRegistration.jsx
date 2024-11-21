@@ -667,7 +667,11 @@ export default function CallRegistration() {
                       : "text-red-500"
                   }`}
                 >
-                  {selectedCustomer.isActive ? "Active" : "Inactive"}
+                  {selectedCustomer.selected.some(
+                    (item) => item.isActive === "Running"
+                  )
+                    ? "Active"
+                    : "Inactive"}
                 </p>
               </div>
             </div>
