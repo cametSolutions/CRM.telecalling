@@ -240,7 +240,6 @@ const CustomerAdd = ({
     // Directly set products to productData
   }, [productData, reset, customer])
 
-
   useEffect(() => {
     if (licensenumber) {
       setLicense(licensenumber)
@@ -254,7 +253,7 @@ const CustomerAdd = ({
 
     if (debouncedLicenseNo.length > 0) {
       debouncedLicenseNo.trim()
-      
+
       if (
         license &&
         license.length > 0 &&
@@ -393,7 +392,7 @@ const CustomerAdd = ({
 
     reset()
   }
-  
+
   const handleEdit = (id) => {
     seteditState(true) // Close the edit state (or handle according to your logic)
 
@@ -1411,6 +1410,9 @@ const CustomerAdd = ({
                           Tvu amount
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Edit
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -1461,6 +1463,9 @@ const CustomerAdd = ({
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {product?.tvuexpiryDate}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {product?.tvuAmount}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {product?.tvuAmount}

@@ -121,11 +121,7 @@ export default function StaffHeader() {
       label: "Expiry Register",
       control: user?.permissions?.[0]?.ExpiryRegister ?? false
     },
-    {
-      to: "/staff/reports/expired-custmerCalls",
-      label: "Expired Customer Calls",
-      control: user?.permissions?.[0]?.ExpiredCustomerCalls ?? false
-    },
+   
    
     
     {
@@ -162,16 +158,8 @@ export default function StaffHeader() {
       label: "Sign Up Custmer",
       control: user?.permissions?.[0]?.SignUpCustomer
     },
-    {
-      to: "/staff/tasks/productMerge",
-      label: "Product Merge",
-      control: user?.permissions?.[0]?.UsersAndPasswords ?? false
-    },
-    {
-      to: "/staff/tasks/productAllocation-Pending",
-      label: "Product Allocation Pending",
-      control: user?.permissions?.[0]?.ProductAllocationPending ?? false
-    },
+    
+   
     {
       to: "/staff/tasks/leaveApproval-pending",
       label: "Leave Approval Pending",

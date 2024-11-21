@@ -53,7 +53,8 @@ const CustomerListform = () => {
     } else {
       dispatch(setSearch(query))
     }
-  }, 100)
+  }, 1000)
+  const handleChange = (e) => handleSearch(e.target.value)
 
   // Function to toggle showing full address
   const handleShowMore = (customerId) => {
@@ -82,7 +83,7 @@ const CustomerListform = () => {
             <input
               type="text"
               // value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={handleChange}
               className="w-full border border-gray-300 rounded-full py-1 px-4 pl-10 focus:outline-none"
               placeholder="Search for..."
             />
@@ -222,7 +223,7 @@ const CustomerListform = () => {
                         {customer?.email}
                       </td>
                       <td className="px-2 py-3 whitespace-nowrap text-sm text-black">
-                        {customer?.isActive ? "Active" : "Inactive"}
+                        {item.isActive}
                       </td>
                       <td className="px-2 py-3 text-xl text-black">
                         <CiEdit

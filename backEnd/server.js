@@ -47,7 +47,7 @@ io.on("connection", (socket) => {
   socket.on("error", (err) => {
     console.error("Socket.IO error:", err)
   })
-  socket.on("updatedCalls", async (userId) => {
+  socket.on("updatedCalls", async () => {
     console.log("Received request for initial data")
 
     try {
@@ -76,11 +76,9 @@ io.on("connection", (socket) => {
             // If it's an array, iterate over it
             attendedBy.forEach((attendee) => {
               if (attendee.callerId) {
-              
                 attendedByIds.add(attendee.callerId.toString())
               } else if (attendee.name) {
                 attendedByIds.add(attendee.name)
-               
               }
             })
           } else if (typeof attendedBy === "string") {
@@ -107,13 +105,13 @@ io.on("connection", (socket) => {
           }
         })
       )
-     
+
       // Separate IDs and names from the Sets
       const attendedByIdsArray = Array.from(attendedByIds)
       const attendedByObjectIds = attendedByIdsArray.filter((id) =>
         mongoose.Types.ObjectId.isValid(id)
       )
-    
+
       const attendedByNames = attendedByIdsArray
         .filter((id) => !mongoose.Types.ObjectId.isValid(id)) // Filter invalid ObjectIds (names)
         .map((name) => ({ name })) // Transform them into objects with a "name" property
@@ -126,7 +124,7 @@ io.on("connection", (socket) => {
       const completedByNames = completedByIdsArray
         .filter((id) => !mongoose.Types.ObjectId.isValid(id)) // Filter invalid ObjectIds (names)
         .map((name) => ({ name })) // Transform them into objects with a "name" property
-  
+
       // Query for ObjectIds (staff/admin users)
       const [
         attendedByStaff,
@@ -178,7 +176,6 @@ io.on("connection", (socket) => {
         ])
       )
 
-      
       calls.forEach((call) =>
         call.callregistration.forEach((entry) => {
           // Handle attendedBy field
@@ -220,213 +217,7 @@ io.on("connection", (socket) => {
         })
       )
 
-      if (userId) {
-        const today = new Date()
-        today.setHours(0, 0, 0, 0) // Start of today (midnight)
-        const tomorrow = new Date(today)
-        tomorrow.setDate(today.getDate() + 1) // Start of tomorrow
-
-        const filteredCalls = calls
-          .map((call) => {
-            const todayCalls = []
-            const pendingCalls = []
-
-            // Filter through callregistration for today's calls and pending calls
-            call.callregistration.forEach((registration) => {
-              const startTime = new Date(registration.timedata?.startTime)
-
-              // Check if this is a today call
-              const isToday = startTime >= today && startTime < tomorrow
-
-              // Check if this is a pending call
-              const isPending = registration.formdata?.status === "pending"
-
-              if (isToday) {
-                todayCalls.push(registration)
-              } else if (isPending) {
-                pendingCalls.push(registration)
-              }
-            })
-
-            // Combine today's calls and pending calls (remove duplicates if necessary)
-            const uniqueCalls = [
-              ...new Map(
-                [...todayCalls, ...pendingCalls].map((item) => [
-                  item._id, // Use a unique identifier (e.g., `_id`) to ensure no duplicates
-                  item
-                ])
-              ).values()
-            ]
-
-            // Include this call only if there are relevant callregistrations
-            return uniqueCalls.length > 0
-              ? { ...call, callregistration: uniqueCalls }
-              : null
-          })
-          .filter(Boolean) // Remove null entries
-     
-
-        const objectId = new mongoose.Types.ObjectId(userId)
-        let user = await Staff.findOne({ _id: objectId })
-
-        if (!user) {
-          user = await Admin.findOne({ _id: objectId })
-        }
-
-        // Emit the updated calls and user data to the client
-        io.emit("updatedCalls", { filteredCalls, user })
-      } else {
-       
-        const objectId = new mongoose.Types.ObjectId(userId)
-        let user = await Staff.findOne({ _id: objectId })
-
-        if (!user) {
-          user = await Admin.findOne({ _id: objectId })
-        }
-
-        // Emit the updated calls and user data to the client
-        io.emit("updatedCalls", { calls, user })
-      }
-
-      // Fetch attendedBy and completedBy data in parallel
-      // const [attendedByUsers, completedByUsers] = await Promise.all([
-      //   mongoose
-      //     .model("Staff")
-      //     .find({ _id: { $in: Array.from(attendedByIds) } })
-      //     .select("name _id role")
-      //     .lean(),
-      //   mongoose
-      //     .model("Admin")
-      //     .find({ _id: { $in: Array.from(completedByIds) } })
-      //     .select("name _id role")
-      //     .lean()
-      // ])
-
-      // // Create lookup maps for attendedBy and completedBy
-      // const userMap = new Map(
-      //   [...attendedByUsers, ...completedByUsers].map((user) => [
-      //     user._id.toString(),
-      //     user.name
-      //   ])
-      // )
-
-      // Attach populated data to calls
-
-      // Fetch all calls from the database with populated product field
-      // const calls = await CallRegistration.find({})
-      //   .populate({
-      //     path: "callregistration.product", // Populate the product field inside callregistration array
-      //     select: "productName" // Optionally select fields from the Product schema you need
-      //   })
-      //   .exec()
-
-      // const today = new Date() // Current date and time
-
-      // // Start and end of today
-      // const startOfToday = new Date(today.toDateString()) // Midnight today
-      // const startOfTomorrow = new Date(startOfToday)
-      // startOfTomorrow.setDate(startOfToday.getDate() + 1) // Midnight tomorrow
-
-      // // Query for today's calls OR pending calls
-      // const calls = await CallRegistration.find({
-      //   $or: [
-      //     {
-      //       "callregistration.timedata.startTime": {
-      //         $gte: startOfToday,
-      //         $lt: startOfTomorrow
-      //       } // Calls from today
-      //     },
-      //     { "callregistration.formdata.status": "pending" } // All pending calls
-      //   ]
-      // })
-      //   .populate({
-      //     path: "callregistration.product",
-      //     select: "productName"
-      //   })
-      //   .exec()
-
-      // Function to batch populate the attendedBy field
-      // async function populateAttendedBy(attendedByArray) {
-      //   const callerIds = attendedByArray
-      //     .filter((attendee) => attendee.callerId)
-      //     .map((attendee) => attendee.callerId)
-
-      //   if (callerIds.length === 0) return attendedByArray
-
-      //   try {
-      //     // Batch query to fetch all staff or admin users
-      //     const users = await mongoose
-      //       .model("Staff")
-      //       .find({ _id: { $in: callerIds } })
-      //       .select("name _id")
-
-      //     const adminUsers = await mongoose
-      //       .model("Admin")
-      //       .find({ _id: { $in: callerIds } })
-      //       .select("name _id")
-
-      //     const allUsers = [...users, ...adminUsers]
-
-      //     // Create a lookup map for callerId => name
-      //     const userMap = new Map()
-      //     allUsers.forEach((user) =>
-      //       userMap.set(user._id.toString(), user.name)
-      //     )
-
-      //     // Attach the populated callerId to the attendees
-      //     return attendedByArray.map((attendee) => {
-      //       if (
-      //         attendee.callerId &&
-      //         userMap.has(attendee.callerId.toString())
-      //       ) {
-      //         return {
-      //           ...attendee,
-      //           callerId: { name: userMap.get(attendee.callerId.toString()) }
-      //         }
-      //       }
-      //       return attendee
-      //     })
-      //   } catch (error) {
-      //     console.error("Error populating attendedBy:", error)
-      //     return attendedByArray // Return original if there's an error
-      //   }
-      // }
-
-      // // Populate attendedBy and completedBy
-      // for (const call of calls) {
-      //   for (const callEntry of call.callregistration) {
-      //     if (
-      //       callEntry.formdata.attendedBy &&
-      //       callEntry.formdata.attendedBy.length > 0
-      //     ) {
-      //       // Populate the attendedBy field
-      //       callEntry.formdata.attendedBy = await populateAttendedBy(
-      //         callEntry.formdata.attendedBy
-      //       )
-      //     }
-
-      //     if (callEntry.formdata.completedBy.length > 0) {
-      //       // Populate completedBy field (single object)
-      //       const { callerId, role } = callEntry?.formdata?.completedBy[0]
-
-      //       if (callerId) {
-      //         const model = role === "Staff" ? "Staff" : "Admin"
-      //         try {
-      //           const populatedCompletedBy = await mongoose
-      //             .model(model)
-      //             .findById(callerId)
-      //             .select("name")
-
-      //           callEntry.formdata.completedBy = populatedCompletedBy
-      //         } catch (error) {
-      //           console.error("Error populating completedBy:", error)
-      //         }
-      //       }
-      //     }
-      //   }
-      // }
-
-      // Find the user (Staff or Admin)
+      io.emit("updatedCalls", { calls })
     } catch (error) {
       console.error("Error fetching call data:", error)
       socket.emit("error", "Error fetching data")
@@ -436,6 +227,17 @@ io.on("connection", (socket) => {
   // Handle Excel to JSON conversion
   socket.on("startConversion", (fileData) => {
     ExceltoJson(socket, fileData)
+  })
+  socket.on("updateUserCallStatus", async (userId) => {
+    const objectId = new mongoose.Types.ObjectId(userId)
+    let user = await Staff.findOne({ _id: objectId })
+
+    if (!user) {
+      user = await Admin.findOne({ _id: objectId })
+    }
+
+    // Emit the updated calls and user data to the client
+    io.emit("updateUserCallStatus", { user })
   })
 
   socket.on("disconnect", () => {

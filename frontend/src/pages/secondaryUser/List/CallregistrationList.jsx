@@ -67,10 +67,9 @@ const CallregistrationList = () => {
       const userId = users._id
       socket.emit("updatedCalls", userId)
       // Listen for initial data from the server
-      socket.on("updatedCalls", ({ filteredCalls, user }) => {
+      socket.on("updatedCalls", ({ calls }) => {
         if (users.role === "Admin") {
-          setCallList(filteredCalls)
-          setUserCallstatus(user.callstatus)
+          setCallList(calls)
         } else {
           const userBranchName = new Set(
             users.selected.map((branch) => branch.branchName)
@@ -78,7 +77,7 @@ const CallregistrationList = () => {
 
           const branchNamesArray = Array.from(userBranchName)
 
-          const filtered = filteredCalls.filter((call) =>
+          const filtered = calls.filter((call) =>
             call.callregistration.some((registration) => {
               const hasMatchingBranch = registration.branchName.some(
                 (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
@@ -99,7 +98,6 @@ const CallregistrationList = () => {
           )
 
           setCallList(filtered)
-          setUserCallstatus(user.callstatus)
         }
       })
 
@@ -110,6 +108,23 @@ const CallregistrationList = () => {
       }
     }
   }, [users])
+
+  useEffect(() => {
+    if (users) {
+      const userId = users._id
+      socket.emit("updateUserCallStatus", userId)
+      // Listen for initial data from the server
+      socket.on("updateUserCallStatus", ({ user }) => {
+        setUserCallstatus(user.callstatus)
+      })
+
+      //Cleanup the socket connection when the component unmounts
+      return () => {
+        socket.off("updateUserCallStatus")
+        // socket.disconnect()
+      }
+    }
+  }, [filteredCalls])
 
   // const fetchData = async () => {
   //   console.log("hii")
@@ -153,12 +168,6 @@ const CallregistrationList = () => {
           )
         })
       )
-      // sortedCalls = relevantCalls.filter((call) => {
-      //   call.callregistration.some((registration) => {
-      //     const token = registration?.formdata.token
-      //     return token.includes(search)
-      //   })
-      // })
     } else if (search) {
       // Search by customer name if searchQuery is not empty
       sortedCalls = relevantCalls.filter((call) =>
@@ -261,24 +270,6 @@ const CallregistrationList = () => {
   //   }
   // }
 
-  // const handleupdateadmin = async () => {
-  //   const id = users._id
-  //   // const id = "66af560dfa230b0b30e69c9c"
-
-  //   const url = `http://localhost:9000/api/auth/resetAdminstatus?adminid=${encodeURIComponent(
-  //     id
-  //   )}`
-
-  //   const response = await fetch(url, {
-  //     method: "POST",
-  //     credentials: "include"
-  //   })
-  //   const b = await response.json()
-  //   if (response.ok) {
-  //     toast.success(b.message)
-  //   }
-  // }
-
   const formatDuration = (seconds) => {
     if (!seconds || isNaN(seconds)) {
       return "0 hr 0 min 0 sec"
@@ -288,13 +279,29 @@ const CallregistrationList = () => {
     const secs = seconds % 60
     return `${hrs} hr ${mins} min ${secs} sec`
   }
+  const handleupdateadmin = async () => {
+    const id = users._id
+    // const id = "66af560dfa230b0b30e69c9c"
+
+    const url = `http://localhost:9000/api/auth/resetAdminstatus?adminid=${encodeURIComponent(
+      id
+    )}`
+    const response = await fetch(url, {
+      method: "POST",
+      credentials: "include"
+    })
+    const b = await response.json()
+    if (response.ok) {
+      toast.success(b.message)
+    }
+  }
 
   return (
     <div className="container mx-auto  p-5 ">
       <div className="w-auto  bg-white shadow-lg rounded p-4 pt-1 h-full ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
           {/* Search Bar for large screens */}
-          <div className="mx-4 md:block items-center">
+          <div className="mx-4 flex items-center">
             <div className="relative">
               <FaSearch className="absolute w-5 h-5 left-2 top-2 text-gray-500" />
             </div>
@@ -305,6 +312,7 @@ const CallregistrationList = () => {
               className=" w-full border border-gray-300 rounded-full py-1 px-4 pl-10 focus:outline-none"
               placeholder="Search for..."
             />
+            <label>call</label>
           </div>
           <div>
             <table className="text-center">
