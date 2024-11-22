@@ -216,9 +216,10 @@ io.on("connection", (socket) => {
           }
         })
       )
+      let user
       if (userId) {
         const objectId = new mongoose.Types.ObjectId(userId)
-        let user = await Staff.findOne({ _id: objectId })
+         user = await Staff.findOne({ _id: objectId })
 
         if (!user) {
           user = await Admin.findOne({ _id: objectId })
