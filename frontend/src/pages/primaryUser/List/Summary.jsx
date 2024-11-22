@@ -10,7 +10,7 @@ const socket = io("https://www.crm.camet.in")
 
 const Summary = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null)
- 
+
   const [selectedUser, setSelectedUser] = useState(null)
   const [Calls, setCalls] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -34,7 +34,6 @@ const Summary = () => {
       setIndividualCallList(staffCallList)
     }
   }, [staffCallList])
- 
 
   useEffect(() => {
     if (branches) {
@@ -311,23 +310,47 @@ const Summary = () => {
             users?.selected.map((branch) => branch.branchName)
           )
           const branchNamesArray = Array.from(userBranchName)
-          const filtered = data.calls.filter((call) =>
-            call.callregistration.some((registration) => {
-              const hasMatchingBranch = registration.branchName.some((branch) =>
-                branchNamesArray.includes(branch)
-              )
-              // If user has only one branch, ensure it matches exactly and no extra branches
-              if (branchNamesArray.length === 1) {
-                return (
-                  hasMatchingBranch &&
-                  registration.branchName.length === 1 &&
-                  registration.branchName[0] === branchNamesArray[0]
-                )
-              }
-              // If user has more than one branch, just check for any match
-              return hasMatchingBranch
-            })
+          const filtered = data.calls.filter(
+            (call) =>
+              Array.isArray(call?.callregistration) && // Check if callregistration is an array
+              call.callregistration.some((registration) => {
+                const hasMatchingBranch =
+                  Array.isArray(registration?.branchName) && // Check if branchName is an array
+                  registration.branchName.some(
+                    (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
+                  )
+
+                // If user has only one branch, ensure it matches exactly and no extra branches
+                if (branchNamesArray.length === 1) {
+                  return (
+                    hasMatchingBranch &&
+                    registration.branchName.length === 1 &&
+                    registration.branchName[0] === branchNamesArray[0]
+                  )
+                }
+
+                // If user has more than one branch, just check for any match
+                return hasMatchingBranch
+              })
           )
+
+          // const filtered = data.calls.filter((call) =>
+          //   call.callregistration.some((registration) => {
+          //     const hasMatchingBranch = registration.branchName.some((branch) =>
+          //       branchNamesArray.includes(branch)
+          //     )
+          //     // If user has only one branch, ensure it matches exactly and no extra branches
+          //     if (branchNamesArray.length === 1) {
+          //       return (
+          //         hasMatchingBranch &&
+          //         registration.branchName.length === 1 &&
+          //         registration.branchName[0] === branchNamesArray[0]
+          //       )
+          //     }
+          //     // If user has more than one branch, just check for any match
+          //     return hasMatchingBranch
+          //   })
+          // )
           setCallList(filtered)
         }
       })
@@ -516,8 +539,6 @@ const Summary = () => {
                       </td>
                     </tr>
                   ))}
-
-               
               </tbody>
             </table>
           </div>
@@ -993,8 +1014,6 @@ const Summary = () => {
                         )
                       })
                     )}
-
-                  
                   </tbody>
                 </table>
               </div>
