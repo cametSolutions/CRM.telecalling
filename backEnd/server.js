@@ -47,7 +47,7 @@ io.on("connection", (socket) => {
   socket.on("error", (err) => {
     console.error("Socket.IO error:", err)
   })
-  socket.on("updatedCalls", async () => {
+  socket.on("updatedCalls", async (userId) => {
     console.log("Received request for initial data")
 
     try {
@@ -216,8 +216,16 @@ io.on("connection", (socket) => {
           }
         })
       )
+      if (userId) {
+        const objectId = new mongoose.Types.ObjectId(userId)
+        let user = await Staff.findOne({ _id: objectId })
 
-      io.emit("updatedCalls", { calls })
+        if (!user) {
+          user = await Admin.findOne({ _id: objectId })
+        }
+      }
+
+      io.emit("updatedCalls", { calls, user })
     } catch (error) {
       console.error("Error fetching call data:", error)
       socket.emit("error", "Error fetching data")
@@ -228,17 +236,17 @@ io.on("connection", (socket) => {
   socket.on("startConversion", (fileData) => {
     ExceltoJson(socket, fileData)
   })
-  socket.on("updateUserCallStatus", async (userId) => {
-    const objectId = new mongoose.Types.ObjectId(userId)
-    let user = await Staff.findOne({ _id: objectId })
+  // socket.on("updateUserCallStatus", async (userId) => {
+  //   const objectId = new mongoose.Types.ObjectId(userId)
+  //   let user = await Staff.findOne({ _id: objectId })
 
-    if (!user) {
-      user = await Admin.findOne({ _id: objectId })
-    }
+  //   if (!user) {
+  //     user = await Admin.findOne({ _id: objectId })
+  //   }
 
-    // Emit the updated calls and user data to the client
-    io.emit("updateUserCallStatus", { user })
-  })
+  //   // Emit the updated calls and user data to the client
+  //   io.emit("updateUserCallStatus", { user })
+  // })
 
   socket.on("disconnect", () => {
     console.log("Client disconnected")
