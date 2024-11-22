@@ -69,41 +69,69 @@ const CallregistrationList = () => {
       socket.emit("updatedCalls", userId)
       // Listen for initial data from the server
       socket.on("updatedCalls", ({ calls, user }) => {
-        setCallList(calls)
-        setUserCallstatus(user.callstatus)
-        console.log("calls", calls)
-        // if (users.role === "Admin") {
-        //   setCallList(calls)
-        // } else {
-        //   const userBranchName = new Set(
-        //     users?.selected?.map((branch) => branch.branchName)
-        //   )
+        if (users.role === "Admin") {
+          setCallList(calls)
 
-        //   const branchNamesArray = Array.from(userBranchName)
-        //   console.log("branchnamesarray", branchNamesArray)
+          setUserCallstatus(user.callstatus)
 
-        //   const filtered = calls.filter((call) =>
-        //     call?.callregistration?.some((registration) => {
-        //       const hasMatchingBranch = registration?.branchName.some(
-        //         (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
-        //       )
+          console.log("calls", calls)
+        } else {
+          const userBranchName = new Set(
+            users?.selected?.map((branch) => branch.branchName)
+          )
 
-        //       // If user has only one branch, ensure it matches exactly and no extra branches
-        //       if (branchNamesArray.length === 1) {
-        //         return (
-        //           hasMatchingBranch &&
-        //           registration.branchName.length === 1 &&
-        //           registration.branchName[0] === branchNamesArray[0]
-        //         )
-        //       }
+          const branchNamesArray = Array.from(userBranchName)
+          console.log("branchnamesarray", branchNamesArray)
 
-        //       // If user has more than one branch, just check for any match
-        //       return hasMatchingBranch
-        //     })
-        //   )
+          // const filtered = calls.filter((call) =>
+          //   call?.callregistration?.some((registration) => {
+          //     const hasMatchingBranch = registration?.branchName?.some(
+          //       (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
+          //     )
 
-        //   setCallList(filtered)
-        // }
+          //     // If user has only one branch, ensure it matches exactly and no extra branches
+          //     if (branchNamesArray.length === 1) {
+          //       return (
+          //         hasMatchingBranch &&
+          //         registration.branchName.length === 1 &&
+          //         registration.branchName[0] === branchNamesArray[0]
+          //       )
+          //     }
+
+          //     // If user has more than one branch, just check for any match
+          //     return hasMatchingBranch
+          //   })
+          // )
+          const filtered = calls.filter((call) => 
+            Array.isArray(call?.callregistration) && // Check if callregistration is an array
+            call.callregistration.some((registration) => {
+              const hasMatchingBranch =
+                Array.isArray(registration?.branchName) && // Check if branchName is an array
+                registration.branchName.some((branch) =>
+                  branchNamesArray.includes(branch) // Check if any branch matches user's branches
+                );
+          
+              // If user has only one branch, ensure it matches exactly and no extra branches
+              if (branchNamesArray.length === 1) {
+                return (
+                  hasMatchingBranch &&
+                  registration.branchName.length === 1 &&
+                  registration.branchName[0] === branchNamesArray[0]
+                );
+              }
+          
+              // If user has more than one branch, just check for any match
+              return hasMatchingBranch;
+            })
+          );
+          
+
+          setCallList(filtered)
+
+          setUserCallstatus(user.callstatus)
+
+          console.log("calls", calls)
+        }
       })
 
       //Cleanup the socket connection when the component unmounts
@@ -112,7 +140,7 @@ const CallregistrationList = () => {
         // socket.disconnect()
       }
     }
-  }, [users]) 
+  }, [users])
 
   // useEffect(() => {
   //   if (users) {
