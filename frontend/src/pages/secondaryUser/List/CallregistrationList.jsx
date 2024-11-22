@@ -68,8 +68,9 @@ const CallregistrationList = () => {
       const userId = users._id
       socket.emit("updatedCalls", userId)
       // Listen for initial data from the server
-      socket.on("updatedCalls", ({ calls }) => {
+      socket.on("updatedCalls", ({ calls, user }) => {
         setCallList(calls)
+        setUserCallstatus(user.callstatus)
         console.log("calls", calls)
         // if (users.role === "Admin") {
         //   setCallList(calls)
@@ -111,24 +112,24 @@ const CallregistrationList = () => {
         // socket.disconnect()
       }
     }
-  }, [users])
+  }, [users]) 
 
-  useEffect(() => {
-    if (users) {
-      const userId = users._id
-      socket.emit("updateUserCallStatus", userId)
-      // Listen for initial data from the server
-      socket.on("updateUserCallStatus", ({ user }) => {
-        setUserCallstatus(user.callstatus)
-      })
+  // useEffect(() => {
+  //   if (users) {
+  //     const userId = users._id
+  //     socket.emit("updateUserCallStatus", userId)
+  //     // Listen for initial data from the server
+  //     socket.on("updateUserCallStatus", ({ user }) => {
+  //       setUserCallstatus(user.callstatus)
+  //     })
 
-      //Cleanup the socket connection when the component unmounts
-      return () => {
-        socket.off("updateUserCallStatus")
-        // socket.disconnect()
-      }
-    }
-  }, [filteredCalls])
+  //     //Cleanup the socket connection when the component unmounts
+  //     return () => {
+  //       socket.off("updateUserCallStatus")
+  //       // socket.disconnect()
+  //     }
+  //   }
+  // }, [filteredCalls])
 
   // const fetchData = async () => {
   //   console.log("hii")
