@@ -69,37 +69,40 @@ const CallregistrationList = () => {
       socket.emit("updatedCalls", userId)
       // Listen for initial data from the server
       socket.on("updatedCalls", ({ calls }) => {
-        if (users.role === "Admin") {
-          setCallList(calls)
-        } else {
-          const userBranchName = new Set(
-            users.selected.map((branch) => branch.branchName)
-          )
+        setCallList(calls)
+        console.log("calls", calls)
+        // if (users.role === "Admin") {
+        //   setCallList(calls)
+        // } else {
+        //   const userBranchName = new Set(
+        //     users?.selected?.map((branch) => branch.branchName)
+        //   )
 
-          const branchNamesArray = Array.from(userBranchName)
+        //   const branchNamesArray = Array.from(userBranchName)
+        //   console.log("branchnamesarray", branchNamesArray)
 
-          const filtered = calls.filter((call) =>
-            call?.callregistration?.some((registration) => {
-              const hasMatchingBranch = registration.branchName.some(
-                (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
-              )
+        //   const filtered = calls.filter((call) =>
+        //     call?.callregistration?.some((registration) => {
+        //       const hasMatchingBranch = registration?.branchName.some(
+        //         (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
+        //       )
 
-              // If user has only one branch, ensure it matches exactly and no extra branches
-              if (branchNamesArray.length === 1) {
-                return (
-                  hasMatchingBranch &&
-                  registration.branchName.length === 1 &&
-                  registration.branchName[0] === branchNamesArray[0]
-                )
-              }
+        //       // If user has only one branch, ensure it matches exactly and no extra branches
+        //       if (branchNamesArray.length === 1) {
+        //         return (
+        //           hasMatchingBranch &&
+        //           registration.branchName.length === 1 &&
+        //           registration.branchName[0] === branchNamesArray[0]
+        //         )
+        //       }
 
-              // If user has more than one branch, just check for any match
-              return hasMatchingBranch
-            })
-          )
+        //       // If user has more than one branch, just check for any match
+        //       return hasMatchingBranch
+        //     })
+        //   )
 
-          setCallList(filtered)
-        }
+        //   setCallList(filtered)
+        // }
       })
 
       //Cleanup the socket connection when the component unmounts
