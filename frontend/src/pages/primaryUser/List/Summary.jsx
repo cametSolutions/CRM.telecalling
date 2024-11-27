@@ -393,7 +393,15 @@ const Summary = () => {
 
   return (
     <div className="antialiased font-sans container mx-auto px-4 sm:px-8">
-      <div className="py-8">
+      <div className="py-2">
+        <div className="flex justify-center text-2xl font-semibold ">
+          <h1 className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-red-500 to-pink-600">
+            {/* {isToggled
+              ? "Upcoming Month Expired Customer's"
+              : "Expired Customer's"} */}
+            {isToggled ? "User Summary" : "Customer Summary"}
+          </h1>
+        </div>
         <h2 className="text-xl font-semibold leading-tight">Branches</h2>
 
         <div className="my-2 flex sm:flex-row flex-col">

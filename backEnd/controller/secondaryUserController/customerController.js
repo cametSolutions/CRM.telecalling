@@ -2,6 +2,7 @@ import Customer from "../../model/secondaryUser/customerSchema.js"
 import License from "../../model/secondaryUser/licenseSchema.js"
 import CallRegistration from "../../model/secondaryUser/CallRegistrationSchema.js"
 import models from "../../model/auth/authSchema.js"
+3
 const { Staff, Admin } = models
 import mongoose from "mongoose"
 
@@ -116,10 +117,37 @@ export const CustomerEdit = async (req, res) => {
 }
 
 export const GetCustomer = async (req, res) => {
-  const { search } = req.query
+  const search = req.query?.search
+  const role = req.query?.role
+  const userBranch = req.query?.userBranch
+  const pendingCustomerList = req.query?.pendingCustomerList
+  console.log("userbraanch",userBranch)
+  let objectIds
+  let parsedBranch
+
+  if (userBranch) {
+    parsedBranch = JSON.parse(decodeURIComponent(userBranch))
+  }
+
+  if (
+    search &&
+    Array.isArray(parsedBranch) &&
+    parsedBranch.length > 0 &&
+    role !== "Admin"
+  ) {
+    const branches = JSON.parse(decodeURIComponent(userBranch))
+    objectIds = branches?.map((id) => new mongoose.Types.ObjectId(id))
+  } else {
+    objectIds = parsedBranch?.map((id) => new mongoose.Types.ObjectId(id))
+  }
 
   try {
-    if (search) {
+    if (
+      search &&
+      Array.isArray(parsedBranch) &&
+      parsedBranch.length > 0 &&
+      role !== "Admin"
+    ) {
       if (!isNaN(search)) {
         const searchRegex = new RegExp(`^${search}`, "i")
 
@@ -151,7 +179,7 @@ export const GetCustomer = async (req, res) => {
         }).lean()
         const customers = [...mobileCustomer, ...licenseCustomer]
 
-        if (customers.length === 0) {
+        if (!customers || customers.length === 0) {
           return res
             .status(404)
             .json({ message: "No customer found", data: [] })
@@ -164,9 +192,120 @@ export const GetCustomer = async (req, res) => {
         // Search by customer name
 
         const searchRegex = new RegExp(`^${search}`, "i")
-        const customers = await Customer.find({ customerName: searchRegex })
+        const customers = await Customer.aggregate([
+          {
+            $match: {
+              customerName: searchRegex, // Match the customer name using the regex search
+              "selected.branch_id": { $in: objectIds } // Match branch_id within the selected array
+            }
+          },
+          {
+            $unwind: {
+              path: "$selected", // Unwind the selected array to access individual items
+              preserveNullAndEmptyArrays: true // Keep empty arrays if any
+            }
+          },
+          {
+            $addFields: {
+              "selected.branchObjectId": { $toObjectId: "$selected.branch_id" },
+              "selected.companyObjectId": {
+                $toObjectId: "$selected.company_id"
+              },
+              "selected.productObjectId": {
+                $toObjectId: "$selected.product_id"
+              }
+            }
+          },
 
-        if (customers.length === 0) {
+          {
+            $lookup: {
+              from: "branches", // Name of the Branch collection
+              localField: "selected.branchObjectId", // Field from the customer document
+              foreignField: "_id", // Match the _id field from the Branch collection
+              as: "branchDetails" // Alias for the resulting joined branch documents
+            }
+          },
+          {
+            $lookup: {
+              from: "companies", // Name of the Company collection
+              localField: "selected.companyObjectId", // Field from the customer document
+              foreignField: "_id", // Match the _id field from the Company collection
+              as: "companyDetails" // Alias for the resulting joined company documents
+            }
+          },
+          {
+            $lookup: {
+              from: "products", // Name of the Product collection
+              localField: "selected.productObjectId", // Field from the customer document
+              foreignField: "_id", // Match the _id field from the Product collection
+              as: "productDetails" // Alias for the resulting joined product documents
+            }
+          },
+          {
+            $addFields: {
+              "selected.product_id": { $arrayElemAt: ["$productDetails", 0] },
+              "selected.branch_id": { $arrayElemAt: ["$branchDetails", 0] },
+              "selected.company_id": { $arrayElemAt: ["$companyDetails", 0] } // Replace product_id with populated product data
+            }
+          },
+
+          {
+            $group: {
+              _id: "$_id", // Group by the customer's _id
+              customerName: { $first: "$customerName" }, // Keep customer name
+              address1: { $first: "$address1" },
+              state: { $first: "$state" },
+              pincode: { $first: "$pincode" },
+              email: { $first: "$email" },
+              mobile: { $first: "$mobile" },
+              selected: { $push: "$selected" } // Push the selected data
+            }
+          }
+        ])
+
+        if (customers.length > 0) {
+          return res
+            .status(200)
+            .json({ message: "Customer(s) found", data: customers })
+        } else {
+          return res
+            .status(200)
+            .json({ message: "No customer found", data: [] })
+        }
+      }
+    } else if (search && role === "Admin") {
+      if (!isNaN(search)) {
+        const searchRegex = new RegExp(`^${search}`, "i")
+
+        const mobileCustomer = await Customer.find({
+          mobile: searchRegex
+        }).lean()
+
+        const licenseCustomer = await Customer.find({
+          $expr: {
+            $gt: [
+              {
+                $size: {
+                  $filter: {
+                    input: "$selected",
+                    as: "item",
+                    cond: {
+                      $regexMatch: {
+                        input: { $toString: "$$item.licensenumber" }, // Convert to string
+                        regex: search, // your regex pattern
+                        options: "i" // case-insensitive if needed
+                      }
+                    }
+                  }
+                }
+              },
+              0
+            ]
+          }
+        }).lean()
+        const customers = [...mobileCustomer, ...licenseCustomer]
+
+        if (!customers || customers.length === 0) {
           return res
             .status(404)
             .json({ message: "No customer found", data: [] })
@@ -175,16 +314,138 @@ export const GetCustomer = async (req, res) => {
             .status(200)
             .json({ message: "Customer(s) found", data: customers })
         }
+      } else {
+        // Search by customer name
+
+        const searchRegex = new RegExp(`^${search}`, "i")
+        const customers = await Customer.aggregate([
+          {
+            $match: {
+              customerName: searchRegex // Match the customer name using the regex search
+            }
+          },
+          {
+            $unwind: {
+              path: "$selected", // Unwind the selected array to access individual items
+              preserveNullAndEmptyArrays: true // Keep empty arrays if any
+            }
+          },
+          {
+            $addFields: {
+              "selected.branchObjectId": { $toObjectId: "$selected.branch_id" },
+              "selected.companyObjectId": {
+                $toObjectId: "$selected.company_id"
+              },
+              "selected.productObjectId": {
+                $toObjectId: "$selected.product_id"
+              }
+            }
+          },
+
+          {
+            $lookup: {
+              from: "branches", // Name of the Branch collection
+              localField: "selected.branchObjectId", // Field from the customer document
+              foreignField: "_id", // Match the _id field from the Branch collection
+              as: "branchDetails" // Alias for the resulting joined branch documents
+            }
+          },
+          {
+            $lookup: {
+              from: "companies", // Name of the Company collection
+              localField: "selected.companyObjectId", // Field from the customer document
+              foreignField: "_id", // Match the _id field from the Company collection
+              as: "companyDetails" // Alias for the resulting joined company documents
+            }
+          },
+          {
+            $lookup: {
+              from: "products", // Name of the Product collection
+              localField: "selected.productObjectId", // Field from the customer document
+              foreignField: "_id", // Match the _id field from the Product collection
+              as: "productDetails" // Alias for the resulting joined product documents
+            }
+          },
+          {
+            $addFields: {
+              "selected.product_id": { $arrayElemAt: ["$productDetails", 0] },
+              "selected.branch_id": { $arrayElemAt: ["$branchDetails", 0] },
+              "selected.company_id": { $arrayElemAt: ["$companyDetails", 0] } // Replace product_id with populated product data
+            }
+          },
+
+          {
+            $group: {
+              _id: "$_id", // Group by the customer's _id
+              customerName: { $first: "$customerName" }, // Keep customer name
+              address1: { $first: "$address1" },
+              state: { $first: "$state" },
+              pincode: { $first: "$pincode" },
+              email: { $first: "$email" },
+              mobile: { $first: "$mobile" },
+              selected: { $push: "$selected" } // Push the selected data
+            }
+          }
+        ])
+
+        if (customers.length > 0) {
+          return res
+            .status(200)
+            .json({ message: "Customer(s) found", data: customers })
+        } else {
+          return res
+            .status(200)
+            .json({ message: "No customer found", data: [] })
+        }
       }
     } else {
-      const customers = await Customer.find().sort({ customerName: 1 })
-      if (customers.length === 0) {
-        return res.status(404).json({ message: "No customer found", data: [] })
-      } else {
+      try {
+        let customers
+
+        if (role === "Admin" || pendingCustomerList) {
+          // Admin: Fetch all customers
+          customers = await Customer.find().sort({ customerName: 1 }).exec()
+        } else {
+          if (pendingCustomerList) {
+            console.log(pendingCustomerList)
+            customers = await Customer.find().sort({ customerName: 1 }).exec()
+          } else if (!parsedBranch || parsedBranch.length === 0) {
+            return res
+              .status(403)
+              .json({ message: "No branches assigned to staff" })
+          }
+
+          // const branchIds = user.selected.map((branch) => branch.branch_id)
+
+          customers = await Customer.find({
+            "selected.branch_id": { $in: objectIds }
+          })
+            .sort({ customerName: 1 })
+            .exec()
+        }
+
+        if (customers.length === 0) {
+          return res
+            .status(404)
+            .json({ message: "No customer found", data: [] })
+        }
+
         return res
           .status(200)
           .json({ message: "Customer(s) found", data: customers })
+      } catch (error) {
+        console.error(error)
+        return res.status(500).json({ message: "Internal server error" })
       }
+      // console.log("cap")
+      // const customers = await Customer.find().sort({ customerName: 1 })
+      // if (customers.length === 0) {
+      //   return res.status(404).json({ message: "No customer found", data: [] })
+      // } else {
+      //   return res
+      //     .status(200)
+      //     .json({ message: "Customer(s) found", data: customers })
+      // }
     }
   } catch (error) {
     console.error("Error fetching customer data:", error.message)
@@ -1214,8 +1475,7 @@ export const GetAllExpiryRegister = async (req, res) => {
 export const getallExpiredCustomerCalls = async (req, res) => {
   try {
     const { expiredCustomerId } = req.body
-    console.log("type", typeof expiredCustomerId)
-    console.log("objectid")
+
     const validCustomerIds = expiredCustomerId
       .filter((id) => mongoose.Types.ObjectId.isValid(id))
       .map((id) => new mongoose.Types.ObjectId(id))

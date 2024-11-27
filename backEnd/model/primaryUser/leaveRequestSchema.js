@@ -4,8 +4,8 @@ const { Schema } = mongoose
 const leaveRequestSchema = new Schema(
   {
     userId: {
-      type: Schema.Types.ObjectId,
-      ref: "User", // Reference to the user who made the request
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Staff", // Reference to the user who made the request
       required: true
     },
     leaveDate: {
@@ -27,8 +27,8 @@ const leaveRequestSchema = new Schema(
     },
     reason: {
       type: String,
-      required: function() {
-        return !this.onsite; // `reason` is required only if `onsite` is false
+      required: function () {
+        return !this.onsite // `reason` is required only if `onsite` is false
       }
     },
     description: {

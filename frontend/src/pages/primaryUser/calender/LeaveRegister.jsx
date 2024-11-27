@@ -7,6 +7,7 @@ function LeaveRegister() {
   const navigate = useNavigate()
   const handleSubmit = async () => {
     try {
+      console.log("submittttt")
       const response = await api.post(
         "/branch/branchRegistration",
         branchData,

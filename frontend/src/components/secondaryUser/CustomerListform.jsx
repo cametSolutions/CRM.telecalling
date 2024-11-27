@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom"
 import UseFetch from "../../hooks/useFetch"
 import debounce from "lodash.debounce"
 import { useDispatch } from "react-redux"
+import ClipLoader from "react-spinners/ClipLoader"
 import { setSearch, removeSearch } from "../../../slices/search"
 import useSearch from "../../hooks/useSearch"
 import {
@@ -31,26 +32,39 @@ const CustomerListform = () => {
   const [searchAfterData, setAfterSearchData] = useState([])
   const [stringCustomers, setStringCustomers] = useState([])
   const [user, setUser] = useState(null)
+  const [branch, setBranches] = useState([])
+  const [userRole, setUserRole] = useState(null)
   const {
     data: customerData,
 
     error
-  } = UseFetch("/customer/getCustomer")
+  } = UseFetch(
+    user &&
+      branch &&
+      `/customer/getCustomer?role=${user?.role}&userBranch=${encodeURIComponent(
+        branch
+      )}`
+  )
   useEffect(() => {
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
+    setUser(user)
+    if (user.role !== "Admin") {
+      const branch = user.selected.map((branch) => branch.branch_id)
+      const branches = JSON.stringify(branch)
+
+      setBranches(branches)
+    }
     if (user && user.role) {
-      setUser(user.role.toLowerCase())
+      setUserRole(user.role.toLowerCase())
     } else {
-      setUser(null) // Handle case where user or role doesn't exist
+      setUserRole(null) // Handle case where user or role doesn't exist
     }
   }, [])
   //custom hook is used for search
   const searchData = useSearch({ fullData: customerData })
   useEffect(() => {
     if (searchData) {
-      const a = searchData.filter((customer) => customer.customerName === "a")
-      console.log(a)
       setAfterSearchData(searchData)
     }
   }, [searchData])
@@ -63,11 +77,13 @@ const CustomerListform = () => {
   //Handle search with lodash debounce to optimize search performance
   const handleSearch = debounce((query) => {
     if (query.trim() === "") {
+      setLoading(true)
       dispatch(removeSearch())
     } else {
+      setLoading(true)
       dispatch(setSearch(query))
     }
-  }, 1000)
+  }, 500)
   const handleChange = (e) => handleSearch(e.target.value)
 
   // Function to toggle showing full address
@@ -84,16 +100,17 @@ const CustomerListform = () => {
       ? `${address?.slice(0, maxLength)}...`
       : address
   }
+
   return (
     <div className=" mx-auto  overflow-y-hidden  ">
       <div className="w-auto shadow-lg rounded p-8 ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-4">
           <h3 className="text-2xl text-black font-bold">Customer List</h3>
           {/* Search Bar for large screens */}
-          <div className="mx-4 md:block">
-            <div className="relative">
+          <div className="mx-4 md:block relative ">
+            {/* <div className="relative">
               <FaSearch className="absolute w-4 h-4 left-2 top-3 text-gray-500" />
-            </div>
+            </div> */}
             <input
               type="text"
               // value={searchQuery}
@@ -101,6 +118,11 @@ const CustomerListform = () => {
               className="w-full border border-gray-300 rounded-full py-1 px-4 pl-10 focus:outline-none"
               placeholder="Search for..."
             />
+            {loading && (
+              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                <ClipLoader color="#36D7B7" loading={loading} size={20} />
+              </div>
+            )}
           </div>
         </div>
 
@@ -124,7 +146,7 @@ const CustomerListform = () => {
             </button>
 
             <Link
-              to="/admin/masters/pendingCustomer"
+              to={`/${user?.role.toLowerCase()}/masters/pendingCustomer`}
               className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center"
             >
               <FaHourglassHalf className="mr-2" />
@@ -242,7 +264,7 @@ const CustomerListform = () => {
                       <td className="px-2 py-3 text-xl text-black">
                         <CiEdit
                           onClick={() =>
-                            navigate(`/${user}/masters/customerEdit`, {
+                            navigate(`/${userRole}/masters/customerEdit`, {
                               state: {
                                 customer: customer,
                                 selected: item

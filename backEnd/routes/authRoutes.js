@@ -25,7 +25,7 @@ router.delete("/userDelete", authMiddleware, DeleteUser)
 router.get("/getallUsers", authMiddleware, GetallUsers)
 router.post("/leave", authMiddleware, LeaveApply)
 router.get("/getallLeave", authMiddleware, GetallLeave)
-router.get("leaveList", authMiddleware, GetAllLeaveRequest)
+router.get("/leaveList", authMiddleware, GetAllLeaveRequest)
 router.get("/getStaffCallStatus", authMiddleware, GetStaffCallList)
 router.get("/staffcallList", authMiddleware, GetindividualStaffCall)
 

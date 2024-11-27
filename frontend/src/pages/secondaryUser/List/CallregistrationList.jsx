@@ -73,15 +73,12 @@ const CallregistrationList = () => {
           setCallList(calls)
 
           setUserCallstatus(user.callstatus)
-
-          console.log("calls", calls)
         } else {
           const userBranchName = new Set(
             users?.selected?.map((branch) => branch.branchName)
           )
 
           const branchNamesArray = Array.from(userBranchName)
-          console.log("branchnamesarray", branchNamesArray)
 
           // const filtered = calls.filter((call) =>
           //   call?.callregistration?.some((registration) => {
@@ -102,35 +99,33 @@ const CallregistrationList = () => {
           //     return hasMatchingBranch
           //   })
           // )
-          const filtered = calls.filter((call) => 
-            Array.isArray(call?.callregistration) && // Check if callregistration is an array
-            call.callregistration.some((registration) => {
-              const hasMatchingBranch =
-                Array.isArray(registration?.branchName) && // Check if branchName is an array
-                registration.branchName.some((branch) =>
-                  branchNamesArray.includes(branch) // Check if any branch matches user's branches
-                );
-          
-              // If user has only one branch, ensure it matches exactly and no extra branches
-              if (branchNamesArray.length === 1) {
-                return (
-                  hasMatchingBranch &&
-                  registration.branchName.length === 1 &&
-                  registration.branchName[0] === branchNamesArray[0]
-                );
-              }
-          
-              // If user has more than one branch, just check for any match
-              return hasMatchingBranch;
-            })
-          );
-          
+          const filtered = calls.filter(
+            (call) =>
+              Array.isArray(call?.callregistration) && // Check if callregistration is an array
+              call.callregistration.some((registration) => {
+                const hasMatchingBranch =
+                  Array.isArray(registration?.branchName) && // Check if branchName is an array
+                  registration.branchName.some(
+                    (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
+                  )
+
+                // If user has only one branch, ensure it matches exactly and no extra branches
+                if (branchNamesArray.length === 1) {
+                  return (
+                    hasMatchingBranch &&
+                    registration.branchName.length === 1 &&
+                    registration.branchName[0] === branchNamesArray[0]
+                  )
+                }
+
+                // If user has more than one branch, just check for any match
+                return hasMatchingBranch
+              })
+          )
 
           setCallList(filtered)
 
           setUserCallstatus(user.callstatus)
-
-          console.log("calls", calls)
         }
       })
 
@@ -312,41 +307,29 @@ const CallregistrationList = () => {
     const secs = seconds % 60
     return `${hrs} hr ${mins} min ${secs} sec`
   }
-  const handleupdateadmin = async () => {
-    const id = users._id
-    // const id = "66af560dfa230b0b30e69c9c"
+  // const handleupdateadmin = async () => {
+  //   const id = users._id
+  //   // const id = "66af560dfa230b0b30e69c9c"
 
-    const url = `http://localhost:9000/api/auth/resetAdminstatus?adminid=${encodeURIComponent(
-      id
-    )}`
-    const response = await fetch(url, {
-      method: "POST",
-      credentials: "include"
-    })
-    const b = await response.json()
-    if (response.ok) {
-      toast.success(b.message)
-    }
-  }
+  //   const url = `http://localhost:9000/api/auth/resetAdminstatus?adminid=${encodeURIComponent(
+  //     id
+  //   )}`
+  //   const response = await fetch(url, {
+  //     method: "POST",
+  //     credentials: "include"
+  //   })
+  //   const b = await response.json()
+  //   if (response.ok) {
+  //     toast.success(b.message)
+  //   }
+  // }
 
   return (
     <div className="container mx-auto  p-5 ">
       <div className="w-auto  bg-white shadow-lg rounded p-4 pt-1 h-full ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
           {/* Search Bar for large screens */}
-          {/* <div className="mx-4 flex items-center">
-            <div className="relative">
-              <FaSearch className="absolute w-5 h-5 left-2 top-2 text-gray-500" />
-            </div>
-            <input
-              type="text"
-              // value={searchQuery}
-              onChange={handleChange}
-              className=" w-full border border-gray-300 rounded-full py-1 px-4 pl-10 focus:outline-none"
-              placeholder="Search for..."
-            />
-            <label>call</label>
-          </div> */}
+
           <div className="mx-4 flex items-center space-x-4">
             {/* Search Input Wrapper */}
             <div className="relative flex items-center w-full">

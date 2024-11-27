@@ -522,8 +522,6 @@ export const LeaveApply = async (req, res) => {
   const { startDate, endDate, leaveType, onsite, reason, description } =
     formData
 
-  const start = new Date(startDate)
-
   try {
     const start = new Date(startDate)
     const end = new Date(endDate)
@@ -534,6 +532,7 @@ export const LeaveApply = async (req, res) => {
       dates.push(new Date(current).toISOString().split("T")[0]) // Format as 'YYYY-MM-DD'
       current.setDate(current.getDate() + 1) // Increment by one day
     }
+    console.log("datessssss", dates)
 
     // Save each date as a separate document
     for (const leaveDate of dates) {
@@ -591,7 +590,32 @@ export const GetallLeave = async (req, res) => {
 }
 export const GetAllLeaveRequest = async (req, res) => {
   try {
-  } catch (error) {}
+    console.log("leaveundoooooo")
+    const leaveList = await LeaveRequest.find({}).populate({
+      path: "userId",
+      select: "name role department", // Select fields from User
+      populate: [
+        {
+          path: "department",
+          select: "department",
+          options: { strictPopulate: false } // Allow graceful fallback for missing departments
+        },
+        {
+          path: "selected.branch_id",
+          model: "Branch",
+          select: "branchName",
+          options: { strictPopulate: false } // Avoid errors for missing branches
+        }
+      ]
+    })
+    console.log("jhfjhgugg", leaveList)
+
+    if (leaveList) {
+      return res.status(200).json({ message: "leaves found", data: leaveList })
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+  }
 }
 
 export const DeleteUser = async (req, res) => {

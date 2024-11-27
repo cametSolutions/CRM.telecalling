@@ -3,7 +3,7 @@ import tippy from "tippy.js"
 import UseFetch from "../../hooks/useFetch"
 // import api from "../../api/api"
 import "tippy.js/dist/tippy.css"
-
+import debounce from "lodash.debounce"
 import FullCalendar from "@fullcalendar/react"
 import dayGridPlugin from "@fullcalendar/daygrid"
 import timeGridPlugin from "@fullcalendar/timegrid"
@@ -20,7 +20,7 @@ function LeaveApplication() {
     reason: "",
     description: ""
   })
-  console.log(formData)
+  console.log("formdata", formData)
   const [isOnsite, setIsOnsite] = useState(formData.onsite)
   const [tableRows, setTableRows] = useState([])
 
@@ -223,13 +223,16 @@ function LeaveApplication() {
     console.log(arg)
   }
 
-  const handleInputChange = (e) => {
+  const handleInputChange = debounce((e) => {
     const { name, value, type, checked } = e.target
+    console.log("valueeee", e.target.value)
     setFormData({
       ...formData,
       [name]: type === "checkbox" ? checked : value
     })
-  }
+  }, 300)
+
+  const handleChange = (e) => handleInputChange(e)
   const handleApply = async () => {
     try {
       console.log("formin", formData)
@@ -279,8 +282,6 @@ function LeaveApplication() {
     }
   }
 
-  console.log(events)
-
   return (
     <div className="flex p-8">
       <div className="mr-8 w-5/6">
@@ -299,7 +300,6 @@ function LeaveApplication() {
             })
           }}
           eventClassNames={({ event }) => {
-            console.log("class", event.classNames)
             return event.classNames || "default-event-class"
             // return event.classNames ? event.classNames : "my-custom-event-class"
           }}
@@ -405,8 +405,8 @@ button {
                 <input
                   type="date"
                   name="startDate"
-                  value={formData.startDate}
-                  onChange={handleInputChange}
+                  defaultValue={formData.startDate}
+                  onChange={handleChange}
                   className="border p-2 rounded w-full"
                 />
               </div>
@@ -415,8 +415,8 @@ button {
                 <input
                   type="date"
                   name="endDate"
-                  value={formData.endDate}
-                  onChange={handleInputChange}
+                  defaultValue={formData.endDate}
+                  onChange={handleChange}
                   className="border p-2 rounded w-full"
                 />
               </div>
@@ -575,8 +575,9 @@ button {
                     <label className="block mb-2">Description</label>
                     <textarea
                       name="description"
-                      value={formData.description}
-                      onChange={handleInputChange}
+                      // value={formData.description}
+                      defaultValue={formData.description}
+                      onChange={handleChange}
                       rows="4"
                       className="border p-2 rounded w-full"
                     ></textarea>
@@ -589,8 +590,9 @@ button {
                 <label className="block mb-2">Reason</label>
                 <textarea
                   name="reason"
-                  value={formData.reason}
-                  onChange={handleInputChange}
+                  // value={formData.reason}
+                  defaultValue={formData.reason}
+                  onChange={handleChange}
                   rows="4"
                   className="border p-2 rounded w-full"
                 ></textarea>
