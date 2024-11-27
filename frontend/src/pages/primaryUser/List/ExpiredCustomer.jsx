@@ -51,7 +51,6 @@ const ExpiredCustomer = () => {
   }, [branches])
 
   useEffect(() => {
-    console.log("hiii")
     const fetchExpiryRegisterList = async () => {
       try {
         const endpoint = isToggled
@@ -107,7 +106,6 @@ const ExpiredCustomer = () => {
           }
         })
       if (customerSummaries) {
-        console.log("hii")
         setExpiredCustomerCalls(customerSummaries)
         setLoading(false)
       }
@@ -137,11 +135,8 @@ const ExpiredCustomer = () => {
         const data = response.data
         if (data) {
           if (isCallsToggled) {
-            console.log(data)
             setCallList(data.calls)
           } else {
-            console.log(data)
-
             setexpiryRegisterList(data.data)
           }
         }
@@ -164,7 +159,6 @@ const ExpiredCustomer = () => {
       setIndividualData(selectedCustomerData)
     }
     if (isModalOpen && selectedCustomer && isCallsToggled) {
-      console.log(expiredCustomerCalls)
       const customerData = callList
         .filter((customer) => customer._id === selectedCustomer) // Filter for the selected customer
         .map((customer) => {
@@ -274,8 +268,6 @@ const ExpiredCustomer = () => {
 
     return result.trim()
   }
-
-  console.log(individualData)
   return (
     <div className="antialiased font-sans container mx-auto px-4 sm:px-8">
       <div className="py-4 ">

@@ -19,14 +19,22 @@ const PendingCustomer = () => {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredCustomer, setFilteredCustomer] = useState([])
-  const { data: pendingCustomerData } = UseFetch("/customer/getCustomer")
-  console.log("pending custmers:", pendingCustomerData)
+  const [userRole, setUserRole] = useState(null)
+  const { data: pendingCustomerData } = UseFetch(
+    `/customer/getCustomer?pendingCustomerList= ${true}`
+  )
+
   useEffect(() => {
     if (pendingCustomerData) {
+      const userData = localStorage.getItem("user")
+      const user = JSON.parse(userData)
       setFilteredCustomer(pendingCustomerData)
+
+      if (user && user.role) {
+        setUserRole(user.role.toLowerCase())
+      }
     }
   }, [pendingCustomerData])
-  console.log("filt", filteredCustomer)
 
   //   const handleSearch = useCallback(
   //     _.debounce((query) => {
@@ -167,10 +175,9 @@ const PendingCustomer = () => {
                         {customer.email}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-xl text-black">
-                        
                         <CiEdit
                           onClick={() =>
-                            navigate("/admin/masters/customerEdit", {
+                            navigate(`/${userRole}/masters/customerEdit`, {
                               state: {
                                 customer: customer
                               }
@@ -187,7 +194,7 @@ const PendingCustomer = () => {
                     colSpan="10"
                     className="px-6 py-4 whitespace-nowrap text-sm text-center text-black"
                   >
-                    No customers found
+                    Loading...
                   </td>
                 </tr>
               )}

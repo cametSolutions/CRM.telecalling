@@ -49,6 +49,7 @@ export default function CallRegistration() {
   const [endTime, setEndTime] = useState(null)
   const [formData, setFormData] = useState(null)
   const [callData, setCallData] = useState([])
+  const [branch, setBranches] = useState([])
 
   const [tokenData, setTokenData] = useState(null)
 
@@ -61,15 +62,24 @@ export default function CallRegistration() {
   const debounceTimeoutRef = useRef(null)
   const location = useLocation()
   const { calldetails, token } = location.state || {}
+
+  useEffect(() => {
+    const userData = localStorage.getItem("user")
+    const user = JSON.parse(userData)
+
+    if (user.role !== "Admin") {
+      const branches = user.selected.map((branch) => branch.branch_id)
+
+      setBranches(branches)
+    }
+
+    setUser(user)
+  }, [])
   // Cleanup the timeout if the component unmounts
   useEffect(() => {
     return () => clearTimeout(debounceTimeoutRef.current)
   }, [])
-  useEffect(() => {
-    const userData = localStorage.getItem("user")
-    const user = JSON.parse(userData)
-    setUser(user)
-  }, [])
+
   useEffect(() => {
     const handler = setTimeout(() => {
       if (search && !selectedCustomer) {
@@ -145,7 +155,6 @@ export default function CallRegistration() {
 
   useEffect(() => {
     if (registeredCall) {
-      console.log(registeredCall)
       const sortedData = registeredCall.callregistration.sort((a, b) => {
         if (a.formdata.status === "pending" && b.formdata.status === "solved") {
           return -1
@@ -359,44 +368,64 @@ export default function CallRegistration() {
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
   }
 
-  const fetchCustomerData = useCallback(
-    debounce(async (query) => {
-      // const url = `http://localhost:9000/api/customer/getCustomer?search=${encodeURIComponent(
-      //   query
-      // )}`
-      const url = `https://www.crm.camet.in/api/customer/getCustomer?search=${encodeURIComponent(
-        query
-      )}`
+  const fetchCustomerData = async (query) => {
+    let url
+    if (user.role === "Admin") {
+      // url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
+      url = `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
+    } else {
+      const branches = JSON.stringify(branch)
 
-      try {
-        const response = await fetch(url, {
-          method: "GET",
-          credentials: "include"
-        })
+      // url =
+      //   branches &&
+      //   branches.length > 0 &&
+      //   `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
+      //     user.role
+      //   }&userBranch=${encodeURIComponent(branches)}`
 
-        if (response.ok) {
-          const result = await response.json()
+      url =
+        branches &&
+        branches.length > 0 &&
+        `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+          user.role
+        }&userBranch=${encodeURIComponent(branches)}`
+    }
+
+
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        credentials: "include"
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+
+        setCustomerData(result.data)
+        if (result.data.length > 0) {
           setMessage("")
-          setCustomerData(result.data)
-          setSearching(true)
-          const userData = localStorage.getItem("user")
-          const user = JSON.parse(userData)
-          setUser(user)
         } else {
-          const errorData = await response.json()
-          setCustomerData(errorData.data)
-          setMessage(errorData.message)
-          console.error("Error fetching customer data:", errorData.message)
+          setMessage(result.message)
         }
-      } catch (error) {
-        console.error("Error fetching customer data:", error.message)
-      } finally {
-        setloading(false)
-        // setSearching(false)
+
+        setSearching(true)
+        const userData = localStorage.getItem("user")
+        const user = JSON.parse(userData)
+        setUser(user)
+      } else {
+        const errorData = await response.json()
+        setCustomerData(errorData.data)
+        setMessage(errorData.message)
+        console.error("Error fetching customer data:", errorData.message)
       }
-    }, 300),
-    [] // The empty dependency array ensures that debounce is created only once
-  )
+    } catch (error) {
+      console.error("Error fetching customer data:", error.message)
+    } finally {
+      setloading(false)
+      // setSearching(false)
+    }
+  }
+
   const formatDuration = (seconds) => {
     if (!seconds || isNaN(seconds)) {
       return "0 hr 0 min 0 sec"
@@ -406,6 +435,7 @@ export default function CallRegistration() {
     const secs = seconds % 60
     return `${hrs} hr ${mins} min ${secs} sec`
   }
+
   const handleInputChange = useCallback((e) => {
     setSelectedCustomer(null)
 
@@ -421,30 +451,11 @@ export default function CallRegistration() {
     // Set a new timeout to update `message` and `customerData`
     debounceTimeoutRef.current = setTimeout(() => {
       if (value === "") {
-        flushSync(() => {
-          setMessage("")
-          setCustomerData([])
-        })
+        setMessage("")
+        setCustomerData([])
       }
     }, 300) // Adjust the delay time to your preference (e.g., 300 ms)
   }, [])
-
-  // const handleInputChange = (e) => {
-  //   setSelectedCustomer(null)
-  //   const value = e.target.value
-
-  //   // Clear previous timeout if the user is still typing
-  //   if (typingTimeout) clearTimeout(typingTimeout)
-
-  //   // Set a new timeout to handle the state updates after a short delay
-  //   typingTimeout = setTimeout(() => {
-  //     if (value === "") {
-  //       setMessage("")
-  //       setCustomerData([])
-  //     }
-  //   }, 200) // Adjust delay (in ms) as needed
-  //   setSearch(value)
-  // }
 
   const handleRowClick = (customer) => {
     flushSync(() => setSearching(false))
@@ -543,7 +554,6 @@ export default function CallRegistration() {
   //     // socket.emit("updatedCalls")
   //   }
   // }
-  console.log(selectedCustomer)
 
   return (
     <div className="container  justify-center items-center p-8 bg-gray-100">
@@ -574,6 +584,7 @@ export default function CallRegistration() {
                 type="text"
                 id="customerName"
                 value={calldetails ? name : search}
+                // defaultValue={calldetails ? name : search}
                 onChange={handleInputChange}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 pr-10 sm:text-sm focus:border-gray-500 outline-none"
                 placeholder="Enter name or license..."
