@@ -518,9 +518,17 @@ export const GetallUsers = async (req, res) => {
 export const LeaveApply = async (req, res) => {
   const formData = req.body
   const { Userid } = req.query
+  const objectId = new mongoose.Types.ObjectId(Userid)
 
-  const { startDate, endDate, leaveType, onsite, reason, description } =
-    formData
+  const {
+    startDate,
+    endDate,
+    leaveType,
+    onsite,
+    reason,
+    description,
+    halfDayPeriod
+  } = formData
 
   try {
     const start = new Date(startDate)
@@ -532,32 +540,72 @@ export const LeaveApply = async (req, res) => {
       dates.push(new Date(current).toISOString().split("T")[0]) // Format as 'YYYY-MM-DD'
       current.setDate(current.getDate() + 1) // Increment by one day
     }
-    console.log("datessssss", dates)
 
     // Save each date as a separate document
     for (const leaveDate of dates) {
       const leave = new LeaveRequest({
         leaveDate,
         leaveType,
+        ...(leaveType === "Half Day" && { halfDayPeriod }),
         onsite,
-
+        reason,
         description,
-        userId: Userid
+        userId: objectId
       })
-      // Only add 'reason' if 'onsite' is false
-      if (!onsite) {
-        leave.reason = reason
-      }
+
       await leave.save()
     }
 
-    const leaveSubmit = await LeaveRequest.find({ userId: Userid })
+    const leaveSubmit = await LeaveRequest.find({ userId: objectId })
 
     return res
       .status(200)
       .json({ message: "leave submitted", data: leaveSubmit })
   } catch (error) {
     res.status(500).json({ message: "internal server error" })
+  }
+}
+
+export const OnsiteleaveApply = async (req, res) => {
+  try {
+    const { Userid } = req.query
+    console.log("type", typeof Userid)
+    const { formData, tableRows } = req.body
+    const objectId = new mongoose.Types.ObjectId(Userid)
+    console.log("formdata", formData)
+    console.log("tableroews", tableRows)
+    if (!tableRows) {
+      return res.status(404).json({ message: "no table content" })
+    }
+    const {
+      startDate,
+      endDate,
+      leaveType,
+      onsite,
+
+      description,
+      halfDayPeriod
+    } = formData
+
+    const onsiteLeave = new LeaveRequest({
+      leaveDate: new Date(startDate).toISOString().split("T")[0],
+      leaveType,
+      ...(leaveType === "Half Day" && { halfDayPeriod }),
+      onsite,
+
+      description,
+      userId: objectId
+    })
+    if (tableRows) {
+      onsiteLeave.onsitestatus.push(tableRows)
+    }
+    const successonsite = await onsiteLeave.save()
+    if (successonsite) {
+      return res.status(200).json({ message: "onsite leave applied success" })
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
   }
 }
 export const GetallLeave = async (req, res) => {
@@ -590,7 +638,6 @@ export const GetallLeave = async (req, res) => {
 }
 export const GetAllLeaveRequest = async (req, res) => {
   try {
-    console.log("leaveundoooooo")
     const leaveList = await LeaveRequest.find({}).populate({
       path: "userId",
       select: "name role department", // Select fields from User
@@ -608,13 +655,170 @@ export const GetAllLeaveRequest = async (req, res) => {
         }
       ]
     })
-    console.log("jhfjhgugg", leaveList)
 
     if (leaveList) {
       return res.status(200).json({ message: "leaves found", data: leaveList })
     }
   } catch (error) {
     console.log("error:", error.message)
+  }
+}
+export const ApproveLeave = async (req, res) => {
+  try {
+    const role = req?.query?.role
+    const userId = req?.query?.userId
+    const selectAll = req?.query?.selectAll
+
+    if (selectAll === "true") {
+      const objectId = new mongoose.Types.ObjectId(userId)
+      if (role === "Admin") {
+        // Update all documents that match the userId
+        const result = await LeaveRequest.updateMany(
+          { userId: objectId }, // Match all documents with this userId
+          {
+            $set: {
+              hrstatus: "HR/Onsite Approved",
+              adminverified: true
+            }
+          }
+        )
+        res.status(200).json({
+          message: "All matching leave requests updated successfully",
+          result
+        })
+      } else {
+        // Update all documents that match the userId
+        const result = await LeaveRequest.updateMany(
+          { userId: objectId }, // Match all documents with this userId
+          {
+            $set: {
+              departmentstatus: "Dept Approved",
+              departmentverified: true
+            }
+          }
+        )
+
+        res.status(200).json({
+          message: "All matching leave requests updated successfully",
+          result
+        })
+      }
+    } else {
+      console.log("hiiiiiiiiii")
+      const objectId = new mongoose.Types.ObjectId(userId)
+
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" })
+      }
+      const leaveRequest = await LeaveRequest.findByIdAndUpdate(
+       { _id:objectId}, // ID of the leave request to update
+        role === "Admin"
+          ? {
+              hrstatus: "HR/Onsite Approved",
+              adminverified: true,
+            }
+          : role === "Staff"
+          ? {
+              departmentstatus: "Dept Approved",
+              departmentverified: true,
+            }
+          : null,
+        { new: true } // Return the updated document
+      );
+      // const leaveRequest = await LeaveRequest.findOne({ _id: objectId })
+
+      // if (!leaveRequest) {
+      //   return res.status(404).json({ message: "Leave request not found" })
+      // }
+      // // Validate the role and update logic
+      // if (role === "Admin") {
+      //   // Update the leave request for admins
+      //   leaveRequest.hrstatus = "HR/Onsite Approved"
+      //   leaveRequest.adminverified = true
+      // } else if (role === "Staff") {
+      //   console.log("hhhhhhhhh")
+      //   // Update the leave request for managers
+      //   leaveRequest.departmentstatus = "Dept Approved"
+      //   leaveRequest.departmentverified = true
+      // }
+      // console.log("leaverea", leaveRequest)
+
+      // // Save the updated leave request
+      // await leaveRequest.save()
+
+      return res.status(200).json({
+        message: "Leave request updated successfully",
+        leaveRequest
+      })
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const RejectLeave = async (req, res) => {
+  try {
+    const role = req?.query?.role
+    const userId = req?.query?.userId
+    const selectAll = req?.query?.selectAll
+    if (selectAll === "true") {
+    } else {
+      const objectId = new mongoose.Types.ObjectId(userId)
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" })
+      }
+
+      const leaveRequest = await LeaveRequest.findOne({ _id: objectId })
+
+      if (!leaveRequest) {
+        return res.status(404).json({ message: "Leave request not found" })
+      }
+      // Validate the role and update logic
+      if (role === "Admin") {
+        // Update the leave request for admins
+        leaveRequest.hrstatus = "HR Rejected"
+      } else if (role === "Staff") {
+        // Update the leave request for managers
+        leaveRequest.departmentstatus = "Dept Rejected"
+      }
+
+      // Save the updated leave request
+      await leaveRequest.save()
+
+      return res.status(200).json({
+        message: "Leave request updated successfully",
+        leaveRequest
+      })
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const UpdateLeave = async (req, res) => {
+  try {
+    const { userId } = req.query
+    const { updatedData } = req.body
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" })
+    }
+    const objectId = new mongoose.Types.ObjectId(userId)
+    // Update the leave request data
+    const updatedLeaveRequest = await LeaveRequest.findOneAndUpdate(
+      { _id: objectId }, // Match the userId
+      { $set: updatedData }, // Set the new data
+      { new: true } // Return the updated document
+    )
+
+    if (!updatedLeaveRequest) {
+      return res.status(404).json({ message: "Leave request not found" })
+    } else {
+      return res.status(200).json({ message: "Leave updates success" })
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
   }
 }
 

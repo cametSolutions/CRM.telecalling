@@ -12,7 +12,11 @@ import {
   GetAllLeaveRequest,
   resetCallStatus,
   GetStaffCallList,
-  GetindividualStaffCall
+  GetindividualStaffCall,
+  ApproveLeave,
+  RejectLeave,
+  UpdateLeave,
+  OnsiteleaveApply
 } from "../controller/authController.js"
 const router = express.Router()
 
@@ -28,5 +32,9 @@ router.get("/getallLeave", authMiddleware, GetallLeave)
 router.get("/leaveList", authMiddleware, GetAllLeaveRequest)
 router.get("/getStaffCallStatus", authMiddleware, GetStaffCallList)
 router.get("/staffcallList", authMiddleware, GetindividualStaffCall)
+router.put("/approveLeave", authMiddleware, ApproveLeave)
+router.put("/rejectLeave", authMiddleware, RejectLeave)
+router.put("/updateLeave", authMiddleware, UpdateLeave)
+router.post("/onsiteLeave", authMiddleware, OnsiteleaveApply)
 
 export default router

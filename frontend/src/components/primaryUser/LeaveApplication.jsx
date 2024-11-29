@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react"
 import tippy from "tippy.js"
 import UseFetch from "../../hooks/useFetch"
-// import api from "../../api/api"
+import api from "../../api/api"
 import "tippy.js/dist/tippy.css"
 import debounce from "lodash.debounce"
 import FullCalendar from "@fullcalendar/react"
@@ -16,52 +16,94 @@ function LeaveApplication() {
     startDate: "",
     endDate: "",
     leaveType: "Full Day",
+    halfDayPeriod: "",
     onsite: false,
     reason: "",
-    description: ""
+    description: "",
+    eventId: null
   })
-  console.log("formdata", formData)
+
   const [isOnsite, setIsOnsite] = useState(formData.onsite)
   const [tableRows, setTableRows] = useState([])
-
+  const [existingEvent, setexistingEvent] = useState([])
+  const [clickedDate, setclickedDate] = useState(null)
   const userData = localStorage.getItem("user")
   const user = JSON.parse(userData)
   const { data: leaves, refreshHook } = UseFetch(
     `/auth/getallLeave?userid=${user._id}`
   )
+  useEffect(() => {
+    if (!showModal) {
+      setIsOnsite(false)
+    }
+  }, [showModal])
+  useEffect(() => {
+    if (formData.onsite && clickedDate) {
+      // Find the event that matches the clicked date
+      const existingEvent = events.find((event) => event.start === clickedDate)
+
+      // If a matching event is found and it has onsite data
+      if (existingEvent && existingEvent.onsitestatus) {
+        const matchedOnsiteData = existingEvent.onsitestatus[0].map(
+          (status) => ({
+            siteName: status.siteName,
+            place: status.place,
+            Start: status.Start,
+            End: status.End,
+            km: status.km,
+            kmExpense: status.kmExpense,
+            foodExpense: status.foodExpense
+          })
+        )
+
+        // Now set the table rows with the matched onsite data and an empty row for new input
+        setTableRows(matchedOnsiteData)
+      }
+    }
+  }, [isOnsite, clickedDate])
+
+  useEffect(() => {
+    if (leaves) {
+      const formattedEvents = formatEventData(leaves)
+
+      setEvents(formattedEvents)
+    }
+  }, [leaves])
   const formatEventData = (events) => {
     return events.map((event) => {
-      console.log(
-        "Formatted classNames:",
-        event.verified ? "verified-event" : "unverified-event"
-      )
       const date = new Date(event.leaveDate) // Convert to Date object
       const formattedDate = date.toISOString().split("T")[0] // Format as YYYY-MM-DD
       // Determine classNames based on conditions
       let classNames = "unverified-event" // Default class
-      if (event.adminverified && event.status === "HR/Onsite Approved") {
+      if (event.cancelstatus) {
+        classNames = "cancel-status"
+      } else if (event.hrstatus === "HR Rejected") {
+        classNames = "hr-rejected"
+      } else if (
+        event.adminverified &&
+        event.hrstatus === "HR/Onsite Approved"
+      ) {
         classNames = "fully-verified-event"
+      } else if (event.departmentstatus === "Dept Rejected") {
+        classNames = "dept-rejected"
       } else if (
         event.departmentverified &&
-        event.status === "Dept. Approved"
+        event.departmentstatus === "Dept Approved"
       ) {
         classNames = "dept-approved-event"
-      } else if (event.onsite && event.status === "HR/Onsite Approved") {
+      } else if (event.onsite && event.hrstatus === "HR/Onsite Approved") {
         classNames = "onsite-approved-event"
       } else if (event.onsite) {
         classNames = "onsite-pending-event"
-      } else if (
-        event.status === "Cancel Request" ||
-        event.status === "Cancelled"
-      ) {
-        classNames = "cancelled-event"
       }
       return {
         id: event._id,
         title: event.leaveType, // Display leave type as the title
-        start: formattedDate, // Use formatted date
+        start: formattedDate, // Use formatted date,
+        onsite: event?.onsite,
+        onsitestatus: event?.onsitestatus,
         extendedProps: {
-          reason: event.reason
+          reason: event.onsite ? event.description : event.reason
         },
         classNames,
         allDay: true // Since the events are all-day
@@ -69,14 +111,6 @@ function LeaveApplication() {
     })
   }
   // const formatEventData = (events) => {
-
-  useEffect(() => {
-    if (leaves) {
-      const formattedEvents = formatEventData(leaves)
-      console.log("formatedevent", formattedEvents)
-      setEvents(formattedEvents)
-    }
-  }, [leaves])
 
   const labels = [
     {
@@ -134,40 +168,54 @@ function LeaveApplication() {
     updatedRows[index].place = value
     setTableRows(updatedRows)
   }
-
   const handleDateClick = (arg) => {
-    // Set the start date to the clicked date and open the modal
-    setFormData({
-      ...formData,
-      startDate: arg.dateStr,
-      endDate: arg.dateStr
-    })
+    const clickedDate = arg.dateStr
+    setclickedDate(clickedDate)
+
+    // Check if there's already an event on this date
+    const existingEvent = events.find((event) => event.start === clickedDate)
+    if (existingEvent) {
+      handleOnsiteChange()
+    }
+    setexistingEvent(existingEvent)
+
+    if (existingEvent) {
+      // If an event exists, set the form data to edit the event
+      setFormData({
+        ...formData,
+        startDate: existingEvent.start,
+        endDate: existingEvent.start, // Assuming single-day events for simplicity
+        leaveType: existingEvent.title,
+        onsite: existingEvent.onsite,
+        reason: existingEvent.extendedProps.reason,
+        eventId: existingEvent.id // Store the event ID for editing
+      })
+    } else {
+      setFormData({
+        ...formData,
+        startDate: arg.dateStr,
+        endDate: arg.dateStr,
+        leaveType: "Full Day",
+        reason: "",
+        eventId: null
+      })
+    }
+
     setShowModal(true)
   }
-  const handleUpdate = async (eventId, updatedData) => {
+  const handleUpdate = async (updatedData) => {
     try {
+      const eventId = formData.eventId
+
       // Assuming you have an API endpoint for updating leave requests
-      const response = await fetch(`/api/leave/${eventId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(formData)
+      const response = await api.put(`/auth/updateLeave?userId=${eventId}`, {
+        updatedData
       })
-
-      if (!response.ok) {
-        throw new Error("Failed to update leave request")
+      if (response.status === 200) {
+        // Close the modal
+        setShowModal(false)
+        refreshHook()
       }
-
-      // Update the event in the calendar (simplified example)
-      setEvents(
-        events.map((event) =>
-          event.id === eventId ? { ...event, ...updatedData } : event
-        )
-      )
-
-      // Close the modal
-      setShowModal(false)
     } catch (error) {
       console.error("Error updating leave request:", error)
     }
@@ -225,7 +273,7 @@ function LeaveApplication() {
 
   const handleInputChange = debounce((e) => {
     const { name, value, type, checked } = e.target
-    console.log("valueeee", e.target.value)
+
     setFormData({
       ...formData,
       [name]: type === "checkbox" ? checked : value
@@ -233,50 +281,64 @@ function LeaveApplication() {
   }, 300)
 
   const handleChange = (e) => handleInputChange(e)
+
   const handleApply = async () => {
     try {
-      console.log("formin", formData)
-      // Assuming you have an API endpoint for creating leave requests
-      const response = await fetch(
-        `http://localhost:9000/api/auth/leave?Userid=${user._id}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(formData),
-          credentials: "include"
+      if (formData.onsite) {
+        const response = await api.post(
+          `http://localhost:9000/api/auth/onsiteLeave?Userid=${user._id}`,
+          { formData, tableRows }
+        )
+        if (response.status === 200) {
+          setFormData((prev) => ({
+            ...prev,
+            description: "",
+            onsite: false,
+            halfDayPeriod: "",
+            leaveType: "Full Day"
+          }))
+          setTableRows((prev) => [
+            {
+              ...prev,
+              siteName: "",
+              place: "",
+              Start: "",
+              End: "",
+              km: "",
+              kmExpense: "",
+              foodExpense: ""
+            }
+          ])
+          setShowModal(false)
+          refreshHook()
         }
-      )
+      } else {
+        // Assuming you have an API endpoint for creating leave requests
+        const response = await fetch(
+          `http://localhost:9000/api/auth/leave?Userid=${user._id}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(formData),
+            credentials: "include"
+          }
+        )
 
-      const responseData = await response.json()
+        const responseData = await response.json()
 
-      if (!response.ok) {
-        throw new Error("Failed to apply for leave")
+        if (!response.ok) {
+          throw new Error("Failed to apply for leave")
+        }
+        refreshHook()
+
+        setShowModal(false)
+        setFormData((prev) => ({
+          ...prev,
+          reason: ""
+        }))
       }
-      refreshHook()
-      // console.log("ressafdadfdf", responseData.data.leaveDate)
-
-      // // Update calendar with new event (simplified example)
-      // const newEvent = {
-      //   title: responseData.data.leaveType,
-
-      //   leaveDate: responseData.data.leaveDate,
-
-      //   extendedProps: {
-      //     reason: responseData.data.reason // Store the reason in extendedProps
-      //   },
-      //   classNames: responseData.data.verified
-      //     ? "verified-event"
-      //     : "unverified-event",
-      //   allDay: true
-      // }
-      // setEvents([...events, newEvent])
-      setShowModal(false)
-      setFormData((prev) => ({
-        ...prev,
-        reason: ""
-      }))
     } catch (error) {
       console.error("Error applying for leave:", error)
     }
@@ -308,12 +370,72 @@ function LeaveApplication() {
       </div>
       <style>
         {`
-
-.verified-event {
-  background: linear-gradient(to right, #34d399, #16a34a) !important; /* Green for verified */
+.cancel-status {
+  background:linear-gradient(to right, #ffeb3b, #ff9800) !important; /* user cancelled leave */
   color: white;
   // width: 100%;
   // height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border:none;
+}
+  .hr-rejected {
+  background: linear-gradient(to right, #22d3ee, #06b6d4)!important; /*hr rejected leave*/
+  color: white;
+  // width: 100%;
+  // height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border:none;
+}
+.fully-verified-event {
+  background: linear-gradient(to right, #34d399, #16a34a) !important; /* Green for HR verified */
+  color: white;
+  // width: 100%;
+  // height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border:none;
+}
+  .dept-rejected {
+  background: linear-gradient(to right, #9ca3af, #4b5563)!important; /*dept. rejected leave*/
+  color: white;
+  // width: 100%;
+  // height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border:none;
+}
+  
+  .dept-approved-event {
+  background: linear-gradient(to right, #60a5fa, #2563eb); !important; /* blue for department verified */
+  color: white;
+  // width: 100%;
+  // height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border:none;
+}
+   .onsite-approved-event {
+  background: 'linear-gradient(to right, #9b4de2, #6b21a8); !important; /* onsite verified */
+  color: white;
+  // width: 100%;
+  // height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border:none;
+}
+   .onsite-pending-event {
+  background: linear-gradient(to right, #fb923c, #ea580c)!important; /* orange for unverified onsite*/
+  color: white !important;
+  // width: %;
+  // height: %;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -329,17 +451,7 @@ function LeaveApplication() {
   align-items: center;
   border:none;
 }
-  .onsite-pending-event {
-  background: linear-gradient(to right, #fb923c, #ea580c)!important; /* orange for unverified onsite*/
-
-  color: white !important;
-  // width: %;
-  // height: %;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border:none;
-}
+ 
 
 .modal {
   position: fixed;
@@ -377,15 +489,20 @@ button {
         <label className="bg-gradient-to-r from-blue-400 to-blue-600 py-1 rounded-md shadow-xl transform hover:scale-105 transition duration-300 px-4">
           Dept. Approved
         </label>
+        <label className="bg-gradient-to-r from-gray-400 to-gray-600 py-1 rounded-md shadow-xl transform hover:scale-105 transition duration-300 px-4">
+          Dpt.Rejected
+        </label>
         <label className="bg-gradient-to-r from-green-400 to-green-600 py-1 rounded-md shadow-xl transform hover:scale-105 transition duration-300 px-4">
           HR/Onsite Approved
         </label>
+        <label className="bg-gradient-to-r from-cyan-400 to-cyan-600 py-1 rounded-md shadow-xl transform hover:scale-105 transition duration-300 px-4">
+          Hr Rejected
+        </label>
+
         <label className="bg-gradient-to-r from-yellow-400 to-yellow-600 py-1 rounded-md shadow-xl transform hover:scale-105 transition duration-300 px-4">
           Cancel Request
         </label>
-        <label className="bg-gradient-to-r from-gray-400 to-gray-600 py-1 rounded-md shadow-xl transform hover:scale-105 transition duration-300 px-4">
-          Cancelled
-        </label>
+
         <label className="bg-gradient-to-r from-purple-400 to-purple-600 py-1 rounded-md shadow-xl transform hover:scale-105 transition duration-300 px-4">
           Onsite Approval
         </label>
@@ -424,14 +541,41 @@ button {
                 <label className="block mb-2">Leave Type</label>
                 <select
                   name="leaveType"
-                  value={formData.leaveType}
-                  onChange={handleInputChange}
+                  // value={formData.leaveType}
+                  defaultValue={formData.leaveType}
+                  onChange={(e) => {
+                    const { value } = e.target
+                    setFormData((prev) => ({
+                      ...prev,
+                      leaveType: value,
+                      halfDayPeriod: value === "Half Day" ? "Morning" : "" // Default to "Morning" for Half Day
+                    }))
+                  }}
                   className="border p-2 rounded w-full"
                 >
                   <option value="Full Day">Full Day</option>
                   <option value="Half Day">Half Day</option>
                 </select>
               </div>
+              {formData.leaveType === "Half Day" && (
+                <div>
+                  <label className="block mb-2">Select Half Day Period</label>
+                  <select
+                    name="halfDayPeriod"
+                    defaultValue={formData.halfDayPeriod}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        halfDayPeriod: e.target.value
+                      }))
+                    }
+                    className="border p-2 rounded w-full"
+                  >
+                    <option value="Morning">Morning</option>
+                    <option value="Afternoon">Afternoon</option>
+                  </select>
+                </div>
+              )}
               <div className="flex items-center ">
                 <input
                   type="checkbox"
@@ -461,7 +605,7 @@ button {
                     </tr>
                   </thead>
                   <tbody>
-                    {tableRows.map((row, index) => (
+                    {tableRows?.map((row, index) => (
                       <tr key={index}>
                         <td className="border p-2 w-60">
                           <input
@@ -475,7 +619,19 @@ button {
                             className="border p-1 rounded w-full"
                           />
                         </td>
-                        <td className="border p-2 w-52">
+                        <td className="border p-2 w-60">
+                          <input
+                            type="text"
+                            value={row.place}
+                            onChange={(e) => {
+                              const updatedRows = [...tableRows]
+                              updatedRows[index].place = e.target.value
+                              setTableRows(updatedRows)
+                            }}
+                            className="border p-1 rounded w-full"
+                          />
+                        </td>
+                        {/* <td className="border p-2 w-52">
                           <select
                             value={row.place}
                             onChange={(e) =>
@@ -485,9 +641,9 @@ button {
                           >
                             <option value="Place1">Place1</option>
                             <option value="Place2">Place2</option>
-                            {/* Add more options as needed */}
+                            
                           </select>
-                        </td>
+                        </td> */}
                         <td className="border p-2 ">
                           <input
                             type="number"
@@ -600,24 +756,29 @@ button {
             )}
 
             <div className="flex justify-end space-x-2">
-              <button
-                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-                onClick={handleApply}
-              >
-                Apply
-              </button>
-              <button
-                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-                onClick={() => handleUpdate(selectedEventId, formData)}
-              >
-                Update
-              </button>
-              <button
+              {!formData.eventId && (
+                <button
+                  className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                  onClick={handleApply}
+                >
+                  Apply
+                </button>
+              )}
+              {formData.eventId && (
+                <button
+                  className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                  onClick={() => handleUpdate(formData)}
+                >
+                  Update
+                </button>
+              )}
+
+              {/* <button
                 className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600"
                 onClick={() => handleDelete(selectedEventId)}
               >
                 Delete
-              </button>
+              </button> */}
               <button
                 className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
                 onClick={() => setShowModal(false)}

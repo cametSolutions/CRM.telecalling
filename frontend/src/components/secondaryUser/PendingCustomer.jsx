@@ -1,17 +1,11 @@
-import React, { useState, useCallback, useEffect } from "react"
+import React, { useState, useEffect } from "react"
+import DeleteAlert from "../common/DeleteAlert"
 import { CiEdit } from "react-icons/ci"
 import { useNavigate } from "react-router-dom"
-import {
-  FaUserPlus,
-  FaSearch,
-  FaRegFileExcel,
-  FaFilePdf,
-  FaPrint,
-  FaHourglassHalf
-} from "react-icons/fa"
-import { MdPending } from "react-icons/md"
+import { toast } from "react-toastify"
+import api from "../../api/api"
+import { FaSearch } from "react-icons/fa"
 
-import { Link } from "react-router-dom"
 import _ from "lodash"
 import UseFetch from "../../hooks/useFetch"
 
@@ -35,6 +29,23 @@ const PendingCustomer = () => {
       }
     }
   }, [pendingCustomerData])
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/customer/deleteCustomer/?id=${id}`, {
+        withCredentials: true
+      })
+
+      // Update the state to remove the deleted brand
+
+      setFilteredCustomer((prevItems) =>
+        prevItems.filter((item) => item._id !== id)
+      )
+      toast.success("Customer deleted successfully!")
+    } catch (error) {
+      console.error("Error deleting Customer:", error)
+      toast.error("Failed to delete brand")
+    }
+  }
 
   //   const handleSearch = useCallback(
   //     _.debounce((query) => {
@@ -75,67 +86,33 @@ const PendingCustomer = () => {
         </div>
 
         <hr className="border-t-2 border-gray-300 mb-4" />
-        {/* <div className="flex flex-wrap space-x-4 mb-4">
-          <Link
-            to="/admin/masters/customerRegistration"
-            className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center"
-          >
-            <FaUserPlus className="mr-2" />
-          </Link>
-          <button className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center">
-            <FaRegFileExcel className="mr-2" />
-          </button>
-          <button className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center">
-            <FaFilePdf className="mr-2" />
-          </button>
-          <button className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center">
-            <FaPrint className="mr-2" />
-          </button>
 
-          <Link
-            to="/admin/masters/pendingCustomer"
-            className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center"
-          >
-            <FaHourglassHalf className="mr-2" />
-          </Link>
-        </div> */}
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white border border-gray-300">
             <thead>
-              <tr>
-                {/* <th className="py-2 px-4 border-b border-gray-300 text-left">
-                  Branch Name
-                </th> */}
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
+              <tr className="text-center">
+                <th className="py-2 px-4 border-b border-gray-300 ">
                   Customer Name
                 </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
+                <th className="py-2 px-4 border-b border-gray-300 ">
                   Address1
                 </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
+                <th className="py-2 px-4 border-b border-gray-300 ">
                   Address2
                 </th>
 
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
-                  City
-                </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
+                <th className="py-2 px-4 border-b border-gray-300 ">City</th>
+                <th className="py-2 px-4 border-b border-gray-300 ">
                   Pin code
                 </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
-                  Mobile
-                </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
+                <th className="py-2 px-4 border-b border-gray-300 ">Mobile</th>
+                <th className="py-2 px-4 border-b border-gray-300 ">
                   Telephone
                 </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
-                  Email
-                </th>
-                <th className="py-2 px-4 border-b border-gray-300 text-left">
-                  Edit
-                </th>
+                <th className="py-2 px-4 border-b border-gray-300 ">Email</th>
+                <th className="py-2 px-4 border-b border-gray-300 ">Edit</th>
 
-                <th className="py-2 px-4 border-b border-gray-300 text-left"></th>
+                <th className="py-2 px-4 border-b border-gray-300 ">Delete</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -146,45 +123,54 @@ const PendingCustomer = () => {
                 filteredCustomer
                   .filter((customer) => customer.selected.length === 0) // Filter customers with an empty selected array
                   .map((customer) => (
-                    <tr key={customer._id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                        No branch selected
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                    <tr className="text-center" key={customer._id}>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
                         {customer.customerName}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
                         {customer.address1}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
                         {customer.address2}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
                         {customer.city}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
                         {customer.pincode}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
                         {customer.mobile}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
                         {customer.landline}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-black">
                         {customer.email}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xl text-black">
-                        <CiEdit
-                          onClick={() =>
-                            navigate(`/${userRole}/masters/customerEdit`, {
-                              state: {
-                                customer: customer
-                              }
-                            })
-                          }
-                          className="cursor-pointer"
-                        />
+                      <td className="px-4 py-4 whitespace-nowrap text-xl text-black">
+                        <div className="flex justify-center">
+                          <CiEdit
+                            onClick={() =>
+                              navigate(`/${userRole}/masters/customerEdit`, {
+                                state: {
+                                  customer: customer
+                                }
+                              })
+                            }
+                            className="cursor-pointer"
+                          />
+                        </div>
+                      </td>
+
+                      <td className="px-4 py-4 whitespace-nowrap text-xl text-black">
+                        <button className="text-red-400 hover:text-red-600">
+                          {/* <MdDelete onClick={() => handleDelete(brand._id)} /> */}
+                          <DeleteAlert
+                            onDelete={handleDelete}
+                            Id={customer._id}
+                          />
+                        </button>
                       </td>
                     </tr>
                   ))

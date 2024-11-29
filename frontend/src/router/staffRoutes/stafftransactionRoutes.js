@@ -1,4 +1,4 @@
-// import LeaveApplication from "../../components/primaryUser/LeaveApplication"
+import LeaveApplication from "../../components/primaryUser/LeaveApplication"
 import CallRegistration from "../../pages/primaryUser/register/CallRegistration"
 import ComingSoon from "../../pages/common/ComingSoon"
 const stafftransactionsRoutes = [

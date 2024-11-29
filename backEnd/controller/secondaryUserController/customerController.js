@@ -115,13 +115,30 @@ export const CustomerEdit = async (req, res) => {
     res.status(500).json({ message: "Error updating customer" })
   }
 }
+export const DeleteCustomer = async (req, res) => {
+  const { id } = req.query
+
+  try {
+    // Perform the deletion
+    const result = await Customer.findByIdAndDelete(id)
+
+    if (result) {
+      return res.status(200).json({ message: "Customer deleted successfully" })
+    } else {
+      return res.status(404).json({ message: "Customer not found" })
+    }
+  } catch (error) {
+    console.error(error)
+    return res.status(500).json({ message: "Server error" })
+  }
+}
 
 export const GetCustomer = async (req, res) => {
   const search = req.query?.search
   const role = req.query?.role
   const userBranch = req.query?.userBranch
   const pendingCustomerList = req.query?.pendingCustomerList
-  console.log("userbraanch",userBranch)
+  console.log("userbraanch", userBranch)
   let objectIds
   let parsedBranch
 
