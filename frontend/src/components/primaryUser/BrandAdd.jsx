@@ -11,13 +11,13 @@ const BrandAdd = ({
   BrandData,
   handleBrandData,
   handleEditedData,
-  handleDeleteData,
+  handleDeleteData
 }) => {
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors }
   } = useForm()
   const [brands, setBrands] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
@@ -51,20 +51,21 @@ const BrandAdd = ({
   }
 
   //   }
-  //   const handleDelete = async (id) => {
-  //     try {
-  //       await api.delete(`/inventory/deleteBrand/${id}`, {
-  //         withCredentials: true,
-  //       })
+  const handleDelete = async (id) => {
+    console.log("hiiiiii")
+    try {
+      await api.delete(`/inventory/deleteBrand/${id}`, {
+        withCredentials: true
+      })
 
-  //       // Update the state to remove the deleted brand
-  //       setBrands(brands.filter((brand) => brand._id !== id))
-  //       toast.success("Brand deleted successfully!")
-  //     } catch (error) {
-  //       console.error("Error deleting brand:", error)
-  //       toast.error("Failed to delete brand")
-  //     }
-  //   }
+      // Update the state to remove the deleted brand
+      setBrands(brands.filter((brand) => brand._id !== id))
+      toast.success("Brand deleted successfully!")
+    } catch (error) {
+      console.error("Error deleting brand:", error)
+      toast.error("Failed to delete brand")
+    }
+  }
 
   // Pagination logic
   const indexOfLastBrand = currentPage * brandsPerPage

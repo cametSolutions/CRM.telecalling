@@ -38,22 +38,26 @@ const leaveRequestSchema = new Schema(
       type: Boolean,
       default: false
     },
+    onsitestatus:[],
 
     adminverified: {
       type: Boolean,
       default: false
     },
     departmentverified: { type: Boolean, default: false },
-    status: {
+    departmentstatus: {
       type: String,
-      enum: [
-        "Not Approved",
-        "Dept. Approved",
-        "HR/Onsite Approved",
-        "Cancel Request",
-        "Cancelled"
-      ],
+      enum: ["Not Approved","Dept Approved","Dept Rejected"],
       default: "Not Approved"
+    },
+    hrstatus: {
+      type: String,
+      enum: ["Not Approved","HR/Onsite Approved","HR Rejected"],
+      default: "Not Approved"
+    },
+    cancelstatus: {
+      type: Boolean,
+      default: false
     }
   },
   {

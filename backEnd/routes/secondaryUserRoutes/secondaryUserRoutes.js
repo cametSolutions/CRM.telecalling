@@ -8,7 +8,8 @@ import {
   GetCallRegister,
   CustomerEdit,
   GetAllExpiryRegister,
-  getallExpiredCustomerCalls
+  getallExpiredCustomerCalls,
+  DeleteCustomer
 } from "../../controller/secondaryUserController/customerController.js"
 
 const router = express.Router()
@@ -20,12 +21,17 @@ router.get("/getCustomer", authMiddleware, GetCustomer)
 router.post("/callRegistration", customerCallRegistration)
 router.get("/getcallregister/:callId", GetCallRegister)
 router.get("/getcallregister/", GetCallRegister)
+router.delete("/deleteCustomer", authMiddleware, DeleteCustomer)
 router.get(
   "/getallExpiryregisterCustomer",
   authMiddleware,
   GetAllExpiryRegister
 )
-router.post("/getallExpiredCustomerCalls", authMiddleware, getallExpiredCustomerCalls)
+router.post(
+  "/getallExpiredCustomerCalls",
+  authMiddleware,
+  getallExpiredCustomerCalls
+)
 // router.get("/getallcalls", authMiddleware, GetallCalls)
 // router.post("/updatedbranch", authMiddleware, updateBranchNames)
 

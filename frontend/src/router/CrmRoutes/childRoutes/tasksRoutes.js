@@ -1,6 +1,7 @@
 import LeaveApprovalAndPending from "../../../components/common/LeaveApprovalAndPending"
 import ComingSoon from "../../../pages/common/ComingSoon"
 import ExcelUploader from "../../../pages/primaryUser/converter/ExcelUploader"
+import LeaveApplication from "../../../components/primaryUser/LeaveApplication"
 
 const tasksRoutes = [
   { path: "/admin/tasks/signUp-customer", component: ComingSoon },
