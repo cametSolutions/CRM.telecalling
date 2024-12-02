@@ -14,7 +14,7 @@ const tasksRoutes = [
   },
   {
     path: "/admin/tasks/leaveApproval-pending",
-    component: ComingSoon
+    component: LeaveApprovalAndPending
   },
   { path: "/admin/tasks/workAllocation", component: ComingSoon },
   { path: "/admin/tasks/excelconverter", component: ExcelUploader }

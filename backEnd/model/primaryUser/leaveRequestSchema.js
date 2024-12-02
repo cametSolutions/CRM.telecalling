@@ -8,6 +8,11 @@ const leaveRequestSchema = new Schema(
       ref: "Staff", // Reference to the user who made the request
       required: true
     },
+    assignedto:{
+      type:mongoose.Schema.Types.ObjectId,
+      ref:"Staff",
+      required:true
+    },
     leaveDate: {
       type: Date,
       required: true
@@ -38,7 +43,12 @@ const leaveRequestSchema = new Schema(
       type: Boolean,
       default: false
     },
-    onsitestatus:[],
+    onsitestatus:{
+      type: String,
+      enum: ["Not Approved","Approved"],
+      default: "Not Approved"
+    },
+    onsiteData:[],
 
     adminverified: {
       type: Boolean,

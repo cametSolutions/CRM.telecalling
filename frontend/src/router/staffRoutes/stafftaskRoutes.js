@@ -7,7 +7,7 @@ const stafftasksRoutes = [
 
   {
     path: "/staff/tasks/leaveApproval-pending",
-    component: ComingSoon
+    component: LeaveApprovalAndPending
   },
   { path: "/staff/tasks/workAllocation", component: ComingSoon },
 

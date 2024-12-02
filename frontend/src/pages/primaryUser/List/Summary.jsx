@@ -5,7 +5,7 @@ import Tiles from "../../../components/common/Tiles"
 import UseFetch from "../../../hooks/useFetch"
 import io from "socket.io-client" // Import Socket.IO client
 import { UNSAFE_useScrollRestoration } from "react-router-dom"
-// const socket = io("http://localhost:9000")
+// const socket = io("http://cost:9000")
 const socket = io("https://www.crm.camet.in")
 
 const Summary = () => {
