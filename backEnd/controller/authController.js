@@ -517,8 +517,10 @@ export const GetallUsers = async (req, res) => {
 
 export const LeaveApply = async (req, res) => {
   const formData = req.body
-  const { Userid } = req.query
-  const objectId = new mongoose.Types.ObjectId(Userid)
+  const { selectedid, assignedto } = req.query
+
+  const objectId = new mongoose.Types.ObjectId(selectedid)
+  const assignedTo = new mongoose.Types.ObjectId(assignedto)
 
   const {
     startDate,
@@ -550,10 +552,14 @@ export const LeaveApply = async (req, res) => {
         onsite,
         reason,
         description,
-        userId: objectId
+        userId: objectId,
+        assignedto: assignedTo
       })
 
-      await leave.save()
+      const a = await leave.save()
+      if (a) {
+        console.log("successsss")
+      }
     }
 
     const leaveSubmit = await LeaveRequest.find({ userId: objectId })
@@ -568,12 +574,12 @@ export const LeaveApply = async (req, res) => {
 
 export const OnsiteleaveApply = async (req, res) => {
   try {
-    const { Userid } = req.query
-    console.log("type", typeof Userid)
+    const { selectedid, assignedto } = req.query
+
     const { formData, tableRows } = req.body
-    const objectId = new mongoose.Types.ObjectId(Userid)
-    console.log("formdata", formData)
-    console.log("tableroews", tableRows)
+    const selectedObjectId = new mongoose.Types.ObjectId(selectedid)
+    const assignedObjectId = new mongoose.Types.ObjectId(assignedto)
+
     if (!tableRows) {
       return res.status(404).json({ message: "no table content" })
     }
@@ -594,10 +600,11 @@ export const OnsiteleaveApply = async (req, res) => {
       onsite,
 
       description,
-      userId: objectId
+      userId: selectedObjectId,
+      assignedto: assignedObjectId
     })
     if (tableRows) {
-      onsiteLeave.onsitestatus.push(tableRows)
+      onsiteLeave.onsiteData.push(tableRows)
     }
     const successonsite = await onsiteLeave.save()
     if (successonsite) {
@@ -610,7 +617,10 @@ export const OnsiteleaveApply = async (req, res) => {
 }
 export const GetallLeave = async (req, res) => {
   const { userid } = req.query // Extract userid from query parameters
+  console.log("tyeeee", typeof userid)
 
+  const objectId = new mongoose.Types.ObjectId(userid)
+  console.log("idddd", objectId)
   try {
     // Validate userid
     if (!userid) {
@@ -618,7 +628,7 @@ export const GetallLeave = async (req, res) => {
     }
 
     // Fetch all leave records for the specified userid
-    const leaves = await LeaveRequest.find({ userId: userid })
+    const leaves = await LeaveRequest.find({ userId: objectId })
 
     // Check if no records found
     if (leaves.length === 0) {
@@ -638,14 +648,51 @@ export const GetallLeave = async (req, res) => {
 }
 export const GetAllLeaveRequest = async (req, res) => {
   try {
-    const leaveList = await LeaveRequest.find({}).populate({
+    const startdate = req?.query?.startdate
+    const enddate = req?.query?.enddate
+    const onsite = req?.query?.onsite
+    const userid = req?.query?.userid
+    const role = req?.query?.role
+
+    const objectId = new mongoose.Types.ObjectId(userid)
+
+    // Ensure the dates are valid and convert them to ISO format
+    const startDate = new Date(startdate) // Convert to Date object
+    const endDate = new Date(enddate) // Convert to Date object
+
+    // Check if the dates are valid
+    if (isNaN(startDate) || isNaN(endDate)) {
+      return res.status(400).send({ message: "Invalid date format" })
+    }
+    // Initialize the query with common conditions
+    const query = {
+      leaveDate: {
+        $gte: startDate, // Greater than or equal to startDate
+        $lte: endDate // Less than or equal to endDate
+      }
+    }
+
+    // Check if the role is not admin
+    if (role !== "Admin") {
+      query.assignedto = objectId // Only include assignedto for non-admin users
+    }
+
+    // Check for onsite status
+    if (onsite === "true") {
+      query.onsite = true
+    } else {
+      query.onsite = false
+    }
+
+    // Execute the query with population
+    const leaveList = await LeaveRequest.find(query).populate({
       path: "userId",
       select: "name role department", // Select fields from User
       populate: [
         {
           path: "department",
           select: "department",
-          options: { strictPopulate: false } // Allow graceful fallback for missing departments
+          options: { strictPopulate: false } // Graceful fallback for missing departments
         },
         {
           path: "selected.branch_id",
@@ -656,6 +703,58 @@ export const GetAllLeaveRequest = async (req, res) => {
       ]
     })
 
+    // if (onsite === "true") {
+    //   leaveList = await LeaveRequest.find({
+    //     leaveDate: {
+    //       $gte: startDate, // Greater than or equal to startDate
+    //       $lte: endDate // Less than or equal to endDate
+    //     },
+    //     onsite: true,
+    //     assignedto: objectId
+    //   }).populate({
+    //     path: "userId",
+    //     select: "name role department", // Select fields from User
+    //     populate: [
+    //       {
+    //         path: "department",
+    //         select: "department",
+    //         options: { strictPopulate: false } // Allow graceful fallback for missing departments
+    //       },
+    //       {
+    //         path: "selected.branch_id",
+    //         model: "Branch",
+    //         select: "branchName",
+    //         options: { strictPopulate: false } // Avoid errors for missing branches
+    //       }
+    //     ]
+    //   })
+    // } else {
+    //   leaveList = await LeaveRequest.find({
+    //     leaveDate: {
+    //       $gte: startDate, // Greater than or equal to startDate
+    //       $lte: endDate // Less than or equal to endDate
+    //     },
+    //     onsite: false,
+    //     assignedto: objectId
+    //   }).populate({
+    //     path: "userId",
+    //     select: "name role department", // Select fields from User
+    //     populate: [
+    //       {
+    //         path: "department",
+    //         select: "department",
+    //         options: { strictPopulate: false } // Allow graceful fallback for missing departments
+    //       },
+    //       {
+    //         path: "selected.branch_id",
+    //         model: "Branch",
+    //         select: "branchName",
+    //         options: { strictPopulate: false } // Avoid errors for missing branches
+    //       }
+    //     ]
+    //   })
+    // }
+
     if (leaveList) {
       return res.status(200).json({ message: "leaves found", data: leaveList })
     }
@@ -664,98 +763,471 @@ export const GetAllLeaveRequest = async (req, res) => {
   }
 }
 export const ApproveLeave = async (req, res) => {
+  console.log("hiiiii")
   try {
-    const role = req?.query?.role
-    const userId = req?.query?.userId
-    const selectAll = req?.query?.selectAll
+    const { role, userId, selectedId, startDate, endDate, onsite } = req.query
 
-    if (selectAll === "true") {
-      const objectId = new mongoose.Types.ObjectId(userId)
-      if (role === "Admin") {
-        // Update all documents that match the userId
-        const result = await LeaveRequest.updateMany(
-          { userId: objectId }, // Match all documents with this userId
-          {
-            $set: {
-              hrstatus: "HR/Onsite Approved",
-              adminverified: true
-            }
-          }
-        )
-        res.status(200).json({
-          message: "All matching leave requests updated successfully",
-          result
-        })
-      } else {
-        // Update all documents that match the userId
-        const result = await LeaveRequest.updateMany(
-          { userId: objectId }, // Match all documents with this userId
-          {
-            $set: {
-              departmentstatus: "Dept Approved",
-              departmentverified: true
-            }
-          }
-        )
+    // Validate common parameters
+    if (!role || !startDate || !endDate || !onsite) {
+      console.log("onsiteddddddd", onsite)
+      return res
+        .status(400)
+        .json({ message: "Missing required query parameters." })
+    }
 
-        res.status(200).json({
-          message: "All matching leave requests updated successfully",
-          result
-        })
-      }
-    } else {
-      console.log("hiiiiiiiiii")
-      const objectId = new mongoose.Types.ObjectId(userId)
+    // Extract additional query strings, dynamically handle `selectAll` and `single`
+    const isSelectAll = req?.query?.selectAll === "true"
+    const isSingle = req?.query?.single === "true"
 
-      if (!userId) {
-        return res.status(400).json({ message: "User ID is required" })
-      }
-      const leaveRequest = await LeaveRequest.findByIdAndUpdate(
-       { _id:objectId}, // ID of the leave request to update
-        role === "Admin"
-          ? {
-              hrstatus: "HR/Onsite Approved",
-              adminverified: true,
-            }
-          : role === "Staff"
-          ? {
-              departmentstatus: "Dept Approved",
-              departmentverified: true,
-            }
-          : null,
-        { new: true } // Return the updated document
-      );
-      // const leaveRequest = await LeaveRequest.findOne({ _id: objectId })
-
-      // if (!leaveRequest) {
-      //   return res.status(404).json({ message: "Leave request not found" })
-      // }
-      // // Validate the role and update logic
-      // if (role === "Admin") {
-      //   // Update the leave request for admins
-      //   leaveRequest.hrstatus = "HR/Onsite Approved"
-      //   leaveRequest.adminverified = true
-      // } else if (role === "Staff") {
-      //   console.log("hhhhhhhhh")
-      //   // Update the leave request for managers
-      //   leaveRequest.departmentstatus = "Dept Approved"
-      //   leaveRequest.departmentverified = true
-      // }
-      // console.log("leaverea", leaveRequest)
-
-      // // Save the updated leave request
-      // await leaveRequest.save()
-
-      return res.status(200).json({
-        message: "Leave request updated successfully",
-        leaveRequest
+    // Ensure at least one specific query is provided
+    if (!isSelectAll && !isSingle) {
+      return res.status(400).json({
+        message: "Missing specific action parameter (selectAll or single)."
       })
     }
+
+    // Convert IDs to ObjectId if provided
+    const userObjectId = userId ? new mongoose.Types.ObjectId(userId) : null
+    const selectedObjectId = selectedId
+      ? new mongoose.Types.ObjectId(selectedId)
+      : null
+
+    // Base query common to both cases
+    const baseQuery = {
+      leaveDate: { $gte: startDate, $lte: endDate },
+      onsite: onsite === "true"
+    }
+
+    // Add user-specific filtering for non-admin roles
+    if (role !== "Admin" && userObjectId) {
+      baseQuery.assignedto = userObjectId
+    }
+
+    // Define role-based update fields
+    const updateFields =
+      role === "Admin"
+        ? {
+            hrstatus: "HR/Onsite Approved",
+            adminverified: true,
+            ...(onsite === "true" && { onsitestatus: "Approved" })
+          }
+        : {
+            departmentstatus: "Dept Approved",
+            departmentverified: true,
+            ...(onsite === "true" && { onsitestatus: "Approved" })
+          }
+
+    let result
+
+    if (isSelectAll) {
+      // Handle selectAll case
+      if (!selectedObjectId) {
+        return res.status(400).json({
+          message: "Missing required parameter: selectedId for selectAll."
+        })
+      }
+      baseQuery.userId = selectedObjectId
+      result = await LeaveRequest.updateMany(baseQuery, { $set: updateFields })
+    } else if (isSingle) {
+      // Handle single case
+      if (!selectedObjectId) {
+        return res.status(400).json({
+          message: "Missing required parameter: selectedId for single update."
+        })
+      }
+      result = await LeaveRequest.updateOne(
+        { _id: selectedObjectId },
+        { $set: updateFields }
+      )
+    }
+
+    // Check if any document was updated
+    if (result && result.modifiedCount > 0) {
+      // Fetch updated leave requests for display
+      const updatedLeaveList = await LeaveRequest.find(baseQuery).populate({
+        path: "userId",
+        select: "name role department",
+        populate: [
+          {
+            path: "department",
+            select: "department",
+            options: { strictPopulate: false }
+          },
+          {
+            path: "selected.branch_id",
+            model: "Branch",
+            select: "branchName",
+            options: { strictPopulate: false }
+          }
+        ]
+      })
+
+      return res.status(200).json({
+        message: "Leave request(s) updated successfully",
+        data: updatedLeaveList
+      })
+    }
+
+    return res
+      .status(404)
+      .json({ message: "No matching leave requests found to update." })
   } catch (error) {
-    console.log("error:", error.message)
+    console.error("Error:", error.message)
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+
+// export const ApproveLeave = async (req, res) => {
+//   try {
+//     const role = req?.query?.role
+//     const userId = req?.query?.userId
+//     const selectedId = req?.query?.selectedId
+//     const startDate = req?.query?.startDate
+//     const endDate = req?.query?.endDate
+//     const onsite = req?.query?.onsite
+//     const selectAll = req?.query?.selectAll
+//     const single = req?.query?.single
+//     const userObjectId = new mongoose.Types.ObjectId(userId)
+//     const selectedObjectId = new mongoose.Types.ObjectId(selectedId)
+
+//     if (selectAll === "true" && onsite === "true") {
+//       if (role === "Admin") {
+//         // Update all documents that match the userId
+//         const result = await LeaveRequest.updateMany(
+//           {
+//             userId: selectedObjectId,
+//             leaveDate: {
+//               $gte: startDate, // Greater than or equal to startDate
+//               $lte: endDate // Less than or equal to endDate
+//             },
+//             onsite: true
+//           },
+//           {
+//             $set: {
+//               hrstatus: "HR/Onsite Approved",
+//               onsitestatus: "Approved",
+//               adminverified: true
+//             }
+//           }
+//         )
+//         if (result.modifiedCount > 0) {
+//           const updatedleaveList = await LeaveRequest.find({
+//             leaveDate: {
+//               $gte: startDate, // Greater than or equal to startDate
+//               $lte: endDate // Less than or equal to endDate
+//             },
+//             onsite: true
+//           }).populate({
+//             path: "userId",
+//             select: "name role department", // Select fields from User
+//             populate: [
+//               {
+//                 path: "department",
+//                 select: "department",
+//                 options: { strictPopulate: false } // Allow graceful fallback for missing departments
+//               },
+//               {
+//                 path: "selected.branch_id",
+//                 model: "Branch",
+//                 select: "branchName",
+//                 options: { strictPopulate: false } // Avoid errors for missing branches
+//               }
+//             ]
+//           })
+
+//           return res.status(200).json({
+//             message: "All matching leave requests updated successfully",
+//             data: updatedleaveList
+//           })
+//         } else if (result.matchedCount > 0) {
+//           console.log("Matched documents, but no updates were necessary.")
+//         } else {
+//           console.log("No matching documents found.")
+//         }
+//       } else {
+//         // Update all documents that match the userId
+//         const result = await LeaveRequest.updateMany(
+//           {
+//             userId: selectedObjectId,
+//             leaveDate: {
+//               $gte: startDate, // Greater than or equal to startDate
+//               $lte: endDate // Less than or equal to endDate
+//             },
+//             onsite: true,
+//             assignedto: userObjectId
+//           },
+//           {
+//             $set: {
+//               departmentstatus: "Dept Approved",
+//               departmentverified: true,
+//               onsitestatus: "Approved"
+//             }
+//           }
+//         )
+//         if (result.modifiedCount > 0) {
+//           const updatedleaveList = await LeaveRequest.find({
+//             leaveDate: {
+//               $gte: startDate, // Greater than or equal to startDate
+//               $lte: endDate // Less than or equal to endDate
+//             },
+//             onsite: true,
+//             assignedto: userObjectId
+//           }).populate({
+//             path: "userId",
+//             select: "name role department", // Select fields from User
+//             populate: [
+//               {
+//                 path: "department",
+//                 select: "department",
+//                 options: { strictPopulate: false } // Allow graceful fallback for missing departments
+//               },
+//               {
+//                 path: "selected.branch_id",
+//                 model: "Branch",
+//                 select: "branchName",
+//                 options: { strictPopulate: false } // Avoid errors for missing branches
+//               }
+//             ]
+//           })
+//           return res.status(200).json({
+//             message: "All matching leave requests updated successfully",
+//             data: updatedleaveList
+//           })
+//         }
+//       }
+//     } else if (selectAll === "true" && onsite === "false") {
+//       if (role === "Admin") {
+//         // Update all documents that match the userId
+//         const result = await LeaveRequest.updateMany(
+//           {
+//             userId: selectedObjectId,
+//             leaveDate: {
+//               $gte: startDate, // Greater than or equal to startDate
+//               $lte: endDate // Less than or equal to endDate
+//             },
+//             onsite: false
+//           },
+//           {
+//             $set: {
+//               hrstatus: "HR/Onsite Approved",
+
+//               adminverified: true
+//             }
+//           }
+//         )
+//         if (result.modifiedCount > 0) {
+//           const updatedleaveList = await LeaveRequest.find({
+//             leaveDate: {
+//               $gte: startDate, // Greater than or equal to startDate
+//               $lte: endDate // Less than or equal to endDate
+//             },
+//             onsite: false
+//           }).populate({
+//             path: "userId",
+//             select: "name role department", // Select fields from User
+//             populate: [
+//               {
+//                 path: "department",
+//                 select: "department",
+//                 options: { strictPopulate: false } // Allow graceful fallback for missing departments
+//               },
+//               {
+//                 path: "selected.branch_id",
+//                 model: "Branch",
+//                 select: "branchName",
+//                 options: { strictPopulate: false } // Avoid errors for missing branches
+//               }
+//             ]
+//           })
+
+//           return res.status(200).json({
+//             message: "All matching leave requests updated successfully",
+//             data: updatedleaveList
+//           })
+//         } else if (result.matchedCount > 0) {
+//           console.log("Matched documents, but no updates were necessary.")
+//         } else {
+//           console.log("No matching documents found.")
+//         }
+//       } else {
+//         // Update all documents that match the userId
+//         const result = await LeaveRequest.updateMany(
+//           {
+//             userId: selectedObjectId,
+//             leaveDate: {
+//               $gte: startDate, // Greater than or equal to startDate
+//               $lte: endDate // Less than or equal to endDate
+//             },
+//             onsite: false,
+//             assignedto: userObjectId
+//           },
+//           {
+//             $set: {
+//               departmentstatus: "Dept Approved",
+//               departmentverified: true
+//             }
+//           }
+//         )
+//         if (result.modifiedCount > 0) {
+//           const updatedleaveList = await LeaveRequest.find({
+//             leaveDate: {
+//               $gte: startDate, // Greater than or equal to startDate
+//               $lte: endDate // Less than or equal to endDate
+//             },
+//             onsite: false,
+//             assignedto: userObjectId
+//           }).populate({
+//             path: "userId",
+//             select: "name role department", // Select fields from User
+//             populate: [
+//               {
+//                 path: "department",
+//                 select: "department",
+//                 options: { strictPopulate: false } // Allow graceful fallback for missing departments
+//               },
+//               {
+//                 path: "selected.branch_id",
+//                 model: "Branch",
+//                 select: "branchName",
+//                 options: { strictPopulate: false } // Avoid errors for missing branches
+//               }
+//             ]
+//           })
+//           return res.status(200).json({
+//             message: "All matching leave requests updated successfully",
+//             data: updatedleaveList
+//           })
+//         }
+//       }
+//     } else if (single === "true" && onsite === "true") {
+//       if (!userId) {
+//         return res.status(400).json({ message: "User ID is required" })
+//       }
+
+//       const result = await LeaveRequest.updateOne(
+//         { _id: selectedObjectId }, // Matches by _id
+//         role === "Admin"
+//           ? {
+//               $set: {
+//                 hrstatus: "HR/Onsite Approved",
+//                 adminverified: true,
+//                 onsitestatus: "Approved"
+//               }
+//             }
+//           : role === "Staff"
+//           ? {
+//               $set: {
+//                 departmentstatus: "Dept Approved",
+//                 departmentverified: true,
+//                 onsitestatus: "Approved"
+//               }
+//             }
+//           : {}
+//       )
+//       if (result.modifiedCount > 0) {
+//         console.log("Update successful")
+
+//         const query = {
+//           leaveDate: {
+//             $gte: startDate, // Greater than or equal to startDate
+//             $lte: endDate // Less than or equal to endDate
+//           },
+//           onsite: true
+//         }
+
+//         // Add `assignedto` conditionally based on the role
+//         if (role !== "Admin") {
+//           query.assignedto = userObjectId
+//         }
+//         const updatedleaveList = await LeaveRequest.find(query).populate({
+//           path: "userId",
+//           select: "name role department", // Select fields from User
+//           populate: [
+//             {
+//               path: "department",
+//               select: "department",
+//               options: { strictPopulate: false } // Allow graceful fallback for missing departments
+//             },
+//             {
+//               path: "selected.branch_id",
+//               model: "Branch",
+//               select: "branchName",
+//               options: { strictPopulate: false } // Avoid errors for missing branches
+//             }
+//           ]
+//         })
+//         return res.status(200).json({
+//           message: "Leave request updated successfully",
+//           data: updatedleaveList
+//         })
+//       }
+//     } else if (single === "true" && onsite === "false") {
+//       if (!userId) {
+//         return res.status(400).json({ message: "User ID is required" })
+//       }
+
+//       const result = await LeaveRequest.updateOne(
+//         { _id: selectedObjectId }, // Matches by _id
+//         role === "Admin"
+//           ? {
+//               $set: {
+//                 hrstatus: "HR/Onsite Approved",
+//                 adminverified: true
+//               }
+//             }
+//           : role === "Staff"
+//           ? {
+//               $set: {
+//                 departmentstatus: "Dept Approved",
+//                 departmentverified: true
+//               }
+//             }
+//           : {}
+//       )
+//       if (result.modifiedCount > 0) {
+//         console.log("Update successful")
+
+//         const query = {
+//           leaveDate: {
+//             $gte: startDate, // Greater than or equal to startDate
+//             $lte: endDate // Less than or equal to endDate
+//           },
+//           onsite: false
+//         }
+
+//         // Add `assignedto` conditionally based on the role
+//         if (role !== "Admin") {
+//           query.assignedto = userObjectId
+//         }
+//         const updatedleaveList = await LeaveRequest.find(query).populate({
+//           path: "userId",
+//           select: "name role department", // Select fields from User
+//           populate: [
+//             {
+//               path: "department",
+//               select: "department",
+//               options: { strictPopulate: false } // Allow graceful fallback for missing departments
+//             },
+//             {
+//               path: "selected.branch_id",
+//               model: "Branch",
+//               select: "branchName",
+//               options: { strictPopulate: false } // Avoid errors for missing branches
+//             }
+//           ]
+//         })
+//         return res.status(200).json({
+//           message: "Leave request updated successfully",
+//           data: updatedleaveList
+//         })
+//       }
+//     }
+//   } catch (error) {
+//     console.log("error:", error.message)
+//     return res.status(500).json({ message: "Internal server error" })
+//   }
+// }
+
 export const RejectLeave = async (req, res) => {
   try {
     const role = req?.query?.role

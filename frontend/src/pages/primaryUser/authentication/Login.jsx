@@ -43,9 +43,9 @@ const Login = () => {
             navigate("/staff/home")
           }
         }, 1000)
-      } else {
       }
     } catch (error) {
+      setLoading(false)
       toast.error("invalid credentials")
       console.error(
         "Login failed:",
