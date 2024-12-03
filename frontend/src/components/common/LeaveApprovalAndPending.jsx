@@ -101,12 +101,14 @@ const LeaveApprovalAndPending = () => {
       setLoading(true)
       let response
       if (!isOnsite) {
+        
         response = await api.get(
           `/auth/leaveList?startdate=${dates.startDate}&enddate=${
             dates.endDate
           }&onsite=${true}&userid=${user?._id}&role=${user?.role}`
         )
       } else {
+        console.log("hlww")
         response = await api.get(
           `/auth/leaveList?startdate=${dates.startDate}&enddate=${dates.endDate}&userid=${user?._id}&role=${user?.role}`
         )
@@ -120,6 +122,7 @@ const LeaveApprovalAndPending = () => {
         setLoading(false)
         setLeaveList([])
       }
+
       // Initialize isToggled state based on the status of each leave request
       const initialToggles = {}
       if (user?.role === "Admin") {
@@ -136,6 +139,7 @@ const LeaveApprovalAndPending = () => {
         })
       }
       setOnsite(!isOnsite)
+      setIsToggled(initialToggles)
     } catch (error) {
       console.log("error:", error.message)
     }
@@ -145,9 +149,9 @@ const LeaveApprovalAndPending = () => {
     let leaveApprove
     if (isOnsite) {
       leaveApprove = await api.put(
-        `/auth/approveLeave/?role=${user?.role}&selectedId=${id}&startdate=${
+        `/auth/approveLeave/?role=${user?.role}&selectedId=${id}&startDate=${
           dates.startDate
-        }&enddate=${dates.endDate}&onsite=${true}&userId=${
+        }&endDate=${dates.endDate}&onsite=${true}&userId=${
           user?._id
         }&single=${true}`
       )
