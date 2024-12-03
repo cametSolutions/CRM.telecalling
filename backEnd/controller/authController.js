@@ -518,6 +518,7 @@ export const GetallUsers = async (req, res) => {
 export const LeaveApply = async (req, res) => {
   const formData = req.body
   const { selectedid, assignedto } = req.query
+  console.log("selectedid", selectedid)
 
   const objectId = new mongoose.Types.ObjectId(selectedid)
   const assignedTo = new mongoose.Types.ObjectId(assignedto)
@@ -803,7 +804,7 @@ export const ApproveLeave = async (req, res) => {
     if (role !== "Admin" && userObjectId) {
       baseQuery.assignedto = userObjectId
     }
-
+    console.log("base", baseQuery)
     // Define role-based update fields
     const updateFields =
       role === "Admin"
@@ -827,8 +828,37 @@ export const ApproveLeave = async (req, res) => {
           message: "Missing required parameter: selectedId for selectAll."
         })
       }
-      baseQuery.userId = selectedObjectId
-      result = await LeaveRequest.updateMany(baseQuery, { $set: updateFields })
+
+      const queryForUpdate = { ...baseQuery, userId: selectedObjectId }
+      result = await LeaveRequest.updateMany(queryForUpdate, {
+        $set: updateFields
+      })
+      // Check if any document was updated
+      if (result && result.modifiedCount > 0) {
+        // Fetch updated leave requests for display
+        const updatedLeaveList = await LeaveRequest.find(baseQuery).populate({
+          path: "userId",
+          select: "name role department",
+          populate: [
+            {
+              path: "department",
+              select: "department",
+              options: { strictPopulate: false }
+            },
+            {
+              path: "selected.branch_id",
+              model: "Branch",
+              select: "branchName",
+              options: { strictPopulate: false }
+            }
+          ]
+        })
+
+        return res.status(200).json({
+          message: "Leave request(s) updated successfully",
+          data: updatedLeaveList
+        })
+      }
     } else if (isSingle) {
       // Handle single case
       if (!selectedObjectId) {
@@ -878,389 +908,90 @@ export const ApproveLeave = async (req, res) => {
   }
 }
 
-// export const ApproveLeave = async (req, res) => {
-//   try {
-//     const role = req?.query?.role
-//     const userId = req?.query?.userId
-//     const selectedId = req?.query?.selectedId
-//     const startDate = req?.query?.startDate
-//     const endDate = req?.query?.endDate
-//     const onsite = req?.query?.onsite
-//     const selectAll = req?.query?.selectAll
-//     const single = req?.query?.single
-//     const userObjectId = new mongoose.Types.ObjectId(userId)
-//     const selectedObjectId = new mongoose.Types.ObjectId(selectedId)
-
-//     if (selectAll === "true" && onsite === "true") {
-//       if (role === "Admin") {
-//         // Update all documents that match the userId
-//         const result = await LeaveRequest.updateMany(
-//           {
-//             userId: selectedObjectId,
-//             leaveDate: {
-//               $gte: startDate, // Greater than or equal to startDate
-//               $lte: endDate // Less than or equal to endDate
-//             },
-//             onsite: true
-//           },
-//           {
-//             $set: {
-//               hrstatus: "HR/Onsite Approved",
-//               onsitestatus: "Approved",
-//               adminverified: true
-//             }
-//           }
-//         )
-//         if (result.modifiedCount > 0) {
-//           const updatedleaveList = await LeaveRequest.find({
-//             leaveDate: {
-//               $gte: startDate, // Greater than or equal to startDate
-//               $lte: endDate // Less than or equal to endDate
-//             },
-//             onsite: true
-//           }).populate({
-//             path: "userId",
-//             select: "name role department", // Select fields from User
-//             populate: [
-//               {
-//                 path: "department",
-//                 select: "department",
-//                 options: { strictPopulate: false } // Allow graceful fallback for missing departments
-//               },
-//               {
-//                 path: "selected.branch_id",
-//                 model: "Branch",
-//                 select: "branchName",
-//                 options: { strictPopulate: false } // Avoid errors for missing branches
-//               }
-//             ]
-//           })
-
-//           return res.status(200).json({
-//             message: "All matching leave requests updated successfully",
-//             data: updatedleaveList
-//           })
-//         } else if (result.matchedCount > 0) {
-//           console.log("Matched documents, but no updates were necessary.")
-//         } else {
-//           console.log("No matching documents found.")
-//         }
-//       } else {
-//         // Update all documents that match the userId
-//         const result = await LeaveRequest.updateMany(
-//           {
-//             userId: selectedObjectId,
-//             leaveDate: {
-//               $gte: startDate, // Greater than or equal to startDate
-//               $lte: endDate // Less than or equal to endDate
-//             },
-//             onsite: true,
-//             assignedto: userObjectId
-//           },
-//           {
-//             $set: {
-//               departmentstatus: "Dept Approved",
-//               departmentverified: true,
-//               onsitestatus: "Approved"
-//             }
-//           }
-//         )
-//         if (result.modifiedCount > 0) {
-//           const updatedleaveList = await LeaveRequest.find({
-//             leaveDate: {
-//               $gte: startDate, // Greater than or equal to startDate
-//               $lte: endDate // Less than or equal to endDate
-//             },
-//             onsite: true,
-//             assignedto: userObjectId
-//           }).populate({
-//             path: "userId",
-//             select: "name role department", // Select fields from User
-//             populate: [
-//               {
-//                 path: "department",
-//                 select: "department",
-//                 options: { strictPopulate: false } // Allow graceful fallback for missing departments
-//               },
-//               {
-//                 path: "selected.branch_id",
-//                 model: "Branch",
-//                 select: "branchName",
-//                 options: { strictPopulate: false } // Avoid errors for missing branches
-//               }
-//             ]
-//           })
-//           return res.status(200).json({
-//             message: "All matching leave requests updated successfully",
-//             data: updatedleaveList
-//           })
-//         }
-//       }
-//     } else if (selectAll === "true" && onsite === "false") {
-//       if (role === "Admin") {
-//         // Update all documents that match the userId
-//         const result = await LeaveRequest.updateMany(
-//           {
-//             userId: selectedObjectId,
-//             leaveDate: {
-//               $gte: startDate, // Greater than or equal to startDate
-//               $lte: endDate // Less than or equal to endDate
-//             },
-//             onsite: false
-//           },
-//           {
-//             $set: {
-//               hrstatus: "HR/Onsite Approved",
-
-//               adminverified: true
-//             }
-//           }
-//         )
-//         if (result.modifiedCount > 0) {
-//           const updatedleaveList = await LeaveRequest.find({
-//             leaveDate: {
-//               $gte: startDate, // Greater than or equal to startDate
-//               $lte: endDate // Less than or equal to endDate
-//             },
-//             onsite: false
-//           }).populate({
-//             path: "userId",
-//             select: "name role department", // Select fields from User
-//             populate: [
-//               {
-//                 path: "department",
-//                 select: "department",
-//                 options: { strictPopulate: false } // Allow graceful fallback for missing departments
-//               },
-//               {
-//                 path: "selected.branch_id",
-//                 model: "Branch",
-//                 select: "branchName",
-//                 options: { strictPopulate: false } // Avoid errors for missing branches
-//               }
-//             ]
-//           })
-
-//           return res.status(200).json({
-//             message: "All matching leave requests updated successfully",
-//             data: updatedleaveList
-//           })
-//         } else if (result.matchedCount > 0) {
-//           console.log("Matched documents, but no updates were necessary.")
-//         } else {
-//           console.log("No matching documents found.")
-//         }
-//       } else {
-//         // Update all documents that match the userId
-//         const result = await LeaveRequest.updateMany(
-//           {
-//             userId: selectedObjectId,
-//             leaveDate: {
-//               $gte: startDate, // Greater than or equal to startDate
-//               $lte: endDate // Less than or equal to endDate
-//             },
-//             onsite: false,
-//             assignedto: userObjectId
-//           },
-//           {
-//             $set: {
-//               departmentstatus: "Dept Approved",
-//               departmentverified: true
-//             }
-//           }
-//         )
-//         if (result.modifiedCount > 0) {
-//           const updatedleaveList = await LeaveRequest.find({
-//             leaveDate: {
-//               $gte: startDate, // Greater than or equal to startDate
-//               $lte: endDate // Less than or equal to endDate
-//             },
-//             onsite: false,
-//             assignedto: userObjectId
-//           }).populate({
-//             path: "userId",
-//             select: "name role department", // Select fields from User
-//             populate: [
-//               {
-//                 path: "department",
-//                 select: "department",
-//                 options: { strictPopulate: false } // Allow graceful fallback for missing departments
-//               },
-//               {
-//                 path: "selected.branch_id",
-//                 model: "Branch",
-//                 select: "branchName",
-//                 options: { strictPopulate: false } // Avoid errors for missing branches
-//               }
-//             ]
-//           })
-//           return res.status(200).json({
-//             message: "All matching leave requests updated successfully",
-//             data: updatedleaveList
-//           })
-//         }
-//       }
-//     } else if (single === "true" && onsite === "true") {
-//       if (!userId) {
-//         return res.status(400).json({ message: "User ID is required" })
-//       }
-
-//       const result = await LeaveRequest.updateOne(
-//         { _id: selectedObjectId }, // Matches by _id
-//         role === "Admin"
-//           ? {
-//               $set: {
-//                 hrstatus: "HR/Onsite Approved",
-//                 adminverified: true,
-//                 onsitestatus: "Approved"
-//               }
-//             }
-//           : role === "Staff"
-//           ? {
-//               $set: {
-//                 departmentstatus: "Dept Approved",
-//                 departmentverified: true,
-//                 onsitestatus: "Approved"
-//               }
-//             }
-//           : {}
-//       )
-//       if (result.modifiedCount > 0) {
-//         console.log("Update successful")
-
-//         const query = {
-//           leaveDate: {
-//             $gte: startDate, // Greater than or equal to startDate
-//             $lte: endDate // Less than or equal to endDate
-//           },
-//           onsite: true
-//         }
-
-//         // Add `assignedto` conditionally based on the role
-//         if (role !== "Admin") {
-//           query.assignedto = userObjectId
-//         }
-//         const updatedleaveList = await LeaveRequest.find(query).populate({
-//           path: "userId",
-//           select: "name role department", // Select fields from User
-//           populate: [
-//             {
-//               path: "department",
-//               select: "department",
-//               options: { strictPopulate: false } // Allow graceful fallback for missing departments
-//             },
-//             {
-//               path: "selected.branch_id",
-//               model: "Branch",
-//               select: "branchName",
-//               options: { strictPopulate: false } // Avoid errors for missing branches
-//             }
-//           ]
-//         })
-//         return res.status(200).json({
-//           message: "Leave request updated successfully",
-//           data: updatedleaveList
-//         })
-//       }
-//     } else if (single === "true" && onsite === "false") {
-//       if (!userId) {
-//         return res.status(400).json({ message: "User ID is required" })
-//       }
-
-//       const result = await LeaveRequest.updateOne(
-//         { _id: selectedObjectId }, // Matches by _id
-//         role === "Admin"
-//           ? {
-//               $set: {
-//                 hrstatus: "HR/Onsite Approved",
-//                 adminverified: true
-//               }
-//             }
-//           : role === "Staff"
-//           ? {
-//               $set: {
-//                 departmentstatus: "Dept Approved",
-//                 departmentverified: true
-//               }
-//             }
-//           : {}
-//       )
-//       if (result.modifiedCount > 0) {
-//         console.log("Update successful")
-
-//         const query = {
-//           leaveDate: {
-//             $gte: startDate, // Greater than or equal to startDate
-//             $lte: endDate // Less than or equal to endDate
-//           },
-//           onsite: false
-//         }
-
-//         // Add `assignedto` conditionally based on the role
-//         if (role !== "Admin") {
-//           query.assignedto = userObjectId
-//         }
-//         const updatedleaveList = await LeaveRequest.find(query).populate({
-//           path: "userId",
-//           select: "name role department", // Select fields from User
-//           populate: [
-//             {
-//               path: "department",
-//               select: "department",
-//               options: { strictPopulate: false } // Allow graceful fallback for missing departments
-//             },
-//             {
-//               path: "selected.branch_id",
-//               model: "Branch",
-//               select: "branchName",
-//               options: { strictPopulate: false } // Avoid errors for missing branches
-//             }
-//           ]
-//         })
-//         return res.status(200).json({
-//           message: "Leave request updated successfully",
-//           data: updatedleaveList
-//         })
-//       }
-//     }
-//   } catch (error) {
-//     console.log("error:", error.message)
-//     return res.status(500).json({ message: "Internal server error" })
-//   }
-// }
-
 export const RejectLeave = async (req, res) => {
   try {
     const role = req?.query?.role
+    const selectedId = req?.query?.selectedId
     const userId = req?.query?.userId
-    const selectAll = req?.query?.selectAll
-    if (selectAll === "true") {
-    } else {
-      const objectId = new mongoose.Types.ObjectId(userId)
-      if (!userId) {
-        return res.status(400).json({ message: "User ID is required" })
+    const onsite = req?.query?.onsite
+    const startdate = req?.query?.startdate
+    console.log("stert", startdate)
+    const enddate = req?.query?.enddate
+    // Ensure the dates are valid and convert them to ISO format
+    const startDate = new Date(startdate) // Convert to Date object
+    const endDate = new Date(enddate) // Convert to Date object
+
+    const selectedObjectId = new mongoose.Types.ObjectId(selectedId)
+    const userObjectId = new mongoose.Types.ObjectId(userId)
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" })
+    }
+
+    const leaveRequest = await LeaveRequest.findOne({ _id: selectedObjectId })
+
+    if (!leaveRequest) {
+      return res.status(404).json({ message: "Leave request not found" })
+    }
+    // Validate the role and update logic
+    if (role === "Admin") {
+      // Update the leave request for admins
+      leaveRequest.hrstatus = "HR Rejected"
+    } else if (role === "Staff") {
+      // Update the leave request for managers
+      leaveRequest.departmentstatus = "Dept Rejected"
+    }
+
+    // Save the updated leave request
+    const succesreject = await leaveRequest.save()
+    if (succesreject) {
+      console.log("okkkk")
+      // Check if the dates are valid
+      if (isNaN(startDate) || isNaN(endDate)) {
+        return res.status(400).send({ message: "Invalid date format" })
+      }
+      // Initialize the query with common conditions
+      const query = {
+        leaveDate: {
+          $gte: startDate, // Greater than or equal to startDate
+          $lte: endDate // Less than or equal to endDate
+        }
       }
 
-      const leaveRequest = await LeaveRequest.findOne({ _id: objectId })
-
-      if (!leaveRequest) {
-        return res.status(404).json({ message: "Leave request not found" })
-      }
-      // Validate the role and update logic
-      if (role === "Admin") {
-        // Update the leave request for admins
-        leaveRequest.hrstatus = "HR Rejected"
-      } else if (role === "Staff") {
-        // Update the leave request for managers
-        leaveRequest.departmentstatus = "Dept Rejected"
+      // Check if the role is not admin
+      if (role !== "Admin") {
+        query.assignedto = userObjectId // Only include assignedto for non-admin users
       }
 
-      // Save the updated leave request
-      await leaveRequest.save()
+      // Check for onsite status
+      if (onsite === "true") {
+        query.onsite = true
+      } else {
+        query.onsite = false
+      }
+
+      // Execute the query with population
+      const leaveList = await LeaveRequest.find(query).populate({
+        path: "userId",
+        select: "name role department", // Select fields from User
+        populate: [
+          {
+            path: "department",
+            select: "department",
+            options: { strictPopulate: false } // Graceful fallback for missing departments
+          },
+          {
+            path: "selected.branch_id",
+            model: "Branch",
+            select: "branchName",
+            options: { strictPopulate: false } // Avoid errors for missing branches
+          }
+        ]
+      })
+      console.log("list", leaveList)
 
       return res.status(200).json({
         message: "Leave request updated successfully",
-        leaveRequest
+        data: leaveList
       })
     }
   } catch (error) {
