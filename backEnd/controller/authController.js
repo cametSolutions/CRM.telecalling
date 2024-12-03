@@ -702,6 +702,7 @@ export const GetAllLeaveRequest = async (req, res) => {
         }
       ]
     })
+    console.log("list", leaveList)
 
     // if (onsite === "true") {
     //   leaveList = await LeaveRequest.find({
