@@ -79,25 +79,6 @@ const CallregistrationList = () => {
 
           const branchNamesArray = Array.from(userBranchName)
 
-          // const filtered = calls.filter((call) =>
-          //   call?.callregistration?.some((registration) => {
-          //     const hasMatchingBranch = registration?.branchName?.some(
-          //       (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
-          //     )
-
-          //     // If user has only one branch, ensure it matches exactly and no extra branches
-          //     if (branchNamesArray.length === 1) {
-          //       return (
-          //         hasMatchingBranch &&
-          //         registration.branchName.length === 1 &&
-          //         registration.branchName[0] === branchNamesArray[0]
-          //       )
-          //     }
-
-          //     // If user has more than one branch, just check for any match
-          //     return hasMatchingBranch
-          //   })
-          // )
           const filtered = calls.filter(
             (call) =>
               Array.isArray(call?.callregistration) && // Check if callregistration is an array
@@ -135,41 +116,6 @@ const CallregistrationList = () => {
       }
     }
   }, [users])
-
-  // useEffect(() => {
-  //   if (users) {
-  //     const userId = users._id
-  //     socket.emit("updateUserCallStatus", userId)
-  //     // Listen for initial data from the server
-  //     socket.on("updateUserCallStatus", ({ user }) => {
-  //       setUserCallstatus(user.callstatus)
-  //     })
-
-  //     //Cleanup the socket connection when the component unmounts
-  //     return () => {
-  //       socket.off("updateUserCallStatus")
-  //       // socket.disconnect()
-  //     }
-  //   }
-  // }, [filteredCalls])
-
-  // const fetchData = async () => {
-  //   console.log("hii")
-  //   try {
-  //     console.log(users)
-  //     const response = await api.post("/customer/updatedbranch", users, {
-  //       withCredentials: true,
-  //       headers: {
-  //         "Content-Type": "application/json" // Ensure the correct content type
-  //       }
-  //     })
-  //   } catch (err) {
-  //     console.log(err)
-  //     // setError(err) // Set error state if fetching fails
-  //   } finally {
-  //     // setLoading(false) // Set loading to false after fetch is complete
-  //   }
-  // }
 
   const handleSearch = debounce((search) => {
     // Step 1: Filter for today's solved calls and all pending calls
@@ -322,7 +268,7 @@ const CallregistrationList = () => {
   //     toast.success(b.message)
   //   }
   // }
-
+  console.log(filteredCalls)
   return (
     <div className="container mx-auto  p-5 ">
       <div className="w-auto  bg-white shadow-lg rounded p-4 pt-1 h-full ">
@@ -616,15 +562,28 @@ const CallregistrationList = () => {
                               {item?.formdata?.status}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {Array.isArray(item?.formdata?.attendedBy)
+                              {/* {Array.isArray(item?.formdata?.attendedBy)
                                 ? item.formdata.attendedBy
                                     .map(
                                       (attendee) =>
                                         attendee?.callerId?.name ||
-                                        attendee?.name ||
-                                        "abi"
+                                        attendee?.name 
+                                      
                                     )
                                     .join(", ")
+                                : item?.formdata?.attendedBy?.callerId?.name} */}
+                              {Array.isArray(item?.formdata?.attendedBy)
+                                ? item.formdata.attendedBy.length > 0
+                                  ? item.formdata.attendedBy[
+                                      item.formdata.attendedBy.length - 1
+                                    ]?.callerId?.name ||
+                                    item.formdata.attendedBy[
+                                      item.formdata.attendedBy.length - 1
+                                    ]?.name ||
+                                    item.formdata.attendedBy[
+                                      item.formdata.attendedBy.length - 1
+                                    ]
+                                  : null
                                 : item?.formdata?.attendedBy?.callerId?.name}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
@@ -815,7 +774,7 @@ const CallregistrationList = () => {
                                 : item?.formdata?.attendedBy?.callerId?.name}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {Array.isArray(item?.formdata?.completedBy)
+                              {/* {Array.isArray(item?.formdata?.completedBy)
                                 ? item.formdata.completedBy
                                     ?.map(
                                       (attendee) =>
@@ -823,7 +782,18 @@ const CallregistrationList = () => {
                                         attendee?.name
                                     )
                                     .join(", ")
-                                : item?.formdata?.completedBy.callerId?.name}
+                                : item?.formdata?.completedBy.callerId?.name} */}
+                              {Array.isArray(item?.formdata?.completedBy)
+                                ? item.formdata.completedBy.length > 0
+                                  ? item.formdata.completedBy[
+                                      item.formdata.completedBy.length - 1
+                                    ]?.callerId?.name ||
+                                    item.formdata.completedBy[
+                                      item.formdata.completedBy.length - 1
+                                    ]?.name
+                                  : null
+                                : item?.formdata?.completedBy?.callerId?.name ||
+                                  item?.formdata?.completedBy?.name}
                             </td>
                             <td className="px-2 py-2 text-xl w-12 text-blue-800"></td>
                           </tr>
