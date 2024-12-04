@@ -23,7 +23,7 @@ function LeaveApplication() {
     eventId: null
   })
 
-  const [isOnsite, setIsOnsite] = useState(formData.onsite)
+  const [isOnsite, setIsOnsite] = useState(false)
   const [tableRows, setTableRows] = useState([])
   const [existingEvent, setexistingEvent] = useState([])
   const [clickedDate, setclickedDate] = useState(null)
@@ -160,7 +160,9 @@ function LeaveApplication() {
           existingEvent.extendedProps.reason,
         eventId: existingEvent.id // Store the event ID for editing
       })
-      setIsOnsite(true)
+      if (existingEvent.onsite) {
+        setIsOnsite(true)
+      }
     } else {
       setFormData({
         ...formData,
@@ -784,7 +786,7 @@ button {
                       foodExpense: ""
                     }
                   ])
-                  setIsOnsite(false)
+
                   setShowModal(false)
                 }}
               >
