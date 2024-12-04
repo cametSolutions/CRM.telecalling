@@ -38,30 +38,28 @@ function LeaveApplication() {
     }
   }, [showModal])
   useEffect(() => {
-    if (formData.onsite && clickedDate) {
+    if (isOnsite && clickedDate) {
       // Find the event that matches the clicked date
       const existingEvent = events.find((event) => event.start === clickedDate)
 
       // If a matching event is found and it has onsite data
       if (existingEvent && existingEvent.onsitestatus) {
-        const matchedOnsiteData = existingEvent.onsitestatus[0].map(
-          (status) => ({
-            siteName: status.siteName,
-            place: status.place,
-            Start: status.Start,
-            End: status.End,
-            km: status.km,
-            kmExpense: status.kmExpense,
-            foodExpense: status.foodExpense
-          })
-        )
+        const matchedOnsiteData = existingEvent.onsiteData[0].map((status) => ({
+          siteName: status.siteName,
+          place: status.place,
+          Start: status.Start,
+          End: status.End,
+          km: status.km,
+          kmExpense: status.kmExpense,
+          foodExpense: status.foodExpense
+        }))
 
         // Now set the table rows with the matched onsite data and an empty row for new input
         setTableRows(matchedOnsiteData)
       }
     }
   }, [isOnsite, clickedDate])
-  console.log(events)
+
   useEffect(() => {
     if (leaves) {
       const formattedEvents = formatEventData(leaves)
@@ -102,42 +100,15 @@ function LeaveApplication() {
         start: formattedDate, // Use formatted date,
         onsite: event?.onsite,
         onsitestatus: event?.onsitestatus,
+        onsiteData: event?.onsiteData,
         extendedProps: {
-          reason: event.onsite ? event.description : event.reason
+          reason: event?.onsite ? event?.description : event?.reason
         },
         classNames,
         allDay: true // Since the events are all-day
       }
     })
   }
-  // const formatEventData = (events) => {
-
-  const labels = [
-    {
-      title: "Half Day",
-      className: "bg-gradient-to-r from-red-400 to-red-600"
-    },
-    {
-      title: "Full Day",
-      className: "bg-gradient-to-r from-blue-400 to-blue-600"
-    },
-    {
-      title: "Onsite",
-      className: "bg-gradient-to-r from-green-400 to-green-600"
-    },
-    {
-      title: "Cancel Request",
-      className: "bg-gradient-to-r from-yellow-400 to-yellow-600"
-    },
-    {
-      title: "Cancelled",
-      className: "bg-gradient-to-r from-gray-400 to-gray-600"
-    },
-    {
-      title: "Onsite",
-      className: "bg-gradient-to-r from-purple-400 to-purple-600"
-    }
-  ]
 
   const handleOnsiteChange = () => {
     setIsOnsite(!isOnsite)
@@ -174,9 +145,7 @@ function LeaveApplication() {
 
     // Check if there's already an event on this date
     const existingEvent = events.find((event) => event.start === clickedDate)
-    if (existingEvent) {
-      handleOnsiteChange()
-    }
+
     setexistingEvent(existingEvent)
 
     if (existingEvent) {
@@ -187,9 +156,11 @@ function LeaveApplication() {
         endDate: existingEvent.start, // Assuming single-day events for simplicity
         leaveType: existingEvent.title,
         onsite: existingEvent.onsite,
-        reason: existingEvent.extendedProps.reason,
+        [existingEvent.onsite ? "description" : "reason"]:
+          existingEvent.extendedProps.reason,
         eventId: existingEvent.id // Store the event ID for editing
       })
+      setIsOnsite(true)
     } else {
       setFormData({
         ...formData,
@@ -267,10 +238,6 @@ function LeaveApplication() {
   //     }
   //   }
 
-  const handleEventClick = (arg) => {
-    console.log(arg)
-  }
-
   const handleInputChange = debounce((e) => {
     const { name, value, type, checked } = e.target
 
@@ -294,7 +261,6 @@ function LeaveApplication() {
           { formData, tableRows }
         )
 
-       
         if (response.status === 200) {
           setFormData((prev) => ({
             ...prev,
@@ -342,8 +308,6 @@ function LeaveApplication() {
             credentials: "include"
           }
         )
-
-        
 
         const responseData = await response.json()
 
@@ -800,7 +764,29 @@ button {
               </button> */}
               <button
                 className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    description: "",
+                    onsite: false,
+                    halfDayPeriod: "",
+                    leaveType: "Full Day"
+                  }))
+                  setTableRows((prev) => [
+                    {
+                      ...prev,
+                      siteName: "",
+                      place: "",
+                      Start: "",
+                      End: "",
+                      km: "",
+                      kmExpense: "",
+                      foodExpense: ""
+                    }
+                  ])
+                  setIsOnsite(false)
+                  setShowModal(false)
+                }}
               >
                 Cancel
               </button>

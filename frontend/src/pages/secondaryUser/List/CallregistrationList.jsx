@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react"
 import debounce from "lodash.debounce"
-import api from "../../../api/api"
-import { toast } from "react-toastify"
+
 import io from "socket.io-client" // Import Socket.IO client
 import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles" // Import the Tile component
