@@ -24,12 +24,17 @@ const Login = () => {
       const { token, User, role } = datas
       console.log("userinlogin", User)
       if (response.status === 200) {
+        
         toast.success(response.data.message, {
           icon: "🚀",
           style: {
-            backgroundColor: "#4caf50",
-            color: "#fff"
-          }
+            backgroundColor: "#fff", // White background
+            color: "#000", // Black text for better contrast
+            boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.3), 0px 1px 3px rgba(0, 0, 0, 0.1)", // 3D shadow effect
+            borderRadius: "8px", // Rounded corners for a polished look
+            padding: "10px 15px", // Comfortable padding
+            fontWeight: "bold", // Bold text for prominence
+          },
         })
         localStorage.setItem("authToken", token)
         localStorage.setItem("user", JSON.stringify(User))

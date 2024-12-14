@@ -1103,7 +1103,7 @@ export const GetCallRegister = async (req, res) => {
       const completedByNames = completedByIdsArray
         .filter((id) => !mongoose.Types.ObjectId.isValid(id)) // Filter invalid ObjectIds (names)
         .map((name) => ({ name })) // Transform them into objects with a "name" property
-
+      console.log("idsss", attendedByObjectIds)
       // Query for ObjectIds (staff/admin users)
       const [
         attendedByStaff,

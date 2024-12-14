@@ -103,11 +103,7 @@ const LeaveApprovalAndPending = () => {
     fetchLeaveList() // Call the async function
   }, [dates, user])
 
-  const openModal = (user) => {
-    setSelectedUser(user)
-    setShowModal(true)
-  }
-  // const onsitetoggle = () => setOnsite(!isOnsite)
+
 
   const onsitetoggle = async () => {
     try {
