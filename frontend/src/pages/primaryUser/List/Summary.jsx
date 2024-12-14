@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react"
+import MyDatePicker from "../../../components/common/MyDatePicker"
 import api from "../../../api/api"
 import { FaSearch, FaPhone } from "react-icons/fa"
+import dayjs from "dayjs"
 import Tiles from "../../../components/common/Tiles"
 import UseFetch from "../../../hooks/useFetch"
 import io from "socket.io-client" // Import Socket.IO client
-import { UNSAFE_useScrollRestoration } from "react-router-dom"
+
 // const socket = io("http://cost:9000")
 const socket = io("https://www.crm.camet.in")
 
@@ -12,6 +14,7 @@ const Summary = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null)
 
   const [selectedUser, setSelectedUser] = useState(null)
+
   const [Calls, setCalls] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [customerSummary, setCustomerSummary] = useState([])
@@ -22,18 +25,29 @@ const Summary = () => {
   const [userList, setUserList] = useState([])
   const [branch, setBranch] = useState([])
   const [indiviDualCallList, setIndividualCallList] = useState([])
-  const { data: branches } = UseFetch("/branch/getBranch")
+
   const [users, setUsers] = useState(null)
   const [selectedBranch, setSelectedBranch] = useState("All")
   const [isToggled, setIsToggled] = useState(false)
   const [data, setData] = useState([])
+  const [dates, setDates] = useState({ startDate: "", endDate: "" })
   const [loading, setLoading] = useState(true)
+  const [a, setA] = useState([])
+  const { data: branches } = UseFetch("/branch/getBranch")
   const { data: staffCallList } = UseFetch("/auth/staffcallList")
+
   useEffect(() => {
     if (staffCallList) {
       setIndividualCallList(staffCallList)
     }
   }, [staffCallList])
+  useEffect(() => {
+    const startDate = new Date()
+
+    setDates({ startDate, endDate: startDate })
+
+    // Last date of the month
+  }, [])
 
   useEffect(() => {
     if (branches) {
@@ -45,77 +59,170 @@ const Summary = () => {
   }, [branches])
 
   useEffect(() => {
-    const fetchUserList = async () => {
-      try {
-        const response = await api.get("/auth/getStaffCallStatus")
-        setData(response.data.data)
-        setUserList(response.data.data)
-      } catch (error) {
-        console.error("Error fetching user list:", error)
-      }
-    }
-    if (isToggled) {
-      if (userList && userList.length > 0) {
-        const staffCallStatus = userList.filter((user) => {
-          if (selectedBranch === "All") {
-            return true // Include all users if "All" is selected
+    if (dates.startDate) {
+      const fetchUserList = async () => {
+        try {
+          const response = await api.get("/auth/getStaffCallStatus")
+          setData(response.data.data)
+          const a = response.data.data.userCallsCount
+          // const b = a.map((item) => {})
+          const filterByDateRange = (data, startDate, endDate) => {
+            // Normalize start and end dates to include the full day
+            const start = new Date(`${startDate}T00:00:00.000Z`)
+            const end = new Date(`${endDate}T23:59:59.999Z`)
+
+            return data.flat().filter((item) => {
+              const callDate = new Date(item.callDate)
+
+              return callDate >= start && callDate <= end
+            })
           }
 
-          const branchMatch = user.selected.some((item) => {
-            return item.branchName === selectedBranch
+          if (a) {
+            const filteredData = filterByDateRange(
+              a,
+              dates.startDate,
+              dates.endDate
+            )
+
+            const processDataAndUpdateList = (data) => {
+              setUserList((prevList) => {
+                const updatedList = [...prevList]
+
+                data.forEach((item) => {
+                  // Check if the callerId exists in the list
+                  const existingEntry = updatedList.find(
+                    (entry) => entry._id === item.callerId
+                  )
+
+                  if (existingEntry) {
+                    // Update counts if the entry exists
+                    existingEntry.solvedCalls += item.solvedCalls
+                    existingEntry.pendingCalls += item.pendingCalls
+                    existingEntry.colleagueSolved += item.colleagueSolved
+                    existingEntry.todaysCalls += item.todaysCalls
+                    existingEntry.datecalls += item.datecalls
+                  } else {
+                    // Create a new entry if it doesn't exist
+                    updatedList.push({
+                      _id: item.callerId,
+                      name: item.callerName,
+                      solvedCalls: item.solvedCalls,
+                      pendingCalls: item.pendingCalls,
+                      colleagueSolved: item.colleagueSolved,
+                      datecalls: item.datecalls,
+                      todaysCalls: item.todaysCalls
+                    })
+                  }
+                })
+
+                return updatedList
+              })
+            }
+            processDataAndUpdateList(filteredData)
+          }
+        } catch (error) {
+          console.error("Error fetching user list:", error)
+        }
+      }
+      if (isToggled) {
+        if (userList && userList.length > 0) {
+          const staffCallStatus = userList.filter((user) => {
+            if (selectedBranch === "All") {
+              return true // Include all users if "All" is selected
+            }
+
+            const branchMatch = user.selected.some((item) => {
+              return item.branchName === selectedBranch
+            })
+
+            return branchMatch
           })
 
-          return branchMatch
-        })
-
-        if (staffCallStatus) {
-          setUserList(staffCallStatus)
+          if (staffCallStatus) {
+            setUserList(staffCallStatus)
+          }
+        } else {
+          fetchUserList()
         }
       } else {
-        fetchUserList()
-      }
-    } else {
-      if (callList) {
-        const customerSummaries = callList
-          .filter(
-            (customer) =>
-              selectedBranch === "All" ||
-              customer?.callregistration?.some((call) =>
-                call?.branchName?.includes(selectedBranch)
-              )
-          )
-          .map((customer) => {
-            const totalCalls = customer.callregistration.length
-            const solvedCalls = customer.callregistration.filter(
-              (call) => call.formdata.status === "solved"
-            ).length
+        if (callList) {
+          const customerSummaries = callList
+            .filter(
+              (customer) =>
+                selectedBranch === "All" ||
+                customer?.callregistration?.some((call) =>
+                  call?.branchName?.includes(selectedBranch)
+                )
+            )
+            .map((customer) => {
+              const totalCalls = customer.callregistration.length
+              const startDate = new Date(dates.startDate)
+                .toISOString()
+                .split("T")[0] // Convert start date to a Date object
+              const endDate = new Date(dates.endDate)
+                .toISOString()
+                .split("T")[0] // Convert end date to a Date object
 
-            const pendingCalls = totalCalls - solvedCalls
-            const today = new Date().toISOString().split("T")[0]
-
-            const todaysCalls = customer.callregistration.filter(
-              (call) =>
-                new Date(call?.timedata?.startTime)
+              const dateCalls = customer.callregistration.filter((call) => {
+                const callDate = new Date(call.timedata.startTime)
                   .toISOString()
-                  .split("T")[0] === today
-            ).length
+                  .split("T")[0] // Convert call's startTime to a Date object
 
-            return {
-              customerId: customer._id,
-              customerName: customer.customerName,
-              totalCalls,
-              solvedCalls,
-              pendingCalls,
-              todaysCalls
-            }
-          })
-        if (customerSummaries) {
-          setCustomerSummary(customerSummaries)
-          // setLoading(false)
+                return callDate >= startDate && callDate <= endDate // Check if call is within the range
+              }).length
+
+              // const solvedCalls = customer.callregistration.filter(
+              //   (call) => call.formdata.status === "solved"
+              // ).length
+              const solvedCalls = customer.callregistration.filter((call) => {
+                const callDate = new Date(call.timedata.startTime)
+                  .toISOString()
+                  .split("T")[0] // Convert call's startTime to a Date object
+                return (
+                  call.formdata.status === "solved" && // Check if status is solved
+                  callDate >= startDate &&
+                  callDate <= endDate // Check if within date range
+                )
+              }).length
+
+              const pendingCalls = dateCalls - solvedCalls
+              const today = new Date().toISOString().split("T")[0]
+
+              // const todaysCalls = customer.callregistration.filter(
+              //   (call) =>
+              //     new Date(call?.timedata?.startTime)
+              //       .toISOString()
+              //       .split("T")[0] === today
+              // ).length
+              const todaysCalls = customer.callregistration.filter((call) => {
+                const callDate = new Date(call?.timedata?.startTime)
+                  .toISOString()
+                  .split("T")[0] // Convert call's startTime to a Date object
+                const isInDateRange =
+                  callDate >= startDate && callDate <= endDate // Check if within date range
+                const isToday = callDate === today // Check if the call is for today
+                return isInDateRange && isToday // Only include calls that match both criteria
+              }).length
+
+              return {
+                customerId: customer._id,
+                customerName: customer.customerName,
+                totalCalls,
+                solvedCalls,
+                pendingCalls,
+                todaysCalls,
+                dateCalls
+              }
+            })
+          if (customerSummaries) {
+            setCustomerSummary(customerSummaries)
+            // setLoading(false)
+          }
         }
       }
     }
-  }, [callList, selectedBranch, isToggled])
+  }, [callList, selectedBranch, isToggled, dates])
 
   useEffect(() => {
     if (isModalOpen && selectedCustomer) {
@@ -361,6 +468,35 @@ const Summary = () => {
       }
     }
   }, [branch, users])
+  const handleDate = (selectedDate) => {
+    const extractDateAndMonth = (date) => {
+      const year = date.getFullYear()
+      const month = date.getMonth() + 1 // getMonth() is 0-indexed
+      const day = date.getDate()
+      return `${year}-${month.toString().padStart(2, "0")}-${day
+        .toString()
+        .padStart(2, "0")}`
+    }
+
+    if (
+      selectedDate.startDate instanceof Date &&
+      !isNaN(selectedDate.startDate.getTime()) &&
+      selectedDate.endDate instanceof Date &&
+      !isNaN(selectedDate.endDate.getTime())
+    ) {
+      // If both startDate and endDate are valid Date objects
+      setDates({
+        startDate: extractDateAndMonth(selectedDate.startDate),
+        endDate: extractDateAndMonth(selectedDate.endDate)
+      })
+    } else {
+      // If dates are not valid Date objects, use them as they are
+      setDates({
+        startDate: selectedDate.startDate,
+        endDate: selectedDate.endDate
+      })
+    }
+  }
 
   const handleChange = (event) => {
     setUserList(data)
@@ -435,7 +571,11 @@ const Summary = () => {
               className="appearance-none rounded-r rounded-l sm:rounded-l-none border border-gray-400 border-b block pl-8 pr-6 py-2 w-full bg-white text-sm placeholder-gray-400 text-gray-700 focus:bg-white focus:placeholder-gray-600 focus:text-gray-700 focus:outline-none"
             />
           </div>
-          <div className="flex justify-end flex-grow">
+
+          <div className="flex justify-end flex-grow gap-4 ">
+            {dates.startDate && (
+              <MyDatePicker handleSelect={handleDate} dates={dates} />
+            )}
             <span className="text-gray-600 mr-4 font-bold">User</span>
             <button
               onClick={toggle}
@@ -467,10 +607,16 @@ const Summary = () => {
               <thead className="sticky top-0 z-30 bg-purple-300">
                 <tr>
                   <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Customer Name
+                    {isToggled ? "User Name" : "Customer Name"}
                   </th>
+                  {!isToggled && (
+                    <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                      Total Calls
+                    </th>
+                  )}
+
                   <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
-                    Total Calls
+                    date Calls
                   </th>
                   <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
                     Solved Calls
@@ -502,24 +648,24 @@ const Summary = () => {
                         <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm">
                           {isToggled ? item.name : item.customerName}
                         </td>
+                        {!isToggled && (
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            {isToggled ? item.name : item.totalCalls}
+                          </td>
+                        )}
+
                         <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                          {isToggled
-                            ? item.callstatus.totalCall
-                            : item.totalCalls}
+                          {isToggled ? item.datecalls : item.dateCalls}
                         </td>
                         <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                          {isToggled
-                            ? item.callstatus.solvedCalls
-                            : item.solvedCalls}
+                          {isToggled ? item.solvedCalls : item.solvedCalls}
                         </td>
                         <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                          {isToggled
-                            ? item.callstatus.pendingCalls
-                            : item.pendingCalls}
+                          {isToggled ? item.pendingCalls : item.pendingCalls}
                         </td>
                         {isToggled && (
                           <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                            {item.callstatus.colleagueSolved}
+                            {item.colleagueSolved}
                           </td>
                         )}
                         {!isToggled && (

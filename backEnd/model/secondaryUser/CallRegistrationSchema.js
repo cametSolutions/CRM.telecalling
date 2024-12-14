@@ -12,13 +12,12 @@ const CallRegistrationSchema = new mongoose.Schema(
     },
     callregistration: [
       {
-        
         product: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Product" // Reference to Product schema
         },
         license: Number,
-        branchName:[],
+        branchName: [],
         timedata: {
           startTime: Date,
           endTime: Date,

@@ -18,8 +18,8 @@ import { debounce } from "lodash"
 import UseFetch from "../../../hooks/useFetch"
 import Timer from "../../../components/primaryUser/Timer"
 import { toast } from "react-toastify"
-const socket = io("https://www.crm.camet.in")
-// const socket = io("http://localhost:9000")
+// const socket = io("https://www.crm.camet.in")
+const socket = io("http://localhost:9000")
 
 export default function CallRegistration() {
   const {
@@ -142,12 +142,12 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
-    const response = await fetch(
-      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
-    )
     // const response = await fetch(
-    //   `http://localhost:9000/api/customer/getcallregister/${callId}`
+    //   `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
     // )
+    const response = await fetch(
+      `http://localhost:9000/api/customer/getcallregister/${callId}`
+    )
     const data = await response.json()
 
     return data
@@ -224,6 +224,9 @@ export default function CallRegistration() {
     const endTime = new Date().toISOString()
     const durationInSeconds = timeStringToSeconds(time)
     // Save timer value in local storage
+    console.log(startTime)
+    console.log(startTime.toISOString())
+
     if (!token) {
       const uniqueToken = generateUniqueNumericToken()
       setTokenData(uniqueToken)
@@ -234,14 +237,19 @@ export default function CallRegistration() {
         duration: durationInSeconds,
         token: uniqueToken
       }
+      console.log(timeData.startTime)
+      console.log(startTime)
+      console.log(timeData)
 
       const updatedformData = { ...formData }
 
       if (updatedformData.status === "pending") {
+        console.log(typeof user._id)
         updatedformData.attendedBy = {
           callerId: user._id,
           role: user.role,
-          duration: timeData.duration
+          duration: timeData.duration,
+          calldate: startTime
         }
 
         updatedformData.completedBy = "" // Clear completedBy if status is pending
@@ -249,7 +257,8 @@ export default function CallRegistration() {
         updatedformData.attendedBy = {
           callerId: user._id,
           role: user.role,
-          duration: timeData.duration
+          duration: timeData.duration,
+          calldate: startTime
         }
         updatedformData.completedBy = {
           callerId: user._id,
@@ -301,7 +310,8 @@ export default function CallRegistration() {
         updatedformData.attendedBy = {
           callerId: user._id,
           role: user.role,
-          duration: timeData.duration
+          duration: timeData.duration,
+          calldate: startTime
         }
 
         updatedformData.completedBy = "" // Clear completedBy if status is pending
@@ -309,7 +319,8 @@ export default function CallRegistration() {
         updatedformData.attendedBy = {
           callerId: user._id,
           role: user.role,
-          duration: timeData.duration
+          duration: timeData.duration,
+          calldate: startTime
         }
         updatedformData.completedBy = {
           callerId: user._id,
@@ -371,26 +382,25 @@ export default function CallRegistration() {
   const fetchCustomerData = async (query) => {
     let url
     if (user.role === "Admin") {
-      // url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
-      url = `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
+      url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
+      // url = `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
     } else {
       const branches = JSON.stringify(branch)
-
-      // url =
-      //   branches &&
-      //   branches.length > 0 &&
-      //   `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
-      //     user.role
-      //   }&userBranch=${encodeURIComponent(branches)}`
 
       url =
         branches &&
         branches.length > 0 &&
-        `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+        `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
           user.role
         }&userBranch=${encodeURIComponent(branches)}`
-    }
 
+      // url =
+      //   branches &&
+      //   branches.length > 0 &&
+      //   `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+      //     user.role
+      //   }&userBranch=${encodeURIComponent(branches)}`
+    }
 
     try {
       const response = await fetch(url, {

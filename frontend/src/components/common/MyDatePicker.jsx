@@ -3,7 +3,6 @@ import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
 import { FaCalendarAlt } from "react-icons/fa"
 const MyDatePicker = ({ handleSelect, dates, onClear }) => {
-  //   const [dateRange, setDateRange] = useState([dates.startDate, dates.endDate])
   console.log(dates)
   const [dateRange, setDateRange] = useState({
     startDate: dates.startDate,
@@ -11,22 +10,7 @@ const MyDatePicker = ({ handleSelect, dates, onClear }) => {
   })
   console.log(dateRange)
   const { startDate, endDate } = dateRange
-  console.log(startDate)
-  console.log(dates)
-  // useEffect(() => {
-  //   const today = dayjs()
 
-  //   // Get the start of the current month (1st day of the month, 00:00:00)
-  //   const startDate = today.startOf("month").format("YYYY-MM-DD HH:mm:ss")
-
-  //   // Get the end of the current month (last day of the month, 23:59:59)
-  //   const endDate = today.endOf("month").format("YYYY-MM-DD HH:mm:ss")
-  //   console.log(startDate)
-  //   console.log(endDate)
-  //   // setDates({ startDate, endDate })
-
-  //   // Last date of the month
-  // }, [])
   useEffect(() => {
     if (dateRange.startDate && dateRange.endDate) {
       console.log("hiii")
@@ -57,12 +41,10 @@ const MyDatePicker = ({ handleSelect, dates, onClear }) => {
     // console.log(normalizedDates)
     setDateRange({
       startDate: dates[0] ? normalizeDateToUTC(dates[0]) : null,
-      endDate: dates[1] ? normalizeDateToUTC(dates[1] ): null
+      endDate: dates[1] ? normalizeDateToUTC(dates[1]) : null
     })
   }
-  console.log(dateRange)
   console.log(startDate)
-  console.log(endDate)
 
   const CustomInput = ({ value, onClick }) => (
     <div

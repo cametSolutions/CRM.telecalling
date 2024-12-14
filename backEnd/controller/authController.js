@@ -1043,17 +1043,226 @@ export const DeleteUser = async (req, res) => {
     return res.status(500).json({ message: "Server error" })
   }
 }
+// export const GetStaffCallList = async (req, res) => {
+//   try {
+//     const staff = await Staff.find()
+//     const customerCalls = await CallRegistration.find()
+
+//     const userCallsCount = customerCalls
+//       .map((item) => {
+//         return item.callregistration
+//           .filter((calls) =>
+//             calls.formdata.attendedBy.some((call) => {
+//               const callDate = new Date(call.calldate) // Assuming `callDate` is in a parsable date format
+//               const filterDate = new Date("2024-12-10")
+//               return callDate > filterDate // Filter out calls after 10-12-2024
+//             })
+//           )
+//           .map((calls) => {
+//             return calls.formdata.attendedBy.map((call) => {
+//               const isColleagueSolved =
+//                 calls.formdata.status === "solved" &&
+//                 calls.formdata.attendedBy.lastIndexOf(call.callerId) ===
+//                   calls.formdata.completedBy
+
+//               return {
+//                 callDate: call.calldate, // Ensure `callDate` exists in each `call`
+//                 callerId: call.callerId, // Assuming `callerId` is a property of `call`
+//                 callStatus: calls.formdata.status,
+//                 colleagueSolved: isColleagueSolved ? 1 : 0
+//               }
+//             })
+//           })
+//       })
+//       .flat()
+
+//     console.log("counts", userCallsCount)
+
+//     if (staff) {
+//       return res
+//         .status(200)
+//         .json({ message: "Staff founds", data: { staff, userCallsCount } })
+//     }
+//   } catch (error) {
+//     console.log(error.message)
+//     return res.status(500).json({ message: "internal server error" })
+//   }
+// }
 export const GetStaffCallList = async (req, res) => {
   try {
+    // Fetch staff details
     const staff = await Staff.find()
+    const a = await Staff.find().select("name _id callstatus.totalCall").lean()
+    console.log("a", a)
+    // Fetch customer calls and populate callerId in attendedBy array
+    const customerCalls = await CallRegistration.find()
+      .populate("callregistration.formdata.attendedBy.callerId") // Populate callerId field
+      .exec()
+
+    // Process customer calls
+    const userCallsCount = customerCalls
+      .map((item) => {
+        return item.callregistration
+          .filter((calls) =>
+            calls.formdata.attendedBy.some((call) => {
+              const callDate = new Date(call.calldate) // Assuming `calldate` is a parsable date format
+              const filterDate = new Date("2024-12-10")
+              return callDate > filterDate // Only include calls after 10-12-2024
+            })
+          )
+          .map((calls) => {
+            const uniqueCallerIds = new Set() // Track unique `callerId`
+
+            return calls.formdata.attendedBy
+              .filter((call) => {
+                if (uniqueCallerIds.has(call.callerId?.toString())) {
+                  return false // Skip if already processed
+                }
+                uniqueCallerIds.add(call.callerId?.toString()) // Add to the set
+                return true
+              })
+              .map((call) => {
+                // Get today's date in `YYYY-MM-DD` format
+                const today = new Date().toISOString().split("T")[0]
+                const callDate = new Date(call.calldate)
+                  .toISOString()
+                  .split("T")[0]
+                // Check if callerId matches any staff _id and add staff name to callerDetails
+                const matchedStaff = staff.find(
+                  (staffMember) =>
+                    staffMember._id.toString() === call?.callerId?.toString()
+                )
+
+                const isColleagueSolved =
+                  calls.formdata.status === "solved" &&
+                  calls.formdata.attendedBy.findIndex(
+                    (attendee) =>
+                      attendee?.callerId?.toString() ===
+                      calls?.formdata?.completedBy[0].callerId
+                  ) ===
+                    calls.formdata.attendedBy.lastIndexOf((attendee) =>
+                      attendee?.callerId?.toString()
+                    )
+
+                return {
+                  callDate: call.calldate, // Ensure `calldate` exists
+                  callerId: call.callerId?._id, // Access the populated `_id` of `callerId`
+                  callerName: matchedStaff
+                    ? matchedStaff.name // Set the staff name if matched
+                    : call.callerId, // Default to original callerDetails if no match
+                  callStatus: calls.formdata.status,
+                  colleagueSolved:
+                    isColleagueSolved && calls.formdata.status === "solved"
+                      ? 0
+                      : !isColleagueSolved &&
+                        calls.formdata.status === "pending"
+                      ? 0
+                      : 1, // Default value if neither condition is met
+
+                  solvedCalls: isColleagueSolved ? 1 : 0,
+                  datecalls:1,
+                  pendingCalls: calls.formdata.completedBy[0]
+                    ? 0 // No pending calls
+                    : 1, // Increment count if `completedBy[0]` is empty
+                  todaysCalls: callDate === today ? 1 : 0 // Count 1 if `call.calldate` matches today's date
+                }
+              })
+          })
+      })
+      .flat() // Flatten nested arrays into a single array
+
+    // const userCallsCount = customerCalls.map((item) => {
+    //   return item.callregistration
+    //     .filter((calls) =>
+    //       calls.formdata.attendedBy.some((call) => {
+    //         const callDate = new Date(call.calldate) // Assuming `calldate` is a parsable date format
+    //         const filterDate = new Date("2024-12-10")
+    //         return callDate > filterDate // Only include calls after 10-12-2024
+    //       })
+    //     )
+    //     .map((calls) => {
+    //       return calls.formdata.attendedBy.map((call) => {
+    //         // Check if callerId matches any staff _id and add staff name to callerDetails
+    //         const matchedStaff = staff.find(
+    //           (staffMember) =>
+    //             staffMember._id.toString() === call?.callerId.toString()
+    //         )
+
+    //         const isColleagueSolved =
+    //           calls.formdata.status === "solved" &&
+    //           calls.formdata.attendedBy.findIndex(
+    //             (attendee) =>
+    //               attendee?.callerId.toString() ===
+    //               calls?.formdata?.completedBy[0]
+    //           ) ===
+    //             calls.formdata.attendedBy.lastIndexOf((attendee) =>
+    //               attendee?.callerId.toString()
+    //             )
+
+    //         return {
+    //           callDate: call.calldate, // Ensure `calldate` exists
+    //           callerId: call.callerId?._id, // Access the populated `_id` of `callerId`
+    //           callerName: matchedStaff
+    //             ? matchedStaff.name // Set the staff name if matched
+    //             : call.callerId, // Default to original callerDetails if no match
+    //           callStatus: calls.formdata.status,
+    //           colleagueSolved: isColleagueSolved ? 0 : 1
+    //         }
+    //       })
+    //     })
+    // }).flat()
+
+    // const userCallsCount = customerCalls
+    //   .map((item) => {
+    //     return item.callregistration
+    //       .filter((calls) =>
+    //         calls.formdata.attendedBy.some((call) => {
+    //           const callDate = new Date(call.calldate) // Assuming `calldate` is a parsable date format
+    //           const filterDate = new Date("2024-12-10")
+    //           return callDate > filterDate // Only include calls after 10-12-2024
+    //         })
+    //       )
+    //       .map((calls) => {
+    //         return calls.formdata.attendedBy.map((call) => {
+    //           const isColleagueSolved =
+    //             calls.formdata.status === "solved" &&
+    //             calls.formdata.attendedBy.findIndex(
+    //               (attendee) =>
+    //                 attendee.callerId?._id?.toString() ===
+    //                 calls.formdata.completedBy
+    //             ) ===
+    //               calls.formdata.attendedBy.lastIndexOf((attendee) =>
+    //                 attendee.callerId?._id?.toString()
+    //               )
+
+    //           return {
+    //             callDate: call.calldate, // Ensure `calldate` exists
+    //             callerId: call.callerId?._id, // Access the populated `_id` of `callerId`
+    //             callerDetails: call.callerId, // Include full populated details of `callerId`
+    //             callStatus: calls.formdata.status,
+    //             colleagueSolved: isColleagueSolved ? 1 : 0
+    //           }
+    //         })
+    //       })
+    //   })
+    //   .flat() // Flatten nested arrays into a single array
+
+    // Debugging output
+    console.log("counts", userCallsCount)
+
+    // Response to client
     if (staff) {
-      return res.status(200).json({ message: "Staff founds", data: staff })
+      return res.status(200).json({
+        message: "Staff found",
+        data: { staff, userCallsCount, a }
+      })
     }
   } catch (error) {
     console.log(error.message)
-    return res.status(500).json({ message: "internal server error" })
+    return res.status(500).json({ message: "Internal server error" })
   }
 }
+
 export const GetindividualStaffCall = async (req, res) => {
   try {
     const startDate = new Date("2024-11-16T00:00:00.000Z")
