@@ -1,18 +1,27 @@
-import React, { useEffect, useState } from "react"
-import tippy from "tippy.js"
-import UseFetch from "../../hooks/useFetch"
-import api from "../../api/api"
-import "tippy.js/dist/tippy.css"
-import debounce from "lodash.debounce"
-import FullCalendar from "@fullcalendar/react"
-import dayGridPlugin from "@fullcalendar/daygrid"
-import timeGridPlugin from "@fullcalendar/timegrid"
-import interactionPlugin from "@fullcalendar/interaction"
+import React, { useEffect, useState } from "react";
+import tippy from "tippy.js";
+import UseFetch from "../../hooks/useFetch";
+import api from "../../api/api";
+import "tippy.js/dist/tippy.css";
+import debounce from "lodash.debounce";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from "@fullcalendar/daygrid";
+import timeGridPlugin from "@fullcalendar/timegrid";
+import interactionPlugin from "@fullcalendar/interaction";
+import "tippy.js/themes/light.css"; // Example for light theme
 
 function LeaveApplication() {
-  const [events, setEvents] = useState([])
-  const [showModal, setShowModal] = useState(false)
-  const [t, setIn] = useState(null)
+  const [events, setEvents] = useState([]);
+
+  // const [dayObject,setDayObject] = useState({
+  //   start: "",
+  //   reason: "No leave today",
+  //   inTime: "",
+  //   outTime: "",
+  //   color: "",
+  // })
+  const [showModal, setShowModal] = useState(false);
+  const [t, setIn] = useState(null);
   const [formData, setFormData] = useState({
     startDate: "",
     endDate: "",
@@ -21,29 +30,30 @@ function LeaveApplication() {
     onsite: false,
     reason: "",
     description: "",
-    eventId: null
-  })
+    eventId: null,
+  });
 
-  const [isOnsite, setIsOnsite] = useState(false)
-  const [attendance, setAttendance] = useState(false)
-  const [widthState, setWidthState] = useState("w-5/6")
-  const [tableRows, setTableRows] = useState([])
-  const [existingEvent, setexistingEvent] = useState([])
-  const [clickedDate, setclickedDate] = useState(null)
-  const userData = localStorage.getItem("user")
-  const user = JSON.parse(userData)
+  const [isOnsite, setIsOnsite] = useState(false);
+  const [attendance, setAttendance] = useState(false);
+  const [widthState, setWidthState] = useState("w-5/6");
+  const [tableRows, setTableRows] = useState([]);
+  const [existingEvent, setexistingEvent] = useState([]);
+  const [clickedDate, setclickedDate] = useState(null);
+  const userData = localStorage.getItem("user");
+  const user = JSON.parse(userData);
+
   const { data: leaves, refreshHook } = UseFetch(
     `/auth/getallLeave?userid=${user._id}`
-  )
+  );
   useEffect(() => {
     if (!showModal) {
-      setIsOnsite(false)
+      setIsOnsite(false);
     }
-  }, [showModal])
+  }, [showModal]);
   useEffect(() => {
     if (isOnsite && clickedDate) {
       // Find the event that matches the clicked date
-      const existingEvent = events.find((event) => event.start === clickedDate)
+      const existingEvent = events.find((event) => event.start === clickedDate);
 
       // If a matching event is found and it has onsite data
       if (existingEvent && existingEvent.onsitestatus) {
@@ -54,73 +64,59 @@ function LeaveApplication() {
           End: status.End,
           km: status.km,
           kmExpense: status.kmExpense,
-          foodExpense: status.foodExpense
-        }))
+          foodExpense: status.foodExpense,
+        }));
 
         // Now set the table rows with the matched onsite data and an empty row for new input
-        setTableRows(matchedOnsiteData)
+        setTableRows(matchedOnsiteData);
       }
     }
-  }, [isOnsite, clickedDate])
-  console.log(t)
+  }, [isOnsite, clickedDate]);
+  console.log(t);
   useEffect(() => {
     if (leaves) {
-      const formattedEvents = formatEventData(leaves)
-      setIn("10.20")
-      setEvents(formattedEvents)
+      console.log(leaves);
+      const formattedEvents = formatEventData(leaves);
+      console.log(formattedEvents);
+      setIn("10.20");
+      setEvents((prevEvents) => [...prevEvents, ...formattedEvents]);
     }
-  }, [leaves])
+  }, [leaves]);
   const formatEventData = (events) => {
     return events.map((event) => {
-      const date = new Date(event.leaveDate) // Convert to Date object
-      const formattedDate = date.toISOString().split("T")[0] // Format as YYYY-MM-DD
-      // Determine classNames based on conditions
-      let classNames = "unverified-event" // Default class
-      if (event.cancelstatus) {
-        classNames = "cancel-status"
-      } else if (event.hrstatus === "HR Rejected") {
-        classNames = "hr-rejected"
-      } else if (
-        event.adminverified &&
-        event.hrstatus === "HR/Onsite Approved"
-      ) {
-        classNames = "fully-verified-event"
-      } else if (event.departmentstatus === "Dept Rejected") {
-        classNames = "dept-rejected"
-      } else if (
-        event.departmentverified &&
-        event.departmentstatus === "Dept Approved"
-      ) {
-        classNames = "dept-approved-event"
-      } else if (event.onsite && event.hrstatus === "HR/Onsite Approved") {
-        classNames = "onsite-approved-event"
-      } else if (event.onsite) {
-        classNames = "onsite-pending-event"
+      console.log(event);
+      const date = new Date(event.leaveDate); // Convert to Date object
+      const formattedDate = date.toISOString().split("T")[0]; // Format as YYYY-MM-DD
+      console.log(formattedDate);
+      let dayObject = {
+        start: "",
+        reason: "No leave today",
+        inTime: "On Leave",
+        outTime: "On Leave",
+        color: "",
+      };
+      if (formattedDate) {
+        dayObject.start = formattedDate;
       }
-      return {
-        id: event._id,
-        // title: event.leaveType, // Display leave type as the title
-        start: formattedDate, // Use formatted date,
-        onsite: event?.onsite,
-        onsitestatus: event?.onsitestatus,
-        onsiteData: event?.onsiteData,
-        extendedProps: {
-          reason: event?.onsite ? event?.description : event?.reason
-        },
-        classNames,
-        allDay: true // Since the events are all-day
+      if (event.adminverified) {
+        dayObject.color = "green";
+      }else if(event.inTime){
+        dayObject.inTime = event.inTime;
+      } else {
+        dayObject.color = "red";
       }
-    })
-  }
+      return dayObject;
+    });
+  };
 
   const handleOnsiteChange = () => {
-    setIsOnsite(!isOnsite)
+    setIsOnsite(!isOnsite);
 
     setFormData({
       ...formData,
-      onsite: !formData.onsite
-    })
-  }
+      onsite: !formData.onsite,
+    });
+  };
 
   const addRow = () => {
     setTableRows([
@@ -132,24 +128,25 @@ function LeaveApplication() {
         End: "",
         km: "",
         kmExpense: "",
-        foodExpense: ""
-      }
-    ])
-  }
+        foodExpense: "",
+      },
+    ]);
+  };
 
   const handleDropdownChange = (index, value) => {
-    const updatedRows = [...tableRows]
-    updatedRows[index].place = value
-    setTableRows(updatedRows)
-  }
+    const updatedRows = [...tableRows];
+    updatedRows[index].place = value;
+    setTableRows(updatedRows);
+  };
   const handleDateClick = (arg) => {
-    const clickedDate = arg.dateStr
-    setclickedDate(clickedDate)
+    console.log(arg);
+    const clickedDate = arg.dateStr;
+    setclickedDate(clickedDate);
 
     // Check if there's already an event on this date
-    const existingEvent = events.find((event) => event.start === clickedDate)
+    const existingEvent = events.find((event) => event.start === clickedDate);
 
-    setexistingEvent(existingEvent)
+    setexistingEvent(existingEvent);
 
     if (existingEvent) {
       // If an event exists, set the form data to edit the event
@@ -161,10 +158,10 @@ function LeaveApplication() {
         onsite: existingEvent.onsite,
         [existingEvent.onsite ? "description" : "reason"]:
           existingEvent.extendedProps.reason,
-        eventId: existingEvent.id // Store the event ID for editing
-      })
+        eventId: existingEvent.id, // Store the event ID for editing
+      });
       if (existingEvent.onsite) {
-        setIsOnsite(true)
+        setIsOnsite(true);
       }
     } else {
       setFormData({
@@ -173,29 +170,29 @@ function LeaveApplication() {
         endDate: arg.dateStr,
         leaveType: "Full Day",
         reason: "",
-        eventId: null
-      })
+        eventId: null,
+      });
     }
 
-    setShowModal(true)
-  }
+    setShowModal(true);
+  };
   const handleUpdate = async (updatedData) => {
     try {
-      const eventId = formData.eventId
+      const eventId = formData.eventId;
 
       // Assuming you have an API endpoint for updating leave requests
       const response = await api.put(`/auth/updateLeave?userId=${eventId}`, {
-        updatedData
-      })
+        updatedData,
+      });
       if (response.status === 200) {
         // Close the modal
-        setShowModal(false)
-        refreshHook()
+        setShowModal(false);
+        refreshHook();
       }
     } catch (error) {
-      console.error("Error updating leave request:", error)
+      console.error("Error updating leave request:", error);
     }
-  }
+  };
 
   //   const handleUpdate = async (id, updatedData) => {
   //     try {
@@ -215,22 +212,22 @@ function LeaveApplication() {
     try {
       // Assuming you have an API endpoint for deleting leave requests
       const response = await fetch(`/api/leave/${eventId}`, {
-        method: "DELETE"
-      })
+        method: "DELETE",
+      });
 
       if (!response.ok) {
-        throw new Error("Failed to delete leave request")
+        throw new Error("Failed to delete leave request");
       }
 
       // Remove the event from the calendar (simplified example)
-      setEvents(events.filter((event) => event.id !== eventId))
+      setEvents(events.filter((event) => event.id !== eventId));
 
       // Close the modal
-      setShowModal(false)
+      setShowModal(false);
     } catch (error) {
-      console.error("Error deleting leave request:", error)
+      console.error("Error deleting leave request:", error);
     }
-  }
+  };
 
   //   const handleDelete = async (id) => {
   //     try {
@@ -244,57 +241,56 @@ function LeaveApplication() {
   //   }
 
   const handleInputChange = debounce((e) => {
-    const { name, value, type, checked } = e.target
+    const { name, value, type, checked } = e.target;
 
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value
-    })
-  }, 300)
+      [name]: type === "checkbox" ? checked : value,
+    });
+  }, 300);
 
-  const handleChange = (e) => handleInputChange(e)
+  const handleChange = (e) => handleInputChange(e);
   const renderEventContent = (eventInfo) => {
     return (
-      <div
-        // className="event-content"
-        style={{
-          position: "absolute", // Enables child element positioning
-          width: "100%",
-          height: "100%"
-        }}
-      >
-        {/* In and Out Times - Top Left */}
-        <div
-          style={{
-            position: "absolute", // Position relative to the parent
-            top: "5%", // Adjust as needed for spacing from the top
-            left: "5%", // Adjust as needed for spacing from the left
-            color: "black",
-            fontSize: "0.75em", // Ensure text fits within the cell
-            lineHeight: "1.2" // Adjust for compact spacing
-          }}
-        >
-          <span>{`In: ${eventInfo?.event?.extendedProps?.inTime || "-"}`}</span>
-          <br />
-          <span>{`Out: ${
-            eventInfo?.event?.extendedProps?.outTime || "-"
-          }`}</span>
-        </div>
+      <></>
+      //   <div
+      //   style={{
+      //     position: "absolute", // Enables child element positioning
+      //     width: "100%",
+      //     height: "100%"
+      //   }}
+      // >
+      //   {/* In and Out Times - Top Left */}
+      //   <div
+      //     // style={{
+      //     //   position: "absolute", // Position relative to the parent
+      //     //   top: "5%", // Adjust for spacing from the top
+      //     //   left: "5%", // Adjust for spacing from the left
+      //     //   color: "black",
+      //     //   fontSize: "0.9em", // Ensure text fits within the cell
+      //     //   lineHeight: "1.2" // Adjust for compact spacing
+      //     // }}
+      //   >
+      //     <span className="text-black font-bold mt-4">{`In: ${eventInfo?.event?.extendedProps?.inTime || "-"}`}</span>
+      //     <br />
+      //     <span  className="text-black font-bold" >{`Out: ${eventInfo?.event?.extendedProps?.outTime || "-"}`}</span>
+      //   </div>
 
-        {/* Square Indicator - Bottom Right */}
-        <span
-          style={{
-            position: "absolute", // Position relative to the parent
-            bottom: "5%", // Adjust for spacing from the bottom
-            right: "5%", // Adjust for spacing from the right
-            width: "10px", // Size of the square
-            height: "10px",
-            backgroundColor: getColorFromClassName(
-              eventInfo?.event?.classNames[0]
-            )
-          }}
-        ></span>
-      </div>
+      //   {/* Square Indicator - Bottom Right */}
+      //   <span className="mt-6"
+      //     style={{
+      //       position: "absolute", // Position relative to the parent
+      //       top:"50%",
+      //       bottom: "5%", // Adjust for spacing from the bottom
+      //       right: "5%", // Adjust for spacing from the right
+      //       width: "10px", // Size of the square
+      //       height: "10px",
+      //       backgroundColor: getColorFromClassName(
+      //         eventInfo?.event?.classNames[0]
+      //       )
+      //     }}
+      //   ></span>
+      // </div>
 
       // <div
       //   className="event-content"
@@ -377,8 +373,8 @@ function LeaveApplication() {
       //     }}
       //   ></span>
       // </div>
-    )
-  }
+    );
+  };
 
   // Function to map classNames to colors
   const getColorFromClassName = (className) => {
@@ -390,10 +386,10 @@ function LeaveApplication() {
       "dept-rejected": "#9900cc",
       "dept-approved-event": "#0066cc",
       "onsite-approved-event": "#33ccff",
-      "onsite-pending-event": "#ff9900"
-    }
-    return colorMap[className] || "#cccccc" // Default to grey if className is not mapped
-  }
+      "onsite-pending-event": "#ff9900",
+    };
+    return colorMap[className] || "#cccccc"; // Default to grey if className is not mapped
+  };
 
   // const renderEventContent = (eventInfo) => {
   //   const intime = "9.30"
@@ -421,9 +417,9 @@ function LeaveApplication() {
   //   )
   // }
   const handleAttendance = () => {
-    setAttendance(!attendance)
-    setWidthState(widthState === "w-5/6" ? "w-2/6" : "w-5/6")
-  }
+    setAttendance(!attendance);
+    setWidthState(widthState === "w-5/6" ? "w-2/6" : "w-5/6");
+  };
 
   const handleApply = async () => {
     try {
@@ -435,7 +431,7 @@ function LeaveApplication() {
         const response = await api.post(
           `https://www.crm.camet.in/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
           { formData, tableRows }
-        )
+        );
 
         if (response.status === 200) {
           setFormData((prev) => ({
@@ -443,8 +439,8 @@ function LeaveApplication() {
             description: "",
             onsite: false,
             halfDayPeriod: "",
-            leaveType: "Full Day"
-          }))
+            leaveType: "Full Day",
+          }));
           setTableRows((prev) => [
             {
               ...prev,
@@ -454,11 +450,11 @@ function LeaveApplication() {
               End: "",
               km: "",
               kmExpense: "",
-              foodExpense: ""
-            }
-          ])
-          setShowModal(false)
-          refreshHook()
+              foodExpense: "",
+            },
+          ]);
+          setShowModal(false);
+          refreshHook();
         }
       } else {
         // Assuming you have an API endpoint for creating leave requests
@@ -478,30 +474,30 @@ function LeaveApplication() {
           {
             method: "POST",
             headers: {
-              "Content-Type": "application/json"
+              "Content-Type": "application/json",
             },
             body: JSON.stringify(formData),
-            credentials: "include"
+            credentials: "include",
           }
-        )
+        );
 
-        const responseData = await response.json()
+        const responseData = await response.json();
 
         if (!response.ok) {
-          throw new Error("Failed to apply for leave")
+          throw new Error("Failed to apply for leave");
         }
-        refreshHook()
+        refreshHook();
 
-        setShowModal(false)
+        setShowModal(false);
         setFormData((prev) => ({
           ...prev,
-          reason: ""
-        }))
+          reason: "",
+        }));
       }
     } catch (error) {
-      console.error("Error applying for leave:", error)
+      console.error("Error applying for leave:", error);
     }
-  }
+  };
 
   return (
     <div className=" p-2">
@@ -535,73 +531,94 @@ function LeaveApplication() {
         <FullCalendar
           plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin]}
           initialView="dayGridMonth"
-          events={events}
           dateClick={handleDateClick}
           selectable={true}
-          // height="80vh"
           height="auto"
-          eventContent={renderEventContent}
           dayCellDidMount={(info) => {
-            // Example: Show "In" and "Out" times for specific dates
             const matchingEvent = events.find(
               (event) => event.start === info.date.toISOString().split("T")[0]
-            )
+            );
 
             if (matchingEvent) {
-              const inTime = "10.30" || "-"
-              const outTime = "5.30" || "-"
+              const inTime = matchingEvent.inTime || "-";
+              const outTime = matchingEvent.outTime || "-";
+              const squareColor = matchingEvent.color || "blue";
+              const reason = matchingEvent.reason || "No reason provided";
 
-              const timeContainer = document.createElement("div")
-              timeContainer.innerHTML = `<small>In: ${inTime}<br>Out: ${outTime}</small>`
-              info.el.appendChild(timeContainer)
+              const timeContainer = document.createElement("div");
+              timeContainer.className = "time-container";
+              timeContainer.innerHTML = `
+                <small class="time-display">
+                  In: ${inTime}<br>Out: ${outTime}
+                </small>
+              `;
+
+              const squareMarker = document.createElement("div");
+              squareMarker.className = "square-marker";
+              squareMarker.style.backgroundColor = squareColor;
+
+              // Append the square marker to the time container
+              timeContainer.appendChild(squareMarker);
+
+              // Append the time container to the day cell
+              info.el
+                .querySelector(".fc-daygrid-day-top")
+                .appendChild(timeContainer);
+
+              // Initialize tippy on the squareMarker AFTER appending it
+              tippy(squareMarker, {
+                content: reason,
+                theme: "custom-tooltip",
+                placement: "top",
+              });
             }
-          }}
-          eventDidMount={(info) => {
-            tippy(info.el, {
-              content: info.event.extendedProps.reason, // Show reason as tooltip content
-              theme: "custom-tooltip",
-              placement: "top" // Tooltip position
-            })
           }}
         />
       </div>
       <style>
         {`
+   .fc-daygrid-day-top {
+  position: relative;
+}
 
-          .fc-daygrid-day-top{
-          position: relative;
-        }
-
-
- 
-
-.modal {
-  position: fixed;
-  top: 50%;
+.square-marker {
+  width: 10px;
+  height: 10px;
+  margin: 2px auto;
+  border-radius: 2px;
+  cursor: pointer; /* Indicates interactivity */
+  position: absolute;
+  top: 60px; /* Adjust spacing */
   left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transform: translateX(-50%);
+  background-color: #007BFF; /* Default marker color */
 }
-.
-button {
-  margin-right: 10px;
+
+.time-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 5px;
 }
-  .tippy-box[data-theme~='custom-tooltip'] {
-  background-color: #007BFF;  /* Set background color */
-  color: #fff;  /* Set text color */
+
+.time-display {
+  font-size: 0.75rem; /* Adjust size as needed */
+  margin-left: 10px;
+  text-align: left;
+}
+
+.tippy-box[data-theme~="custom-tooltip"] {
+  background-color: #007BFF; /* Tooltip background color */
+  color: #fff; /* Tooltip text color */
   border-radius: 4px;
 }
 
-.tippy-box[data-theme~='custom-tooltip'] .tippy-arrow {
-  color: #007BFF ;  /* Match the arrow color to the background */
+.tippy-box[data-theme~="custom-tooltip"] .tippy-arrow {
+  color: #007BFF; /* Match tooltip arrow color to the background */
 }
 
-
-
-        `}
+  `}
       </style>
 
       {/* Modal Popup */}
@@ -648,12 +665,12 @@ button {
                       name="leaveType"
                       defaultValue={formData.leaveType}
                       onChange={(e) => {
-                        const { value } = e.target
+                        const { value } = e.target;
                         setFormData((prev) => ({
                           ...prev,
                           leaveType: value,
-                          halfDayPeriod: value === "Half Day" ? "Morning" : "" // Default to "Morning" for Half Day
-                        }))
+                          halfDayPeriod: value === "Half Day" ? "Morning" : "", // Default to "Morning" for Half Day
+                        }));
                       }}
                       className="border p-2 rounded w-full"
                     >
@@ -672,7 +689,7 @@ button {
                         onChange={(e) =>
                           setFormData((prev) => ({
                             ...prev,
-                            halfDayPeriod: e.target.value
+                            halfDayPeriod: e.target.value,
                           }))
                         }
                         className="border p-2 rounded w-full"
@@ -717,9 +734,9 @@ button {
                                 type="text"
                                 value={row.siteName}
                                 onChange={(e) => {
-                                  const updatedRows = [...tableRows]
-                                  updatedRows[index].siteName = e.target.value
-                                  setTableRows(updatedRows)
+                                  const updatedRows = [...tableRows];
+                                  updatedRows[index].siteName = e.target.value;
+                                  setTableRows(updatedRows);
                                 }}
                                 className="border p-1 rounded w-full"
                               />
@@ -729,9 +746,9 @@ button {
                                 type="text"
                                 value={row.place}
                                 onChange={(e) => {
-                                  const updatedRows = [...tableRows]
-                                  updatedRows[index].place = e.target.value
-                                  setTableRows(updatedRows)
+                                  const updatedRows = [...tableRows];
+                                  updatedRows[index].place = e.target.value;
+                                  setTableRows(updatedRows);
                                 }}
                                 className="border p-1 rounded w-full"
                               />
@@ -741,9 +758,9 @@ button {
                                 type="number"
                                 value={row.Start}
                                 onChange={(e) => {
-                                  const updatedRows = [...tableRows]
-                                  updatedRows[index].Start = e.target.value
-                                  setTableRows(updatedRows)
+                                  const updatedRows = [...tableRows];
+                                  updatedRows[index].Start = e.target.value;
+                                  setTableRows(updatedRows);
                                 }}
                                 className="border p-1 rounded w-full"
                               />
@@ -753,9 +770,9 @@ button {
                                 type="number"
                                 value={row.End}
                                 onChange={(e) => {
-                                  const updatedRows = [...tableRows]
-                                  updatedRows[index].End = e.target.value
-                                  setTableRows(updatedRows)
+                                  const updatedRows = [...tableRows];
+                                  updatedRows[index].End = e.target.value;
+                                  setTableRows(updatedRows);
                                 }}
                                 className="border p-1 rounded w-full"
                               />
@@ -765,9 +782,9 @@ button {
                                 type="number"
                                 value={row.km}
                                 onChange={(e) => {
-                                  const updatedRows = [...tableRows]
-                                  updatedRows[index].km = e.target.value
-                                  setTableRows(updatedRows)
+                                  const updatedRows = [...tableRows];
+                                  updatedRows[index].km = e.target.value;
+                                  setTableRows(updatedRows);
                                 }}
                                 className="border p-1 rounded w-full"
                               />
@@ -777,9 +794,9 @@ button {
                                 type="number"
                                 value={row.kmExpense}
                                 onChange={(e) => {
-                                  const updatedRows = [...tableRows]
-                                  updatedRows[index].kmExpense = e.target.value
-                                  setTableRows(updatedRows)
+                                  const updatedRows = [...tableRows];
+                                  updatedRows[index].kmExpense = e.target.value;
+                                  setTableRows(updatedRows);
                                 }}
                                 className="border p-1 rounded w-full"
                               />
@@ -789,10 +806,10 @@ button {
                                 type="number"
                                 value={row.foodExpense}
                                 onChange={(e) => {
-                                  const updatedRows = [...tableRows]
+                                  const updatedRows = [...tableRows];
                                   updatedRows[index].foodExpense =
-                                    e.target.value
-                                  setTableRows(updatedRows)
+                                    e.target.value;
+                                  setTableRows(updatedRows);
                                 }}
                                 className="border p-1 rounded w-full"
                               />
@@ -800,9 +817,9 @@ button {
                             <td className="border p-2">
                               <button
                                 onClick={() => {
-                                  const updatedRows = [...tableRows]
-                                  updatedRows.splice(index, 1)
-                                  setTableRows(updatedRows)
+                                  const updatedRows = [...tableRows];
+                                  updatedRows.splice(index, 1);
+                                  setTableRows(updatedRows);
                                 }}
                                 className="text-red-500"
                               >
@@ -871,10 +888,10 @@ button {
                         description: "",
                         onsite: false,
                         halfDayPeriod: "",
-                        leaveType: "Full Day"
-                      })
-                      setTableRows([{}])
-                      setShowModal(false)
+                        leaveType: "Full Day",
+                      });
+                      setTableRows([{}]);
+                      setShowModal(false);
                     }}
                   >
                     Cancel
@@ -903,7 +920,7 @@ button {
                     {new Date(formData.startDate).toLocaleDateString("en-GB", {
                       day: "2-digit",
                       month: "short",
-                      year: "numeric"
+                      year: "numeric",
                     })}
                   </p>
                   <form className="grid grid-cols-2 gap-4">
@@ -947,7 +964,7 @@ button {
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default LeaveApplication
+export default LeaveApplication;
