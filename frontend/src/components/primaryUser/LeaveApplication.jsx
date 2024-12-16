@@ -23,9 +23,15 @@ function LeaveApplication() {
     description: "",
     eventId: null
   })
+  const [selectattendance, setselectAttendance] = useState({
+    attendanceDate: "",
+    inTime: "",
+    outTime: ""
+  })
+  const [attendance, setAttendance] = useState(false)
 
   const [isOnsite, setIsOnsite] = useState(false)
-  const [attendance, setAttendance] = useState(false)
+
   const [widthState, setWidthState] = useState("w-5/6")
   const [tableRows, setTableRows] = useState([])
   const [existingEvent, setexistingEvent] = useState([])
@@ -35,6 +41,10 @@ function LeaveApplication() {
   const { data: leaves, refreshHook } = UseFetch(
     `/auth/getallLeave?userid=${user._id}`
   )
+  const { data: attendee } = UseFetch(
+    `/auth/getallAttendance?userid=${user._id}`
+  )
+  console.log(attendee)
   useEffect(() => {
     if (!showModal) {
       setIsOnsite(false)
@@ -253,131 +263,12 @@ function LeaveApplication() {
   }, 300)
 
   const handleChange = (e) => handleInputChange(e)
-  const renderEventContent = (eventInfo) => {
-    return (
-      <div
-        // className="event-content"
-        style={{
-          position: "absolute", // Enables child element positioning
-          width: "100%",
-          height: "100%"
-        }}
-      >
-        {/* In and Out Times - Top Left */}
-        <div
-          style={{
-            position: "absolute", // Position relative to the parent
-            top: "5%", // Adjust as needed for spacing from the top
-            left: "5%", // Adjust as needed for spacing from the left
-            color: "black",
-            fontSize: "0.75em", // Ensure text fits within the cell
-            lineHeight: "1.2" // Adjust for compact spacing
-          }}
-        >
-          <span>{`In: ${eventInfo?.event?.extendedProps?.inTime || "-"}`}</span>
-          <br />
-          <span>{`Out: ${
-            eventInfo?.event?.extendedProps?.outTime || "-"
-          }`}</span>
-        </div>
-
-        {/* Square Indicator - Bottom Right */}
-        <span
-          style={{
-            position: "absolute", // Position relative to the parent
-            bottom: "5%", // Adjust for spacing from the bottom
-            right: "5%", // Adjust for spacing from the right
-            width: "10px", // Size of the square
-            height: "10px",
-            backgroundColor: getColorFromClassName(
-              eventInfo?.event?.classNames[0]
-            )
-          }}
-        ></span>
-      </div>
-
-      // <div
-      //   className="event-content"
-      //   style={{
-      //     position: "relative", // Enable positioning for children
-      //     width: "100%",
-      //     height: "100%"
-      //   }}
-      // >
-      //   {/* In and Out Times - Top Left */}
-      //   <div
-      //     style={{
-      //       position: "absolute", // Position within the parent
-      //       bottom: "5%", // Adjust for spacing from the top
-      //       left: "3%", // Adjust for spacing from the left
-      //       color: "black",
-      //       fontSize: "0.8em" // Adjust text size for better fit in cells
-      //     }}
-      //   >
-      //     <span>{`In: ${eventInfo?.event?.extendedProps?.inTime || "-"}`}</span>
-      //     <br />
-      //     <span>{`Out: ${
-      //       eventInfo?.event?.extendedProps?.outTime || "-"
-      //     }`}</span>
-      //   </div>
-
-      //   {/* Square Indicator - Bottom Right */}
-      //   <span
-      //     style={{
-      //       position: "absolute", // Position within the parent
-      //       top: "50%",
-      //       bottom: "5%", // Adjust for spacing from the bottom
-      //       right: "1%", // Adjust for spacing from the right
-      //       display: "inline-block",
-      //       width: "8px", // Reduced size for better fit in small cells
-      //       height: "8px",
-      //       backgroundColor: getColorFromClassName(
-      //         eventInfo?.event?.classNames[0]
-      //       )
-      //     }}
-      //   ></span>
-      // </div>
-
-      // <div
-      //   className="event-content"
-      //   style={{
-      //     position: "relative", // Enable positioning for children
-      //     width: "100%",
-      //     height: "100%"
-      //   }}
-      // >
-      //   {/* In and Out Times - Top Left */}
-      //   <div
-      //     style={{
-      //       position: "absolute", // Position within the parent
-      //       bottom: "0vw", // Adjust for spacing from the top
-      //       left: "vw", // Adjust for spacing from the left
-      //       color: "black" // Ensure text is visible
-      //     }}
-      //   >
-      //     <span>{`In: ${eventInfo?.event?.extendedProps?.inTime || "-"}`}</span>
-      //     <br />
-      //     <span>{`Out: ${
-      //       eventInfo?.event?.extendedProps?.outTime || "-"
-      //     }`}</span>
-      //   </div>
-
-      //   {/* Square Indicator - Bottom Right */}
-      //   <span
-      //     style={{
-      //       position: "absolute", // Position within the parent
-      //       top: "4vw", // Adjust for spacing from the bottom
-      //       right: "1vw", // Adjust for spacing from the right
-      //       display: "inline-block",
-      //       width: "10px",
-      //       height: "10px",
-      //       backgroundColor: getColorFromClassName(
-      //         eventInfo?.event?.classNames[0]
-      //       )
-      //     }}
-      //   ></span>
-      // </div>
-    )
+  const selectAttendance = (e) => {
+    const { name, value } = e.target
+    setselectAttendance((prevState) => ({
+      ...prevState,
+      [name]: value
+    }))
   }
 
   // Function to map classNames to colors
@@ -395,33 +286,12 @@ function LeaveApplication() {
     return colorMap[className] || "#cccccc" // Default to grey if className is not mapped
   }
 
-  // const renderEventContent = (eventInfo) => {
-  //   const intime = "9.30"
-  //   const outime = "5.30"
-  //   const eventClassNames = eventInfo.event.classNames
-
-  //   const eventIndicators = {
-  //     "onsite-pending-event": <div className="onsite-pending-event"></div>,
-  //     "onsite-approved-event": <div className="onsite-approved-event"></div>,
-  //     "hr-rejected": <div className="hr-rejected-event"></div>
-  //   }
-
-  //   const indicatorToRender = eventClassNames
-  //     .map((className) => eventIndicators[className])
-  //     .find(Boolean)
-
-  //   return (
-  //     <div className={"custom-event"}>
-  //       {/* {indicatorToRender} */}
-  //       <div className="in-out-times grid">
-  //         <span className="in-time text-black">In: {intime || "N/A"}</span>
-  //         <span className="out-time text-black">Out: {outime || "N/A"}</span>
-  //       </div>
-  //     </div>
-  //   )
-  // }
   const handleAttendance = () => {
     setAttendance(!attendance)
+    setselectAttendance((prevState) => ({
+      ...prevState,
+      attendanceDate: formData.startDate
+    }))
     setWidthState(widthState === "w-5/6" ? "w-2/6" : "w-5/6")
   }
 
@@ -502,6 +372,34 @@ function LeaveApplication() {
       console.error("Error applying for leave:", error)
     }
   }
+  console.log(selectattendance)
+  const handleApplyAttendance = async () => {
+    const response = await fetch(
+      `http://localhost:9000/api/auth/attendance?selectedid=${user._id}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(selectattendance),
+        credentials: "include"
+      }
+    )
+    const responseData = await response.json()
+
+    if (!response.ok) {
+      throw new Error("Failed to apply for leave")
+    }
+    refreshHook()
+
+    setShowModal(false)
+    setFormData((prev) => ({
+      ...prev,
+      attendanceDate: "",
+      inTime: "",
+      outTime: ""
+    }))
+  }
 
   return (
     <div className=" p-2">
@@ -535,12 +433,12 @@ function LeaveApplication() {
         <FullCalendar
           plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin]}
           initialView="dayGridMonth"
-          events={events}
+          // events={events}
           dateClick={handleDateClick}
           selectable={true}
           // height="80vh"
           height="auto"
-          eventContent={renderEventContent}
+          // eventContent={renderEventContent}
           dayCellDidMount={(info) => {
             // Example: Show "In" and "Out" times for specific dates
             const matchingEvent = events.find(
@@ -607,7 +505,7 @@ button {
       {/* Modal Popup */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-lg shadow-lg w-90% sm:w-5/6 md:w-2/3 lg:w-1/2 xl:w-1/3 max-h-screen overflow-y-auto">
+          <div className="bg-white p-8  rounded-lg shadow-lg  sm:w-5/6 max-h-screen overflow-y-auto">
             {!attendance ? (
               <div>
                 {/* Content for Leave Application */}
@@ -693,126 +591,128 @@ button {
                     <label className="ml-2 ">Onsite</label>
                   </div>
                 </div>
-
                 {isOnsite && (
                   <div className="mb-4">
-                    <table className="min-w-full border border-gray-200 text-center">
-                      <thead>
-                        <tr>
-                          <th className="border p-2">Site Name</th>
-                          <th className="border p-2 ">Place</th>
-                          <th className="border p-2 ">Start</th>
-                          <th className="border p-2 ">End</th>
-                          <th className="border py-2 ">KM</th>
-                          <th className="border p-2">TA</th>
-                          <th className="border p-2">Food </th>
-                          <th className="border p-2">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {tableRows?.map((row, index) => (
-                          <tr key={index}>
-                            <td className="border p-2 w-60">
-                              <input
-                                type="text"
-                                value={row.siteName}
-                                onChange={(e) => {
-                                  const updatedRows = [...tableRows]
-                                  updatedRows[index].siteName = e.target.value
-                                  setTableRows(updatedRows)
-                                }}
-                                className="border p-1 rounded w-full"
-                              />
-                            </td>
-                            <td className="border p-2 w-60">
-                              <input
-                                type="text"
-                                value={row.place}
-                                onChange={(e) => {
-                                  const updatedRows = [...tableRows]
-                                  updatedRows[index].place = e.target.value
-                                  setTableRows(updatedRows)
-                                }}
-                                className="border p-1 rounded w-full"
-                              />
-                            </td>
-                            <td className="border p-2">
-                              <input
-                                type="number"
-                                value={row.Start}
-                                onChange={(e) => {
-                                  const updatedRows = [...tableRows]
-                                  updatedRows[index].Start = e.target.value
-                                  setTableRows(updatedRows)
-                                }}
-                                className="border p-1 rounded w-full"
-                              />
-                            </td>
-                            <td className="border p-2 W-20">
-                              <input
-                                type="number"
-                                value={row.End}
-                                onChange={(e) => {
-                                  const updatedRows = [...tableRows]
-                                  updatedRows[index].End = e.target.value
-                                  setTableRows(updatedRows)
-                                }}
-                                className="border p-1 rounded w-full"
-                              />
-                            </td>
-                            <td className="border p-2">
-                              <input
-                                type="number"
-                                value={row.km}
-                                onChange={(e) => {
-                                  const updatedRows = [...tableRows]
-                                  updatedRows[index].km = e.target.value
-                                  setTableRows(updatedRows)
-                                }}
-                                className="border p-1 rounded w-full"
-                              />
-                            </td>
-                            <td className="border p-2">
-                              <input
-                                type="number"
-                                value={row.kmExpense}
-                                onChange={(e) => {
-                                  const updatedRows = [...tableRows]
-                                  updatedRows[index].kmExpense = e.target.value
-                                  setTableRows(updatedRows)
-                                }}
-                                className="border p-1 rounded w-full"
-                              />
-                            </td>
-                            <td className="border p-2 w-28">
-                              <input
-                                type="number"
-                                value={row.foodExpense}
-                                onChange={(e) => {
-                                  const updatedRows = [...tableRows]
-                                  updatedRows[index].foodExpense =
-                                    e.target.value
-                                  setTableRows(updatedRows)
-                                }}
-                                className="border p-1 rounded w-full"
-                              />
-                            </td>
-                            <td className="border p-2">
-                              <button
-                                onClick={() => {
-                                  const updatedRows = [...tableRows]
-                                  updatedRows.splice(index, 1)
-                                  setTableRows(updatedRows)
-                                }}
-                                className="text-red-500"
-                              >
-                                Remove
-                              </button>
-                            </td>
+                    <div className="overflow-x-auto ">
+                      <table className=" border border-gray-200 text-center">
+                        <thead>
+                          <tr>
+                            <th className="border px-8">Site Name</th>
+                            <th className="border px-8 ">Place</th>
+                            <th className="border px-8 ">Start</th>
+                            <th className="border px-8">End</th>
+                            <th className="border px-10 ">KM</th>
+                            <th className="border px-10">TA</th>
+                            <th className="border px-8">Food </th>
+                            <th className="border px-8">Actions</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {tableRows?.map((row, index) => (
+                            <tr key={index}>
+                              <td className="border p-2 w-60">
+                                <input
+                                  type="text"
+                                  value={row.siteName}
+                                  onChange={(e) => {
+                                    const updatedRows = [...tableRows]
+                                    updatedRows[index].siteName = e.target.value
+                                    setTableRows(updatedRows)
+                                  }}
+                                  className="border p-1 rounded w-full"
+                                />
+                              </td>
+                              <td className="border p-2 w-60">
+                                <input
+                                  type="text"
+                                  value={row.place}
+                                  onChange={(e) => {
+                                    const updatedRows = [...tableRows]
+                                    updatedRows[index].place = e.target.value
+                                    setTableRows(updatedRows)
+                                  }}
+                                  className="border p-1 rounded w-full"
+                                />
+                              </td>
+                              <td className="border p-2">
+                                <input
+                                  type="number"
+                                  value={row.Start}
+                                  onChange={(e) => {
+                                    const updatedRows = [...tableRows]
+                                    updatedRows[index].Start = e.target.value
+                                    setTableRows(updatedRows)
+                                  }}
+                                  className="border p-1 rounded w-full"
+                                />
+                              </td>
+                              <td className="border p-2 W-20">
+                                <input
+                                  type="number"
+                                  value={row.End}
+                                  onChange={(e) => {
+                                    const updatedRows = [...tableRows]
+                                    updatedRows[index].End = e.target.value
+                                    setTableRows(updatedRows)
+                                  }}
+                                  className="border p-1 rounded w-full"
+                                />
+                              </td>
+                              <td className="border p-2">
+                                <input
+                                  type="number"
+                                  value={row.km}
+                                  onChange={(e) => {
+                                    const updatedRows = [...tableRows]
+                                    updatedRows[index].km = e.target.value
+                                    setTableRows(updatedRows)
+                                  }}
+                                  className="border p-1 rounded w-full"
+                                />
+                              </td>
+                              <td className="border p-2">
+                                <input
+                                  type="number"
+                                  value={row.kmExpense}
+                                  onChange={(e) => {
+                                    const updatedRows = [...tableRows]
+                                    updatedRows[index].kmExpense =
+                                      e.target.value
+                                    setTableRows(updatedRows)
+                                  }}
+                                  className="border p-1 rounded w-full"
+                                />
+                              </td>
+                              <td className="border p-2 w-28">
+                                <input
+                                  type="number"
+                                  value={row.foodExpense}
+                                  onChange={(e) => {
+                                    const updatedRows = [...tableRows]
+                                    updatedRows[index].foodExpense =
+                                      e.target.value
+                                    setTableRows(updatedRows)
+                                  }}
+                                  className="border p-1 rounded w-full"
+                                />
+                              </td>
+                              <td className="border p-2">
+                                <button
+                                  onClick={() => {
+                                    const updatedRows = [...tableRows]
+                                    updatedRows.splice(index, 1)
+                                    setTableRows(updatedRows)
+                                  }}
+                                  className="text-red-500"
+                                >
+                                  Remove
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                     <button
                       onClick={addRow}
                       className="mt-2 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
@@ -882,13 +782,13 @@ button {
                 </div>
               </div>
             ) : (
-              <div>
+              <div className="p-3">
                 {/* Content for Attendance */}
                 <div className="flex justify-between mb-1">
                   <h2 className="text-xl font-bold">Attendance</h2>
                   <button
                     onClick={handleAttendance}
-                    className="bg-gradient-to-b from-blue-200 to-blue-400 px-2 rounded-xl hover:from-blue-400 hover:to-blue-600"
+                    className="bg-gradient-to-b from-blue-200 to-blue-400 px-1 rounded-xl hover:from-blue-400 hover:to-blue-600"
                   >
                     Leave Application
                   </button>
@@ -896,10 +796,7 @@ button {
                 <hr />
                 {/* You can add your attendance-related content here */}
                 <div className="attendance-content mt-2 justify-center">
-                  {/* Replace this part with your attendance logic and content */}
-                  {/* <p>Date:{formData.startDate}</p> */}
                   <p className="text-gray-500">
-                    Date:{" "}
                     {new Date(formData.startDate).toLocaleDateString("en-GB", {
                       day: "2-digit",
                       month: "short",
@@ -910,13 +807,15 @@ button {
                     {/* Start Time */}
                     <div className="grid ">
                       <label htmlFor="startTime" className="font-bold mb-1">
-                        Start Time
+                        In Time
                       </label>
                       <input
                         type="time"
-                        id="startTime"
-                        name="startTime"
-                        className="border border-gray-300 py-1 px-2 rounded w-2/3 justify-end"
+                        id="inTime"
+                        name="inTime"
+                        value={attendance.inTime}
+                        onChange={selectAttendance}
+                        className="border border-gray-300 py-1 px-2 sm:w-2/5 rounded justify-end"
                       />
                     </div>
                     {/* End Time */}
@@ -925,17 +824,22 @@ button {
                         htmlFor="endTime"
                         className="font-bold mb-1 justify-self-end"
                       >
-                        End Time
+                        Out Time
                       </label>
                       <input
                         type="time"
-                        id="endTime"
-                        name="endTime"
-                        className="border border-gray-300 py-1 px-2 rounded w-2/3 justify-self-end"
+                        id="outTime"
+                        name="outTime"
+                        value={attendance.outTime}
+                        onChange={selectAttendance}
+                        className="border border-gray-300 py-1 px-2 sm:w-2/5 rounded  justify-self-end"
                       />
                     </div>
                     <div className="col-span-2 flex justify-center">
-                      <button className="bg-gradient-to-b from-blue-400 to-blue-500 px-3 py-1 hover:from-blue-400 hover:to-blue-600 text-white rounded">
+                      <button
+                        className="bg-gradient-to-b from-blue-400 to-blue-500 px-3 py-1 hover:from-blue-400 hover:to-blue-600 text-white rounded"
+                        onClick={handleApplyAttendance}
+                      >
                         Submit
                       </button>
                     </div>{" "}

@@ -1,6 +1,7 @@
 import models from "../model/auth/authSchema.js"
 import mongoose from "mongoose"
 import Branch from "../model/primaryUser/branchSchema.js"
+import Attendance from "../model/primaryUser/attendanceSchema.js"
 const { Staff, Admin } = models
 import bcrypt from "bcrypt"
 
@@ -514,6 +515,65 @@ export const GetallUsers = async (req, res) => {
     res.status(500).json({ message: "server error" })
   }
 }
+export const AttendanceApply = async (req, res) => {
+  try {
+    const selectattendance = req.body
+    const { selectedid } = req.query
+
+    if (!selectedid) {
+      return res.status(400).json({ message: "Selected ID is required" })
+    }
+
+    const objectId = new mongoose.Types.ObjectId(selectedid)
+
+    const { attendanceDate, inTime, outTime } = selectattendance
+
+    // Check if attendance for the given date already exists for the selected ID
+    const existingAttendance = await Attendance.findOne({
+      userId: objectId,
+      attendanceDate
+    })
+    if (existingAttendance) {
+      // Update existing record with new time data
+      if (inTime) existingAttendance.inTime = inTime
+      if (outTime) existingAttendance.outTime = outTime
+
+      await existingAttendance.save()
+
+      return res.status(200).json({
+        message: "Attendance updated successfully",
+        attendance: existingAttendance
+      })
+    } else {
+      // Create a new attendance record if none exists
+      if (!inTime) {
+        return res
+          .status(400)
+          .json({ message: "In-time is required for new attendance" })
+      }
+
+      const newAttendance = new Attendance({
+        userId: objectId,
+        attendanceDate,
+        inTime,
+        outTime: outTime || null // Out-time can be added later
+      })
+
+      await newAttendance.save()
+
+      return res.status(201).json({
+        message: "Attendance recorded successfully",
+        attendance: newAttendance
+      })
+    }
+  } catch (error) {
+    console.error("Error:", error.message)
+    res.status(500).json({
+      message: "An error occurred while recording attendance",
+      error: error.message
+    })
+  }
+}
 
 export const LeaveApply = async (req, res) => {
   const formData = req.body
@@ -611,6 +671,33 @@ export const OnsiteleaveApply = async (req, res) => {
     if (successonsite) {
       return res.status(200).json({ message: "onsite leave applied success" })
     }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const GetAllAttendance = async (req, res) => {
+  try {
+    const { userid } = req.query // Extract userid from query parameters
+    console.log("tyeeee", typeof userid)
+
+    const objectId = new mongoose.Types.ObjectId(userid)
+    if (!userid) {
+      return res.status(400).json({ error: "User ID is required" })
+    }
+
+    // Fetch all leave records for the specified userid
+    const attendance = await Attendance.find({ userId: objectId })
+
+    // Check if no records found
+    if (attendance.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No attendance records found for this user" })
+    }
+
+    // Send the leave records as a JSON response
+    res.status(200).json({ message: "attendance found", data: attendance })
   } catch (error) {
     console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })
@@ -1160,7 +1247,7 @@ export const GetStaffCallList = async (req, res) => {
                       : 1, // Default value if neither condition is met
 
                   solvedCalls: isColleagueSolved ? 1 : 0,
-                  datecalls:1,
+                  datecalls: 1,
                   pendingCalls: calls.formdata.completedBy[0]
                     ? 0 // No pending calls
                     : 1, // Increment count if `completedBy[0]` is empty
