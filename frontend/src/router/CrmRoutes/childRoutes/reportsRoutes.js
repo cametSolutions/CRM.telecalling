@@ -2,7 +2,7 @@ import ComingSoon from "../../../pages/common/ComingSoon"
 import Summary from "../../../pages/primaryUser/List/Summary"
 import ExpiredCustomer from "../../../pages/primaryUser/List/ExpiredCustomer"
 import AccountSearch from "../../../pages/primaryUser/List/AccountSearch"
-import LeaveRegister from "../../../pages/primaryUser/calender/LeaveRegister"
+import LeaveSummary from "../../../components/primaryUser/LeaveSummary"
 const reportsRoutes = [
   { path: "/admin/reports/summary", component: Summary },
 
@@ -12,7 +12,7 @@ const reportsRoutes = [
 
   { path: "/admin/reports/account-search", component: AccountSearch },
 
-  { path: "/admin/reports/leave-summary", component: ComingSoon }
+  { path: "/admin/reports/leave-summary", component: LeaveSummary }
 ]
 
 export default reportsRoutes

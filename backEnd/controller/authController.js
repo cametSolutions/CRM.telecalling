@@ -525,8 +525,18 @@ export const AttendanceApply = async (req, res) => {
     }
 
     const objectId = new mongoose.Types.ObjectId(selectedid)
-
-    const { attendanceDate, inTime, outTime } = selectattendance
+    const {
+      attendanceDate,
+      inTime: { hours: inTimeHours, minutes: inTimeMinutes, amPm: inTimeAmPm },
+      outTime: {
+        hours: outTimeHours,
+        minutes: outTimeMinutes,
+        amPm: outTimeAmPm
+      }
+    } = selectattendance
+    // Merge hours, minutes, and amPm into time strings
+    const inTimeString = `${inTimeHours}:${inTimeMinutes} ${inTimeAmPm}`
+    const outTimeString = `${outTimeHours}:${outTimeMinutes} ${outTimeAmPm}`
 
     // Check if attendance for the given date already exists for the selected ID
     const existingAttendance = await Attendance.findOne({
@@ -535,18 +545,17 @@ export const AttendanceApply = async (req, res) => {
     })
     if (existingAttendance) {
       // Update existing record with new time data
-      if (inTime) existingAttendance.inTime = inTime
-      if (outTime) existingAttendance.outTime = outTime
-
+      existingAttendance.inTime = inTimeString
+      existingAttendance.outTime = outTimeString
       await existingAttendance.save()
-
+      console.log("Hiiiiii")
       return res.status(200).json({
         message: "Attendance updated successfully",
         attendance: existingAttendance
       })
     } else {
       // Create a new attendance record if none exists
-      if (!inTime) {
+      if (!inTimeString) {
         return res
           .status(400)
           .json({ message: "In-time is required for new attendance" })
@@ -555,8 +564,8 @@ export const AttendanceApply = async (req, res) => {
       const newAttendance = new Attendance({
         userId: objectId,
         attendanceDate,
-        inTime,
-        outTime: outTime || null // Out-time can be added later
+        inTime: inTimeString,
+        outTime: outTimeString || null // Out-time can be added later
       })
 
       await newAttendance.save()
@@ -585,7 +594,7 @@ export const LeaveApply = async (req, res) => {
 
   const {
     startDate,
-    endDate,
+
     leaveType,
     onsite,
     reason,
@@ -594,33 +603,22 @@ export const LeaveApply = async (req, res) => {
   } = formData
 
   try {
-    const start = new Date(startDate)
-    const end = new Date(endDate)
-    const dates = []
-
-    let current = new Date(start)
-    while (current <= end) {
-      dates.push(new Date(current).toISOString().split("T")[0]) // Format as 'YYYY-MM-DD'
-      current.setDate(current.getDate() + 1) // Increment by one day
-    }
-
     // Save each date as a separate document
-    for (const leaveDate of dates) {
-      const leave = new LeaveRequest({
-        leaveDate,
-        leaveType,
-        ...(leaveType === "Half Day" && { halfDayPeriod }),
-        onsite,
-        reason,
-        description,
-        userId: objectId,
-        assignedto: assignedTo
-      })
 
-      const a = await leave.save()
-      if (a) {
-        console.log("successsss")
-      }
+    const leave = new LeaveRequest({
+      leaveDate: startDate,
+      leaveType,
+      ...(leaveType === "Half Day" && { halfDayPeriod }),
+      onsite,
+      reason,
+      description,
+      userId: objectId,
+      assignedto: assignedTo
+    })
+
+    const a = await leave.save()
+    if (a) {
+      console.log("successsss")
     }
 
     const leaveSubmit = await LeaveRequest.find({ userId: objectId })
@@ -849,6 +847,30 @@ export const GetAllLeaveRequest = async (req, res) => {
     }
   } catch (error) {
     console.log("error:", error.message)
+  }
+}
+export const GetallusersLeaves = async (req, res) => {
+  try {
+    const leaves = await LeaveRequest.find({})
+    if (leaves) {
+      return res.status(200).json({ message: "leaves found", data: leaves })
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "internal server error" })
+  }
+}
+export const GetallusersAttendance = async (req, res) => {
+  try {
+    const attendance = await Attendance.find({})
+    if (attendance) {
+      return res
+        .status(200)
+        .json({ message: "attendance found", data: attendance })
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "internal server error" })
   }
 }
 export const ApproveLeave = async (req, res) => {

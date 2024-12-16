@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react"
 
 import tippy from "tippy.js"
 import UseFetch from "../../hooks/useFetch"
+import { useLocation } from "react-router-dom"
 import api from "../../api/api"
 import "tippy.js/dist/tippy.css"
 import debounce from "lodash.debounce"
@@ -11,7 +12,15 @@ import timeGridPlugin from "@fullcalendar/timegrid"
 import interactionPlugin from "@fullcalendar/interaction"
 import "tippy.js/themes/light.css" // Example for light theme
 
-function LeaveApplication() {
+function UsersLeaveApplicationSummary() {
+  const location = useLocation()
+  // Extract query parameters
+  const searchParams = new URLSearchParams(location.search)
+  const userId = searchParams.get("userid") // Retrieve the 'userid' query parameter
+  const userName = searchParams.get("userName")
+
+  const { selectedusersleaves, selectedusersattendance } = location.state || {}
+
   const [events, setEvents] = useState([])
   const [selectedMonth, setSelectedMonth] = useState("")
   const [showModal, setShowModal] = useState(false)
@@ -32,7 +41,6 @@ function LeaveApplication() {
     inTime: { hours: "12", minutes: "00", amPm: "AM" },
     outTime: { hours: "12", minutes: "00", amPm: "AM" }
   })
-  console.log(selectedAttendance)
 
   const [isOnsite, setIsOnsite] = useState(false)
   const [totalAttendance, setTotalAttendance] = useState(null)
@@ -42,20 +50,23 @@ function LeaveApplication() {
   const [tableRows, setTableRows] = useState([])
   const [existingEvent, setexistingEvent] = useState([])
   const [clickedDate, setclickedDate] = useState(null)
+  const [leaves, setLeaves] = useState([])
+  const [attendee, setAttendee] = useState([])
   const userData = localStorage.getItem("user")
   const user = JSON.parse(userData)
 
-  const { data: leaves, refreshHook } = UseFetch(
-    `/auth/getallLeave?userid=${user._id}`
-  )
-  const { data: attendee } = UseFetch(
-    `/auth/getallAttendance?userid=${user._id}`
-  )
+  useEffect(() => {
+    if ((selectedusersleaves, selectedusersattendance)) {
+      const filteredLeaves = selectedusersleaves.filter(
+        (leave) => leave.userId === userId
+      )
+      setAttendee(selectedusersattendance)
+      setLeaves(filteredLeaves)
+    }
+  }, [])
 
   useEffect(() => {
-    if (leaves && attendee) {
-      console.log(leaves)
-      console.log(attendee)
+    if (leaves && leaves.length && attendee && attendee.length) {
       const formattedEvents = formatEventData(leaves)
 
       let attendanceDetails
@@ -86,19 +97,16 @@ function LeaveApplication() {
             dayObject.start = date
             dayObject.inTime = item?.inTime
             dayObject.outTime = item?.outTime
-            console.log(dayObject)
+
             return dayObject
           }
         })
       }
-      console.log(attendanceDetails)
-      console.log(formattedEvents)
 
       setEvents([...formattedEvents, ...attendanceDetails])
     }
   }, [leaves, attendee])
 
-  console.log(events)
   useEffect(() => {
     if (!showModal) {
       setIsOnsite(false)
@@ -126,13 +134,12 @@ function LeaveApplication() {
       }
     }
   }, [isOnsite, clickedDate])
-  console.log(t)
+
   const formatEventData = (events) => {
     return events.map((event) => {
-      console.log(event)
       const date = new Date(event.leaveDate) // Convert to Date object
       const formattedDate = date.toISOString().split("T")[0] // Format as YYYY-MM-DD
-      console.log(formattedDate)
+
       let dayObject = {
         start: "",
         reason: event?.reason,
@@ -185,37 +192,31 @@ function LeaveApplication() {
   }
   const selectAttendance = (e) => {
     const { name, value } = e.target
-    console.log(name)
-    console.log(value)
+
     setselectedAttendance((prev) => ({
       ...prev, // Spread the existing state
       [name]: value // Dynamically update the property corresponding to 'name'
     }))
   }
-  console.log(selectedAttendance)
 
   const handleDateClick = (arg) => {
-    console.log(arg)
     const clickedDate = arg.dateStr
     setclickedDate(clickedDate)
-    console.log(clickedDate)
+
     // Check if there's already an event on this date
-    console.log(events)
+
     const existingEvent = events.find((event) => event.start === clickedDate)
-    console.log(existingEvent)
 
     setexistingEvent(existingEvent)
 
     if (existingEvent) {
-      console.log(existingEvent)
-      console.log("hii")
       // Parse the inTime and outTime (assuming they are in "hh:mm AM/PM" format)
       const parseTime = (timeString) => {
         const [time, amPm] = timeString.split(" ")
         const [hours, minutes] = time.split(":")
         return { hours, minutes, amPm }
       }
-      console.log(parseTime(existingEvent.inTime))
+
       // If an event exists, set the form data to edit the event
       setFormData({
         ...formData,
@@ -246,7 +247,6 @@ function LeaveApplication() {
         setIsOnsite(true)
       }
     } else {
-      console.log("ji")
       setFormData({
         ...formData,
         startDate: arg.dateStr,
@@ -263,7 +263,7 @@ function LeaveApplication() {
 
     setShowModal(true)
   }
-  console.log(selectedAttendance)
+
   const handleUpdate = async (updatedData) => {
     try {
       const eventId = formData.eventId
@@ -316,8 +316,7 @@ function LeaveApplication() {
       December: 12
     }
     const monthNumber = monthMapping[monthName]
-    console.log(attendee)
-    console.log(monthNumber)
+
     const filteredData = attendee?.filter((item) => {
       const attendanceMonth = new Date(item.attendanceDate).getMonth() + 1 // Get month from Date (1 = Jan, 12 = Dec)
       return attendanceMonth === monthNumber
@@ -325,7 +324,7 @@ function LeaveApplication() {
 
     setTotalAttendance(filteredData)
   }
-  console.log(selectedMonth)
+
   const handleDelete = async (eventId) => {
     try {
       // Assuming you have an API endpoint for deleting leave requests
@@ -498,17 +497,6 @@ function LeaveApplication() {
     }
   }
   const handleApplyAttendance = async () => {
-    // const response = await fetch(
-    //   `http://localhost:9000/api/auth/attendance?selectedid=${user._id}`,
-    //   {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json"
-    //     },
-    //     body: JSON.stringify(selectedAttendance),
-    //     credentials: "include"
-    //   }
-    // )
     const response = await fetch(
       `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}`,
       {
@@ -535,9 +523,7 @@ function LeaveApplication() {
       outTime: ""
     })
   }
-  console.log(selectedAttendance)
-  console.log(events)
-  console.log(attendance)
+
   return (
     <div className=" p-4">
       <div className="w-full">
@@ -566,16 +552,43 @@ function LeaveApplication() {
             <span className="text-sm md:text-base">Not selected</span>
           </div>
         </div>
-        <div className="flex">
-          <div className="mr-5">
-            <span>Total Attendance-</span>
-            <span>{totalAttendance?.length}</span>
+        <div className="flex flex-wrap justify-between items-center p-3 mb-2 bg-gray-100 rounded-md shadow-md">
+          {/* Left Section */}
+          <div className="flex space-x-8">
+            <div>
+              <span className="font-semibold">Total Attendance: </span>
+              <span>{totalAttendance?.length || 0}</span>
+            </div>
+            <div>
+              <span className="font-semibold">Total Late Coming: </span>
+              <span>{attendee?.length || 0}</span>
+            </div>
           </div>
-          <div>
-            <span>Total Latecoming-</span>
-            <span>{attendee?.length}</span>
+
+          {/* Center Section */}
+          <div className="text-center w-full sm:w-auto mt-4 sm:mt-0">
+            <h3 className="text-xl font-bold text-gray-800">
+              {userName || "User Name"}
+            </h3>
           </div>
         </div>
+
+        {/* <div className="flex">
+          <div className="flex justify-start">
+            <div className="mr-5">
+              <span>Total Attendance-</span>
+              <span>{totalAttendance?.length}</span>
+            </div>
+            <div>
+              <span>Total Latecoming-</span>
+              <span>{attendee?.length}</span>
+            </div>
+          </div>
+
+          <div className=" flex justify-center">
+            <h3>{userName}</h3>
+          </div>
+        </div> */}
 
         <FullCalendar
           key={events.length}
@@ -591,7 +604,6 @@ function LeaveApplication() {
           height="auto"
           datesSet={handleDatesSet}
           dayCellDidMount={(info) => {
-            console.log(info.date)
             // Normalize the date to "YYYY-MM-DD" format (UTC)
             const cellDate = info.date.toLocaleDateString("en-CA") // Simplified to handle UTC date
 
@@ -605,13 +617,12 @@ function LeaveApplication() {
               // Get event start date in "YYYY-MM-DD" format
               return eventDate === cellDate // Compare the date part (YYYY-MM-DD)
             })
-            console.log(info.el)
+
             const dayCellBottom = info.el.querySelector(
               ".fc-daygrid-day-bottom"
             )
 
             if (matchingEvent) {
-              console.log(matchingEvent)
               const inTime = matchingEvent.inTime || "-"
               const outTime = matchingEvent.outTime || "-"
               const squareColor = matchingEvent.color || "blue"
@@ -1304,4 +1315,4 @@ function LeaveApplication() {
   )
 }
 
-export default LeaveApplication
+export default UsersLeaveApplicationSummary
