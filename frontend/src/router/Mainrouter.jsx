@@ -14,6 +14,7 @@ import CallregistrationList from "../pages/secondaryUser/List/CallregistrationLi
 import stafftasksRoutes from "./staffRoutes/stafftaskRoutes.js"
 import staffmastersRoutes from "./staffRoutes/staffmasterRoutes.js"
 import staffreportsRoutes from "./staffRoutes/staffreportRoutes.js"
+import UsersLeaveApplicationSummary from "../components/primaryUser/UsersLeaveApplicationSummary.jsx"
 
 const Mainrouter = () => {
   const allRoutes = [
@@ -32,6 +33,7 @@ const Mainrouter = () => {
         <Route path="/" element={<Login />} />
         {/* <Route path="/admin/productlist" element={<ProductList />} /> */}
         <Route path="/admin/home" element={<CallregistrationList />} />
+        <Route path="/admin/usersleave-application" element={<UsersLeaveApplicationSummary/>}/>
         <Route path="/staff/home" element={<CallregistrationList />} />
         {allRoutes.map((route, index) => {
           const { path, component: Component, title } = route

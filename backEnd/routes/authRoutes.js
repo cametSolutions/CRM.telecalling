@@ -18,7 +18,9 @@ import {
   UpdateLeave,
   OnsiteleaveApply,
   AttendanceApply,
-  GetAllAttendance
+  GetAllAttendance,
+  GetallusersAttendance,
+  GetallusersLeaves
 } from "../controller/authController.js"
 const router = express.Router()
 
@@ -40,5 +42,7 @@ router.put("/rejectLeave", authMiddleware, RejectLeave)
 router.put("/updateLeave", authMiddleware, UpdateLeave)
 router.post("/onsiteLeave", authMiddleware, OnsiteleaveApply)
 router.post("/attendance", authMiddleware, AttendanceApply)
+router.get("/getallusersLeaves", authMiddleware, GetallusersLeaves)
+router.get("/getallusersAttendance", authMiddleware, GetallusersAttendance)
 
 export default router

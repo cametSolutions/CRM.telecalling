@@ -121,9 +121,7 @@ export default function StaffHeader() {
       label: "Expiry Register",
       control: user?.permissions?.[0]?.ExpiryRegister ?? false
     },
-   
-   
-    
+
     {
       to: "/staff/reports/account-search",
       label: "Account Search",
@@ -158,8 +156,7 @@ export default function StaffHeader() {
       label: "Sign Up Custmer",
       control: user?.permissions?.[0]?.SignUpCustomer
     },
-    
-   
+
     {
       to: "/staff/tasks/leaveApproval-pending",
       label: "Leave Approval Pending",
@@ -259,9 +256,13 @@ export default function StaffHeader() {
             fontFamily="Arial, Helvetica, sans-serif"
             dy=".3em"
           >
-            CRM
+            CRm
           </text>
         </svg>
+        <span className="text-xl sm:text-2xl md:text-2xl lg:text-3xl font-bold text-green-600">
+          MANAGEMENT
+        </span>
+
         {/* <span className="text-3xl font-bold text-green-600">MANAGEMENT</span> */}
       </div>
       <div className="flex flex-grow justify-center items-center">
