@@ -60,17 +60,22 @@ function UsersLeaveApplicationSummary() {
       const filteredLeaves = selectedusersleaves.filter(
         (leave) => leave.userId === userId
       )
-      setAttendee(selectedusersattendance)
+      const filteredAttendance = selectedusersattendance.filter(
+        (attendance) => attendance.userId === userId
+      )
+      setAttendee(filteredAttendance)
       setLeaves(filteredLeaves)
     }
   }, [])
 
   useEffect(() => {
-    if (leaves && leaves.length && attendee && attendee.length) {
+    if ((leaves && leaves.length) || (attendee && attendee.length)) {
       const formattedEvents = formatEventData(leaves)
+      console.log(formattedEvents)
 
       let attendanceDetails
       if (formattedEvents.length > 0) {
+        console.log(attendee)
         attendanceDetails = attendee.map((item) => {
           let dayObject = {
             start: "",
@@ -102,6 +107,7 @@ function UsersLeaveApplicationSummary() {
           }
         })
       }
+      console.log(attendanceDetails)
 
       setEvents([...formattedEvents, ...attendanceDetails])
     }

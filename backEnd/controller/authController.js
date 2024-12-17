@@ -519,6 +519,7 @@ export const AttendanceApply = async (req, res) => {
   try {
     const selectattendance = req.body
     const { selectedid } = req.query
+    console.log("iddattendid", selectedid)
 
     if (!selectedid) {
       return res.status(400).json({ message: "Selected ID is required" })
@@ -703,7 +704,8 @@ export const GetAllAttendance = async (req, res) => {
 }
 export const GetallLeave = async (req, res) => {
   const { userid } = req.query // Extract userid from query parameters
-  console.log("tyeeee", typeof userid)
+  console.log("tyeeeessss", typeof userid)
+  console.log("iddd", userid)
 
   const objectId = new mongoose.Types.ObjectId(userid)
   console.log("idddd", objectId)

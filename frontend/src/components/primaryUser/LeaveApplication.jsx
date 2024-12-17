@@ -32,7 +32,6 @@ function LeaveApplication() {
     inTime: { hours: "12", minutes: "00", amPm: "AM" },
     outTime: { hours: "12", minutes: "00", amPm: "AM" }
   })
-  console.log(selectedAttendance)
 
   const [isOnsite, setIsOnsite] = useState(false)
   const [totalAttendance, setTotalAttendance] = useState(null)
@@ -43,23 +42,23 @@ function LeaveApplication() {
   const [existingEvent, setexistingEvent] = useState([])
   const [clickedDate, setclickedDate] = useState(null)
   const userData = localStorage.getItem("user")
+
   const user = JSON.parse(userData)
 
   const { data: leaves, refreshHook } = UseFetch(
     `/auth/getallLeave?userid=${user._id}`
   )
+
   const { data: attendee } = UseFetch(
     `/auth/getallAttendance?userid=${user._id}`
   )
 
   useEffect(() => {
     if (leaves && attendee) {
-      console.log(leaves)
-      console.log(attendee)
       const formattedEvents = formatEventData(leaves)
 
       let attendanceDetails
-      if (formattedEvents.length > 0) {
+      if (formattedEvents.length > 0 && attendee && attendee.length > 0) {
         attendanceDetails = attendee.map((item) => {
           let dayObject = {
             start: "",
@@ -86,19 +85,17 @@ function LeaveApplication() {
             dayObject.start = date
             dayObject.inTime = item?.inTime
             dayObject.outTime = item?.outTime
-            console.log(dayObject)
+
             return dayObject
           }
         })
+        setEvents([...formattedEvents, ...attendanceDetails])
+      } else {
+        setEvents(formattedEvents)
       }
-      console.log(attendanceDetails)
-      console.log(formattedEvents)
-
-      setEvents([...formattedEvents, ...attendanceDetails])
     }
   }, [leaves, attendee])
 
-  console.log(events)
   useEffect(() => {
     if (!showModal) {
       setIsOnsite(false)
@@ -126,13 +123,12 @@ function LeaveApplication() {
       }
     }
   }, [isOnsite, clickedDate])
-  console.log(t)
+
   const formatEventData = (events) => {
     return events.map((event) => {
-      console.log(event)
       const date = new Date(event.leaveDate) // Convert to Date object
       const formattedDate = date.toISOString().split("T")[0] // Format as YYYY-MM-DD
-      console.log(formattedDate)
+
       let dayObject = {
         start: "",
         reason: event?.reason,
@@ -185,37 +181,31 @@ function LeaveApplication() {
   }
   const selectAttendance = (e) => {
     const { name, value } = e.target
-    console.log(name)
-    console.log(value)
+
     setselectedAttendance((prev) => ({
       ...prev, // Spread the existing state
       [name]: value // Dynamically update the property corresponding to 'name'
     }))
   }
-  console.log(selectedAttendance)
 
   const handleDateClick = (arg) => {
-    console.log(arg)
     const clickedDate = arg.dateStr
     setclickedDate(clickedDate)
-    console.log(clickedDate)
+
     // Check if there's already an event on this date
-    console.log(events)
+
     const existingEvent = events.find((event) => event.start === clickedDate)
-    console.log(existingEvent)
 
     setexistingEvent(existingEvent)
 
     if (existingEvent) {
-      console.log(existingEvent)
-      console.log("hii")
       // Parse the inTime and outTime (assuming they are in "hh:mm AM/PM" format)
       const parseTime = (timeString) => {
         const [time, amPm] = timeString.split(" ")
         const [hours, minutes] = time.split(":")
         return { hours, minutes, amPm }
       }
-      console.log(parseTime(existingEvent.inTime))
+
       // If an event exists, set the form data to edit the event
       setFormData({
         ...formData,
@@ -246,7 +236,6 @@ function LeaveApplication() {
         setIsOnsite(true)
       }
     } else {
-      console.log("ji")
       setFormData({
         ...formData,
         startDate: arg.dateStr,
@@ -263,7 +252,7 @@ function LeaveApplication() {
 
     setShowModal(true)
   }
-  console.log(selectedAttendance)
+
   const handleUpdate = async (updatedData) => {
     try {
       const eventId = formData.eventId
@@ -316,8 +305,7 @@ function LeaveApplication() {
       December: 12
     }
     const monthNumber = monthMapping[monthName]
-    console.log(attendee)
-    console.log(monthNumber)
+
     const filteredData = attendee?.filter((item) => {
       const attendanceMonth = new Date(item.attendanceDate).getMonth() + 1 // Get month from Date (1 = Jan, 12 = Dec)
       return attendanceMonth === monthNumber
@@ -325,7 +313,7 @@ function LeaveApplication() {
 
     setTotalAttendance(filteredData)
   }
-  console.log(selectedMonth)
+
   const handleDelete = async (eventId) => {
     try {
       // Assuming you have an API endpoint for deleting leave requests
@@ -423,14 +411,14 @@ function LeaveApplication() {
   const handleApply = async () => {
     try {
       if (formData.onsite) {
-        // const response = await api.post(
-        //   `http://localhost:9000/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
-        //   { formData, tableRows }
-        // )
         const response = await api.post(
-          `https://www.crm.camet.in/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          `http://localhost:9000/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
           { formData, tableRows }
         )
+        // const response = await api.post(
+        //   `https://www.crm.camet.in/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+        //   { formData, tableRows }
+        // )
 
         if (response.status === 200) {
           setFormData((prev) => ({
@@ -457,19 +445,8 @@ function LeaveApplication() {
         }
       } else {
         // Assuming you have an API endpoint for creating leave requests
-        // const response = await fetch(
-        //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
-        //   {
-        //     method: "POST",
-        //     headers: {
-        //       "Content-Type": "application/json"
-        //     },
-        //     body: JSON.stringify(formData),
-        //     credentials: "include"
-        //   }
-        // )
         const response = await fetch(
-          `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
           {
             method: "POST",
             headers: {
@@ -479,6 +456,17 @@ function LeaveApplication() {
             credentials: "include"
           }
         )
+        // const response = await fetch(
+        //   `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+        //   {
+        //     method: "POST",
+        //     headers: {
+        //       "Content-Type": "application/json"
+        //     },
+        //     body: JSON.stringify(formData),
+        //     credentials: "include"
+        //   }
+        // )
 
         const responseData = await response.json()
 
@@ -498,19 +486,8 @@ function LeaveApplication() {
     }
   }
   const handleApplyAttendance = async () => {
-    // const response = await fetch(
-    //   `http://localhost:9000/api/auth/attendance?selectedid=${user._id}`,
-    //   {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json"
-    //     },
-    //     body: JSON.stringify(selectedAttendance),
-    //     credentials: "include"
-    //   }
-    // )
     const response = await fetch(
-      `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}`,
+      `http://localhost:9000/api/auth/attendance?selectedid=${user._id}`,
       {
         method: "POST",
         headers: {
@@ -520,6 +497,17 @@ function LeaveApplication() {
         credentials: "include"
       }
     )
+    // const response = await fetch(
+    //   `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}`,
+    //   {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json"
+    //     },
+    //     body: JSON.stringify(selectedAttendance),
+    //     credentials: "include"
+    //   }
+    // )
 
     const responseData = await response.json()
 
@@ -535,9 +523,7 @@ function LeaveApplication() {
       outTime: ""
     })
   }
-  console.log(selectedAttendance)
-  console.log(events)
-  console.log(attendance)
+
   return (
     <div className=" p-4">
       <div className="w-full">
@@ -591,7 +577,6 @@ function LeaveApplication() {
           height="auto"
           datesSet={handleDatesSet}
           dayCellDidMount={(info) => {
-            console.log(info.date)
             // Normalize the date to "YYYY-MM-DD" format (UTC)
             const cellDate = info.date.toLocaleDateString("en-CA") // Simplified to handle UTC date
 
@@ -605,13 +590,12 @@ function LeaveApplication() {
               // Get event start date in "YYYY-MM-DD" format
               return eventDate === cellDate // Compare the date part (YYYY-MM-DD)
             })
-            console.log(info.el)
+
             const dayCellBottom = info.el.querySelector(
               ".fc-daygrid-day-bottom"
             )
 
             if (matchingEvent) {
-              console.log(matchingEvent)
               const inTime = matchingEvent.inTime || "-"
               const outTime = matchingEvent.outTime || "-"
               const squareColor = matchingEvent.color || "blue"
@@ -1159,7 +1143,7 @@ function LeaveApplication() {
                         <select
                           id="hours"
                           name="hours"
-                          value={selectedAttendance.inTime.hours}
+                          value={selectedAttendance?.inTime?.hours}
                           onChange={(e) =>
                             handleTimeChange("inTime", "hours", e.target.value)
                           }
@@ -1175,7 +1159,7 @@ function LeaveApplication() {
                         <select
                           id="minutes"
                           name="minutes"
-                          value={selectedAttendance.inTime.minutes}
+                          value={selectedAttendance?.inTime?.minutes}
                           onChange={(e) =>
                             handleTimeChange(
                               "inTime",
@@ -1218,7 +1202,7 @@ function LeaveApplication() {
                         <select
                           id="hours"
                           name="hours"
-                          value={selectedAttendance.outTime.hours}
+                          value={selectedAttendance?.outTime?.hours}
                           onChange={(e) =>
                             handleTimeChange("outTime", "hours", e.target.value)
                           }
@@ -1234,7 +1218,7 @@ function LeaveApplication() {
                         <select
                           id="minutes"
                           name="minutes"
-                          value={selectedAttendance.outTime.minutes}
+                          value={selectedAttendance?.outTime?.minutes}
                           onChange={(e) =>
                             handleTimeChange(
                               "outTime",
@@ -1254,7 +1238,7 @@ function LeaveApplication() {
                         <select
                           id="amPm"
                           name="amPm"
-                          value={selectedAttendance.outTime.amPm}
+                          value={selectedAttendance?.outTime?.amPm}
                           onChange={(e) =>
                             handleTimeChange("outTime", "amPm", e.target.value)
                           }
