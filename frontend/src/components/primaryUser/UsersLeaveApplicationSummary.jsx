@@ -71,11 +71,9 @@ function UsersLeaveApplicationSummary() {
   useEffect(() => {
     if ((leaves && leaves.length) || (attendee && attendee.length)) {
       const formattedEvents = formatEventData(leaves)
-      console.log(formattedEvents)
 
       let attendanceDetails
       if (formattedEvents.length > 0) {
-        console.log(attendee)
         attendanceDetails = attendee.map((item) => {
           let dayObject = {
             start: "",
@@ -107,7 +105,6 @@ function UsersLeaveApplicationSummary() {
           }
         })
       }
-      console.log(attendanceDetails)
 
       setEvents([...formattedEvents, ...attendanceDetails])
     }

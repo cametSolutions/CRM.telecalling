@@ -7,8 +7,8 @@ import Tiles from "../../../components/common/Tiles"
 import UseFetch from "../../../hooks/useFetch"
 import io from "socket.io-client" // Import Socket.IO client
 
-const socket = io("http://localhost:9000")
-// const socket = io("https://www.crm.camet.in")
+// const socket = io("http://localhost:9000")
+const socket = io("https://www.crm.camet.in")
 
 const Summary = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null)
