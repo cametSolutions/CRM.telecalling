@@ -54,7 +54,7 @@ function LeaveApplication() {
   )
 
   useEffect(() => {
-    if (leaves && attendee) {
+    if (leaves || attendee) {
       const formattedEvents = formatEventData(leaves)
 
       let attendanceDetails
