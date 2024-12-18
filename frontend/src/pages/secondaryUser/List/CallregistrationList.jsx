@@ -268,7 +268,7 @@ const CallregistrationList = () => {
   //     toast.success(b.message)
   //   }
   // }
-  console.log(filteredCalls)
+
   return (
     <div className="container mx-auto  p-5 ">
       <div className="w-auto  bg-white shadow-lg rounded p-4 pt-1 h-full ">

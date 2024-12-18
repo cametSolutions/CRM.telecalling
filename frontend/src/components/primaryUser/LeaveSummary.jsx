@@ -8,7 +8,7 @@ const leaveSummary = () => {
   const [user, setUser] = useState([])
   const [selectedUser, setSelectedUser] = useState(null)
   const [leaves, setleaves] = useState([])
-  const [attedance, setAttendance] = useState([])
+  const [attendance, setAttendance] = useState([])
   const [showModal, setShowModal] = useState(null)
   const { data: userData, refreshHook, loading } = UseFetch("/auth/getallUsers")
   const { data: usersleaves } = UseFetch("/auth/getallusersLeaves")
@@ -18,13 +18,26 @@ const leaveSummary = () => {
   useEffect(() => {
     setleaves(usersleaves)
     setAttendance(usersAttendance)
-  }, [leaves, attedance])
+  }, [usersleaves, usersAttendance])
   useEffect(() => {
-    if (userData) {
+    if (userData && leaves) {
       const { allusers } = userData
-      setUser(allusers)
+      // Assuming allusers and leaves are arrays, and userId is already available.
+      const updatedUsers = allusers.map((user) => {
+        // Filter leaves for the current user and check if admin has approved them
+        const userLeaves = leaves.filter(
+          (leave) => leave.userId === user._id && leave.adminverified
+        )
+
+        // Add a new field `totalLeaves` to the user object
+        return {
+          ...user,
+          totalLeaves: userLeaves.length // Total count of approved leaves for this user
+        }
+      })
+      setUser(updatedUsers)
     }
-  }, [userData])
+  }, [userData, leaves, attendance])
   const openModal = (user) => {
     setSelectedUser(user)
     setShowModal(true)
@@ -52,7 +65,7 @@ const leaveSummary = () => {
                 <th className="border-l border-gray-300 py-3">No</th>
                 <th className="py-3">User Name</th>
                 <th className="py-3">Designation</th>
-                <th className="py-3">Total leave</th>
+                <th className="py-3">Total leaves</th>
                 <th className="py-3">Total Late</th>
                 <th className="py-3">Department</th>
                 <th className="py-3">Branch</th>
@@ -68,11 +81,9 @@ const leaveSummary = () => {
                     {user.designation}
                   </td>
                   <td className="border border-gray-300 py-1">
-                    {user.department?.department}
+                    {user.totalLeaves}
                   </td>
-                  <td className="border border-gray-300 py-1">
-                    {user.department?.department}
-                  </td>
+                  <td className="border border-gray-300 py-1">{"0"}</td>
                   <td className="border border-gray-300 py-1">
                     {user.department?.department}
                   </td>

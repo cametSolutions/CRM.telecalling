@@ -219,8 +219,13 @@ export default function CallRegistration() {
 
   const stopTimer = async (time) => {
     setSubmitLoading(true)
+
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
+    const branchName = user.selected
+      .map((branch) => branch.branchName)
+      .join(", ")
+
     const endTime = new Date().toISOString()
     const durationInSeconds = timeStringToSeconds(time)
     // Save timer value in local storage
@@ -270,11 +275,12 @@ export default function CallRegistration() {
             : user.selected.map((branch) => branch.branchName),
         timedata: timeData,
         formdata: updatedformData,
-        customeremail: selectedCustomer.email
+        customerEmail: selectedCustomer.email,
+        productName: selectedProducts.productName
       }
 
       const response = await api.post(
-        `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}`,
+        `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}`,
         calldata,
 
         {
@@ -333,11 +339,12 @@ export default function CallRegistration() {
             : user.selected.map((branch) => branch.branchName),
         timedata: timeData,
         formdata: updatedformData,
-        customeremail: selectedCustomer.email
+        customeremail: selectedCustomer.email,
+        productName: selectedProducts.productName
       }
 
       const response = await api.post(
-        `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}`,
+        `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}`,
         calldata,
         {
           withCredentials: true,

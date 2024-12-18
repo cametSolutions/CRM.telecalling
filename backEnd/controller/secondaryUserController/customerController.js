@@ -2,7 +2,7 @@ import Customer from "../../model/secondaryUser/customerSchema.js"
 import License from "../../model/secondaryUser/licenseSchema.js"
 import CallRegistration from "../../model/secondaryUser/CallRegistrationSchema.js"
 import models from "../../model/auth/authSchema.js"
-3
+import { sendEmail } from "../../helper/nodemailer.js"
 const { Staff, Admin } = models
 import mongoose from "mongoose"
 
@@ -489,7 +489,8 @@ export const GetLicense = async (req, res) => {
 
 export const customerCallRegistration = async (req, res) => {
   try {
-    const { customerid, customer } = req.query // Get customerid from query
+    const { customerid, customer, branchName } = req.query // Get customerid from query
+    console.log("branch", branchName)
     const calldata = req.body // Assuming calldata is sent in the body
     // Convert attendedBy.callerId to ObjectId
     if (
@@ -575,9 +576,25 @@ export const customerCallRegistration = async (req, res) => {
                   calldata.timedata.duration
 
                 const pendingSavedStaff = await staffCaller.save()
-                
+                console.log("prev")
+
                 if (pendingSavedStaff) {
-                  return res.status(200).json({ message: "all successed" })
+                  const emailResponse = await sendEmail(
+                    calldata,
+                    customer,
+                    branchName
+                  )
+
+                  if (emailResponse) {
+                    return res.status(200).json({
+                      success: true,
+                      message: "Email sent successfully"
+                    })
+                  }
+
+                  return res
+                    .status(200)
+                    .json({ message: "all successeduuuuuuuuu" })
                 }
               } else if (calldata.formdata.status === "solved") {
                 const mapAndCheckAttendedBy = (data, selectedId) => {
