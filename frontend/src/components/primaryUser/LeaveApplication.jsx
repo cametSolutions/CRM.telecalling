@@ -54,9 +54,9 @@ function LeaveApplication() {
   )
 
   useEffect(() => {
-    if (leaves || attendee) {
+    if ((leaves && leaves.length > 0) || (attendee && attendee.length > 0)) {
       const formattedEvents = formatEventData(leaves)
-
+      console.log(formattedEvents)
       let attendanceDetails
       if (formattedEvents.length > 0 && attendee && attendee.length > 0) {
         attendanceDetails = attendee.map((item) => {
@@ -95,6 +95,7 @@ function LeaveApplication() {
       }
     }
   }, [leaves, attendee])
+  console.log(events)
 
   useEffect(() => {
     if (!showModal) {
