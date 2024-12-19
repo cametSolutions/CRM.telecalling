@@ -489,8 +489,8 @@ export const GetLicense = async (req, res) => {
 
 export const customerCallRegistration = async (req, res) => {
   try {
-    const { customerid, customer, branchName } = req.query // Get customerid from query
-    console.log("branch", branchName)
+    const { customerid, customer, branchName={} } = req.query // Get customerid from query
+
     const calldata = req.body // Assuming calldata is sent in the body
     // Convert attendedBy.callerId to ObjectId
     if (
@@ -579,22 +579,20 @@ export const customerCallRegistration = async (req, res) => {
                 console.log("prev")
 
                 if (pendingSavedStaff) {
-                  const emailResponse = await sendEmail(
-                    calldata,
-                    customer,
-                    branchName
-                  )
+                  // const emailResponse = await sendEmail(
+                  //   calldata,
+                  //   customer,
+                  //   branchName
+                  // )
 
-                  if (emailResponse) {
-                    return res.status(200).json({
-                      success: true,
-                      message: "Email sent successfully"
-                    })
-                  }
+                  // if (emailResponse) {
+                  //   return res.status(200).json({
+                  //     success: true,
+                  //     message: "Email sent successfully"
+                  //   })
+                  // }
 
-                  return res
-                    .status(200)
-                    .json({ message: "all successeduuuuuuuuu" })
+                  return res.status(200).json({ message: "all success" })
                 }
               } else if (calldata.formdata.status === "solved") {
                 const mapAndCheckAttendedBy = (data, selectedId) => {

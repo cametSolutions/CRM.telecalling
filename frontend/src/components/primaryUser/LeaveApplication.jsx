@@ -16,6 +16,7 @@ function LeaveApplication() {
   const [selectedMonth, setSelectedMonth] = useState("")
   const [showModal, setShowModal] = useState(false)
   const [t, setIn] = useState(null)
+  const [selectedTab, setSelectedTab] = useState("Leave")
   const [formData, setFormData] = useState({
     startDate: "",
     endDate: "",
@@ -42,7 +43,7 @@ function LeaveApplication() {
   const [existingEvent, setexistingEvent] = useState([])
   const [clickedDate, setclickedDate] = useState(null)
   const userData = localStorage.getItem("user")
-
+  const tabs = ["Leave", "Onsite", "Attendance"]
   const user = JSON.parse(userData)
 
   const { data: leaves, refreshHook } = UseFetch(
@@ -524,6 +525,432 @@ function LeaveApplication() {
       outTime: ""
     })
   }
+  ////
+  const renderContent = () => {
+    switch (selectedTab) {
+      case "Leave":
+        return (
+          <div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div>
+                <label className="block mb-2">Leave Date</label>
+                <input
+                  type="date"
+                  name="startDate"
+                  defaultValue={formData.startDate}
+                  onChange={handleChange}
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-2">Leave Type</label>
+                <select
+                  name="leaveType"
+                  defaultValue={formData.leaveType}
+                  onChange={(e) => {
+                    const { value } = e.target
+                    setFormData((prev) => ({
+                      ...prev,
+                      leaveType: value,
+                      halfDayPeriod: value === "Half Day" ? "Morning" : "" // Default to "Morning" for Half Day
+                    }))
+                  }}
+                  className="border p-2 rounded w-full"
+                >
+                  <option value="Full Day">Full Day</option>
+                  <option value="Half Day">Half Day</option>
+                </select>
+              </div>
+              {formData.leaveType === "Half Day" && (
+                <div>
+                  <label className="block mb-2">Select Half Day Period</label>
+                  <select
+                    name="halfDayPeriod"
+                    defaultValue={formData.halfDayPeriod}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        halfDayPeriod: e.target.value
+                      }))
+                    }
+                    className="border p-2 rounded w-full"
+                  >
+                    <option value="Morning">Morning</option>
+                    <option value="Afternoon">Afternoon</option>
+                  </select>
+                </div>
+              )}
+            </div>
+            <div className="mb-4">
+              <label className="block mb-2">Reason</label>
+              <textarea
+                name="reason"
+                defaultValue={formData.reason}
+                onChange={handleChange}
+                rows="4"
+                className="border p-2 rounded w-full"
+              ></textarea>
+            </div>
+          </div>
+        )
+      case "Onsite":
+        return (
+          <div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div>
+                <label className="block mb-2">Onsit Date</label>
+                <input
+                  type="date"
+                  name="startDate"
+                  defaultValue={formData.startDate}
+                  onChange={handleChange}
+                  className="border p-2 rounded w-full"
+                />
+              </div>
+
+              <div>
+                <label className="block mb-2">Type</label>
+                <select
+                  name="leaveType"
+                  defaultValue={formData.leaveType}
+                  onChange={(e) => {
+                    const { value } = e.target
+                    setFormData((prev) => ({
+                      ...prev,
+                      leaveType: value,
+                      halfDayPeriod: value === "Half Day" ? "Morning" : "" // Default to "Morning" for Half Day
+                    }))
+                  }}
+                  className="border p-2 rounded w-full"
+                >
+                  <option value="Full Day">Full Day</option>
+                  <option value="Half Day">Half Day</option>
+                </select>
+              </div>
+              {formData.leaveType === "Half Day" && (
+                <div>
+                  <label className="block mb-2">Select Half Day Period</label>
+                  <select
+                    name="halfDayPeriod"
+                    defaultValue={formData.halfDayPeriod}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        halfDayPeriod: e.target.value
+                      }))
+                    }
+                    className="border p-2 rounded w-full"
+                  >
+                    <option value="Morning">Morning</option>
+                    <option value="Afternoon">Afternoon</option>
+                  </select>
+                </div>
+              )}
+            </div>
+            <div className="mb-4">
+              <div className="overflow-x-auto ">
+                <table className=" border border-gray-200 text-center w-full">
+                  <thead>
+                    <tr>
+                      <th className="border px-8">Site Name</th>
+                      <th className="border px-8 ">Place</th>
+                      <th className="border px-8 ">Start</th>
+                      <th className="border px-8">End</th>
+                      <th className="border px-10 ">KM</th>
+                      <th className="border px-10">TA</th>
+                      <th className="border px-8">Food </th>
+                      <th className="border px-8">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tableRows?.map((row, index) => (
+                      <tr key={index}>
+                        <td className="border p-2 w-60">
+                          <input
+                            type="text"
+                            value={row.siteName}
+                            onChange={(e) => {
+                              const updatedRows = [...tableRows]
+                              updatedRows[index].siteName = e.target.value
+                              setTableRows(updatedRows)
+                            }}
+                            className="border p-1 rounded w-full"
+                          />
+                        </td>
+                        <td className="border p-2 w-60">
+                          <input
+                            type="text"
+                            value={row.place}
+                            onChange={(e) => {
+                              const updatedRows = [...tableRows]
+                              updatedRows[index].place = e.target.value
+                              setTableRows(updatedRows)
+                            }}
+                            className="border p-1 rounded w-full"
+                          />
+                        </td>
+                        <td className="border p-2">
+                          <input
+                            type="number"
+                            value={row.Start}
+                            onChange={(e) => {
+                              const updatedRows = [...tableRows]
+                              updatedRows[index].Start = e.target.value
+                              setTableRows(updatedRows)
+                            }}
+                            className="border p-1 rounded w-full"
+                          />
+                        </td>
+                        <td className="border p-2 W-20">
+                          <input
+                            type="number"
+                            value={row.End}
+                            onChange={(e) => {
+                              const updatedRows = [...tableRows]
+                              updatedRows[index].End = e.target.value
+                              setTableRows(updatedRows)
+                            }}
+                            className="border p-1 rounded w-full"
+                          />
+                        </td>
+                        <td className="border p-2">
+                          <input
+                            type="number"
+                            value={row.km}
+                            onChange={(e) => {
+                              const updatedRows = [...tableRows]
+                              updatedRows[index].km = e.target.value
+                              setTableRows(updatedRows)
+                            }}
+                            className="border p-1 rounded w-full"
+                          />
+                        </td>
+                        <td className="border p-2">
+                          <input
+                            type="number"
+                            value={row.kmExpense}
+                            onChange={(e) => {
+                              const updatedRows = [...tableRows]
+                              updatedRows[index].kmExpense = e.target.value
+                              setTableRows(updatedRows)
+                            }}
+                            className="border p-1 rounded w-full"
+                          />
+                        </td>
+                        <td className="border p-2 w-28">
+                          <input
+                            type="number"
+                            value={row.foodExpense}
+                            onChange={(e) => {
+                              const updatedRows = [...tableRows]
+                              updatedRows[index].foodExpense = e.target.value
+                              setTableRows(updatedRows)
+                            }}
+                            className="border p-1 rounded w-full"
+                          />
+                        </td>
+                        <td className="border p-2">
+                          <button
+                            onClick={() => {
+                              const updatedRows = [...tableRows]
+                              updatedRows.splice(index, 1)
+                              setTableRows(updatedRows)
+                            }}
+                            className="text-red-500"
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <button
+                onClick={addRow}
+                className="mt-2 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+              >
+                Add Row
+              </button>
+            </div>
+            <div className="mb-4">
+              <label className="block mb-2">Description</label>
+              <textarea
+                name="reason"
+                defaultValue={formData.reason}
+                onChange={handleChange}
+                rows="4"
+                className="border p-2 rounded w-full"
+              ></textarea>
+            </div>
+          </div>
+        )
+      case "Attendance":
+        return (
+          <div className="p-1">
+            <div className="flex justify-between mb-1">
+              <h2 className="text-xl font-bold">Attendance</h2>
+              <button
+                onClick={handleAttendance}
+                className="bg-gradient-to-b from-blue-200 to-blue-400 px-1 rounded-xl hover:from-blue-400 hover:to-blue-600"
+              >
+                Leave Application
+              </button>
+            </div>
+            <hr />
+
+            <div className="attendance-content mt-2 justify-center">
+              <p className="text-gray-500">
+                {new Date(formData.startDate).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric"
+                })}
+              </p>
+              <form className="grid grid-cols-2 ">
+                <div className="grid ">
+                  <label htmlFor="startTime" className="font-bold mb-1">
+                    In Time
+                  </label>
+                  <div className="flex">
+                    <select
+                      id="hours"
+                      name="hours"
+                      value={selectedAttendance?.inTime?.hours}
+                      onChange={(e) =>
+                        handleTimeChange("inTime", "hours", e.target.value)
+                      }
+                      className="border border-gray-300 py-1 px-1 rounded"
+                    >
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <option key={i + 1} value={i + 1}>
+                          {String(i + 1).padStart(2, "0")}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      id="minutes"
+                      name="minutes"
+                      value={selectedAttendance?.inTime?.minutes}
+                      onChange={(e) =>
+                        handleTimeChange("inTime", "minutes", e.target.value)
+                      }
+                      className="border border-gray-300 py-1 px-1 rounded"
+                    >
+                      {Array.from({ length: 60 }, (_, i) => (
+                        <option key={i} value={i}>
+                          {String(i).padStart(2, "0")}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      id="amPm"
+                      name="amPm"
+                      // value={selectedAttendance.amPm}
+                      onChange={(e) =>
+                        handleTimeChange("inTime", "amPm", e.target.value)
+                      }
+                      className="border border-gray-300 py-1 px-1 rounded"
+                    >
+                      <option value="AM">AM</option>
+                      <option value="PM">PM</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid ">
+                  <label
+                    htmlFor="endTime"
+                    className="font-bold mb-1 justify-self-end"
+                  >
+                    Out Time
+                  </label>
+                  <div className=" flex justify-end">
+                    <select
+                      id="hours"
+                      name="hours"
+                      value={selectedAttendance?.outTime?.hours}
+                      onChange={(e) =>
+                        handleTimeChange("outTime", "hours", e.target.value)
+                      }
+                      className="border border-gray-300 py-1 px-1 rounded"
+                    >
+                      {Array.from({ length: 12 }, (_, i) => (
+                        <option key={i + 1} value={i + 1}>
+                          {String(i + 1).padStart(2, "0")}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      id="minutes"
+                      name="minutes"
+                      value={selectedAttendance?.outTime?.minutes}
+                      onChange={(e) =>
+                        handleTimeChange("outTime", "minutes", e.target.value)
+                      }
+                      className="border border-gray-300 py-1 px-1 rounded"
+                    >
+                      {Array.from({ length: 60 }, (_, i) => (
+                        <option key={i} value={i}>
+                          {String(i).padStart(2, "0")}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      id="amPm"
+                      name="amPm"
+                      value={selectedAttendance?.outTime?.amPm}
+                      onChange={(e) =>
+                        handleTimeChange("outTime", "amPm", e.target.value)
+                      }
+                      className="border border-gray-300 py-1 px-1 rounded"
+                    >
+                      <option value="AM">AM</option>
+                      <option value="PM">PM</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="col-span-2 gap-4 flex justify-center">
+                  <button
+                    className="bg-gradient-to-b from-blue-400 to-blue-500 px-3 py-1 hover:from-blue-400 hover:to-blue-600 text-white rounded"
+                    onClick={handleApplyAttendance}
+                  >
+                    Submit
+                  </button>
+                  <button
+                    className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
+                    onClick={() => {
+                      setFormData({
+                        description: "",
+                        onsite: false,
+                        halfDayPeriod: "",
+                        leaveType: "Full Day"
+                      })
+                      setselectedAttendance({
+                        attendanceDate: "",
+                        intTime: "",
+                        onTime: ""
+                      })
+                      setAttendance(false)
+                      setShowModal(false)
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )
+      default:
+        return <p>Select a tab to view the content.</p>
+    }
+  }
 
   return (
     <div className=" p-4">
@@ -736,99 +1163,7 @@ function LeaveApplication() {
   color: #007BFF;
 }
 
-//    .fc-daygrid-day-top {
-//   position: relative;
-// }
-//   .fc-daygrid-day-bottom {
-//   position: relative!important;
-//   }
-//   .fc-toolbar {
-//   display: flex;
-//   flex-wrap: wrap; /* Allows wrapping on smaller screens */
-//   align-items: center;
-//   justify-content: space-between; /* Distribute space evenly */
-//   gap: 1px; /* Add spacing between items */
-// }
-  
 
-// .fc-toolbar-chunk {
-//   flex: 1; /* Adjust to take up available space */
-//   text-align: center;
-// }
-
-// @media (max-width: 600px) {
-//   .fc-toolbar {
-//     flex-direction: column; /* Stack items vertically */
-//   }
-//   .fc-toolbar-chunk {
-//     text-align: center; /* Center text for better readability */
-//     margin: 1px 0;
-//   }
-// }
-
-
-// .square-marker {
-//   width: 10px;
-//   height: 10px;
-//   margin: 2px auto;
-//   border-radius: 2px;
-//   cursor: pointer; /* Indicates interactivity */
-//   position: absolute;
-//   top:30px; /* Adjust spacing */
-//   right: 10%;
-//   transform: translateX(-50%);
-//   background-color: ##FFA500; /* Default marker color */
-// }
-
-// @media (max-width: 768px) {
-//   .square-marker {
-//     top: 30px; /* Adjust for smaller screens */
-//     left: 70%; /* Recalculate position */
-//   }
-// }
-
-
-// .time-container {
-//   display: flex;
-//   align-items: center;
-//   justify-content: space-between;
-//   width: 100%;
-//   margin-top: 3px;
-// }
-
-// .time-display {
-//   font-size: 0.75rem; /* Adjust size as needed */
-//   margin-left: 10px;
-//   text-align: left;
-// }
-//   .no-event-marker {
-//  width: 10px;
-//   height: 10px;
-//   margin: 2px auto;
-//   border-radius: 2px;
-//   cursor: pointer; /* Indicates interactivity */
-//   position: absolute;
-//   top: 30px; /* Adjust spacing */
-//   left: 80%;
-//   transform: translateX(-50%);
-  
-// }
-  
-// @media (max-width: 768px) {
-//   .time-display {
-//     display: none;
-//   }
-// }
-
-// .tippy-box[data-theme~="custom-tooltip"] {
-//   background-color: #007BFF; /* Tooltip background color */
-//   color: #fff; /* Tooltip text color */
-//   border-radius: 4px;
-// }
-
-// .tippy-box[data-theme~="custom-tooltip"] .tippy-arrow {
-//   color: #007BFF; /* Match tooltip arrow color to the background */
-// }
 
   `}
       </style>
@@ -836,265 +1171,500 @@ function LeaveApplication() {
       {/* Modal Popup */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-8  rounded-lg shadow-lg  sm:w-2/3 max-h-screen overflow-y-auto">
-            {!attendance ? (
-              <div>
-                {/* Content for Leave Application */}
-                <div className="flex justify-between mb-1">
-                  <h2 className="text-xl font-bold">Leave Application</h2>
-                  <button
-                    onClick={handleAttendance}
-                    className="bg-gradient-to-b from-blue-200 to-blue-400 px-2 rounded-xl hover:from-blue-400 hover:to-blue-600"
-                  >
-                    Attendance
-                  </button>
-                </div>
-                <hr />
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                  <div>
-                    <label className="block mb-2">Leave Date</label>
-                    <input
-                      type="date"
-                      name="startDate"
-                      defaultValue={formData.startDate}
-                      onChange={handleChange}
-                      className="border p-2 rounded w-full"
-                    />
-                  </div>
-                  {/* <div>
-                    <label className="block mb-2">End Date</label>
-                    <input
-                      type="date"
-                      name="endDate"
-                      defaultValue={formData.endDate}
-                      onChange={handleChange}
-                      className="border p-2 rounded w-full"
-                    />
+          <div className="bg-white   p-8  rounded-lg shadow-lg  sm:w-2/3  overflow-y-auto">
+            <div>
+              {!attendance ? (
+                <div>
+                  {/* <div className="flex justify-center space-x-4">
+                    {tabs.map((tab) => (
+                      <span
+                        key={tab}
+                        onClick={() => setSelectedTab(tab)}
+                        className={`cursor-pointer ${
+                          selectedTab === tab
+                            ? "text-blue-500 font-semibold underline"
+                            : "text-black"
+                        }`}
+                      >
+                        {tab}
+                      </span>
+                    ))}
                   </div> */}
-                  <div>
-                    <label className="block mb-2">Leave Type</label>
-                    <select
-                      name="leaveType"
-                      defaultValue={formData.leaveType}
-                      onChange={(e) => {
-                        const { value } = e.target
-                        setFormData((prev) => ({
-                          ...prev,
-                          leaveType: value,
-                          halfDayPeriod: value === "Half Day" ? "Morning" : "" // Default to "Morning" for Half Day
-                        }))
-                      }}
-                      className="border p-2 rounded w-full"
+
+                  <div className="flex justify-between mb-1">
+                    <h2 className="text-xl font-bold">Leave Application</h2>
+                    <button
+                      onClick={handleAttendance}
+                      className="bg-gradient-to-b from-blue-200 to-blue-400 px-2 rounded-xl hover:from-blue-400 hover:to-blue-600"
                     >
-                      <option value="Full Day">Full Day</option>
-                      <option value="Half Day">Half Day</option>
-                    </select>
+                      Attendance
+                    </button>
                   </div>
-                  {formData.leaveType === "Half Day" && (
+                  <hr />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                     <div>
-                      <label className="block mb-2">
-                        Select Half Day Period
-                      </label>
+                      <label className="block mb-2">Leave Date</label>
+                      <input
+                        type="date"
+                        name="startDate"
+                        defaultValue={formData.startDate}
+                        onChange={handleChange}
+                        className="border p-2 rounded w-full"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block mb-2">Leave Type</label>
                       <select
-                        name="halfDayPeriod"
-                        defaultValue={formData.halfDayPeriod}
-                        onChange={(e) =>
+                        name="leaveType"
+                        defaultValue={formData.leaveType}
+                        onChange={(e) => {
+                          const { value } = e.target
                           setFormData((prev) => ({
                             ...prev,
-                            halfDayPeriod: e.target.value
+                            leaveType: value,
+                            halfDayPeriod: value === "Half Day" ? "Morning" : "" // Default to "Morning" for Half Day
                           }))
-                        }
+                        }}
                         className="border p-2 rounded w-full"
                       >
-                        <option value="Morning">Morning</option>
-                        <option value="Afternoon">Afternoon</option>
+                        <option value="Full Day">Full Day</option>
+                        <option value="Half Day">Half Day</option>
                       </select>
                     </div>
-                  )}
-                  <div className="flex items-center ">
-                    <input
-                      type="checkbox"
-                      name="onsite"
-                      checked={formData.onsite}
-                      onChange={handleOnsiteChange}
-                      className="w-5 h-5"
-                    />
-                    <label className="ml-2 ">Onsite</label>
-                  </div>
-                </div>
-                {isOnsite && (
-                  <div className="mb-4">
-                    <div className="overflow-x-auto ">
-                      <table className=" border border-gray-200 text-center">
-                        <thead>
-                          <tr>
-                            <th className="border px-8">Site Name</th>
-                            <th className="border px-8 ">Place</th>
-                            <th className="border px-8 ">Start</th>
-                            <th className="border px-8">End</th>
-                            <th className="border px-10 ">KM</th>
-                            <th className="border px-10">TA</th>
-                            <th className="border px-8">Food </th>
-                            <th className="border px-8">Actions</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {tableRows?.map((row, index) => (
-                            <tr key={index}>
-                              <td className="border p-2 w-60">
-                                <input
-                                  type="text"
-                                  value={row.siteName}
-                                  onChange={(e) => {
-                                    const updatedRows = [...tableRows]
-                                    updatedRows[index].siteName = e.target.value
-                                    setTableRows(updatedRows)
-                                  }}
-                                  className="border p-1 rounded w-full"
-                                />
-                              </td>
-                              <td className="border p-2 w-60">
-                                <input
-                                  type="text"
-                                  value={row.place}
-                                  onChange={(e) => {
-                                    const updatedRows = [...tableRows]
-                                    updatedRows[index].place = e.target.value
-                                    setTableRows(updatedRows)
-                                  }}
-                                  className="border p-1 rounded w-full"
-                                />
-                              </td>
-                              <td className="border p-2">
-                                <input
-                                  type="number"
-                                  value={row.Start}
-                                  onChange={(e) => {
-                                    const updatedRows = [...tableRows]
-                                    updatedRows[index].Start = e.target.value
-                                    setTableRows(updatedRows)
-                                  }}
-                                  className="border p-1 rounded w-full"
-                                />
-                              </td>
-                              <td className="border p-2 W-20">
-                                <input
-                                  type="number"
-                                  value={row.End}
-                                  onChange={(e) => {
-                                    const updatedRows = [...tableRows]
-                                    updatedRows[index].End = e.target.value
-                                    setTableRows(updatedRows)
-                                  }}
-                                  className="border p-1 rounded w-full"
-                                />
-                              </td>
-                              <td className="border p-2">
-                                <input
-                                  type="number"
-                                  value={row.km}
-                                  onChange={(e) => {
-                                    const updatedRows = [...tableRows]
-                                    updatedRows[index].km = e.target.value
-                                    setTableRows(updatedRows)
-                                  }}
-                                  className="border p-1 rounded w-full"
-                                />
-                              </td>
-                              <td className="border p-2">
-                                <input
-                                  type="number"
-                                  value={row.kmExpense}
-                                  onChange={(e) => {
-                                    const updatedRows = [...tableRows]
-                                    updatedRows[index].kmExpense =
-                                      e.target.value
-                                    setTableRows(updatedRows)
-                                  }}
-                                  className="border p-1 rounded w-full"
-                                />
-                              </td>
-                              <td className="border p-2 w-28">
-                                <input
-                                  type="number"
-                                  value={row.foodExpense}
-                                  onChange={(e) => {
-                                    const updatedRows = [...tableRows]
-                                    updatedRows[index].foodExpense =
-                                      e.target.value
-                                    setTableRows(updatedRows)
-                                  }}
-                                  className="border p-1 rounded w-full"
-                                />
-                              </td>
-                              <td className="border p-2">
-                                <button
-                                  onClick={() => {
-                                    const updatedRows = [...tableRows]
-                                    updatedRows.splice(index, 1)
-                                    setTableRows(updatedRows)
-                                  }}
-                                  className="text-red-500"
-                                >
-                                  Remove
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                    <button
-                      onClick={addRow}
-                      className="mt-2 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-                    >
-                      Add Row
-                    </button>
-                    <div>
-                      <div className="mb-4">
-                        <label className="block mb-2">Description</label>
-                        <textarea
-                          name="description"
-                          defaultValue={formData.description}
-                          onChange={handleChange}
-                          rows="4"
+                    {formData.leaveType === "Half Day" && (
+                      <div>
+                        <label className="block mb-2">
+                          Select Half Day Period
+                        </label>
+                        <select
+                          name="halfDayPeriod"
+                          defaultValue={formData.halfDayPeriod}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              halfDayPeriod: e.target.value
+                            }))
+                          }
                           className="border p-2 rounded w-full"
-                        ></textarea>
+                        >
+                          <option value="Morning">Morning</option>
+                          <option value="Afternoon">Afternoon</option>
+                        </select>
+                      </div>
+                    )}
+                    <div className="flex items-center ">
+                      <input
+                        type="checkbox"
+                        name="onsite"
+                        checked={formData.onsite}
+                        onChange={handleOnsiteChange}
+                        className="w-5 h-5"
+                      />
+                      <label className="ml-2 ">Onsite</label>
+                    </div>
+                  </div>
+                  {isOnsite && (
+                    <div className="mb-4">
+                      <div className="overflow-x-auto ">
+                        <table className=" border border-gray-200 text-center">
+                          <thead>
+                            <tr>
+                              <th className="border px-8">Site Name</th>
+                              <th className="border px-8 ">Place</th>
+                              <th className="border px-8 ">Start</th>
+                              <th className="border px-8">End</th>
+                              <th className="border px-10 ">KM</th>
+                              <th className="border px-10">TA</th>
+                              <th className="border px-8">Food </th>
+                              <th className="border px-8">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {tableRows?.map((row, index) => (
+                              <tr key={index}>
+                                <td className="border p-2 w-60">
+                                  <input
+                                    type="text"
+                                    value={row.siteName}
+                                    onChange={(e) => {
+                                      const updatedRows = [...tableRows]
+                                      updatedRows[index].siteName =
+                                        e.target.value
+                                      setTableRows(updatedRows)
+                                    }}
+                                    className="border p-1 rounded w-full"
+                                  />
+                                </td>
+                                <td className="border p-2 w-60">
+                                  <input
+                                    type="text"
+                                    value={row.place}
+                                    onChange={(e) => {
+                                      const updatedRows = [...tableRows]
+                                      updatedRows[index].place = e.target.value
+                                      setTableRows(updatedRows)
+                                    }}
+                                    className="border p-1 rounded w-full"
+                                  />
+                                </td>
+                                <td className="border p-2">
+                                  <input
+                                    type="number"
+                                    value={row.Start}
+                                    onChange={(e) => {
+                                      const updatedRows = [...tableRows]
+                                      updatedRows[index].Start = e.target.value
+                                      setTableRows(updatedRows)
+                                    }}
+                                    className="border p-1 rounded w-full"
+                                  />
+                                </td>
+                                <td className="border p-2 W-20">
+                                  <input
+                                    type="number"
+                                    value={row.End}
+                                    onChange={(e) => {
+                                      const updatedRows = [...tableRows]
+                                      updatedRows[index].End = e.target.value
+                                      setTableRows(updatedRows)
+                                    }}
+                                    className="border p-1 rounded w-full"
+                                  />
+                                </td>
+                                <td className="border p-2">
+                                  <input
+                                    type="number"
+                                    value={row.km}
+                                    onChange={(e) => {
+                                      const updatedRows = [...tableRows]
+                                      updatedRows[index].km = e.target.value
+                                      setTableRows(updatedRows)
+                                    }}
+                                    className="border p-1 rounded w-full"
+                                  />
+                                </td>
+                                <td className="border p-2">
+                                  <input
+                                    type="number"
+                                    value={row.kmExpense}
+                                    onChange={(e) => {
+                                      const updatedRows = [...tableRows]
+                                      updatedRows[index].kmExpense =
+                                        e.target.value
+                                      setTableRows(updatedRows)
+                                    }}
+                                    className="border p-1 rounded w-full"
+                                  />
+                                </td>
+                                <td className="border p-2 w-28">
+                                  <input
+                                    type="number"
+                                    value={row.foodExpense}
+                                    onChange={(e) => {
+                                      const updatedRows = [...tableRows]
+                                      updatedRows[index].foodExpense =
+                                        e.target.value
+                                      setTableRows(updatedRows)
+                                    }}
+                                    className="border p-1 rounded w-full"
+                                  />
+                                </td>
+                                <td className="border p-2">
+                                  <button
+                                    onClick={() => {
+                                      const updatedRows = [...tableRows]
+                                      updatedRows.splice(index, 1)
+                                      setTableRows(updatedRows)
+                                    }}
+                                    className="text-red-500"
+                                  >
+                                    Remove
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <button
+                        onClick={addRow}
+                        className="mt-2 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                      >
+                        Add Row
+                      </button>
+                      <div>
+                        <div className="mb-4">
+                          <label className="block mb-2">Description</label>
+                          <textarea
+                            name="description"
+                            defaultValue={formData.description}
+                            onChange={handleChange}
+                            rows="4"
+                            className="border p-2 rounded w-full"
+                          ></textarea>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
-
-                {!isOnsite && (
-                  <div className="mb-4">
-                    <label className="block mb-2">Reason</label>
-                    <textarea
-                      name="reason"
-                      defaultValue={formData.reason}
-                      onChange={handleChange}
-                      rows="4"
-                      className="border p-2 rounded w-full"
-                    ></textarea>
-                  </div>
-                )}
-
-                <div className="flex justify-end space-x-2">
-                  {!formData.eventId && (
-                    <button
-                      className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-                      onClick={handleApply}
-                    >
-                      Apply
-                    </button>
                   )}
-                  {formData.eventId && (
-                    <button
-                      className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-                      onClick={() => handleUpdate(formData)}
-                    >
-                      Update
-                    </button>
+
+                  {!isOnsite && (
+                    <div className="mb-4">
+                      <label className="block mb-2">Reason</label>
+                      <textarea
+                        name="reason"
+                        defaultValue={formData.reason}
+                        onChange={handleChange}
+                        rows="4"
+                        className="border p-2 rounded w-full"
+                      ></textarea>
+                    </div>
                   )}
+
+                  <div className="flex justify-end space-x-2">
+                    {!formData.eventId && (
+                      <button
+                        className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                        onClick={handleApply}
+                      >
+                        Apply
+                      </button>
+                    )}
+                    {formData.eventId && (
+                      <button
+                        className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                        onClick={() => handleUpdate(formData)}
+                      >
+                        Update
+                      </button>
+                    )}
+                    <button
+                      className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
+                      onClick={() => {
+                        setFormData({
+                          description: "",
+                          onsite: false,
+                          halfDayPeriod: "",
+                          leaveType: "Full Day"
+                        })
+                        setTableRows([{}])
+                        setShowModal(false)
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-1">
+                  <div className="flex justify-between mb-1">
+                    <h2 className="text-xl font-bold">Attendance</h2>
+                    <button
+                      onClick={handleAttendance}
+                      className="bg-gradient-to-b from-blue-200 to-blue-400 px-1 rounded-xl hover:from-blue-400 hover:to-blue-600"
+                    >
+                      Leave Application
+                    </button>
+                  </div>
+                  <hr />
+
+                  <div className="attendance-content mt-2 justify-center">
+                    <p className="text-gray-500">
+                      {new Date(formData.startDate).toLocaleDateString(
+                        "en-GB",
+                        {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric"
+                        }
+                      )}
+                    </p>
+                    <form className="grid grid-cols-2 ">
+                      <div className="grid ">
+                        <label htmlFor="startTime" className="font-bold mb-1">
+                          In Time
+                        </label>
+                        <div className="flex">
+                          <select
+                            id="hours"
+                            name="hours"
+                            value={selectedAttendance?.inTime?.hours}
+                            onChange={(e) =>
+                              handleTimeChange(
+                                "inTime",
+                                "hours",
+                                e.target.value
+                              )
+                            }
+                            className="border border-gray-300 py-1 px-1 rounded"
+                          >
+                            {Array.from({ length: 12 }, (_, i) => (
+                              <option key={i + 1} value={i + 1}>
+                                {String(i + 1).padStart(2, "0")}
+                              </option>
+                            ))}
+                          </select>
+
+                          <select
+                            id="minutes"
+                            name="minutes"
+                            value={selectedAttendance?.inTime?.minutes}
+                            onChange={(e) =>
+                              handleTimeChange(
+                                "inTime",
+                                "minutes",
+                                e.target.value
+                              )
+                            }
+                            className="border border-gray-300 py-1 px-1 rounded"
+                          >
+                            {Array.from({ length: 60 }, (_, i) => (
+                              <option key={i} value={i}>
+                                {String(i).padStart(2, "0")}
+                              </option>
+                            ))}
+                          </select>
+
+                          <select
+                            id="amPm"
+                            name="amPm"
+                            // value={selectedAttendance.amPm}
+                            onChange={(e) =>
+                              handleTimeChange("inTime", "amPm", e.target.value)
+                            }
+                            className="border border-gray-300 py-1 px-1 rounded"
+                          >
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid ">
+                        <label
+                          htmlFor="endTime"
+                          className="font-bold mb-1 justify-self-end"
+                        >
+                          Out Time
+                        </label>
+                        <div className=" flex justify-end">
+                          <select
+                            id="hours"
+                            name="hours"
+                            value={selectedAttendance?.outTime?.hours}
+                            onChange={(e) =>
+                              handleTimeChange(
+                                "outTime",
+                                "hours",
+                                e.target.value
+                              )
+                            }
+                            className="border border-gray-300 py-1 px-1 rounded"
+                          >
+                            {Array.from({ length: 12 }, (_, i) => (
+                              <option key={i + 1} value={i + 1}>
+                                {String(i + 1).padStart(2, "0")}
+                              </option>
+                            ))}
+                          </select>
+
+                          <select
+                            id="minutes"
+                            name="minutes"
+                            value={selectedAttendance?.outTime?.minutes}
+                            onChange={(e) =>
+                              handleTimeChange(
+                                "outTime",
+                                "minutes",
+                                e.target.value
+                              )
+                            }
+                            className="border border-gray-300 py-1 px-1 rounded"
+                          >
+                            {Array.from({ length: 60 }, (_, i) => (
+                              <option key={i} value={i}>
+                                {String(i).padStart(2, "0")}
+                              </option>
+                            ))}
+                          </select>
+
+                          <select
+                            id="amPm"
+                            name="amPm"
+                            value={selectedAttendance?.outTime?.amPm}
+                            onChange={(e) =>
+                              handleTimeChange(
+                                "outTime",
+                                "amPm",
+                                e.target.value
+                              )
+                            }
+                            className="border border-gray-300 py-1 px-1 rounded"
+                          >
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="col-span-2 gap-4 flex justify-center">
+                        <button
+                          className="bg-gradient-to-b from-blue-400 to-blue-500 px-3 py-1 hover:from-blue-400 hover:to-blue-600 text-white rounded"
+                          onClick={handleApplyAttendance}
+                        >
+                          Submit
+                        </button>
+                        <button
+                          className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
+                          onClick={() => {
+                            setFormData({
+                              description: "",
+                              onsite: false,
+                              halfDayPeriod: "",
+                              leaveType: "Full Day"
+                            })
+                            setselectedAttendance({
+                              attendanceDate: "",
+                              intTime: "",
+                              onTime: ""
+                            })
+                            setAttendance(false)
+                            setShowModal(false)
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
+              {/* Tab Navigation */}
+              {/* <div className="flex justify-center space-x-4">
+                {["Leave", "Onsite", "Attendance"].map((tab) => (
+                  <span
+                    key={tab}
+                    onClick={() => setSelectedTab(tab)}
+                    className={`cursor-pointer ${
+                      selectedTab === tab
+                        ? "text-blue-500 font-semibold underline"
+                        : "text-black"
+                    }`}
+                  >
+                    {tab}
+                  </span>
+                ))}
+              </div>
+
+              ///tab content
+              <div className="mt-4">
+                <div>{renderContent()}</div>
+                <div className="col-span-2 gap-4 flex justify-center">
+                  <button
+                    className="bg-gradient-to-b from-blue-400 to-blue-500 px-3 py-1 hover:from-blue-400 hover:to-blue-600 text-white rounded"
+                    onClick={handleApplyAttendance}
+                  >
+                    Submit
+                  </button>
                   <button
                     className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
                     onClick={() => {
@@ -1104,184 +1674,20 @@ function LeaveApplication() {
                         halfDayPeriod: "",
                         leaveType: "Full Day"
                       })
-                      setTableRows([{}])
+                      setselectedAttendance({
+                        attendanceDate: "",
+                        intTime: "",
+                        onTime: ""
+                      })
+                      setAttendance(false)
                       setShowModal(false)
                     }}
                   >
                     Cancel
                   </button>
                 </div>
-              </div>
-            ) : (
-              <div className="p-1">
-                {/* Content for Attendance */}
-                <div className="flex justify-between mb-1">
-                  <h2 className="text-xl font-bold">Attendance</h2>
-                  <button
-                    onClick={handleAttendance}
-                    className="bg-gradient-to-b from-blue-200 to-blue-400 px-1 rounded-xl hover:from-blue-400 hover:to-blue-600"
-                  >
-                    Leave Application
-                  </button>
-                </div>
-                <hr />
-                {/* You can add your attendance-related content here */}
-                <div className="attendance-content mt-2 justify-center">
-                  <p className="text-gray-500">
-                    {new Date(formData.startDate).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric"
-                    })}
-                  </p>
-                  <form className="grid grid-cols-2 ">
-                    {/* Start Time */}
-                    <div className="grid ">
-                      <label htmlFor="startTime" className="font-bold mb-1">
-                        In Time
-                      </label>
-                      <div className="flex">
-                        <select
-                          id="hours"
-                          name="hours"
-                          value={selectedAttendance?.inTime?.hours}
-                          onChange={(e) =>
-                            handleTimeChange("inTime", "hours", e.target.value)
-                          }
-                          className="border border-gray-300 py-1 px-1 rounded"
-                        >
-                          {Array.from({ length: 12 }, (_, i) => (
-                            <option key={i + 1} value={i + 1}>
-                              {String(i + 1).padStart(2, "0")}
-                            </option>
-                          ))}
-                        </select>
-
-                        <select
-                          id="minutes"
-                          name="minutes"
-                          value={selectedAttendance?.inTime?.minutes}
-                          onChange={(e) =>
-                            handleTimeChange(
-                              "inTime",
-                              "minutes",
-                              e.target.value
-                            )
-                          }
-                          className="border border-gray-300 py-1 px-1 rounded"
-                        >
-                          {Array.from({ length: 60 }, (_, i) => (
-                            <option key={i} value={i}>
-                              {String(i).padStart(2, "0")}
-                            </option>
-                          ))}
-                        </select>
-
-                        <select
-                          id="amPm"
-                          name="amPm"
-                          // value={selectedAttendance.amPm}
-                          onChange={(e) =>
-                            handleTimeChange("inTime", "amPm", e.target.value)
-                          }
-                          className="border border-gray-300 py-1 px-1 rounded"
-                        >
-                          <option value="AM">AM</option>
-                          <option value="PM">PM</option>
-                        </select>
-                      </div>
-                    </div>
-                    {/* End Time */}
-                    <div className="grid ">
-                      <label
-                        htmlFor="endTime"
-                        className="font-bold mb-1 justify-self-end"
-                      >
-                        Out Time
-                      </label>
-                      <div className=" flex justify-end">
-                        <select
-                          id="hours"
-                          name="hours"
-                          value={selectedAttendance?.outTime?.hours}
-                          onChange={(e) =>
-                            handleTimeChange("outTime", "hours", e.target.value)
-                          }
-                          className="border border-gray-300 py-1 px-1 rounded"
-                        >
-                          {Array.from({ length: 12 }, (_, i) => (
-                            <option key={i + 1} value={i + 1}>
-                              {String(i + 1).padStart(2, "0")}
-                            </option>
-                          ))}
-                        </select>
-
-                        <select
-                          id="minutes"
-                          name="minutes"
-                          value={selectedAttendance?.outTime?.minutes}
-                          onChange={(e) =>
-                            handleTimeChange(
-                              "outTime",
-                              "minutes",
-                              e.target.value
-                            )
-                          }
-                          className="border border-gray-300 py-1 px-1 rounded"
-                        >
-                          {Array.from({ length: 60 }, (_, i) => (
-                            <option key={i} value={i}>
-                              {String(i).padStart(2, "0")}
-                            </option>
-                          ))}
-                        </select>
-
-                        <select
-                          id="amPm"
-                          name="amPm"
-                          value={selectedAttendance?.outTime?.amPm}
-                          onChange={(e) =>
-                            handleTimeChange("outTime", "amPm", e.target.value)
-                          }
-                          className="border border-gray-300 py-1 px-1 rounded"
-                        >
-                          <option value="AM">AM</option>
-                          <option value="PM">PM</option>
-                        </select>
-                      </div>
-                    </div>
-                    <div className="col-span-2 gap-4 flex justify-center">
-                      <button
-                        className="bg-gradient-to-b from-blue-400 to-blue-500 px-3 py-1 hover:from-blue-400 hover:to-blue-600 text-white rounded"
-                        onClick={handleApplyAttendance}
-                      >
-                        Submit
-                      </button>
-                      <button
-                        className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
-                        onClick={() => {
-                          setFormData({
-                            description: "",
-                            onsite: false,
-                            halfDayPeriod: "",
-                            leaveType: "Full Day"
-                          })
-                          setselectedAttendance({
-                            attendanceDate: "",
-                            intTime: "",
-                            onTime: ""
-                          })
-                          setAttendance(false)
-                          setShowModal(false)
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </div>{" "}
-                  </form>
-                </div>
-              </div>
-            )}
+              </div> */}
+            </div>
           </div>
         </div>
       )}
