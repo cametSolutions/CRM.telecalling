@@ -17,6 +17,8 @@ const BranchSchema = new mongoose.Schema({
   pincode: String,
   mobile: String,
   email: String,
+  notificationemail: String,
+  mailpassword: String,
   landlineno: String
 })
 

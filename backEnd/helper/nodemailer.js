@@ -1,11 +1,18 @@
 import nodemailer from "nodemailer"
-
+import Branch from "../model/primaryUser/branchSchema.js"
 // Function to send email using Nodemailer
 export const sendEmail = async (calldata, name, branchName) => {
+  console.log("calldata", calldata)
   console.log(branchName)
   let organization
+  let notificationemail
+  let mailpassword
   if (branchName === "ACCUANET") {
     organization = "Accuanet Info Solution"
+    const result = await Branch.findOne({ branchName })
+    console.log(result)
+    notificationemail = result.notificationemail
+    mailpassword = result.mailpassword
   } else if (branchName === "CAMET") {
     organization = "Camet IT Solution"
   }
@@ -36,12 +43,13 @@ export const sendEmail = async (calldata, name, branchName) => {
   const finalDateTime = `${formattedDate} ${formattedTime}`
   console.log("time", finalDateTime)
 
+  console.log("hai0", notificationemail, mailpassword)
   // Create a transporter object with your SMTP configuration
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: "abhidasabhi1234@gmail.com", // Use environment variables for security
-      pass: "uivp nabd jpzl giou" // App-specific password
+      user: notificationemail, // Use environment variables for security
+      pass: mailpassword // App-specific password
     },
     tls: {
       rejectUnauthorized: false // Bypass self-signed certificate validation
@@ -107,9 +115,14 @@ export const sendEmail = async (calldata, name, branchName) => {
       `
 
   try {
+    console.log("transporter", transporter)
+    console.log("Notification Email: ", notificationemail)
+    console.log("Mail Password: ", mailpassword)
+    console.log("customermail", calldata.customeremail)
+
     const info = await transporter.sendMail({
-      from: `"Abhi" <abhidasabhi1234@gmail.com>`, // Sender's name and address
-      to: `sreerajvijay17@gmail.com` || "default@example.com", // Recipient's email address
+      from: notificationemail, // Sender's name and address
+      to: calldata.customeremail|| "default@example.com", // Recipient's email address
       subject: "Your Call Recorded", // Subject
       html: htmlContent // Email content as HTML
     })

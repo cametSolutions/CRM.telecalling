@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom"
 
 import BranchAdd from "../../../components/primaryUser/BranchAdd"
 import api from "../../../api/api"
-import toast from "react-hot-toast"
+import { toast } from "react-toastify"
 import { useNavigate } from "react-router-dom"
 function BranchEdit() {
   const [Branch, setBranch] = useState(null)
@@ -22,7 +22,7 @@ function BranchEdit() {
         }
       )
       toast.success("Branch updated successfully:")
-      navigate("/admin/masters/company")
+      navigate("/admin/masters/branch")
     } catch (error) {
       console.error("Error updating branch:", error)
     }
