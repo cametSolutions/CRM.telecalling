@@ -67,7 +67,7 @@ export const CustomerRegister = async (req, res) => {
       message: "Customer created successfully"
     })
   } catch (error) {
-    console.log(error.message)
+    console.log("error:",error.message)
     res.status(500).json({ message: "server error" })
   }
 }
@@ -579,18 +579,18 @@ export const customerCallRegistration = async (req, res) => {
                 console.log("prev")
 
                 if (pendingSavedStaff) {
-                  // const emailResponse = await sendEmail(
-                  //   calldata,
-                  //   customer,
-                  //   branchName
-                  // )
+                  const emailResponse = await sendEmail(
+                    calldata,
+                    customer,
+                    branchName
+                  )
 
-                  // if (emailResponse) {
-                  //   return res.status(200).json({
-                  //     success: true,
-                  //     message: "Email sent successfully"
-                  //   })
-                  // }
+                  if (emailResponse) {
+                    return res.status(200).json({
+                      success: true,
+                      message: "Email sent successfully"
+                    })
+                  }
 
                   return res.status(200).json({ message: "all success" })
                 }

@@ -39,6 +39,8 @@ const BranchAdd = ({
       setValue("mobile", branchdata.mobile)
       setValue("landlineno", branchdata.landlineno)
       setValue("email", branchdata.email)
+      setValue("notificationemail", branchdata.notificationemail)
+      setValue("mailpassword", branchdata.mailpassword)
     }
   }, [companies])
 

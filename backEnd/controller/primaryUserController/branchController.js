@@ -5,6 +5,8 @@ export const BranchRegister = async (req, res) => {
   const {
     branchName,
     email,
+    mailpassword,
+    notificationemail,
     companyName,
     mobile,
     landlineno,
@@ -32,6 +34,8 @@ export const BranchRegister = async (req, res) => {
     const branches = new Branch({
       companyName,
       email,
+      notificationemail,
+      mailpassword,
       branchName,
       mobile,
       landlineno,
@@ -75,10 +79,10 @@ export const Getbranch = async (req, res) => {
   }
 }
 export const BranchEdit = async (req, res) => {
-  const branchdata = req.body
+  const { branchData, branchId } = req.body
   console.log("bodyyyy", req.body)
 
-  const branchId = req.body
+  console.log("id", branchId)
 
   try {
     const objectId = new mongoose.Types.ObjectId(branchId)
@@ -99,20 +103,25 @@ export const BranchEdit = async (req, res) => {
     //     landlineno: branchdata.landlineno
     //   }
     // )
-    await Branch.findByIdAndUpdate(objectId,{
-      companyName: branchdata.companyName,
-      branchName: branchdata.branchName,
-      address: branchdata.adress,
-      city: branchdata.city,
-      pincode: branchdata.pincode,
-      country: branchdata.country,
-      state: branchdata.state,
-      email: branchdata.email,
+    await Branch.findByIdAndUpdate(
+      objectId,
+      {
+        companyName: branchData.companyName,
+        branchName: branchData.branchName,
+        address: branchData.adress,
+        city: branchData.city,
+        pincode: branchData.pincode,
+        country: branchData.country,
+        state: branchData.state,
+        email: branchData.email,
+        notificationemail: branchData.notificationemail,
+        mailpassword: branchData.mailpassword,
+        mobile: branchData.mobile,
 
-      mobile: branchdata.mobile,
-
-      landlineno: branchdata.landlineno
-    } , { new: true })
+        landlineno: branchData.landlineno
+      },
+      { new: true }
+    )
 
     return res.status(200).json({
       success: true,

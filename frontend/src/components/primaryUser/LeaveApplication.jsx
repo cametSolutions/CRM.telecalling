@@ -47,11 +47,11 @@ function LeaveApplication() {
   const user = JSON.parse(userData)
 
   const { data: leaves, refreshHook } = UseFetch(
-    `/auth/getallLeave?userid=${user._id}`
+    user && `/auth/getallLeave?userid=${user._id}`
   )
 
   const { data: attendee } = UseFetch(
-    `/auth/getallAttendance?userid=${user._id}`
+    user && `/auth/getallAttendance?userid=${user._id}`
   )
 
   useEffect(() => {
@@ -59,7 +59,12 @@ function LeaveApplication() {
       const formattedEvents = formatEventData(leaves)
       console.log(formattedEvents)
       let attendanceDetails
-      if (formattedEvents.length > 0 && attendee && attendee.length > 0) {
+      if (
+        formattedEvents &&
+        formattedEvents.length > 0 &&
+        attendee &&
+        attendee.length > 0
+      ) {
         attendanceDetails = attendee.map((item) => {
           let dayObject = {
             start: "",
@@ -127,7 +132,7 @@ function LeaveApplication() {
   }, [isOnsite, clickedDate])
 
   const formatEventData = (events) => {
-    return events.map((event) => {
+    return events?.map((event) => {
       const date = new Date(event.leaveDate) // Convert to Date object
       const formattedDate = date.toISOString().split("T")[0] // Format as YYYY-MM-DD
 
@@ -409,18 +414,56 @@ function LeaveApplication() {
 
     setWidthState(widthState === "w-5/6" ? "w-2/6" : "w-5/6")
   }
-
-  const handleApply = async () => {
+  console.log(selectedAttendance)
+  const handleSubmit = async (tab) => {
     try {
-      if (formData.onsite) {
-        // const response = await api.post(
-        //   `http://localhost:9000/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
-        //   { formData, tableRows }
+      if (tab === "Leave") {
+        // Assuming you have an API endpoint for creating leave requests
+        const response = await fetch(
+          `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(formData),
+            credentials: "include"
+          }
+        )
+        // const response = await fetch(
+        //   `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+        //   {
+        //     method: "POST",
+        //     headers: {
+        //       "Content-Type": "application/json"
+        //     },
+        //     body: JSON.stringify(formData),
+        //     credentials: "include"
+        //   }
         // )
+
+        const responseData = await response.json()
+
+        if (!response.ok) {
+          throw new Error("Failed to apply for leave")
+        } else {
+          refreshHook()
+
+          setShowModal(false)
+          setFormData((prev) => ({
+            ...prev,
+            reason: ""
+          }))
+        }
+      } else if (tab === "Onsite") {
         const response = await api.post(
-          `https://www.crm.camet.in/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          `http://localhost:9000/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
           { formData, tableRows }
         )
+        // const response = await api.post(
+        //   `https://www.crm.camet.in/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+        //   { formData, tableRows }
+        // )
 
         if (response.status === 200) {
           setFormData((prev) => ({
@@ -445,62 +488,66 @@ function LeaveApplication() {
           setShowModal(false)
           refreshHook()
         }
-      } else {
-        // Assuming you have an API endpoint for creating leave requests
-        // const response = await fetch(
-        //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
-        //   {
-        //     method: "POST",
-        //     headers: {
-        //       "Content-Type": "application/json"
-        //     },
-        //     body: JSON.stringify(formData),
-        //     credentials: "include"
-        //   }
-        // )
+      } else if (tab === "Attendance") {
+        console.log(selectedAttendance)
         const response = await fetch(
-          `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          `http://localhost:9000/api/auth/attendance?selectedid=${user._id}`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json"
             },
-            body: JSON.stringify(formData),
+            body: JSON.stringify(selectedAttendance),
             credentials: "include"
           }
         )
+        // const response = await fetch(
+        //   `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}`,
+        //   {
+        //     method: "POST",
+        //     headers: {
+        //       "Content-Type": "application/json"
+        //     },
+        //     body: JSON.stringify(selectedAttendance),
+        //     credentials: "include"
+        //   }
+        // )
 
         const responseData = await response.json()
 
         if (!response.ok) {
           throw new Error("Failed to apply for leave")
+        } else {
+          const response = await axios.get(
+            `/auth/getallAttendance?userid=${user._id}`
+          )
+          if (response.status === 200) {
+            setShowModal(false)
+            setselectedAttendance({
+              attendanceDate: "",
+              inTime: { hours: "12", minutes: "00", amPm: "AM" },
+              outTime: { hours: "12", minutes: "00", amPm: "AM" }
+            })
+          }
         }
-        refreshHook()
+      }
+    } catch (error) {
+      console.log("error:", error.response.message)
+    }
+  }
 
-        setShowModal(false)
-        setFormData((prev) => ({
-          ...prev,
-          reason: ""
-        }))
+  const handleApply = async () => {
+    try {
+      if (formData.onsite) {
+      } else {
       }
     } catch (error) {
       console.error("Error applying for leave:", error)
     }
   }
   const handleApplyAttendance = async () => {
-    // const response = await fetch(
-    //   `http://localhost:9000/api/auth/attendance?selectedid=${user._id}`,
-    //   {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json"
-    //     },
-    //     body: JSON.stringify(selectedAttendance),
-    //     credentials: "include"
-    //   }
-    // )
     const response = await fetch(
-      `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}`,
+      `http://localhost:9000/api/auth/attendance?selectedid=${user._id}`,
       {
         method: "POST",
         headers: {
@@ -510,6 +557,17 @@ function LeaveApplication() {
         credentials: "include"
       }
     )
+    // const response = await fetch(
+    //   `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}`,
+    //   {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json"
+    //     },
+    //     body: JSON.stringify(selectedAttendance),
+    //     credentials: "include"
+    //   }
+    // )
 
     const responseData = await response.json()
 
@@ -531,7 +589,7 @@ function LeaveApplication() {
       case "Leave":
         return (
           <div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div>
                 <label className="block mb-2">Leave Date</label>
                 <input
@@ -789,17 +847,6 @@ function LeaveApplication() {
       case "Attendance":
         return (
           <div className="p-1">
-            <div className="flex justify-between mb-1">
-              <h2 className="text-xl font-bold">Attendance</h2>
-              <button
-                onClick={handleAttendance}
-                className="bg-gradient-to-b from-blue-200 to-blue-400 px-1 rounded-xl hover:from-blue-400 hover:to-blue-600"
-              >
-                Leave Application
-              </button>
-            </div>
-            <hr />
-
             <div className="attendance-content mt-2 justify-center">
               <p className="text-gray-500">
                 {new Date(formData.startDate).toLocaleDateString("en-GB", {
@@ -808,7 +855,7 @@ function LeaveApplication() {
                   year: "numeric"
                 })}
               </p>
-              <form className="grid grid-cols-2 ">
+              <div className="grid grid-cols-2 ">
                 <div className="grid ">
                   <label htmlFor="startTime" className="font-bold mb-1">
                     In Time
@@ -915,35 +962,7 @@ function LeaveApplication() {
                     </select>
                   </div>
                 </div>
-                <div className="col-span-2 gap-4 flex justify-center">
-                  <button
-                    className="bg-gradient-to-b from-blue-400 to-blue-500 px-3 py-1 hover:from-blue-400 hover:to-blue-600 text-white rounded"
-                    onClick={handleApplyAttendance}
-                  >
-                    Submit
-                  </button>
-                  <button
-                    className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
-                    onClick={() => {
-                      setFormData({
-                        description: "",
-                        onsite: false,
-                        halfDayPeriod: "",
-                        leaveType: "Full Day"
-                      })
-                      setselectedAttendance({
-                        attendanceDate: "",
-                        intTime: "",
-                        onTime: ""
-                      })
-                      setAttendance(false)
-                      setShowModal(false)
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
+              </div>
             </div>
           </div>
         )
@@ -992,7 +1011,7 @@ function LeaveApplication() {
         </div>
 
         <FullCalendar
-          key={events.length}
+          key={events?.length}
           plugins={[dayGridPlugin, interactionPlugin, timeGridPlugin]}
           initialView="dayGridMonth"
           dateClick={handleDateClick}
@@ -1011,7 +1030,7 @@ function LeaveApplication() {
             const dayOfWeek = info.date.getDay() // Get the day of the week (0 = Sunday)
 
             // Find the matching event by comparing only the date part (YYYY-MM-DD)
-            const matchingEvent = events.find((event) => {
+            const matchingEvent = events?.find((event) => {
               const eventDate = new Date(event.start).toLocaleDateString(
                 "en-CA"
               )
@@ -1171,25 +1190,11 @@ function LeaveApplication() {
       {/* Modal Popup */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white   p-8  rounded-lg shadow-lg  sm:w-2/3  overflow-y-auto">
+          <div className="bg-white p-3 rounded-lg shadow-lg w-full mx-4 sm:w-3/4 md:w-3/4 lg:w-4/6xl:w-4/6 overflow-y-auto">
             <div>
-              {!attendance ? (
+              {/* {!attendance ? (
                 <div>
-                  {/* <div className="flex justify-center space-x-4">
-                    {tabs.map((tab) => (
-                      <span
-                        key={tab}
-                        onClick={() => setSelectedTab(tab)}
-                        className={`cursor-pointer ${
-                          selectedTab === tab
-                            ? "text-blue-500 font-semibold underline"
-                            : "text-black"
-                        }`}
-                      >
-                        {tab}
-                      </span>
-                    ))}
-                  </div> */}
+                  
 
                   <div className="flex justify-between mb-1">
                     <h2 className="text-xl font-bold">Leave Application</h2>
@@ -1637,10 +1642,10 @@ function LeaveApplication() {
                     </form>
                   </div>
                 </div>
-              )}
+              )} */}
               {/* Tab Navigation */}
-              {/* <div className="flex justify-center space-x-4">
-                {["Leave", "Onsite", "Attendance"].map((tab) => (
+              <div className="flex justify-center space-x-4">
+                {tabs.map((tab) => (
                   <span
                     key={tab}
                     onClick={() => setSelectedTab(tab)}
@@ -1655,13 +1660,12 @@ function LeaveApplication() {
                 ))}
               </div>
 
-              ///tab content
-              <div className="mt-4">
+              <div className="mt-2">
                 <div>{renderContent()}</div>
-                <div className="col-span-2 gap-4 flex justify-center">
+                <div className="col-span-2 gap-4 flex justify-center mt-4">
                   <button
                     className="bg-gradient-to-b from-blue-400 to-blue-500 px-3 py-1 hover:from-blue-400 hover:to-blue-600 text-white rounded"
-                    onClick={handleApplyAttendance}
+                    onClick={() => handleSubmit(selectedTab)}
                   >
                     Submit
                   </button>
@@ -1686,7 +1690,7 @@ function LeaveApplication() {
                     Cancel
                   </button>
                 </div>
-              </div> */}
+              </div>
             </div>
           </div>
         </div>
