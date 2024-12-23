@@ -22,12 +22,17 @@ import ProductEdit from "../../../pages/primaryUser/edit/ProductEdit"
 import UserListform from "../../../pages/primaryUser/List/UserListform"
 import UserPermissions from "../../../pages/primaryUser/List/UserPermissions"
 import ComingSoon from "../../../pages/common/ComingSoon"
+import { CallNoteRegistration } from "../../../pages/primaryUser/register/CallNoteRegistration"
 
 const mastersRoutes = [
   {
     path: "/admin/masters/company",
 
     component: CompanyList
+  },
+  {
+    path: "/admin/masters/callnotes",
+    component: CallNoteRegistration
   },
   {
     path: "/admin/masters/companyRegistration",
