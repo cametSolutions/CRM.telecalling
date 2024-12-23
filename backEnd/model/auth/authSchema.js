@@ -93,6 +93,7 @@ const staffSchema = new Schema(
         Company: Boolean,
         Branch: Boolean,
         Customer: Boolean,
+        CallNotes:Boolean,
         UsersAndPasswords: Boolean,
         MenuRights: Boolean,
         VoucherMaster: Boolean,

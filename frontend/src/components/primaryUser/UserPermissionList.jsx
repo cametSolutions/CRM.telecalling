@@ -6,6 +6,7 @@ const UserPermissionList = ({ user, closeModal, Loader }) => {
     Company: false,
     Branch: false,
     Customer: false,
+    CallNotes: false,
     UsersAndPasswords: false,
     MenuRights: false,
     VoucherMaster: false,

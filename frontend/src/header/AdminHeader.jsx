@@ -51,6 +51,11 @@ export default function AdminHeader() {
       // control: user.permissions[0].Branch
     },
     {
+      to: "/admin/masters/callnotes",
+      label: "Call Notes"
+      // control: user.permissions[0].Customer
+    },
+    {
       to: "/admin/masters/customer",
       label: "Customer"
       // control: user.permissions[0].Customer

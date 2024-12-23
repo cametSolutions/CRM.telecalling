@@ -60,10 +60,7 @@ export const sendEmail = async (calldata, name, branchName) => {
   const tableContent = `
         <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif;">
           <thead>
-            <tr style="background-color: #f2f2f2;">
-              <th style="text-align: left;">Field</th>
-              <th style="text-align: left;">Value</th>
-            </tr>
+           
           </thead>
           <tbody>
             <tr>
@@ -100,6 +97,15 @@ export const sendEmail = async (calldata, name, branchName) => {
               <td>Call Status</td>
               <td>${calldata.formdata.status || "N/A"}</td>
             </tr>
+            ${
+              calldata.formdata.status === "solved"
+                ? `
+              <tr>
+                <td>Remarks</td>
+                <td>${calldata.formdata.solution || "N/A"}</td>
+              </tr>`
+                : ""
+            }
           </tbody>
         </table>
       `
@@ -110,8 +116,8 @@ export const sendEmail = async (calldata, name, branchName) => {
         <p>We would like to share the following details:</p>
         ${tableContent}
        <p>Click here <a>https://crm.camet.in/</a></p
-        <p>If you have any questions or need further assistance, feel free to contact us at <a href="mailto:${process.env.EMAIL_USER}">${process.env.EMAIL_USER}</a>.</p>
-        <p>Kind regards,<br>Your Company</p>
+        <p>If you have any questions or need further assistance, feel free to contact us at <a href="mailto:${notificationemail}">${notificationemail}</a>.</p>
+        <p>Kind regards,<br>${organization}</p>
       `
 
   try {
@@ -122,12 +128,13 @@ export const sendEmail = async (calldata, name, branchName) => {
 
     const info = await transporter.sendMail({
       from: notificationemail, // Sender's name and address
-      to: calldata.customeremail|| "default@example.com", // Recipient's email address
+      to: calldata.customeremail || "default@example.com", // Recipient's email address
       subject: "Your Call Recorded", // Subject
       html: htmlContent // Email content as HTML
     })
 
-    console.log("Message sent: %s", info.messageId)
+    console.log(`Email sent successfully: ${info.messageId}`);
+    console.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
     return info // Return the response info after the email is sent
   } catch (error) {
     console.error("Error sending email: ", error.message)

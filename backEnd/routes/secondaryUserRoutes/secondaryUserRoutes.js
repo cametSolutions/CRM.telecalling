@@ -9,12 +9,20 @@ import {
   CustomerEdit,
   GetAllExpiryRegister,
   getallExpiredCustomerCalls,
-  DeleteCustomer
+  DeleteCustomer,
+  GetallCallnotes,
+  CallnoteRegistration,
+  UpdateCallnotes,
+  DeleteCallnotes
 } from "../../controller/secondaryUserController/customerController.js"
 
 const router = express.Router()
 
 router.post("/customerRegistration", authMiddleware, CustomerRegister)
+router.delete("/callnoteDelete",authMiddleware,DeleteCallnotes)
+router.post("/callnotesRegistration", authMiddleware, CallnoteRegistration)
+router.get("/getallcallNotes", authMiddleware, GetallCallnotes)
+router.put("/callnotesEdit", authMiddleware, UpdateCallnotes)
 router.post("/customerEdit", authMiddleware, CustomerEdit)
 router.get("/getLicensenumber", authMiddleware, GetLicense)
 router.get("/getCustomer", authMiddleware, GetCustomer)
