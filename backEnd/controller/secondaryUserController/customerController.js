@@ -1,10 +1,104 @@
 import Customer from "../../model/secondaryUser/customerSchema.js"
 import License from "../../model/secondaryUser/licenseSchema.js"
 import CallRegistration from "../../model/secondaryUser/CallRegistrationSchema.js"
+import CallNote from "../../model/secondaryUser/callNotesSchema.js"
 import models from "../../model/auth/authSchema.js"
 import { sendEmail } from "../../helper/nodemailer.js"
 const { Staff, Admin } = models
 import mongoose from "mongoose"
+export const GetallCallnotes = async (req, res) => {
+  try {
+    const callnotes = await CallNote.find({})
+    console.log("notessssss", callnotes)
+    if (callnotes) {
+      return res
+        .status(200)
+        .json({ message: "callnotes found", data: callnotes })
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+  }
+}
+export const DeleteCallnotes = async (req, res) => {
+  const { id } = req.query
+  console.log("hiii")
+  const objectId = new mongoose.Types.ObjectId(id)
+
+  try {
+    // Perform the deletion
+    const result = await CallNote.findByIdAndDelete(objectId)
+    console.log("result", result)
+
+    if (result) {
+      return res.status(200).json({ message: " deleted successfully" })
+    } else {
+      return res.status(404).json({ message: "callnote not found" })
+    }
+  } catch (error) {
+    console.error(error)
+    return res.status(500).json({ message: "Server error" })
+  }
+}
+
+export const UpdateCallnotes = async (req, res) => {
+  const { id } = req.query
+  console.log("idddddddddddd", id)
+  const objectId = new mongoose.Types.ObjectId(id)
+  const formData = req.body
+  if (!id) {
+    return res.status(400).json({ message: "Invalid id" })
+  }
+
+  try {
+    console.log("data", formData)
+    const updatedCallnotes = await CallNote.findByIdAndUpdate(
+      objectId,
+      formData,
+      {
+        new: true
+      }
+    )
+    console.log("upppp", updatedCallnotes)
+
+    if (!updatedCallnotes) {
+      return res.status(404).json({ message: "callnotes not found" })
+    }
+
+    res.status(200).json({ data: updatedCallnotes })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: "Internal Server Error" })
+  }
+}
+export const CallnoteRegistration = async (req, res) => {
+  try {
+    const formdata = req.body
+    console.log("id", formdata.callNotes)
+    const existingItem = await CallNote.findOne({
+      callNotes: formdata.callNotes
+    })
+    if (existingItem) {
+      return res
+        .status(400)
+        .json({ message: "This callnotes  is already registered" })
+    }
+
+    // Create and save call notes
+    const collection = new CallNote({
+      callNotes: formdata.callNotes
+    })
+    console.log("collection:", collection)
+    await collection.save()
+
+    res.status(200).json({
+      status: true,
+      message: "Call notes created successfully",
+      data: collection
+    })
+  } catch (error) {
+    console.log("error:", error.message)
+  }
+}
 
 export const CustomerRegister = async (req, res) => {
   const { customerData, tabledata = {} } = req.body
@@ -67,7 +161,7 @@ export const CustomerRegister = async (req, res) => {
       message: "Customer created successfully"
     })
   } catch (error) {
-    console.log("error:",error.message)
+    console.log("error:", error.message)
     res.status(500).json({ message: "server error" })
   }
 }
@@ -489,7 +583,7 @@ export const GetLicense = async (req, res) => {
 
 export const customerCallRegistration = async (req, res) => {
   try {
-    const { customerid, customer, branchName={} } = req.query // Get customerid from query
+    const { customerid, customer, branchName = {} } = req.query // Get customerid from query
 
     const calldata = req.body // Assuming calldata is sent in the body
     // Convert attendedBy.callerId to ObjectId
@@ -579,20 +673,26 @@ export const customerCallRegistration = async (req, res) => {
                 console.log("prev")
 
                 if (pendingSavedStaff) {
-                  const emailResponse = await sendEmail(
-                    calldata,
-                    customer,
-                    branchName
-                  )
+                  return res.status(200).json({
+                    success: true,
+                    message: "Call registered"
+                  })
+                  // const emailResponse = await sendEmail(
+                  //   calldata,
+                  //   customer,
+                  //   branchName
+                  // )
 
-                  if (emailResponse) {
-                    return res.status(200).json({
-                      success: true,
-                      message: "Email sent successfully"
-                    })
-                  }
-
-                  return res.status(200).json({ message: "all success" })
+                  // if (emailResponse) {
+                  //   return res.status(200).json({
+                  //     success: true,
+                  //     message: "Call registered"
+                  //   })
+                  // } else {
+                  //   return res
+                  //     .status(200)
+                  //     .json({ message: "Call registered email not send" })
+                  // }
                 }
               } else if (calldata.formdata.status === "solved") {
                 const mapAndCheckAttendedBy = (data, selectedId) => {
@@ -635,7 +735,6 @@ export const customerCallRegistration = async (req, res) => {
                     token,
                     calldata?.formdata?.attendedBy?.callerId
                   )
-                //
 
                 staffCaller.callstatus.totalCall = isCallerIdMatched
                   ? staffCaller.callstatus.totalCall
@@ -674,9 +773,24 @@ export const customerCallRegistration = async (req, res) => {
                       })
                     } else {
                       return res.status(200).json({
-                        message: "All updates completed successfully",
-                        results
+                        success: true,
+                        message: "Call registered"
                       })
+                      // const emailResponse = await sendEmail(
+                      //   calldata,
+                      //   customer,
+                      //   branchName
+                      // )
+                      // if (emailResponse) {
+                      //   return res.status(200).json({
+                      //     success: true,
+                      //     message: "Call registered"
+                      //   })
+                      // } else {
+                      //   return res
+                      //     .status(200)
+                      //     .json({ message: "Call registered email not send" })
+                      // }
                     }
                   } catch (error) {
                     console.error("Error in updateAttendeesController:", error)
@@ -702,7 +816,26 @@ export const customerCallRegistration = async (req, res) => {
 
                   const pendingAdminSaved = await adminCaller.save()
                   if (pendingAdminSaved) {
-                    return res.status(200).json({ message: "All success" })
+                    return res.status(200).json({
+                      success: true,
+                      message: "Call registered"
+                    })
+                    // const emailResponse = await sendEmail(
+                    //   calldata,
+                    //   customer,
+                    //   branchName
+                    // )
+
+                    // if (emailResponse) {
+                    //   return res.status(200).json({
+                    //     success: true,
+                    //     message: "Call registered"
+                    //   })
+                    // } else {
+                    //   return res
+                    //     .status(200)
+                    //     .json({ message: "Call registered email not send" })
+                    // }
                   }
                 } else if (calldata.formdata.status === "solved") {
                   const mapAndCheckAttendedBy = (data, selectedId) => {
@@ -780,9 +913,25 @@ export const customerCallRegistration = async (req, res) => {
                         })
                       } else {
                         return res.status(200).json({
-                          message: "All updates completed successfully",
-                          results
+                          success: true,
+                          message: "Call registered"
                         })
+                        // const emailResponse = await sendEmail(
+                        //   calldata,
+                        //   customer,
+                        //   branchName
+                        // )
+
+                        // if (emailResponse) {
+                        //   return res.status(200).json({
+                        //     success: true,
+                        //     message: "Call registered"
+                        //   })
+                        // } else {
+                        //   return res
+                        //     .status(200)
+                        //     .json({ message: "Call registered email not send" })
+                        // }
                       }
                     } catch (error) {
                       console.error(
@@ -820,7 +969,26 @@ export const customerCallRegistration = async (req, res) => {
 
               const pendingSavedStaff = await staffCaller.save()
               if (pendingSavedStaff) {
-                return res.status(200).json({ message: "all successed" })
+                return res.status(200).json({
+                  success: true,
+                  message: "Call registered"
+                })
+                // const emailResponse = await sendEmail(
+                //   calldata,
+                //   customer,
+                //   branchName
+                // )
+
+                // if (emailResponse) {
+                //   return res.status(200).json({
+                //     success: true,
+                //     message: "Call registered"
+                //   })
+                // } else {
+                //   return res
+                //     .status(200)
+                //     .json({ message: "Call registered email not send" })
+                // }
               }
             } else if (calldata.formdata.status === "solved") {
               staffCaller.callstatus.totalCall += 1
@@ -831,7 +999,26 @@ export const customerCallRegistration = async (req, res) => {
 
               const saved = await staffCaller.save()
               if (saved) {
-                return res.status(200).json({ message: "All success" })
+                return res.status(200).json({
+                  success: true,
+                  message: "Call registered"
+                })
+                // const emailResponse = await sendEmail(
+                //   calldata,
+                //   customer,
+                //   branchName
+                // )
+
+                // if (emailResponse) {
+                //   return res.status(200).json({
+                //     success: true,
+                //     message: "Call registered"
+                //   })
+                // } else {
+                //   return res
+                //     .status(200)
+                //     .json({ message: "Call registered email not send" })
+                // }
               }
             }
           } else {
@@ -849,7 +1036,26 @@ export const customerCallRegistration = async (req, res) => {
 
                 const pendingAdminSaved = await adminCaller.save()
                 if (pendingAdminSaved) {
-                  return res.status(200).json({ message: "All success" })
+                  return res.status(200).json({
+                    success: true,
+                    message: "Call registered"
+                  })
+                  // const emailResponse = await sendEmail(
+                  //   calldata,
+                  //   customer,
+                  //   branchName
+                  // )
+
+                  // if (emailResponse) {
+                  //   return res.status(200).json({
+                  //     success: true,
+                  //     message: "Call registered"
+                  //   })
+                  // } else {
+                  //   return res
+                  //     .status(200)
+                  //     .json({ message: "Call registered email not send" })
+                  // }
                 }
               } else if (calldata.formdata.status === "solved") {
                 adminCaller.callstatus.totalCall += 1
@@ -861,7 +1067,26 @@ export const customerCallRegistration = async (req, res) => {
 
                 const saved = await adminCaller.save()
                 if (saved) {
-                  return res.status(200).json({ message: "All success" })
+                  return res.status(200).json({
+                    success: true,
+                    message: "Call registered"
+                  })
+                  // const emailResponse = await sendEmail(
+                  //   calldata,
+                  //   customer,
+                  //   branchName
+                  // )
+
+                  // if (emailResponse) {
+                  //   return res.status(200).json({
+                  //     success: true,
+                  //     message: "Call registered"
+                  //   })
+                  // } else {
+                  //   return res
+                  //     .status(200)
+                  //     .json({ message: "Call registered email not send" })
+                  // }
                 }
               }
             }
@@ -886,9 +1111,9 @@ export const customerCallRegistration = async (req, res) => {
           _id: Id
         })
 
-        ////
         if (staffCaller) {
           if (calldata.formdata.status === "pending") {
+            console.log("pendingggggggg")
             staffCaller.callstatus.totalCall += 1
 
             staffCaller.callstatus.pendingCalls += 1
@@ -898,7 +1123,27 @@ export const customerCallRegistration = async (req, res) => {
             const pendingSavedStaff = await staffCaller.save()
 
             if (pendingSavedStaff) {
-              return res.status(200).json({ message: "all successed" })
+              return res.status(200).json({
+                success: true,
+                message: "Call registered"
+              })
+              // const emailResponse = await sendEmail(
+              //   calldata,
+              //   customer,
+              //   branchName
+              // )
+
+              // if (emailResponse) {
+              //   console.log("emaiil senddddd")
+              //   return res.status(200).json({
+              //     success: true,
+              //     message: "Call registered"
+              //   })
+              // } else {
+              //   return res
+              //     .status(200)
+              //     .json({ message: "Call registered email not send" })
+              // }
             }
           } else if (calldata.formdata.status === "solved") {
             staffCaller.callstatus.totalCall += 1
@@ -909,7 +1154,26 @@ export const customerCallRegistration = async (req, res) => {
 
             const saved = await staffCaller.save()
             if (saved) {
-              return res.status(200).json({ message: "All success" })
+              return res.status(200).json({
+                success: true,
+                message: "Call registered"
+              })
+              // const emailResponse = await sendEmail(
+              //   calldata,
+              //   customer,
+              //   branchName
+              // )
+
+              // if (emailResponse) {
+              //   return res.status(200).json({
+              //     success: true,
+              //     message: "Call registered"
+              //   })
+              // } else {
+              //   return res
+              //     .status(200)
+              //     .json({ message: "Call registered email not send" })
+              // }
             }
           }
         } else {
@@ -926,7 +1190,26 @@ export const customerCallRegistration = async (req, res) => {
 
               const pendingAdminSaved = await adminCaller.save()
               if (pendingAdminSaved) {
-                return res.status(200).json({ message: "All success" })
+                return res.status(200).json({
+                  success: true,
+                  message: "Call registered"
+                })
+                // const emailResponse = await sendEmail(
+                //   calldata,
+                //   customer,
+                //   branchName
+                // )
+
+                // if (emailResponse) {
+                //   return res.status(200).json({
+                //     success: true,
+                //     message: "Call registered"
+                //   })
+                // } else {
+                //   return res
+                //     .status(200)
+                //     .json({ message: "Call registered email not send" })
+                // }
               }
             } else if (calldata.formdata.status === "solved") {
               adminCaller.callstatus.totalCall += 1
@@ -937,7 +1220,26 @@ export const customerCallRegistration = async (req, res) => {
 
               const saved = await adminCaller.save()
               if (saved) {
-                return res.status(200).json({ message: "All success" })
+                return res.status(200).json({
+                  success: true,
+                  message: "Call registered"
+                })
+                // const emailResponse = await sendEmail(
+                //   calldata,
+                //   customer,
+                //   branchName
+                // )
+
+                // if (emailResponse) {
+                //   return res.status(200).json({
+                //     success: true,
+                //     message: "Call registered"
+                //   })
+                // } else {
+                //   return res
+                //     .status(200)
+                //     .json({ message: "Call registered email not send" })
+                // }
               }
             }
           }

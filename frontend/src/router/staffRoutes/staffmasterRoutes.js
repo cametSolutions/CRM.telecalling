@@ -1,10 +1,9 @@
-// import CompanyList from "../../pages/primaryUser/List/CompanyList"
 import CompanyList from "../../pages/primaryUser/List/CompanyList"
 import CompanyRegistration from "../../pages/primaryUser/register/CompanyRegistration"
 import BranchRegistration from "../../pages/primaryUser/register/BranchRegistration"
 import CustomerRegistration from "../../pages/secondaryUser/register/CustomerRegistration"
 import CustomerEdit from "../../pages/secondaryUser/edit/CustomerEdit"
-
+import {CallNoteRegistration} from "../../pages/primaryUser/register/CallNoteRegistration"
 import BranchList from "../../pages/primaryUser/List/BranchList"
 import CompanyEdit from "../../pages/primaryUser/edit/CompanyEdit"
 import BranchEdit from "../../pages/primaryUser/edit/BranchEdit"
@@ -41,6 +40,10 @@ const staffmastersRoutes = [
     path: "/staff/masters/branchRegistration",
 
     component: BranchRegistration
+  },
+  {
+    path: "/staff/masters/callnotes",
+    component: CallNoteRegistration
   },
   { path: "/staff/masters/branchEdit", component: BranchEdit },
   { path: "/staff/masters/customer", component: CustomerListform },

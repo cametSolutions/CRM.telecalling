@@ -5,7 +5,7 @@ const transactionsRoutes = [
   { path: "/admin/transaction/lead", component: ComingSoon },
   { path: "/admin/transaction/call-registration", component: CallRegistration },
 
-  { path: "/admin/transaction/leave-application", component: LeaveApplication }
+  { path: "/admin/transaction/leave-application", component: ComingSoon }
 ]
 
 export default transactionsRoutes

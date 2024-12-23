@@ -33,6 +33,7 @@ export default function StaffHeader() {
     { label: "Reports" },
     { label: "Task" }
   ]
+  console.log(user.permissions[0])
 
   const masters = [
     {
@@ -49,6 +50,11 @@ export default function StaffHeader() {
       to: "/staff/masters/customer",
       label: "Customer",
       control: user?.permissions?.[0]?.Customer ?? false
+    },
+    {
+      to: "/staff/masters/callnotes",
+      label: "Call Notes",
+      control: user?.permissions?.[0]?.CallNotes ?? false
     },
     {
       to: "/staff/masters/users-&-passwords",

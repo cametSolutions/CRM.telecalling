@@ -18,8 +18,8 @@ import { debounce } from "lodash"
 import UseFetch from "../../../hooks/useFetch"
 import Timer from "../../../components/primaryUser/Timer"
 import { toast } from "react-toastify"
-// const socket = io("https://www.crm.camet.in")
-const socket = io("http://localhost:9000")
+const socket = io("https://www.crm.camet.in")
+// const socket = io("http://localhost:9000")
 
 export default function CallRegistration() {
   const {
@@ -142,12 +142,12 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
-    // const response = await fetch(
-    //   `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
-    // )
     const response = await fetch(
-      `http://localhost:9000/api/customer/getcallregister/${callId}`
+      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
     )
+    // const response = await fetch(
+    //   `http://localhost:9000/api/customer/getcallregister/${callId}`
+    // )
     const data = await response.json()
 
     return data
@@ -265,7 +265,7 @@ export default function CallRegistration() {
         }
         // Set both attendedBy and completedBy if status is solved
       }
-
+      console.log(selectedCustomer)
       const calldata = {
         product: selectedProducts.product_id,
         license: selectedProducts.licensenumber,
@@ -275,7 +275,7 @@ export default function CallRegistration() {
             : user.selected.map((branch) => branch.branchName),
         timedata: timeData,
         formdata: updatedformData,
-        customerEmail: selectedCustomer.email,
+        customeremail: selectedCustomer.email,
         productName: selectedProducts.productName
       }
 
@@ -385,24 +385,24 @@ export default function CallRegistration() {
   const fetchCustomerData = async (query) => {
     let url
     if (user.role === "Admin") {
-      url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
-      // url = `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
+      // url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
+      url = `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
     } else {
       const branches = JSON.stringify(branch)
-
-      url =
-        branches &&
-        branches.length > 0 &&
-        `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
-          user.role
-        }&userBranch=${encodeURIComponent(branches)}`
 
       // url =
       //   branches &&
       //   branches.length > 0 &&
-      //   `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+      //   `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
       //     user.role
       //   }&userBranch=${encodeURIComponent(branches)}`
+
+      url =
+        branches &&
+        branches.length > 0 &&
+        `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+          user.role
+        }&userBranch=${encodeURIComponent(branches)}`
     }
 
     try {

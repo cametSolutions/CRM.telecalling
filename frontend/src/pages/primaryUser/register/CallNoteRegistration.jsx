@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from "react"
-import DeleteAlert from "../common/DeleteAlert"
-import Edit from "../common/Edit"
-import api from "../../api/api"
-import UseFetch from "../../hooks/useFetch"
-import toast from "react-hot-toast"
-export default function ProductSubDetailsForm({ tab }) {
+import DeleteAlert from "../../../components/common/DeleteAlert"
+import Edit from "../../../components/common/Edit"
+import api from "../../../api/api"
+import UseFetch from "../../../hooks/useFetch"
+import { toast } from "react-toastify"
+export const CallNoteRegistration = () => {
   const [value, setValue] = useState("")
   const [items, setItems] = useState([])
-  //const [currentPage, setCurrentPage] = useState(1)
-  // const [totalPages, setTotalPages] = useState(1)
+
   const [editState, seteditState] = useState(true)
   const [editId, setEditId] = useState("")
   const { data, loading, error, refreshHook } = UseFetch(
-    `/inventory/getproductsubDetails?tab=${tab}`
+    "/customer/getallcallNotes"
   )
   useEffect(() => {
     if (data) {
@@ -21,15 +20,12 @@ export default function ProductSubDetailsForm({ tab }) {
     }
   }, [data])
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page)
-  }
   const handleEdit = (id) => {
     seteditState(false)
     const itemToEdit = items.find((item) => item._id === id)
     if (itemToEdit) {
-      // reset({ brandName: brandToEdit.brandName })
-      setValue(itemToEdit[tab])
+     
+      setValue(itemToEdit.callNotes)
       setEditId(id)
 
       // Store the ID of the brand being edited
@@ -37,7 +33,7 @@ export default function ProductSubDetailsForm({ tab }) {
   }
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/inventory/productSubdetailsDelete?tab=${tab}&id=${id}`)
+      await api.delete(`/customer/callnoteDelete?id=${id}`)
 
       // Remove the deleted item from the items array
       setItems((prevItems) => prevItems.filter((item) => item._id !== id))
@@ -54,26 +50,23 @@ export default function ProductSubDetailsForm({ tab }) {
 
   const handleSubmit = async () => {
     const formData = {
-      [tab]: value
+      callNotes: value
     }
 
     try {
       if (editId) {
         // Update the existing item
 
-        await api.put(
-          `/inventory/productSubdetailsEdit?tab=${tab}&id=${editId}`,
-          formData
-        )
+        await api.put(`/customer/callnotesEdit?id=${editId}`, formData)
 
-        toast.success(`${tab.toUpperCase()} updated successfully`)
+        toast.success("Call notes updated successfully")
         seteditState(true)
       } else {
         // Create a new item
 
-        await api.post("/inventory/productSubdetailsRegistration", formData)
+        await api.post("/customer/callnotesRegistration", formData)
 
-        toast.success(`${tab.toUpperCase()} created successfully`)
+        toast.success("callnote created successfully")
       }
       // Refresh the list
       // const response = await api.get(
@@ -93,7 +86,7 @@ export default function ProductSubDetailsForm({ tab }) {
   return (
     <div>
       <h1 className="text-sm font-bold mb-6  text-gray-800 px-6 pt-6  uppercase">
-        ADD YOUR DESIRED {tab}
+        ADD YOUR DESIRED CALL NOTE
       </h1>
 
       <div className="flex items-center  w-full px-6  ">
@@ -147,7 +140,7 @@ export default function ProductSubDetailsForm({ tab }) {
                 <thead>
                   <tr>
                     <th className=" w-3/6  px-6 text-left  text-black border border-solid border-black py-3 text-sm uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold">
-                      {tab}
+                      Call Note
                     </th>
                     <th className="px-6 w-1/6 text-center  text-blue-500 align-middle border border-solid border-black py-3 text-sm uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold">
                       Edit
@@ -162,7 +155,7 @@ export default function ProductSubDetailsForm({ tab }) {
                   {items?.map((el) => (
                     <tr key={el._id}>
                       <th className="px-6 text-left col-span-2 text-wrap border-t-0 align-middle border-l-0 border-r-0  whitespace-nowrap  text-black p-2">
-                        {el[tab]}
+                        {el.callNotes}
                       </th>
                       <td className="cursor-pointer text-center flex justify-center px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2 ">
                         <Edit onEdit={handleEdit} Id={el._id} />
@@ -175,7 +168,6 @@ export default function ProductSubDetailsForm({ tab }) {
                 </tbody>
               </table>
             </div>
-           
           </div>
         </div>
       </section>
