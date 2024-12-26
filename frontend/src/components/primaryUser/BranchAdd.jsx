@@ -27,8 +27,6 @@ const BranchAdd = ({
   }, [companyData])
   useEffect(() => {
     if (branchdata && companies.length > 0) {
-      console.log("brrrr", branchdata)
-      console.log("com", companies)
       setValue("companyName", branchdata.companyName._id)
       setValue("branchName", branchdata.branchName)
       setValue("address", branchdata.address)
@@ -290,9 +288,8 @@ const BranchAdd = ({
             <button
               type="submit"
               className="inline-flex items-center justify-center px-6 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
-            >
-              Submit
-            </button>
+            >{process === "edit"?"Update":"Submit"}
+              </button>
           </div>
         </form>
       </div>

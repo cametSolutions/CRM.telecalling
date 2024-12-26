@@ -28,6 +28,10 @@ const CallRegistrationSchema = new mongoose.Schema(
           incomingNumber: String,
           token: String,
           description: String,
+          callnote: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Callnote" // Reference to callnote schema
+          },
           solution: String,
           status: String,
           attendedBy: [],

@@ -19,7 +19,7 @@ import {
 const router = express.Router()
 
 router.post("/customerRegistration", authMiddleware, CustomerRegister)
-router.delete("/callnoteDelete",authMiddleware,DeleteCallnotes)
+router.delete("/callnoteDelete", authMiddleware, DeleteCallnotes)
 router.post("/callnotesRegistration", authMiddleware, CallnoteRegistration)
 router.get("/getallcallNotes", authMiddleware, GetallCallnotes)
 router.put("/callnotesEdit", authMiddleware, UpdateCallnotes)
@@ -30,6 +30,7 @@ router.post("/callRegistration", customerCallRegistration)
 router.get("/getcallregister/:callId", GetCallRegister)
 router.get("/getcallregister/", GetCallRegister)
 router.delete("/deleteCustomer", authMiddleware, DeleteCustomer)
+
 router.get(
   "/getallExpiryregisterCustomer",
   authMiddleware,

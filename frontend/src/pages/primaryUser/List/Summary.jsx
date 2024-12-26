@@ -65,7 +65,7 @@ const Summary = () => {
           const response = await api.get("/auth/getStaffCallStatus")
           setData(response.data.data)
           const a = response.data.data.userCallsCount
-          console.log(a)
+
           // const b = a.map((item) => {})
           const filterByDateRange = (data, startDate, endDate) => {
             // Normalize start and end dates to include the full day
