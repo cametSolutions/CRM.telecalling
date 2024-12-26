@@ -57,7 +57,7 @@ function LeaveApplication() {
   useEffect(() => {
     if ((leaves && leaves.length > 0) || (attendee && attendee.length > 0)) {
       const formattedEvents = formatEventData(leaves)
-      console.log(formattedEvents)
+
       let attendanceDetails
       if (
         formattedEvents &&
@@ -101,7 +101,6 @@ function LeaveApplication() {
       }
     }
   }, [leaves, attendee])
-  console.log(events)
 
   useEffect(() => {
     if (!showModal) {
@@ -414,24 +413,13 @@ function LeaveApplication() {
 
     setWidthState(widthState === "w-5/6" ? "w-2/6" : "w-5/6")
   }
-  console.log(selectedAttendance)
+
   const handleSubmit = async (tab) => {
     try {
       if (tab === "Leave") {
-        // Assuming you have an API endpoint for creating leave requests
-        // const response = await fetch(
-        //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
-        //   {
-        //     method: "POST",
-        //     headers: {
-        //       "Content-Type": "application/json"
-        //     },
-        //     body: JSON.stringify(formData),
-        //     credentials: "include"
-        //   }
-        // )
+        //Assuming you have an API endpoint for creating leave requests
         const response = await fetch(
-          `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
           {
             method: "POST",
             headers: {
@@ -441,6 +429,17 @@ function LeaveApplication() {
             credentials: "include"
           }
         )
+        // const response = await fetch(
+        //   `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+        //   {
+        //     method: "POST",
+        //     headers: {
+        //       "Content-Type": "application/json"
+        //     },
+        //     body: JSON.stringify(formData),
+        //     credentials: "include"
+        //   }
+        // )
 
         const responseData = await response.json()
 
@@ -456,14 +455,14 @@ function LeaveApplication() {
           }))
         }
       } else if (tab === "Onsite") {
-        // const response = await api.post(
-        //   `http://localhost:9000/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
-        //   { formData, tableRows }
-        // )
         const response = await api.post(
-          `https://www.crm.camet.in/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          `http://localhost:9000/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
           { formData, tableRows }
         )
+        // const response = await api.post(
+        //   `https://www.crm.camet.in/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+        //   { formData, tableRows }
+        // )
 
         if (response.status === 200) {
           setFormData((prev) => ({
@@ -489,20 +488,8 @@ function LeaveApplication() {
           refreshHook()
         }
       } else if (tab === "Attendance") {
-        console.log(selectedAttendance)
-        // const response = await fetch(
-        //   `http://localhost:9000/api/auth/attendance?selectedid=${user._id}`,
-        //   {
-        //     method: "POST",
-        //     headers: {
-        //       "Content-Type": "application/json"
-        //     },
-        //     body: JSON.stringify(selectedAttendance),
-        //     credentials: "include"
-        //   }
-        // )
         const response = await fetch(
-          `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}`,
+          `http://localhost:9000/api/auth/attendance?selectedid=${user._id}`,
           {
             method: "POST",
             headers: {
@@ -512,6 +499,17 @@ function LeaveApplication() {
             credentials: "include"
           }
         )
+        // const response = await fetch(
+        //   `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}`,
+        //   {
+        //     method: "POST",
+        //     headers: {
+        //       "Content-Type": "application/json"
+        //     },
+        //     body: JSON.stringify(selectedAttendance),
+        //     credentials: "include"
+        //   }
+        // )
 
         const responseData = await response.json()
 
@@ -546,19 +544,8 @@ function LeaveApplication() {
     }
   }
   const handleApplyAttendance = async () => {
-    // const response = await fetch(
-    //   `http://localhost:9000/api/auth/attendance?selectedid=${user._id}`,
-    //   {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json"
-    //     },
-    //     body: JSON.stringify(selectedAttendance),
-    //     credentials: "include"
-    //   }
-    // )
     const response = await fetch(
-      `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}`,
+      `http://localhost:9000/api/auth/attendance?selectedid=${user._id}`,
       {
         method: "POST",
         headers: {
@@ -568,6 +555,17 @@ function LeaveApplication() {
         credentials: "include"
       }
     )
+    // const response = await fetch(
+    //   `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}`,
+    //   {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json"
+    //     },
+    //     body: JSON.stringify(selectedAttendance),
+    //     credentials: "include"
+    //   }
+    // )
 
     const responseData = await response.json()
 

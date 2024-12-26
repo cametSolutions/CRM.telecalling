@@ -6,11 +6,9 @@ import api from "../../../api/api"
 import { toast } from "react-toastify"
 import { useNavigate } from "react-router-dom"
 function BranchEdit() {
-  const [Branch, setBranch] = useState(null)
   const navigate = useNavigate()
   const location = useLocation()
   const { branch } = location.state || {}
-  console.log("branch", branch)
 
   const handleSubmit = async (branchData, branchId) => {
     try {

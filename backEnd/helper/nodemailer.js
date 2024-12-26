@@ -1,23 +1,29 @@
 import nodemailer from "nodemailer"
+import mongoose from "mongoose"
+import Callnote from "../model/secondaryUser/callNotesSchema.js"
 import Branch from "../model/primaryUser/branchSchema.js"
 // Function to send email using Nodemailer
-export const sendEmail = async (calldata, name, branchName) => {
-  console.log("calldata", calldata)
-  console.log(branchName)
+export const sendEmail = async (calldata, name, branchName, username) => {
+ 
   let organization
   let notificationemail
   let mailpassword
+  const problem = new mongoose.Types.ObjectId(calldata.formdata.callnote)
+  
+
+  const customerproblem = await Callnote.find(problem)
+ 
+
   if (branchName === "ACCUANET") {
     organization = "Accuanet Info Solution"
     const result = await Branch.findOne({ branchName })
-    console.log(result)
+  
     notificationemail = result.notificationemail
     mailpassword = result.mailpassword
   } else if (branchName === "CAMET") {
     organization = "Camet IT Solution"
   }
-  console.log("klklskd", calldata)
-  console.log("hiiiiii", name)
+ 
   const isoDate = calldata.timedata.startTime
   const date = new Date(isoDate)
 
@@ -41,9 +47,7 @@ export const sendEmail = async (calldata, name, branchName) => {
   const formattedTime = timeFormatter.format(date)
 
   const finalDateTime = `${formattedDate} ${formattedTime}`
-  console.log("time", finalDateTime)
 
-  console.log("hai0", notificationemail, mailpassword)
   // Create a transporter object with your SMTP configuration
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -90,7 +94,7 @@ export const sendEmail = async (calldata, name, branchName) => {
             </tr>
             <tr>
               <td>Problem</td>
-              <td>${calldata.formdata.description || "N/A"}</td>
+              <td>${customerproblem[0].callNotes || "N/A"}</td>
             </tr>
   
             <tr>
@@ -115,26 +119,22 @@ export const sendEmail = async (calldata, name, branchName) => {
         <p>Dear ${name},</p>
         <p>We would like to share the following details:</p>
         ${tableContent}
-       <p>Click here <a>https://crm.camet.in/</a></p
+
         <p>If you have any questions or need further assistance, feel free to contact us at <a href="mailto:${notificationemail}">${notificationemail}</a>.</p>
-        <p>Kind regards,<br>${organization}</p>
+        <p>Kind regards,<br>${username}<br>${organization}</p>
       `
 
   try {
-    console.log("transporter", transporter)
-    console.log("Notification Email: ", notificationemail)
-    console.log("Mail Password: ", mailpassword)
-    console.log("customermail", calldata.customeremail)
-
     const info = await transporter.sendMail({
       from: notificationemail, // Sender's name and address
-      to: calldata.customeremail || "default@example.com", // Recipient's email address
+      to: calldata.customeremail, // Recipient's email address
+      cc: "solutions@camet.in",
       subject: "Your Call Recorded", // Subject
       html: htmlContent // Email content as HTML
     })
 
-    console.log(`Email sent successfully: ${info.messageId}`);
-    console.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+    console.log(`Email sent successfully: ${info.messageId}`)
+    console.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`)
     return info // Return the response info after the email is sent
   } catch (error) {
     console.error("Error sending email: ", error.message)

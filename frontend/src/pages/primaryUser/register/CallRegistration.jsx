@@ -50,6 +50,7 @@ export default function CallRegistration() {
   const [formData, setFormData] = useState(null)
   const [callData, setCallData] = useState([])
   const [branch, setBranches] = useState([])
+  const [callnote, setCallnotes] = useState([])
 
   const [tokenData, setTokenData] = useState(null)
 
@@ -57,6 +58,7 @@ export default function CallRegistration() {
     selectedCustomer &&
       `/customer/getcallregister?customerid=${selectedCustomer?._id || null}`
   )
+  const { data: callnotes } = UseFetch("/customer/getallcallNotes")
 
   // useRef to keep track of the latest timeout for debouncing
   const debounceTimeoutRef = useRef(null)
@@ -64,17 +66,20 @@ export default function CallRegistration() {
   const { calldetails, token } = location.state || {}
 
   useEffect(() => {
-    const userData = localStorage.getItem("user")
-    const user = JSON.parse(userData)
+    if (callnotes && callnotes.length > 0) {
+      const userData = localStorage.getItem("user")
+      const user = JSON.parse(userData)
 
-    if (user.role !== "Admin") {
-      const branches = user.selected.map((branch) => branch.branch_id)
+      if (user.role !== "Admin") {
+        const branches = user.selected.map((branch) => branch.branch_id)
 
-      setBranches(branches)
+        setBranches(branches)
+      }
+
+      setUser(user)
+      setCallnotes(callnotes)
     }
-
-    setUser(user)
-  }, [])
+  }, [callnotes])
   // Cleanup the timeout if the component unmounts
   useEffect(() => {
     return () => clearTimeout(debounceTimeoutRef.current)
@@ -126,7 +131,8 @@ export default function CallRegistration() {
             token: matchingRegistration?.timedata?.token,
             description: matchingRegistration?.formdata?.description,
             solution: matchingRegistration?.formdata?.solution,
-            status: matchingRegistration?.formdata?.status
+            status: matchingRegistration?.formdata?.status,
+            callnote: matchingRegistration?.formdata?.callnote
           }
 
           reset(editData)
@@ -265,7 +271,7 @@ export default function CallRegistration() {
         }
         // Set both attendedBy and completedBy if status is solved
       }
-      console.log(selectedCustomer)
+
       const calldata = {
         product: selectedProducts.product_id,
         license: selectedProducts.licensenumber,
@@ -280,7 +286,7 @@ export default function CallRegistration() {
       }
 
       const response = await api.post(
-        `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}`,
+        `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
         calldata,
 
         {
@@ -344,7 +350,7 @@ export default function CallRegistration() {
       }
 
       const response = await api.post(
-        `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}`,
+        `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
         calldata,
         {
           withCredentials: true,
@@ -549,7 +555,7 @@ export default function CallRegistration() {
   //     timedata: timeDatasss,
   //     formdata: form
   //   }
-  //   console.log("calllldddddaataa", editcall)
+  //   c("calllldddddaataa", editcall)
   //   const response = await api.post(
   //     `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}`,
   //     editcall,
@@ -900,8 +906,8 @@ export default function CallRegistration() {
 
                 <form onSubmit={handleSubmit(onSubmit)}>
                   {/* Updated parent div with justify-between */}
-                  <div className="flex justify-between m-5">
-                    <div className="w-1/3 ">
+                  <div className="grid grid-cols-3 gap-6 m-5">
+                    <div>
                       {" "}
                       {/* Adjust width and padding for spacing */}
                       <label
@@ -925,8 +931,7 @@ export default function CallRegistration() {
                         </span>
                       )}
                     </div>
-                    <div className="w-1/3">
-                      {" "}
+                    <div>
                       {/* Adjust width and padding for spacing */}
                       <label
                         htmlFor="token"
@@ -941,9 +946,38 @@ export default function CallRegistration() {
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
                       />
                     </div>
-                  </div>
-                  <div className="flex justify-between m-5">
-                    <div className="w-1/3">
+                    <div>
+                      {/* Adjust width and padding for spacing */}
+                      <label
+                        htmlFor="callnote"
+                        className="block text-sm font-medium text-gray-700"
+                      >
+                        Call Notes
+                      </label>
+
+                      <select
+                        {...register("callnote", {
+                          required: "please select a callnote"
+                        })}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
+                        defaultValue="" // Default placeholder
+                      >
+                        <option value="" disabled>
+                          Select Callnote
+                        </option>
+                        {callnote.map((callnotes) => (
+                          <option key={callnotes._id} value={callnotes._id}>
+                            {callnotes.callNotes}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.callnote && (
+                        <span className="mt-2 text-sm text-red-600">
+                          {errors.callnote.message}
+                        </span>
+                      )}
+                    </div>
+                    <div>
                       <label
                         id="description"
                         className="block text-sm font-medium text-gray-700"
@@ -968,7 +1002,7 @@ export default function CallRegistration() {
                         </span>
                       )}
                     </div>
-                    <div className="w-1/3">
+                    <div>
                       <label
                         id="solution"
                         className="block text-sm font-medium text-gray-700"
@@ -993,9 +1027,7 @@ export default function CallRegistration() {
                         </span>
                       )}
                     </div>
-                  </div>
-                  <div className="flex justify-between m-5">
-                    <div className="w-1/3">
+                    <div>
                       <label
                         htmlFor="status"
                         className="block text-sm font-medium text-gray-700"
@@ -1013,6 +1045,7 @@ export default function CallRegistration() {
                       </select>
                     </div>
                   </div>
+
                   {selectedCustomer && (
                     <div className=" flex justify-center items-center">
                       <button

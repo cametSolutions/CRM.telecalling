@@ -33,7 +33,6 @@ export default function StaffHeader() {
     { label: "Reports" },
     { label: "Task" }
   ]
-  console.log(user.permissions[0])
 
   const masters = [
     {
