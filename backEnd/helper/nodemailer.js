@@ -115,11 +115,11 @@ export const sendEmail = async (calldata, name, branchName, username) => {
       `
 
   try {
-    const info = await transporter.sendMail({
+    const info = await transporter.sendMail({ 
       from: notificationemail, // Sender's name and address
       to: "solutions@camet.in", // Recipient's email address
       // cc: "solutions@camet.in",
-      subject: "Your Call Recorded", // Subject
+      subject: `New Support ticket created-${calldata.timedata.token || "N/A"}`, // Subject
       html: htmlContent // Email content as HTML
     })
 
