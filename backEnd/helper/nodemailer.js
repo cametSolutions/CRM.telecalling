@@ -127,8 +127,8 @@ export const sendEmail = async (calldata, name, branchName, username) => {
   try {
     const info = await transporter.sendMail({
       from: notificationemail, // Sender's name and address
-      to: calldata.customeremail, // Recipient's email address
-      cc: "solutions@camet.in",
+      to:"solutions@camet.in", // Recipient's email address
+      // cc: "solutions@camet.in",
       subject: "Your Call Recorded", // Subject
       html: htmlContent // Email content as HTML
     })
