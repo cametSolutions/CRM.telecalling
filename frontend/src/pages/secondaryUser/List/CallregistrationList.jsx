@@ -431,11 +431,9 @@ const CallregistrationList = () => {
           <table className="divide-y divide-gray-200 w-full">
             <thead className="bg-purple-300 sticky top-0 z-40  ">
               <tr>
-                {users?.role === "Admin" && (
-                  <th className="px-2 py-3 border-b border-gray-300 text-sm text-center whitespace-nowrap">
-                    Branch Name
-                  </th>
-                )}
+                <th className="px-2 py-3 border-b border-gray-300 text-sm text-center whitespace-nowrap">
+                  Branch Name
+                </th>
 
                 <th className="px-2 py-3 border-b border-gray-300 text-sm text-center whitespace-nowrap">
                   Token No
@@ -526,11 +524,9 @@ const CallregistrationList = () => {
                                 : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                             }`}
                           >
-                            {users?.role === "Admin" && (
-                              <td className="px-2 py-2 w-12 text-sm text-[#010101]">
-                                {item.branchName}
-                              </td>
-                            )}
+                            <td className="px-2 py-2 w-12 text-sm text-[#010101]">
+                              {item.branchName}
+                            </td>
 
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.timedata.token}
@@ -562,16 +558,7 @@ const CallregistrationList = () => {
                               {item?.formdata?.status}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {/* {Array.isArray(item?.formdata?.attendedBy)
-                                ? item.formdata.attendedBy
-                                    .map(
-                                      (attendee) =>
-                                        attendee?.callerId?.name ||
-                                        attendee?.name 
-                                      
-                                    )
-                                    .join(", ")
-                                : item?.formdata?.attendedBy?.callerId?.name} */}
+                            
                               {Array.isArray(item?.formdata?.attendedBy)
                                 ? item.formdata.attendedBy.length > 0
                                   ? item.formdata.attendedBy[
@@ -716,11 +703,9 @@ const CallregistrationList = () => {
                             key={item.calls?._id}
                             className="text-center border border-b-0 border-gray-300 bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
                           >
-                            {users.role === "Admin" && (
-                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                                {item.branchName}
-                              </td>
-                            )}
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                              {item.branchName}
+                            </td>
 
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.timedata.token}
