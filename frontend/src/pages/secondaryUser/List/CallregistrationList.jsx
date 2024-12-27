@@ -558,7 +558,6 @@ const CallregistrationList = () => {
                               {item?.formdata?.status}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                            
                               {Array.isArray(item?.formdata?.attendedBy)
                                 ? item.formdata.attendedBy.length > 0
                                   ? item.formdata.attendedBy[
@@ -748,7 +747,7 @@ const CallregistrationList = () => {
                               {item?.formdata?.status}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {Array.isArray(item?.formdata?.attendedBy)
+                              {/* {Array.isArray(item?.formdata?.attendedBy)
                                 ? item.formdata.attendedBy
                                     ?.map(
                                       (attendee) =>
@@ -756,6 +755,19 @@ const CallregistrationList = () => {
                                         attendee?.name
                                     )
                                     .join(", ")
+                                : item?.formdata?.attendedBy?.callerId?.name} */}
+                              {Array.isArray(item?.formdata?.attendedBy)
+                                ? item.formdata.attendedBy.length > 0
+                                  ? item.formdata.attendedBy[
+                                      item.formdata.attendedBy.length - 1
+                                    ]?.callerId?.name ||
+                                    item.formdata.attendedBy[
+                                      item.formdata.attendedBy.length - 1
+                                    ]?.name ||
+                                    item.formdata.attendedBy[
+                                      item.formdata.attendedBy.length - 1
+                                    ]
+                                  : null
                                 : item?.formdata?.attendedBy?.callerId?.name}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">

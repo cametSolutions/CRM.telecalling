@@ -99,15 +99,7 @@ export const sendEmail = async (calldata, name, branchName, username) => {
               <td>Call Status</td>
               <td>${calldata.formdata.status || "N/A"}</td>
             </tr>
-            ${
-              calldata.formdata.status === "solved"
-                ? `
-              <tr>
-                <td>Remarks</td>
-                <td>${calldata.formdata.solution || "N/A"}</td>
-              </tr>`
-                : ""
-            }
+          
           </tbody>
         </table>
       `
