@@ -708,7 +708,7 @@ const CustomerAdd = ({
                     value: /\S+@\S+\.\S+/,
                     message: "Invalid email address"
                   },
-                  // validate: (value) => validateEmailDomain(value),
+                  
                   onBlur: (e) => setValue("email", e.target.value.trim())
                 })}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"

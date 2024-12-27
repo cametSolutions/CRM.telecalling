@@ -220,9 +220,11 @@ const BranchAdd = ({
                 {...register("notificationemail", {
                   required: " notification Email is required",
                   pattern: {
-                    value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                    value: /\S+@\S+\.\S+/,
                     message: "Invalid email address"
-                  }
+                  },
+                  onBlur: (e) =>
+                    setValue("notificationemail", e.target.value.trim())
                 })}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
                 placeholder="Email"
@@ -238,7 +240,7 @@ const BranchAdd = ({
                 Mail Password
               </label>
               <input
-                type="text"
+                type="password"
                 {...register("mailpassword")}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
                 placeholder="mail password..."
@@ -288,8 +290,9 @@ const BranchAdd = ({
             <button
               type="submit"
               className="inline-flex items-center justify-center px-6 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
-            >{process === "edit"?"Update":"Submit"}
-              </button>
+            >
+              {process === "edit" ? "Update" : "Submit"}
+            </button>
           </div>
         </form>
       </div>
