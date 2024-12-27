@@ -4,26 +4,24 @@ import Callnote from "../model/secondaryUser/callNotesSchema.js"
 import Branch from "../model/primaryUser/branchSchema.js"
 // Function to send email using Nodemailer
 export const sendEmail = async (calldata, name, branchName, username) => {
- 
+  console.log("hiiiiiiii")
   let organization
   let notificationemail
   let mailpassword
   const problem = new mongoose.Types.ObjectId(calldata.formdata.callnote)
-  
 
   const customerproblem = await Callnote.find(problem)
- 
 
   if (branchName === "ACCUANET") {
     organization = "Accuanet Info Solution"
     const result = await Branch.findOne({ branchName })
-  
+
     notificationemail = result.notificationemail
     mailpassword = result.mailpassword
   } else if (branchName === "CAMET") {
     organization = "Camet IT Solution"
   }
- 
+
   const isoDate = calldata.timedata.startTime
   const date = new Date(isoDate)
 
@@ -127,7 +125,7 @@ export const sendEmail = async (calldata, name, branchName, username) => {
   try {
     const info = await transporter.sendMail({
       from: notificationemail, // Sender's name and address
-      to:"solutions@camet.in", // Recipient's email address
+      to: "solutions@camet.in", // Recipient's email address
       // cc: "solutions@camet.in",
       subject: "Your Call Recorded", // Subject
       html: htmlContent // Email content as HTML
