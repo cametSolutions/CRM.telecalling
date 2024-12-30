@@ -1,14 +1,10 @@
 import { useEffect, useState } from "react"
 import MyDatePicker from "../../../components/common/MyDatePicker"
+
+import { FaSearch } from "react-icons/fa"
 import api from "../../../api/api"
-import { FaSearch, FaPhone } from "react-icons/fa"
-import dayjs from "dayjs"
 import Tiles from "../../../components/common/Tiles"
 import UseFetch from "../../../hooks/useFetch"
-import io from "socket.io-client" // Import Socket.IO client
-
-// const socket = io("http://localhost:9000")
-const socket = io("https://www.crm.camet.in")
 
 const Summary = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null)
@@ -35,7 +31,7 @@ const Summary = () => {
   const [a, setA] = useState([])
   const { data: branches } = UseFetch("/branch/getBranch")
   const { data: staffCallList } = UseFetch("/auth/staffcallList")
-
+  console.log("hii")
   useEffect(() => {
     if (staffCallList) {
       setIndividualCallList(staffCallList)
@@ -43,6 +39,7 @@ const Summary = () => {
   }, [staffCallList])
   useEffect(() => {
     const startDate = new Date()
+    console.log(startDate)
 
     setDates({ startDate, endDate: startDate })
 
@@ -60,10 +57,13 @@ const Summary = () => {
 
   useEffect(() => {
     if (dates.startDate) {
+      console.log(dates)
       const fetchUserList = async () => {
         try {
-          const response = await api.get("/auth/getStaffCallStatus")
+          const query = `startDate=${dates.startDate}&endDate=${dates.endDate}`
+          const response = await api.get(`/auth/getStaffCallStatus?${query}`)
           setData(response.data.data)
+          console.log(response.data.data)
           const a = response.data.data.userCallsCount
 
           // const b = a.map((item) => {})
@@ -148,6 +148,8 @@ const Summary = () => {
         }
       } else {
         if (callList) {
+          console.log("hii")
+          console.log()
           const customerSummaries = callList
             .filter(
               (customer) =>
@@ -407,10 +409,18 @@ const Summary = () => {
   }, [isModalOpen, selectedUser, selectedCustomer])
 
   useEffect(() => {
-    if (branch) {
-      socket.emit("updatedCalls")
-      // Listen for initial data from the server
-      socket.on("updatedCalls", (data) => {
+    const fetchCalls = async () => {
+      if (!branch && !dates && !users) return
+
+      try {
+        console.log(dates)
+        console.log("hiiii")
+        const query = `startDate=${dates.startDate}&endDate=${dates.endDate}`
+        const response = await api.get(
+          `/customer/getselectedDateCalls?${query}`
+        ) // Replace with your API endpoint
+        const data = response.data
+
         if (users?.role === "Admin") {
           setCallList(data.calls)
         } else {
@@ -418,6 +428,7 @@ const Summary = () => {
             users?.selected.map((branch) => branch.branchName)
           )
           const branchNamesArray = Array.from(userBranchName)
+
           const filtered = data.calls.filter(
             (call) =>
               Array.isArray(call?.callregistration) && // Check if callregistration is an array
@@ -442,34 +453,66 @@ const Summary = () => {
               })
           )
 
-          // const filtered = data.calls.filter((call) =>
-          //   call.callregistration.some((registration) => {
-          //     const hasMatchingBranch = registration.branchName.some((branch) =>
-          //       branchNamesArray.includes(branch)
-          //     )
-          //     // If user has only one branch, ensure it matches exactly and no extra branches
-          //     if (branchNamesArray.length === 1) {
-          //       return (
-          //         hasMatchingBranch &&
-          //         registration.branchName.length === 1 &&
-          //         registration.branchName[0] === branchNamesArray[0]
-          //       )
-          //     }
-          //     // If user has more than one branch, just check for any match
-          //     return hasMatchingBranch
-          //   })
-          // )
           setCallList(filtered)
         }
-      })
-
-      // Cleanup the socket connection when the component unmounts
-      return () => {
-        socket.off("updatedCalls")
+      } catch (error) {
+        console.error("Error fetching calls:", error)
       }
     }
+
+    fetchCalls()
   }, [branch, users])
+
+  // useEffect(() => {
+  //   if (branch) {
+  //     console.log(branch)
+  //     // const customercalls =
+  //     socket.emit("updatedCalls")
+  //     // Listen for initial data from the server
+  //     socket.on("updatedCalls", (data) => {
+  //       if (users?.role === "Admin") {
+  //         setCallList(data.calls)
+  //       } else {
+  //         const userBranchName = new Set(
+  //           users?.selected.map((branch) => branch.branchName)
+  //         )
+  //         const branchNamesArray = Array.from(userBranchName)
+  //         const filtered = data.calls.filter(
+  //           (call) =>
+  //             Array.isArray(call?.callregistration) && // Check if callregistration is an array
+  //             call.callregistration.some((registration) => {
+  //               const hasMatchingBranch =
+  //                 Array.isArray(registration?.branchName) && // Check if branchName is an array
+  //                 registration.branchName.some(
+  //                   (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
+  //                 )
+
+  //               // If user has only one branch, ensure it matches exactly and no extra branches
+  //               if (branchNamesArray.length === 1) {
+  //                 return (
+  //                   hasMatchingBranch &&
+  //                   registration.branchName.length === 1 &&
+  //                   registration.branchName[0] === branchNamesArray[0]
+  //                 )
+  //               }
+
+  //               // If user has more than one branch, just check for any match
+  //               return hasMatchingBranch
+  //             })
+  //         )
+
+  //         setCallList(filtered)
+  //       }
+  //     })
+
+  //     // Cleanup the socket connection when the component unmounts
+  //     return () => {
+  //       socket.off("updatedCalls")
+  //     }
+  //   }
+  // }, [branch, users])
   const handleDate = (selectedDate) => {
+    console.log(selectedDate)
     const extractDateAndMonth = (date) => {
       const year = date.getFullYear()
       const month = date.getMonth() + 1 // getMonth() is 0-indexed
@@ -478,6 +521,8 @@ const Summary = () => {
         .toString()
         .padStart(2, "0")}`
     }
+    const a = !isNaN(selectedDate.startDate.getTime())
+    console.log(a)
 
     if (
       selectedDate.startDate instanceof Date &&
@@ -485,11 +530,13 @@ const Summary = () => {
       selectedDate.endDate instanceof Date &&
       !isNaN(selectedDate.endDate.getTime())
     ) {
+      console.log("hiii")
       // If both startDate and endDate are valid Date objects
       setDates({
         startDate: extractDateAndMonth(selectedDate.startDate),
         endDate: extractDateAndMonth(selectedDate.endDate)
       })
+      console.log(extractDateAndMonth(selectedDate.startDate))
     } else {
       // If dates are not valid Date objects, use them as they are
       setDates({

@@ -4,7 +4,7 @@ import ExpiredCustomer from "../../pages/primaryUser/List/ExpiredCustomer"
 import AccountSearch from "../../pages/primaryUser/List/AccountSearch"
 import LeaveRegister from "../../pages/primaryUser/calender/LeaveRegister"
 const staffreportsRoutes = [
-  { path: "/staff/reports/summary", component: Summary },
+  { path: "/staff/reports/summary", component: ComingSoon },
   { path: "/staff/reports/expiry-register", component: ExpiredCustomer },
 
   { path: "/staff/reports/customer-contact", component: ComingSoon },

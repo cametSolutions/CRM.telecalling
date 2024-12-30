@@ -45,7 +45,6 @@ export const BranchRegister = async (req, res) => {
       state,
       city
     })
-    console.log("control branch:", branches)
     const savedBranch = await branches.save()
     await Company.findByIdAndUpdate(
       companyName,
@@ -68,7 +67,6 @@ export const Getbranch = async (req, res) => {
       model: "Company",
       select: "companyName"
     })
-    console.log("branchdata :", branchData)
     if (!branchData && branchData.length < 0) {
       res.status(404).json({ messsge: "company not found" })
     }
@@ -80,45 +78,26 @@ export const Getbranch = async (req, res) => {
 }
 export const BranchEdit = async (req, res) => {
   const { branchData, branchId } = req.body
-  console.log("bodyyyy", req.body)
-
-  console.log("id", branchId)
 
   try {
     const objectId = new mongoose.Types.ObjectId(branchId)
-    // const updatedBranch = await Branch.updateOne(
-    //   { _id: branchId },
-    //   {
-    //     companyName: branchdata.companyName,
-    //     branchName: branchdata.branchName,
-    //     address: branchdata.adress,
-    //     city: branchdata.city,
-    //     pincode: branchdata.pincode,
-    //     country: branchdata.country,
-    //     state: branchdata.state,
-    //     email: branchdata.email,
 
-    //     mobile: branchdata.mobile,
-
-    //     landlineno: branchdata.landlineno
-    //   }
-    // )
     await Branch.findByIdAndUpdate(
       objectId,
       {
-        companyName: branchData.companyName,
-        branchName: branchData.branchName,
-        address: branchData.adress,
-        city: branchData.city,
-        pincode: branchData.pincode,
-        country: branchData.country,
-        state: branchData.state,
-        email: branchData.email,
-        notificationemail: branchData.notificationemail,
-        mailpassword: branchData.mailpassword,
-        mobile: branchData.mobile,
+        companyName: branchData?.companyName,
+        branchName: branchData?.branchName,
+        address: branchData?.adress,
+        city: branchData?.city,
+        pincode: branchData?.pincode,
+        country: branchData?.country,
+        state: branchData?.state,
+        email: branchData?.email,
+        notificationemail: branchData?.notificationemail,
+        mailpassword: branchData?.mailpassword,
+        mobile: branchData?.mobile,
 
-        landlineno: branchData.landlineno
+        landlineno: branchData?.landlineno
       },
       { new: true }
     )

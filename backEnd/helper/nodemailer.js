@@ -8,6 +8,7 @@ export const sendEmail = async (calldata, name, branchName, username) => {
   let organization
   let notificationemail
   let mailpassword
+  let landline
   const problem = new mongoose.Types.ObjectId(calldata.formdata.callnote)
 
   const customerproblem = await Callnote.find(problem)
@@ -18,9 +19,16 @@ export const sendEmail = async (calldata, name, branchName, username) => {
 
     notificationemail = result.notificationemail
     mailpassword = result.mailpassword
+    landline = result.landlineno
   } else if (branchName === "CAMET") {
     organization = "Camet IT Solution"
+    const result = await Branch.findOne({ branchName })
+    notificationemail = result.notificationemail
+    mailpassword = result.mailpassword
+
+    landline = result.landlineno
   }
+  console.log("landline", landline)
 
   const isoDate = calldata.timedata.startTime
   const date = new Date(isoDate)
@@ -90,16 +98,24 @@ export const sendEmail = async (calldata, name, branchName, username) => {
               <td>Serial No</td>
               <td>${calldata.license || "N/A"}</td>
             </tr>
+             <tr>
+              <td>Call Status</td>
+              <td>${calldata.formdata.status || "N/A"}</td>
+            </tr>
             <tr>
               <td>Problem</td>
               <td>${customerproblem[0].callNotes || "N/A"}</td>
             </tr>
-  
+           
+  ${
+    calldata.formdata.status === "solved"
+      ? `
             <tr>
-              <td>Call Status</td>
-              <td>${calldata.formdata.status || "N/A"}</td>
-            </tr>
-          
+              <td>Remarks</td>
+              <td>${calldata.formdata.solution || "N/A"}</td>
+            </tr>`
+      : ""
+  }
           </tbody>
         </table>
       `
@@ -109,16 +125,19 @@ export const sendEmail = async (calldata, name, branchName, username) => {
         <p>Dear ${name},</p>
         <p>We would like to share the following details:</p>
         ${tableContent}
-
-        <p>If you have any questions or need further assistance, feel free to contact us at <a href="mailto:${notificationemail}">${notificationemail}</a>.</p>
+        <p>
+  If you have any questions or need further assistance, feel free to contact us at 
+  <a href="mailto:${notificationemail}">${notificationemail}</a> or call us at 
+  <a href="tel:${landline}">${landline}</a>.
+</p>
         <p>Kind regards,<br>${username}<br>${organization}</p>
       `
 
   try {
-    const info = await transporter.sendMail({ 
+    const info = await transporter.sendMail({
       from: notificationemail, // Sender's name and address
       to: "solutions@camet.in", // Recipient's email address
-      // cc: "solutions@camet.in",
+      // cc: "abhidasabhi1234@gmail.com",
       subject: `New Support ticket created-${calldata.timedata.token || "N/A"}`, // Subject
       html: htmlContent // Email content as HTML
     })

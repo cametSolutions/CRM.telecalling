@@ -40,7 +40,7 @@ function LeaveApplication() {
   const [attendance, setAttendance] = useState(false)
   const [widthState, setWidthState] = useState("w-5/6")
   const [tableRows, setTableRows] = useState([])
-  const [existingEvent, setexistingEvent] = useState([])
+  // const [existingEvent, setexistingEvent] = useState([])
   const [clickedDate, setclickedDate] = useState(null)
   const userData = localStorage.getItem("user")
   const tabs = ["Leave", "Onsite", "Attendance"]
@@ -195,16 +195,19 @@ function LeaveApplication() {
   }
 
   const handleDateClick = (arg) => {
+    console.log("hii")
     const clickedDate = arg.dateStr
     setclickedDate(clickedDate)
+    console.log(clickedDate)
 
     // Check if there's already an event on this date
 
-    const existingEvent = events.find((event) => event.start === clickedDate)
+    const existingEvent = events?.find((event) => event.start === clickedDate)
 
-    setexistingEvent(existingEvent)
+    // setexistingEvent(existingEvent)
 
     if (existingEvent) {
+      console.log("iii")
       // Parse the inTime and outTime (assuming they are in "hh:mm AM/PM" format)
       const parseTime = (timeString) => {
         const [time, amPm] = timeString.split(" ")
@@ -242,6 +245,7 @@ function LeaveApplication() {
         setIsOnsite(true)
       }
     } else {
+      console.log("hii")
       setFormData({
         ...formData,
         startDate: arg.dateStr,
@@ -512,6 +516,7 @@ function LeaveApplication() {
         // )
 
         const responseData = await response.json()
+        console.log(responseData)
 
         if (!response.ok) {
           throw new Error("Failed to apply for leave")

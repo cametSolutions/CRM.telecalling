@@ -13,7 +13,8 @@ import {
   GetallCallnotes,
   CallnoteRegistration,
   UpdateCallnotes,
-  DeleteCallnotes
+  DeleteCallnotes,
+  GetselectedDateCalls
 } from "../../controller/secondaryUserController/customerController.js"
 
 const router = express.Router()
@@ -29,6 +30,7 @@ router.get("/getCustomer", authMiddleware, GetCustomer)
 router.post("/callRegistration", customerCallRegistration)
 router.get("/getcallregister/:callId", GetCallRegister)
 router.get("/getcallregister/", GetCallRegister)
+router.get("/getselectedDateCalls", authMiddleware, GetselectedDateCalls)
 router.delete("/deleteCustomer", authMiddleware, DeleteCustomer)
 
 router.get(
