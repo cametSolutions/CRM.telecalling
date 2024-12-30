@@ -24,7 +24,6 @@ export const CallNoteRegistration = () => {
     seteditState(false)
     const itemToEdit = items.find((item) => item._id === id)
     if (itemToEdit) {
-     
       setValue(itemToEdit.callNotes)
       setEditId(id)
 
@@ -119,23 +118,49 @@ export const CallNoteRegistration = () => {
           </button>
         </div>
       </div>
-      <section className=" m-8 ">
-        <div className="w-full xl:mb-0 ">
-          <div className="relative flex flex-col min-w-0 break-words bg-red-50 w-full mb-6 shadow-xl  rounded">
-            <div className=" mb-0 px-4 py-3 border-0">
-              <div className="flex flex-wrap items-center">
-                <div className="relative w-full px-4 max-w-full flex-grow flex-1 text-right">
-                  <button
-                    className="bg-indigo-500 text-white active:bg-indigo-600 text-xs font-bold uppercase px-3 py-1 rounded outline-none focus:outline-none  mb-1 ease-linear transition-all duration-150"
-                    type="button"
-                  >
-                    See all
-                  </button>
-                </div>
-              </div>
+      <section className="m-8">
+        <div className="w-full xl:mb-0">
+          <div className="relative flex flex-col min-w-0 break-words bg-red-50 w-full mb-6 p-6 shadow-xl rounded">
+            <div className="block w-full overflow-x-auto overflow-y-auto h-[calc(80vh-200px)]">
+              <table className="items-center w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-300 sticky top-0 z-10">
+                    <th className="w-3/6 px-6 text-left text-black  py-3 text-sm uppercase whitespace-nowrap font-semibold">
+                      Call Note
+                    </th>
+                    <th className="px-6 w-1/6 text-center text-blue-500 align-middle  py-3 text-sm uppercase  whitespace-nowrap font-semibold">
+                      Edit
+                    </th>
+                    <th className="px-6 w-1/6 text-right text-red-500 align-middle  py-3 text-sm uppercase whitespace-nowrap font-semibold">
+                      Delete
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items?.map((el) => (
+                    <tr key={el._id}>
+                      <th className="px-6 text-left col-span-2 text-wrap border-t-0 align-middle border-l-0 border-r-0 whitespace-nowrap text-black p-2">
+                        {el.callNotes}
+                      </th>
+                      <td className="cursor-pointer text-center flex justify-center px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                        <Edit onEdit={handleEdit} Id={el._id} />
+                      </td>
+                      <td className="cursor-pointer text-right px-6 border-t-0 align-middle border-l-0 border-r-0 whitespace-nowrap p-2">
+                        <DeleteAlert onDelete={handleDelete} Id={el._id} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+          </div>
+        </div>
+      </section>
 
-            <div className="block w-full  overflow-x-auto">
+      {/* <section className=" m-8 ">
+        <div className="w-full xl:mb-0 ">
+          <div className="relative flex flex-col min-w-0 break-words bg-red-50 w-full mb-6 p-6 shadow-xl  rounded">
+            <div className="block w-full  overflow-x-auto ">
               <table className="items-center  w-full border-collapse">
                 <thead>
                   <tr>
@@ -170,7 +195,7 @@ export const CallNoteRegistration = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
     </div>
   )
 }

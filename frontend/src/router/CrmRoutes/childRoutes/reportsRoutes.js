@@ -4,7 +4,7 @@ import ExpiredCustomer from "../../../pages/primaryUser/List/ExpiredCustomer"
 import AccountSearch from "../../../pages/primaryUser/List/AccountSearch"
 import LeaveSummary from "../../../components/primaryUser/LeaveSummary"
 const reportsRoutes = [
-  { path: "/admin/reports/summary", component: Summary },
+  { path: "/admin/reports/summary", component: ComingSoon },
 
   { path: "/admin/reports/expiry-register", component: ExpiredCustomer },
 

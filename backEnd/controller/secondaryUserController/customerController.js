@@ -67,6 +67,66 @@ export const UpdateCallnotes = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" })
   }
 }
+export const GetselectedDateCalls = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query
+  
+    const customerCalls = await CallRegistration.aggregate([
+      {
+        $addFields: {
+          filteredAttendees: {
+            $filter: {
+              input: "$callregistration.formdata.attendedBy", // The array to filter
+              as: "attendee", // Alias for each element in the array
+              cond: {
+                $and: [
+                  { $eq: [{ $type: "$$attendee" }, "object"] }, // Ensure it's an object
+                  { $ne: ["$$attendee.calldate", undefined] }, // Ensure 'calldate' exists
+                  { $ne: ["$$attendee.calldate", ""] }, // Ensure 'calldate' is not empty
+                  {
+                    $and: [
+                      {
+                        $gte: [
+                          {
+                            $dateFromString: {
+                              dateString: "$$attendee.calldate"
+                            }
+                          }, // Convert 'calldate' to Date
+                          startDate // Compare to start date
+                        ]
+                      },
+                      {
+                        $lte: [
+                          {
+                            $dateFromString: {
+                              dateString: "$$attendee.calldate"
+                            }
+                          }, // Convert 'calldate' to Date
+                          endDate // Compare to end date
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      // Optionally filter documents that have non-empty filteredAttendees
+      {
+        $match: { "filteredAttendees.0": { $exists: true } }
+      }
+    ])
+
+    console.log("customercalls", customerCalls)
+
+    res.status(200).send(customerCalls)
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "internal server error" })
+  }
+}
 export const CallnoteRegistration = async (req, res) => {
   try {
     const formdata = req.body
@@ -166,45 +226,57 @@ export const CustomerEdit = async (req, res) => {
   const { customerData, tableData } = req.body
   const customerId = req.query.customerid
 
+  if (!customerId || !customerData) {
+    return res
+      .status(400)
+      .json({ message: "Customer ID and data are required" })
+  }
+
   try {
-    if (customerId && customerData) {
-      const objectId = new mongoose.Types.ObjectId(customerId)
+    const objectId = new mongoose.Types.ObjectId(customerId)
 
-      const existingCustomer = await Customer.findById(objectId)
-      // Now handle the update of `selected` data
-      if (tableData.length > 0) {
-        // Iterate over the new selected data (tabledata)
-        for (const item of tableData) {
-          // Find the index of the entry in `customer.selected` array that matches the product_id
-          const selectedIndex = existingCustomer.selected.findIndex(
-            (selectedItem) =>
-              selectedItem.product_id.toString() === item.product_id.toString()
-          )
+    // Find the existing customer
+    const existingCustomer = await Customer.findById(objectId)
+    if (!existingCustomer) {
+      return res.status(404).json({ message: "Customer not found" })
+    }
 
-          if (selectedIndex !== -1) {
-            // If we found the product in the existingCustomer's `selected` array, update it
-            existingCustomer.selected[selectedIndex] = {
-              ...existingCustomer.selected[selectedIndex], // Retain other data
-              ...item // Update with new data from tabledata
-            }
-          } else {
-            // If the product_id doesn't exist in the existingCustomer's selected array, push a new entry
-            existingCustomer.selected.push(item)
+    // Update formdata (overwrite existing fields with new ones)
+    Object.assign(existingCustomer, customerData)
+
+    // Update or add tabledata (handle array of objects)
+    if (Array.isArray(tableData) && tableData.length > 0) {
+      for (const item of tableData) {
+        const existingIndex = existingCustomer.selected.findIndex(
+          (selectedItem) =>
+            selectedItem.product_id.toString() === item.product_id.toString()
+        )
+
+        if (existingIndex !== -1) {
+          // Update existing entry
+          existingCustomer.selected[existingIndex] = {
+            ...existingCustomer.selected[existingIndex],
+            ...item
           }
+        } else {
+          // Add new entry if not found
+          existingCustomer.selected.push(item)
         }
       }
-
-      if (!existingCustomer) {
-        return res.status(404).json({ message: "Customer not found" })
-      }
-
-      await existingCustomer.save()
-      res.status(200).json({ message: "Customer updated succesfully" })
     }
+
+    // Save the updated customer document
+    await existingCustomer.save()
+
+    res.status(200).json({
+      message: "Customer updated successfully"
+    })
   } catch (error) {
-    console.log("Error:", error.message)
-    res.status(500).json({ message: "Error updating customer" })
+    console.error("Error updating customer:", error)
+    res.status(500).json({ message: "Internal server error" })
   }
+
+
 }
 export const DeleteCustomer = async (req, res) => {
   const { id } = req.query
@@ -543,15 +615,7 @@ export const GetCustomer = async (req, res) => {
         console.error(error)
         return res.status(500).json({ message: "Internal server error" })
       }
-      // console.log("cap")
-      // const customers = await Customer.find().sort({ customerName: 1 })
-      // if (customers.length === 0) {
-      //   return res.status(404).json({ message: "No customer found", data: [] })
-      // } else {
-      //   return res
-      //     .status(200)
-      //     .json({ message: "Customer(s) found", data: customers })
-      // }
+     
     }
   } catch (error) {
     console.error("Error fetching customer data:", error.message)

@@ -110,7 +110,7 @@ export const Register = async (req, res) => {
           selected: tabledata
         })
 
-        const savedstaff = await staff.save()
+        await staff.save()
 
         return res.status(200).json({
           status: true,
@@ -146,7 +146,6 @@ export const StaffRegister = async (req, res) => {
       assignedtoModel = "Admin"
     } else {
       // Handle the case where assignedto is neither Staff nor Admin
-      console.log("Assigned to does not exist in either model")
       return res
         .status(400)
         .json({ message: "Assigned to user does not exist." })
@@ -519,7 +518,6 @@ export const AttendanceApply = async (req, res) => {
   try {
     const selectattendance = req.body
     const { selectedid } = req.query
-    console.log("iddattendid", selectedid)
 
     if (!selectedid) {
       return res.status(400).json({ message: "Selected ID is required" })
@@ -549,7 +547,6 @@ export const AttendanceApply = async (req, res) => {
       existingAttendance.inTime = inTimeString
       existingAttendance.outTime = outTimeString
       await existingAttendance.save()
-      console.log("Hiiiiii")
       return res.status(200).json({
         message: "Attendance updated successfully",
         attendance: existingAttendance
@@ -588,7 +585,6 @@ export const AttendanceApply = async (req, res) => {
 export const LeaveApply = async (req, res) => {
   const formData = req.body
   const { selectedid, assignedto } = req.query
-  console.log("selectedid", selectedid)
 
   const objectId = new mongoose.Types.ObjectId(selectedid)
   const assignedTo = new mongoose.Types.ObjectId(assignedto)
@@ -617,10 +613,7 @@ export const LeaveApply = async (req, res) => {
       assignedto: assignedTo
     })
 
-    const a = await leave.save()
-    if (a) {
-      console.log("successsss")
-    }
+    await leave.save()
 
     const leaveSubmit = await LeaveRequest.find({ userId: objectId })
 
@@ -678,7 +671,6 @@ export const OnsiteleaveApply = async (req, res) => {
 export const GetAllAttendance = async (req, res) => {
   try {
     const { userid } = req.query // Extract userid from query parameters
-    console.log("tyeeee", typeof userid)
 
     const objectId = new mongoose.Types.ObjectId(userid)
     if (!userid) {
@@ -704,11 +696,9 @@ export const GetAllAttendance = async (req, res) => {
 }
 export const GetallLeave = async (req, res) => {
   const { userid } = req.query // Extract userid from query parameters
-  console.log("tyeeeessss", typeof userid)
-  console.log("iddd", userid)
 
   const objectId = new mongoose.Types.ObjectId(userid)
-  console.log("idddd", objectId)
+
   try {
     // Validate userid
     if (!userid) {
@@ -790,7 +780,6 @@ export const GetAllLeaveRequest = async (req, res) => {
         }
       ]
     })
-    console.log("list", leaveList)
 
     // if (onsite === "true") {
     //   leaveList = await LeaveRequest.find({
@@ -876,13 +865,11 @@ export const GetallusersAttendance = async (req, res) => {
   }
 }
 export const ApproveLeave = async (req, res) => {
-  console.log("hiiiii")
   try {
     const { role, userId, selectedId, startDate, endDate, onsite } = req.query
 
     // Validate common parameters
     if (!role || !startDate || !endDate || !onsite) {
-      console.log("onsiteddddddd", onsite)
       return res
         .status(400)
         .json({ message: "Missing required query parameters." })
@@ -915,7 +902,7 @@ export const ApproveLeave = async (req, res) => {
     if (role !== "Admin" && userObjectId) {
       baseQuery.assignedto = userObjectId
     }
-    console.log("base", baseQuery)
+
     // Define role-based update fields
     const updateFields =
       role === "Admin"
@@ -1026,7 +1013,7 @@ export const RejectLeave = async (req, res) => {
     const userId = req?.query?.userId
     const onsite = req?.query?.onsite
     const startdate = req?.query?.startdate
-    console.log("stert", startdate)
+
     const enddate = req?.query?.enddate
     // Ensure the dates are valid and convert them to ISO format
     const startDate = new Date(startdate) // Convert to Date object
@@ -1055,7 +1042,6 @@ export const RejectLeave = async (req, res) => {
     // Save the updated leave request
     const succesreject = await leaveRequest.save()
     if (succesreject) {
-      console.log("okkkk")
       // Check if the dates are valid
       if (isNaN(startDate) || isNaN(endDate)) {
         return res.status(400).send({ message: "Invalid date format" })
@@ -1098,7 +1084,6 @@ export const RejectLeave = async (req, res) => {
           }
         ]
       })
-      console.log("list", leaveList)
 
       return res.status(200).json({
         message: "Leave request updated successfully",
@@ -1201,10 +1186,12 @@ export const DeleteUser = async (req, res) => {
 // }
 export const GetStaffCallList = async (req, res) => {
   try {
+    const { startDate, endDate } = req.query
+
     // Fetch staff details
     const staff = await Staff.find()
     const a = await Staff.find().select("name _id callstatus.totalCall").lean()
-    console.log("a", a)
+
     // Fetch customer calls and populate callerId in attendedBy array
     const customerCalls = await CallRegistration.find()
       .populate("callregistration.formdata.attendedBy.callerId") // Populate callerId field
@@ -1359,7 +1346,7 @@ export const GetStaffCallList = async (req, res) => {
     //   .flat() // Flatten nested arrays into a single array
 
     // Debugging output
-    console.log("counts", userCallsCount)
+    // console.log("counts", userCallsCount)
 
     // Response to client
     if (staff) {
@@ -1369,7 +1356,7 @@ export const GetStaffCallList = async (req, res) => {
       })
     }
   } catch (error) {
-    console.log(error.message)
+    console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })
   }
 }
