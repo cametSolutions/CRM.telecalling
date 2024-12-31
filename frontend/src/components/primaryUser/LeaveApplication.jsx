@@ -156,6 +156,7 @@ function LeaveApplication() {
       if (!event.onsite) {
         dayObject = {
           start: "",
+          leaveType: "",
           reason: event?.reason,
           inTime: "On Leave",
           outTime: "On Leave",
@@ -173,12 +174,15 @@ function LeaveApplication() {
         dayObject.start = formattedDate
       }
       if (event.adminverified && !event.onsite) {
+        dayObject.leaveType = event.leaveType
         dayObject.color = "red"
       } else if (event.adminverified && event.onsite) {
+        dayObject.leaveType = event.leaveType
         dayObject.color = "blue"
       } else if (event.inTime) {
         dayObject.inTime = event.inTime
       } else {
+        dayObject.leaveType = event.leaveType
         dayObject.color = "orange"
       }
       return dayObject
@@ -223,7 +227,7 @@ function LeaveApplication() {
         ...formData,
         startDate: existingEvent?.start,
 
-        leaveType: existingEvent?.title,
+        leaveType: existingEvent?.leaveType,
         onsite: existingEvent?.onsite,
         [existingEvent.onsite ? "description" : "reason"]:
           existingEvent?.reason,
@@ -350,7 +354,7 @@ function LeaveApplication() {
   const handleSubmit = async (tab) => {
     try {
       if (tab === "Leave") {
-        //Assuming you have an API endpoint for creating leave requests
+        // Assuming you have an API endpoint for creating leave requests
         // const response = await fetch(
         //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
         //   {
