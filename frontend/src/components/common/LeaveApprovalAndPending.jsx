@@ -393,6 +393,7 @@ const LeaveApprovalAndPending = () => {
                 <th className="py-3">Apply Date</th>
                 <th className="py-3">Leave Date</th>
                 <th className="py-3">Leave Type</th>
+                <th className="py-3">Shift</th>
                 <th className="py-3">{isOnsite ? "Remarks" : "Reason"}</th>
                 <th className="py-3">Dpt.Status</th>
                 <th className="py-3">Hr.Status</th>
@@ -438,6 +439,9 @@ const LeaveApprovalAndPending = () => {
                     </td>
                     <td className="border border-gray-300 py-1 px-4">
                       {user?.leaveType}
+                    </td>
+                    <td className="border border-gray-300 py-1 px-4">
+                      {user?.halfDayPeriod}
                     </td>
                     <td className="border border-gray-300 py-1">
                       {user?.reason || user?.description}
