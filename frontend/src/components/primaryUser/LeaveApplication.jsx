@@ -150,6 +150,7 @@ function LeaveApplication() {
 
   const formatEventData = (events) => {
     return events?.map((event) => {
+      console.log(event)
       const date = new Date(event.leaveDate) // Convert to Date object
       const formattedDate = date.toISOString().split("T")[0] // Format as YYYY-MM-DD
       let dayObject
@@ -157,6 +158,7 @@ function LeaveApplication() {
         dayObject = {
           start: "",
           leaveType: "",
+          halfDayPeriod: "",
           reason: event?.reason,
           inTime: "On Leave",
           outTime: "On Leave",
@@ -174,14 +176,17 @@ function LeaveApplication() {
         dayObject.start = formattedDate
       }
       if (event.adminverified && !event.onsite) {
+        dayObject.halfDayPeriod = event.halfDayPeriod
         dayObject.leaveType = event.leaveType
         dayObject.color = "red"
       } else if (event.adminverified && event.onsite) {
+        dayObject.halfDayPeriod = event.halfDayPeriod
         dayObject.leaveType = event.leaveType
         dayObject.color = "blue"
       } else if (event.inTime) {
         dayObject.inTime = event.inTime
       } else {
+        dayObject.halfDayPeriod = event.halfDayPeriod
         dayObject.leaveType = event.leaveType
         dayObject.color = "orange"
       }
@@ -226,8 +231,9 @@ function LeaveApplication() {
       setFormData({
         ...formData,
         startDate: existingEvent?.start,
-
+        halfDayPeriod:existingEvent.halfDayPeriod,
         leaveType: existingEvent?.leaveType,
+        // halfDayPeriod:existingEvent
         onsite: existingEvent?.onsite,
         [existingEvent.onsite ? "description" : "reason"]:
           existingEvent?.reason,
