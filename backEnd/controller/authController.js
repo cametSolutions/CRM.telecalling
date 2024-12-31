@@ -533,9 +533,13 @@ export const AttendanceApply = async (req, res) => {
         amPm: outTimeAmPm
       }
     } = selectattendance
+    console.log("selectedattendance", selectattendance)
+
     // Merge hours, minutes, and amPm into time strings
     const inTimeString = `${inTimeHours}:${inTimeMinutes} ${inTimeAmPm}`
     const outTimeString = `${outTimeHours}:${outTimeMinutes} ${outTimeAmPm}`
+    console.log("intime", inTimeString)
+    console.log("outime", outTimeString)
 
     // Check if attendance for the given date already exists for the selected ID
     const existingAttendance = await Attendance.findOne({
@@ -645,6 +649,7 @@ export const OnsiteleaveApply = async (req, res) => {
       description,
       halfDayPeriod
     } = formData
+    console.log("onsite", onsite)
 
     const onsiteLeave = new LeaveRequest({
       leaveDate: new Date(startDate).toISOString().split("T")[0],

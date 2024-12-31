@@ -147,7 +147,8 @@ const Summary = () => {
           fetchUserList()
         }
       } else {
-        if (callList) {
+        if (callList && callList.length > 0) {
+          console.log(callList)
           console.log("hii")
           console.log()
           const customerSummaries = callList
@@ -410,16 +411,22 @@ const Summary = () => {
 
   useEffect(() => {
     const fetchCalls = async () => {
-      if (!branch && !dates && !users) return
+      if (
+        (!branch || branch.length === 0) &&
+        (!dates.startDate || !dates.endDate) &&
+        !users
+      )
+        return
 
       try {
         console.log(dates)
-        console.log("hiiii")
+        console.log("hii")
         const query = `startDate=${dates.startDate}&endDate=${dates.endDate}`
         const response = await api.get(
           `/customer/getselectedDateCalls?${query}`
         ) // Replace with your API endpoint
         const data = response.data
+        console.log(data)
 
         if (users?.role === "Admin") {
           setCallList(data.calls)

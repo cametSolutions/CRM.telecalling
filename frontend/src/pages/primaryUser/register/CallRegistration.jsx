@@ -51,19 +51,21 @@ export default function CallRegistration() {
   const [callData, setCallData] = useState([])
   const [branch, setBranches] = useState([])
   const [callnote, setCallnotes] = useState([])
-
+  const debounceTimeoutRef = useRef(null)
+  const location = useLocation()
+  const { calldetails, token } = location.state || {}
   const [tokenData, setTokenData] = useState(null)
 
   const { data: registeredCall, refreshHook } = UseFetch(
-    selectedCustomer &&
+    selectedCustomer?._id &&
       `/customer/getcallregister?customerid=${selectedCustomer?._id || null}`
   )
   const { data: callnotes } = UseFetch("/customer/getallcallNotes")
 
   // useRef to keep track of the latest timeout for debouncing
-  const debounceTimeoutRef = useRef(null)
-  const location = useLocation()
-  const { calldetails, token } = location.state || {}
+
+  console.log(calldetails)
+  console.log(token)
 
   useEffect(() => {
     if (callnotes && callnotes.length > 0) {
@@ -103,6 +105,8 @@ export default function CallRegistration() {
 
   useEffect(() => {
     if (calldetails) {
+      console.log("hdi")
+      console.log(calldetails)
       // Fetch the call details using the ID
       fetchCallDetails(calldetails)
         .then((callData) => {
@@ -115,7 +119,8 @@ export default function CallRegistration() {
           const productName = matchingRegistration
             ? matchingRegistration.product.productName
             : null
-
+          console.log(productName)
+          console.log(callData)
           const matchingProducts =
             callData.callDetails.customerid.selected.filter(
               (product) => product.productName === productName
@@ -123,6 +128,7 @@ export default function CallRegistration() {
 
           setSelectedCustomer(callData?.callDetails?.customerid)
           setName(callData?.callDetails?.customerid?.customerName)
+          console.log(matchingProducts)
 
           setProductDetails(matchingProducts)
 
@@ -148,6 +154,7 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
+    console.log(callId)
     const response = await fetch(
       `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
     )

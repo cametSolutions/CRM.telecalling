@@ -69,54 +69,58 @@ export const UpdateCallnotes = async (req, res) => {
 }
 export const GetselectedDateCalls = async (req, res) => {
   try {
+    console.log("koolll")
     const { startDate, endDate } = req.query
-  
+    console.log("stardate", startDate)
+    console.log(typeof startDate)
+    console.log("enddate", endDate)
+
     const customerCalls = await CallRegistration.aggregate([
+      // Stage 1: Unwind the attendedBy array
       {
-        $addFields: {
-          filteredAttendees: {
-            $filter: {
-              input: "$callregistration.formdata.attendedBy", // The array to filter
-              as: "attendee", // Alias for each element in the array
-              cond: {
-                $and: [
-                  { $eq: [{ $type: "$$attendee" }, "object"] }, // Ensure it's an object
-                  { $ne: ["$$attendee.calldate", undefined] }, // Ensure 'calldate' exists
-                  { $ne: ["$$attendee.calldate", ""] }, // Ensure 'calldate' is not empty
-                  {
-                    $and: [
-                      {
-                        $gte: [
-                          {
-                            $dateFromString: {
-                              dateString: "$$attendee.calldate"
-                            }
-                          }, // Convert 'calldate' to Date
-                          startDate // Compare to start date
-                        ]
-                      },
-                      {
-                        $lte: [
-                          {
-                            $dateFromString: {
-                              dateString: "$$attendee.calldate"
-                            }
-                          }, // Convert 'calldate' to Date
-                          endDate // Compare to end date
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              }
-            }
-          }
+        $unwind: {
+          path: "$callregistration.formdata.attendedBy",
+          preserveNullAndEmptyArrays: false // Only keep documents with attendedBy entries
         }
-      },
-      // Optionally filter documents that have non-empty filteredAttendees
-      {
-        $match: { "filteredAttendees.0": { $exists: true } }
       }
+      // Stage 2: Match documents within the date range and ensure calldate is valid
+      // {
+      //   $match: {
+      //     $and: [
+      //       {
+      //         "callregistration.formdata.attendedBy.calldate": {
+      //           $exists: true,
+      //           $ne: ""
+      //         }
+      //       }, // Ensure calldate exists and is not empty
+      //       {
+      //         "callregistration.formdata.attendedBy.calldate": {
+      //           $gte: startDate,
+      //           $lte: endDate
+      //         }
+      //       } // Match date range
+      //     ]
+      //   }
+      // }
+      // Stage 3: Group back to reconstruct documents and include only filtered attendedBy entries
+      // {
+      //   $group: {
+      //     _id: "$_id",
+      //     attendedBy: {
+      //       $push: "$callregistration.formdata.attendedBy" // Recreate the attendedBy array with filtered data
+      //     },
+      //     // Include other fields if needed
+      //     otherFields: { $first: "$otherFields" } // Example: Replace 'otherFields' with the fields you want to preserve
+      //   }
+      // },
+      // // Stage 4: Project the final structure
+      // {
+      //   $project: {
+      //     _id: 1,
+      //     "callregistration.formdata.attendedBy": "$attendedBy" // Reassign filtered attendedBy array
+      //     // Include additional fields if needed
+      //   }
+      // }
     ])
 
     console.log("customercalls", customerCalls)
@@ -275,8 +279,6 @@ export const CustomerEdit = async (req, res) => {
     console.error("Error updating customer:", error)
     res.status(500).json({ message: "Internal server error" })
   }
-
-
 }
 export const DeleteCustomer = async (req, res) => {
   const { id } = req.query
@@ -615,7 +617,6 @@ export const GetCustomer = async (req, res) => {
         console.error(error)
         return res.status(500).json({ message: "Internal server error" })
       }
-     
     }
   } catch (error) {
     console.error("Error fetching customer data:", error.message)
@@ -1420,9 +1421,13 @@ export const GetCallRegister = async (req, res) => {
   try {
     const { customerid } = req.query
 
+    console.log("idsss", customerid)
+
     const { callId } = req.params
+    console.log("callid", callId)
 
     if (customerid !== "null" && customerid) {
+      console.log("hiiiiiiiii")
       const customerId = new mongoose.Types.ObjectId(customerid)
       const registeredCall = await CallRegistration.findOne({
         customerid: customerId
@@ -1582,12 +1587,14 @@ export const GetCallRegister = async (req, res) => {
         return res.status(404).json({ message: "No registered Calls" })
       }
     } else if (callId) {
+      console.log("slw")
       const callDetails = await CallRegistration.findById(callId)
         .populate("customerid")
         .populate({
           path: "callregistration.product", // Populate the product field inside callregistration array
           model: "Product"
         })
+      console.log("calldetaisl", callDetails)
 
       const attendedByIds = new Set()
       const completedByIds = new Set()
@@ -1739,6 +1746,7 @@ export const GetCallRegister = async (req, res) => {
       if (!callDetails) {
         return res.status(404).json({ message: "Calls not found" })
       } else {
+        console.log("data", callDetails)
         return res
           .status(200)
           .json({ message: "calls with respect customer found", callDetails })
