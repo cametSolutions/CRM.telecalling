@@ -175,11 +175,11 @@ function LeaveApplication() {
       if (formattedDate) {
         dayObject.start = formattedDate
       }
-      if (event.adminverified && !event.onsite) {
+      if (event.departmentverified && !event.onsite) {
         dayObject.halfDayPeriod = event.halfDayPeriod
         dayObject.leaveType = event.leaveType
         dayObject.color = "red"
-      } else if (event.adminverified && event.onsite) {
+      } else if (event.departmentverified && event.onsite) {
         dayObject.halfDayPeriod = event.halfDayPeriod
         dayObject.leaveType = event.leaveType
         dayObject.color = "blue"
@@ -231,7 +231,7 @@ function LeaveApplication() {
       setFormData({
         ...formData,
         startDate: existingEvent?.start,
-        halfDayPeriod:existingEvent.halfDayPeriod,
+        halfDayPeriod: existingEvent.halfDayPeriod,
         leaveType: existingEvent?.leaveType,
         // halfDayPeriod:existingEvent
         onsite: existingEvent?.onsite,
