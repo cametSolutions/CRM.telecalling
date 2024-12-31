@@ -40,7 +40,7 @@ function LeaveApplication() {
   const [attendance, setAttendance] = useState(false)
   const [widthState, setWidthState] = useState("w-5/6")
   const [tableRows, setTableRows] = useState([])
-  // const [existingEvent, setexistingEvent] = useState([])
+
   const [clickedDate, setclickedDate] = useState(null)
   const userData = localStorage.getItem("user")
   const tabs = ["Leave", "Onsite", "Attendance"]
@@ -76,7 +76,7 @@ function LeaveApplication() {
           const fdate = new Date(item.attendanceDate) // Convert to Date object
 
           let date = fdate.toISOString().split("T")[0]
-          let existingDate = formattedEvents.find((event) => {
+          let existingDate = formattedEvents?.find((event) => {
             return event.start === date
           })
           if (existingDate) {
@@ -95,8 +95,26 @@ function LeaveApplication() {
             return dayObject
           }
         })
+
         setEvents([...formattedEvents, ...attendanceDetails])
-      } else {
+      } else if (attendee && attendee.length > 0) {
+        attendanceDetails = attendee.map((item) => {
+          let dayObject = {
+            start: "",
+            reason: "No leave today",
+            inTime: "On Leave",
+            outTime: "On Leave",
+            color: "green"
+          }
+
+          dayObject.start = item.attendanceDate
+          dayObject.inTime = item?.inTime
+          dayObject.outTime = item?.outTime
+
+          return dayObject
+        })
+        setEvents(attendanceDetails)
+      } else if (formattedEvents && formattedEvents.length > 0) {
         setEvents(formattedEvents)
       }
     }
@@ -134,34 +152,36 @@ function LeaveApplication() {
     return events?.map((event) => {
       const date = new Date(event.leaveDate) // Convert to Date object
       const formattedDate = date.toISOString().split("T")[0] // Format as YYYY-MM-DD
+      let dayObject
+      if (!event.onsite) {
+        dayObject = {
+          start: "",
+          reason: event?.reason,
+          inTime: "On Leave",
+          outTime: "On Leave",
+          color: ""
+        }
+      } else {
+        dayObject = {
+          start: "",
+          reason: event?.description,
 
-      let dayObject = {
-        start: "",
-        reason: event?.reason,
-        inTime: "On Leave",
-        outTime: "On Leave",
-        color: ""
+          color: ""
+        }
       }
       if (formattedDate) {
         dayObject.start = formattedDate
       }
-      if (event.adminverified) {
+      if (event.adminverified && !event.onsite) {
         dayObject.color = "red"
+      } else if (event.adminverified && event.onsite) {
+        dayObject.color = "blue"
       } else if (event.inTime) {
         dayObject.inTime = event.inTime
       } else {
         dayObject.color = "orange"
       }
       return dayObject
-    })
-  }
-
-  const handleOnsiteChange = () => {
-    setIsOnsite(!isOnsite)
-
-    setFormData({
-      ...formData,
-      onsite: !formData.onsite
     })
   }
 
@@ -180,25 +200,9 @@ function LeaveApplication() {
     ])
   }
 
-  const handleDropdownChange = (index, value) => {
-    const updatedRows = [...tableRows]
-    updatedRows[index].place = value
-    setTableRows(updatedRows)
-  }
-  const selectAttendance = (e) => {
-    const { name, value } = e.target
-
-    setselectedAttendance((prev) => ({
-      ...prev, // Spread the existing state
-      [name]: value // Dynamically update the property corresponding to 'name'
-    }))
-  }
-
   const handleDateClick = (arg) => {
-    console.log("hii")
     const clickedDate = arg.dateStr
     setclickedDate(clickedDate)
-    console.log(clickedDate)
 
     // Check if there's already an event on this date
 
@@ -207,7 +211,6 @@ function LeaveApplication() {
     // setexistingEvent(existingEvent)
 
     if (existingEvent) {
-      console.log("iii")
       // Parse the inTime and outTime (assuming they are in "hh:mm AM/PM" format)
       const parseTime = (timeString) => {
         const [time, amPm] = timeString.split(" ")
@@ -245,7 +248,6 @@ function LeaveApplication() {
         setIsOnsite(true)
       }
     } else {
-      console.log("hii")
       setFormData({
         ...formData,
         startDate: arg.dateStr,
@@ -324,72 +326,17 @@ function LeaveApplication() {
     setTotalAttendance(filteredData)
   }
 
-  const handleDelete = async (eventId) => {
-    try {
-      // Assuming you have an API endpoint for deleting leave requests
-      const response = await fetch(`/api/leave/${eventId}`, {
-        method: "DELETE"
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to delete leave request")
-      }
-
-      // Remove the event from the calendar (simplified example)
-      setEvents(events.filter((event) => event.id !== eventId))
-
-      // Close the modal
-      setShowModal(false)
-    } catch (error) {
-      console.error("Error deleting leave request:", error)
-    }
-  }
-
-  //   const handleDelete = async (id) => {
-  //     try {
-  //       await fetch(`/api/leaves/${id}`, {
-  //         method: "DELETE"
-  //       })
-  //       setEvents(events.filter((event) => event._id !== id))
-  //     } catch (error) {
-  //       console.error("Error deleting leave:", error)
-  //     }
-  //   }
-
   const handleInputChange = debounce((e) => {
-    const { name, value, type, checked } = e.target
+    const { name, value } = e.target
 
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value
+      [name]: value
     })
   }, 300)
 
   const handleChange = (e) => handleInputChange(e)
 
-  // Function to map classNames to colors
-  const getColorFromClassName = (className) => {
-    const colorMap = {
-      "unverified-event": "#ffcc00",
-      "cancel-status": "#ff0000",
-      "hr-rejected": "#cc0000",
-      "fully-verified-event": "#00cc66",
-      "dept-rejected": "#9900cc",
-      "dept-approved-event": "#0066cc",
-      "onsite-approved-event": "#33ccff",
-      "onsite-pending-event": "#ff9900"
-    }
-    return colorMap[className] || "#cccccc" // Default to grey if className is not mapped
-  }
-  const handleHourChange = (e) => {
-    setAttendance((prev) => ({
-      ...prev,
-      [type]: {
-        ...prev[type],
-        [field]: value
-      }
-    }))
-  }
   const handleTimeChange = (type, field, value) => {
     setselectedAttendance((prev) => ({
       ...prev,
@@ -400,41 +347,12 @@ function LeaveApplication() {
     }))
   }
 
-  const handleMinuteChange = (e) => {
-    setselectedAttendance({ ...selectedAttendance, minutes: e.target.value })
-  }
-
-  const handleAmPmChange = (e) => {
-    setselectedAttendance({ ...selectedAttendance, amPm: e.target.value })
-  }
-  const handleAttendance = () => {
-    setAttendance(!attendance)
-    // setselectedAttendance((prev) => ({
-    //   ...prev, // Spread the existing state
-    //   attendanceDate: formData.startDate // Add or update the attendanceDate field
-
-    // }))
-
-    setWidthState(widthState === "w-5/6" ? "w-2/6" : "w-5/6")
-  }
-
   const handleSubmit = async (tab) => {
     try {
       if (tab === "Leave") {
         //Assuming you have an API endpoint for creating leave requests
-        const response = await fetch(
-          `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify(formData),
-            credentials: "include"
-          }
-        )
         // const response = await fetch(
-        //   `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+        //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
         //   {
         //     method: "POST",
         //     headers: {
@@ -444,6 +362,17 @@ function LeaveApplication() {
         //     credentials: "include"
         //   }
         // )
+        const response = await fetch(
+          `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(formData),
+            credentials: "include"
+          }
+        )
 
         const responseData = await response.json()
 
@@ -459,14 +388,14 @@ function LeaveApplication() {
           }))
         }
       } else if (tab === "Onsite") {
-        const response = await api.post(
-          `http://localhost:9000/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
-          { formData, tableRows }
-        )
         // const response = await api.post(
-        //   `https://www.crm.camet.in/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+        //   `http://localhost:9000/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
         //   { formData, tableRows }
         // )
+        const response = await api.post(
+          `https://www.crm.camet.in/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          { formData, tableRows }
+        )
 
         if (response.status === 200) {
           setFormData((prev) => ({
@@ -492,19 +421,8 @@ function LeaveApplication() {
           refreshHook()
         }
       } else if (tab === "Attendance") {
-        const response = await fetch(
-          `http://localhost:9000/api/auth/attendance?selectedid=${user._id}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify(selectedAttendance),
-            credentials: "include"
-          }
-        )
         // const response = await fetch(
-        //   `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}`,
+        //   `http://localhost:9000/api/auth/attendance?selectedid=${user._id}`,
         //   {
         //     method: "POST",
         //     headers: {
@@ -514,9 +432,19 @@ function LeaveApplication() {
         //     credentials: "include"
         //   }
         // )
+        const response = await fetch(
+          `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(selectedAttendance),
+            credentials: "include"
+          }
+        )
 
         const responseData = await response.json()
-        console.log(responseData)
 
         if (!response.ok) {
           throw new Error("Failed to apply for leave")
@@ -539,54 +467,6 @@ function LeaveApplication() {
     }
   }
 
-  const handleApply = async () => {
-    try {
-      if (formData.onsite) {
-      } else {
-      }
-    } catch (error) {
-      console.error("Error applying for leave:", error)
-    }
-  }
-  const handleApplyAttendance = async () => {
-    const response = await fetch(
-      `http://localhost:9000/api/auth/attendance?selectedid=${user._id}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(selectedAttendance),
-        credentials: "include"
-      }
-    )
-    // const response = await fetch(
-    //   `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}`,
-    //   {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json"
-    //     },
-    //     body: JSON.stringify(selectedAttendance),
-    //     credentials: "include"
-    //   }
-    // )
-
-    const responseData = await response.json()
-
-    if (!response.ok) {
-      throw new Error("Failed to apply for leave")
-    }
-    refreshHook()
-
-    setShowModal(false)
-    setselectedAttendance({
-      attendanceDate: "",
-      inTime: "",
-      outTime: ""
-    })
-  }
-  ////
   const renderContent = () => {
     switch (selectedTab) {
       case "Leave":
@@ -1001,6 +881,10 @@ function LeaveApplication() {
             <div className="h-3 w-3 bg-pink-300 "></div>
             <span className="text-sm md:text-base">Not selected</span>
           </div>
+          <div className="flex items-center space-x-2">
+            <div className="h-3 w-3 bg-blue-500 "></div>
+            <span className="text-sm md:text-base">Onsite</span>
+          </div>
         </div>
         <div className="flex">
           <div className="mr-5">
@@ -1195,463 +1079,18 @@ function LeaveApplication() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-3 rounded-lg shadow-lg w-full mx-4 sm:w-3/4 md:w-3/4 lg:w-4/6xl:w-4/6 overflow-y-auto">
             <div>
-              {/* {!attendance ? (
-                <div>
-                  
-
-                  <div className="flex justify-between mb-1">
-                    <h2 className="text-xl font-bold">Leave Application</h2>
-                    <button
-                      onClick={handleAttendance}
-                      className="bg-gradient-to-b from-blue-200 to-blue-400 px-2 rounded-xl hover:from-blue-400 hover:to-blue-600"
-                    >
-                      Attendance
-                    </button>
-                  </div>
-                  <hr />
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                    <div>
-                      <label className="block mb-2">Leave Date</label>
-                      <input
-                        type="date"
-                        name="startDate"
-                        defaultValue={formData.startDate}
-                        onChange={handleChange}
-                        className="border p-2 rounded w-full"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block mb-2">Leave Type</label>
-                      <select
-                        name="leaveType"
-                        defaultValue={formData.leaveType}
-                        onChange={(e) => {
-                          const { value } = e.target
-                          setFormData((prev) => ({
-                            ...prev,
-                            leaveType: value,
-                            halfDayPeriod: value === "Half Day" ? "Morning" : "" // Default to "Morning" for Half Day
-                          }))
-                        }}
-                        className="border p-2 rounded w-full"
-                      >
-                        <option value="Full Day">Full Day</option>
-                        <option value="Half Day">Half Day</option>
-                      </select>
-                    </div>
-                    {formData.leaveType === "Half Day" && (
-                      <div>
-                        <label className="block mb-2">
-                          Select Half Day Period
-                        </label>
-                        <select
-                          name="halfDayPeriod"
-                          defaultValue={formData.halfDayPeriod}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              halfDayPeriod: e.target.value
-                            }))
-                          }
-                          className="border p-2 rounded w-full"
-                        >
-                          <option value="Morning">Morning</option>
-                          <option value="Afternoon">Afternoon</option>
-                        </select>
-                      </div>
-                    )}
-                    <div className="flex items-center ">
-                      <input
-                        type="checkbox"
-                        name="onsite"
-                        checked={formData.onsite}
-                        onChange={handleOnsiteChange}
-                        className="w-5 h-5"
-                      />
-                      <label className="ml-2 ">Onsite</label>
-                    </div>
-                  </div>
-                  {isOnsite && (
-                    <div className="mb-4">
-                      <div className="overflow-x-auto ">
-                        <table className=" border border-gray-200 text-center">
-                          <thead>
-                            <tr>
-                              <th className="border px-8">Site Name</th>
-                              <th className="border px-8 ">Place</th>
-                              <th className="border px-8 ">Start</th>
-                              <th className="border px-8">End</th>
-                              <th className="border px-10 ">KM</th>
-                              <th className="border px-10">TA</th>
-                              <th className="border px-8">Food </th>
-                              <th className="border px-8">Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {tableRows?.map((row, index) => (
-                              <tr key={index}>
-                                <td className="border p-2 w-60">
-                                  <input
-                                    type="text"
-                                    value={row.siteName}
-                                    onChange={(e) => {
-                                      const updatedRows = [...tableRows]
-                                      updatedRows[index].siteName =
-                                        e.target.value
-                                      setTableRows(updatedRows)
-                                    }}
-                                    className="border p-1 rounded w-full"
-                                  />
-                                </td>
-                                <td className="border p-2 w-60">
-                                  <input
-                                    type="text"
-                                    value={row.place}
-                                    onChange={(e) => {
-                                      const updatedRows = [...tableRows]
-                                      updatedRows[index].place = e.target.value
-                                      setTableRows(updatedRows)
-                                    }}
-                                    className="border p-1 rounded w-full"
-                                  />
-                                </td>
-                                <td className="border p-2">
-                                  <input
-                                    type="number"
-                                    value={row.Start}
-                                    onChange={(e) => {
-                                      const updatedRows = [...tableRows]
-                                      updatedRows[index].Start = e.target.value
-                                      setTableRows(updatedRows)
-                                    }}
-                                    className="border p-1 rounded w-full"
-                                  />
-                                </td>
-                                <td className="border p-2 W-20">
-                                  <input
-                                    type="number"
-                                    value={row.End}
-                                    onChange={(e) => {
-                                      const updatedRows = [...tableRows]
-                                      updatedRows[index].End = e.target.value
-                                      setTableRows(updatedRows)
-                                    }}
-                                    className="border p-1 rounded w-full"
-                                  />
-                                </td>
-                                <td className="border p-2">
-                                  <input
-                                    type="number"
-                                    value={row.km}
-                                    onChange={(e) => {
-                                      const updatedRows = [...tableRows]
-                                      updatedRows[index].km = e.target.value
-                                      setTableRows(updatedRows)
-                                    }}
-                                    className="border p-1 rounded w-full"
-                                  />
-                                </td>
-                                <td className="border p-2">
-                                  <input
-                                    type="number"
-                                    value={row.kmExpense}
-                                    onChange={(e) => {
-                                      const updatedRows = [...tableRows]
-                                      updatedRows[index].kmExpense =
-                                        e.target.value
-                                      setTableRows(updatedRows)
-                                    }}
-                                    className="border p-1 rounded w-full"
-                                  />
-                                </td>
-                                <td className="border p-2 w-28">
-                                  <input
-                                    type="number"
-                                    value={row.foodExpense}
-                                    onChange={(e) => {
-                                      const updatedRows = [...tableRows]
-                                      updatedRows[index].foodExpense =
-                                        e.target.value
-                                      setTableRows(updatedRows)
-                                    }}
-                                    className="border p-1 rounded w-full"
-                                  />
-                                </td>
-                                <td className="border p-2">
-                                  <button
-                                    onClick={() => {
-                                      const updatedRows = [...tableRows]
-                                      updatedRows.splice(index, 1)
-                                      setTableRows(updatedRows)
-                                    }}
-                                    className="text-red-500"
-                                  >
-                                    Remove
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                      <button
-                        onClick={addRow}
-                        className="mt-2 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-                      >
-                        Add Row
-                      </button>
-                      <div>
-                        <div className="mb-4">
-                          <label className="block mb-2">Description</label>
-                          <textarea
-                            name="description"
-                            defaultValue={formData.description}
-                            onChange={handleChange}
-                            rows="4"
-                            className="border p-2 rounded w-full"
-                          ></textarea>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {!isOnsite && (
-                    <div className="mb-4">
-                      <label className="block mb-2">Reason</label>
-                      <textarea
-                        name="reason"
-                        defaultValue={formData.reason}
-                        onChange={handleChange}
-                        rows="4"
-                        className="border p-2 rounded w-full"
-                      ></textarea>
-                    </div>
-                  )}
-
-                  <div className="flex justify-end space-x-2">
-                    {!formData.eventId && (
-                      <button
-                        className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-                        onClick={handleApply}
-                      >
-                        Apply
-                      </button>
-                    )}
-                    {formData.eventId && (
-                      <button
-                        className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-                        onClick={() => handleUpdate(formData)}
-                      >
-                        Update
-                      </button>
-                    )}
-                    <button
-                      className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
-                      onClick={() => {
-                        setFormData({
-                          description: "",
-                          onsite: false,
-                          halfDayPeriod: "",
-                          leaveType: "Full Day"
-                        })
-                        setTableRows([{}])
-                        setShowModal(false)
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-1">
-                  <div className="flex justify-between mb-1">
-                    <h2 className="text-xl font-bold">Attendance</h2>
-                    <button
-                      onClick={handleAttendance}
-                      className="bg-gradient-to-b from-blue-200 to-blue-400 px-1 rounded-xl hover:from-blue-400 hover:to-blue-600"
-                    >
-                      Leave Application
-                    </button>
-                  </div>
-                  <hr />
-
-                  <div className="attendance-content mt-2 justify-center">
-                    <p className="text-gray-500">
-                      {new Date(formData.startDate).toLocaleDateString(
-                        "en-GB",
-                        {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric"
-                        }
-                      )}
-                    </p>
-                    <form className="grid grid-cols-2 ">
-                      <div className="grid ">
-                        <label htmlFor="startTime" className="font-bold mb-1">
-                          In Time
-                        </label>
-                        <div className="flex">
-                          <select
-                            id="hours"
-                            name="hours"
-                            value={selectedAttendance?.inTime?.hours}
-                            onChange={(e) =>
-                              handleTimeChange(
-                                "inTime",
-                                "hours",
-                                e.target.value
-                              )
-                            }
-                            className="border border-gray-300 py-1 px-1 rounded"
-                          >
-                            {Array.from({ length: 12 }, (_, i) => (
-                              <option key={i + 1} value={i + 1}>
-                                {String(i + 1).padStart(2, "0")}
-                              </option>
-                            ))}
-                          </select>
-
-                          <select
-                            id="minutes"
-                            name="minutes"
-                            value={selectedAttendance?.inTime?.minutes}
-                            onChange={(e) =>
-                              handleTimeChange(
-                                "inTime",
-                                "minutes",
-                                e.target.value
-                              )
-                            }
-                            className="border border-gray-300 py-1 px-1 rounded"
-                          >
-                            {Array.from({ length: 60 }, (_, i) => (
-                              <option key={i} value={i}>
-                                {String(i).padStart(2, "0")}
-                              </option>
-                            ))}
-                          </select>
-
-                          <select
-                            id="amPm"
-                            name="amPm"
-                            // value={selectedAttendance.amPm}
-                            onChange={(e) =>
-                              handleTimeChange("inTime", "amPm", e.target.value)
-                            }
-                            className="border border-gray-300 py-1 px-1 rounded"
-                          >
-                            <option value="AM">AM</option>
-                            <option value="PM">PM</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="grid ">
-                        <label
-                          htmlFor="endTime"
-                          className="font-bold mb-1 justify-self-end"
-                        >
-                          Out Time
-                        </label>
-                        <div className=" flex justify-end">
-                          <select
-                            id="hours"
-                            name="hours"
-                            value={selectedAttendance?.outTime?.hours}
-                            onChange={(e) =>
-                              handleTimeChange(
-                                "outTime",
-                                "hours",
-                                e.target.value
-                              )
-                            }
-                            className="border border-gray-300 py-1 px-1 rounded"
-                          >
-                            {Array.from({ length: 12 }, (_, i) => (
-                              <option key={i + 1} value={i + 1}>
-                                {String(i + 1).padStart(2, "0")}
-                              </option>
-                            ))}
-                          </select>
-
-                          <select
-                            id="minutes"
-                            name="minutes"
-                            value={selectedAttendance?.outTime?.minutes}
-                            onChange={(e) =>
-                              handleTimeChange(
-                                "outTime",
-                                "minutes",
-                                e.target.value
-                              )
-                            }
-                            className="border border-gray-300 py-1 px-1 rounded"
-                          >
-                            {Array.from({ length: 60 }, (_, i) => (
-                              <option key={i} value={i}>
-                                {String(i).padStart(2, "0")}
-                              </option>
-                            ))}
-                          </select>
-
-                          <select
-                            id="amPm"
-                            name="amPm"
-                            value={selectedAttendance?.outTime?.amPm}
-                            onChange={(e) =>
-                              handleTimeChange(
-                                "outTime",
-                                "amPm",
-                                e.target.value
-                              )
-                            }
-                            className="border border-gray-300 py-1 px-1 rounded"
-                          >
-                            <option value="AM">AM</option>
-                            <option value="PM">PM</option>
-                          </select>
-                        </div>
-                      </div>
-                      <div className="col-span-2 gap-4 flex justify-center">
-                        <button
-                          className="bg-gradient-to-b from-blue-400 to-blue-500 px-3 py-1 hover:from-blue-400 hover:to-blue-600 text-white rounded"
-                          onClick={handleApplyAttendance}
-                        >
-                          Submit
-                        </button>
-                        <button
-                          className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
-                          onClick={() => {
-                            setFormData({
-                              description: "",
-                              onsite: false,
-                              halfDayPeriod: "",
-                              leaveType: "Full Day"
-                            })
-                            setselectedAttendance({
-                              attendanceDate: "",
-                              intTime: "",
-                              onTime: ""
-                            })
-                            setAttendance(false)
-                            setShowModal(false)
-                          }}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </form>
-                  </div>
-                </div>
-              )} */}
               {/* Tab Navigation */}
               <div className="flex justify-center space-x-4">
                 {tabs.map((tab) => (
                   <span
                     key={tab}
-                    onClick={() => setSelectedTab(tab)}
+                    onClick={() => {
+                      setSelectedTab(tab)
+                      setFormData((prev) => ({
+                        ...prev,
+                        onsite: tab === "Onsite" // Sets true if "onsite", false otherwise
+                      }))
+                    }}
                     className={`cursor-pointer ${
                       selectedTab === tab
                         ? "text-blue-500 font-semibold underline"

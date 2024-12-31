@@ -593,8 +593,8 @@ const CallregistrationList = () => {
                                           "/staff/transaction/call-registration",
                                           {
                                             state: {
-                                              calldetails: item.calls._id,
-                                              token: item.timedata.token
+                                              calldetails: item?.calls._id,
+                                              token: item?.timedata?.token
                                             }
                                           }
                                         )

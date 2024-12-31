@@ -28,6 +28,7 @@ const server = http.createServer(app)
 
 // Running port configuration
 const PORT = process.env.PORT
+console.log(PORT)
 
 // MongoDB connection getting from config/db.js
 connectDB()
@@ -219,7 +220,7 @@ io.on("connection", (socket) => {
       let user
       if (userId) {
         const objectId = new mongoose.Types.ObjectId(userId)
-         user = await Staff.findOne({ _id: objectId })
+        user = await Staff.findOne({ _id: objectId })
 
         if (!user) {
           user = await Admin.findOne({ _id: objectId })

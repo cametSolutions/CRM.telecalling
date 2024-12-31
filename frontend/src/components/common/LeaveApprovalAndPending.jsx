@@ -103,8 +103,6 @@ const LeaveApprovalAndPending = () => {
     fetchLeaveList() // Call the async function
   }, [dates, user])
 
-
-
   const onsitetoggle = async () => {
     try {
       setLoading(true)
@@ -394,11 +392,10 @@ const LeaveApprovalAndPending = () => {
                 <th className="py-3">Branch</th>
                 <th className="py-3">Apply Date</th>
                 <th className="py-3">Leave Date</th>
+                <th className="py-3">Leave Type</th>
                 <th className="py-3">{isOnsite ? "Remarks" : "Reason"}</th>
                 <th className="py-3">Dpt.Status</th>
                 <th className="py-3">Hr.Status</th>
-
-                <th className="py-3">Description</th>
                 <th className="py-3">Approve</th>
                 <th className="py-3">Approve All</th>
 
@@ -415,15 +412,15 @@ const LeaveApprovalAndPending = () => {
                       {user?.userId?.name}
                     </td>
 
-                    <td className="border border-gray-300 py-1">
+                    <td className="border border-gray-300 py-1 px-1">
                       {user?.userId?.department?.department}
                     </td>
-                    <td className="border border-gray-300 py-1 px-2">
+                    <td className="border border-gray-300 py-1 px-1">
                       {user?.userId?.selected
                         ?.map((branch) => branch?.branch_id?.branchName)
                         .join(", ")}
                     </td>
-                    <td className="border border-gray-300 py-1">
+                    <td className="border border-gray-300 py-1 px-2">
                       {new Date(user?.createdAt).toLocaleDateString("en-GB", {
                         timeZone: "UTC",
                         day: "2-digit",
@@ -431,13 +428,16 @@ const LeaveApprovalAndPending = () => {
                         year: "numeric"
                       })}
                     </td>
-                    <td className="border border-gray-300 py-1">
+                    <td className="border border-gray-300 py-1 px-2">
                       {new Date(user?.leaveDate).toLocaleDateString("en-GB", {
                         timeZone: "UTC",
                         day: "2-digit",
                         month: "2-digit",
                         year: "numeric"
                       })}
+                    </td>
+                    <td className="border border-gray-300 py-1 px-4">
+                      {user?.leaveType}
                     </td>
                     <td className="border border-gray-300 py-1">
                       {user?.reason || user?.description}
@@ -448,12 +448,12 @@ const LeaveApprovalAndPending = () => {
                     <td className="border border-gray-300 py-1">
                       {user?.hrstatus}
                     </td>
-                    <td className="border border-gray-300 py-1">
+                    {/* <td className="border border-gray-300 py-1">
                       <input
                         type="text"
                         className="w-full px-2 py-1 border rounded focus:outline-none "
                       ></input>
-                    </td>
+                    </td> */}
                     <td className="border border-gray-300 py-1">
                       <div className="flex justify-center">
                         <button
