@@ -110,6 +110,7 @@ export default function CallRegistration() {
       // Fetch the call details using the ID
       fetchCallDetails(calldetails)
         .then((callData) => {
+          console.log(callData)
           const matchingRegistration =
             callData.callDetails.callregistration.find(
               (registration) => registration.timedata.token === token
@@ -179,7 +180,6 @@ export default function CallRegistration() {
       })
       setCallData(sortedData)
       setSubmitLoading(false)
-      // setCallData(registeredCall.callregistration)
     }
   }, [registeredCall])
 
@@ -229,7 +229,7 @@ export default function CallRegistration() {
     const [hours, minutes, seconds] = timeString.split(":").map(Number)
     return hours * 3600 + minutes * 60 + seconds
   }
-
+  console.log(selectedCustomer)
   const stopTimer = async (time) => {
     setSubmitLoading(true)
 
@@ -289,6 +289,7 @@ export default function CallRegistration() {
         timedata: timeData,
         formdata: updatedformData,
         customeremail: selectedCustomer.email,
+        customerName: selectedCustomer.customerName,
         productName: selectedProducts.productName
       }
 
@@ -353,6 +354,7 @@ export default function CallRegistration() {
         timedata: timeData,
         formdata: updatedformData,
         customeremail: selectedCustomer.email,
+        customerName: selectedCustomer.customerName,
         productName: selectedProducts.productName
       }
 
@@ -370,7 +372,6 @@ export default function CallRegistration() {
       if (response.status === 200) {
         toast.success(response.data.message)
         refreshHook()
-        // setCallData(response.data.updatedCall.callregistration)
 
         socket.emit("updatedCalls")
       } else {

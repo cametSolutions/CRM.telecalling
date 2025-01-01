@@ -5,28 +5,20 @@ import Branch from "../model/primaryUser/branchSchema.js"
 // Function to send email using Nodemailer
 export const sendEmail = async (calldata, name, branchName, username) => {
   console.log("hiiiiiiii")
-  let organization
-  let notificationemail
-  let mailpassword
-  let landline
+
   const problem = new mongoose.Types.ObjectId(calldata.formdata.callnote)
 
   const customerproblem = await Callnote.find(problem)
+  const result = await Branch.findOne({ branchName })
 
+  const notificationemail = result.notificationemail
+  const mailpassword = result.mailpassword
+  const landline = result.landlineno
+  let branch
   if (branchName === "ACCUANET") {
-    organization = "Accuanet Info Solution"
-    const result = await Branch.findOne({ branchName })
-
-    notificationemail = result.notificationemail
-    mailpassword = result.mailpassword
-    landline = result.landlineno
+    branch = "Accuanet Info Solutions"
   } else if (branchName === "CAMET") {
-    organization = "Camet IT Solution"
-    const result = await Branch.findOne({ branchName })
-    notificationemail = result.notificationemail
-    mailpassword = result.mailpassword
-
-    landline = result.landlineno
+    branch = "Camet IT Solutions LLP"
   }
   console.log("landline", landline)
 
@@ -83,7 +75,7 @@ export const sendEmail = async (calldata, name, branchName, username) => {
             </tr>
                <tr>
               <td>Organization</td>
-              <td>${organization || "N/A"}</td>
+              <td>${calldata.customerName || "N/A"}</td>
             </tr>
               <tr>
               <td>Contact No</td>
@@ -130,14 +122,14 @@ export const sendEmail = async (calldata, name, branchName, username) => {
   <a href="mailto:${notificationemail}">${notificationemail}</a> or call us at 
   <a href="tel:${landline}">${landline}</a>.
 </p>
-        <p>Kind regards,<br>${username}<br>${organization}</p>
+        <p>Kind regards,<br>${username}<br>${branch}</p>
       `
 
   try {
     const info = await transporter.sendMail({
       from: notificationemail, // Sender's name and address
       to: "solutions@camet.in", // Recipient's email address
-      // cc: "abhidasabhi1234@gmail.com",
+      cc: "abhidasabhi1234@gmail.com",
       subject: `New Support ticket created-${calldata.timedata.token || "N/A"}`, // Subject
       html: htmlContent // Email content as HTML
     })
