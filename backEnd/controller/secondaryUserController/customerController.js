@@ -1424,7 +1424,7 @@ export const GetCallRegister = async (req, res) => {
     console.log("idsss", customerid)
 
     const { callId } = req.params
-    console.log("callid", callId)
+    console.log("callidssssss", callId)
 
     if (customerid !== "null" && customerid) {
       console.log("hiiiiiiiii")
