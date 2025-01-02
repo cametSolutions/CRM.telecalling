@@ -898,12 +898,12 @@ function LeaveApplication() {
         </div>
         <div className="flex">
           <div className="mr-5">
-            <span>Total Attendance-</span>
-            <span>{totalAttendance?.length}</span>
+            <span>Attendance-</span>
+            {/* <span>{totalAttendance?.length}</span> */}
           </div>
           <div>
-            <span>Total Latecoming-</span>
-            <span>{attendee?.length}</span>
+            <span>Latecoming-</span>
+            {/* <span>{attendee?.length}</span> */}
           </div>
         </div>
 
