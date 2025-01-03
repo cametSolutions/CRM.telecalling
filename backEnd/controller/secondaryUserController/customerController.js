@@ -414,12 +414,11 @@ export const CustomerRegister = async (req, res) => {
 }
 export const CustomerEdit = async (req, res) => {
   const { customerData, tableData } = req.body
-  console.log("dataa", customerData)
+
   const { customerid, index } = req.query
-  console.log("inddddddd", index)
+
   // Ensure index is a number
   const parsedIndex = parseInt(index, 10)
-  console.log("parse", parsedIndex)
 
   if (!customerid || !customerData) {
     return res
@@ -442,33 +441,10 @@ export const CustomerEdit = async (req, res) => {
     // Update or add tabledata (handle array of objects)
     if (Array.isArray(tableData) && tableData.length > 0) {
       if (parsedIndex >= 0 && parsedIndex < existingCustomer.selected.length) {
-        console.log("Type:", typeof existingCustomer.selected[parsedIndex])
-        console.log("selected", existingCustomer.selected)
-       
-        // Update the item at the matched index
-        existingCustomer.selected[parsedIndex] = tableData
-
-        console.log("excust", existingCustomer.selected)
+        console.log("okkkkkgi")
+        console.log("hiiiiiiii")
+        existingCustomer.selected.splice(parsedIndex, 1, tableData[0])
       }
-      // for (const item of tableData) {
-      //   const existingIndex = existingCustomer.selected.findIndex(
-      //     (selectedItem) =>
-      //       selectedItem.product_id.toString() === item.product_id.toString()
-      //   )
-
-      //   if (existingIndex !== -1) {
-      //     console.log("hiiiiii")
-      //     // Update existing entry
-      //     existingCustomer.selected[existingIndex] = {
-      //       ...existingCustomer.selected[existingIndex],
-      //       ...item
-      //     }
-      //   } else {
-      //     console.log("hlwww")
-      //     // Add new entry if not found
-      //     existingCustomer.selected.push(item)
-      //   }
-      // }
     }
 
     // Save the updated customer document
