@@ -47,11 +47,11 @@ const staffmastersRoutes = [
   },
   { path: "/staff/masters/branchEdit", component: BranchEdit },
   { path: "/staff/masters/customer", component: CustomerListform },
-  { path: "/staff/masters/customerEdit", component: ComingSoon },
+  { path: "/staff/masters/customerEdit", component: CustomerEdit },
   { path: "/staff/masters/pendingCustomer", component: PendingCustomer },
   {
     path: "/staff/masters/customerRegistration",
-    component: ComingSoon
+    component: CustomerRegistration
   },
 
   {
