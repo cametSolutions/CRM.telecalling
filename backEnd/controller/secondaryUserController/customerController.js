@@ -442,7 +442,7 @@ export const CustomerEdit = async (req, res) => {
     if (Array.isArray(tableData) && tableData.length > 0) {
       if (parsedIndex >= 0 && parsedIndex < existingCustomer.selected.length) {
         console.log("okkkkkgi")
-        console.log("hiiiiiiii")
+
         existingCustomer.selected.splice(parsedIndex, 1, tableData[0])
       }
     }
