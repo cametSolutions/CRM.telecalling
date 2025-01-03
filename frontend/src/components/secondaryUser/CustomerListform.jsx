@@ -45,6 +45,7 @@ const CustomerListform = () => {
         branch
       )}`
   )
+  console.log("hi")
   useEffect(() => {
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
@@ -130,7 +131,11 @@ const CustomerListform = () => {
         <div className="flex justify-between">
           <div className="flex flex-wrap space-x-4 mb-4">
             <Link
-              to="/admin/masters/customerRegistration"
+              to={
+                user?.role === "Admin"
+                  ? "/admin/masters/customerRegistration"
+                  : "/staff/masters/customerRegistration"
+              }
               className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center"
             >
               <FaUserPlus className="mr-2" />
@@ -267,7 +272,8 @@ const CustomerListform = () => {
                             navigate(`/${userRole}/masters/customerEdit`, {
                               state: {
                                 customer: customer,
-                                selected: item
+                                selected: item,
+                                index: itemIndex
                               }
                             })
                           }

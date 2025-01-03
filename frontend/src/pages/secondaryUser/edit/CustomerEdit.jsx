@@ -12,6 +12,8 @@ function CustomerEdit() {
   const location = useLocation()
   const customer = location.state?.customer
   const selected = location.state?.selected
+  const index = location.state?.index
+  console.log(index)
   const customerId = customer._id
   console.log("selected", selected)
   console.log(customerId)
@@ -29,8 +31,10 @@ function CustomerEdit() {
       selected.hasOwnProperty(key) &&
       key.includes("Date") // Check for date fields
     ) {
+      console.log("hiii")
       // Format the date
       selected[key] = formatDateString(selected[key])
+      console.log(selected[key])
     }
   }
   // const updatedCustomer = Object.assign({}, customer, {
@@ -38,12 +42,16 @@ function CustomerEdit() {
   // })
   // Safely merge selected into customer, ensuring selected is not undefined or null
   const updatedCustomer = Object.assign({}, customer, {
-    selected: selected || {} // If selected is falsy, fall back to an empty object
+    selected: selected || {}, // If selected is falsy, fall back to an empty object
+    index: index !== undefined ? index : null
   })
-  const handleSubmit = async (customerData, tableData) => {
+  console.log(updatedCustomer)
+  const handleSubmit = async (customerData, tableData, index) => {
+    console.log(index)
+    console.log(tableData)
     try {
       const response = await api.post(
-        `/customer/customerEdit?customerid=${customerId}`,
+        `/customer/customerEdit?customerid=${customerId}&index=${index}`,
         { customerData, tableData },
         {
           withCredentials: true
