@@ -117,7 +117,7 @@ export const GetselectedDateCalls = async (req, res) => {
                   // If the last attendedBy has a callerId, populate it
                   if (lastAttended?.callerId) {
                     const caller = await Staff.findById(lastAttended.callerId)
-                   
+
                     lastAttended.callerId = caller || lastAttended.callerId // Replace callerId with populated data or leave as is if not found
                   }
                 }
@@ -444,8 +444,7 @@ export const CustomerEdit = async (req, res) => {
       if (parsedIndex >= 0 && parsedIndex < existingCustomer.selected.length) {
         console.log("Type:", typeof existingCustomer.selected[parsedIndex])
         console.log("selected", existingCustomer.selected)
-        console.log("sellllllll", existingCustomer.selected[parsedIndex])
-
+       
         // Update the item at the matched index
         existingCustomer.selected[parsedIndex] = tableData
 
