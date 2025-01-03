@@ -3,7 +3,7 @@ import CompanyRegistration from "../../pages/primaryUser/register/CompanyRegistr
 import BranchRegistration from "../../pages/primaryUser/register/BranchRegistration"
 import CustomerRegistration from "../../pages/secondaryUser/register/CustomerRegistration"
 import CustomerEdit from "../../pages/secondaryUser/edit/CustomerEdit"
-import {CallNoteRegistration} from "../../pages/primaryUser/register/CallNoteRegistration"
+import { CallNoteRegistration } from "../../pages/primaryUser/register/CallNoteRegistration"
 import BranchList from "../../pages/primaryUser/List/BranchList"
 import CompanyEdit from "../../pages/primaryUser/edit/CompanyEdit"
 import BranchEdit from "../../pages/primaryUser/edit/BranchEdit"
@@ -15,12 +15,12 @@ import EditHsn from "../../pages/primaryUser/edit/EditHsn"
 import ProductMaster from "../../pages/primaryUser/register/ProductMaster"
 import CustomerListform from "../../components/secondaryUser/CustomerListform"
 import ProductList from "../../pages/primaryUser/List/ProductList"
-
+import ComingSoon from "../../pages/common/ComingSoon"
 import PendingCustomer from "../../components/secondaryUser/PendingCustomer"
 import ProductEdit from "../../pages/primaryUser/edit/ProductEdit"
 import UserListform from "../../pages/primaryUser/List/UserListform"
 import UserPermissions from "../../pages/primaryUser/List/UserPermissions"
-import ComingSoon from "../../pages/common/ComingSoon"
+
 import DepartmentRegistration from "../../pages/primaryUser/register/DepartmentRegistration"
 const staffmastersRoutes = [
   {
@@ -47,11 +47,11 @@ const staffmastersRoutes = [
   },
   { path: "/staff/masters/branchEdit", component: BranchEdit },
   { path: "/staff/masters/customer", component: CustomerListform },
-  { path: "/staff/masters/customerEdit", component: CustomerEdit },
+  { path: "/staff/masters/customerEdit", component: ComingSoon },
   { path: "/staff/masters/pendingCustomer", component: PendingCustomer },
   {
     path: "/staff/masters/customerRegistration",
-    component: CustomerRegistration
+    component: ComingSoon
   },
 
   {

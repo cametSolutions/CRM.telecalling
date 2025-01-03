@@ -31,7 +31,7 @@ const Summary = () => {
   const [a, setA] = useState([])
   const { data: branches } = UseFetch("/branch/getBranch")
   const { data: staffCallList } = UseFetch("/auth/staffcallList")
-  console.log("hii")
+
   useEffect(() => {
     if (staffCallList) {
       setIndividualCallList(staffCallList)
@@ -39,7 +39,6 @@ const Summary = () => {
   }, [staffCallList])
   useEffect(() => {
     const startDate = new Date()
-    console.log(startDate)
 
     setDates({ startDate, endDate: startDate })
 
@@ -57,13 +56,12 @@ const Summary = () => {
 
   useEffect(() => {
     if (dates.startDate) {
-      console.log(dates)
       const fetchUserList = async () => {
         try {
           const query = `startDate=${dates.startDate}&endDate=${dates.endDate}`
           const response = await api.get(`/auth/getStaffCallStatus?${query}`)
           setData(response.data.data)
-          console.log(response.data.data)
+     
           const a = response.data.data.userCallsCount
 
           // const b = a.map((item) => {})
@@ -148,9 +146,6 @@ const Summary = () => {
         }
       } else {
         if (callList && callList.length > 0) {
-          console.log(callList)
-          console.log("hii")
-          console.log()
           const customerSummaries = callList
             .filter(
               (customer) =>
@@ -419,24 +414,21 @@ const Summary = () => {
         return
 
       try {
-        console.log(dates)
-        console.log("hii")
         const query = `startDate=${dates.startDate}&endDate=${dates.endDate}`
         const response = await api.get(
           `/customer/getselectedDateCalls?${query}`
         ) // Replace with your API endpoint
         const data = response.data
-        console.log(data)
 
         if (users?.role === "Admin") {
-          setCallList(data.calls)
+          setCallList(data)
         } else {
           const userBranchName = new Set(
             users?.selected.map((branch) => branch.branchName)
           )
           const branchNamesArray = Array.from(userBranchName)
 
-          const filtered = data.calls.filter(
+          const filtered = data.filter(
             (call) =>
               Array.isArray(call?.callregistration) && // Check if callregistration is an array
               call.callregistration.some((registration) => {
@@ -459,6 +451,7 @@ const Summary = () => {
                 return hasMatchingBranch
               })
           )
+    
 
           setCallList(filtered)
         }
@@ -519,7 +512,6 @@ const Summary = () => {
   //   }
   // }, [branch, users])
   const handleDate = (selectedDate) => {
-    console.log(selectedDate)
     const extractDateAndMonth = (date) => {
       const year = date.getFullYear()
       const month = date.getMonth() + 1 // getMonth() is 0-indexed
@@ -529,7 +521,6 @@ const Summary = () => {
         .padStart(2, "0")}`
     }
     const a = !isNaN(selectedDate.startDate.getTime())
-    console.log(a)
 
     if (
       selectedDate.startDate instanceof Date &&
@@ -537,13 +528,11 @@ const Summary = () => {
       selectedDate.endDate instanceof Date &&
       !isNaN(selectedDate.endDate.getTime())
     ) {
-      console.log("hiii")
       // If both startDate and endDate are valid Date objects
       setDates({
         startDate: extractDateAndMonth(selectedDate.startDate),
         endDate: extractDateAndMonth(selectedDate.endDate)
       })
-      console.log(extractDateAndMonth(selectedDate.startDate))
     } else {
       // If dates are not valid Date objects, use them as they are
       setDates({

@@ -40,7 +40,7 @@ function LeaveApplication() {
   const [attendance, setAttendance] = useState(false)
   const [widthState, setWidthState] = useState("w-5/6")
   const [tableRows, setTableRows] = useState([])
-
+  console.log(tableRows)
   const [clickedDate, setclickedDate] = useState(null)
   const userData = localStorage.getItem("user")
   const tabs = ["Leave", "Onsite", "Attendance"]
@@ -57,6 +57,7 @@ function LeaveApplication() {
   useEffect(() => {
     if ((leaves && leaves.length > 0) || (attendee && attendee.length > 0)) {
       const formattedEvents = formatEventData(leaves)
+      console.log(formattedEvents)
 
       let attendanceDetails
       if (
@@ -65,26 +66,26 @@ function LeaveApplication() {
         attendee &&
         attendee.length > 0
       ) {
+        console.log(attendee)
         attendanceDetails = attendee.map((item) => {
+          console.log(item)
           let dayObject = {
             start: "",
-            reason: "No leave today",
-            inTime: "On Leave",
-            outTime: "On Leave",
             color: "green"
           }
           const fdate = new Date(item.attendanceDate) // Convert to Date object
-
+          console.log(fdate)
           let date = fdate.toISOString().split("T")[0]
           let existingDate = formattedEvents?.find((event) => {
             return event.start === date
           })
           if (existingDate) {
-            dayObject.start = existingDate?.start
-            dayObject.reason = existingDate?.reason
+            console.log(existingDate)
+            dayObject.start = item?.attendanceDate
+
             dayObject.inTime = item?.inTime
             dayObject.outTime = item?.outTime
-            dayObject.color = existingDate.color
+            // dayObject.color = existingDate.color
             formattedEvents.filter((item) => item.start !== date)
             return dayObject
           } else {
@@ -95,6 +96,7 @@ function LeaveApplication() {
             return dayObject
           }
         })
+        console.log(attendanceDetails)
 
         setEvents([...formattedEvents, ...attendanceDetails])
       } else if (attendee && attendee.length > 0) {
@@ -125,13 +127,20 @@ function LeaveApplication() {
       setIsOnsite(false)
     }
   }, [showModal])
+  // console.log(onsite)
   useEffect(() => {
     if (isOnsite && clickedDate) {
+      console.log(isOnsite)
       // Find the event that matches the clicked date
       const existingEvent = events.find((event) => event.start === clickedDate)
-
+      console.log(existingEvent)
       // If a matching event is found and it has onsite data
-      if (existingEvent && existingEvent.onsitestatus) {
+      if (
+        existingEvent &&
+        existingEvent.onsiteData &&
+        existingEvent.onsiteData.length > 0
+      ) {
+        console.log("h")
         const matchedOnsiteData = existingEvent.onsiteData[0].map((status) => ({
           siteName: status.siteName,
           place: status.place,
@@ -160,15 +169,16 @@ function LeaveApplication() {
           leaveType: "",
           halfDayPeriod: "",
           reason: event?.reason,
-          inTime: "On Leave",
-          outTime: "On Leave",
+
           color: ""
         }
       } else {
         dayObject = {
           start: "",
           reason: event?.description,
-
+          leaveType: "",
+          halfDayPeriod: "",
+          onsiteData: "",
           color: ""
         }
       }
@@ -180,9 +190,15 @@ function LeaveApplication() {
         dayObject.leaveType = event.leaveType
         dayObject.color = "red"
       } else if (event.departmentverified && event.onsite) {
+        dayObject.onsiteData = event.onsiteData
         dayObject.halfDayPeriod = event.halfDayPeriod
         dayObject.leaveType = event.leaveType
         dayObject.color = "blue"
+      } else if (!event.departmentverified && event.onsite) {
+        dayObject.onsiteData = event.onsiteData
+        dayObject.halfDayPeriod = event.halfDayPeriod
+        dayObject.leaveType = event.leaveType
+        dayObject.color = "orange"
       } else if (event.inTime) {
         dayObject.inTime = event.inTime
       } else {
@@ -214,14 +230,25 @@ function LeaveApplication() {
     setclickedDate(clickedDate)
 
     // Check if there's already an event on this date
-
-    const existingEvent = events?.find((event) => event.start === clickedDate)
-
+    console.log(events)
+    // const existingEvent = events?.filter((event) => event.start === clickedDate)
+    const existingEvent = events?.filter((event) => {
+      const eventDate = new Date(event.start).toISOString().split("T")[0] // Normalize to YYYY-MM-DD
+      return eventDate === clickedDate // Compare only the date part
+    })
+    console.log(existingEvent)
     // setexistingEvent(existingEvent)
 
-    if (existingEvent) {
+    if (existingEvent && existingEvent.length > 0) {
+      console.log(existingEvent)
       // Parse the inTime and outTime (assuming they are in "hh:mm AM/PM" format)
       const parseTime = (timeString) => {
+        console.log(timeString)
+        if (!timeString) {
+          // Return default or empty values if timeString is undefined or null
+          return { hours: null, minutes: null, amPm: null }
+        }
+        console.log(timeString)
         const [time, amPm] = timeString.split(" ")
         const [hours, minutes] = time.split(":")
         return { hours, minutes, amPm }
@@ -231,7 +258,7 @@ function LeaveApplication() {
       setFormData({
         ...formData,
         startDate: existingEvent?.start,
-        halfDayPeriod: existingEvent.halfDayPeriod,
+        halfDayPeriod: existingEvent?.halfDayPeriod,
         leaveType: existingEvent?.leaveType,
         // halfDayPeriod:existingEvent
         onsite: existingEvent?.onsite,
@@ -239,19 +266,20 @@ function LeaveApplication() {
           existingEvent?.reason,
         eventId: existingEvent?.id // Store the event ID for editing
       })
+      const inTimeEvent = existingEvent.find((event) => event.inTime)
       // Set selected attendance state
       setselectedAttendance((prev) => ({
         ...prev, // Spread the previous state to keep other values intact
-        attendanceDate: existingEvent.start, // Set the attendance date
+        attendanceDate: existingEvent?.start, // Set the attendance date
         inTime: {
-          hours: parseTime(existingEvent.inTime)?.hours, // Update hours from parsed inTime
-          minutes: parseTime(existingEvent.inTime)?.minutes, // Update minutes from parsed inTime
-          amPm: parseTime(existingEvent.inTime)?.amPm // Update AM/PM from parsed inTime
+          hours: parseTime(inTimeEvent?.inTime)?.hours, // Update hours from parsed inTime
+          minutes: parseTime(inTimeEvent?.inTime)?.minutes, // Update minutes from parsed inTime
+          amPm: parseTime(inTimeEvent?.inTime)?.amPm // Update AM/PM from parsed inTime
         },
         outTime: {
-          hours: parseTime(existingEvent.outTime)?.hours, // Update hours from parsed outTime
-          minutes: parseTime(existingEvent.outTime)?.minutes, // Update minutes from parsed outTime
-          amPm: parseTime(existingEvent.outTime)?.amPm // Update AM/PM from parsed outTime
+          hours: parseTime(inTimeEvent?.outTime)?.hours, // Update hours from parsed outTime
+          minutes: parseTime(inTimeEvent?.outTime)?.minutes, // Update minutes from parsed outTime
+          amPm: parseTime(inTimeEvent?.outTime)?.amPm // Update AM/PM from parsed outTime
         }
       }))
       if (existingEvent.onsite) {
@@ -348,13 +376,22 @@ function LeaveApplication() {
   const handleChange = (e) => handleInputChange(e)
 
   const handleTimeChange = (type, field, value) => {
-    setselectedAttendance((prev) => ({
-      ...prev,
-      [type]: {
-        ...prev[type],
-        [field]: value
+    console.log(type)
+    console.log(field)
+
+    console.log(value)
+    setselectedAttendance((prev) => {
+      // Ensure the nested object exists for `type`
+      const currentType = prev[type] || { hours: "", minutes: "", amPm: "" }
+
+      return {
+        ...prev,
+        [type]: {
+          ...currentType, // Preserve existing fields
+          [field]: value // Update the specific field
+        }
       }
-    }))
+    })
   }
 
   const handleSubmit = async (tab) => {
@@ -431,6 +468,7 @@ function LeaveApplication() {
           refreshHook()
         }
       } else if (tab === "Attendance") {
+        console.log(selectedAttendance)
         // const response = await fetch(
         //   `http://localhost:9000/api/auth/attendance?selectedid=${user._id}`,
         //   {
@@ -763,9 +801,9 @@ function LeaveApplication() {
                       }
                       className="border border-gray-300 py-1 px-1 rounded"
                     >
-                      {Array.from({ length: 12 }, (_, i) => (
-                        <option key={i + 1} value={i + 1}>
-                          {String(i + 1).padStart(2, "0")}
+                      {Array.from({ length: 13 }, (_, i) => (
+                        <option key={i + 1} value={i}>
+                          {String(i).padStart(2, "0")}
                         </option>
                       ))}
                     </select>
@@ -818,9 +856,9 @@ function LeaveApplication() {
                       }
                       className="border border-gray-300 py-1 px-1 rounded"
                     >
-                      {Array.from({ length: 12 }, (_, i) => (
-                        <option key={i + 1} value={i + 1}>
-                          {String(i + 1).padStart(2, "0")}
+                      {Array.from({ length: 13 }, (_, i) => (
+                        <option key={i + 1} value={i}>
+                          {String(i).padStart(2, "0")}
                         </option>
                       ))}
                     </select>
@@ -863,6 +901,7 @@ function LeaveApplication() {
         return <p>Select a tab to view the content.</p>
     }
   }
+  console.log(selectedAttendance)
 
   return (
     <div className=" p-4">
@@ -927,10 +966,11 @@ function LeaveApplication() {
             const dayOfWeek = info.date.getDay() // Get the day of the week (0 = Sunday)
 
             // Find the matching event by comparing only the date part (YYYY-MM-DD)
-            const matchingEvent = events?.find((event) => {
+            const matchingEvent = events?.filter((event) => {
               const eventDate = new Date(event.start).toLocaleDateString(
                 "en-CA"
               )
+              console.log(eventDate)
               // Get event start date in "YYYY-MM-DD" format
               return eventDate === cellDate // Compare the date part (YYYY-MM-DD)
             })
@@ -939,35 +979,83 @@ function LeaveApplication() {
               ".fc-daygrid-day-bottom"
             )
 
-            if (matchingEvent) {
-              const inTime = matchingEvent.inTime || "-"
-              const outTime = matchingEvent.outTime || "-"
-              const squareColor = matchingEvent.color || "blue"
-              const reason = matchingEvent.reason || "No reason provided"
+            // if (matchingEvent && matchingEvent.length > 0) {
+            //   console.log(matchingEvent)
+            //   const inTime = matchingEvent?.inTime
+            //   const outTime = matchingEvent?.outTime
+            //   const squareColor = matchingEvent?.color
+            //   const reason = matchingEvent?.reason || "No reason provided"
 
-              // Create the time container and add it to the day cell
-              const timeContainer = document.createElement("div")
-              timeContainer.className = "time-container"
-              timeContainer.innerHTML = `<div class="time-display">In: ${inTime}<br>Out: ${outTime}</div>`
+            //   // Create the time container and add it to the day cell
+            //   const timeContainer = document.createElement("div")
+            //   timeContainer.className = "time-container"
+            //   // timeContainer.innerHTML = `<div class="time-display">In: ${inTime}<br>Out: ${outTime}</div>`
+            //   if (inTime && outTime) {
+            //     console.log(inTime)
+            //     timeContainer.innerHTML = `<div class="time-display">In: ${inTime}<br>Out: ${outTime}</div>`
+            //   } else {
+            //     timeContainer.innerHTML = "" // Or set it to a placeholder message if needed
+            //   }
 
-              // Create and style the square marker
-              const squareMarker = document.createElement("div")
-              squareMarker.className = "square-marker"
-              squareMarker.style.backgroundColor = squareColor
+            //   // Create and style the square marker
+            //   const squareMarker = document.createElement("div")
+            //   squareMarker.className = "square-marker"
+            //   squareMarker.style.backgroundColor = squareColor
 
-              // Append square marker to the day cell bottom
-              dayCellBottom?.appendChild(squareMarker)
+            //   // Append square marker to the day cell bottom
+            //   dayCellBottom?.appendChild(squareMarker)
 
-              // Append time container to the top of the day cell
-              info.el
-                .querySelector(".fc-daygrid-day-top")
-                .appendChild(timeContainer)
+            //   // Append time container to the top of the day cell
+            //   info.el
+            //     .querySelector(".fc-daygrid-day-top")
+            //     .appendChild(timeContainer)
 
-              // Initialize tippy tooltips on the square marker
-              tippy(squareMarker, {
-                content: reason,
-                theme: "custom-tooltip",
-                placement: "top"
+            //   // Initialize tippy tooltips on the square marker
+            //   tippy(squareMarker, {
+            //     content: reason,
+            //     theme: "custom-tooltip",
+            //     placement: "top"
+            //   })
+            //
+            if (matchingEvent && matchingEvent.length > 0) {
+              matchingEvent.forEach((event) => {
+                console.log(event)
+                const {
+                  color: squareColor,
+                  reason = "No reason provided",
+                  inTime,
+                  outTime
+                } = event
+                console.log(squareColor)
+
+                // Create the time container for the first event only
+                if (
+                  inTime &&
+                  outTime &&
+                  !info.el.querySelector(".time-container")
+                ) {
+                  const timeContainer = document.createElement("div")
+                  timeContainer.className = "time-container"
+                  timeContainer.innerHTML = `<div class="time-display">In: ${inTime}<br>Out: ${outTime}</div>`
+                  info.el
+                    .querySelector(".fc-daygrid-day-top")
+                    .appendChild(timeContainer)
+                }
+
+                // Create and style the square marker
+                const squareMarker = document.createElement("div")
+                squareMarker.className = "square-marker"
+                squareMarker.style.backgroundColor = squareColor
+
+                // Append square marker to the day cell bottom
+                dayCellBottom?.appendChild(squareMarker)
+
+                // Initialize tippy tooltip on the square marker
+                tippy(squareMarker, {
+                  content: reason,
+                  theme: "custom-tooltip",
+                  placement: "top"
+                })
               })
             } else if (dayOfWeek !== 0) {
               // Only add marker for days that are not Sunday (day 0)
@@ -988,10 +1076,18 @@ function LeaveApplication() {
         .fc-daygrid-day-top {
   position: relative;
 }
-
 .fc-daygrid-day-bottom {
-  position: relative !important;
+  position: relative; /* Ensure the container is the positioning reference */
+   display: flex; /* Flexbox for marker alignment */
+  justify-content: flex-end; /* Align markers to the right */
+  align-items: flex-end; /* Align markers to the bottom */
+  flex-wrap: wrap; /* Allow wrapping for multiple markers on smaller screens */
+  gap: 4px; /* Space between markers */
+  padding: 4px; /* Padding for better spacing inside the cell */
 }
+// .fc-daygrid-day-bottom {
+//   position: relative !important;
+// }
 
 .fc-toolbar {
   display: flex;
@@ -1015,24 +1111,49 @@ function LeaveApplication() {
     margin: 1px 0;
   }
 }
-
-.square-marker {
+  .square-marker {
   width: 10px;
   height: 10px;
-  margin: 2px auto;
   border-radius: 2px;
   cursor: pointer;
-  position: absolute;
-  top: 30px;
-  left: 80%;
-  transform: translateX(-50%);
-  background-color: #FFA500; /* Default marker color */
+  position: absolute; /* Position marker absolutely */
+  top:28px; /* Distance from the bottom edge */
+  
+ // background-color: #FFA500; /* Default marker color */
+  z-index: 1; /* Ensure it is above other content */
+}
+  .square-marker + .square-marker {
+  right: calc(4px + 18px); /* Adjust spacing for subsequent markers */
 }
 
+// .square-marker {
+//   width: 10px;
+//   height: 10px;
+//   margin: 2px auto;
+//   border-radius: 2px;
+//   cursor: pointer;
+//   position: absolute;
+//   top: 30px;
+//   left: 80%;
+//   transform: translateX(-50%);
+//   background-color: #FFA500; /* Default marker color */
+// }
+
+// @media (max-width: 768px) {
+//   .square-marker {
+//     top: 30px;
+//     left: 70%;
+//   }
+// }
 @media (max-width: 768px) {
   .square-marker {
-    top: 30px;
-    left: 70%;
+    width: 10px; /* Slightly smaller markers for mobile screens */
+    height: 10px;
+    top:30px;
+  }
+  .fc-daygrid-day-bottom {
+    gap: 3px; /* Adjust gap for smaller markers */
+    padding: 3px;
   }
 }
 
@@ -1100,6 +1221,7 @@ function LeaveApplication() {
                         ...prev,
                         onsite: tab === "Onsite" // Sets true if "onsite", false otherwise
                       }))
+                      setIsOnsite(tab === "Onsite")
                     }}
                     className={`cursor-pointer ${
                       selectedTab === tab
@@ -1137,6 +1259,8 @@ function LeaveApplication() {
                       })
                       setAttendance(false)
                       setShowModal(false)
+                      setSelectedTab("Leave")
+                      setTableRows([])
                     }}
                   >
                     Cancel

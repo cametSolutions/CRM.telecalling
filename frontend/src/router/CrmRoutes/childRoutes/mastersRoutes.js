@@ -53,9 +53,9 @@ const mastersRoutes = [
   { path: "/admin/masters/pendingCustomer", component: PendingCustomer },
   {
     path: "/admin/masters/customerRegistration",
-    component: CustomerRegistration
+    component: ComingSoon
   },
-  { path: "/admin/masters/customerEdit", component: CustomerEdit },
+  { path: "/admin/masters/customerEdit", component: ComingSoon },
   {
     path: "/admin/masters/userRegistration",
     component: UserRegistration

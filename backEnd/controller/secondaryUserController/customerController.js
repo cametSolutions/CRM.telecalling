@@ -1,4 +1,5 @@
 import Customer from "../../model/secondaryUser/customerSchema.js"
+import moment from "moment" // You can use moment.js to handle date manipulation easily
 import License from "../../model/secondaryUser/licenseSchema.js"
 import CallRegistration from "../../model/secondaryUser/CallRegistrationSchema.js"
 import CallNote from "../../model/secondaryUser/callNotesSchema.js"
@@ -74,56 +75,241 @@ export const GetselectedDateCalls = async (req, res) => {
     console.log("stardate", startDate)
     console.log(typeof startDate)
     console.log("enddate", endDate)
+    // const customerCalls = await CallRegistration.find({})
+    // Get the current date and calculate the range for yesterday
+    // Define the start and end of yesterday
+    const startOfYesterday = moment().startOf("day").subtract(1, "days")
+    const endOfYesterday = moment().endOf("day").subtract(1, "days")
+    const customerCalls = await CallRegistration.find({})
+      .populate("callregistration.product") // Populate the product field
+      .then(async (calls) => {
+        // Iterate through each customer call data
+        const customerCallsWithPopulatedData = await Promise.all(
+          calls.map(async (callData) => {
+            // Filter only the calls made within the range of yesterday
+            const matchedCalls = callData.callregistration.filter((call) => {
+              // Parse the startTime of each call
+              const callDate = moment(call.timedata.startTime)
 
-    const customerCalls = await CallRegistration.aggregate([
-      // Stage 1: Unwind the attendedBy array
-      {
-        $unwind: {
-          path: "$callregistration.formdata.attendedBy",
-          preserveNullAndEmptyArrays: false // Only keep documents with attendedBy entries
-        }
-      }
-      // Stage 2: Match documents within the date range and ensure calldate is valid
-      // {
-      //   $match: {
-      //     $and: [
-      //       {
-      //         "callregistration.formdata.attendedBy.calldate": {
-      //           $exists: true,
-      //           $ne: ""
-      //         }
-      //       }, // Ensure calldate exists and is not empty
-      //       {
-      //         "callregistration.formdata.attendedBy.calldate": {
-      //           $gte: startDate,
-      //           $lte: endDate
-      //         }
-      //       } // Match date range
-      //     ]
-      //   }
-      // }
-      // Stage 3: Group back to reconstruct documents and include only filtered attendedBy entries
-      // {
-      //   $group: {
-      //     _id: "$_id",
-      //     attendedBy: {
-      //       $push: "$callregistration.formdata.attendedBy" // Recreate the attendedBy array with filtered data
-      //     },
-      //     // Include other fields if needed
-      //     otherFields: { $first: "$otherFields" } // Example: Replace 'otherFields' with the fields you want to preserve
-      //   }
-      // },
-      // // Stage 4: Project the final structure
-      // {
-      //   $project: {
-      //     _id: 1,
-      //     "callregistration.formdata.attendedBy": "$attendedBy" // Reassign filtered attendedBy array
-      //     // Include additional fields if needed
-      //   }
-      // }
-    ])
+              // Check if the call was made within the range of yesterday
+              return callDate.isBetween(
+                startOfYesterday,
+                endOfYesterday,
+                null,
+                "[]"
+              ) // '[]' includes the endpoints
+            })
 
-    console.log("customercalls", customerCalls)
+            // Proceed only if there are matched calls
+            if (matchedCalls.length > 0) {
+              // Iterate through each matched call's attendedBy array if it exists and is an array
+              for (let call of matchedCalls) {
+                if (
+                  Array.isArray(call.formdata?.attendedBy) &&
+                  call.formdata.attendedBy.length > 0
+                ) {
+                  // Get the last attendedBy entry
+                  const lastAttended =
+                    call.formdata.attendedBy[
+                      call.formdata.attendedBy.length - 1
+                    ]
+
+                  // If the last attendedBy has a callerId, populate it
+                  if (lastAttended?.callerId) {
+                    const caller = await Staff.findById(lastAttended.callerId)
+                   
+                    lastAttended.callerId = caller || lastAttended.callerId // Replace callerId with populated data or leave as is if not found
+                  }
+                }
+              }
+            }
+
+            // Return the customer call data with matched calls and populated last attendedBy
+            return {
+              _id: callData._id,
+              customerName: callData.customerName,
+              callregistration: matchedCalls
+            }
+          })
+        )
+        return customerCallsWithPopulatedData
+      })
+      .catch((err) => {
+        console.error(err)
+        return []
+      })
+    // const customerCalls = await CallRegistration.find({})
+    //   .populate("callregistration.product") // Populate the product field
+    //   .then(async (calls) => {
+    //     // Iterate through each customer call data
+    //     const customerCallsWithPopulatedData = await Promise.all(
+    //       calls.map(async (callData) => {
+    //         // Filter only the calls made within the range of yesterday
+    //         const matchedCalls = callData.callregistration.filter((call) => {
+    //           // Parse the startTime of each call
+    //           const callDate = moment(call.timedata.startTime)
+
+    //           // Check if the call was made within the range of yesterday
+    //           return callDate.isBetween(
+    //             startOfYesterday,
+    //             endOfYesterday,
+    //             null,
+    //             "[]"
+    //           ) // '[]' includes the endpoints
+    //         })
+
+    //         // Proceed only if there are matched calls
+    //         if (matchedCalls.length > 0) {
+    //           // Iterate through each matched call's attendedBy array if it exists and is an array
+    //           for (let call of matchedCalls) {
+    //             if (Array.isArray(call.formdata?.attendedBy)) {
+    //               // Check if attendedBy is an array
+    //               for (let attended of call.formdata?.attendedBy) {
+    //                 if (attended?.callerId) {
+    //                   // Manually populate the callerId by querying the Staff model
+    //                   const caller = await Staff.findById(attended.callerId)
+    //                   console.log("Populating callerId for", attended.callerId)
+    //                   attended.callerId = caller || attended.callerId // Replace callerId with populated data or leave as is if not found
+    //                 }
+    //               }
+    //             }
+    //           }
+    //         }
+
+    //         // Return the customer call data with matched calls and populated attendedBy array
+    //         return {
+    //           _id: callData._id,
+    //           customerName: callData.customerName,
+    //           callregistration: matchedCalls
+    //         }
+    //       })
+    //     )
+    //     return customerCallsWithPopulatedData
+    //   })
+    //   .catch((err) => {
+    //     console.error(err)
+    //     return []
+    //   })
+    // const calls = await CallRegistration.find({})
+    //   .populate("callregistration.product") // Populate product field
+    //   .then(async (calls) => {
+    //     // Iterate through each customer call data
+    //     const customerCallsWithPopulatedData = await Promise.all(
+    //       calls.map(async (callData) => {
+    //         // Check if the customer has call registrations
+    //         if (
+    //           callData.callregistration &&
+    //           callData.callregistration.length > 0
+    //         ) {
+    //           // Iterate through each call's attendedBy array if it exists and is an array
+    //           for (let call of callData.callregistration) {
+    //             if (Array.isArray(call.formdata?.attendedBy)) {
+    //               // Check if attendedBy is an array
+    //               for (let attended of call?.formdata?.attendedBy) {
+    //                 if (attended?.callerId) {
+    //                   // Manually populate the callerId by querying the User model
+    //                   const caller = await Staff.findById(attended.callerId)
+    //                   console.log("hhhhhhhhhhhhhhhhh")
+    //                   attended.callerId = caller || attended.callerId // Replace callerId with populated data or leave as is if not found
+    //                 }
+    //               }
+    //             }
+    //           }
+    //         }
+    //         return callData // Return the call data with populated attendedBy array
+    //       })
+    //     )
+    //     return customerCallsWithPopulatedData
+    //   })
+    //   .catch((err) => {
+    //     console.error(err)
+    //     return []
+    //   })
+
+    // const calls = await CallRegistration.find({})
+    // Assuming `calls` is an array of customer call data
+
+    // Assuming `calls` is an array of customer call data
+    // const customerCalls = calls
+    //   .map((callData) => {
+    //     // Filter only calls within the range of yesterday from each customer's callregistration array
+    //     const matchedCalls = callData.callregistration.filter((call) => {
+    //       // Parse the startTime of each call
+    //       const callDate = moment(call.timedata.startTime)
+
+    //       // Check if the call was made within the range of yesterday
+    //       return callDate.isBetween(
+    //         startOfYesterday,
+    //         endOfYesterday,
+    //         null,
+    //         "[]"
+    //       ) // '[]' includes the endpoints
+    //     })
+
+    //     // If matched calls exist, return the customer data along with the matched calls
+    //     if (matchedCalls.length > 0) {
+    //       return {
+    //         _id: callData._id,
+    //         customerName: callData.customerName,
+    //         callregistration: matchedCalls // Include the matched calls for this customer
+    //       }
+    //     }
+
+    //     // Return null or skip customers with no matched calls
+    //     return null
+    //   })
+    //   .filter((customer) => customer !== null) // Filter out null values to remove customers with no matched calls
+
+    // const customerCalls = await CallRegistration.aggregate([
+    //   // Stage 1: Unwind the attendedBy array
+    //   {
+    //     $unwind: {
+    //       path: "$callregistration.formdata.attendedBy",
+    //       preserveNullAndEmptyArrays: false // Only keep documents with attendedBy entries
+    //     }
+    //   }
+    //   // Stage 2: Match documents within the date range and ensure calldate is valid
+    //   // {
+    //   //   $match: {
+    //   //     $and: [
+    //   //       {
+    //   //         "callregistration.formdata.attendedBy.calldate": {
+    //   //           $exists: true,
+    //   //           $ne: ""
+    //   //         }
+    //   //       }, // Ensure calldate exists and is not empty
+    //   //       {
+    //   //         "callregistration.formdata.attendedBy.calldate": {
+    //   //           $gte: startDate,
+    //   //           $lte: endDate
+    //   //         }
+    //   //       } // Match date range
+    //   //     ]
+    //   //   }
+    //   // }
+    //   // Stage 3: Group back to reconstruct documents and include only filtered attendedBy entries
+    //   // {
+    //   //   $group: {
+    //   //     _id: "$_id",
+    //   //     attendedBy: {
+    //   //       $push: "$callregistration.formdata.attendedBy" // Recreate the attendedBy array with filtered data
+    //   //     },
+    //   //     // Include other fields if needed
+    //   //     otherFields: { $first: "$otherFields" } // Example: Replace 'otherFields' with the fields you want to preserve
+    //   //   }
+    //   // },
+    //   // // Stage 4: Project the final structure
+    //   // {
+    //   //   $project: {
+    //   //     _id: 1,
+    //   //     "callregistration.formdata.attendedBy": "$attendedBy" // Reassign filtered attendedBy array
+    //   //     // Include additional fields if needed
+    //   //   }
+    //   // }
+    // ])
+
+    // console.log("customercalls", customerCalls)
+    console.log("customercallscount", customerCalls.length)
 
     res.status(200).send(customerCalls)
   } catch (error) {
@@ -228,16 +414,21 @@ export const CustomerRegister = async (req, res) => {
 }
 export const CustomerEdit = async (req, res) => {
   const { customerData, tableData } = req.body
-  const customerId = req.query.customerid
+  console.log("dataa", customerData)
+  const { customerid, index } = req.query
+  console.log("inddddddd", index)
+  // Ensure index is a number
+  const parsedIndex = parseInt(index, 10)
+  console.log("parse", parsedIndex)
 
-  if (!customerId || !customerData) {
+  if (!customerid || !customerData) {
     return res
       .status(400)
       .json({ message: "Customer ID and data are required" })
   }
 
   try {
-    const objectId = new mongoose.Types.ObjectId(customerId)
+    const objectId = new mongoose.Types.ObjectId(customerid)
 
     // Find the existing customer
     const existingCustomer = await Customer.findById(objectId)
@@ -250,23 +441,35 @@ export const CustomerEdit = async (req, res) => {
 
     // Update or add tabledata (handle array of objects)
     if (Array.isArray(tableData) && tableData.length > 0) {
-      for (const item of tableData) {
-        const existingIndex = existingCustomer.selected.findIndex(
-          (selectedItem) =>
-            selectedItem.product_id.toString() === item.product_id.toString()
-        )
+      if (parsedIndex >= 0 && parsedIndex < existingCustomer.selected.length) {
+        console.log("Type:", typeof existingCustomer.selected[parsedIndex])
+        console.log("selected", existingCustomer.selected)
+        console.log("sellllllll", existingCustomer.selected[parsedIndex])
 
-        if (existingIndex !== -1) {
-          // Update existing entry
-          existingCustomer.selected[existingIndex] = {
-            ...existingCustomer.selected[existingIndex],
-            ...item
-          }
-        } else {
-          // Add new entry if not found
-          existingCustomer.selected.push(item)
-        }
+        // Update the item at the matched index
+        existingCustomer.selected[parsedIndex] = tableData
+
+        console.log("excust", existingCustomer.selected)
       }
+      // for (const item of tableData) {
+      //   const existingIndex = existingCustomer.selected.findIndex(
+      //     (selectedItem) =>
+      //       selectedItem.product_id.toString() === item.product_id.toString()
+      //   )
+
+      //   if (existingIndex !== -1) {
+      //     console.log("hiiiiii")
+      //     // Update existing entry
+      //     existingCustomer.selected[existingIndex] = {
+      //       ...existingCustomer.selected[existingIndex],
+      //       ...item
+      //     }
+      //   } else {
+      //     console.log("hlwww")
+      //     // Add new entry if not found
+      //     existingCustomer.selected.push(item)
+      //   }
+      // }
     }
 
     // Save the updated customer document

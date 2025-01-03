@@ -509,13 +509,13 @@ const CustomerAdd = ({
     }
   }
   ///now created
-  const emailDomains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com"];
+  const emailDomains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com"]
 
   const validateEmailDomain = (email) => {
-    const domain = email.split("@")[1];
-    return emailDomains.includes(domain) || "Invalid email domain";
-  };
-  
+    const domain = email.split("@")[1]
+    return emailDomains.includes(domain) || "Invalid email domain"
+  }
+
   const handleBranchChange = (selectedOption) => {
     setTableObject((prev) => ({
       ...prev,
@@ -533,7 +533,9 @@ const CustomerAdd = ({
         if (tableData.length === 0) {
           setTableData((prev) => [...prev, tableObject])
         }
-        await handleEditedData(data, tableData)
+        console.log(data)
+        console.log(customer)
+        await handleEditedData(data, tableData, customer.index)
       }
     } catch (error) {
       toast.error("Failed to save customer!")
@@ -708,7 +710,7 @@ const CustomerAdd = ({
                     value: /\S+@\S+\.\S+/,
                     message: "Invalid email address"
                   },
-                  
+
                   onBlur: (e) => setValue("email", e.target.value.trim())
                 })}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"

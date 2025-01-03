@@ -67,7 +67,6 @@ function UsersLeaveApplicationSummary() {
       setLeaves(filteredLeaves)
     }
   }, [])
-  console.log("hiii")
 
   useEffect(() => {
     if ((leaves && leaves.length) || (attendee && attendee.length)) {
