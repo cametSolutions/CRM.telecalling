@@ -61,7 +61,7 @@ const Summary = () => {
           const query = `startDate=${dates.startDate}&endDate=${dates.endDate}`
           const response = await api.get(`/auth/getStaffCallStatus?${query}`)
           setData(response.data.data)
-     
+
           const a = response.data.data.userCallsCount
 
           // const b = a.map((item) => {})
@@ -451,7 +451,6 @@ const Summary = () => {
                 return hasMatchingBranch
               })
           )
-    
 
           setCallList(filtered)
         }
@@ -570,6 +569,7 @@ const Summary = () => {
     setSelectedCustomer(null)
     setSelectedUser(null)
   }
+  console.log(customerCalls)
 
   return (
     <div className="antialiased font-sans container mx-auto px-4 sm:px-8">
@@ -746,8 +746,8 @@ const Summary = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 h-screen">
           <div className="container mx-auto  p-8  h-screen">
             <div className="w-auto  bg-white shadow-lg rounded p-4  h-full ">
-              <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
-                {/* Search Bar for large screens */}
+              {/* <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
+            
                 <div className="mx-4 md:block items-center">
                   <div className="relative">
                     <FaSearch className="absolute w-5 h-5 left-2 top-2 text-gray-500" />
@@ -760,8 +760,11 @@ const Summary = () => {
                     placeholder="Search for..."
                   />
                 </div>
+              </div> */}
+              <div className="flex justify-center text-indigo-500 text-2xl">
+                {customerCalls.customerName}
               </div>
-              <hr className="border-t-2 border-gray-300 mb-2 " />
+              <hr className="border-t-2 border-gray-300 m-3" />
               {/* <Tiles datas={registeredcalllist?.alltokens} /> */}
               <div className="flex justify-around">
                 {!isToggled && (
