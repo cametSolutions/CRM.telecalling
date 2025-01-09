@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react"
 import { useLocation, Link } from "react-router-dom"
 import { flushSync } from "react-dom"
+import ReactQuill from "react-quill"
+import "react-quill/dist/quill.snow.css" // Import Quill styles
 import ClipLoader from "react-spinners/ClipLoader"
 import io from "socket.io-client"
 import { formatDate } from "../../../utils/dateUtils"
@@ -66,7 +68,9 @@ export default function CallRegistration() {
 
   console.log(calldetails)
   console.log(token)
-
+  const handleQuillChange = (value) => {
+    setValue("description", value, { shouldValidate: true }) // Update React Hook Form's value
+  }
   useEffect(() => {
     if (callnotes && callnotes.length > 0) {
       const userData = localStorage.getItem("user")
@@ -155,7 +159,7 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
-    console.log(callId)
+  
     const response = await fetch(
       `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
     )
@@ -985,6 +989,28 @@ export default function CallRegistration() {
                         </span>
                       )}
                     </div>
+                    {/* <div>
+                      <label
+                        htmlFor="description"
+                        className="block text-sm font-medium text-gray-700"
+                      >
+                        Description
+                      </label>
+                      <ReactQuill
+                        id="description"
+                        theme="snow"
+                        // onChange={handleQuillChange}
+                        spellCheck={true} // Enables spell check
+                        lang="en" // Sets the language for spell check
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm sm:text-sm focus:border-gray-500 outline-none"
+                        placeholder="Enter a description..."
+                      />
+                      {errors.description && (
+                        <span className="mt-2 text-sm text-red-600">
+                          {errors.description.message}
+                        </span>
+                      )}
+                    </div> */}
                     <div>
                       <label
                         id="description"
