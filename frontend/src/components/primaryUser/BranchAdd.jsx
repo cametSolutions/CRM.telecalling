@@ -37,8 +37,10 @@ const BranchAdd = ({
       setValue("mobile", branchdata.mobile)
       setValue("landlineno", branchdata.landlineno)
       setValue("email", branchdata.email)
+      setValue("ccmail", branchdata.ccmail)
       setValue("notificationemail", branchdata.notificationemail)
       setValue("mailpassword", branchdata.mailpassword)
+      setValue("whatsappnumber", branchdata.whatsappnumber)
     }
   }, [companies])
 
@@ -213,6 +215,28 @@ const BranchAdd = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
+                Cc Mail
+              </label>
+              <input
+                type="email"
+                {...register("ccmail", {
+                  required: "Email is required",
+                  pattern: {
+                    value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                    message: "Invalid email address"
+                  }
+                })}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                placeholder="cc mail"
+              />
+              {errors.ccmail && (
+                <span className="mt-2 text-sm text-red-600">
+                  {errors.ccmail.message}
+                </span>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
                 Notification Mail
               </label>
               <input
@@ -248,6 +272,22 @@ const BranchAdd = ({
               {errors.mailpassword && (
                 <span className="mt-2 text-sm text-red-600">
                   {errors.mailpassword.message}
+                </span>
+              )}
+            </div>
+            <div className="">
+              <label className="block text-sm font-medium text-gray-700">
+                Whats App No
+              </label>
+              <input
+                type="text"
+                {...register("whatsappnumber")}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                placeholder="whats app number.."
+              />
+              {errors.whatsappnumber && (
+                <span className="mt-2 text-sm text-red-600">
+                  {errors.whatsappnumber.message}
                 </span>
               )}
             </div>

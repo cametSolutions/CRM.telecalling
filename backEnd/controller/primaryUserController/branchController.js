@@ -5,6 +5,8 @@ export const BranchRegister = async (req, res) => {
   const {
     branchName,
     email,
+    ccmail,
+    whatsappnumber,
     mailpassword,
     notificationemail,
     companyName,
@@ -34,6 +36,8 @@ export const BranchRegister = async (req, res) => {
     const branches = new Branch({
       companyName,
       email,
+      ccmail,
+      whatsappnumber,
       notificationemail,
       mailpassword,
       branchName,
@@ -93,10 +97,11 @@ export const BranchEdit = async (req, res) => {
         country: branchData?.country,
         state: branchData?.state,
         email: branchData?.email,
+        ccmail:branchData?.ccmail,
         notificationemail: branchData?.notificationemail,
         mailpassword: branchData?.mailpassword,
+        whatsappnumber:branchData?.whatsappnumber,
         mobile: branchData?.mobile,
-
         landlineno: branchData?.landlineno
       },
       { new: true }

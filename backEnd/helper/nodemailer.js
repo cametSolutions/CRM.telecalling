@@ -4,8 +4,6 @@ import Callnote from "../model/secondaryUser/callNotesSchema.js"
 import Branch from "../model/primaryUser/branchSchema.js"
 // Function to send email using Nodemailer
 export const sendEmail = async (calldata, name, branchName, username) => {
-  console.log("hiiiiiiii")
-
   const problem = new mongoose.Types.ObjectId(calldata.formdata.callnote)
 
   const customerproblem = await Callnote.find(problem)
@@ -104,7 +102,7 @@ export const sendEmail = async (calldata, name, branchName, username) => {
       ? `
             <tr>
               <td>Remarks</td>
-              <td>${calldata.formdata.solution || "N/A"}</td>
+              <td>${"Closed"}</td>
             </tr>`
       : ""
   }
@@ -124,7 +122,7 @@ export const sendEmail = async (calldata, name, branchName, username) => {
 </p>
         <p>Kind regards,<br>${username}<br>${branch}</p>
       `
-
+  // solutions@camet.in
   try {
     const info = await transporter.sendMail({
       from: notificationemail, // Sender's name and address
@@ -134,8 +132,9 @@ export const sendEmail = async (calldata, name, branchName, username) => {
       html: htmlContent // Email content as HTML
     })
 
-    console.log(`Email sent successfully: ${info.messageId}`)
+    // console.log(`Email sent successfully: ${info.messageId}`)
     console.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`)
+
     return info // Return the response info after the email is sent
   } catch (error) {
     console.error("Error sending email: ", error.message)

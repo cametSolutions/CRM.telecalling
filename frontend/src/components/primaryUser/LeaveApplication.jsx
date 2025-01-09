@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-
+import axios from "axios"
 import tippy from "tippy.js"
 import UseFetch from "../../hooks/useFetch"
 import api from "../../api/api"
@@ -40,7 +40,6 @@ function LeaveApplication() {
   const [attendance, setAttendance] = useState(false)
   const [widthState, setWidthState] = useState("w-5/6")
   const [tableRows, setTableRows] = useState([])
-  console.log(tableRows)
   const [clickedDate, setclickedDate] = useState(null)
   const userData = localStorage.getItem("user")
   const tabs = ["Leave", "Onsite", "Attendance"]
@@ -50,14 +49,13 @@ function LeaveApplication() {
     user && `/auth/getallLeave?userid=${user._id}`
   )
 
-  const { data: attendee } = UseFetch(
+  const { data: attendee, refreshHook: refreshattendee } = UseFetch(
     user && `/auth/getallAttendance?userid=${user._id}`
   )
 
   useEffect(() => {
     if ((leaves && leaves.length > 0) || (attendee && attendee.length > 0)) {
       const formattedEvents = formatEventData(leaves)
-      console.log(formattedEvents)
 
       let attendanceDetails
       if (
@@ -66,21 +64,17 @@ function LeaveApplication() {
         attendee &&
         attendee.length > 0
       ) {
-        console.log(attendee)
         attendanceDetails = attendee.map((item) => {
-          console.log(item)
           let dayObject = {
             start: "",
             color: "green"
           }
           const fdate = new Date(item.attendanceDate) // Convert to Date object
-          console.log(fdate)
           let date = fdate.toISOString().split("T")[0]
           let existingDate = formattedEvents?.find((event) => {
             return event.start === date
           })
           if (existingDate) {
-            console.log(existingDate)
             dayObject.start = item?.attendanceDate
 
             dayObject.inTime = item?.inTime
@@ -96,7 +90,6 @@ function LeaveApplication() {
             return dayObject
           }
         })
-        console.log(attendanceDetails)
 
         setEvents([...formattedEvents, ...attendanceDetails])
       } else if (attendee && attendee.length > 0) {
@@ -127,20 +120,16 @@ function LeaveApplication() {
       setIsOnsite(false)
     }
   }, [showModal])
-  // console.log(onsite)
   useEffect(() => {
     if (isOnsite && clickedDate) {
-      console.log(isOnsite)
       // Find the event that matches the clicked date
       const existingEvent = events.find((event) => event.start === clickedDate)
-      console.log(existingEvent)
       // If a matching event is found and it has onsite data
       if (
         existingEvent &&
         existingEvent.onsiteData &&
         existingEvent.onsiteData.length > 0
       ) {
-        console.log("h")
         const matchedOnsiteData = existingEvent.onsiteData[0].map((status) => ({
           siteName: status.siteName,
           place: status.place,
@@ -159,7 +148,6 @@ function LeaveApplication() {
 
   const formatEventData = (events) => {
     return events?.map((event) => {
-      console.log(event)
       const date = new Date(event.leaveDate) // Convert to Date object
       const formattedDate = date.toISOString().split("T")[0] // Format as YYYY-MM-DD
       let dayObject
@@ -224,65 +212,84 @@ function LeaveApplication() {
       }
     ])
   }
-
   const handleDateClick = (arg) => {
-    const clickedDate = arg.dateStr
-    setclickedDate(clickedDate)
+    setclickedDate(arg.dateStr)
+    const clickeddate = arg.dateStr
 
     // Check if there's already an event on this date
-    console.log(events)
     // const existingEvent = events?.filter((event) => event.start === clickedDate)
     const existingEvent = events?.filter((event) => {
       const eventDate = new Date(event.start).toISOString().split("T")[0] // Normalize to YYYY-MM-DD
-      return eventDate === clickedDate // Compare only the date part
+      return eventDate === clickeddate // Compare only the date part
     })
-    console.log(existingEvent)
     // setexistingEvent(existingEvent)
 
     if (existingEvent && existingEvent.length > 0) {
-      console.log(existingEvent)
       // Parse the inTime and outTime (assuming they are in "hh:mm AM/PM" format)
       const parseTime = (timeString) => {
-        console.log(timeString)
         if (!timeString) {
           // Return default or empty values if timeString is undefined or null
           return { hours: null, minutes: null, amPm: null }
         }
-        console.log(timeString)
         const [time, amPm] = timeString.split(" ")
         const [hours, minutes] = time.split(":")
         return { hours, minutes, amPm }
       }
+      const findRelevantEvent = (events) => {
+        return (
+          events.find((event) => {
+            // Example condition: prioritize events without inTime and outTime, or with specific keys like onsite
+            return (
+              !event.inTime &&
+              !event.outTime &&
+              !event.onsite &&
+              !event.onsiteData
+            )
+          }) || events[0]
+        ) // Fallback to the first event if no specific match is found
+      }
 
-      // If an event exists, set the form data to edit the event
+      // Find the relevant event
+      const relevantEvent = findRelevantEvent(existingEvent)
+
+      // Set the form data dynamically based on the relevant event
       setFormData({
         ...formData,
-        startDate: existingEvent?.start,
-        halfDayPeriod: existingEvent?.halfDayPeriod,
-        leaveType: existingEvent?.leaveType,
-        // halfDayPeriod:existingEvent
-        onsite: existingEvent?.onsite,
-        [existingEvent.onsite ? "description" : "reason"]:
-          existingEvent?.reason,
-        eventId: existingEvent?.id // Store the event ID for editing
+        startDate: relevantEvent?.start,
+        halfDayPeriod: relevantEvent?.halfDayPeriod || "",
+        leaveType: relevantEvent.leaveType || "",
+        reason: relevantEvent.reason || ""
       })
-      const inTimeEvent = existingEvent.find((event) => event.inTime)
-      // Set selected attendance state
-      setselectedAttendance((prev) => ({
-        ...prev, // Spread the previous state to keep other values intact
-        attendanceDate: existingEvent?.start, // Set the attendance date
-        inTime: {
-          hours: parseTime(inTimeEvent?.inTime)?.hours, // Update hours from parsed inTime
-          minutes: parseTime(inTimeEvent?.inTime)?.minutes, // Update minutes from parsed inTime
-          amPm: parseTime(inTimeEvent?.inTime)?.amPm // Update AM/PM from parsed inTime
-        },
-        outTime: {
-          hours: parseTime(inTimeEvent?.outTime)?.hours, // Update hours from parsed outTime
-          minutes: parseTime(inTimeEvent?.outTime)?.minutes, // Update minutes from parsed outTime
-          amPm: parseTime(inTimeEvent?.outTime)?.amPm // Update AM/PM from parsed outTime
-        }
-      }))
-      if (existingEvent.onsite) {
+
+      // If an event exists, set the form data to edit the event
+      // setFormData({
+      //   ...formData,
+      //   startDate: existingEvent?.start,
+      //   halfDayPeriod: existingEvent?.halfDayPeriod,
+      //   leaveType: existingEvent?.leaveType,
+      //   // halfDayPeriod:existingEvent
+      //   onsite: existingEvent?.onsite,
+      //   [existingEvent.onsite ? "description" : "reason"]:
+      //     existingEvent?.reason,
+      //   eventId: existingEvent?.id // Store the event ID for editing
+      // })
+      // const inTimeEvent = existingEvent.find((event) => event.inTime)
+      // // Set selected attendance state
+      // setselectedAttendance((prev) => ({
+      //   ...prev, // Spread the previous state to keep other values intact
+      //   attendanceDate: existingEvent?.start, // Set the attendance date
+      //   inTime: {
+      //     hours: parseTime(inTimeEvent?.inTime)?.hours, // Update hours from parsed inTime
+      //     minutes: parseTime(inTimeEvent?.inTime)?.minutes, // Update minutes from parsed inTime
+      //     amPm: parseTime(inTimeEvent?.inTime)?.amPm // Update AM/PM from parsed inTime
+      //   },
+      //   outTime: {
+      //     hours: parseTime(inTimeEvent?.outTime)?.hours, // Update hours from parsed outTime
+      //     minutes: parseTime(inTimeEvent?.outTime)?.minutes, // Update minutes from parsed outTime
+      //     amPm: parseTime(inTimeEvent?.outTime)?.amPm // Update AM/PM from parsed outTime
+      //   }
+      // }))
+      if (existingEvent?.onsite) {
         setIsOnsite(true)
       }
     } else {
@@ -376,10 +383,7 @@ function LeaveApplication() {
   const handleChange = (e) => handleInputChange(e)
 
   const handleTimeChange = (type, field, value) => {
-    console.log(type)
-    console.log(field)
-
-    console.log(value)
+  
     setselectedAttendance((prev) => {
       // Ensure the nested object exists for `type`
       const currentType = prev[type] || { hours: "", minutes: "", amPm: "" }
@@ -397,7 +401,7 @@ function LeaveApplication() {
   const handleSubmit = async (tab) => {
     try {
       if (tab === "Leave") {
-        // Assuming you have an API endpoint for creating leave requests
+        //Assuming you have an API endpoint for creating leave requests
         // const response = await fetch(
         //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
         //   {
@@ -468,7 +472,6 @@ function LeaveApplication() {
           refreshHook()
         }
       } else if (tab === "Attendance") {
-        console.log(selectedAttendance)
         // const response = await fetch(
         //   `http://localhost:9000/api/auth/attendance?selectedid=${user._id}`,
         //   {
@@ -492,7 +495,7 @@ function LeaveApplication() {
           }
         )
 
-        const responseData = await response.json()
+        await response.json()
 
         if (!response.ok) {
           throw new Error("Failed to apply for leave")
@@ -500,8 +503,12 @@ function LeaveApplication() {
           const response = await axios.get(
             `/auth/getallAttendance?userid=${user._id}`
           )
+          const data = response.data
+
           if (response.status === 200) {
             setShowModal(false)
+            refreshHook()
+            refreshattendee()
             setselectedAttendance({
               attendanceDate: "",
               inTime: { hours: "12", minutes: "00", amPm: "AM" },
@@ -511,7 +518,103 @@ function LeaveApplication() {
         }
       }
     } catch (error) {
-      console.log("error:", error.response.message)
+      console.log("error:", error.message)
+    }
+  }
+
+  const selectedTabContent = (value) => {
+    let existingEvent
+    switch (true) {
+      case value === "Leave":
+        existingEvent = events?.filter((event) => {
+          const eventDate = new Date(event.start).toISOString().split("T")[0] // Normalize to YYYY-MM-DD
+          return eventDate === clickedDate // Compare only the date part
+        })
+        if (existingEvent && existingEvent.length > 0) {
+          const findRelevantEvent = (events) => {
+            return (
+              events.find((event) => {
+                // Example condition: prioritize events without inTime and outTime, or with specific keys like onsite
+                return (
+                  !event.inTime &&
+                  !event.outTime &&
+                  !event.onsite &&
+                  !event.onsiteData
+                )
+              }) || events[0]
+            ) // Fallback to the first event if no specific match is found
+          }
+
+          // Find the relevant event
+          const relevantEvent = findRelevantEvent(existingEvent)
+
+          // Set the form data dynamically based on the relevant event
+          setFormData({
+            ...formData,
+            startDate: relevantEvent?.start,
+            halfDayPeriod: relevantEvent?.halfDayPeriod || "",
+            leaveType: relevantEvent.leaveType || "",
+            reason: relevantEvent.reason || ""
+          })
+        }
+
+        // Handle the case where the fields are missing or falsy
+        break
+
+      case value === "Onsite":
+        console.log("Case 2: All fields are present.")
+        // Handle the case where all fields are present
+        break
+
+      case value === "Attendance":
+        existingEvent = events?.filter((event) => {
+          const eventDate = new Date(event.start).toISOString().split("T")[0] // Normalize to YYYY-MM-DD
+          return eventDate === clickedDate // Compare only the date part
+        })
+
+        if (existingEvent && existingEvent.length > 0) {
+          const findRelevantEvent = (events) => {
+            return events.find((event) => {
+              // Example condition: prioritize events with both inTime and outTime
+              return event.inTime && event.outTime
+            })
+          }
+
+          // Find the relevant event
+          const relevantEvent = findRelevantEvent(existingEvent)
+
+          const parseTime = (timeString) => {
+            if (!timeString) {
+              // Return default or empty values if timeString is undefined or null
+              return { hours: null, minutes: null, amPm: null }
+            }
+            const [time, amPm] = timeString.split(" ")
+            const [hours, minutes] = time.split(":")
+            return { hours, minutes, amPm }
+          }
+          // // Set selected attendance state
+          setselectedAttendance((prev) => ({
+            ...prev, // Spread the previous state to keep other values intact
+            attendanceDate: relevantEvent?.start, // Set the attendance date
+            inTime: {
+              hours: parseTime(relevantEvent?.inTime)?.hours, // Update hours from parsed inTime
+              minutes: parseTime(relevantEvent?.inTime)?.minutes, // Update minutes from parsed inTime
+              amPm: parseTime(relevantEvent?.inTime)?.amPm // Update AM/PM from parsed inTime
+            },
+            outTime: {
+              hours: parseTime(relevantEvent?.outTime)?.hours, // Update hours from parsed outTime
+              minutes: parseTime(relevantEvent?.outTime)?.minutes, // Update minutes from parsed outTime
+              amPm: parseTime(relevantEvent?.outTime)?.amPm // Update AM/PM from parsed outTime
+            }
+          }))
+        }
+
+        // Handle the case where onsite is true but inTime or outTime is missing/falsy
+        break
+
+      default:
+        console.log("Default case: None of the above conditions met.")
+      // Handle other cases
     }
   }
 
@@ -827,7 +930,7 @@ function LeaveApplication() {
                     <select
                       id="amPm"
                       name="amPm"
-                      // value={selectedAttendance.amPm}
+                      value={selectedAttendance?.inTime?.amPm}
                       onChange={(e) =>
                         handleTimeChange("inTime", "amPm", e.target.value)
                       }
@@ -901,7 +1004,6 @@ function LeaveApplication() {
         return <p>Select a tab to view the content.</p>
     }
   }
-  console.log(selectedAttendance)
 
   return (
     <div className=" p-4">
@@ -970,7 +1072,6 @@ function LeaveApplication() {
               const eventDate = new Date(event.start).toLocaleDateString(
                 "en-CA"
               )
-              console.log(eventDate)
               // Get event start date in "YYYY-MM-DD" format
               return eventDate === cellDate // Compare the date part (YYYY-MM-DD)
             })
@@ -1019,14 +1120,12 @@ function LeaveApplication() {
             //
             if (matchingEvent && matchingEvent.length > 0) {
               matchingEvent.forEach((event) => {
-                console.log(event)
                 const {
                   color: squareColor,
                   reason = "No reason provided",
                   inTime,
                   outTime
                 } = event
-                console.log(squareColor)
 
                 // Create the time container for the first event only
                 if (
@@ -1212,15 +1311,16 @@ function LeaveApplication() {
             <div>
               {/* Tab Navigation */}
               <div className="flex justify-center space-x-4">
-                {tabs.map((tab) => (
+                {tabs?.map((tab) => (
                   <span
                     key={tab}
                     onClick={() => {
                       setSelectedTab(tab)
-                      setFormData((prev) => ({
-                        ...prev,
-                        onsite: tab === "Onsite" // Sets true if "onsite", false otherwise
-                      }))
+                      selectedTabContent(tab)
+                      // setFormData((prev) => ({
+                      //   ...prev,
+                      //   onsite: tab === "Onsite" // Sets true if "onsite", false otherwise
+                      // }))
                       setIsOnsite(tab === "Onsite")
                     }}
                     className={`cursor-pointer ${
@@ -1254,8 +1354,8 @@ function LeaveApplication() {
                       })
                       setselectedAttendance({
                         attendanceDate: "",
-                        intTime: "",
-                        onTime: ""
+                        inTime: { hours: "12", minutes: "00", amPm: "AM" },
+                        outTime: { hours: "12", minutes: "00", amPm: "AM" }
                       })
                       setAttendance(false)
                       setShowModal(false)
