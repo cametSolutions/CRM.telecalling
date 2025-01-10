@@ -52,7 +52,14 @@ function LeaveApplication() {
   const { data: attendee, refreshHook: refreshattendee } = UseFetch(
     user && `/auth/getallAttendance?userid=${user._id}`
   )
-
+  useEffect(() => {
+    if (isOnsite) {
+      setFormData((prev) => ({
+        ...prev,
+        onsite: true
+      }))
+    }
+  }, [isOnsite])
   useEffect(() => {
     if ((leaves && leaves.length > 0) || (attendee && attendee.length > 0)) {
       const formattedEvents = formatEventData(leaves)
@@ -383,7 +390,6 @@ function LeaveApplication() {
   const handleChange = (e) => handleInputChange(e)
 
   const handleTimeChange = (type, field, value) => {
-  
     setselectedAttendance((prev) => {
       // Ensure the nested object exists for `type`
       const currentType = prev[type] || { hours: "", minutes: "", amPm: "" }
@@ -869,8 +875,8 @@ function LeaveApplication() {
             <div className="mb-4">
               <label className="block mb-2">Description</label>
               <textarea
-                name="reason"
-                defaultValue={formData.reason}
+                name="description"
+                defaultValue={formData.description}
                 onChange={handleChange}
                 rows="4"
                 className="border p-2 rounded w-full"
