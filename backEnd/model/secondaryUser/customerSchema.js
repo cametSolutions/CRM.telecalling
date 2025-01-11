@@ -19,11 +19,11 @@ const CustomerSchema = new mongoose.Schema({
   mobile: { type: String },
   landline: String,
   industry: { type: String },
-
+  partner: { type: mongoose.Schema.Types.ObjectId, ref: "Partner" },
   contactPerson: {
     type: String
   },
-  parter: { type: String },
+
   selected: [
     {
       company_id: { type: mongoose.Schema.Types.ObjectId, ref: "Company" }, // if referencing another collection
@@ -53,7 +53,7 @@ const CustomerSchema = new mongoose.Schema({
 
         enum: ["Running", "Deactive"]
       },
-      reasonofStatus:{type:String},
+      reasonofStatus: { type: String },
       softwareTrade: { type: String }
     }
   ],

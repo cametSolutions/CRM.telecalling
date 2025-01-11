@@ -180,16 +180,19 @@ function LeaveApplication() {
       if (formattedDate) {
         dayObject.start = formattedDate
       }
-      if (event.departmentverified && !event.onsite) {
+      if (event.departmentverified || (event.adminverified && !event.onsite)) {
         dayObject.halfDayPeriod = event.halfDayPeriod
         dayObject.leaveType = event.leaveType
         dayObject.color = "red"
-      } else if (event.departmentverified && event.onsite) {
+      } else if (
+        event.departmentverified ||
+        (event.adminverified && event.onsite)
+      ) {
         dayObject.onsiteData = event.onsiteData
         dayObject.halfDayPeriod = event.halfDayPeriod
         dayObject.leaveType = event.leaveType
         dayObject.color = "blue"
-      } else if (!event.departmentverified && event.onsite) {
+      } else if ((!event.departmentverified || !event.adminverified)&& event.onsite) {
         dayObject.onsiteData = event.onsiteData
         dayObject.halfDayPeriod = event.halfDayPeriod
         dayObject.leaveType = event.leaveType
@@ -403,7 +406,7 @@ function LeaveApplication() {
       }
     })
   }
-
+  console.log(formData)
   const handleSubmit = async (tab) => {
     try {
       if (tab === "Leave") {
@@ -445,14 +448,14 @@ function LeaveApplication() {
           }))
         }
       } else if (tab === "Onsite") {
-        // const response = await api.post(
-        //   `http://localhost:9000/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
-        //   { formData, tableRows }
-        // )
         const response = await api.post(
-          `https://www.crm.camet.in/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          `http://localhost:9000/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
           { formData, tableRows }
         )
+        // const response = await api.post(
+        //   `https://www.crm.camet.in/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+        //   { formData, tableRows }
+        // )
 
         if (response.status === 200) {
           setFormData((prev) => ({

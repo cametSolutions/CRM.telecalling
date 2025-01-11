@@ -4,6 +4,7 @@ import BranchRegistration from "../../pages/primaryUser/register/BranchRegistrat
 import CustomerRegistration from "../../pages/secondaryUser/register/CustomerRegistration"
 import CustomerEdit from "../../pages/secondaryUser/edit/CustomerEdit"
 import { CallNoteRegistration } from "../../pages/primaryUser/register/CallNoteRegistration"
+import { PartnerRegistration } from "../../pages/primaryUser/register/PartnerRegistration"
 import BranchList from "../../pages/primaryUser/List/BranchList"
 import CompanyEdit from "../../pages/primaryUser/edit/CompanyEdit"
 import BranchEdit from "../../pages/primaryUser/edit/BranchEdit"
@@ -45,6 +46,7 @@ const staffmastersRoutes = [
     path: "/staff/masters/callnotes",
     component: CallNoteRegistration
   },
+  {path:"/staff/masters/partners",component:PartnerRegistration},
   { path: "/staff/masters/branchEdit", component: BranchEdit },
   { path: "/staff/masters/customer", component: CustomerListform },
   { path: "/staff/masters/customerEdit", component: CustomerEdit },

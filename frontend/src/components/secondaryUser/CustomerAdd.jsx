@@ -62,7 +62,7 @@ const CustomerAdd = ({
   const [showTable, setShowTable] = useState(false)
   const [tableData, setTableData] = useState([])
   const [editState, seteditState] = useState(false)
-
+  const [partner, setPartner] = useState([])
   const [editIndex, setEditIndex] = useState(null)
   const [licenseAvailable, setLicenseAvailable] = useState(true)
   const [license, setLicense] = useState([])
@@ -102,13 +102,16 @@ const CustomerAdd = ({
   const { data: licensenumber, error: licensenumberError } = UseFetch(
     "/customer/getLicensenumber"
   )
-
+  const { data: partners } = UseFetch("/customer/getallpartners")
+  console.log(partners)
+  console.log(partner)
   useEffect(() => {
     if (productData) {
       setTableObject({
         ...tableObject,
         isActive: "Running"
       })
+      setPartner(partners)
       setProductOptions(
         productData.map((product) => ({
           label: product.productName,
@@ -134,6 +137,7 @@ const CustomerAdd = ({
           mobile: customer.mobile,
           landline: customer.landline,
           industry: customer.industry,
+          partner:customer.partner,
           productName: customer?.selected?.product_id
             ? {
                 label: customer?.selected?.productName,
@@ -246,7 +250,7 @@ const CustomerAdd = ({
     }
 
     // Directly set products to productData
-  }, [productData, reset, customer])
+  }, [productData, reset, customer, partners])
 
   useEffect(() => {
     if (licensenumber) {
@@ -775,6 +779,28 @@ const CustomerAdd = ({
               {errors.industry && (
                 <span className="mt-2 text-sm text-red-600">
                   {errors.industry.message}
+                </span>
+              )}
+            </div>
+            <div className="">
+              <label className="block text-sm font-medium text-gray-700">
+                Partnership
+              </label>
+              <select
+                id="partner"
+                {...register("partner")}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+              >
+                <option value="">Select Partner</option>
+                {partner?.map((partnr, index) => (
+                  <option key={index} value={partnr._id}>
+                    {partnr.partner}
+                  </option>
+                ))}
+              </select>
+              {errors.partner && (
+                <span className="mt-2 text-sm text-red-600">
+                  {errors.partner.message}
                 </span>
               )}
             </div>
