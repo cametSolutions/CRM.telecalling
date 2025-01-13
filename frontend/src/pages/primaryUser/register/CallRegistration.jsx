@@ -66,8 +66,6 @@ export default function CallRegistration() {
 
   // useRef to keep track of the latest timeout for debouncing
 
-  console.log(calldetails)
-  console.log(token)
   const handleQuillChange = (value) => {
     setValue("description", value, { shouldValidate: true }) // Update React Hook Form's value
   }
@@ -159,7 +157,6 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
-  
     const response = await fetch(
       `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
     )
@@ -383,7 +380,7 @@ export default function CallRegistration() {
       }
     }
   }
-
+  console.log(selectedCustomer)
   const formatDateTime = (date) => {
     const year = date.getFullYear()
 
@@ -585,7 +582,8 @@ export default function CallRegistration() {
   //     // socket.emit("updatedCalls")
   //   }
   // }
-
+  console.log(customerData)
+  console.log(selectedCustomer)
   return (
     <div className="container  justify-center items-center p-8 bg-gray-100">
       <div className="w-auto bg-white shadow-lg rounded min-h-screen p-8 mx-auto">
@@ -649,7 +647,7 @@ export default function CallRegistration() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {customerData?.map((customer, index) =>
-                  customer.selected.map((item, subIndex) => (
+                  customer?.selected?.map((item, subIndex) => (
                     <tr
                       key={`${index}-${subIndex}`} // Ensure unique key for each row
                       onClick={() => handleRowClick(customer)}
@@ -717,6 +715,12 @@ export default function CallRegistration() {
                 <h4 className="text-md font-bold text-white">Landline</h4>
                 <p className="text-white">
                   {selectedCustomer.landline || "N/A"}
+                </p>
+              </div>
+              <div className="">
+                <h4 className="text-md font-bold text-white">Partnership</h4>
+                <p className="text-white">
+                  {selectedCustomer?.partner?.partner || "N/A"}
                 </p>
               </div>
               <div className="">

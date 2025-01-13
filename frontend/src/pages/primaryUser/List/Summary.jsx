@@ -31,7 +31,7 @@ const Summary = () => {
   const [a, setA] = useState([])
   const { data: branches } = UseFetch("/branch/getBranch")
   const { data: staffCallList } = UseFetch("/auth/staffcallList")
-
+  console.log(staffCallList)
   useEffect(() => {
     if (staffCallList) {
       setIndividualCallList(staffCallList)

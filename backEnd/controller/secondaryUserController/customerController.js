@@ -2,6 +2,7 @@ import Customer from "../../model/secondaryUser/customerSchema.js"
 import moment from "moment" // You can use moment.js to handle date manipulation easily
 import License from "../../model/secondaryUser/licenseSchema.js"
 import CallRegistration from "../../model/secondaryUser/CallRegistrationSchema.js"
+import Partner from "../../model/secondaryUser/partnerSchema.js"
 import CallNote from "../../model/secondaryUser/callNotesSchema.js"
 import models from "../../model/auth/authSchema.js"
 import { sendEmail } from "../../helper/nodemailer.js"
@@ -20,6 +21,19 @@ export const GetallCallnotes = async (req, res) => {
     console.log("error:", error.message)
   }
 }
+export const GetallPartners = async (req, res) => {
+  try {
+    const partners = await Partner.find({})
+
+    if (partners) {
+      return res
+        .status(200)
+        .json({ message: "callnotes found", data: partners })
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+  }
+}
 export const DeleteCallnotes = async (req, res) => {
   const { id } = req.query
 
@@ -33,6 +47,25 @@ export const DeleteCallnotes = async (req, res) => {
       return res.status(200).json({ message: " deleted successfully" })
     } else {
       return res.status(404).json({ message: "callnote not found" })
+    }
+  } catch (error) {
+    console.error(error)
+    return res.status(500).json({ message: "Server error" })
+  }
+}
+export const DeletePartner = async (req, res) => {
+  const { id } = req.query
+
+  const objectId = new mongoose.Types.ObjectId(id)
+
+  try {
+    // Perform the deletion
+    const result = await Partner.findByIdAndDelete(objectId)
+
+    if (result) {
+      return res.status(200).json({ message: " deleted successfully" })
+    } else {
+      return res.status(404).json({ message: "partner not found" })
     }
   } catch (error) {
     console.error(error)
@@ -68,6 +101,34 @@ export const UpdateCallnotes = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" })
   }
 }
+export const UpdatePartners = async (req, res) => {
+  const { id } = req.query
+
+  const objectId = new mongoose.Types.ObjectId(id)
+  const formData = req.body
+  if (!id) {
+    return res.status(400).json({ message: "Invalid id" })
+  }
+
+  try {
+    const updatedPartners = await Partner.findByIdAndUpdate(
+      objectId,
+      formData,
+      {
+        new: true
+      }
+    )
+
+    if (!updatedPartners) {
+      return res.status(404).json({ message: "partners not found" })
+    }
+
+    res.status(200).json({ data: updatedPartners })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: "Internal Server Error" })
+  }
+}
 export const GetselectedDateCalls = async (req, res) => {
   try {
     console.log("koolll")
@@ -78,8 +139,8 @@ export const GetselectedDateCalls = async (req, res) => {
     // const customerCalls = await CallRegistration.find({})
     // Get the current date and calculate the range for yesterday
     // Define the start and end of yesterday
-    const startOfYesterday = moment().startOf("day").subtract(1, "days")
-    const endOfYesterday = moment().endOf("day").subtract(1, "days")
+    const startOfYesterday = moment().startOf("day").subtract(2, "days")
+    const endOfYesterday = moment().endOf("day").subtract(2, "days")
     const customerCalls = await CallRegistration.find({})
       .populate("callregistration.product") // Populate the product field
       .then(async (calls) => {
@@ -310,7 +371,7 @@ export const GetselectedDateCalls = async (req, res) => {
 
     // console.log("customercalls", customerCalls)
     console.log("customercallscount", customerCalls.length)
-
+    // console.log("calls", customerCalls)
     res.status(200).send(customerCalls)
   } catch (error) {
     console.log("error:", error.message)
@@ -346,6 +407,35 @@ export const CallnoteRegistration = async (req, res) => {
     console.log("error:", error.message)
   }
 }
+export const PartnerRegistration = async (req, res) => {
+  try {
+    const formdata = req.body
+
+    const existingItem = await Partner.findOne({
+      partner: formdata.partner
+    })
+    if (existingItem) {
+      return res
+        .status(400)
+        .json({ message: "This callnotes  is already registered" })
+    }
+
+    // Create and save call notes
+    const collection = new Partner({
+      partner: formdata.partner
+    })
+
+    await collection.save()
+
+    res.status(200).json({
+      status: true,
+      message: "Partner created successfully",
+      data: collection
+    })
+  } catch (error) {
+    console.log("error:", error.message)
+  }
+}
 
 export const CustomerRegister = async (req, res) => {
   const { customerData, tabledata = {} } = req.body
@@ -362,7 +452,8 @@ export const CustomerRegister = async (req, res) => {
     email,
     mobile,
     landline,
-    industry
+    industry,
+    partner
   } = customerData
 
   // Check if user already exists
@@ -385,6 +476,7 @@ export const CustomerRegister = async (req, res) => {
       mobile,
       landline,
       industry,
+      partner,
       contactPerson,
       selected: tabledata
     })
@@ -572,6 +664,9 @@ export const GetCustomer = async (req, res) => {
               },
               "selected.productObjectId": {
                 $toObjectId: "$selected.product_id"
+              },
+              partnerObjectId: {
+                $toObjectId: "$partner"
               }
             }
           },
@@ -601,7 +696,16 @@ export const GetCustomer = async (req, res) => {
             }
           },
           {
+            $lookup: {
+              from: "partners", // Name of the Product collection
+              localField: "partnerObjectId", // Field from the customer document
+              foreignField: "_id", // Match the _id field from the Product collection
+              as: "partnerDetails" // Alias for the resulting joined product documents
+            }
+          },
+          {
             $addFields: {
+              partner: { $arrayElemAt: ["$partnerDetails", 0] },
               "selected.product_id": { $arrayElemAt: ["$productDetails", 0] },
               "selected.branch_id": { $arrayElemAt: ["$branchDetails", 0] },
               "selected.company_id": { $arrayElemAt: ["$companyDetails", 0] } // Replace product_id with populated product data
@@ -617,11 +721,12 @@ export const GetCustomer = async (req, res) => {
               pincode: { $first: "$pincode" },
               email: { $first: "$email" },
               mobile: { $first: "$mobile" },
+              partner: { $first: "$partner" },
               selected: { $push: "$selected" } // Push the selected data
             }
           }
         ])
-
+        console.log("customers", customers)
         if (customers.length > 0) {
           return res
             .status(200)

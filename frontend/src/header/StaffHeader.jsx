@@ -55,6 +55,7 @@ export default function StaffHeader() {
       label: "Call Notes",
       control: user?.permissions?.[0]?.CallNotes ?? false
     },
+
     {
       to: "/staff/masters/users-&-passwords",
       label: "users & Passwords",
