@@ -380,7 +380,7 @@ export default function CallRegistration() {
       }
     }
   }
-
+  console.log(selectedCustomer)
   const formatDateTime = (date) => {
     const year = date.getFullYear()
 
@@ -511,7 +511,6 @@ export default function CallRegistration() {
 
     // Additional actions can be performed here (e.g., populate form fields)
   }
-  
 
   const onSubmit = async (data) => {
     if (selectedProducts && selectedProducts.length === 0) {
@@ -583,7 +582,8 @@ export default function CallRegistration() {
   //     // socket.emit("updatedCalls")
   //   }
   // }
-
+  console.log(customerData)
+  console.log(selectedCustomer)
   return (
     <div className="container  justify-center items-center p-8 bg-gray-100">
       <div className="w-auto bg-white shadow-lg rounded min-h-screen p-8 mx-auto">
@@ -647,7 +647,7 @@ export default function CallRegistration() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {customerData?.map((customer, index) =>
-                  customer.selected.map((item, subIndex) => (
+                  customer?.selected?.map((item, subIndex) => (
                     <tr
                       key={`${index}-${subIndex}`} // Ensure unique key for each row
                       onClick={() => handleRowClick(customer)}
@@ -720,7 +720,7 @@ export default function CallRegistration() {
               <div className="">
                 <h4 className="text-md font-bold text-white">Partnership</h4>
                 <p className="text-white">
-                  {selectedCustomer.partner || "N/A"}
+                  {selectedCustomer?.partner?.partner || "N/A"}
                 </p>
               </div>
               <div className="">

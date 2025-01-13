@@ -699,12 +699,13 @@ export const GetCustomer = async (req, res) => {
             $lookup: {
               from: "partners", // Name of the Product collection
               localField: "partnerObjectId", // Field from the customer document
-              foreignField: "partner", // Match the _id field from the Product collection
+              foreignField: "_id", // Match the _id field from the Product collection
               as: "partnerDetails" // Alias for the resulting joined product documents
             }
           },
           {
             $addFields: {
+              partner: { $arrayElemAt: ["$partnerDetails", 0] },
               "selected.product_id": { $arrayElemAt: ["$productDetails", 0] },
               "selected.branch_id": { $arrayElemAt: ["$branchDetails", 0] },
               "selected.company_id": { $arrayElemAt: ["$companyDetails", 0] } // Replace product_id with populated product data
@@ -720,12 +721,12 @@ export const GetCustomer = async (req, res) => {
               pincode: { $first: "$pincode" },
               email: { $first: "$email" },
               mobile: { $first: "$mobile" },
-              partner: { $first: "$partnerDetails" },
+              partner: { $first: "$partner" },
               selected: { $push: "$selected" } // Push the selected data
             }
           }
         ])
-
+        console.log("customers", customers)
         if (customers.length > 0) {
           return res
             .status(200)
