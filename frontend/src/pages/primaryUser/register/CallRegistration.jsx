@@ -157,12 +157,12 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
-    // const response = await fetch(
-    //   `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
-    // )
     const response = await fetch(
-      `http://localhost:9000/api/customer/getcallregister/${callId}`
+      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
     )
+    // const response = await fetch(
+    //   `http://localhost:9000/api/customer/getcallregister/${callId}`
+    // )
     const data = await response.json()
 
     return data
@@ -400,24 +400,24 @@ export default function CallRegistration() {
   const fetchCustomerData = async (query) => {
     let url
     if (user.role === "Admin") {
-      url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
-      // url = `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
+      // url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
+      url = `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
     } else {
       const branches = JSON.stringify(branch)
-
-      url =
-        branches &&
-        branches.length > 0 &&
-        `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
-          user.role
-        }&userBranch=${encodeURIComponent(branches)}`
 
       // url =
       //   branches &&
       //   branches.length > 0 &&
-      //   `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+      //   `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
       //     user.role
       //   }&userBranch=${encodeURIComponent(branches)}`
+
+      url =
+        branches &&
+        branches.length > 0 &&
+        `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+          user.role
+        }&userBranch=${encodeURIComponent(branches)}`
     }
 
     try {
@@ -511,7 +511,7 @@ export default function CallRegistration() {
 
     // Additional actions can be performed here (e.g., populate form fields)
   }
-  console.log(selectedCustomer)
+  
 
   const onSubmit = async (data) => {
     if (selectedProducts && selectedProducts.length === 0) {

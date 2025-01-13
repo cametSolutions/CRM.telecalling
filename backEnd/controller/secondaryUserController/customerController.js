@@ -139,8 +139,8 @@ export const GetselectedDateCalls = async (req, res) => {
     // const customerCalls = await CallRegistration.find({})
     // Get the current date and calculate the range for yesterday
     // Define the start and end of yesterday
-    const startOfYesterday = moment().startOf("day").subtract(1, "days")
-    const endOfYesterday = moment().endOf("day").subtract(1, "days")
+    const startOfYesterday = moment().startOf("day").subtract(2, "days")
+    const endOfYesterday = moment().endOf("day").subtract(2, "days")
     const customerCalls = await CallRegistration.find({})
       .populate("callregistration.product") // Populate the product field
       .then(async (calls) => {
@@ -371,7 +371,7 @@ export const GetselectedDateCalls = async (req, res) => {
 
     // console.log("customercalls", customerCalls)
     console.log("customercallscount", customerCalls.length)
-
+    // console.log("calls", customerCalls)
     res.status(200).send(customerCalls)
   } catch (error) {
     console.log("error:", error.message)
