@@ -103,8 +103,7 @@ const CustomerAdd = ({
     "/customer/getLicensenumber"
   )
   const { data: partners } = UseFetch("/customer/getallpartners")
-  console.log(partners)
-  console.log(partner)
+
   useEffect(() => {
     if (productData) {
       setTableObject({
@@ -137,115 +136,117 @@ const CustomerAdd = ({
           mobile: customer.mobile,
           landline: customer.landline,
           industry: customer.industry,
-          partner:customer.partner,
-          productName: customer?.selected?.product_id
+          partner: customer.partner,
+          productName: customer?.selected[0]?.product_id
             ? {
-                label: customer?.selected?.productName,
-                value: customer?.selected?.product_id
+                label: customer?.selected[0]?.productName,
+                value: customer?.selected[0]?.product_id
               }
             : null,
-          companyName: customer?.selected?.companyName
+          companyName: customer?.selected[0]?.companyName
             ? {
-                label: customer?.selected?.companyName,
-                value: customer?.selected?.company_id
+                label: customer?.selected[0]?.companyName,
+                value: customer?.selected[0]?.company_id
               }
             : null,
-          branchName: customer?.selected?.branch_id
+          branchName: customer?.selected[0]?.branch_id
             ? {
-                label: customer?.selected?.branchName,
-                value: customer?.selected?.branch_id
+                label: customer?.selected[0]?.branchName,
+                value: customer?.selected[0]?.branch_id
               }
             : null,
-          licensenumber: customer?.selected?.licensenumber,
-          noofusers: customer?.selected?.noofusers,
-          version: customer?.selected?.version,
-          customerAddDate: customer?.selected?.customerAddDate,
-          amcstartDate: customer?.selected?.amcstartDate,
-          amcendDate: customer?.selected?.amcendDate,
-          amcAmount: customer?.selected?.amcAmount,
-          licenseExpiryDate: customer?.selected?.licenseExpiryDate,
-          productAmount: customer?.selected?.productAmount,
+          licensenumber: customer?.selected[0]?.licensenumber,
+          noofusers: customer?.selected[0]?.noofusers,
+          version: customer?.selected[0]?.version,
+          customerAddDate: customer?.selected[0]?.customerAddDate,
+          amcstartDate: customer?.selected[0]?.amcstartDate,
+          amcendDate: customer?.selected[0]?.amcendDate,
+          amcAmount: customer?.selected[0]?.amcAmount,
+          licenseExpiryDate: customer?.selected[0]?.licenseExpiryDate,
+          productAmount: customer?.selected[0]?.productAmount,
           productamountDescription:
-            customer?.selected?.productamountDescription,
-          tvuexpiryDate: customer?.selected?.tvuexpiryDate,
-          tvuAmount: customer?.selected?.tvuAmount,
-          tvuamountDescription: customer?.selected?.tvuamountDescription,
-          isActive: customer?.selected?.isActive,
-          reasonofStatus: customer?.selected?.reasonofStatus
+            customer?.selected[0]?.productamountDescription,
+          tvuexpiryDate: customer?.selected[0]?.tvuexpiryDate,
+          tvuAmount: customer?.selected[0]?.tvuAmount,
+          tvuamountDescription: customer?.selected[0]?.tvuamountDescription,
+          isActive: customer?.selected[0]?.isActive,
+          reasonofStatus: customer?.selected[0]?.reasonofStatus
         })
-
-        setTableObject({
-          company_id: customer?.selected?.company_id || "",
-          companyName: customer?.selected?.companyName || "",
-          branch_id: customer?.selected?.branch_id || "",
-          branchName: customer?.selected?.branchName || "",
-          product_id: customer?.selected?.product_id || "",
-          productName: customer?.selected?.productName || "",
-          licensenumber: customer?.selected?.licensenumber || "",
-          noofusers: customer?.selected?.noofusers || "",
-          version: customer?.selected?.version || "",
-          customerAddDate: customer?.selected?.customerAddDate || "",
-          amcstartDate: customer?.selected?.amcstartDate || "",
-          amcendDate: customer?.selected?.amcendDate || "",
-          amcAmount: customer?.selected?.amcAmount || "",
-          amcDescription: customer?.selected?.amcDescription || "",
-          licenseExpiryDate: customer?.selected?.licenseExpiryDate || "",
-          productAmount: customer?.selected?.productAmount || "",
-          productamountDescription:
-            customer?.selected?.productamountDescription || "",
-          tvuexpiryDate: customer?.selected?.tvuexpiryDate || "",
-          tvuAmount: customer?.selected?.tvuAmount || "",
-          tvuamountDescription: customer?.selected?.tvuamountDescription || "",
-          isActive: customer?.selected?.isActive || "",
-          reasonofStatus: customer?.selected?.reasonofStatus || ""
-        })
-
-        setTableData([
-          {
-            company_id: customer?.selected?.company_id || "",
-            companyName: customer?.selected?.companyName || "",
-            branch_id: customer?.selected?.branch_id || "",
-            branchName: customer?.selected?.branchName || "",
-            product_id: customer?.selected?.product_id || "",
-            productName: customer?.selected?.productName || "",
-            licensenumber: customer?.selected?.licensenumber || "",
-            noofusers: customer?.selected?.noofusers || "",
-            version: customer?.selected?.version || "",
-            customerAddDate: customer?.selected?.customerAddDate || "",
-            amcstartDate: customer?.selected?.amcstartDate || "",
-            amcendDate: customer?.selected?.amcendDate || "",
-            amcAmount: customer?.selected?.amcAmount || "",
-            amcDescription: customer?.selected?.amcDescription || "",
-            licenseExpiryDate: customer?.selected?.licenseExpiryDate || "",
-            productAmount: customer?.selected?.productAmount || "",
+        if (Array.isArray(customer.selected) && customer.selected.length > 0) {
+          setTableObject({
+            company_id: customer?.selected[0]?.company_id || "",
+            companyName: customer?.selected[0]?.companyName || "",
+            branch_id: customer?.selected[0]?.branch_id || "",
+            branchName: customer?.selected[0]?.branchName || "",
+            product_id: customer?.selected[0]?.product_id || "",
+            productName: customer?.selected[0]?.productName || "",
+            licensenumber: customer?.selected[0]?.licensenumber || "",
+            noofusers: customer?.selected[0]?.noofusers || "",
+            version: customer?.selected[0]?.version || "",
+            customerAddDate: customer?.selected[0]?.customerAddDate || "",
+            amcstartDate: customer?.selected[0]?.amcstartDate || "",
+            amcendDate: customer?.selected[0]?.amcendDate || "",
+            amcAmount: customer?.selected[0]?.amcAmount || "",
+            amcDescription: customer?.selected[0]?.amcDescription || "",
+            licenseExpiryDate: customer?.selected[0]?.licenseExpiryDate || "",
+            productAmount: customer?.selected[0]?.productAmount || "",
             productamountDescription:
-              customer?.selected?.productamountDescription || "",
-            tvuexpiryDate: customer?.selected?.tvuexpiryDate || "",
-            tvuAmount: customer?.selected?.tvuAmount || "",
+              customer?.selected[0]?.productamountDescription || "",
+            tvuexpiryDate: customer?.selected[0]?.tvuexpiryDate || "",
+            tvuAmount: customer?.selected[0]?.tvuAmount || "",
             tvuamountDescription:
-              customer?.selected?.tvuamountDescription || "",
-            isActive: customer?.selected?.isActive || "",
-            industry: customer?.selected?.industry || "",
-            reasonofStatus: customer?.selected?.reasonofStatus || ""
-          }
-        ])
-        // setTableData((prev) => [...prev, tableObject])
-        if (customer?.selected?.productName)
-          handleProductChange(
+              customer?.selected[0]?.tvuamountDescription || "",
+            isActive: customer?.selected[0]?.isActive || "",
+            reasonofStatus: customer?.selected[0]?.reasonofStatus || ""
+          })
+
+          setTableData([
             {
-              label: customer?.selected?.productName,
-              value: customer?.selected?.product_id
-            },
-            true
-          )
-        if (customer?.selected?.companyName)
-          handleCompanyChange(
-            {
-              label: customer?.selected?.companyName,
-              value: customer?.selected?.company_id
-            },
-            true
-          )
+              company_id: customer?.selected[0]?.company_id || "",
+              companyName: customer?.selected[0]?.companyName || "",
+              branch_id: customer?.selected[0]?.branch_id || "",
+              branchName: customer?.selected[0]?.branchName || "",
+              product_id: customer?.selected[0]?.product_id || "",
+              productName: customer?.selected[0]?.productName || "",
+              licensenumber: customer?.selected[0]?.licensenumber || "",
+              noofusers: customer?.selected[0]?.noofusers || "",
+              version: customer?.selected[0]?.version || "",
+              customerAddDate: customer?.selected[0]?.customerAddDate || "",
+              amcstartDate: customer?.selected[0]?.amcstartDate || "",
+              amcendDate: customer?.selected[0]?.amcendDate || "",
+              amcAmount: customer?.selected[0]?.amcAmount || "",
+              amcDescription: customer?.selected[0]?.amcDescription || "",
+              licenseExpiryDate: customer?.selected[0]?.licenseExpiryDate || "",
+              productAmount: customer?.selected[0]?.productAmount || "",
+              productamountDescription:
+                customer?.selected[0]?.productamountDescription || "",
+              tvuexpiryDate: customer?.selected[0]?.tvuexpiryDate || "",
+              tvuAmount: customer?.selected[0]?.tvuAmount || "",
+              tvuamountDescription:
+                customer?.selected[0]?.tvuamountDescription || "",
+              isActive: customer?.selected[0]?.isActive || "",
+              industry: customer?.selected[0]?.industry || "",
+              reasonofStatus: customer?.selected[0]?.reasonofStatus || ""
+            }
+          ])
+          // setTableData((prev) => [...prev, tableObject])
+          if (customer?.selected[0]?.productName)
+            handleProductChange(
+              {
+                label: customer?.selected[0]?.productName,
+                value: customer?.selected[0]?.product_id
+              },
+              true
+            )
+          if (customer?.selected[0]?.companyName)
+            handleCompanyChange(
+              {
+                label: customer?.selected[0]?.companyName,
+                value: customer?.selected[0]?.company_id
+              },
+              true
+            )
+        }
       }
     }
 
@@ -537,8 +538,7 @@ const CustomerAdd = ({
         if (tableData.length === 0) {
           setTableData((prev) => [...prev, tableObject])
         }
-        console.log(data)
-        console.log(customer)
+
         await handleEditedData(data, tableData, customer.index)
       }
     } catch (error) {

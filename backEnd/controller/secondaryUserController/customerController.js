@@ -131,11 +131,8 @@ export const UpdatePartners = async (req, res) => {
 }
 export const GetselectedDateCalls = async (req, res) => {
   try {
-    console.log("koolll")
     const { startDate, endDate } = req.query
-    console.log("stardate", startDate)
-    console.log(typeof startDate)
-    console.log("enddate", endDate)
+    
     // const customerCalls = await CallRegistration.find({})
     // Get the current date and calculate the range for yesterday
     // Define the start and end of yesterday
@@ -370,7 +367,6 @@ export const GetselectedDateCalls = async (req, res) => {
     // ])
 
     // console.log("customercalls", customerCalls)
-    console.log("customercallscount", customerCalls.length)
     // console.log("calls", customerCalls)
     res.status(200).send(customerCalls)
   } catch (error) {
@@ -464,6 +460,10 @@ export const CustomerRegister = async (req, res) => {
   }
 
   try {
+    const normalizedPartner =
+      customerData.partner && customerData.partner.trim() !== ""
+        ? customerData.partner
+        : null
     const customer = new Customer({
       customerName,
       address1,
@@ -476,18 +476,18 @@ export const CustomerRegister = async (req, res) => {
       mobile,
       landline,
       industry,
-      partner,
+      partner: normalizedPartner,
       contactPerson,
       selected: tabledata
     })
 
-    const customerData = await customer.save()
+    const customerdata = await customer.save()
 
     if (tabledata) {
-      for (const item of customerData.selected) {
+      for (const item of customerdata.selected) {
         const license = new License({
           products: item.product_id,
-          customerName: customerData._id, // Using the customer ID from the parent object
+          customerName: customerdata._id, // Using the customer ID from the parent object
           licensenumber: item.licensenumber
         })
 
@@ -533,9 +533,9 @@ export const CustomerEdit = async (req, res) => {
     // Update or add tabledata (handle array of objects)
     if (Array.isArray(tableData) && tableData.length > 0) {
       if (parsedIndex >= 0 && parsedIndex < existingCustomer.selected.length) {
-        console.log("okkkkkgi")
-
         existingCustomer.selected.splice(parsedIndex, 1, tableData[0])
+      } else {
+        tableData.map((item) => existingCustomer.selected.push(item))
       }
     }
 
