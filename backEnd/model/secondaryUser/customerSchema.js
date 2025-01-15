@@ -19,7 +19,11 @@ const CustomerSchema = new mongoose.Schema({
   mobile: { type: String },
   landline: String,
   industry: { type: String },
-  partner: { type: mongoose.Schema.Types.ObjectId, ref: "Partner" },
+  partner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Partner",
+    default: null
+  },
   contactPerson: {
     type: String
   },
