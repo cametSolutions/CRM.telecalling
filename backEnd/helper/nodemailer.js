@@ -95,26 +95,17 @@ export const sendEmail = async (calldata, name, branchName, username) => {
                   ? `
                 
                   
-                  <td>${"Closed"}</td>
+                  <td>Closed</td>
                 `
                   :` <td>${calldata.formdata.status || "N/A"}</td>`
               }
-              <td>${calldata.formdata.status || "N/A"}</td>
+             
             </tr>
             <tr>
               <td>Problem</td>
               <td>${customerproblem[0].callNotes || "N/A"}</td>
             </tr>
-           
-  ${
-    calldata.formdata.status === "solved"
-      ? `
-            <tr>
-              <td>Remarks</td>
-              <td>${calldata.formdata.solution}</td>
-            </tr>`
-      : ""
-  }
+ 
           </tbody>
         </table>
       `
