@@ -14,6 +14,7 @@ import "tippy.js/themes/light.css" // Example for light theme
 function LeaveApplication() {
   const [events, setEvents] = useState([])
   const [selectedMonth, setSelectedMonth] = useState("")
+  const [message, setMessage] = useState("")
   const [showModal, setShowModal] = useState(false)
   const [t, setIn] = useState(null)
   const [selectedTab, setSelectedTab] = useState("Leave")
@@ -170,7 +171,7 @@ function LeaveApplication() {
       } else {
         dayObject = {
           start: "",
-          reason: event?.description,
+          description: event?.description,
           leaveType: "",
           halfDayPeriod: "",
           onsiteData: "",
@@ -184,15 +185,15 @@ function LeaveApplication() {
         dayObject.halfDayPeriod = event.halfDayPeriod
         dayObject.leaveType = event.leaveType
         dayObject.color = "red"
-      } else if (
-        event.departmentverified ||
-        (event.adminverified && event.onsite)
-      ) {
+      } else if (event.onsiteData && event.onsite) {
         dayObject.onsiteData = event.onsiteData
         dayObject.halfDayPeriod = event.halfDayPeriod
         dayObject.leaveType = event.leaveType
         dayObject.color = "blue"
-      } else if ((!event.departmentverified || !event.adminverified)&& event.onsite) {
+      } else if (
+        (!event.departmentverified || !event.adminverified) &&
+        event.onsite
+      ) {
         dayObject.onsiteData = event.onsiteData
         dayObject.halfDayPeriod = event.halfDayPeriod
         dayObject.leaveType = event.leaveType
@@ -271,34 +272,6 @@ function LeaveApplication() {
         reason: relevantEvent.reason || ""
       })
 
-      // If an event exists, set the form data to edit the event
-      // setFormData({
-      //   ...formData,
-      //   startDate: existingEvent?.start,
-      //   halfDayPeriod: existingEvent?.halfDayPeriod,
-      //   leaveType: existingEvent?.leaveType,
-      //   // halfDayPeriod:existingEvent
-      //   onsite: existingEvent?.onsite,
-      //   [existingEvent.onsite ? "description" : "reason"]:
-      //     existingEvent?.reason,
-      //   eventId: existingEvent?.id // Store the event ID for editing
-      // })
-      // const inTimeEvent = existingEvent.find((event) => event.inTime)
-      // // Set selected attendance state
-      // setselectedAttendance((prev) => ({
-      //   ...prev, // Spread the previous state to keep other values intact
-      //   attendanceDate: existingEvent?.start, // Set the attendance date
-      //   inTime: {
-      //     hours: parseTime(inTimeEvent?.inTime)?.hours, // Update hours from parsed inTime
-      //     minutes: parseTime(inTimeEvent?.inTime)?.minutes, // Update minutes from parsed inTime
-      //     amPm: parseTime(inTimeEvent?.inTime)?.amPm // Update AM/PM from parsed inTime
-      //   },
-      //   outTime: {
-      //     hours: parseTime(inTimeEvent?.outTime)?.hours, // Update hours from parsed outTime
-      //     minutes: parseTime(inTimeEvent?.outTime)?.minutes, // Update minutes from parsed outTime
-      //     amPm: parseTime(inTimeEvent?.outTime)?.amPm // Update AM/PM from parsed outTime
-      //   }
-      // }))
       if (existingEvent?.onsite) {
         setIsOnsite(true)
       }
@@ -396,6 +369,7 @@ function LeaveApplication() {
     setselectedAttendance((prev) => {
       // Ensure the nested object exists for `type`
       const currentType = prev[type] || { hours: "", minutes: "", amPm: "" }
+    
 
       return {
         ...prev,
@@ -406,46 +380,65 @@ function LeaveApplication() {
       }
     })
   }
-  console.log(formData)
+ 
   const handleSubmit = async (tab) => {
     try {
       if (tab === "Leave") {
-        //Assuming you have an API endpoint for creating leave requests
-        // const response = await fetch(
-        //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
-        //   {
-        //     method: "POST",
-        //     headers: {
-        //       "Content-Type": "application/json"
-        //     },
-        //     body: JSON.stringify(formData),
-        //     credentials: "include"
-        //   }
-        // )
-        const response = await fetch(
-          `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify(formData),
-            credentials: "include"
-          }
-        )
+        const formStartDate = new Date(formData.startDate)
 
-        const responseData = await response.json()
+        // Find a leave matching the date (ignoring time) and adminverified or departmentverified is true
+        const existingLeave = leaves.find((leave) => {
+          const leaveDate = new Date(leave.leaveDate) // Convert leave.leaveDate to Date object
+          // Compare the year, month, and day only (ignoring time)
+          const isSameDate =
+            leaveDate.getFullYear() === formStartDate.getFullYear() &&
+            leaveDate.getMonth() === formStartDate.getMonth() &&
+            leaveDate.getDate() === formStartDate.getDate()
 
-        if (!response.ok) {
-          throw new Error("Failed to apply for leave")
+          // Check if adminverified or departmentverified is true
+          return isSameDate && (leave.adminverified || leave.departmentverified)
+        })
+
+        if (existingLeave) {
+          setMessage("This leave is already approved. Do not make any changes.")
         } else {
-          refreshHook()
+          //Assuming you have an API endpoint for creating leave requests
+          // const response = await fetch(
+          //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          //   {
+          //     method: "POST",
+          //     headers: {
+          //       "Content-Type": "application/json"
+          //     },
+          //     body: JSON.stringify(formData),
+          //     credentials: "include"
+          //   }
+          // )
+          const response = await fetch(
+            `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(formData),
+              credentials: "include"
+            }
+          )
 
-          setShowModal(false)
-          setFormData((prev) => ({
-            ...prev,
-            reason: ""
-          }))
+          const responseData = await response.json()
+
+          if (!response.ok) {
+            throw new Error("Failed to apply for leave")
+          } else {
+            refreshHook()
+
+            setShowModal(false)
+            setFormData((prev) => ({
+              ...prev,
+              reason: ""
+            }))
+          }
         }
       } else if (tab === "Onsite") {
         // const response = await api.post(
@@ -541,38 +534,62 @@ function LeaveApplication() {
         })
         if (existingEvent && existingEvent.length > 0) {
           const findRelevantEvent = (events) => {
-            return (
-              events.find((event) => {
-                // Example condition: prioritize events without inTime and outTime, or with specific keys like onsite
-                return (
-                  !event.inTime &&
-                  !event.outTime &&
-                  !event.onsite &&
-                  !event.onsiteData
-                )
-              }) || events[0]
-            ) // Fallback to the first event if no specific match is found
+            return events.find((event) => {
+              // Example condition: prioritize events without inTime and outTime, or with specific keys like onsite
+              return (
+                !event.inTime &&
+                !event.outTime &&
+                !event.onsite &&
+                !event.onsiteData
+              )
+            }) // Fallback to the first event if no specific match is found
           }
 
           // Find the relevant event
           const relevantEvent = findRelevantEvent(existingEvent)
-
-          // Set the form data dynamically based on the relevant event
-          setFormData({
-            ...formData,
-            startDate: relevantEvent?.start,
-            halfDayPeriod: relevantEvent?.halfDayPeriod || "",
-            leaveType: relevantEvent.leaveType || "",
-            reason: relevantEvent.reason || ""
-          })
-        }
+          if (relevantEvent) {
+            // Set the form data dynamically based on the relevant event
+            setFormData({
+              ...formData,
+              startDate: relevantEvent?.start,
+              halfDayPeriod: relevantEvent?.halfDayPeriod || "",
+              leaveType: relevantEvent.leaveType || "",
+              reason: relevantEvent.reason || "",
+              onsite: false
+            })
+          }
+        } 
 
         // Handle the case where the fields are missing or falsy
         break
 
       case value === "Onsite":
-        console.log("Case 2: All fields are present.")
-        // Handle the case where all fields are present
+        existingEvent = events?.filter((event) => {
+          const eventDate = new Date(event.start).toISOString().split("T")[0] // Normalize to YYYY-MM-DD
+          return eventDate === clickedDate // Compare only the date part
+        })
+        if (existingEvent && existingEvent.length > 0) {
+          const findRelevantEvent = (events) => {
+            return events.find((event) => {
+              // Example condition: prioritize events without inTime and outTime, or with specific keys like onsite
+              return !event.inTime && !event.outTime && event.onsiteData
+            }) // Fallback to the first event if no specific match is found
+          }
+          // Find the relevant event
+          const relevantEvent = findRelevantEvent(existingEvent)
+          if (relevantEvent) {
+            // Set the form data dynamically based on the relevant event
+            setFormData({
+              ...formData,
+              startDate: relevantEvent?.start,
+              halfDayPeriod: relevantEvent?.halfDayPeriod || "",
+              leaveType: relevantEvent?.leaveType || "",
+              description: relevantEvent?.description || "",
+              onsite: true
+            })
+          }
+        } 
+
         break
 
       case value === "Attendance":
@@ -580,7 +597,6 @@ function LeaveApplication() {
           const eventDate = new Date(event.start).toISOString().split("T")[0] // Normalize to YYYY-MM-DD
           return eventDate === clickedDate // Compare only the date part
         })
-
         if (existingEvent && existingEvent.length > 0) {
           const findRelevantEvent = (events) => {
             return events.find((event) => {
@@ -591,31 +607,41 @@ function LeaveApplication() {
 
           // Find the relevant event
           const relevantEvent = findRelevantEvent(existingEvent)
-
-          const parseTime = (timeString) => {
-            if (!timeString) {
-              // Return default or empty values if timeString is undefined or null
-              return { hours: null, minutes: null, amPm: null }
+          if (relevantEvent) {
+            const parseTime = (timeString) => {
+              if (!timeString) {
+                // Return default or empty values if timeString is undefined or null
+                return { hours: null, minutes: null, amPm: null }
+              }
+              const [time, amPm] = timeString.split(" ")
+              const [hours, minutes] = time.split(":")
+              return { hours, minutes, amPm }
             }
-            const [time, amPm] = timeString.split(" ")
-            const [hours, minutes] = time.split(":")
-            return { hours, minutes, amPm }
+            // // Set selected attendance state
+            setselectedAttendance((prev) => ({
+              ...prev, // Spread the previous state to keep other values intact
+              attendanceDate: relevantEvent?.start, // Set the attendance date
+              inTime: {
+                hours: parseTime(relevantEvent?.inTime)?.hours, // Update hours from parsed inTime
+                minutes: parseTime(relevantEvent?.inTime)?.minutes, // Update minutes from parsed inTime
+                amPm: parseTime(relevantEvent?.inTime)?.amPm // Update AM/PM from parsed inTime
+              },
+              outTime: {
+                hours: parseTime(relevantEvent?.outTime)?.hours, // Update hours from parsed outTime
+                minutes: parseTime(relevantEvent?.outTime)?.minutes, // Update minutes from parsed outTime
+                amPm: parseTime(relevantEvent?.outTime)?.amPm // Update AM/PM from parsed outTime
+              }
+            }))
+            setFormData((prev) => ({
+              ...prev, // Spread the previous state
+              onsite: false // Add or update the `attendanceDate` field
+            }))
+          } else {
+            setselectedAttendance((prev) => ({
+              ...prev, // Spread the previous state
+              attendanceDate: clickedDate // Add or update the `attendanceDate` field
+            }))
           }
-          // // Set selected attendance state
-          setselectedAttendance((prev) => ({
-            ...prev, // Spread the previous state to keep other values intact
-            attendanceDate: relevantEvent?.start, // Set the attendance date
-            inTime: {
-              hours: parseTime(relevantEvent?.inTime)?.hours, // Update hours from parsed inTime
-              minutes: parseTime(relevantEvent?.inTime)?.minutes, // Update minutes from parsed inTime
-              amPm: parseTime(relevantEvent?.inTime)?.amPm // Update AM/PM from parsed inTime
-            },
-            outTime: {
-              hours: parseTime(relevantEvent?.outTime)?.hours, // Update hours from parsed outTime
-              minutes: parseTime(relevantEvent?.outTime)?.minutes, // Update minutes from parsed outTime
-              amPm: parseTime(relevantEvent?.outTime)?.amPm // Update AM/PM from parsed outTime
-            }
-          }))
         }
 
         // Handle the case where onsite is true but inTime or outTime is missing/falsy
@@ -1014,6 +1040,7 @@ function LeaveApplication() {
     }
   }
 
+
   return (
     <div className=" p-4">
       <div className="w-full">
@@ -1089,44 +1116,6 @@ function LeaveApplication() {
               ".fc-daygrid-day-bottom"
             )
 
-            // if (matchingEvent && matchingEvent.length > 0) {
-            //   console.log(matchingEvent)
-            //   const inTime = matchingEvent?.inTime
-            //   const outTime = matchingEvent?.outTime
-            //   const squareColor = matchingEvent?.color
-            //   const reason = matchingEvent?.reason || "No reason provided"
-
-            //   // Create the time container and add it to the day cell
-            //   const timeContainer = document.createElement("div")
-            //   timeContainer.className = "time-container"
-            //   // timeContainer.innerHTML = `<div class="time-display">In: ${inTime}<br>Out: ${outTime}</div>`
-            //   if (inTime && outTime) {
-            //     console.log(inTime)
-            //     timeContainer.innerHTML = `<div class="time-display">In: ${inTime}<br>Out: ${outTime}</div>`
-            //   } else {
-            //     timeContainer.innerHTML = "" // Or set it to a placeholder message if needed
-            //   }
-
-            //   // Create and style the square marker
-            //   const squareMarker = document.createElement("div")
-            //   squareMarker.className = "square-marker"
-            //   squareMarker.style.backgroundColor = squareColor
-
-            //   // Append square marker to the day cell bottom
-            //   dayCellBottom?.appendChild(squareMarker)
-
-            //   // Append time container to the top of the day cell
-            //   info.el
-            //     .querySelector(".fc-daygrid-day-top")
-            //     .appendChild(timeContainer)
-
-            //   // Initialize tippy tooltips on the square marker
-            //   tippy(squareMarker, {
-            //     content: reason,
-            //     theme: "custom-tooltip",
-            //     placement: "top"
-            //   })
-            //
             if (matchingEvent && matchingEvent.length > 0) {
               matchingEvent.forEach((event) => {
                 const {
@@ -1226,7 +1215,7 @@ function LeaveApplication() {
   cursor: pointer;
   position: absolute; /* Position marker absolutely */
   top:28px; /* Distance from the bottom edge */
-  
+
  // background-color: #FFA500; /* Default marker color */
   z-index: 1; /* Ensure it is above other content */
 }
@@ -1297,7 +1286,6 @@ function LeaveApplication() {
   }
 }
 
-
 .tippy-box[data-theme~="custom-tooltip"] {
   background-color: #007BFF;
   color: #fff;
@@ -1307,8 +1295,6 @@ function LeaveApplication() {
 .tippy-box[data-theme~="custom-tooltip"] .tippy-arrow {
   color: #007BFF;
 }
-
-
 
   `}
       </style>
@@ -1326,10 +1312,7 @@ function LeaveApplication() {
                     onClick={() => {
                       setSelectedTab(tab)
                       selectedTabContent(tab)
-                      // setFormData((prev) => ({
-                      //   ...prev,
-                      //   onsite: tab === "Onsite" // Sets true if "onsite", false otherwise
-                      // }))
+
                       setIsOnsite(tab === "Onsite")
                     }}
                     className={`cursor-pointer ${
@@ -1345,6 +1328,10 @@ function LeaveApplication() {
 
               <div className="mt-2">
                 <div>{renderContent()}</div>
+                <div className="text-center text-red-700">
+                  <p>{message}</p>
+                </div>
+
                 <div className="col-span-2 gap-4 flex justify-center mt-4">
                   <button
                     className="bg-gradient-to-b from-blue-400 to-blue-500 px-3 py-1 hover:from-blue-400 hover:to-blue-600 text-white rounded"
@@ -1370,6 +1357,7 @@ function LeaveApplication() {
                       setShowModal(false)
                       setSelectedTab("Leave")
                       setTableRows([])
+                      setMessage("")
                     }}
                   >
                     Cancel

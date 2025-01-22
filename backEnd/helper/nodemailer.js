@@ -10,6 +10,7 @@ export const sendEmail = async (calldata, name, branchName, username) => {
   const result = await Branch.findOne({ branchName })
 
   const notificationemail = result.notificationemail
+
   const mailpassword = result.mailpassword
   const landline = result.landlineno
   let branch
@@ -18,7 +19,6 @@ export const sendEmail = async (calldata, name, branchName, username) => {
   } else if (branchName === "CAMET") {
     branch = "Camet IT Solutions LLP"
   }
-  console.log("landline", landline)
 
   const isoDate = calldata.timedata.startTime
   const date = new Date(isoDate)
@@ -97,7 +97,7 @@ export const sendEmail = async (calldata, name, branchName, username) => {
                   
                   <td>Closed</td>
                 `
-                  :` <td>${calldata.formdata.status || "N/A"}</td>`
+                  : ` <td>${calldata.formdata.status || "N/A"}</td>`
               }
              
             </tr>
@@ -126,9 +126,11 @@ export const sendEmail = async (calldata, name, branchName, username) => {
   try {
     const info = await transporter.sendMail({
       from: notificationemail, // Sender's name and address
-      to: "solutions@camet.in", // Recipient's email address
-      cc: "abhidasabhi1234@gmail.com",
-      subject: `New Support ticket created-${calldata.timedata.token || "N/A"}`, // Subject
+      to: `${calldata?.customeremail}`, // Recipient's email address
+      cc: `${calldata?.ccMail ? calldata?.ccMail : "sale@camet.in"}`,
+      subject: `New Support ticket created-${
+        calldata?.timedata?.token || "N/A"
+      }`, // Subject
       html: htmlContent // Email content as HTML
     })
 
@@ -138,6 +140,20 @@ export const sendEmail = async (calldata, name, branchName, username) => {
     return info // Return the response info after the email is sent
   } catch (error) {
     console.error("Error sending email: ", error.message)
-    throw new Error("Failed to send email. Please check the configuration.")
+    if (error.message == "Username and Password not accepted") {
+      throw new error(
+        "Please check the branch notification email and password "
+      )
+    } else {
+      const info = await transporter.sendMail({
+        from: notificationemail, // Sender's name and address
+        to: "sreerajvijay1997@gmail.com",
+        // cc: "abhidasabhi1234@gmail.com",
+        subject: `New Support ticket created-${
+          calldata?.timedata?.token || "N/A"
+        }`, // Subject
+        html: htmlContent // Email content as HTML
+      })
+    }
   }
 }

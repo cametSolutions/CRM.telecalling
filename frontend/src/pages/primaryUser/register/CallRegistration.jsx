@@ -107,8 +107,7 @@ export default function CallRegistration() {
 
   useEffect(() => {
     if (calldetails) {
-      console.log("hdi")
-      console.log(calldetails)
+    
       // Fetch the call details using the ID
       fetchCallDetails(calldetails)
         .then((callData) => {
@@ -122,8 +121,7 @@ export default function CallRegistration() {
           const productName = matchingRegistration
             ? matchingRegistration.product.productName
             : null
-          console.log(productName)
-          console.log(callData)
+         
           const matchingProducts =
             callData.callDetails.customerid.selected.filter(
               (product) => product.productName === productName
@@ -131,7 +129,7 @@ export default function CallRegistration() {
 
           setSelectedCustomer(callData?.callDetails?.customerid)
           setName(callData?.callDetails?.customerid?.customerName)
-          console.log(matchingProducts)
+        
 
           setProductDetails(matchingProducts)
 
@@ -230,7 +228,7 @@ export default function CallRegistration() {
     const [hours, minutes, seconds] = timeString.split(":").map(Number)
     return hours * 3600 + minutes * 60 + seconds
   }
-  console.log(selectedCustomer)
+
   const stopTimer = async (time) => {
     setSubmitLoading(true)
 
@@ -252,6 +250,7 @@ export default function CallRegistration() {
         startTime: startTime.toISOString(),
         endTime: endTime,
         duration: durationInSeconds,
+        time,
         token: uniqueToken
       }
 
@@ -318,6 +317,7 @@ export default function CallRegistration() {
         startTime: startTime.toISOString(),
         endTime: endTime,
         duration: durationInSeconds,
+        time,
         token: token
       }
       const updatedformData = { ...formData }
@@ -371,6 +371,8 @@ export default function CallRegistration() {
       )
 
       if (response.status === 200) {
+       
+
         toast.success(response.data.message)
         refreshHook()
 
@@ -380,7 +382,29 @@ export default function CallRegistration() {
       }
     }
   }
-  console.log(selectedCustomer)
+  const sendWhatapp = (calldata) => {
+    console.log(calldata)
+    if (!calldata?.formdata?.incomingNumber) {
+      console.error("Incoming number is missing in calldata.")
+      return
+    }
+    console.log("calldata", calldata)
+    const phoneNumber = `+91${calldata.formdata.incomingNumber}`
+    console.log("numm", phoneNumber)
+    const textToShare = "hii"
+
+    // Open WhatsApp Web with the message
+    const whatsappUrl = `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodeURIComponent(
+      textToShare
+    )}`
+    // Open WhatsApp Web
+    const newWindow = window.open(whatsappUrl, "_blank")
+    if (!newWindow) {
+      console.error(
+        "Failed to open WhatsApp Web. A popup blocker might be active."
+      )
+    }
+  }
   const formatDateTime = (date) => {
     const year = date.getFullYear()
 
@@ -527,63 +551,7 @@ export default function CallRegistration() {
     // let updatedData = { ...data }
     setFormData(data)
   }
-  // const fetchData = async () => {
-  //   const uniqueToken = generateUniqueNumericToken()
 
-  //   const startDate = new Date("2024-11-01T10:46:00")
-  //   startDate.setHours(15, 46, 0, 0)
-  //   // Set the end date by adding 66 seconds (66 * 1000 milliseconds) to the start date
-  //   const endDate = new Date(startDate.getTime() + 66 * 1000)
-
-  //   // Optionally, log in ISO format for reference
-  //   console.log("Start Date (ISO):", startDate.toISOString())
-  //   console.log("End Date (ISO):", endDate.toISOString())
-  //   const timeDatasss = {
-  //     startTime: startDate.toISOString(),
-  //     endTime: endDate.toISOString(),
-  //     duration: formatTime(66),
-  //     token: uniqueToken
-  //   }
-  //   console.log("timedatafffuhh", timeDatasss)
-  //   const form = {
-  //     incomingNumber: "9846008802",
-  //     token: "",
-  //     description: "Excel import module",
-  //     solution: "Cleared",
-  //     status: "solved",
-  //     attendedBy: "Akhila thomas",
-  //     completedBy: "Akhila thomas"
-  //   }
-  //   console.log("forms", form)
-
-  //   const editcall = {
-  //     userName: "Akhila thomas",
-  //     product: "67051e69c6d1805013e91797",
-  //     license: 737805573,
-  //     branchName: ["CAMET"],
-  //     timedata: timeDatasss,
-  //     formdata: form
-  //   }
-  //   c("calllldddddaataa", editcall)
-  //   const response = await api.post(
-  //     `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}`,
-  //     editcall,
-  //     {
-  //       withCredentials: true,
-  //       headers: {
-  //         "Content-Type": "application/json" // Ensure the correct content type
-  //       }
-  //     }
-  //   )
-  //   if (response.status === 200) {
-  //     console.log("okkk")
-  //     // refreshHook()
-  //     // // setCallData(response.data.updatedCall.callregistration)
-  //     // socket.emit("updatedCalls")
-  //   }
-  // }
-  console.log(customerData)
-  console.log(selectedCustomer)
   return (
     <div className="container  justify-center items-center p-8 bg-gray-100">
       <div className="w-auto bg-white shadow-lg rounded min-h-screen p-8 mx-auto">
@@ -1161,30 +1129,30 @@ export default function CallRegistration() {
                                     : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                 }`}
                               >
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
                                   {call.timedata?.token}
                                 </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
                                   {call.product?.productName}
                                 </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
                                   {formatDate(call.timedata?.startTime)}
                                 </td>
 
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
                                   {call.formdata?.status === "solved"
                                     ? formatDate(call.timedata?.endTime)
                                     : ""}
                                 </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
                                   {formatDuration(call?.timedata?.duration) ||
                                     "N/A"}
                                 </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
                                   {call.formdata?.incomingNumber}
                                 </td>
 
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
                                   {Array.isArray(call?.formdata?.attendedBy)
                                     ? call?.formdata?.attendedBy
                                         ?.map(
@@ -1196,7 +1164,7 @@ export default function CallRegistration() {
                                     : call?.formdata?.attendedBy?.callerId
                                         ?.name}
                                 </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
                                   {call?.formdata.status
                                     ? Array.isArray(call?.formdata?.completedBy)
                                       ? call?.formdata?.completedBy
@@ -1210,12 +1178,12 @@ export default function CallRegistration() {
                                           ?.name
                                     : ""}
                                 </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-700">
+                                <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
                                   {call.formdata?.status}
                                 </td>
                               </tr>
                               <tr
-                                className={`text-center border-t-0 border-gray-500 ${
+                                className={`text-center border-t-0 border-black ${
                                   call?.formdata?.status === "solved"
                                     ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
                                     : call?.formdata?.status === "pending"

@@ -605,25 +605,56 @@ export const LeaveApply = async (req, res) => {
 
   try {
     // Save each date as a separate document
-
-    const leave = new LeaveRequest({
+    const existingDateLeave = await LeaveRequest.findOne({
       leaveDate: startDate,
-      leaveType,
-      ...(leaveType === "Half Day" && { halfDayPeriod }),
-      onsite,
-      reason,
-      description,
-      userId: objectId,
-      assignedto: assignedTo
+      userId: objectId
     })
+    console.log("type", leaveType)
+    console.log("perod", halfDayPeriod)
+    console.log("reason", reason)
+    console.log("exist", existingDateLeave)
+    if (existingDateLeave) {
+      // If a leave exists, update the document with the current formData
+      const updatedLeave = await LeaveRequest.findByIdAndUpdate(
+        existingDateLeave._id, // Use the existing leave's ID
+        {
+          leaveDate: startDate, // Update fields with formData
+          leaveType,
+          ...(leaveType === "Half Day" && { halfDayPeriod }),
+          onsite,
+          reason,
+          description,
+          userId: objectId,
+          assignedto: assignedTo
+        },
+        { new: true } // Return the updated document
+      )
+      if (updatedLeave) {
+        console.log("Leave updated:", updatedLeave)
+        return res
+          .status(200)
+          .json({ message: "leave updated", data: updatedLeave })
+      }
+    } else {
+      const leave = new LeaveRequest({
+        leaveDate: startDate,
+        leaveType,
+        ...(leaveType === "Half Day" && { halfDayPeriod }),
+        onsite,
+        reason,
+        description,
+        userId: objectId,
+        assignedto: assignedTo
+      })
 
-    await leave.save()
+      await leave.save()
 
-    const leaveSubmit = await LeaveRequest.find({ userId: objectId })
+      const leaveSubmit = await LeaveRequest.find({ userId: objectId })
 
-    return res
-      .status(200)
-      .json({ message: "leave submitted", data: leaveSubmit })
+      return res
+        .status(200)
+        .json({ message: "leave submitted", data: leaveSubmit })
+    }
   } catch (error) {
     res.status(500).json({ message: "internal server error" })
   }
@@ -1196,7 +1227,7 @@ export const GetStaffCallList = async (req, res) => {
     // Fetch staff details
     const staff = await Staff.find()
     const a = await Staff.find().select("name _id callstatus.totalCall").lean()
-
+    console.log("ggggggggggg")
     // Fetch customer calls and populate callerId in attendedBy array
     const customerCalls = await CallRegistration.find()
       .populate("callregistration.formdata.attendedBy.callerId") // Populate callerId field
