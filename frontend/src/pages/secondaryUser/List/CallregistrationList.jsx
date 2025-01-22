@@ -243,9 +243,14 @@ const CallregistrationList = () => {
   //   }
   // }
 
-  const formatDuration = (seconds) => {
+  const formatDuration = (seconds, name) => {
     if (!seconds || isNaN(seconds)) {
       return "0 hr 0 min 0 sec"
+    }
+    if (name === "JOSEPH'S AGENCIES") {
+      console.log(seconds)
+      const hrs = Math.floor(seconds / 3600)
+      console.log(hrs)
     }
     const hrs = Math.floor(seconds / 3600)
     const mins = Math.floor((seconds % 3600) / 60)
@@ -646,8 +651,10 @@ const CallregistrationList = () => {
                                 )} days`}
                               </span>
                               <span className="ml-1">
-                                {formatDuration(item?.timedata?.duration) ||
-                                  "N/A"}
+                                {formatDuration(
+                                  item?.timedata?.duration,
+                                  item.calls?.customerName
+                                ) || "N/A"}
                               </span>
                             </td>
                             <td

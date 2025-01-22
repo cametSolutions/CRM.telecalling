@@ -22,7 +22,8 @@ const CallRegistrationSchema = new mongoose.Schema(
           startTime: Date,
           endTime: Date,
           duration: String,
-          token: String
+          token: String,
+          time: String
         },
         formdata: {
           incomingNumber: String,

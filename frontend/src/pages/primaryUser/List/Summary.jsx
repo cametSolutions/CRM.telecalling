@@ -59,6 +59,7 @@ const Summary = () => {
       const fetchUserList = async () => {
         try {
           const query = `startDate=${dates.startDate}&endDate=${dates.endDate}`
+          console.log("h")
           const response = await api.get(`/auth/getStaffCallStatus?${query}`)
           setData(response.data.data)
 
@@ -414,11 +415,13 @@ const Summary = () => {
         return
 
       try {
+        console.log("g")
         const query = `startDate=${dates.startDate}&endDate=${dates.endDate}`
         const response = await api.get(
           `/customer/getselectedDateCalls?${query}`
         ) // Replace with your API endpoint
-        const data = response.data
+        const data = response.data.data
+        console.log(data)
 
         if (users?.role === "Admin") {
           setCallList(data)
