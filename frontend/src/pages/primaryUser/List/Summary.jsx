@@ -56,6 +56,7 @@ const Summary = () => {
 
   useEffect(() => {
     console.log("Hh")
+    console.log(dates)
     if (dates.startDate) {
       const fetchUserList = async () => {
         try {
@@ -148,6 +149,7 @@ const Summary = () => {
         }
       } else {
         if (callList && callList.length > 0) {
+          console.log("tt")
           const customerSummaries = callList
             .filter(
               (customer) =>
@@ -190,12 +192,6 @@ const Summary = () => {
               const pendingCalls = dateCalls - solvedCalls
               const today = new Date().toISOString().split("T")[0]
 
-              // const todaysCalls = customer.callregistration.filter(
-              //   (call) =>
-              //     new Date(call?.timedata?.startTime)
-              //       .toISOString()
-              //       .split("T")[0] === today
-              // ).length
               const todaysCalls = customer.callregistration.filter((call) => {
                 const callDate = new Date(call?.timedata?.startTime)
                   .toISOString()
@@ -227,6 +223,7 @@ const Summary = () => {
 
   useEffect(() => {
     if (isModalOpen && selectedCustomer) {
+      console.log("hh")
       const customerData = callList
         .filter((customer) => customer._id === selectedCustomer) // Filter for the selected customer
         .map((customer) => {
@@ -422,6 +419,7 @@ const Summary = () => {
           `/customer/getselectedDateCalls?${query}`
         ) // Replace with your API endpoint
         const data = response.data.data
+        console.log(data.length)
         console.log(data)
 
         if (users?.role === "Admin") {
@@ -455,6 +453,7 @@ const Summary = () => {
                 return hasMatchingBranch
               })
           )
+          console.log(filtered)
 
           setCallList(filtered)
         }
@@ -464,7 +463,7 @@ const Summary = () => {
     }
 
     fetchCalls()
-  }, [branch, users])
+  }, [branch, users, dates])
 
   // useEffect(() => {
   //   if (branch) {

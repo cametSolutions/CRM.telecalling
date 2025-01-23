@@ -133,215 +133,82 @@ export const UpdatePartners = async (req, res) => {
 export const GetselectedDateCalls = async (req, res) => {
   try {
     const { startDate, endDate } = req.query
-
-
-    const startOfYesterday = moment().startOf("day").subtract(1, "days")
-    const endOfYesterday = moment().endOf("day").subtract(1, "days")
-    const customerCalls = await CallRegistration.find({})
-      .populate("callregistration.product") // Populate the product field
-      .then(async (calls) => {
-        // Iterate through each customer call data
-        const customerCallsWithPopulatedData = await Promise.all(
-          calls.map(async (callData) => {
-            // Filter only the calls made within the range of yesterday
-            const matchedCalls = callData.callregistration.filter((call) => {
-              // Parse the startTime of each call
-              const callDate = moment(call.timedata.startTime)
-
-              // Check if the call was made within the range of yesterday
-              return callDate.isBetween(
-                startOfYesterday,
-                endOfYesterday,
-                null,
-                "[]"
-              ) // '[]' includes the endpoints
-            })
-
-            // Proceed only if there are matched calls
-            if (matchedCalls.length > 0) {
-              // Iterate through each matched call's attendedBy array if it exists and is an array
-              for (let call of matchedCalls) {
-                if (
-                  Array.isArray(call.formdata?.attendedBy) &&
-                  call.formdata.attendedBy.length > 0
-                ) {
-                  // Get the last attendedBy entry
-                  const lastAttended =
-                    call.formdata.attendedBy[
-                      call.formdata.attendedBy.length - 1
-                    ]
-
-                  // If the last attendedBy has a callerId, populate it
-                  if (lastAttended?.callerId) {
-                    const caller = await Staff.findById(lastAttended.callerId)
-
-                    lastAttended.callerId = caller || lastAttended.callerId // Replace callerId with populated data or leave as is if not found
-                  }
-                }
+    console.log("type of stardate", typeof startDate)
+    console.log("endate", endDate)
+    const customerCalls = await CallRegistration.aggregate([
+      {
+        $match: {
+          callregistration: { $exists: true, $ne: [] } // Ensure callregistration exists and is not empty
+        }
+      },
+      {
+        $match: {
+          "callregistration.formdata.attendedBy": { $type: "array" }
+        }
+      },
+      {
+        $addFields: {
+          // Filter callregistration array to include only those with attendedBy matching the date range
+          callregistration: {
+            $filter: {
+              input: "$callregistration", // Iterate through callregistration array
+              as: "call",
+              cond: {
+                $gt: [
+                  {
+                    // Check if any attendedBy.calldate matches the date range
+                    $size: {
+                      $filter: {
+                        input: { $ifNull: ["$$call.formdata.attendedBy", []] }, // Handle empty attendedBy array
+                        as: "attendee",
+                        cond: {
+                          $and: [
+                            { $ne: ["$$attendee.calldate", null] },
+                            { $ne: ["$$attendee.calldate", ""] },
+                            {
+                              $and: [
+                                {
+                                  $gte: [
+                                    { $toDate: "$$attendee.calldate" },
+                                    new Date(startDate)
+                                  ]
+                                },
+                                {
+                                  $lte: [
+                                    { $toDate: "$$attendee.calldate" },
+                                    new Date(endDate)
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  0
+                ]
               }
             }
+          }
+        }
+      },
 
-            // Return the customer call data with matched calls and populated last attendedBy
-            return {
-              _id: callData._id,
-              customerName: callData.customerName,
-              callregistration: matchedCalls
-            }
-          })
-        )
-        return customerCallsWithPopulatedData
-      })
-      .catch((err) => {
-        console.error(err)
-        return []
-      })
+      {
+        $match: {
+          // Ensure callregistration array still contains at least one element after filtering
+          callregistration: { $ne: [] }
+        }
+      },
+      {
+        $project: {
+          customerName: 1, // Include necessary fields in the result
+          callregistration: 1
+        }
+      }
+    ])
 
-    ////
-    // const customerCalls = await CallRegistration.find({})
-    //   .populate("callregistration.product") // Populate the product field
-    //   .then(async (calls) => {
-    //     // Iterate through each customer call data
-    //     const customerCallsWithPopulatedData = await Promise.all(
-    //       calls.map(async (callData) => {
-    //         // Filter only the calls made within the range of yesterday
-    //         const matchedCalls = callData.callregistration.filter((call) => {
-    //           // Parse the startTime of each call
-    //           const callDate = moment(call.timedata.startTime)
-
-    //           // Check if the call was made within the range of yesterday
-    //           return callDate.isBetween(
-    //             startOfYesterday,
-    //             endOfYesterday,
-    //             null,
-    //             "[]"
-    //           ) // '[]' includes the endpoints
-    //         })
-
-    //         // Proceed only if there are matched calls
-    //         if (matchedCalls.length > 0) {
-    //           // Iterate through each matched call's attendedBy array if it exists and is an array
-    //           for (let call of matchedCalls) {
-    //             if (Array.isArray(call.formdata?.attendedBy)) {
-    //               // Check if attendedBy is an array
-    //               for (let attended of call.formdata?.attendedBy) {
-    //                 if (attended?.callerId) {
-    //                   // Manually populate the callerId by querying the Staff model
-    //                   const caller = await Staff.findById(attended.callerId)
-    //                   console.log("Populating callerId for", attended.callerId)
-    //                   attended.callerId = caller || attended.callerId // Replace callerId with populated data or leave as is if not found
-    //                 }
-    //               }
-    //             }
-    //           }
-    //         }
-
-    //         // Return the customer call data with matched calls and populated attendedBy array
-    //         return {
-    //           _id: callData._id,
-    //           customerName: callData.customerName,
-    //           callregistration: matchedCalls
-    //         }
-    //       })
-    //     )
-    //     return customerCallsWithPopulatedData
-    //   })
-    //   .catch((err) => {
-    //     console.error(err)
-    //     return []
-    //   })
-    //
-    // const calls = await CallRegistration.find({})
-    //   .populate("callregistration.product") // Populate product field
-    //   .then(async (calls) => {
-    //     // Iterate through each customer call data
-    //     const customerCallsWithPopulatedData = await Promise.all(
-    //       calls.map(async (callData) => {
-    //         // Check if the customer has call registrations
-    //         if (
-    //           callData.callregistration &&
-    //           callData.callregistration.length > 0
-    //         ) {
-    //           // Iterate through each call's attendedBy array if it exists and is an array
-    //           for (let call of callData.callregistration) {
-    //             if (Array.isArray(call.formdata?.attendedBy)) {
-    //               // Check if attendedBy is an array
-    //               for (let attended of call?.formdata?.attendedBy) {
-    //                 if (attended?.callerId) {
-    //                   // Manually populate the callerId by querying the User model
-    //                   const caller = await Staff.findById(attended.callerId)
-
-    //                   attended.callerId = caller || attended.callerId // Replace callerId with populated data or leave as is if not found
-    //                 }
-    //               }
-    //             }
-    //           }
-    //         }
-    //         return callData // Return the call data with populated attendedBy array
-    //       })
-    //     )
-    //     return customerCallsWithPopulatedData
-    //   })
-    //   .catch((err) => {
-    //     console.error(err)
-    //     return []
-    //   })
-    // console.log("customercallsss", customerCalls)
-
-    // const calls = await CallRegistration.find({})
-    // Assuming `calls` is an array of customer call data
-
-    // Assuming `calls` is an array of customer call data
-    // const customerCalls = calls
-    //   .map((callData) => {
-    //     // Filter only calls within the range of yesterday from each customer's callregistration array
-    //     const matchedCalls = callData.callregistration.filter((call) => {
-    //       // Parse the startTime of each call
-    //       const callDate = moment(call.timedata.startTime)
-
-    //       // Check if the call was made within the range of yesterday
-    //       return callDate.isBetween(
-    //         startOfYesterday,
-    //         endOfYesterday,
-    //         null,
-    //         "[]"
-    //       ) // '[]' includes the endpoints
-    //     })
-
-    //     // If matched calls exist, return the customer data along with the matched calls
-    //     if (matchedCalls.length > 0) {
-    //       return {
-    //         _id: callData._id,
-    //         customerName: callData.customerName,
-    //         callregistration: matchedCalls // Include the matched calls for this customer
-    //       }
-    //     }
-
-    //     // Return null or skip customers with no matched calls
-    //     return null
-    //   })
-    //   .filter((customer) => customer !== null) // Filter out null values to remove customers with no matched calls
-
-    // const customerCalls = await CallRegistration.aggregate([
-    //   {
-    //     $match: {
-    //       $and: [
-    //         {
-    //           "callregistration.formdata.attendedBy.calldate": {
-    //             $exists: true,
-    //             $ne: ""
-    //           }
-    //         }, // Ensure calldate exists and is not empty
-    //         {
-    //           "callregistration.formdata.attendedBy.calldate": {
-    //             $gte: startDate,
-    //             $lte: endDate
-    //           }
-    //         } // Match date range
-    //       ]
-    //     }
-    //   }
-    // ])
-
+    console.log("end")
     console.log("customercalls", customerCalls)
 
     return res
