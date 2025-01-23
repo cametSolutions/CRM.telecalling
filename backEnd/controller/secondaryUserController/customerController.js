@@ -344,7 +344,7 @@ export const GetselectedDateCalls = async (req, res) => {
       }
     ])
 
-    // console.log("customercalls", customerCalls)
+    console.log("customercalls", customerCalls)
 
     return res
       .status(200)

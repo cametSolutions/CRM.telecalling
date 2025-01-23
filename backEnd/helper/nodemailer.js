@@ -127,7 +127,7 @@ export const sendEmail = async (calldata, name, branchName, username) => {
     const info = await transporter.sendMail({
       from: notificationemail, // Sender's name and address
       to: `${calldata?.customeremail}`, // Recipient's email address
-      cc: `${calldata?.ccMail ? calldata?.ccMail : "sale@camet.in"}`,
+      cc: `${calldata?.ccMail}`,
       subject: `New Support ticket created-${
         calldata?.timedata?.token || "N/A"
       }`, // Subject
@@ -145,9 +145,13 @@ export const sendEmail = async (calldata, name, branchName, username) => {
         "Please check the branch notification email and password "
       )
     } else {
+      const toEmail =
+        notificationemail === "contact.camet@gmail.com"
+          ? "sale@camet.in"
+          : "helpdeskaccuanets@gmail.com"
       const info = await transporter.sendMail({
         from: notificationemail, // Sender's name and address
-        to: "sreerajvijay1997@gmail.com",
+        to: toEmail,
         // cc: "abhidasabhi1234@gmail.com",
         subject: `New Support ticket created-${
           calldata?.timedata?.token || "N/A"
