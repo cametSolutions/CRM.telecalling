@@ -55,6 +55,7 @@ const Summary = () => {
   }, [branches])
 
   useEffect(() => {
+    console.log("Hh")
     if (dates.startDate) {
       const fetchUserList = async () => {
         try {
@@ -749,24 +750,10 @@ const Summary = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 h-screen">
           <div className="container mx-auto  p-8  h-screen">
             <div className="w-auto  bg-white shadow-lg rounded p-4  h-full ">
-              {/* <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
-            
-                <div className="mx-4 md:block items-center">
-                  <div className="relative">
-                    <FaSearch className="absolute w-5 h-5 left-2 top-2 text-gray-500" />
-                  </div>
-                  <input
-                    type="text"
-                    // value={searchQuery}
-                    // onChange={handleChange}
-                    className=" w-full border border-gray-300 rounded-full py-1 px-4 pl-10 focus:outline-none"
-                    placeholder="Search for..."
-                  />
-                </div>
-              </div> */}
               <div className="flex justify-center text-indigo-500 text-2xl">
                 {customerCalls.customerName}
               </div>
+
               <hr className="border-t-2 border-gray-300 m-3" />
               {/* <Tiles datas={registeredcalllist?.alltokens} /> */}
               <div className="flex justify-around">
@@ -876,8 +863,8 @@ const Summary = () => {
                   // }}
                 />
               </div>
-              <div className="overflow-y-auto overflow-x-auto max-h-60 sm:max-h-80 md:max-h-[380px] lg:max-h-[398px] shadow-md rounded-lg mt-2 ">
-                <table className="divide-y divide-gray-200 w-full text-center">
+              <div className="overflow-x-auto max-h-[60vh] shadow-md rounded-lg mt-2">
+                <table className="table-auto divide-y divide-gray-200 w-full text-center">
                   <thead className="bg-purple-300 sticky top-0 z-40  ">
                     <tr>
                       <th className="px-2 py-3 border-b border-gray-300 text-sm text-center whitespace-nowrap">
@@ -976,15 +963,7 @@ const Summary = () => {
                                       reg?.timedata?.endTime
                                     ).toLocaleString()}
                                   </td>
-                                  {/* <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                                    {reg.timedata.duration}
-                                  </td>
-                                  <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                                    {reg.formdata.description}
-                                  </td>
-                                  <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                                    {reg.formdata.solution}
-                                  </td> */}
+
                                   <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                                     {reg?.formdata?.incomingNumber}
                                   </td>
@@ -1221,7 +1200,7 @@ const Summary = () => {
                   </tbody>
                 </table>
               </div>
-              <div className="flex justify-center items-center mt-8">
+              <div className="flex justify-center items-center mt-1">
                 <button
                   className="bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 p-2 text-white rounded-lg"
                   onClick={closeModal}
