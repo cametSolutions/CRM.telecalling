@@ -65,6 +65,7 @@ export const BranchRegister = async (req, res) => {
   }
 }
 export const Getbranch = async (req, res) => {
+  console.log("ggggg")
   try {
     const branchData = await Branch.find().populate({
       path: "companyName",
@@ -97,10 +98,10 @@ export const BranchEdit = async (req, res) => {
         country: branchData?.country,
         state: branchData?.state,
         email: branchData?.email,
-        ccmail:branchData?.ccmail,
+        ccmail: branchData?.ccmail,
         notificationemail: branchData?.notificationemail,
         mailpassword: branchData?.mailpassword,
-        whatsappnumber:branchData?.whatsappnumber,
+        whatsappnumber: branchData?.whatsappnumber,
         mobile: branchData?.mobile,
         landlineno: branchData?.landlineno
       },

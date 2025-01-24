@@ -7,13 +7,15 @@ import { useDispatch } from "react-redux"
 import { toast } from "react-toastify"
 
 function CustomerEdit() {
+  const users = localStorage.getItem("user")
+  console.log(users)
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const location = useLocation()
   const customer = location.state?.customer
   const selected = location.state?.selected
   const index = location.state?.index
-  
+
   const customerId = customer._id
 
   function formatDateString(dateString) {
@@ -34,10 +36,7 @@ function CustomerEdit() {
       selected[key] = formatDateString(selected[key])
     }
   }
-  // const updatedCustomer = Object.assign({}, customer, {
-  //   selected: { ...selected } // Merge selected object into the customer
-  // })
-  // Safely merge selected into customer, ensuring selected is not undefined or null
+
   const updatedCustomer = Object.assign({}, customer, {
     selected: selected ? [selected] : [], // If selected is falsy, fall back to an empty object
     index: index !== undefined ? index : null
@@ -54,7 +53,11 @@ function CustomerEdit() {
       )
       toast.success(response.data.message)
       dispatch(removeSearch(""))
-      navigate("/admin/masters/customer")
+      if (users?.role === "Admin") {
+        navigate("/admin/masters/customer")
+      } else {
+        navigate("/staff/masters/customer")
+      }
     } catch (error) {
       console.error("Error updating branch:", error)
       toast.error(error.response.data.message)
