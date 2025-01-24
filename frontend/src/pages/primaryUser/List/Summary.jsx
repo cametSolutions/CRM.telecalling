@@ -31,7 +31,6 @@ const Summary = () => {
   const [a, setA] = useState([])
   const { data: branches } = UseFetch("/branch/getBranch")
   const { data: staffCallList } = UseFetch("/auth/staffcallList")
-  console.log(staffCallList)
   useEffect(() => {
     if (staffCallList) {
       setIndividualCallList(staffCallList)
@@ -55,13 +54,11 @@ const Summary = () => {
   }, [branches])
 
   useEffect(() => {
-    console.log("Hh")
-    console.log(dates)
+  
     if (dates.startDate) {
       const fetchUserList = async () => {
         try {
           const query = `startDate=${dates.startDate}&endDate=${dates.endDate}`
-          console.log("h")
           const response = await api.get(`/auth/getStaffCallStatus?${query}`)
           setData(response.data.data)
 
@@ -149,7 +146,6 @@ const Summary = () => {
         }
       } else {
         if (callList && callList.length > 0) {
-          console.log("tt")
           const customerSummaries = callList
             .filter(
               (customer) =>
@@ -218,7 +214,6 @@ const Summary = () => {
           }
         } else {
           setCustomerSummary([])
-          console.log("h")
         }
       }
     }
@@ -226,9 +221,6 @@ const Summary = () => {
 
   useEffect(() => {
     if (isModalOpen && selectedCustomer) {
-      console.log("jjj")
-      console.log("hh")
-      console.log(callList)
 
       const customerData = callList
         .filter((customer) => customer._id === selectedCustomer) // Filter for the selected customer
@@ -237,7 +229,6 @@ const Summary = () => {
 
           // Get all calls for the selected customer
           const allCalls = customer.callregistration.map((call) => call)
-          console.log(allCalls)
 
           // Calculate summary counts
           const totalCalls = allCalls.length
@@ -282,7 +273,6 @@ const Summary = () => {
 
         return 0
       })
-      console.log(sortedCalls)
 
       setCustomerCalls(customerData)
       setCalls(sortedCalls)
@@ -425,18 +415,12 @@ const Summary = () => {
         if (today < dates.endDate) {
           return
         }
-        console.log("g")
         const query = `startDate=${dates.startDate}&endDate=${dates.endDate}`
-        console.log("hii")
         const response = await api.get(
           `/customer/getselectedDateCalls?${query}`
         ) // Replace with your API endpoint
         const data = response.data.data
-        console.log(data.length)
-        console.log(data)
-
-        console.log("sucesss")
-
+  
         if (users?.role === "Admin") {
           setCallList(data)
         } else {
@@ -468,7 +452,7 @@ const Summary = () => {
                 return hasMatchingBranch
               })
           )
-          console.log(filtered)
+        
 
           setCallList(filtered)
         }
@@ -537,7 +521,7 @@ const Summary = () => {
         .toString()
         .padStart(2, "0")}`
     }
-    const a = !isNaN(selectedDate.startDate.getTime())
+ 
 
     if (
       selectedDate.startDate instanceof Date &&
@@ -573,7 +557,7 @@ const Summary = () => {
   const toggle = () => setIsToggled(!isToggled)
 
   const openModal = (id) => {
-    console.log(id)
+
     if (isToggled) {
       setSelectedUser(id)
     } else {
@@ -602,59 +586,71 @@ const Summary = () => {
             {isToggled ? "User Summary" : "Customer Summary"}
           </h1>
         </div>
-        <h2 className="text-xl font-semibold leading-tight">Branches</h2>
+        {users?.role === "Admin" && (
+          <div>
+            <h2 className="text-xl font-semibold leading-tight">Branches</h2>
 
-        <div className="my-2 flex sm:flex-row flex-col">
-          <div className="flex flex-row mb-1 sm:mb-0">
-            <div className="relative">
-              <select
-                onChange={handleChange}
-                className="h-full rounded-r border-t sm:rounded-r-none sm:border-r-0 border-r border-b block appearance-none w-full bg-white border-gray-400 text-gray-700 py-2 px-4 pr-8 leading-tight focus:outline-none focus:border-l focus:border-r focus:bg-white focus:border-gray-500"
+            <div className="my-2 flex sm:flex-row flex-col">
+              <div className="flex flex-row mb-1 sm:mb-0">
+                <div className="relative">
+                  <select
+                    onChange={handleChange}
+                    className="h-full rounded-r border-t sm:rounded-r-none sm:border-r-0 border-r border-b block appearance-none w-full bg-white border-gray-400 text-gray-700 py-2 px-4 pr-8 leading-tight focus:outline-none focus:border-l focus:border-r focus:bg-white focus:border-gray-500"
+                  >
+                    <option value="All">All</option>
+                    {branches?.map((branch) => (
+                      <option key={branch._id} value={branch._id}>
+                        {branch.branchName}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                    <svg
+                      className="fill-current h-4 w-4"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <div className="block relative">
+                <input
+                  placeholder="Search"
+                  className="appearance-none rounded-r rounded-l sm:rounded-l-none border border-gray-400 border-b block pl-8 pr-6 py-2 w-full bg-white text-sm placeholder-gray-400 text-gray-700 focus:bg-white focus:placeholder-gray-600 focus:text-gray-700 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex justify-end flex-grow gap-4 ">
+                {dates.startDate && (
+                  <MyDatePicker handleSelect={handleDate} dates={dates} />
+                )}
+                {/* <span className="text-gray-600 mr-4 font-bold">User</span>
+              <button
+                onClick={toggle}
+                className={`${
+                  isToggled ? "bg-green-500" : "bg-gray-300"
+                } w-16 h-8 flex items-center rounded-full p-1 transition-colors duration-300`}
               >
-                <option value="All">All</option>
-                {branches?.map((branch) => (
-                  <option key={branch._id} value={branch._id}>
-                    {branch.branchName}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                <svg
-                  className="fill-current h-4 w-4"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                </svg>
+                <div
+                  className={`${
+                    isToggled ? "translate-x-8" : "translate-x-0"
+                  } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                ></div>
+              </button> */}
               </div>
             </div>
           </div>
-          <div className="block relative">
-            <input
-              placeholder="Search"
-              className="appearance-none rounded-r rounded-l sm:rounded-l-none border border-gray-400 border-b block pl-8 pr-6 py-2 w-full bg-white text-sm placeholder-gray-400 text-gray-700 focus:bg-white focus:placeholder-gray-600 focus:text-gray-700 focus:outline-none"
-            />
-          </div>
-
+        )}
+        {users?.role !== "Admin" && (
           <div className="flex justify-end flex-grow gap-4 ">
             {dates.startDate && (
               <MyDatePicker handleSelect={handleDate} dates={dates} />
             )}
-            <span className="text-gray-600 mr-4 font-bold">User</span>
-            <button
-              onClick={toggle}
-              className={`${
-                isToggled ? "bg-green-500" : "bg-gray-300"
-              } w-16 h-8 flex items-center rounded-full p-1 transition-colors duration-300`}
-            >
-              <div
-                className={`${
-                  isToggled ? "translate-x-8" : "translate-x-0"
-                } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-              ></div>
-            </button>
           </div>
-        </div>
+        )}
+
         <div className="flex justify-between">
           <div className="text-blue-700">
             {/* {customerSummary.length} Total Customers */}

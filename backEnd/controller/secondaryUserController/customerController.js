@@ -133,8 +133,7 @@ export const UpdatePartners = async (req, res) => {
 export const GetselectedDateCalls = async (req, res) => {
   try {
     const { startDate, endDate } = req.query
-    console.log("yyyyyyyyyyy")
-
+    console.log("hh")
     const customerCalls = await CallRegistration.aggregate([
       {
         $match: {
@@ -283,7 +282,12 @@ export const GetselectedDateCalls = async (req, res) => {
                             cond: {
                               $eq: [
                                 "$$attended._id", // Match attendedBy user ID
-                                { $arrayElemAt: ["$$registration.formdata.attendedBy.callerId", 0] }
+                                {
+                                  $arrayElemAt: [
+                                    "$$registration.formdata.attendedBy.callerId",
+                                    0
+                                  ]
+                                }
                               ]
                             }
                           }
@@ -318,7 +322,12 @@ export const GetselectedDateCalls = async (req, res) => {
                             cond: {
                               $eq: [
                                 "$$completed._id", // Match completedBy user ID
-                                { $arrayElemAt: ["$$registration.formdata.completedBy.callerId", 0] }
+                                {
+                                  $arrayElemAt: [
+                                    "$$registration.formdata.completedBy.callerId",
+                                    0
+                                  ]
+                                }
                               ]
                             }
                           }
@@ -332,8 +341,7 @@ export const GetselectedDateCalls = async (req, res) => {
             }
           }
         }
-      }
-      ,
+      },
       {
         $project: {
           customerName: 1, // Include necessary fields in the result
@@ -342,9 +350,8 @@ export const GetselectedDateCalls = async (req, res) => {
         }
       }
     ])
-    console.log("uuuuuu")
-    console.log("calllls", customerCalls)
 
+    console.log("calls", customerCalls)
     return res
       .status(200)
       .json({ message: "customercalls found", data: customerCalls })
@@ -413,6 +420,7 @@ export const PartnerRegistration = async (req, res) => {
 }
 
 export const CustomerRegister = async (req, res) => {
+  console.log("ree", req.body.tabledata)
   const { customerData, tabledata = {} } = req.body
 
   const {
@@ -430,12 +438,19 @@ export const CustomerRegister = async (req, res) => {
     industry,
     partner
   } = customerData
+  if (tabledata && tabledata?.length > 0) {
+    const licenseNumbers = tabledata.map((item) => item.licensenumber)
 
-  // Check if user already exists
-  const customerExists = await Customer.findOne({ customerName })
+    // Check if user already exists
 
-  if (customerExists) {
-    return res.status(400).json({ message: "Customer already registered" })
+    const existingLicenses = await License.find({
+      licensenumber: { $in: licenseNumbers }
+    })
+    if (existingLicenses && existingLicenses.length > 0) {
+      return res
+        .status(400)
+        .json({ message: "License number already registered" })
+    }
   }
 
   try {
@@ -462,7 +477,7 @@ export const CustomerRegister = async (req, res) => {
 
     const customerdata = await customer.save()
 
-    if (tabledata) {
+    if (tabledata.tabledata.length>0) {
       for (const item of customerdata.selected) {
         const license = new License({
           products: item.product_id,
