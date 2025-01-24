@@ -216,6 +216,9 @@ const Summary = () => {
             setCustomerSummary(customerSummaries)
             // setLoading(false)
           }
+        } else {
+          setCustomerSummary([])
+          console.log("h")
         }
       }
     }
@@ -223,7 +226,10 @@ const Summary = () => {
 
   useEffect(() => {
     if (isModalOpen && selectedCustomer) {
+      console.log("jjj")
       console.log("hh")
+      console.log(callList)
+
       const customerData = callList
         .filter((customer) => customer._id === selectedCustomer) // Filter for the selected customer
         .map((customer) => {
@@ -231,6 +237,7 @@ const Summary = () => {
 
           // Get all calls for the selected customer
           const allCalls = customer.callregistration.map((call) => call)
+          console.log(allCalls)
 
           // Calculate summary counts
           const totalCalls = allCalls.length
@@ -275,6 +282,7 @@ const Summary = () => {
 
         return 0
       })
+      console.log(sortedCalls)
 
       setCustomerCalls(customerData)
       setCalls(sortedCalls)
@@ -413,14 +421,21 @@ const Summary = () => {
         return
 
       try {
+        const today = new Date().toISOString().split("T")[0]
+        if (today < dates.endDate) {
+          return
+        }
         console.log("g")
         const query = `startDate=${dates.startDate}&endDate=${dates.endDate}`
+        console.log("hii")
         const response = await api.get(
           `/customer/getselectedDateCalls?${query}`
         ) // Replace with your API endpoint
         const data = response.data.data
         console.log(data.length)
         console.log(data)
+
+        console.log("sucesss")
 
         if (users?.role === "Admin") {
           setCallList(data)
@@ -558,6 +573,7 @@ const Summary = () => {
   const toggle = () => setIsToggled(!isToggled)
 
   const openModal = (id) => {
+    console.log(id)
     if (isToggled) {
       setSelectedUser(id)
     } else {
@@ -573,6 +589,7 @@ const Summary = () => {
     setSelectedUser(null)
   }
   console.log(customerCalls)
+  console.log(Calls)
 
   return (
     <div className="antialiased font-sans container mx-auto px-4 sm:px-8">
@@ -736,7 +753,11 @@ const Summary = () => {
                   ) : (
                     <tr>
                       <td colSpan="7" className="text-center py-4">
-                        {loading ? "Loading..." : "N data"}
+                        {loading
+                          ? "Loading..."
+                          : customerSummary.length === 0
+                          ? "No data"
+                          : null}
                       </td>
                     </tr>
                   ))}
@@ -1078,7 +1099,7 @@ const Summary = () => {
                                 {call?.timedata?.token}
                               </td>
                               <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                                {call?.product?.productName}
+                                {call?.productdetails?.productName}
                               </td>
                               <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                                 {call?.license}
@@ -1112,7 +1133,8 @@ const Summary = () => {
                                 {call?.formdata?.status}
                               </td>
                               <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                                {Array.isArray(call?.formdata?.attendedBy)
+                                {call?.attendeddetails?.name}
+                                {/* {Array.isArray(call?.formdata?.attendedBy)
                                   ? call?.formdata?.attendedBy
                                       .map(
                                         (attendee) =>
@@ -1123,10 +1145,11 @@ const Summary = () => {
                                   : call?.formdata?.attendedBy?.callerId
                                       ?.name ||
                                     call?.formdata?.attendedBy ||
-                                    call?.formdata?.attendedBy?.name}
+                                    call?.formdata?.attendedBy?.name} */}
                               </td>
                               <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                                {call?.formdata?.status === "solved"
+                                {call?.completedbydetails?.name}
+                                {/* {call?.formdata?.status === "solved"
                                   ? Array.isArray(call?.formdata?.completedBy)
                                     ? call?.formdata?.completedBy.map(
                                         (attendee) =>
@@ -1137,7 +1160,7 @@ const Summary = () => {
                                         ?.name ||
                                       call?.formdata?.completedBy ||
                                       call?.formdata?.completedBy?.name
-                                  : ""}
+                                  : ""} */}
                               </td>
                             </tr>
                             <tr

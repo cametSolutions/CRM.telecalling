@@ -133,8 +133,8 @@ export const UpdatePartners = async (req, res) => {
 export const GetselectedDateCalls = async (req, res) => {
   try {
     const { startDate, endDate } = req.query
-    console.log("type of stardate", typeof startDate)
-    console.log("endate", endDate)
+    console.log("yyyyyyyyyyy")
+
     const customerCalls = await CallRegistration.aggregate([
       {
         $match: {
@@ -146,6 +146,7 @@ export const GetselectedDateCalls = async (req, res) => {
           "callregistration.formdata.attendedBy": { $type: "array" }
         }
       },
+
       {
         $addFields: {
           // Filter callregistration array to include only those with attendedBy matching the date range
@@ -200,16 +201,149 @@ export const GetselectedDateCalls = async (req, res) => {
           callregistration: { $ne: [] }
         }
       },
+
+      // Lookup for product details (and directly enrich the existing product field)
+      {
+        $lookup: {
+          from: "products",
+          localField: "callregistration.product",
+          foreignField: "_id",
+          as: "productDetails" // We temporarily store product details here
+        }
+      },
+
+      // Lookup for attendedBy details (and directly enrich the existing attendedBy field)
+      {
+        $lookup: {
+          from: "staffs",
+          localField: "callregistration.formdata.attendedBy.callerId",
+          foreignField: "_id",
+          as: "attendedByDetails" // Temporary storage for attendedBy details
+        }
+      },
+
+      // Lookup for completedBy details (and directly enrich the existing completedBy field)
+      {
+        $lookup: {
+          from: "staffs",
+          localField: "callregistration.formdata.completedBy.callerId",
+          foreignField: "_id",
+          as: "completedByDetails" // Temporary storage for completedBy details
+        }
+      },
+      {
+        $addFields: {
+          // Map callregistration to include matched product details
+          callregistration: {
+            $map: {
+              input: "$callregistration", // Iterate over callregistration array
+              as: "registration",
+              in: {
+                $mergeObjects: [
+                  "$$registration", // Preserve existing callregistration fields
+                  {
+                    productdetails: {
+                      $arrayElemAt: [
+                        {
+                          $filter: {
+                            input: "$productDetails", // Filter joined products
+                            as: "product",
+                            cond: {
+                              $eq: ["$$product._id", "$$registration.product"] // Match product ID
+                            }
+                          }
+                        },
+                        0
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        $addFields: {
+          // Map callregistration to include attendedBy details
+          callregistration: {
+            $map: {
+              input: "$callregistration", // Iterate over callregistration array
+              as: "registration",
+              in: {
+                $mergeObjects: [
+                  "$$registration", // Preserve existing callregistration fields
+                  {
+                    attendeddetails: {
+                      $arrayElemAt: [
+                        {
+                          $filter: {
+                            input: "$attendedByDetails", // Filter attendedBy details
+                            as: "attended",
+                            cond: {
+                              $eq: [
+                                "$$attended._id", // Match attendedBy user ID
+                                { $arrayElemAt: ["$$registration.formdata.attendedBy.callerId", 0] }
+                              ]
+                            }
+                          }
+                        },
+                        0
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      },
+      {
+        $addFields: {
+          // Map callregistration to include completedBy details
+          callregistration: {
+            $map: {
+              input: "$callregistration", // Iterate over callregistration array
+              as: "registration",
+              in: {
+                $mergeObjects: [
+                  "$$registration", // Preserve existing callregistration fields
+                  {
+                    completedbydetails: {
+                      $arrayElemAt: [
+                        {
+                          $filter: {
+                            input: "$completedByDetails", // Filter completedBy details
+                            as: "completed",
+                            cond: {
+                              $eq: [
+                                "$$completed._id", // Match completedBy user ID
+                                { $arrayElemAt: ["$$registration.formdata.completedBy.callerId", 0] }
+                              ]
+                            }
+                          }
+                        },
+                        0
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+      ,
       {
         $project: {
           customerName: 1, // Include necessary fields in the result
+
           callregistration: 1
         }
       }
     ])
-
-    console.log("end")
-    console.log("customercalls", customerCalls)
+    console.log("uuuuuu")
+    console.log("calllls", customerCalls)
 
     return res
       .status(200)
@@ -846,17 +980,22 @@ export const customerCallRegistration = async (req, res) => {
         // Function to convert "HH:MM:SS" format to total seconds
 
         if (callToUpdate) {
+          if (!callToUpdate.timedata.time) {
+            callToUpdate.timedata.time = 0 // Initialize time to 0 if it doesn't exist
+          }
           // Update the fields with the new data
 
           callToUpdate.timedata.startTime = calldata.timedata.startTime
           callToUpdate.timedata.endTime = calldata.timedata.endTime
           // Convert the total duration back to "HH:MM:SS" format
           callToUpdate.timedata.duration += calldata.timedata.duration
+          console.log("time", callToUpdate.timedata)
 
           callToUpdate.timedata.time = addTimes(
             callToUpdate.timedata.time,
             calldata.timedata.time
           )
+          console.log(callToUpdate.timedata)
 
           callToUpdate.timedata.token = calldata.timedata.token
           callToUpdate.formdata.incomingNumber =
