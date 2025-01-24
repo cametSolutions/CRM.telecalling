@@ -46,6 +46,11 @@ export default function AdminHeader() {
       // control: user.permissions[0].Company
     },
     {
+      to: "/admin/masters/leavemaster",
+      label: "Leavemaster"
+      // control: user.permissions[0].Branch
+    },
+    {
       to: "/admin/masters/branch",
       label: "Branch"
       // control: user.permissions[0].Branch
@@ -275,7 +280,6 @@ export default function AdminHeader() {
               CRM
             </text>
           </svg>
-          {/* <span className="text-3xl font-bold text-green-600">MANAGEMENT</span> */}
           <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-green-600">
             MANAGEMENT
           </span>

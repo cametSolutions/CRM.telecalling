@@ -7,7 +7,7 @@ import Tiles from "../../../components/common/Tiles" // Import the Tile componen
 import { useNavigate } from "react-router-dom"
 
 const socket = io("https://www.crm.camet.in")
-// const socket = io("http://localhost:9000") // Adjust the URL to your backend
+// const socket = io("http://localhost:9000") c// Adjust the URL to your backend
 
 const CallregistrationList = () => {
   const navigate = useNavigate()

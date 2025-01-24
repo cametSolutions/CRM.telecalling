@@ -40,6 +40,7 @@ export default function StaffHeader() {
       label: "Company",
       control: user?.permissions?.[0]?.Company ?? false
     },
+   
     {
       to: "/staff/masters/branch",
       label: "Branch",

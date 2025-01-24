@@ -23,6 +23,7 @@ import UserListform from "../../../pages/primaryUser/List/UserListform"
 import UserPermissions from "../../../pages/primaryUser/List/UserPermissions"
 import ComingSoon from "../../../pages/common/ComingSoon"
 import { CallNoteRegistration } from "../../../pages/primaryUser/register/CallNoteRegistration"
+import LeaveMaster from "../../../pages/primaryUser/register/LeaveMaster"
 
 const mastersRoutes = [
   {
@@ -33,6 +34,10 @@ const mastersRoutes = [
   {
     path: "/admin/masters/callnotes",
     component: CallNoteRegistration
+  },
+  {
+    path: "/admin/masters/leavemaster",
+    component: LeaveMaster
   },
   {
     path: "/admin/masters/companyRegistration",
