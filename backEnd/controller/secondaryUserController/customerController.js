@@ -420,7 +420,6 @@ export const PartnerRegistration = async (req, res) => {
 }
 
 export const CustomerRegister = async (req, res) => {
-  console.log("ree", req.body.tabledata)
   const { customerData, tabledata = {} } = req.body
 
   const {
@@ -446,7 +445,8 @@ export const CustomerRegister = async (req, res) => {
     const existingLicenses = await License.find({
       licensenumber: { $in: licenseNumbers }
     })
-    if (existingLicenses && existingLicenses.length > 0) {
+    if (existingLicenses && existingLicenses?.length > 0) {
+      console.log("undo")
       return res
         .status(400)
         .json({ message: "License number already registered" })
@@ -476,8 +476,7 @@ export const CustomerRegister = async (req, res) => {
     })
 
     const customerdata = await customer.save()
-
-    if (tabledata.tabledata.length>0) {
+    if (tabledata && tabledata.length > 0) {
       for (const item of customerdata.selected) {
         const license = new License({
           products: item.product_id,
