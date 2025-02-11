@@ -72,6 +72,7 @@ export const AttendanceExceltoJson = async (socket, fileData) => {
   let uploadedCount = 0
   let totalData = 0
   let failedData = []
+  let existingexcel = []
   const allowedHeaders = [
     "SNO",
     "User ID",
@@ -96,40 +97,83 @@ export const AttendanceExceltoJson = async (socket, fileData) => {
   //Parse the uploaded Excel file
   const workbook = XLSX.read(fileData, { type: "buffer" })
   const sheet = workbook.Sheets[workbook.SheetNames[0]]
+  const allRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" })
 
-  const jsonData = XLSX.utils.sheet_to_json(sheet, { defval: "" }) // First row as array
-  const filteredData = jsonData.map((row) => {
-    const filteredRow = {}
-    Object.keys(row).forEach((key) => {
-      if (allowedHeaders.includes(key)) {
-        filteredRow[key] = row[key]
-      }
-    })
-    return filteredRow
+  // Step 2: Find the row index that contains actual headers
+  // const allowedHeaders = ["User ID", "Date", "In Time", "Out Time"] // Adjust headers as needed
+  let headerIndex = allRows.findIndex((row) =>
+    row.some((cell) => allowedHeaders.includes(cell))
+  )
+
+  // If no headers found, return an empty array
+  if (headerIndex === -1) {
+    console.error("No valid headers found in the Excel sheet.")
+    return []
+  }
+
+  // Step 3: Extract table data (excluding unwanted text below)
+  const tableData = allRows.slice(headerIndex) // Keep only rows after the header
+
+  // Step 4: Convert the valid table data to JSON format
+  const jsonData = XLSX.utils.sheet_to_json(sheet, {
+    range: headerIndex,
+    defval: ""
   })
 
-  // Loop through all the sheets in the workbook
-  for (const item of filteredData) {
+  for (const item of jsonData) {
     try {
+      const datestr = excelDateToFormatString(item["Date"])
+      const searchDate = new Date(datestr)
+      const startOfDay = new Date(
+        Date.UTC(
+          searchDate.getUTCFullYear(),
+          searchDate.getUTCMonth(),
+          searchDate.getUTCDate(),
+          0,
+          0,
+          0,
+          0
+        )
+      )
+
+      const endOfDay = new Date(
+        Date.UTC(
+          searchDate.getUTCFullYear(),
+          searchDate.getUTCMonth(),
+          searchDate.getUTCDate(),
+          23,
+          59,
+          59,
+          999
+        )
+      )
       const existingAttendance = await Attendance.findOne({
         attendanceId: item["User ID"],
-        attendanceDate: excelDateToFormatString(item["Date"])
+        attendanceDate: {
+          $gte: startOfDay,
+          $lte: endOfDay // Covers full day range
+        }
       })
+
       const outTime12 = item["Out"] ? convertTo12HourTime(item["Out"]) : null
       const inTime12 = item["In"]
         ? convertTo12HourTime(item["In"], item["User ID"])
         : null
 
       if (
-        existingAttendance &&
-        !existingAttendance.edited &&
-        !existingAttendance.excel
+        (existingAttendance &&
+          !existingAttendance.edited &&
+          existingAttendance.excel) ||
+        existingAttendance.own
       ) {
         totalData++
         const updated = await Attendance.updateOne(
           {
             attendanceId: item["User ID"],
-            attendanceDate: excelDateToFormatString(item["Date"]),
+            attendanceDate: {
+              $gte: searchDate,
+              $lt: new Date(searchDate.getTime() + 24 * 60 * 60 * 1000) // Covers full day range
+            },
             edited: false
           },
           {
@@ -140,13 +184,11 @@ export const AttendanceExceltoJson = async (socket, fileData) => {
           }
         )
         if (updated.modifiedCount > 0) {
-          uploadedCount++
+          existingexcel.push(item)
           socket.emit("attendanceconversionProgress", {
             current: uploadedCount,
             total: totalData
           })
-        } else {
-          failedData.push(item)
         }
       } else {
         if (item["User ID"] && (item["In"] || item["Out"])) {
@@ -154,12 +196,14 @@ export const AttendanceExceltoJson = async (socket, fileData) => {
           const staff = await Staff.findOne({ attendanceId: item["User ID"] })
 
           if (staff) {
-            const a = excelDateToFormatString(item["Date"])
+            const datestr = excelDateToFormatString(item["Date"])
+
+            const date = new Date(datestr)
 
             const saveAttendance = await Attendance({
               userId: staff._id,
               attendanceId: item["User ID"],
-              attendanceDate: a,
+              attendanceDate: date,
               inTime: inTime12,
               outTime: outTime12,
               excel: true
@@ -180,20 +224,42 @@ export const AttendanceExceltoJson = async (socket, fileData) => {
         }
       }
     } catch (error) {
-      failedData.push(item)
       console.log("error:", error.message)
     }
   }
 
   //Final socket emission
-  if (uploadedCount > 0) {
+  if (uploadedCount > 0 && existingexcel.length > 0) {
+    socket.emit("attendanceconversionComplete", {
+      message:
+        failedData.length === 0
+          ? "Conversion completed"
+          : "Conversion partially completed",
+      secondaryMessage: "Some files were not saved due to have no Ids ",
+      duplicateMessage: existingexcel.length > 0 ? "already uploaded" : "",
+
+      nonsavingData: failedData,
+      duplicateData: existingexcel
+    })
+  } else if (uploadedCount > 0 && existingexcel.length === 0) {
     socket.emit("attendanceconversionComplete", {
       message:
         failedData.length === 0
           ? "Conversion completed"
           : "Conversion partially completed",
       secondaryMessage: "Some files were not saved due to have no Ids",
+
       nonsavingData: failedData
+    })
+  } else if (uploadedCount === 0 && existingexcel.length > 0) {
+    socket.emit("attendanceconversionComplete", {
+      message: "all are duplicates",
+      secondaryMessage:
+        "Some files were not saved due to have no Ids or duplicate",
+      duplicateMessage: "already uploaded",
+
+      nonsavingData: failedData,
+      duplicateData: existingexcel
     })
   } else {
     socket.emit("attendanceconversionError", {
