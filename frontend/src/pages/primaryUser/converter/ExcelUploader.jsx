@@ -39,7 +39,6 @@ const ExcelUploader = () => {
   // Listen for progress updates
   useEffect(() => {
     socket.on("conversionProgress", (data) => {
-      console.log(data)
       setProgress({
         current: data.current,
         total: data.total

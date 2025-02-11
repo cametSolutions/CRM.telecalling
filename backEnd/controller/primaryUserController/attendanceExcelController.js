@@ -24,9 +24,6 @@ const convertTo12HourTime = (time24, ID) => {
   // Split the time string into hours, minutes, and seconds
   const [hours, minutes] = time24.split(":").map(Number)
 
-  // console.log("timeeeeec", time24)
-  // console.log("min", minutes)
-
   // Determine AM/PM
   const period = hours >= 12 ? "PM" : "AM"
 
@@ -39,7 +36,6 @@ const convertTo12HourTime = (time24, ID) => {
 
 export const excelDateToFormatString = (value) => {
   if (typeof value === "string") {
-    // console.log("val", value)
     // Try to handle different string date formats
     let jsDate
 
@@ -75,7 +71,7 @@ export const AttendanceExceltoJson = async (socket, fileData) => {
   // Initialize tracking for uploads
   let uploadedCount = 0
   let totalData = 0
-  const failedData = []
+  let failedData = []
   const allowedHeaders = [
     "SNO",
     "User ID",
@@ -111,71 +107,96 @@ export const AttendanceExceltoJson = async (socket, fileData) => {
     })
     return filteredRow
   })
-  totalData += filteredData.length
+
   // Loop through all the sheets in the workbook
   for (const item of filteredData) {
-    const existingAttendance = await Attendance.findOne({
-      attendanceId: item["User ID"],
-      attendanceDate: excelDateToFormatString(item["Date"])
-    })
-    const outTime12 = item["Out"] ? convertTo12HourTime(item["Out"]) : null
-    const inTime12 = item["In"]
-      ? convertTo12HourTime(item["In"], item["User ID"])
-      : null
+    try {
+      const existingAttendance = await Attendance.findOne({
+        attendanceId: item["User ID"],
+        attendanceDate: excelDateToFormatString(item["Date"])
+      })
+      const outTime12 = item["Out"] ? convertTo12HourTime(item["Out"]) : null
+      const inTime12 = item["In"]
+        ? convertTo12HourTime(item["In"], item["User ID"])
+        : null
 
-    if (
-      existingAttendance &&
-      !existingAttendance.edited &&
-      !existingAttendance.excel
-    ) {
-      await Attendance.updateOne(
-        {
-          attendanceId: item["User ID"],
-          attendanceDate: excelDateToFormatString(item["Date"])
-        },
-        {
-          $set: {
-            inTime: inTime12,
-            outTime: outTime12
-          }
-        }
-      )
-      uploadedCount++
-    } else {
-      if (item["User ID"] && (item["In"] || item["Out"])) {
-        const staff = await Staff.findOne({ attendanceId: item["User ID"] })
-
-        if (staff) {
-          const a = excelDateToFormatString(item["Date"])
-
-          const saveAttendance = await Attendance({
-            userId: staff._id,
+      if (
+        existingAttendance &&
+        !existingAttendance.edited &&
+        !existingAttendance.excel
+      ) {
+        totalData++
+        const updated = await Attendance.updateOne(
+          {
             attendanceId: item["User ID"],
-            attendanceDate: a,
-            inTime: inTime12,
-            outTime: outTime12
+            attendanceDate: excelDateToFormatString(item["Date"]),
+            edited: false
+          },
+          {
+            $set: {
+              inTime: inTime12,
+              outTime: outTime12
+            }
+          }
+        )
+        if (updated.modifiedCount > 0) {
+          uploadedCount++
+          socket.emit("attendanceconversionProgress", {
+            current: uploadedCount,
+            total: totalData
           })
-          const uploadattendance = await saveAttendance.save()
-          if (uploadattendance) {
-            uploadedCount++
+        } else {
+          failedData.push(item)
+        }
+      } else {
+        if (item["User ID"] && (item["In"] || item["Out"])) {
+          totalData++
+          const staff = await Staff.findOne({ attendanceId: item["User ID"] })
+
+          if (staff) {
+            const a = excelDateToFormatString(item["Date"])
+
+            const saveAttendance = await Attendance({
+              userId: staff._id,
+              attendanceId: item["User ID"],
+              attendanceDate: a,
+              inTime: inTime12,
+              outTime: outTime12,
+              excel: true
+            })
+            const uploadattendance = await saveAttendance.save()
+            if (uploadattendance) {
+              uploadedCount++
+              socket.emit("attendanceconversionProgress", {
+                current: uploadedCount,
+                total: totalData
+              })
+            } else {
+              failedData.push(item)
+            }
+          } else {
+            failedData.push(item)
           }
         }
       }
+    } catch (error) {
+      failedData.push(item)
+      console.log("error:", error.message)
     }
   }
 
   //Final socket emission
   if (uploadedCount > 0) {
-    socket.emit("conversionComplete", {
+    socket.emit("attendanceconversionComplete", {
       message:
         failedData.length === 0
           ? "Conversion completed"
           : "Conversion partially completed",
-      secondaryMessage: "Some files were not saved due to same license number",
+      secondaryMessage: "Some files were not saved due to have no Ids",
       nonsavingData: failedData
     })
   } else {
-    socket.emit("conversionError", {
+    socket.emit("attendanceconversionError", {
       message:
         failedData.length === totalData
           ? "This file is already uploaded"
