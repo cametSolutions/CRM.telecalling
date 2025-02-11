@@ -1,28 +1,24 @@
 import mongoose from "mongoose"
 const { Schema } = mongoose
 
-const attendanceSchema = new Schema(
+const onsiteSchema = new Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Staff", // Reference to the user who made the request
       required: true
     },
-    // assignedto: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: "Staff",
-    //   required: true
-    // },
-    attendanceId: {
-      type: Number,
+    assignedto: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Staff",
       required: true
     },
 
-    attendanceDate: {
+    onsiteDate: {
       type: Date,
       required: true
     },
-    attendanceType: {
+    onsiteType: {
       type: String,
       enum: ["Half Day", "Full Day"]
     },
@@ -33,17 +29,8 @@ const attendanceSchema = new Schema(
         return this.attendaneType === "Half Day" // Only required if leaveType is Half Day
       }
     },
-    inTime: {
-      type: String
-    },
-    edited: {
-      type: Boolean,
-      default: false
-    },
-    excel: {
-      type: Boolean,
-      default: false
-    },
+    
+   
     description: {
       type: String
     },
@@ -66,13 +53,10 @@ const attendanceSchema = new Schema(
       type: String,
       enum: ["Not Approved", "HR/Onsite Approved", "HR Rejected"],
       default: "Not Approved"
-    },
-    outTime: {
-      type: String
     }
   },
   { timestamps: true } // Enables createdAt and updatedAt fields)
 )
-const Attendance = mongoose.model("Attendance", attendanceSchema)
+const Onsite = mongoose.model("Onsite", onsiteSchema)
 
-export default Attendance
+export default Onsite

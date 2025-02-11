@@ -17,6 +17,7 @@ import path from "path"
 import { Server } from "socket.io"
 import { fileURLToPath } from "url"
 import { ExceltoJson } from "./controller/primaryUserController/excelController.js"
+import { AttendanceExceltoJson } from "./controller/primaryUserController/attendanceExcelController.js"
 import { customerCallRegistration } from "./controller/secondaryUserController/customerController.js"
 import CallRegistration from "./model/secondaryUser/CallRegistrationSchema.js"
 import mongoose from "mongoose"
@@ -237,6 +238,9 @@ io.on("connection", (socket) => {
   // Handle Excel to JSON conversion
   socket.on("startConversion", (fileData) => {
     ExceltoJson(socket, fileData)
+  })
+  socket.on("startattendanceConversion", (fileData) => {
+    AttendanceExceltoJson(socket, fileData)
   })
   // socket.on("updateUserCallStatus", async (userId) => {
   //   const objectId = new mongoose.Types.ObjectId(userId)

@@ -2,6 +2,7 @@ import LeaveApprovalAndPending from "../../../components/common/LeaveApprovalAnd
 import ComingSoon from "../../../pages/common/ComingSoon"
 import ExcelUploader from "../../../pages/primaryUser/converter/ExcelUploader"
 import LeaveApplication from "../../../components/primaryUser/LeaveApplication"
+import AttendanceExcelUploader from "../../../pages/primaryUser/converter/AttendanceExcelUploader"
 
 const tasksRoutes = [
   { path: "/admin/tasks/signUp-customer", component: ComingSoon },
@@ -17,7 +18,12 @@ const tasksRoutes = [
     component: LeaveApprovalAndPending
   },
   { path: "/admin/tasks/workAllocation", component: ComingSoon },
-  { path: "/admin/tasks/excelconverter", component: ExcelUploader }
+  { path: "/admin/tasks/excelconverter", component: ExcelUploader },
+
+  {
+    path: "/admin/tasks/attendanceExcelconverter",
+    component: AttendanceExcelUploader
+  }
 ]
 
 export default tasksRoutes

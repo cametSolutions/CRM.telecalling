@@ -103,7 +103,7 @@ const CustomerAdd = ({
     "/customer/getLicensenumber"
   )
   const { data: partners } = UseFetch("/customer/getallpartners")
-
+  console.log(tableObject)
   useEffect(() => {
     if (productData) {
       setTableObject({

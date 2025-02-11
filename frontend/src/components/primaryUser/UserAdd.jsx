@@ -242,6 +242,7 @@ const UserAdd = ({
       setValue("isVerified", User.isVerified)
       setValue("joiningdate", User.joiningdate)
       setValue("pincode", User.pincode)
+      setValue("attendanceId", User.attendanceId)
 
       Object.entries(User).forEach(([key, value]) => {
         if (key === "country") {
@@ -372,6 +373,7 @@ const UserAdd = ({
 
       handleUserData(formattedData, imageData, tableData)
     } else if (process === "Edit") {
+      console.log(data)
       handleEditedData(data, User?._id, tableData)
     }
   }
@@ -707,6 +709,21 @@ const UserAdd = ({
 
             <ImageInput onSelect={profileImage} tag={"UploadProfile"} />
             <ImageInput onSelect={documentImage} tag={"UploadDocument"} />
+            <div>
+              <label className="block mb-1 font-semibold">Staff Id</label>
+              <input
+                type="Number"
+                {...register("attendanceId")}
+                // value={User && User.address}
+                placeholder="Enter an address"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
+              />
+              {errors.attendanceId && (
+                <p className="text-red-500 text-sm">
+                  {errors.attendanceId.message}
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="mt-5">

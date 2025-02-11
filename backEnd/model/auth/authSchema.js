@@ -81,6 +81,7 @@ const staffSchema = new Schema(
     documentUrl: {
       type: [String]
     },
+    attendanceId:{type:Number},
     callstatus: {
       totalCall: { type: Number, default: 0 },
       solvedCalls: { type: Number, default: 0 },

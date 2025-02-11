@@ -13,16 +13,25 @@ const Layout = () => {
   const staffHeader = location.pathname.startsWith("/staff")
 
   return (
-    <>
-      {adminHeader ? <AdminHeader /> : ""}
-      {staffHeader ? <StaffHeader /> : ""}
+    <div>
+      {/* Conditional Header */}
+      {adminHeader ? <AdminHeader /> : null}
+      {staffHeader ? <StaffHeader /> : null}
 
+      {/* Main Content */}
       <main>
         <Mainrouter />
       </main>
+    </div>
+    // <>
+    //   {adminHeader ? <AdminHeader /> : ""}
+    //   {staffHeader ? <StaffHeader /> : ""}
 
-      {/* <Footer /> */}
-    </>
+    //   <main>
+    //     <Mainrouter />
+    //   </main>
+
+    // </>
   )
 }
 

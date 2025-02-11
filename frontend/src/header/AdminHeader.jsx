@@ -165,6 +165,11 @@ export default function AdminHeader() {
       to: "/admin/tasks/excelconverter",
       label: "Excel Converter"
       // control: user.permissions[0].ExcelConverter
+    },
+    {
+      to: "/admin/tasks/attendanceExcelconverter",
+      label: "Attendance Converter"
+      // control: user.permissions[0].ExcelConverter
     }
   ]
   const reports = [
@@ -198,7 +203,7 @@ export default function AdminHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 flex bg-white shadow-md py-4 items-center">
+      <header className=" h-20 flex bg-white shadow-md items-center">
         {/* Mobile menu button */}
         <div className="md:hidden flex justify-between py-2 px-4">
           <button
@@ -326,7 +331,7 @@ export default function AdminHeader() {
 
                 {/* Masters dropdown */}
                 {link.label === "Masters" && masterMenuOpen && (
-                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md">
+                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md z-50">
                     {masters.map((master) => (
                       <div
                         key={master.to}
@@ -369,7 +374,7 @@ export default function AdminHeader() {
                   </div>
                 )}
                 {link.label === "Transactions" && transactionMenuOpen && (
-                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 shadow-lg block rounded-md ">
+                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 shadow-lg block rounded-md z-50">
                     {transactions.map((transaction) => (
                       <Link
                         key={transaction.to}
@@ -382,7 +387,7 @@ export default function AdminHeader() {
                   </div>
                 )}
                 {link.label === "Reports" && reportsMenuOpen && (
-                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md">
+                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md z-50">
                     {reports.map((report) => (
                       <Link
                         key={report.to}
@@ -395,7 +400,7 @@ export default function AdminHeader() {
                   </div>
                 )}
                 {link.label === "Task" && tasksMenuOpen && (
-                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md">
+                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md z-50">
                     {tasks.map((task) => (
                       <Link
                         key={task.to}

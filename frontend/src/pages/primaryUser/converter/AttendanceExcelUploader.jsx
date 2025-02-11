@@ -5,11 +5,11 @@ import * as XLSX from "xlsx" // Import XLSX for creating the Excel file
 const socket = io("https://www.crm.camet.in") // Adjust based on your backend address
 // const socket = io("http://localhost:9000")
 
-const ExcelUploader = () => {
+const AttendanceExcelUploader = () => {
   const [file, setFile] = useState(null)
   const [progress, setProgress] = useState({ current: 0, total: 0 })
   const [message, setMessage] = useState("")
-  const [loading,setLoading ] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [failMessage, setFailMessage] = useState("")
   const [success, setSuccess] = useState(false)
   const [nonsavedData, setNonsavedData] = useState([])
@@ -30,7 +30,7 @@ const ExcelUploader = () => {
         const fileData = event.target.result
 
         // Emit event to start the conversion
-        socket.emit("startConversion", fileData)
+        socket.emit("startattendanceConversion", fileData)
       }
       reader.readAsArrayBuffer(file)
     }
@@ -45,6 +45,7 @@ const ExcelUploader = () => {
         total: data.total
       })
     })
+    console.log("h")
 
     // Listen for completion message
     socket.on("conversionComplete", (data) => {
@@ -66,6 +67,7 @@ const ExcelUploader = () => {
 
     // Cleanup on component unmount
     return () => {
+      console.log("g")
       socket.off("conversionProgress")
       socket.off("conversionComplete")
       socket.off("conversionError")
@@ -92,7 +94,7 @@ const ExcelUploader = () => {
     <div className="w-full flex  justify-center items-center h-96">
       <div className=" w-2/6 mx-auto p-6   bg-gray-100 rounded-lg shadow-md text-center">
         <h1 className="text-2xl font-semibold mb-4 text-gray-800">
-          Excel to JSON Conversion
+          AttendanceExcel to JSON Conversion
         </h1>
         <input
           type="file"
@@ -136,4 +138,4 @@ const ExcelUploader = () => {
   )
 }
 
-export default ExcelUploader
+export default AttendanceExcelUploader

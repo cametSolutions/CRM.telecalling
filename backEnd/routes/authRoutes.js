@@ -15,12 +15,16 @@ import {
   GetindividualStaffCall,
   ApproveLeave,
   RejectLeave,
+  mergeonsite,
   UpdateLeave,
-  OnsiteleaveApply,
+  OnsiteApply,
   AttendanceApply,
   GetAllAttendance,
+  GetallOnsite,
   GetallusersAttendance,
-  GetallusersLeaves
+  GetallusersLeaves,
+  OnsiteleaveApply,
+  GetsomeAll
 } from "../controller/authController.js"
 const router = express.Router()
 
@@ -34,13 +38,17 @@ router.get("/getallUsers", authMiddleware, GetallUsers)
 router.post("/leave", authMiddleware, LeaveApply)
 router.get("/getallLeave", authMiddleware, GetallLeave)
 router.get("/getallAttendance", authMiddleware, GetAllAttendance)
+router.get("/getallOnsite", authMiddleware, GetallOnsite)
+router.get("/getsomeall", authMiddleware, GetsomeAll)
 router.get("/leaveList", authMiddleware, GetAllLeaveRequest)
 router.get("/getStaffCallStatus", authMiddleware, GetStaffCallList)
 router.get("/staffcallList", authMiddleware, GetindividualStaffCall)
 router.put("/approveLeave", authMiddleware, ApproveLeave)
 router.put("/rejectLeave", authMiddleware, RejectLeave)
 router.put("/updateLeave", authMiddleware, UpdateLeave)
-router.post("/onsiteLeave", authMiddleware, OnsiteleaveApply)
+router.get("/merge", authMiddleware, mergeonsite)
+router.post("/onsiteLeave", authMiddleware, OnsiteApply)
+// router.post("/onsiteLeave", authMiddleware, OnsiteleaveApply)
 router.post("/attendance", authMiddleware, AttendanceApply)
 router.get("/getallusersLeaves", authMiddleware, GetallusersLeaves)
 router.get("/getallusersAttendance", authMiddleware, GetallusersAttendance)

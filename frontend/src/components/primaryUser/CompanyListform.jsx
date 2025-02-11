@@ -33,8 +33,8 @@ const CompanyListForm = ({ companies }) => {
   }, [searchQuery, handleSearch])
 
   return (
-    <div className="container mx-auto min-h-screen p-8 bg-gray-100">
-      <div className="w-auto  bg-white shadow-lg rounded p-8 ">
+    <div className="container mx-auto h-screen p-8 bg-gray-100">
+      <div className="w-auto  h-full bg-white shadow-lg rounded p-8 ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-4">
           <h3 className="text-2xl text-black font-bold">CompanyList</h3>
           {/* Search Bar for large screens */}

@@ -1,4 +1,5 @@
 import Customer from "../../model/secondaryUser/customerSchema.js"
+import Leavemaster from "../../model/secondaryUser/leavemasterSchema.js"
 import { sendWhatapp } from "../../helper/whatapp.js"
 import moment from "moment" // You can use moment.js to handle date manipulation easily
 import License from "../../model/secondaryUser/licenseSchema.js"
@@ -9,6 +10,7 @@ import models from "../../model/auth/authSchema.js"
 import { sendEmail } from "../../helper/nodemailer.js"
 const { Staff, Admin } = models
 import mongoose from "mongoose"
+import Holymaster from "../../model/secondaryUser/holydaymasterSchema.js"
 export const GetallCallnotes = async (req, res) => {
   try {
     const callnotes = await CallNote.find({})
@@ -2324,5 +2326,182 @@ export const getallExpiredCustomerCalls = async (req, res) => {
   } catch (error) {
     console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const LeavemasterRegister = async (req, res) => {
+  try {
+    console.log("body", req.body)
+    // Extract data from request body
+    const {
+      checkIn,
+      checkOut,
+      checkInEndAt,
+      checkOutStartAt,
+      lateArrival,
+      earlyOut,
+      holyDate,
+      customTextInput,
+
+      deductSalaryMinute
+    } = req.body
+
+    console.log("teecct", customTextInput)
+    const { editstate } = req.query
+    console.log("eddit", editstate)
+    const existingRecord = await Leavemaster.findOne({
+      checkIn // You can use some other criteria to find the existing record if applicable
+    })
+    if (existingRecord) {
+      console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
+      const isSame =
+        existingRecord.checkIn === checkIn &&
+        existingRecord.checkOut === checkOut &&
+        existingRecord.checkInEndAt === checkInEndAt &&
+        existingRecord.checkOutStartAt === checkOutStartAt &&
+        existingRecord.lateArrival === lateArrival &&
+        existingRecord.earlyOut === earlyOut &&
+        existingRecord.deductSalaryMinute === deductSalaryMinute
+      console.log("same", isSame)
+      // Step 3: If everything is the same, don't create a new instance, just return
+      if (isSame) {
+        if (editstate === "true") {
+          console.log("edittreee")
+
+          const b = await Holymaster.updateOne(
+            { customTextInput }, // Find the existing record using its ID
+            {
+              $set: {
+                holyDate,
+                customTextInput
+              }
+            }
+          )
+          console.log("innnput", customTextInput)
+          console.log("yyyy", b)
+          if (b.modifiedCount > 0) {
+            console.log("bbbbb", b)
+            return res
+              .status(200)
+              .json({ message: "Holiday update succesfully" })
+          }
+        } else {
+          console.log("ppp")
+          if (holyDate && customTextInput) {
+            const year = new Date(holyDate).getFullYear()
+
+            const a = await Holymaster.find({
+              $and: [
+                {
+                  $expr: {
+                    $eq: [{ $year: "$holyDate" }, year]
+                  }
+                },
+                {
+                  customTextInput
+                }
+              ]
+            })
+
+            // const a = await Holymaster.find({ holyDate })
+            if (a && a.length > 0) {
+              console.log("aaaa", a)
+              return res.status(401).json({
+                message: `${customTextInput} is already registered with this Year`
+              })
+            } else {
+              console.log("uuuuuu")
+              const newHoly = await Holymaster({
+                holyDate,
+                customTextInput,
+                newField: true
+              })
+              await newHoly.save()
+              if (newHoly) {
+                return res.status(200).json({
+                  message: ` ${customTextInput} is succesfully registered`
+                })
+              }
+            }
+          }
+        }
+      } else {
+        // Step 4: If the data is different, update the existing record
+        const q = await Leavemaster.updateOne(
+          { _id: existingRecord._id }, // Find the existing record using its ID
+          {
+            $set: {
+              checkIn,
+              checkOut,
+              checkInEndAt,
+              checkOutStartAt,
+              lateArrival,
+              earlyOut,
+              deductSalaryMinute
+            }
+          },
+          { new: true } 
+          
+        )
+        if (q.modifiedCount > 0) {
+          return res
+            .status(200)
+            .json({ message: "Leave master updated succesfully",data:q })
+        }
+      }
+    } else {
+      // Create a new document
+      const newTime = new Leavemaster({
+        checkIn,
+        checkOut,
+        checkInEndAt,
+        checkOutStartAt,
+        lateArrival: Number(lateArrival),
+        earlyOut: Number(earlyOut),
+
+        deductSalaryMinute: Number(deductSalaryMinute)
+      })
+
+      // Save to database
+      await newTime.save()
+      if (holyDate && customTextInput) {
+        console.log("date", holyDate)
+        console.log("text", customTextInput)
+        console.log("hhhhhh")
+        const newHoly = await Holymaster({
+          holyDate,
+          customTextInput,
+          newField: true
+        })
+        await newHoly.save()
+        if (newHoly && newTime) {
+          res.status(200).json({ message: "saved successfully!" })
+        }
+      }
+      return res.status(200).json({ message: "successfully registered" })
+    }
+  } catch (error) {
+    console.error("Error saving time data:", error)
+    res.status(500).json({ error: "Failed to save time data." })
+  }
+}
+export const GetallHoly = async (req, res) => {
+  try {
+    const a = await Holymaster.find({})
+    if (a) {
+      return res.status(200).json({ message: "holy found", data: a })
+    }
+  } catch (error) {
+    console.log("error", error.message)
+  }
+}
+export const Getleavemaster = async (req, res) => {
+  try {
+    const a = await Leavemaster.find({})
+    if (a) {
+      console.log("aa", a)
+      return res.status(200).json({ message: "Leave master found", data: a })
+    }
+  } catch (error) {
+    console.log("error", error.message)
   }
 }
