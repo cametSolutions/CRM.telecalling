@@ -163,8 +163,8 @@ export const AttendanceExceltoJson = async (socket, fileData) => {
       if (
         (existingAttendance &&
           !existingAttendance.edited &&
-          existingAttendance.excel) ||
-        existingAttendance.own
+          existingAttendance.excel)
+      
       ) {
         totalData++
         const updated = await Attendance.updateOne(
