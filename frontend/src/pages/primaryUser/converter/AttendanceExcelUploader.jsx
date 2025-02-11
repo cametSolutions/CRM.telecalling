@@ -38,39 +38,36 @@ const AttendanceExcelUploader = () => {
 
   // Listen for progress updates
   useEffect(() => {
-    socket.on("conversionProgress", (data) => {
-      console.log(data)
+    socket.on("attendanceconversionProgress", (data) => {
       setProgress({
         current: data.current,
         total: data.total
       })
     })
-    console.log("h")
 
     // Listen for completion message
-    socket.on("conversionComplete", (data) => {
+    socket.on("attendanceconversionComplete", (data) => {
       setLoading(false) // Set loading to false on completion
-      setMessage(data.message)
-      setFailMessage(data.secondaryMessage)
-      setNonsavedData(data.nonsavingData) // Store failed data
+      setMessage(data?.message)
+      setFailMessage(data?.secondaryMessage)
+      setNonsavedData(data?.nonsavingData) // Store failed data
       setSuccess(true)
       setFile(null) // Reset file selection after conversion
     })
 
     // Listen for error messages
-    socket.on("conversionError", (error) => {
+    socket.on("attendanceconversionError", (error) => {
       setLoading(false) // Set loading to false on error
-      setMessage(error.message)
+      setMessage(error?.message)
       // setNonsavedData(error.nonsavingData) // Store failed data
       setSuccess(false)
     })
 
     // Cleanup on component unmount
     return () => {
-      console.log("g")
-      socket.off("conversionProgress")
-      socket.off("conversionComplete")
-      socket.off("conversionError")
+      socket.off("attendanceconversionProgress")
+      socket.off("attendanceconversionComplete")
+      socket.off("attendanceconversionError")
     }
   }, [])
 
@@ -127,7 +124,7 @@ const AttendanceExcelUploader = () => {
             <p className="text-red-400">{failMessage}</p>
             <button
               onClick={handleDownloadFailedData}
-              className="bg-green-400 text-white py-2 px-4 rounded-lg hover:bg-green-500 transition-colors duration-300"
+              className="bg-green-400 text-white py-2 px-2 rounded-lg hover:bg-green-500 transition-colors duration-300 text-sm"
             >
               Download Failed Data
             </button>
