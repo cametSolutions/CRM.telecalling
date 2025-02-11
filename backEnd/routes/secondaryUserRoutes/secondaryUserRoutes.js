@@ -18,7 +18,10 @@ import {
   GetselectedDateCalls,
   GetallPartners,
   UpdatePartners,
-  DeletePartner
+  DeletePartner,
+  LeavemasterRegister,
+  GetallHoly,
+  Getleavemaster
 } from "../../controller/secondaryUserController/customerController.js"
 
 const router = express.Router()
@@ -40,6 +43,9 @@ router.post("/partnerRegistration", authMiddleware, PartnerRegistration)
 router.get("/getallpartners", authMiddleware, GetallPartners)
 router.put("/partnerEdit", authMiddleware, UpdatePartners)
 router.delete("/partnerDelete", authMiddleware, DeletePartner)
+router.post("/leavemasterRegistration", authMiddleware, LeavemasterRegister)
+router.get("/getallholy", authMiddleware, GetallHoly)
+router.get("/getleavemaster", authMiddleware, Getleavemaster)
 router.get(
   "/getallExpiryregisterCustomer",
   authMiddleware,

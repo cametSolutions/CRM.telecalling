@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react"
 import debounce from "lodash.debounce"
-
+import axios from "axios"
+import api from "../../../api/api"
 import io from "socket.io-client" // Import Socket.IO client
 import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles" // Import the Tile component
@@ -273,6 +274,33 @@ const CallregistrationList = () => {
   //     toast.success(b.message)
   //   }
   // }
+  const handlemerge = async () => {
+    console.log("loggg")
+    try {
+      const res = await api.get("/auth/merge")
+
+      if (res.status === 200) {
+        console.log("✅ Success:", res.data)
+      } else {
+        console.log("⚠️ Unexpected Response:", res)
+      }
+    } catch (error) {
+      if (error.response) {
+        // Server responded with a status code outside the 2xx range
+        console.error(
+          "❌ Server Error:",
+          error.response.status,
+          error.response.data
+        )
+      } else if (error.request) {
+        // Request was made but no response received
+        console.error("❌ No Response from Server:", error.request)
+      } else {
+        // Something else went wrong in setting up the request
+        console.error("❌ Request Setup Error:", error.message)
+      }
+    }
+  }
 
   return (
     <div className="container mx-auto  p-5 ">
@@ -303,6 +331,11 @@ const CallregistrationList = () => {
             >
               Call
             </label>
+            <div>
+              <button className="bg-blue-800" onClick={handlemerge}>
+                merge
+              </button>
+            </div>
           </div>
 
           <div>

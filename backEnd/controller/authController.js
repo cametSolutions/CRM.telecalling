@@ -1,7 +1,10 @@
 import models from "../model/auth/authSchema.js"
+
 import mongoose from "mongoose"
 import Branch from "../model/primaryUser/branchSchema.js"
 import Attendance from "../model/primaryUser/attendanceSchema.js"
+import Holymaster from "../model/secondaryUser/holydaymasterSchema.js"
+import Onsite from "../model/primaryUser/onsiteSchema.js"
 const { Staff, Admin } = models
 import bcrypt from "bcrypt"
 
@@ -168,7 +171,8 @@ export const StaffRegister = async (req, res) => {
       gender,
       role,
       department,
-      assignedto
+      assignedto,
+      attendanceId
     } = userData
     const { profileUrl, documentUrl } = image
 
@@ -196,6 +200,7 @@ export const StaffRegister = async (req, res) => {
           department,
           assignedto,
           assignedtoModel,
+          attendanceId: Number(attendanceId),
           profileUrl,
           documentUrl,
           selected: tabledata
@@ -231,6 +236,7 @@ export const UpdateUserandAdmin = async (req, res) => {
 
   const { selected, ...filteredUserData } = userData
   const { password } = filteredUserData
+  console.log("filllll", filteredUserData)
 
   try {
     if (role === "Staff") {
@@ -517,10 +523,13 @@ export const GetallUsers = async (req, res) => {
 export const AttendanceApply = async (req, res) => {
   try {
     const selectattendance = req.body
-    const { selectedid } = req.query
+    const { selectedid, attendanceId } = req.query
+    console.log("id", attendanceId)
 
-    if (!selectedid) {
-      return res.status(400).json({ message: "Selected ID is required" })
+    if (!selectedid && !attendanceId) {
+      return res
+        .status(400)
+        .json({ message: "Selected ID and attendanceId is required" })
     }
 
     const objectId = new mongoose.Types.ObjectId(selectedid)
@@ -565,6 +574,7 @@ export const AttendanceApply = async (req, res) => {
 
       const newAttendance = new Attendance({
         userId: objectId,
+        attendanceId: Number(attendanceId),
         attendanceDate,
         inTime: inTimeString,
         outTime: outTimeString || null // Out-time can be added later
@@ -597,9 +607,9 @@ export const LeaveApply = async (req, res) => {
     startDate,
 
     leaveType,
-    onsite,
+
     reason,
-    description,
+
     halfDayPeriod
   } = formData
 
@@ -609,6 +619,7 @@ export const LeaveApply = async (req, res) => {
       leaveDate: startDate,
       userId: objectId
     })
+
     console.log("type", leaveType)
     console.log("perod", halfDayPeriod)
     console.log("reason", reason)
@@ -621,9 +632,9 @@ export const LeaveApply = async (req, res) => {
           leaveDate: startDate, // Update fields with formData
           leaveType,
           ...(leaveType === "Half Day" && { halfDayPeriod }),
-          onsite,
+
           reason,
-          description,
+
           userId: objectId,
           assignedto: assignedTo
         },
@@ -640,9 +651,9 @@ export const LeaveApply = async (req, res) => {
         leaveDate: startDate,
         leaveType,
         ...(leaveType === "Half Day" && { halfDayPeriod }),
-        onsite,
+
         reason,
-        description,
+
         userId: objectId,
         assignedto: assignedTo
       })
@@ -659,7 +670,50 @@ export const LeaveApply = async (req, res) => {
     res.status(500).json({ message: "internal server error" })
   }
 }
+export const mergeonsite = async (req, res) => {
+  console.log("check before")
+  try {
+    const leaveRequests = await LeaveRequest.find({ onsite: true })
 
+    if (leaveRequests.length === 0) {
+      console.log("❌ No onsite leave requests found.")
+
+      return
+    }
+
+    // Transform and save each document into the Onsite collection
+    const onsiteRecords = leaveRequests.map((record) => ({
+      userId: record.userId,
+      assignedto: record.assignedto,
+      onsiteDate: record.leaveDate,
+      onsiteType: record.leaveType,
+      ...(record.leaveType === "Half Day" && {
+        halfDayPeriod: record.halfDayPeriod
+      }),
+      description: record.description,
+      onsite: record.onsite,
+      onsitestatus: record.onsitestatus,
+      onsiteData: record.onsiteData,
+      adminverified: record.adminverified,
+      departmentverified: record.departmentverified,
+      departmentstatus: record.departmentstatus,
+      hrstatus: record.hrstatus,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt
+    }))
+
+    // Insert into the new Onsite collection
+    const a = await Onsite.insertMany(onsiteRecords)
+    console.log("chek after")
+    if (a) {
+      console.log("sucess")
+      return res.status(200).json({ message: "sucesss", data: a })
+    }
+  } catch (error) {
+    console.log("error", error)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const OnsiteleaveApply = async (req, res) => {
   try {
     const { selectedid, assignedto } = req.query
@@ -704,7 +758,393 @@ export const OnsiteleaveApply = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+export const OnsiteApply = async (req, res) => {
+  try {
+    const { selectedid, assignedto } = req.query
+
+    const { formData, tableRows } = req.body
+    const selectedObjectId = new mongoose.Types.ObjectId(selectedid)
+    const assignedObjectId = new mongoose.Types.ObjectId(assignedto)
+
+    if (!tableRows) {
+      return res.status(404).json({ message: "no table content" })
+    }
+    const { startDate, onsiteType, description, halfDayPeriod } = formData
+    console.log("type", onsiteType)
+    console.log("roews", tableRows)
+    const existingOnsite = await Onsite.findOne({
+      onsiteDate: startDate,
+      userId: selectedObjectId
+    })
+
+    if (existingOnsite) {
+      // Merge existing and current onsiteData
+      let updatedOnsiteData = tableRows.map((newEntry) => {
+        // Check if entry exists in old data
+        const existingEntry = existingOnsite.onsiteData?.find(
+          (oldEntry) =>
+            oldEntry.siteName === newEntry.siteName &&
+            oldEntry.place === newEntry.place
+        )
+
+        return existingEntry ? { ...existingEntry, ...newEntry } : newEntry
+      })
+
+      // Update record
+      const updatedOnsite = await Onsite.findOneAndUpdate(
+        {
+          onsiteDate: startDate,
+          userId: selectedObjectId
+        },
+        {
+          onsiteType,
+          ...(onsiteType === "Half Day" && { halfDayPeriod }),
+          description,
+          assignedto: assignedObjectId,
+          onsiteData: updatedOnsiteData // Update onsite data
+        },
+        { new: true }
+      )
+      console.log("Updated Leave Request:", updatedOnsite)
+      if (updatedOnsite) {
+        return res.status(200).json({ message: "Onsite updated" })
+      }
+    } else {
+      // If no existing record, create a new one
+      const onsitedata = new Onsite({
+        onsiteDate: startDate,
+        onsiteType,
+        ...(onsiteType === "Half Day" && { halfDayPeriod }),
+        description,
+        userId: selectedObjectId,
+        assignedto: assignedObjectId
+      })
+      if (tableRows) {
+        onsitedata.onsiteData.push(tableRows)
+      }
+      const successonsite = await onsitedata.save()
+      if (successonsite) {
+        return res.status(200).json({ message: "onsite  applied success" })
+      }
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const GetsomeAll = async (req, res) => {
+  try {
+    const { year, month } = req.query
+    function getSundays(year, month) {
+      const sundays = []
+      const date = new Date(year, month - 1, 1) // Start from the 1st day of the month
+
+      while (date.getMonth() === month - 1) {
+        if (date.getDay() === 0) {
+          // 0 represents Sunday
+          sundays.push(date.getDate()) // Get only the day (1-31)
+        }
+        date.setDate(date.getDate() + 1) // Move to the next day
+      }
+
+      return sundays
+    }
+    function generateMonthDates(year, month) {
+      const dates = {}
+      const daysInMonth = new Date(year, month - 1, 0).getDate()
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        let date = new Date(year, month - 1, day)
+        let dateKey =
+          date.getFullYear() +
+          "-" +
+          String(date.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(date.getDate()).padStart(2, "0")
+        dates[dateKey] = {} // Initialize empty object for each date
+      }
+
+      return dates
+    }
+    
+
+    const sundays = getSundays(year, month)
+
+    const startDate = new Date(Date.UTC(year, month - 1, 1))
+    const endDate = new Date(Date.UTC(year, month, 0))
+  
+
+    const users = await Staff.find({}, { _id: 1, name: 1 })
+    const convertToMinutes = (timeStr) => {
+      const [time, modifier] = timeStr.split(" ")
+      let [hours, minutes] = time.split(":").map(Number)
+
+      if (modifier === "PM" && hours !== 12) hours += 12 // Convert PM times correctly
+      if (modifier === "AM" && hours === 12) hours = 0 // Midnight case
+
+      return hours * 60 + minutes // Return total minutes since midnight
+    }
+
+    const morningLimit = convertToMinutes("9:35 AM")
+    const lateLimit = convertToMinutes("10:00 AM")
+    const minOutTime = convertToMinutes("5:00 PM")
+    const earlyLeaveLimit = convertToMinutes("5:30 PM")
+    const noonLimit = convertToMinutes("1:30 PM")
+    let staffAttendanceStats = []
+    const holidays = await Holymaster.find({})
+   
+    const holiday = Array.isArray(holidays)
+      ? holidays.map((date) => date.holyDate.getDate())
+      : []
+    for (const user of users) {
+      const userId = user._id
+      const userName = user.name
+
+      // Fetch attendance-related data for the given month
+      const results = await Promise.allSettled([
+        Attendance.find({
+          userId,
+          attendanceDate: { $gte: startDate, $lte: endDate }
+        }),
+        Onsite.find({ userId, onsiteDate: { $gte: startDate, $lte: endDate } }),
+        LeaveRequest.find({
+          userId,
+          leaveDate: { $gte: startDate, $lte: endDate }
+        }),
+        Holymaster.find({ holyDate: { $gte: startDate, $lte: endDate } })
+      ])
+      const attendances =
+        results[0].status === "fulfilled" ? results[0].value || [] : []
+      const onsites =
+        results[1].status === "fulfilled" ? results[1].value || [] : []
+      const leaves =
+        results[2].status === "fulfilled" ? results[2].value || [] : []
+    
+      const uniqueHolidays = holiday.filter(
+        (holiday) => !sundays.includes(holiday)
+      )
+      let stats = {
+        name: userName,
+        userId: userId,
+        present: 0,
+        absent: 0,
+        late: 0,
+        earlyGoing: 0,
+        halfDayLeave: 0,
+        fullDayLeave: 0,
+        onsite: 0,
+        holiday: 0,
+        notMarked: 0,
+        attendancedates: generateMonthDates(year, month)
+      }
+     
+
+      let daysInMonth = new Set(
+        [...Array(endDate.getDate()).keys()].map((i) => i + 1)
+      )
+
+      const arr = []
+      const present = []
+      const fulldayarr = []
+      const halfdayarr = []
+     
+
+      attendances?.forEach((att) => {
+        const day = att.attendanceDate.getDate()
+        const dayTime = att.attendanceDate.toISOString().split("T")[0]
+
+        const punchIn = att.inTime ? convertToMinutes(att.inTime) : null
+        const punchOut = att.outTime ? convertToMinutes(att.outTime) : null
+        stats.attendancedates[dayTime] = {
+          inTime: att?.inTime || "",
+          outTime: att?.outTime || ""
+        }
+        if (!punchIn || !punchOut) {
+          arr.push(day)
+          stats.present++
+          stats.halfDayLeave++
+          halfdayarr.push(day)
+        } else if (punchIn <= morningLimit && punchOut >= earlyLeaveLimit) {
+          stats.present++
+          present.push(day)
+        } else if (
+          punchIn >= morningLimit &&
+          punchIn <= lateLimit &&
+          punchOut >= earlyLeaveLimit
+        ) {
+          stats.late++
+          stats.present++
+          present.push(day)
+        } else if (
+          punchOut >= minOutTime &&
+          punchOut < earlyLeaveLimit &&
+          punchIn < lateLimit
+        ) {
+          stats.present++
+          stats.earlyGoing++
+          present.push(day)
+        } else if (
+          (punchIn < noonLimit && punchOut < noonLimit) ||
+          (punchIn > noonLimit && punchOut > noonLimit) ||
+          (punchIn > lateLimit &&
+            punchIn < noonLimit &&
+            punchOut < minOutTime &&
+            punchOut > noonLimit)
+        ) {
+          stats.fullDayLeave++
+          fulldayarr.push(day)
+        } else if (
+          (punchIn < lateLimit &&
+            punchOut >= noonLimit &&
+            punchOut < minOutTime) ||
+          (punchIn <= noonLimit &&
+            punchOut >= earlyLeaveLimit &&
+            punchIn > lateLimit)
+        ) {
+          arr.push(day)
+          halfdayarr.push(day)
+          stats.present++
+          stats.halfDayLeave++
+        }
+        daysInMonth.delete(day)
+      })
+
+      onsites?.length &&
+        onsites?.forEach((onsite) => {
+          let day = onsite.onsiteDate.getDate()
+          const dayTime = onsite.onsiteDate.toISOString().split("T")[0]
+          stats.attendancedates[dayTime].onsite = []
+          if (Array.isArray(onsite.onsiteData)) {
+            onsite.onsiteData.flat().forEach((item) => {
+
+              stats.attendancedates[dayTime].onsite.push({
+                place: item?.place,
+                siteName: item?.siteName,
+                onsiteType: onsite?.onsiteType,
+                period:
+                  onsite?.onsiteType === "Half Day"
+                    ? onsite?.halfDayPeriod
+                    : null
+              })
+            })
+          }
+
+          if (!arr.includes(day)) {
+            if (onsite.onsiteType === "Full Day") {
+              if (!sundays.includes(day) && !present.includes(day)) {
+                stats.onsite++
+                stats.present++
+                if (fulldayarr.includes(day)) {
+                  stats.fullDayLeave--
+                }
+                daysInMonth.delete(day)
+              } else if (!sundays.includes(day) && present.includes(day)) {
+                daysInMonth.delete(day)
+                stats.onsite++
+              } else {
+                stats.onsite++
+              }
+            } else if (onsite.onsiteType === "Half Day") {
+              if (!sundays.includes(day) && !present.includes(day)) {
+                stats.present++
+                stats.onsite++
+                if (fulldayarr.includes(day)) {
+                  stats.fullDayLeave--
+                }
+                stats.halfDayLeave++
+                daysInMonth.delete(day)
+              } else if (!sundays.includes(day) && present.includes(day)) {
+                daysInMonth.delete(day)
+                stats.onsite++
+              } else {
+                stats.onsite++
+              }
+            }
+          } else {
+            if (halfdayarr.includes(day)) {
+              if (onsite.onsiteType === "Half Day") {
+                stats.onsite++
+                stats.halfDayLeave--
+              } else if (onsite.onsiteType === "Full Day") {
+                stats.onsite++
+                stats.halfDayLeave--
+              }
+            }
+          }
+        })
+
+      stats.notMarked = daysInMonth.size - sundays.length
+
+      stats.absent =
+        Math.floor(stats.late / 3) * 1 +
+        Math.floor(stats.earlyGoing / 3) * 1 +
+        stats.fullDayLeave +
+        stats.halfDayLeave / 2 +
+        stats.notMarked
+      stats.present += sundays.length
+
+      stats.present += uniqueHolidays?.length
+
+      stats.present -= Math.floor(stats?.late / 3) * 1
+      stats.present -= Math.floor(stats?.earlyGoing / 3) * 1
+
+      stats.present -= stats?.halfDayLeave / 2
+
+      staffAttendanceStats.push(stats)
+     
+    }
+
+    // console.log("ddddddddddddd", staffAttendanceStats)
+
+    return res
+      .status(200)
+      .json({ message: "Attendence report found", data: staffAttendanceStats })
+  } catch (error) {
+    console.log("error", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+
 export const GetAllAttendance = async (req, res) => {
+  try {
+    const { userid, year, month } = req.query // Extract userid from query parameters
+    if (year && month) {
+      const startDate = new Date(Date.UTC(year, month - 1, 1))
+      const endDate = new Date(Date.UTC(year, month, 0))
+      const attendance = await Attendance.find({
+        attendanceDate: { $gte: startDate, $lte: endDate }
+      })
+
+      if (attendance) {
+        return res
+          .status(200)
+          .json({ message: "attendance found", data: attendance })
+      }
+    }
+
+    const objectId = new mongoose.Types.ObjectId(userid)
+    if (!userid) {
+      return res.status(400).json({ error: "User ID is required" })
+    }
+
+    // Fetch all leave records for the specified userid
+    const attendance = await Attendance.find({ userId: objectId })
+
+    // Check if no records found
+    if (attendance.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No attendance records found for this user" })
+    }
+
+    // Send the leave records as a JSON response
+    res.status(200).json({ message: "attendance found", data: attendance })
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const GetallOnsite = async (req, res) => {
   try {
     const { userid } = req.query // Extract userid from query parameters
 
@@ -714,7 +1154,7 @@ export const GetAllAttendance = async (req, res) => {
     }
 
     // Fetch all leave records for the specified userid
-    const attendance = await Attendance.find({ userId: objectId })
+    const attendance = await Onsite.find({ userId: objectId })
 
     // Check if no records found
     if (attendance.length === 0) {
