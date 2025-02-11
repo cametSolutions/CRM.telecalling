@@ -9,10 +9,11 @@ const ExcelUploader = () => {
   const [file, setFile] = useState(null)
   const [progress, setProgress] = useState({ current: 0, total: 0 })
   const [message, setMessage] = useState("")
-  const [loading,setLoading ] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [failMessage, setFailMessage] = useState("")
   const [success, setSuccess] = useState(false)
   const [nonsavedData, setNonsavedData] = useState([])
+ 
 
   const handleFileUpload = (e) => {
     const selectedFile = e.target.files[0]
@@ -51,6 +52,7 @@ const ExcelUploader = () => {
       setMessage(data.message)
       setFailMessage(data.secondaryMessage)
       setNonsavedData(data.nonsavingData) // Store failed data
+     
       setSuccess(true)
       setFile(null) // Reset file selection after conversion
     })

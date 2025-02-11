@@ -11,8 +11,11 @@ const AttendanceExcelUploader = () => {
   const [message, setMessage] = useState("")
   const [loading, setLoading] = useState(false)
   const [failMessage, setFailMessage] = useState("")
+  const [duplicateMessage, setDuplicateMessage] = useState("")
+
   const [success, setSuccess] = useState(false)
   const [nonsavedData, setNonsavedData] = useState([])
+  const [duplicateData, setDuplicateData] = useState([])
 
   const handleFileUpload = (e) => {
     const selectedFile = e.target.files[0]
@@ -49,12 +52,14 @@ const AttendanceExcelUploader = () => {
     socket.on("attendanceconversionComplete", (data) => {
       setLoading(false) // Set loading to false on completion
       setMessage(data?.message)
+      setDuplicateMessage(data?.duplicateMessage)
       setFailMessage(data?.secondaryMessage)
+
       setNonsavedData(data?.nonsavingData) // Store failed data
+      setDuplicateData(data?.duplicateData)
       setSuccess(true)
       setFile(null) // Reset file selection after conversion
     })
-
     // Listen for error messages
     socket.on("attendanceconversionError", (error) => {
       setLoading(false) // Set loading to false on error
@@ -72,6 +77,21 @@ const AttendanceExcelUploader = () => {
   }, [])
 
   const handleDownloadFailedData = () => {
+    if (nonsavedData.length > 0) {
+      // Create a new workbook
+      const workbook = XLSX.utils.book_new()
+
+      // Convert failed data to sheet
+      const worksheet = XLSX.utils.json_to_sheet(nonsavedData)
+
+      // Append sheet to workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Failed Data")
+
+      // Generate Excel file and trigger download
+      XLSX.writeFile(workbook, "failed_data.xlsx")
+    }
+  }
+  const handleDownloadduplicateData = () => {
     if (nonsavedData.length > 0) {
       // Create a new workbook
       const workbook = XLSX.utils.book_new()
@@ -105,6 +125,7 @@ const AttendanceExcelUploader = () => {
             </p>
           </div>
         )}
+
         <button
           onClick={handleUpload}
           disabled={!file || loading}
@@ -118,18 +139,29 @@ const AttendanceExcelUploader = () => {
             {message}
           </div>
         )}
+        {/* {duplicateData?.length > 0 && (
+          <div className="mt-4 flex justify-end">
+            <p className="text-red-400">{duplicateMessage}</p>
+            <button
+              onClick={handleDownloadduplicateData}
+              className="bg-green-400 text-white mx-4 py-2 px-2 rounded-lg hover:bg-green-500 transition-colors duration-300 text-sm"
+            >
+              Duplicate Data
+            </button>
+          </div>
+        )}
 
         {nonsavedData.length > 0 && (
           <div className="mt-4 flex">
             <p className="text-red-400">{failMessage}</p>
             <button
               onClick={handleDownloadFailedData}
-              className="bg-green-400 text-white py-2 px-2 rounded-lg hover:bg-green-500 transition-colors duration-300 text-sm"
+              className="bg-green-400 text-white mx-1 py-1 px-1 rounded-lg hover:bg-green-500 transition-colors duration-300 text-sm"
             >
-              Download Failed Data
+              Failed Data
             </button>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   )
