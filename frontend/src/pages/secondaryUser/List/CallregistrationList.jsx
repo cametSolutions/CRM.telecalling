@@ -331,11 +331,11 @@ const CallregistrationList = () => {
             >
               Call
             </label>
-            <div>
+            {/* <div>
               <button className="bg-blue-800" onClick={handlemerge}>
                 merge
               </button>
-            </div>
+            </div> */}
           </div>
 
           <div>
