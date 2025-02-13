@@ -94,319 +94,311 @@ const leaveSummary = () => {
           Loading users...
         </div>
       ) : (
-        // {/* Outer div with max height for scrolling the user list */}
-        <div className=" max-h-60 sm:max-h-80 md:max-h-96 lg:max-h-[500px] overflow-y-auto overflow-x-auto ">
+        <div className="max-h-[500px] overflow-auto">
           {newattende?.length > 0 &&
             newattende.map((attendee, index) => (
               <div key={index}>
-                {/* Only show the selected div, hide others */}
                 {selectedIndex === null || selectedIndex === index ? (
                   <>
-                    {/* Clickable Attendee Div */}
                     <div
-                      className="bg-white shadow-lg rounded-xl p-4 mb-2 border flex items-center cursor-pointer"
+                      className={`bg-white p-2 w-full shadow-lg rounded-xl mb-2 border flex items-center cursor-pointer overflow-x-auto max-w-full
+                      ${
+                        selectedIndex === index
+                          ? "sticky top-0 z-20 bg-blue-200"
+                          : ""
+                      }
+                    `}
+                      // className="bg-white p-2 w-full shadow-lg rounded-xl mb-2 border flex items-center cursor-pointer overflow-x-auto max-w-full"
                       onClick={() => {
                         setSelectedIndex(selectedIndex === index ? null : index)
                         selectedUser(attendee.userId)
                       }}
                     >
-                      {/* Name - Aligned Left */}
-                      <div className="text-md font-semibold text-gray-800 w-1/6">
+                      <div className="text-md font-semibold text-gray-800 w-[215px] text-lef p-2">
                         {attendee.name}
                       </div>
 
-                      {/* Attendance Details - Labels & Values in a Flex Row */}
-                      <div className="w-5/6 flex justify-evenly">
-                        <div className="flex flex-col items-center">
-                          <span className="font-medium text-gray-600">
-                            Present
-                          </span>
-                          <span>{attendee.present}</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <span className="font-medium text-gray-600">
-                            Absent
-                          </span>
-                          <span>{attendee.absent}</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <span className="font-medium text-gray-600">
-                            Late
-                          </span>
-                          <span>{attendee.late}</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <span className="font-medium text-gray-600">
-                            Early
-                          </span>
-                          <span>{attendee.earlyGoing}</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <span className="font-medium text-gray-600">
-                            Onsite
-                          </span>
-                          <span>{attendee.onsite}</span>
-                        </div>
-                        <div className="flex flex-col items-center mr-4">
-                          <span className="font-medium text-gray-600">
-                            Not Marked
-                          </span>
-                          <span>{attendee.notMarked}</span>
-                        </div>
+                      <div className="w-full sm:w-10/12 flex text-center ">
+                        {[
+                          {
+                            label: "Present",
+                            value: attendee.present,
+                            // bg: "bg-green-300",
+                            width: "w-[205px]"
+                          },
+                          {
+                            label: "Absent",
+                            value: attendee.absent,
+                            // bg: "bg-orange-200",
+                            width: "w-[100px]"
+                          },
+                          {
+                            label: "Late Coming",
+                            value: attendee.late,
+                            // bg: "bg-pink-500",
+                            width: "w-[100px]"
+                          },
+                          {
+                            label: "Early Going",
+                            value: attendee.earlyGoing,
+                            // bg: "bg-green-700",
+                            width: "w-[100px]"
+                          },
+                          {
+                            label: "Not Marked",
+                            value: attendee.notMarked,
+                            // bg: "bg-rose-300",
+                            width: "w-[110px]"
+                          },
+                          {
+                            label: "Onsite",
+                            value: attendee.onsite,
+                            // bg: "bg-green-400",
+                            width: "w-[510px]"
+                          },
+                          {
+                            label: "Edited",
+                            value: attendee.edited,
+                            // bg: "bg-gray-400",
+                            width: "w-[106px]"
+                          }
+                        ].map((item, idx) => (
+                          <div
+                            key={idx}
+                            className={`flex flex-col items-center p-1 ${item.bg} ${item.width}`}
+                          >
+                            <span className="font-medium text-gray-600 text-sm">
+                              {item.label}
+                            </span>
+                            <span>{item.value}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
 
-                    {/* Show Selected Attendee Details Below */}
                     {selectedIndex === index && (
-                      <div className="bg-gray-100 p-4 rounded-lg shadow-md mt-2">
-                        <div className="overflow-auto max-h-80">
-                          <table className="w-full ">
-                            {/* Table Header */}
-                            <thead className="bg-gray-200 sticky top-0 z-10 ">
-                              <tr className="text-gray-800 font-semibold text-center">
-                                <th className="p-2 ">Date</th>
-                                <th className="p-2 ">In Time</th>
-                                <th className="p-2 ">Out Time</th>
-                                <th className="p-2 ">Place</th>
-                                <th className="p-2 ">Onsite Name</th>
-                                <th className="p-2 ">Onsite Type</th>
-                                <th className="p-2 ">Onsite Shift</th>
-                                <th className="p-2 ">Edit</th>
+                      <div className="bg-gray-100 rounded-lg shadow-md mt-2 p-4 overflow-auto max-h-[500px]">
+                        <div className="overflow-x-auto">
+                          <table className="w-full border-collapse table-fixed">
+                            <thead className="bg-gray-300 sticky top-0">
+                              <tr className="text-left text-xs sm:text-sm">
+                                {[
+                                  {
+                                    label: "Date",
+                                    width: "w-[180px] min-w-[180px]"
+                                  },
+                                  {
+                                    label: "In Time",
+                                    width: "w-[90px] min-w-[200px]"
+                                  },
+                                  {
+                                    label: "Out Time",
+                                    width: "w-[90px] min-w-[50px]"
+                                  },
+                                  {
+                                    label: "Absent",
+                                    width: "w-[100px] min-w-[60px]"
+                                  },
+                                  {
+                                    label: "Late Coming",
+                                    width: "w-[80px] min-w-[80px]"
+                                  },
+                                  {
+                                    label: "Early Going",
+                                    width: "w-[100px] min-w-[100px]"
+                                  },
+                                  {
+                                    label: "Not Marked",
+                                    width: "w-[100px] min-w-[100px]"
+                                  },
+                                  {
+                                    label: "Onsite Place",
+                                    width: "w-[120px] min-w-[120px]"
+                                  },
+                                  {
+                                    label: "Onsite Name",
+                                    width: "w-[130px] min-w-[130px]"
+                                  },
+                                  {
+                                    label: "Onsite Type",
+                                    width: "w-[100px] min-w-[120px]"
+                                  },
+                                  {
+                                    label: "Onsite Period",
+                                    width: "w-[100px] min-w-[110px]"
+                                  },
+                                  {
+                                    label: "Actions",
+                                    width: "w-[100px] min-w-[100px]"
+                                  }
+                                ].map((heading, i) => (
+                                  <th
+                                    key={i}
+                                    className={`p-2 border border-gray-400 text-center ${heading.width}`}
+                                  >
+                                    {heading.label}
+                                  </th>
+                                ))}
                               </tr>
                             </thead>
-
-                            {/* Table Body */}
-                            <tbody className="divide-y divide-gray-300 bg-white">
+                            <tbody className="divide-y divide-gray-300 bg-white text-xs sm:text-sm">
                               {Object.entries(attendee.attendancedates).map(
-                                ([date, details], idx) => {
-                                  const hasOnsite = details?.onsite?.length > 0
-
-                                  return (
-                                    <React.Fragment key={idx}>
-                                      {/* 🟢 Row for Date and Punch Time */}
-                                      <tr className="text-center font-semibold bg-white">
-                                        <td className="p-2 border border-gray-300">
-                                          {date}
-                                        </td>{" "}
-                                        {/* Date (Read-Only) */}
-                                        {/* Editable In Time */}
-                                        <td className="p-2 border border-gray-300">
-                                          <input
-                                            type="text"
-                                            className="w-full text-center border rounded p-1"
-                                            defaultValue={details?.inTime || ""}
-                                          />
-                                        </td>
-                                        {/* Editable Out Time */}
-                                        <td className="p-2 border border-gray-300">
-                                          <input
-                                            type="text"
-                                            className="w-full text-center border rounded p-1"
-                                            defaultValue={
-                                              details?.outTime || ""
-                                            }
-                                          />
-                                        </td>
-                                        {/* If onsite data exists, show first onsite entry in the main row */}
-                                        {hasOnsite ? (
-                                          <>
-                                            {/* Editable Place */}
-                                            <td className="p-2 border border-gray-300">
-                                              <input
-                                                type="text"
-                                                className="w-full text-center border rounded p-1"
-                                                defaultValue={
-                                                  details.onsite[0]?.place || ""
-                                                }
-                                              />
-                                            </td>
-
-                                            {/* Editable Site Name */}
-                                            <td className="p-2 border border-gray-300">
-                                              <input
-                                                type="text"
-                                                className="w-full text-center border rounded p-1"
-                                                defaultValue={
-                                                  details.onsite[0]?.siteName ||
-                                                  ""
-                                                }
-                                              />
-                                            </td>
-
-                                            {/* Onsite Type Dropdown */}
-                                            <td className="p-2 border border-gray-300">
-                                              <select
-                                                className="w-full text-center border rounded p-1"
-                                                defaultValue={
-                                                  details.onsite[0]?.onsiteType
-                                                }
-                                                onChange={(e) =>
-                                                  handleOnsiteTypeChange(
-                                                    date,
-                                                    0,
-                                                    e.target.value
-                                                  )
-                                                }
-                                              >
-                                                <option value="Full Day">
-                                                  Full Day
-                                                </option>
-                                                <option value="Half Day">
-                                                  Half Day
-                                                </option>
-                                              </select>
-                                            </td>
-
-                                            {/* Show Period Dropdown Only if Half Day is Selected */}
-                                            {onsiteTypes[`${date}-0`] ===
-                                              "Half Day" ||
-                                            details.onsite[0]?.onsiteType ===
-                                              "Half Day" ? (
-                                              <td className="p-2 border border-gray-300">
-                                                <select
-                                                  className="w-full text-center border rounded p-1"
-                                                  defaultValue={
-                                                    details.onsite[0]?.period
-                                                  }
-                                                >
-                                                  <option value="Morning">
-                                                    Morning
-                                                  </option>
-                                                  <option value="Afternoon">
-                                                    Afternoon
-                                                  </option>
-                                                </select>
-                                              </td>
-                                            ) : (
-                                              <td className="p-2 border">-</td>
-                                            )}
-                                          </>
-                                        ) : (
-                                          <>
-                                            {/* No onsite data, keep these empty */}
-                                            <td className="p-2 border border-gray-300">
-                                              -
-                                            </td>
-                                            <td className="p-2 border border-gray-300">
-                                              -
-                                            </td>
-                                            <td className="p-2 border border-gray-300">
-                                              -
-                                            </td>
-                                            <td className="p-2 border border-gray-300">
-                                              -
-                                            </td>
-                                          </>
-                                        )}
-                                        {/* Edit Icon for Punch Time */}
-                                        <td className="p-2 border border-gray-300">
-                                          <button className="text-blue-500 hover:text-blue-700">
-                                            <CiEdit size={20} />
-                                          </button>
-                                        </td>
-                                      </tr>
-
-                                      {/* 🟢 Additional Rows for Extra Onsite Data */}
-                                      {hasOnsite &&
-                                        details.onsite
-                                          .slice(1)
-                                          .map((item, index) => (
-                                            <tr
-                                              key={index}
-                                              className="text-center bg-white"
-                                            >
-                                              <td className="p-2 border border-gray-300"></td>{" "}
-                                              {/* Empty for Date Alignment */}
-                                              {/* Empty Punch Time Columns */}
-                                              <td className="p-2 border border-gray-300">
-                                                -
-                                              </td>
-                                              <td className="p-2 border border-gray-300">
-                                                -
-                                              </td>
-                                              {/* Editable Place */}
-                                              <td className="p-2 border border-gray-300">
-                                                <input
-                                                  type="text"
-                                                  className="w-full text-center border rounded p-1"
-                                                  defaultValue={
-                                                    item?.place || ""
-                                                  }
-                                                />
-                                              </td>
-                                              {/* Editable Site Name */}
-                                              <td className="p-2 border border-gray-300">
-                                                <input
-                                                  type="text"
-                                                  className="w-full text-center border rounded p-1"
-                                                  defaultValue={
-                                                    item?.siteName || ""
-                                                  }
-                                                />
-                                              </td>
-                                              {/* Onsite Type Dropdown */}
-                                              <td className="p-2 border border-gray-300">
-                                                <select
-                                                  className="w-full text-center border rounded p-1"
-                                                  defaultValue={
-                                                    item?.onsiteType
-                                                  }
-                                                  onChange={(e) =>
-                                                    handleOnsiteTypeChange(
-                                                      date,
-                                                      index + 1,
-                                                      e.target.value
-                                                    )
-                                                  }
-                                                >
-                                                  <option value="Full Day">
-                                                    Full Day
-                                                  </option>
-                                                  <option value="Half Day">
-                                                    Half Day
-                                                  </option>
-                                                </select>
-                                              </td>
-                                              {/* Show Period Dropdown Only if Half Day is Selected */}
-                                              {onsiteTypes[
-                                                `${date}-${index + 1}`
-                                              ] === "Half Day" ||
-                                              item?.onsiteType ===
-                                                "Half Day" ? (
-                                                <td className="p-2 border border-gray-300">
-                                                  <select
-                                                    className="w-full text-center border rounded p-1"
-                                                    defaultValue={item?.period}
-                                                  >
-                                                    <option value="Morning">
-                                                      Morning
-                                                    </option>
-                                                    <option value="Afternoon">
-                                                      Afternoon
-                                                    </option>
-                                                  </select>
-                                                </td>
-                                              ) : (
-                                                <td className="p-2 border border-gray-300">
-                                                  -
-                                                </td>
-                                              )}
-                                              {/* Edit Icon for Onsite Data */}
-                                              <td className="p-2 border border-gray-300">
-                                                <button className="text-blue-500 hover:text-blue-700">
-                                                  <CiEdit size={20} />
-                                                </button>
-                                              </td>
-                                            </tr>
-                                          ))}
-                                    </React.Fragment>
-                                  )
-                                }
+                                ([date, details], idx) => (
+                                  <tr key={idx} className="text-center">
+                                    <td className="p-2 border border-gray-300 text-left w-[105px] min-w-[105px]">
+                                      {date}
+                                    </td>
+                                    <td className="p-2 border border-gray-300 w-[200px] min-w-[200px]">
+                                      <input
+                                        type="text"
+                                        className="w-full text-center border rounded p-1"
+                                        defaultValue={details?.inTime || ""}
+                                      />
+                                    </td>
+                                    <td className="p-2 border border-gray-300 w-[50px] min-w-[50px]">
+                                      <input
+                                        type="text"
+                                        className="w-full text-center border rounded p-1"
+                                        defaultValue={details?.outTime || ""}
+                                      />
+                                    </td>
+                                    <td className="p-2 border border-gray-300 w-[80px] min-w-[80px]">
+                                      {details?.absent || "-"}
+                                    </td>
+                                    <td className="p-2 border border-gray-300 w-[80px] min-w-[80px]">
+                                      {details?.late || "-"}
+                                    </td>
+                                    <td className="p-2 border border-gray-300 w-[100px] min-w-[100px]">
+                                      {details?.early || "-"}
+                                    </td>
+                                    <td className="p-2 border border-gray-300 w-[100px] min-w-[100px]">
+                                      {details?.notMarked || "-"}
+                                    </td>
+                                    <td className="p-2 border border-gray-300 w-[120px] min-w-[120px]">
+                                      {details?.onsite?.[0]?.place || "-"}
+                                    </td>
+                                    <td className="p-2 border border-gray-300 w-[130px] min-w-[130px]">
+                                      {details?.onsite?.[0]?.siteName || "-"}
+                                    </td>
+                                    <td className="p-2 border border-gray-300 w-[120px] min-w-[120px]">
+                                      {details?.onsite?.[0]?.onsiteType || "-"}
+                                    </td>
+                                    <td className="p-2 border border-gray-300 w-[110px] min-w-[110px]">
+                                      {details?.onsite?.[0]?.period || "-"}
+                                    </td>
+                                    <td className="p-2 border border-gray-300 w-[100px] min-w-[100px]">
+                                      <button className="text-blue-500 hover:text-blue-700">
+                                        <CiEdit size={20} />
+                                      </button>
+                                    </td>
+                                  </tr>
+                                )
                               )}
                             </tbody>
                           </table>
                         </div>
                       </div>
+
+                      // <div className="bg-gray-100 rounded-lg shadow-md mt-2 p-4 overflow-auto max-h-[500px]">
+                      //   <div className="overflow-x-auto">
+                      //     <table className="w-full border-collapse">
+                      //       <thead className="bg-gray-300 sticky top-0">
+                      //         <tr className="text-left text-xs sm:text-sm">
+                      //           {[
+                      //             { label: "Date", width: "min-w-[105px]" },
+                      //             { label: "In Time", width: "min-w-[200px]" },
+                      //             { label: "Out Time", width: "min-w-[50px]" },
+                      //             { label: "Absent", width: "min-w-[80px]" },
+                      //             { label: "Late", width: "min-w-[80px]" },
+                      //             { label: "Early", width: "min-w-[100px]" },
+                      //             {
+                      //               label: "Not Marked",
+                      //               width: "min-w-[10px]"
+                      //             },
+                      //             {
+                      //               label: "Onsite Place",
+                      //               width: "min-w-[10px]"
+                      //             },
+                      //             {
+                      //               label: "Onsite Name",
+                      //               width: "min-w-[13px]"
+                      //             },
+                      //             {
+                      //               label: "Onsite Type",
+                      //               width: "min-w-[10px]"
+                      //             },
+                      //             {
+                      //               label: "Onsite Period",
+                      //               width: "min-w-[110px]"
+                      //             },
+                      //             { label: "Actions", width: "min-w-[100px]" }
+                      //           ].map((heading, i) => (
+                      //             <th
+                      //               key={i}
+                      //               className={`p-2 border border-gray-400 ${heading.width} text-center`}
+                      //             >
+                      //               {heading.label}
+                      //             </th>
+                      //           ))}
+                      //         </tr>
+                      //       </thead>
+                      //       <tbody className="divide-y divide-gray-300 bg-white text-xs sm:text-sm">
+                      //         {Object.entries(attendee.attendancedates).map(
+                      //           ([date, details], idx) => (
+                      //             <tr key={idx} className="text-center">
+                      //               <td className="p-2 border border-gray-300 bg-gray-300 text-left">
+                      //                 {date}
+                      //               </td>
+                      //               <td className="p-2 border border-gray-300 bg-green-300">
+                      //                 <input
+                      //                   type="text"
+                      //                   className=" text-center border rounded p-1"
+                      //                   defaultValue={details?.inTime || ""}
+                      //                 />
+                      //               </td>
+                      //               <td className="p-2 border border-gray-300">
+                      //                 <input
+                      //                   type="text"
+                      //                   className=" text-center border rounded p-1"
+                      //                   defaultValue={details?.outTime || ""}
+                      //                 />
+                      //               </td>
+                      //               <td className="p-2 border border-gray-300">
+                      //                 {details?.absent || "-"}
+                      //               </td>
+                      //               <td className="p-2 border border-gray-300">
+                      //                 {details?.late || "-"}
+                      //               </td>
+                      //               <td className="p-2 border border-gray-300">
+                      //                 {details?.early || "-"}
+                      //               </td>
+                      //               <td className="p-2 border border-gray-300">
+                      //                 {details?.notMarked || "-"}
+                      //               </td>
+                      //               <td className="p-2 border border-gray-300">
+                      //                 {details?.onsite?.[0]?.place || "-"}
+                      //               </td>
+                      //               <td className="p-2 border border-gray-300">
+                      //                 {details?.onsite?.[0]?.siteName || "-"}
+                      //               </td>
+                      //               <td className="p-2 border border-gray-300">
+                      //                 {details?.onsite?.[0]?.onsiteType || "-"}
+                      //               </td>
+                      //               <td className="p-2 border border-gray-300">
+                      //                 {details?.onsite?.[0]?.period || "-"}
+                      //               </td>
+                      //               <td className="p-2 border border-gray-300">
+                      //                 <button className="text-blue-500 hover:text-blue-700">
+                      //                   <CiEdit size={20} />
+                      //                 </button>
+                      //               </td>
+                      //             </tr>
+                      //           )
+                      //         )}
+                      //       </tbody>
+                      //     </table>
+                      //   </div>
+                      // </div>
                     )}
                   </>
                 ) : null}

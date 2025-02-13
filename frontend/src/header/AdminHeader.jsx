@@ -203,7 +203,7 @@ export default function AdminHeader() {
 
   return (
     <>
-      <header className=" h-20 flex bg-white shadow-md items-center">
+      <header className="sticky top-0 z-50 h-20 flex bg-white shadow-md items-center">
         {/* Mobile menu button */}
         <div className="md:hidden flex justify-between py-2 px-4">
           <button
