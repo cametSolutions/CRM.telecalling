@@ -28,6 +28,7 @@ function LeaveMaster() {
   })
   const [tableholy, setTableHoly] = useState([])
   const { data: leaveData, refreshHook } = UseFetch("/customer/getleavemaster")
+  console.log(leaveData)
   const { data: holydata, refreshHook: holyrefresh } = UseFetch(
     "/customer/getallholy"
   )

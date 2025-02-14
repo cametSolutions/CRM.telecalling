@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react"
-import { CiEdit } from "react-icons/ci"
 
 import UseFetch from "../../hooks/useFetch"
 
@@ -20,15 +19,7 @@ const leaveSummary = () => {
   const { data: attendance } = UseFetch(
     `/auth/getallAttendance?year=${selectedYear}&month=${selectedMonth}`
   )
-  console.log(attendance)
-  console.log(newattende)
-  const a = newattende?.filter((item) => item.name === "abhi")
-  console.log(a)
-  // Refetch data when year or month changes
-  // useEffect(() => {
-  //   refreshHook()
-  // }, [selectedYear, selectedMonth])
-
+ 
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i)
   const months = [
     { name: "January", value: 1 },
@@ -50,7 +41,6 @@ const leaveSummary = () => {
       console.log(id.userId)
       return id.userId === attendeeid
     })
-    console.log(filteredAttendance)
   }
   // Handle onsite type change
   const handleOnsiteTypeChange = (date, index, newType) => {
@@ -59,8 +49,10 @@ const leaveSummary = () => {
       [`${date}-${index}`]: newType
     }))
   }
+  
   return (
     <div className="p-3 text-center ">
+     
       <h1 className="text-2xl font-bold mb-1">User Leave Summary</h1>
       <div className="flex justify-end space-x-4 m-4">
         {/* Year Select */}
@@ -104,8 +96,8 @@ const leaveSummary = () => {
                       className={`bg-white p-2 w-full shadow-lg rounded-xl mb-2 border flex items-center cursor-pointer overflow-x-auto max-w-full
                       ${
                         selectedIndex === index
-                          ? "sticky top-0 z-20 bg-blue-200"
-                          : ""
+                          ? "sticky top-0 z-20 bg-blue-400"
+                          : "bg-green-300"
                       }
                     `}
                       // className="bg-white p-2 w-full shadow-lg rounded-xl mb-2 border flex items-center cursor-pointer overflow-x-auto max-w-full"
@@ -114,7 +106,7 @@ const leaveSummary = () => {
                         selectedUser(attendee.userId)
                       }}
                     >
-                      <div className="text-md font-semibold text-gray-800 w-[215px] text-lef p-2">
+                      <div className="text-md font-semibold text-gray-800 w-[215px] text-left p-2">
                         {attendee.name}
                       </div>
 
@@ -124,19 +116,19 @@ const leaveSummary = () => {
                             label: "Present",
                             value: attendee.present,
                             // bg: "bg-green-300",
-                            width: "w-[205px]"
+                            width: "w-[230px]"
                           },
                           {
                             label: "Absent",
                             value: attendee.absent,
                             // bg: "bg-orange-200",
-                            width: "w-[100px]"
+                            width: "w-[115px]"
                           },
                           {
                             label: "Late Coming",
                             value: attendee.late,
                             // bg: "bg-pink-500",
-                            width: "w-[100px]"
+                            width: "w-[110px]"
                           },
                           {
                             label: "Early Going",
@@ -148,20 +140,20 @@ const leaveSummary = () => {
                             label: "Not Marked",
                             value: attendee.notMarked,
                             // bg: "bg-rose-300",
-                            width: "w-[110px]"
+                            width: "w-[130px]"
                           },
                           {
                             label: "Onsite",
                             value: attendee.onsite,
                             // bg: "bg-green-400",
                             width: "w-[510px]"
-                          },
-                          {
-                            label: "Edited",
-                            value: attendee.edited,
-                            // bg: "bg-gray-400",
-                            width: "w-[106px]"
                           }
+                          // {
+                          //   label: "Edited",
+                          //   value: attendee.edited,
+                          //   // bg: "bg-gray-400",
+                          //   width: "w-[106px]"
+                          // }
                         ].map((item, idx) => (
                           <div
                             key={idx}
@@ -226,11 +218,11 @@ const leaveSummary = () => {
                                   {
                                     label: "Onsite Period",
                                     width: "w-[100px] min-w-[110px]"
-                                  },
-                                  {
-                                    label: "Actions",
-                                    width: "w-[100px] min-w-[100px]"
                                   }
+                                  // {
+                                  //   label: "Actions",
+                                  //   width: "w-[100px] min-w-[100px]"
+                                  // }
                                 ].map((heading, i) => (
                                   <th
                                     key={i}
@@ -244,7 +236,7 @@ const leaveSummary = () => {
                             <tbody className="divide-y divide-gray-300 bg-white text-xs sm:text-sm">
                               {Object.entries(attendee.attendancedates).map(
                                 ([date, details], idx) => (
-                                  <tr key={idx} className="text-center">
+                                  <tr key={idx} className="text-center ">
                                     <td className="p-2 border border-gray-300 text-left w-[105px] min-w-[105px]">
                                       {date}
                                     </td>
@@ -266,18 +258,28 @@ const leaveSummary = () => {
                                       {details?.absent || "-"}
                                     </td>
                                     <td className="p-2 border border-gray-300 w-[80px] min-w-[80px]">
-                                      {details?.late || "-"}
+                                      {details?.late
+                                        ? `${details.late} minutes`
+                                        : "-"}
                                     </td>
                                     <td className="p-2 border border-gray-300 w-[100px] min-w-[100px]">
-                                      {details?.early || "-"}
+                                      {details?.early
+                                        ? `${details.early} minutes`
+                                        : "-"}
                                     </td>
                                     <td className="p-2 border border-gray-300 w-[100px] min-w-[100px]">
-                                      {details?.notMarked || "-"}
+                                      {details?.notemarked || "-"}
                                     </td>
-                                    <td className="p-2 border border-gray-300 w-[120px] min-w-[120px]">
+                                    <td
+                                      title={details?.onsite?.[0]?.place}
+                                      className="p-2 border border-gray-300 w-[120px] min-w-[120px] truncate overflow-hidden whitespace-nowrap cursor-pointer"
+                                    >
                                       {details?.onsite?.[0]?.place || "-"}
                                     </td>
-                                    <td className="p-2 border border-gray-300 w-[130px] min-w-[130px]">
+                                    <td
+                                      title={details?.onsite?.[0]?.siteName}
+                                      className="p-2 border border-gray-300 w-[130px] min-w-[130px] truncate overflow-hidden whitespace-nowrap cursor-pointer"
+                                    >
                                       {details?.onsite?.[0]?.siteName || "-"}
                                     </td>
                                     <td className="p-2 border border-gray-300 w-[120px] min-w-[120px]">
@@ -286,11 +288,11 @@ const leaveSummary = () => {
                                     <td className="p-2 border border-gray-300 w-[110px] min-w-[110px]">
                                       {details?.onsite?.[0]?.period || "-"}
                                     </td>
-                                    <td className="p-2 border border-gray-300 w-[100px] min-w-[100px]">
+                                    {/* <td className="p-2 border border-gray-300 w-[100px] min-w-[100px]">
                                       <button className="text-blue-500 hover:text-blue-700">
                                         <CiEdit size={20} />
                                       </button>
-                                    </td>
+                                    </td> */}
                                   </tr>
                                 )
                               )}
