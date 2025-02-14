@@ -2330,7 +2330,6 @@ export const getallExpiredCustomerCalls = async (req, res) => {
 }
 export const LeavemasterRegister = async (req, res) => {
   try {
-    console.log("body", req.body)
     // Extract data from request body
     const {
       checkIn,
@@ -2345,14 +2344,9 @@ export const LeavemasterRegister = async (req, res) => {
       deductSalaryMinute
     } = req.body
 
-    console.log("teecct", customTextInput)
     const { editstate } = req.query
-    console.log("eddit", editstate)
-    const existingRecord = await Leavemaster.findOne({
-      checkIn // You can use some other criteria to find the existing record if applicable
-    })
+    const existingRecord = await Leavemaster.findOne({})
     if (existingRecord) {
-      console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh")
       const isSame =
         existingRecord.checkIn === checkIn &&
         existingRecord.checkOut === checkOut &&
@@ -2361,7 +2355,6 @@ export const LeavemasterRegister = async (req, res) => {
         existingRecord.lateArrival === lateArrival &&
         existingRecord.earlyOut === earlyOut &&
         existingRecord.deductSalaryMinute === deductSalaryMinute
-      console.log("same", isSame)
       // Step 3: If everything is the same, don't create a new instance, just return
       if (isSame) {
         if (editstate === "true") {
@@ -2376,16 +2369,13 @@ export const LeavemasterRegister = async (req, res) => {
               }
             }
           )
-          console.log("innnput", customTextInput)
-          console.log("yyyy", b)
+         
           if (b.modifiedCount > 0) {
-            console.log("bbbbb", b)
             return res
               .status(200)
               .json({ message: "Holiday update succesfully" })
           }
         } else {
-          console.log("ppp")
           if (holyDate && customTextInput) {
             const year = new Date(holyDate).getFullYear()
 
@@ -2439,13 +2429,12 @@ export const LeavemasterRegister = async (req, res) => {
               deductSalaryMinute
             }
           },
-          { new: true } 
-          
+          { new: true }
         )
         if (q.modifiedCount > 0) {
           return res
             .status(200)
-            .json({ message: "Leave master updated succesfully",data:q })
+            .json({ message: "Leave master updated succesfully", data: q })
         }
       }
     } else {

@@ -835,6 +835,7 @@ export const OnsiteApply = async (req, res) => {
 export const GetsomeAll = async (req, res) => {
   try {
     const { year, month } = req.query
+
     function getSundays(year, month) {
       const sundays = []
       const date = new Date(year, month - 1, 1) // Start from the 1st day of the month
@@ -849,30 +850,37 @@ export const GetsomeAll = async (req, res) => {
 
       return sundays
     }
-    function generateMonthDates(year, month) {
+    function generateMonthDates(year, month, name) {
       const dates = {}
       const daysInMonth = new Date(year, month - 1, 0).getDate()
 
       for (let day = 1; day <= daysInMonth; day++) {
         let date = new Date(year, month - 1, day)
+
         let dateKey =
           date.getFullYear() +
           "-" +
           String(date.getMonth() + 1).padStart(2, "0") +
           "-" +
           String(date.getDate()).padStart(2, "0")
-        dates[dateKey] = {} // Initialize empty object for each date
+        dates[dateKey] = {
+          inTime: "",
+          outTime: "",
+          late: "",
+          onsite: [],
+          early: "",
+          notemarked: "",
+          absent: ""
+        } // Initialize empty object for each date
       }
 
       return dates
     }
-    
 
     const sundays = getSundays(year, month)
 
     const startDate = new Date(Date.UTC(year, month - 1, 1))
     const endDate = new Date(Date.UTC(year, month, 0))
-  
 
     const users = await Staff.find({}, { _id: 1, name: 1 })
     const convertToMinutes = (timeStr) => {
@@ -885,17 +893,34 @@ export const GetsomeAll = async (req, res) => {
       return hours * 60 + minutes // Return total minutes since midnight
     }
 
+    function createDates(b, month, year) {
+      return b.map((day) => {
+        const date = new Date(year, month - 1, day)
+        const yyyy = date.getFullYear() // Full year (4 digits)
+        const mm = String(date.getMonth() + 1).padStart(2, "0") // Add leading zero
+        const dd = String(date.getDate()).padStart(2, "0") // Add leading zero
+        return `${yyyy}-${mm}-${dd}` // Full year format
+      })
+    }
+
     const morningLimit = convertToMinutes("9:35 AM")
     const lateLimit = convertToMinutes("10:00 AM")
     const minOutTime = convertToMinutes("5:00 PM")
     const earlyLeaveLimit = convertToMinutes("5:30 PM")
     const noonLimit = convertToMinutes("1:30 PM")
     let staffAttendanceStats = []
-    const holidays = await Holymaster.find({})
-   
+    // const holidays = await Holymaster.find({})
+    const holidays = await Holymaster.find({
+      holyDate: {
+        $gte: startDate,
+        $lt: endDate
+      }
+    })
+
     const holiday = Array.isArray(holidays)
       ? holidays.map((date) => date.holyDate.getDate())
       : []
+    console.log("hooooo", holiday)
     for (const user of users) {
       const userId = user._id
       const userName = user.name
@@ -919,7 +944,7 @@ export const GetsomeAll = async (req, res) => {
         results[1].status === "fulfilled" ? results[1].value || [] : []
       const leaves =
         results[2].status === "fulfilled" ? results[2].value || [] : []
-    
+
       const uniqueHolidays = holiday.filter(
         (holiday) => !sundays.includes(holiday)
       )
@@ -935,19 +960,32 @@ export const GetsomeAll = async (req, res) => {
         onsite: 0,
         holiday: 0,
         notMarked: 0,
-        attendancedates: generateMonthDates(year, month)
+        attendancedates: generateMonthDates(year, month, userName)
       }
-     
 
       let daysInMonth = new Set(
         [...Array(endDate.getDate()).keys()].map((i) => i + 1)
       )
+      function getTimeDifference(start, end) {
+        // Convert times to Date objects using 12-hour format
+        const startTime = new Date(`1970-01-01 ${start}`)
+        const endTime = new Date(`1970-01-01 ${end}`)
+
+        if (isNaN(startTime) || isNaN(endTime)) {
+          return "Invalid date format"
+        }
+
+        // Calculate difference in minutes
+        const differenceInMinutes = (endTime - startTime) / (1000 * 60)
+        return differenceInMinutes >= 0
+          ? differenceInMinutes
+          : differenceInMinutes + 1440
+      }
 
       const arr = []
       const present = []
       const fulldayarr = []
       const halfdayarr = []
-     
 
       attendances?.forEach((att) => {
         const day = att.attendanceDate.getDate()
@@ -955,14 +993,15 @@ export const GetsomeAll = async (req, res) => {
 
         const punchIn = att.inTime ? convertToMinutes(att.inTime) : null
         const punchOut = att.outTime ? convertToMinutes(att.outTime) : null
-        stats.attendancedates[dayTime] = {
-          inTime: att?.inTime || "",
-          outTime: att?.outTime || ""
-        }
+
+        stats.attendancedates[dayTime].inTime = att?.inTime
+        stats.attendancedates[dayTime].outTime = att?.outTime
+
         if (!punchIn || !punchOut) {
           arr.push(day)
           stats.present++
           stats.halfDayLeave++
+          stats.attendancedates[dayTime].absent = 0.5
           halfdayarr.push(day)
         } else if (punchIn <= morningLimit && punchOut >= earlyLeaveLimit) {
           stats.present++
@@ -972,6 +1011,11 @@ export const GetsomeAll = async (req, res) => {
           punchIn <= lateLimit &&
           punchOut >= earlyLeaveLimit
         ) {
+          const a = getTimeDifference("09:35 AM", att.inTime)
+
+          // stats.attendancedates[dayTime].late = ""
+          stats.attendancedates[dayTime].late = a
+
           stats.late++
           stats.present++
           present.push(day)
@@ -980,6 +1024,9 @@ export const GetsomeAll = async (req, res) => {
           punchOut < earlyLeaveLimit &&
           punchIn < lateLimit
         ) {
+          const b = getTimeDifference(att.outTime, "05:30 PM")
+          // stats.attendancedates[dayTime].early = ""
+          stats.attendancedates[dayTime].early = b
           stats.present++
           stats.earlyGoing++
           present.push(day)
@@ -991,6 +1038,8 @@ export const GetsomeAll = async (req, res) => {
             punchOut < minOutTime &&
             punchOut > noonLimit)
         ) {
+          stats.attendancedates[dayTime].absent = 1
+
           stats.fullDayLeave++
           fulldayarr.push(day)
         } else if (
@@ -1005,6 +1054,7 @@ export const GetsomeAll = async (req, res) => {
           halfdayarr.push(day)
           stats.present++
           stats.halfDayLeave++
+          stats.attendancedates[dayTime].absent = 0.5
         }
         daysInMonth.delete(day)
       })
@@ -1013,10 +1063,9 @@ export const GetsomeAll = async (req, res) => {
         onsites?.forEach((onsite) => {
           let day = onsite.onsiteDate.getDate()
           const dayTime = onsite.onsiteDate.toISOString().split("T")[0]
-          stats.attendancedates[dayTime].onsite = []
+
           if (Array.isArray(onsite.onsiteData)) {
             onsite.onsiteData.flat().forEach((item) => {
-
               stats.attendancedates[dayTime].onsite.push({
                 place: item?.place,
                 siteName: item?.siteName,
@@ -1037,6 +1086,8 @@ export const GetsomeAll = async (req, res) => {
                 if (fulldayarr.includes(day)) {
                   stats.fullDayLeave--
                 }
+                stats.attendancedates[dayTime].absent = ""
+
                 daysInMonth.delete(day)
               } else if (!sundays.includes(day) && present.includes(day)) {
                 daysInMonth.delete(day)
@@ -1051,6 +1102,8 @@ export const GetsomeAll = async (req, res) => {
                 if (fulldayarr.includes(day)) {
                   stats.fullDayLeave--
                 }
+                stats.attendancedates[dayTime].absent = 0.5
+
                 stats.halfDayLeave++
                 daysInMonth.delete(day)
               } else if (!sundays.includes(day) && present.includes(day)) {
@@ -1065,33 +1118,172 @@ export const GetsomeAll = async (req, res) => {
               if (onsite.onsiteType === "Half Day") {
                 stats.onsite++
                 stats.halfDayLeave--
+                stats.attendancedates[dayTime].absent = ""
               } else if (onsite.onsiteType === "Full Day") {
                 stats.onsite++
                 stats.halfDayLeave--
+                stats.attendancedates[dayTime].absent = ""
               }
             }
           }
         })
 
+      const monthSet = [...daysInMonth]
+      sundays.forEach((sunday) => {
+        const a = monthSet.findIndex((day) => day === sunday)
+        if (a !== -1) {
+          monthSet.splice(a, 1)
+        }
+      })
+
+      monthSet.forEach((day) => {
+        let date = new Date(year, month - 1, day)
+
+        let dateKey =
+          date.getFullYear() +
+          "-" +
+          String(date.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(date.getDate()).padStart(2, "0")
+
+        stats.attendancedates[dateKey].absent = 1 // Set absent = 1
+        stats.attendancedates[dateKey].notemarked = 1
+      })
+
+      ////sunday leaveeee////////
+      // const uniqueDates = [...new Set([...sundays, ...holiday])]
+
+      // const c = createDates(uniqueDates, month, year)
+      // function getNextDate(dateString) {
+      //   // Parse the date string (YYYY-MM-DD)
+      //   const [year, month, day] = dateString.split("-").map(Number)
+
+      //   // Create a date object
+      //   const date = new Date(year, month - 1, day)
+
+      //   // Add one day
+      //   date.setDate(date.getDate() + 1)
+
+      //   // Format the result back to 'YYYY-MM-DD'
+      //   const nextDay = String(date.getDate()).padStart(2, "0")
+      //   const nextMonth = String(date.getMonth() + 1).padStart(2, "0")
+      //   const nextYear = date.getFullYear() // Full year
+
+      //   return `${nextYear}-${nextMonth}-${nextDay}`
+      // }
+      // function getPreviousDate(dateString) {
+      //   // Parse the date string (YYYY-MM-DD)
+      //   const [year, month, day] = dateString.split("-").map(Number)
+
+      //   // Create a date object
+      //   const date = new Date(year, month - 1, day)
+
+      //   // Subtract one day
+      //   date.setDate(date.getDate() - 1)
+
+      //   // Format the result back to 'YYYY-MM-DD'
+      //   const prevDay = String(date.getDate()).padStart(2, "0")
+      //   const prevMonth = String(date.getMonth() + 1).padStart(2, "0")
+      //   const prevYear = date.getFullYear() // Full year
+
+      //   return `${prevYear}-${prevMonth}-${prevDay}`
+      // }
+      // if (userName.trim() === "Sreeraj Vijay") {
+      //   console.log("sreeeee", stats)
+      // }
+
+      // ;(function calculateAbsences(sundays, attendances, onsites) {
+      //   const isPresent = (date) =>
+      //     attendances.some((att) => {
+      //       const punchIn = att.inTime ? convertToMinutes(att.inTime) : null
+      //       const punchOut = att.outTime ? convertToMinutes(att.outTime) : null
+      //       const attDate = att.attendanceDate.toISOString().split("T")[0]
+      //       if (
+      //         attDate === date &&
+      //         ((punchIn <= morningLimit && punchOut >= earlyLeaveLimit) ||
+      //           (punchIn >= morningLimit &&
+      //             punchIn <= lateLimit &&
+      //             punchOut >= earlyLeaveLimit) ||
+      //           (punchOut >= minOutTime &&
+      //             punchOut < earlyLeaveLimit &&
+      //             punchIn < lateLimit))
+      //       ) {
+      //         return true
+      //       } else if (
+      //         attDate === date &&
+      //         (att.inTime || att.outTime) &&
+      //         (!punchIn ||
+      //           !punchOut ||
+      //           (punchIn < noonLimit && punchOut < noonLimit) ||
+      //           (punchIn > noonLimit && punchOut > noonLimit) ||
+      //           (punchIn > lateLimit &&
+      //             punchIn < noonLimit &&
+      //             punchOut < minOutTime &&
+      //             punchOut > noonLimit) ||
+      //           (punchIn < lateLimit &&
+      //             punchOut >= noonLimit &&
+      //             punchOut < minOutTime) ||
+      //           (punchIn <= noonLimit &&
+      //             punchOut >= earlyLeaveLimit &&
+      //             punchIn > lateLimit))
+      //       ) {
+      //         return false
+      //       }
+      //     })
+
+      //   const hasOnsite = (date) =>
+      //     onsites.some(
+      //       (onsite) =>
+      //         onsite.onsiteDate.toISOString().split("T")[0] === date &&
+      //         onsite.onsiteType === "Full Day"
+      //     )
+
+      //   sundays.forEach((sunday) => {
+      //     // console.log("sundddddddd", sunday)
+      //     const previousDay = getPreviousDate(sunday)
+      //     const nextDay = getNextDate(sunday)
+
+      //     const prevPresent = isPresent(previousDay)
+      //     const nextPresent = isPresent(nextDay)
+
+      //     const prevOnsite = hasOnsite(previousDay)
+      //     const nextOnsite = hasOnsite(nextDay)
+
+      //     if (!(prevPresent || prevOnsite) || !(nextPresent || nextOnsite)) {
+      //       stats.attendancedates[previousDay].absent = 1
+      //       stats.attendancedates[sunday].absent = 1
+      //       stats.attendancedates[nextDay].absent = 1
+      //       stats.present -= 3
+      //       stats.absent += 3
+      //     }
+      //   })
+      // })(c, attendances, onsites)
+
       stats.notMarked = daysInMonth.size - sundays.length
 
-      stats.absent =
+      stats.absent +=
         Math.floor(stats.late / 3) * 1 +
         Math.floor(stats.earlyGoing / 3) * 1 +
         stats.fullDayLeave +
         stats.halfDayLeave / 2 +
         stats.notMarked
+      if (userName.trim() === "Anjana unnikrishnan") {
+        console.log("preee", stats.present)
+      }
       stats.present += sundays.length
-
+      if (userName.trim() === "Anjana unnikrishnan") {
+        console.log("preee", stats.present)
+      }
       stats.present += uniqueHolidays?.length
-
+      if (userName.trim() === "Anjana unnikrishnan") {
+        console.log("preee", stats.present)
+      }
       stats.present -= Math.floor(stats?.late / 3) * 1
       stats.present -= Math.floor(stats?.earlyGoing / 3) * 1
 
       stats.present -= stats?.halfDayLeave / 2
 
       staffAttendanceStats.push(stats)
-     
     }
 
     // console.log("ddddddddddddd", staffAttendanceStats)

@@ -19,7 +19,7 @@ const excelDateToFormatNumber = (value) => {
     console.log("hiiiiiiiii")
   }
 }
-const convertTo12HourTime = (time24, ID) => {
+const convertTo12HourTime = (time24) => {
   if (!time24) return null
   // Split the time string into hours, minutes, and seconds
   const [hours, minutes] = time24.split(":").map(Number)
@@ -156,15 +156,12 @@ export const AttendanceExceltoJson = async (socket, fileData) => {
       })
 
       const outTime12 = item["Out"] ? convertTo12HourTime(item["Out"]) : null
-      const inTime12 = item["In"]
-        ? convertTo12HourTime(item["In"], item["User ID"])
-        : null
+      const inTime12 = item["In"] ? convertTo12HourTime(item["In"]) : null
 
       if (
-        (existingAttendance &&
-          !existingAttendance.edited &&
-          existingAttendance.excel)
-      
+        existingAttendance &&
+        !existingAttendance.edited &&
+        existingAttendance.excel
       ) {
         totalData++
         const updated = await Attendance.updateOne(
