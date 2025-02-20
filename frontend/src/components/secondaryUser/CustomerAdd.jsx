@@ -260,11 +260,12 @@ const CustomerAdd = ({
   }, [licensenumber])
 
   const debouncedLicenseNo = useDebounce(tableObject.licensenumber, 1000)
-
+  // console.log(debouncedLicenseNo)
   useEffect(() => {
     // If there's a debounced license number, check its uniqueness
 
     if (debouncedLicenseNo.length > 0) {
+      console.log(debouncedLicenseNo)
       debouncedLicenseNo.trim()
 
       if (
@@ -273,9 +274,12 @@ const CustomerAdd = ({
         isLicense &&
         isLicense.length === 0
       ) {
-        const checkLicense = license.find(
-          (item) => item?.licensenumber.toString() === debouncedLicenseNo
-        )
+        const checkLicense = license.find((item) => {
+          if (!item || item.licensenumber === undefined) {
+            return false // Skips this and moves to the next item
+          }
+           return item?.licensenumber.toString() === debouncedLicenseNo
+        })
 
         if (checkLicense) {
           setLicenseAvailable(false)

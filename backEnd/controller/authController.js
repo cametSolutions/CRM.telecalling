@@ -236,7 +236,6 @@ export const UpdateUserandAdmin = async (req, res) => {
 
   const { selected, ...filteredUserData } = userData
   const { password } = filteredUserData
-  console.log("filllll", filteredUserData)
 
   try {
     if (role === "Staff") {
@@ -542,13 +541,10 @@ export const AttendanceApply = async (req, res) => {
         amPm: outTimeAmPm
       }
     } = selectattendance
-    console.log("selectedattendance", selectattendance)
 
     // Merge hours, minutes, and amPm into time strings
     const inTimeString = `${inTimeHours}:${inTimeMinutes} ${inTimeAmPm}`
     const outTimeString = `${outTimeHours}:${outTimeMinutes} ${outTimeAmPm}`
-    console.log("intime", inTimeString)
-    console.log("outime", outTimeString)
 
     // Check if attendance for the given date already exists for the selected ID
     const existingAttendance = await Attendance.findOne({
@@ -620,10 +616,6 @@ export const LeaveApply = async (req, res) => {
       userId: objectId
     })
 
-    console.log("type", leaveType)
-    console.log("perod", halfDayPeriod)
-    console.log("reason", reason)
-    console.log("exist", existingDateLeave)
     if (existingDateLeave) {
       // If a leave exists, update the document with the current formData
       const updatedLeave = await LeaveRequest.findByIdAndUpdate(
@@ -641,7 +633,6 @@ export const LeaveApply = async (req, res) => {
         { new: true } // Return the updated document
       )
       if (updatedLeave) {
-        console.log("Leave updated:", updatedLeave)
         return res
           .status(200)
           .json({ message: "leave updated", data: updatedLeave })
@@ -671,7 +662,6 @@ export const LeaveApply = async (req, res) => {
   }
 }
 export const mergeonsite = async (req, res) => {
-  console.log("check before")
   try {
     const leaveRequests = await LeaveRequest.find({ onsite: true })
 
@@ -704,9 +694,7 @@ export const mergeonsite = async (req, res) => {
 
     // Insert into the new Onsite collection
     const a = await Onsite.insertMany(onsiteRecords)
-    console.log("chek after")
     if (a) {
-      console.log("sucess")
       return res.status(200).json({ message: "sucesss", data: a })
     }
   } catch (error) {
@@ -734,7 +722,6 @@ export const OnsiteleaveApply = async (req, res) => {
       description,
       halfDayPeriod
     } = formData
-    console.log("onsite", onsite)
 
     const onsiteLeave = new LeaveRequest({
       leaveDate: new Date(startDate).toISOString().split("T")[0],
@@ -770,8 +757,7 @@ export const OnsiteApply = async (req, res) => {
       return res.status(404).json({ message: "no table content" })
     }
     const { startDate, onsiteType, description, halfDayPeriod } = formData
-    console.log("type", onsiteType)
-    console.log("roews", tableRows)
+
     const existingOnsite = await Onsite.findOne({
       onsiteDate: startDate,
       userId: selectedObjectId
@@ -805,7 +791,6 @@ export const OnsiteApply = async (req, res) => {
         },
         { new: true }
       )
-      console.log("Updated Leave Request:", updatedOnsite)
       if (updatedOnsite) {
         return res.status(200).json({ message: "Onsite updated" })
       }
@@ -832,9 +817,9 @@ export const OnsiteApply = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
-export const GetsomeAll = async (req, res) => {
+export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
   try {
-    const { year, month } = req.query
+    const { year, month } = req.query || { year: yearParam, month: monthParam }
 
     function getSundays(year, month) {
       const sundays = []
@@ -850,27 +835,45 @@ export const GetsomeAll = async (req, res) => {
 
       return sundays
     }
-    function generateMonthDates(year, month, name) {
+    function generateMonthDates(year, month) {
       const dates = {}
-      const daysInMonth = new Date(year, month - 1, 0).getDate()
+      const daysInMonth = new Date(year, month, 0).getDate()
 
       for (let day = 1; day <= daysInMonth; day++) {
         let date = new Date(year, month - 1, day)
+        // let dateKey =
+        //   String(date.getDate()).padStart(2, "0") +
+        //   "-" +
+        //   String(date.getMonth() + 1).padStart(2, "0") +
+        //   "-" +
+        //   date.getFullYear()
 
+        // let dateKey =
+        //   String(date.getDate()).padStart(2, "0") +
+        //   +"-" +
+        //   String(date.getMonth() + 1).padStart(2, "0") +
+        //   "-" +
+        //   date.getFullYear()
         let dateKey =
           date.getFullYear() +
           "-" +
           String(date.getMonth() + 1).padStart(2, "0") +
           "-" +
           String(date.getDate()).padStart(2, "0")
+
         dates[dateKey] = {
           inTime: "",
           outTime: "",
+          present: 0,
           late: "",
           onsite: [],
           early: "",
-          notemarked: "",
-          absent: ""
+          halfDayperiod: "",
+          notMarked: 1,
+          casualLeave: "",
+          privileageLeave: "",
+          compensatoryLeave: "",
+          otherLeave: ""
         } // Initialize empty object for each date
       }
 
@@ -920,7 +923,6 @@ export const GetsomeAll = async (req, res) => {
     const holiday = Array.isArray(holidays)
       ? holidays.map((date) => date.holyDate.getDate())
       : []
-    console.log("hooooo", holiday)
     for (const user of users) {
       const userId = user._id
       const userName = user.name
@@ -953,6 +955,7 @@ export const GetsomeAll = async (req, res) => {
         userId: userId,
         present: 0,
         absent: 0,
+        latecutting: 0,
         late: 0,
         earlyGoing: 0,
         halfDayLeave: 0,
@@ -960,7 +963,7 @@ export const GetsomeAll = async (req, res) => {
         onsite: 0,
         holiday: 0,
         notMarked: 0,
-        attendancedates: generateMonthDates(year, month, userName)
+        attendancedates: generateMonthDates(year, month)
       }
 
       let daysInMonth = new Set(
@@ -986,313 +989,630 @@ export const GetsomeAll = async (req, res) => {
       const present = []
       const fulldayarr = []
       const halfdayarr = []
+      attendances?.length &&
+        attendances?.forEach((att) => {
+          const day = att.attendanceDate.getDate()
+          const dayTime = att.attendanceDate.toISOString().split("T")[0]
+          // const date = new Date(att.attendanceDate)
+          // const day = String(date.getDate()).padStart(2, "0")
+          // const month = String(date.getMonth() + 1).padStart(2, "0")
+          // const year = date.getFullYear()
 
-      attendances?.forEach((att) => {
-        const day = att.attendanceDate.getDate()
-        const dayTime = att.attendanceDate.toISOString().split("T")[0]
+          // const dayTime = `${day}-${month}-${year}`
+          // console.log("daytime", dayTime)
 
-        const punchIn = att.inTime ? convertToMinutes(att.inTime) : null
-        const punchOut = att.outTime ? convertToMinutes(att.outTime) : null
+          const punchIn = att.inTime ? convertToMinutes(att.inTime) : null
+          const punchOut = att.outTime ? convertToMinutes(att.outTime) : null
 
-        stats.attendancedates[dayTime].inTime = att?.inTime
-        stats.attendancedates[dayTime].outTime = att?.outTime
+          stats.attendancedates[dayTime].inTime = att?.inTime
+          stats.attendancedates[dayTime].outTime = att?.outTime
+          const isOnsite =
+            Array.isArray(onsites) &&
+            onsites.some(
+              (o) =>
+                o.onsiteDate.toISOString().split("T")[0] === dayTime &&
+                (o.departmentverified === true || o.adminverified === true)
+            )
+          // const isOnsite =
+          //   Array.isArray(onsites) &&
+          //   onsites.some((o) => {
+          //     const onsiteDate =
+          //       String(o.onsiteDate.getDate()).padStart(2, "0") +
+          //       "-" +
+          //       String(o.onsiteDate.getMonth() + 1).padStart(2, "0") +
+          //       "-" +
+          //       o.onsiteDate.getFullYear()
 
-        if (!punchIn || !punchOut) {
-          arr.push(day)
-          stats.present++
-          stats.halfDayLeave++
-          stats.attendancedates[dayTime].absent = 0.5
-          halfdayarr.push(day)
-        } else if (punchIn <= morningLimit && punchOut >= earlyLeaveLimit) {
-          stats.present++
-          present.push(day)
-        } else if (
-          punchIn >= morningLimit &&
-          punchIn <= lateLimit &&
-          punchOut >= earlyLeaveLimit
-        ) {
-          const a = getTimeDifference("09:35 AM", att.inTime)
+          //     return (
+          //       onsiteDate === dayTime &&
+          //       (o.departmentverified === true || o.adminverified === true)
+          //     )
+          //   })
+          // if (userName.trim() === "Muhammed Rasik K.M") {
+          //   console.log("ISSSSS", isOnsite)
+          // }
 
-          // stats.attendancedates[dayTime].late = ""
-          stats.attendancedates[dayTime].late = a
+          const onsiteRecord = Array.isArray(onsites)
+            ? onsites.find(
+                (o) =>
+                  o.onsiteDate.toISOString().split("T")[0] === dayTime &&
+                  (o.departmentverified === true || o.adminverified === true)
+              )
+            : null
+          // const onsiteRecord = Array.isArray(onsites)
+          //   ? onsites.find((o) => {
+          //       const onsiteDate =
+          //         String(o.onsiteDate.getDate()).padStart(2, "0") +
+          //         "-" +
+          //         String(o.onsiteDate.getMonth() + 1).padStart(2, "0") +
+          //         "-" +
+          //         o.onsiteDate.getFullYear()
 
-          stats.late++
-          stats.present++
-          present.push(day)
-        } else if (
-          punchOut >= minOutTime &&
-          punchOut < earlyLeaveLimit &&
-          punchIn < lateLimit
-        ) {
-          const b = getTimeDifference(att.outTime, "05:30 PM")
-          // stats.attendancedates[dayTime].early = ""
-          stats.attendancedates[dayTime].early = b
-          stats.present++
-          stats.earlyGoing++
-          present.push(day)
-        } else if (
-          (punchIn < noonLimit && punchOut < noonLimit) ||
-          (punchIn > noonLimit && punchOut > noonLimit) ||
-          (punchIn > lateLimit &&
-            punchIn < noonLimit &&
-            punchOut < minOutTime &&
-            punchOut > noonLimit)
-        ) {
-          stats.attendancedates[dayTime].absent = 1
+          //       return (
+          //         onsiteDate === dayTime &&
+          //         (o.departmentverified === true || o.adminverified === true)
+          //       )
+          //     })
+          //   : null
 
-          stats.fullDayLeave++
-          fulldayarr.push(day)
-        } else if (
-          (punchIn < lateLimit &&
-            punchOut >= noonLimit &&
-            punchOut < minOutTime) ||
-          (punchIn <= noonLimit &&
-            punchOut >= earlyLeaveLimit &&
-            punchIn > lateLimit)
-        ) {
-          arr.push(day)
-          halfdayarr.push(day)
-          stats.present++
-          stats.halfDayLeave++
-          stats.attendancedates[dayTime].absent = 0.5
-        }
-        daysInMonth.delete(day)
-      })
+          const onsiteDetails = onsiteRecord
+            ? {
+                onsiteData: onsiteRecord.onsiteData,
+                onsiteType: onsiteRecord.onsiteType,
+                halfDayPeriod:
+                  onsiteRecord.onsiteType === "Half Day"
+                    ? onsiteRecord.halfDayPeriod
+                    : null
+              }
+            : null
+          ////
+          // const isLeave =
+          //   Array.isArray(leaves) &&
+          //   leaves.some((l) => {
+          //     const leaveDate =
+          //       String(l.leaveDate.getDate()).padStart(2, "0") +
+          //       "-" +
+          //       String(l.leaveDate.getMonth() + 1).padStart(2, "0") +
+          //       "-" +
+          //       l.leaveDate.getFullYear()
 
+          //     return (
+          //       leaveDate === dayTime &&
+          //       l.onsite === false &&
+          //       (l.departmentverified === true || l.adminverified === true)
+          //     )
+          //   })
+
+          const isLeave =
+            Array.isArray(leaves) &&
+            leaves.some(
+              (l) =>
+                l.leaveDate.toISOString().split("T")[0] === dayTime &&
+                l.onsite === false &&
+                (l.departmentverified === true || l.adminverified === true)
+            )
+          const leaveRecord = Array.isArray(leaves)
+            ? leaves.find(
+                (l) =>
+                  l.leaveDate.toISOString().split("T")[0] === dayTime &&
+                  l.onsite === false &&
+                  (l.departmentverified === true || l.adminverified === true)
+              )
+            : null
+          // const leaveRecord = Array.isArray(leaves)
+          //   ? leaves.find((l) => {
+          //       const leaveDate =
+          //         String(l.leaveDate.getDate()).padStart(2, "0") +
+          //         "-" +
+          //         String(l.leaveDate.getMonth() + 1).padStart(2, "0") +
+          //         "-" +
+          //         l.leaveDate.getFullYear()
+
+          //       return (
+          //         leaveDate === dayTime &&
+          //         l.onsite === false &&
+          //         (l.departmentverified === true || l.adminverified === true)
+          //       )
+          //     })
+          //   : null
+          const leaveDetails = leaveRecord
+            ? {
+                leaveType: leaveRecord.leaveType,
+                halfDayPeriod:
+                  leaveRecord.leaveType === "Half Day"
+                    ? leaveRecord.halfDayPeriod
+                    : null,
+                leaveCategory: leaveRecord?.leaveCategory || null
+              }
+            : null
+
+          // const leaveType = leaveRecord ? leaveRecord.leaveType : null
+
+          if (!punchIn || !punchOut) {
+            arr.push(day)
+
+            stats.attendancedates[dayTime].notMarked = 1
+          } else if (punchIn <= morningLimit && punchOut >= earlyLeaveLimit) {
+            stats.attendancedates[dayTime].present = 1
+            stats.attendancedates[dayTime].inTime = att.inTime
+            stats.attendancedates[dayTime].outTime = att.outTime
+            stats.attendancedates[dayTime].notMarked = ""
+
+            if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+              stats.onsite++
+              // stats.attendancedates[dayTime].onsite = 1
+            } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
+              stats.onsite += 0.5
+              // stats.attendancedates[dayTime].onsite = 0.5
+            }
+          } else if (
+            punchIn >= morningLimit &&
+            punchIn <= lateLimit &&
+            punchOut >= earlyLeaveLimit
+          ) {
+            const a = getTimeDifference("09:35 AM", att.inTime)
+
+            stats.attendancedates[dayTime].late = a
+            stats.late++
+            stats.attendancedates[dayTime].present = 1
+            stats.attendancedates[dayTime].inTime = att.inTime
+            stats.attendancedates[dayTime].outTime = att.outTime
+            stats.attendancedates[dayTime].notMarked = ""
+            if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+              stats.onsite++
+              // stats.attendancedates[dayTime].onsite = 1
+            } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
+              stats.onsite += 0.5
+              // stats.attendancedates[dayTime].onsite = 0.5
+            }
+            present.push(day)
+          } else if (
+            punchOut > minOutTime &&
+            punchOut < earlyLeaveLimit &&
+            punchIn <= morningLimit
+          ) {
+            const b = getTimeDifference(att.outTime, "05:30 PM")
+            stats.attendancedates[dayTime].present = 1
+            stats.attendancedates[dayTime].early = b
+            stats.attendancedates[dayTime].inTime = att.inTime
+            stats.attendancedates[dayTime].outTime = att.outTime
+            stats.attendancedates[dayTime].notMarked = ""
+            stats.earlyGoing++
+            if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+              stats.onsite++
+              // stats.attendancedates[dayTime].onsite = 1
+            } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
+              stats.onsite += 0.5
+              // stats.attendancedates[dayTime].onsite = 0.5
+            }
+            present.push(day)
+          } else if (
+            punchIn < lateLimit &&
+            punchIn > morningLimit &&
+            punchOut > minOutTime &&
+            punchOut < earlyLeaveLimit
+          ) {
+            const a = getTimeDifference("09:35 AM", att.inTime)
+            const b = getTimeDifference(att.outTime, "05:30 PM")
+            stats.earlyGoing++
+            stats.late++
+            stats.attendancedates[dayTime].present = 1
+            stats.attendancedates[dayTime].inTime = att.inTime
+            stats.attendancedates[dayTime].outTime = att.outTime
+            stats.attendancedates[dayTime].notMarked = ""
+            stats.attendancedates[dayTime].early = b
+            stats.attendancedates[dayTime].late = a
+            if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+              stats.onsite++
+              // stats.attendancedates[dayTime].onsite = 1
+            } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
+              stats.onsite += 0.5
+              // stats.attendancedates[dayTime].onsite = 0.5
+            }
+          } else if (
+            (punchIn < noonLimit && punchOut < noonLimit) ||
+            (punchIn > noonLimit && punchOut > noonLimit) ||
+            (punchIn > lateLimit &&
+              punchIn < noonLimit &&
+              punchOut < minOutTime &&
+              punchOut > noonLimit)
+          ) {
+            stats.attendancedates[dayTime].notMarked = 1
+            if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+              stats.onsite++
+              stats.attendancedates[dayTime].present = 1
+              stats.attendancedates[dayTime].notMarked = ""
+            } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
+              stats.onsite += 0.5
+              stats.attendancedates[dayTime].present = 0.5
+              stats.attendancedates[dayTime].notMarked = 0.5
+            }
+
+            fulldayarr.push(day)
+          } else if (
+            (punchIn < lateLimit &&
+              punchOut >= noonLimit &&
+              punchOut < minOutTime) ||
+            (punchIn <= noonLimit &&
+              punchOut >= earlyLeaveLimit &&
+              punchIn > lateLimit)
+          ) {
+            arr.push(day)
+            halfdayarr.push(day)
+            stats.attendancedates[dayTime].present = 0.5
+            stats.attendancedates[dayTime].notMarked = 0.5
+            if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+              stats.onsite++
+              stats.attendancedates[dayTime].present = 1
+              stats.attendancedates[dayTime].notMarked = ""
+            } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
+              if (
+                punchIn < lateLimit &&
+                punchOut >= noonLimit &&
+                onsiteDetails.halfDayPeriod === "Afternoon"
+              ) {
+                stats.onsite += 0.5
+                stats.attendancedates[dayTime].present = 1
+                stats.attendancedates[dayTime].notMarked = ""
+                // stats.attendancedates[dayTime].onsite = 0.5
+              } else if (
+                punchIn < lateLimit &&
+                punchOut >= noonLimit &&
+                onsiteDetails.halfDayPeriod === "Morning"
+              ) {
+                stats.onsite += 0.5
+                // stats.attendancedates[dayTime].onsite = 0.5
+              } else if (
+                punchIn <= noonLimit &&
+                punchOut >= earlyLeaveLimit &&
+                onsiteDetails.halfDayPeriod === "Afternoon"
+              ) {
+                stats.onsite += 0.5
+                // stats.attendancedates[dayTime].onsite = 0.5
+              } else if (
+                punchIn <= noonLimit &&
+                punchOut >= earlyLeaveLimit &&
+                onsiteDetails.halfDayPeriod === "Morning"
+              ) {
+                stats.onsite += 0.5
+                stats.attendancedates[dayTime].present = 1
+                // stats.attendancedates[dayTime].onsite = 0.5
+                stats.attendancedates[dayTime].notMarked = ""
+              }
+            }
+            if (isLeave && leaveDetails.leaveType === "Full Day") {
+              if (leaveDetails.leaveCategory) {
+                switch (leaveDetails.leaveCategory) {
+                  case "casual Leave":
+                    stats.attendancedates[dayTime].casualLeave = 1
+
+                    break
+                  case "other Leave":
+                    stats.attendancedates[dayTime].otherLeave = 1
+                    break
+                  case "privileage Leave":
+                    stats.attendancedates[dayTime].privileageLeave = 1
+                    break
+                  case "compensatory Leave":
+                    stats.attendancedates[dayTime].compensatoryLeave = 1
+                    break
+                  default:
+                    stats.attendancedates[dayTime].others = 1 // Default case
+                    break
+                }
+                // stats.attendancedates[dayTime].leaveDetails.leaveCategory = 1
+              } else {
+                stats.attendancedates[dayTime].otherLeave = 1
+              }
+              // stats.absent++
+              stats.attendancedates[dayTime].notMarked = ""
+            } else if (isLeave && leaveDetails.leaveType === "Half Day") {
+              if (leaveDetails.leaveCategory) {
+                switch (leaveDetails.leaveCategory) {
+                  case "casual Leave":
+                    stats.attendancedates[dayTime].casualLeave = 0.5
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod
+                    break
+                  case "other Leave":
+                    stats.attendancedates[dayTime].otherLeave = 0.5
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod
+                    break
+                  case "privileage Leave":
+                    stats.attendancedates[dayTime].privileageLeave = 0.5
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod
+                    break
+                  case "compensatory Leave":
+                    stats.attendancedates[dayTime].compensatoryLeave = 0.5
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod
+                    break
+                  default:
+                    stats.attendancedates[dayTime].others = 0.5
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod // Default case
+                    break
+                }
+                // stats.attendancedates[dayTime].leaveDetails.leaveCategory = 0.5
+              } else {
+                stats.attendancedates[dayTime].otherLeave = 0.5
+                stats.attendancedates[dayTime].halfDayperiod =
+                  leaveDetails.halfDayPeriod
+              }
+              // stats.absent += 0.5
+              stats.attendancedates[dayTime].notMarked = ""
+            }
+          }
+          daysInMonth.delete(day)
+        })
+      // if (userName.trim() === "Muhammed Rasik K.M") {
+      //   console.log("staaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", stats)
+      // }
       onsites?.length &&
         onsites?.forEach((onsite) => {
-          let day = onsite.onsiteDate.getDate()
-          const dayTime = onsite.onsiteDate.toISOString().split("T")[0]
+          const onsiteDate = onsite.onsiteDate.toISOString().split("T")[0]
 
+          // const date = onsite.onsiteDate
+          // const day = String(date.getDate()).padStart(2, "0")
+          // const month = String(date.getMonth() + 1).padStart(2, "0")
+          // const year = date.getFullYear()
+
+          // const onsiteDate = `${day}-${month}-${year}`
+          const isAttendance =
+            Array.isArray(attendances) &&
+            // attendances.some((o) => {
+            //   const formattedDate = o.attendancedates
+            //     ?.toISOString()
+            //     .split("T")[0]
+            //     .split("-")
+            //     .reverse()
+            //     .join("-")
+
+            //   return formattedDate === onsiteDate
+            // })
+            attendances.some(
+              (o) => o.attendanceDate.toISOString().split("T")[0] === onsiteDate
+            )
           if (Array.isArray(onsite.onsiteData)) {
             onsite.onsiteData.flat().forEach((item) => {
-              stats.attendancedates[dayTime].onsite.push({
+              stats.attendancedates[onsiteDate].onsite.push({
                 place: item?.place,
                 siteName: item?.siteName,
                 onsiteType: onsite?.onsiteType,
-                period:
+                halfDayPeriod:
                   onsite?.onsiteType === "Half Day"
                     ? onsite?.halfDayPeriod
                     : null
               })
             })
           }
-
-          if (!arr.includes(day)) {
+          if (!isAttendance) {
             if (onsite.onsiteType === "Full Day") {
-              if (!sundays.includes(day) && !present.includes(day)) {
-                stats.onsite++
-                stats.present++
-                if (fulldayarr.includes(day)) {
-                  stats.fullDayLeave--
-                }
-                stats.attendancedates[dayTime].absent = ""
-
-                daysInMonth.delete(day)
-              } else if (!sundays.includes(day) && present.includes(day)) {
-                daysInMonth.delete(day)
-                stats.onsite++
-              } else {
-                stats.onsite++
-              }
+              stats.attendancedates[onsiteDate].present = 1
+              stats.attendancedates[onsiteDate].notMarked = ""
+              stats.onsite++
             } else if (onsite.onsiteType === "Half Day") {
-              if (!sundays.includes(day) && !present.includes(day)) {
-                stats.present++
-                stats.onsite++
-                if (fulldayarr.includes(day)) {
-                  stats.fullDayLeave--
-                }
-                stats.attendancedates[dayTime].absent = 0.5
-
-                stats.halfDayLeave++
-                daysInMonth.delete(day)
-              } else if (!sundays.includes(day) && present.includes(day)) {
-                daysInMonth.delete(day)
-                stats.onsite++
-              } else {
-                stats.onsite++
-              }
+              stats.attendancedates[onsiteDate].present = 0.5
+              stats.attendancedates[onsiteDate].notMarked = 0.5
             }
-          } else {
-            if (halfdayarr.includes(day)) {
-              if (onsite.onsiteType === "Half Day") {
-                stats.onsite++
-                stats.halfDayLeave--
-                stats.attendancedates[dayTime].absent = ""
-              } else if (onsite.onsiteType === "Full Day") {
-                stats.onsite++
-                stats.halfDayLeave--
-                stats.attendancedates[dayTime].absent = ""
+          }
+        })
+      leaves?.length &&
+        leaves.forEach((leave) => {
+          const leaveDate = leave.leaveDate.toISOString().split("T")[0]
+          const leaveCategory = leave?.leaveCategory
+
+          const isAttendance =
+            Array.isArray(attendances) &&
+            attendances.some(
+              (o) => o.attendanceDate.toISOString().split("T")[0] === leaveDate
+            )
+          if (!isAttendance) {
+            if (leave.leaveType === "Full Day" && leave.onsite === false) {
+              if (leaveCategory) {
+                switch (leaveCategory) {
+                  case "casual Leave":
+                    stats.attendancedates[leaveDate].casualLeave = 1
+                    break
+                  case "other Leave":
+                    stats.attendancedates[leaveDate].otherLeave = 1
+                    break
+                  case "privileage Leave":
+                    stats.attendancedates[leaveDate].privileageLeave = 1
+                    break
+                  case "compensatory Leave":
+                    stats.attendancedates[leaveDate].compensatoryLeave = 1
+                    break
+                  default:
+                    stats.attendancedates[leaveDate].others = 1 // Default case
+                    break
+                }
+              } else {
+                stats.attendancedates[leaveDate].otherLeave = 1
               }
+              // stats.absent++
+
+              stats.attendancedates[leaveDate].notMarked = ""
+            } else if (
+              leave.leaveType === "Half Day" &&
+              leave.onsite === false
+            ) {
+              if (leaveCategory) {
+                switch (leaveCategory) {
+                  case "casual Leave":
+                    stats.attendancedates[leaveDate].casualLeave = 0.5
+                    stats.attendancedates[leaveDate].halfDayperiod =
+                      leave.halfDayPeriod
+                    break
+                  case "other Leave":
+                    stats.attendancedates[leaveDate].otherLeave = 0.5
+                    stats.attendancedates[leaveDate].halfDayperiod =
+                      leave.halfDayPeriod
+                    break
+                  case "privileage Leave":
+                    stats.attendancedates[leaveDate].privileageLeave = 0.5
+                    stats.attendancedates[leaveDate].halfDayperiod =
+                      leave.halfDayPeriod
+                    break
+                  case "compensatory Leave":
+                    stats.attendancedates[leaveDate].compensatoryLeave = 0.5
+                    stats.attendancedates[leaveDate].halfDayperiod =
+                      leave.halfDayPeriod
+                    break
+                  default:
+                    stats.attendancedates[leaveDate].others = 0.5
+                    stats.attendancedates[leaveDate].halfDayperiod =
+                      leave.halfDayPeriod // Default case
+                    break
+                }
+                // stats.attendancedates[leaveDate].leaveCategory = 0.5
+              } else {
+                stats.attendancedates[leaveDate].otherLeave = 0.5
+                stats.attendancedates[leaveDate].halfDayperiod =
+                  leave.halfDayPeriod
+              }
+
+              // stats.notMarked += 0.5
+              stats.attendancedates[leaveDate].notMarked = 0.5
             }
           }
         })
 
-      const monthSet = [...daysInMonth]
-      sundays.forEach((sunday) => {
-        const a = monthSet.findIndex((day) => day === sunday)
-        if (a !== -1) {
-          monthSet.splice(a, 1)
+      const uniqueDates = [...new Set([...sundays, ...holiday])]
+
+      const c = createDates(uniqueDates, month, year)
+      function getNextDate(dateString) {
+        // Parse the date string (YYYY-MM-DD)
+        const [year, month, day] = dateString.split("-").map(Number)
+
+        // Create a date object
+        const date = new Date(year, month - 1, day)
+
+        // Add one day
+        date.setDate(date.getDate() + 1)
+
+        // Format the result back to 'YYYY-MM-DD'
+        const nextDay = String(date.getDate()).padStart(2, "0")
+        const nextMonth = String(date.getMonth() + 1).padStart(2, "0")
+        const nextYear = date.getFullYear() // Full year
+
+        return `${nextYear}-${nextMonth}-${nextDay}`
+      }
+      function getPreviousDate(dateString) {
+        // Parse the date string (YYYY-MM-DD)
+        const [year, month, day] = dateString.split("-").map(Number)
+
+        // Create a date object
+        const date = new Date(year, month - 1, day)
+
+        // Subtract one day
+        date.setDate(date.getDate() - 1)
+
+        // Format the result back to 'YYYY-MM-DD'
+        const prevDay = String(date.getDate()).padStart(2, "0")
+        const prevMonth = String(date.getMonth() + 1).padStart(2, "0")
+        const prevYear = date.getFullYear() // Full year
+
+        return `${prevYear}-${prevMonth}-${prevDay}`
+      }
+
+      ;(function calculateAbsences(sundays, attendances, onsites) {
+        const isPresent = (date) => {
+          for (const dates in attendances.attendancedates) {
+            if (date === dates) {
+              const attendance = attendances.attendancedates[dates]
+
+              if (attendance.otherLeave !== "") {
+                return {
+                  status: true,
+                  present: attendance.present,
+                  otherLeave: attendance.others,
+                  notMarked: attendance.notMarked
+                }
+              } else {
+                return {
+                  status: false,
+                  present: attendance.present,
+                  notMarked: attendance.notMarked
+                }
+              }
+            }
+          }
         }
-      })
 
-      monthSet.forEach((day) => {
-        let date = new Date(year, month - 1, day)
+        sundays.forEach((sunday) => {
+          const previousDay = getPreviousDate(sunday)
+          const nextDay = getNextDate(sunday)
 
-        let dateKey =
-          date.getFullYear() +
-          "-" +
-          String(date.getMonth() + 1).padStart(2, "0") +
-          "-" +
-          String(date.getDate()).padStart(2, "0")
+          const prevPresent = isPresent(previousDay)
+          const nextPresent = isPresent(nextDay)
 
-        stats.attendancedates[dateKey].absent = 1 // Set absent = 1
-        stats.attendancedates[dateKey].notemarked = 1
-      })
+          if (prevPresent?.status && nextPresent?.status) {
+            if (
+              prevPresent?.otherLeave === 0.5 &&
+              prevPresent?.present === 0.5
+            ) {
+              stats.attendancedates[previousDay].present = 0
+            }
+            if (nextPresent?.others === 0.5 && nextPresent?.present === 0.5) {
+              stats.attendancedates[nextDay].present = 0
+            }
+            stats.attendancedates[previousDay].others = 1
+            stats.attendancedates[sunday].otherLeave = 1
+            stats.attendancedates[nextDay].otherLeave = 1
+            stats.attendancedates[sunday].notMarked = ""
+          } else if (
+            (prevPresent?.notMarked < 1 || prevPresent?.notMarked === "") &&
+            (nextPresent?.notMarked < 1 || nextPresent?.notMarked === "")
+          ) {
+            stats.attendancedates[sunday].present = 1
+            stats.attendancedates[sunday].notMarked = ""
+          }
+        })
+      })(c, stats, onsites)
 
-      ////sunday leaveeee////////
-      // const uniqueDates = [...new Set([...sundays, ...holiday])]
+      for (const dates in stats.attendancedates) {
+        stats.present += stats.attendancedates[dates].present
+        stats.present +=
+          stats.attendancedates[dates].privileageLeave !== ""
+            ? Number(stats.attendancedates[dates].privileageLeave)
+            : 0
+        stats.present +=
+          stats.attendancedates[dates].compensatoryLeave !== ""
+            ? Number(stats.attendancedates[dates].compensatoryLeave)
+            : 0
+        stats.absent +=
+          stats.attendancedates[dates].otherLeave &&
+          !isNaN(stats.attendancedates[dates].otherLeave)
+            ? Number(stats.attendancedates[dates].otherLeave)
+            : stats.attendancedates[dates].casualLeave &&
+              !isNaN(stats.attendancedates[dates].casualLeave)
+            ? Number(stats.attendancedates[dates].casualLeave)
+            : 0
 
-      // const c = createDates(uniqueDates, month, year)
-      // function getNextDate(dateString) {
-      //   // Parse the date string (YYYY-MM-DD)
-      //   const [year, month, day] = dateString.split("-").map(Number)
-
-      //   // Create a date object
-      //   const date = new Date(year, month - 1, day)
-
-      //   // Add one day
-      //   date.setDate(date.getDate() + 1)
-
-      //   // Format the result back to 'YYYY-MM-DD'
-      //   const nextDay = String(date.getDate()).padStart(2, "0")
-      //   const nextMonth = String(date.getMonth() + 1).padStart(2, "0")
-      //   const nextYear = date.getFullYear() // Full year
-
-      //   return `${nextYear}-${nextMonth}-${nextDay}`
-      // }
-      // function getPreviousDate(dateString) {
-      //   // Parse the date string (YYYY-MM-DD)
-      //   const [year, month, day] = dateString.split("-").map(Number)
-
-      //   // Create a date object
-      //   const date = new Date(year, month - 1, day)
-
-      //   // Subtract one day
-      //   date.setDate(date.getDate() - 1)
-
-      //   // Format the result back to 'YYYY-MM-DD'
-      //   const prevDay = String(date.getDate()).padStart(2, "0")
-      //   const prevMonth = String(date.getMonth() + 1).padStart(2, "0")
-      //   const prevYear = date.getFullYear() // Full year
-
-      //   return `${prevYear}-${prevMonth}-${prevDay}`
-      // }
-      // if (userName.trim() === "Sreeraj Vijay") {
-      //   console.log("sreeeee", stats)
-      // }
-
-      // ;(function calculateAbsences(sundays, attendances, onsites) {
-      //   const isPresent = (date) =>
-      //     attendances.some((att) => {
-      //       const punchIn = att.inTime ? convertToMinutes(att.inTime) : null
-      //       const punchOut = att.outTime ? convertToMinutes(att.outTime) : null
-      //       const attDate = att.attendanceDate.toISOString().split("T")[0]
-      //       if (
-      //         attDate === date &&
-      //         ((punchIn <= morningLimit && punchOut >= earlyLeaveLimit) ||
-      //           (punchIn >= morningLimit &&
-      //             punchIn <= lateLimit &&
-      //             punchOut >= earlyLeaveLimit) ||
-      //           (punchOut >= minOutTime &&
-      //             punchOut < earlyLeaveLimit &&
-      //             punchIn < lateLimit))
-      //       ) {
-      //         return true
-      //       } else if (
-      //         attDate === date &&
-      //         (att.inTime || att.outTime) &&
-      //         (!punchIn ||
-      //           !punchOut ||
-      //           (punchIn < noonLimit && punchOut < noonLimit) ||
-      //           (punchIn > noonLimit && punchOut > noonLimit) ||
-      //           (punchIn > lateLimit &&
-      //             punchIn < noonLimit &&
-      //             punchOut < minOutTime &&
-      //             punchOut > noonLimit) ||
-      //           (punchIn < lateLimit &&
-      //             punchOut >= noonLimit &&
-      //             punchOut < minOutTime) ||
-      //           (punchIn <= noonLimit &&
-      //             punchOut >= earlyLeaveLimit &&
-      //             punchIn > lateLimit))
-      //       ) {
-      //         return false
-      //       }
-      //     })
-
-      //   const hasOnsite = (date) =>
-      //     onsites.some(
-      //       (onsite) =>
-      //         onsite.onsiteDate.toISOString().split("T")[0] === date &&
-      //         onsite.onsiteType === "Full Day"
-      //     )
-
-      //   sundays.forEach((sunday) => {
-      //     // console.log("sundddddddd", sunday)
-      //     const previousDay = getPreviousDate(sunday)
-      //     const nextDay = getNextDate(sunday)
-
-      //     const prevPresent = isPresent(previousDay)
-      //     const nextPresent = isPresent(nextDay)
-
-      //     const prevOnsite = hasOnsite(previousDay)
-      //     const nextOnsite = hasOnsite(nextDay)
-
-      //     if (!(prevPresent || prevOnsite) || !(nextPresent || nextOnsite)) {
-      //       stats.attendancedates[previousDay].absent = 1
-      //       stats.attendancedates[sunday].absent = 1
-      //       stats.attendancedates[nextDay].absent = 1
-      //       stats.present -= 3
-      //       stats.absent += 3
-      //     }
-      //   })
-      // })(c, attendances, onsites)
-
-      stats.notMarked = daysInMonth.size - sundays.length
-
-      stats.absent +=
-        Math.floor(stats.late / 3) * 1 +
-        Math.floor(stats.earlyGoing / 3) * 1 +
-        stats.fullDayLeave +
-        stats.halfDayLeave / 2 +
-        stats.notMarked
-      if (userName.trim() === "Anjana unnikrishnan") {
-        console.log("preee", stats.present)
+        stats.notMarked +=
+          stats.attendancedates[dates].notMarked !== ""
+            ? Number(stats.attendancedates[dates].notMarked)
+            : 0
       }
-      stats.present += sundays.length
-      if (userName.trim() === "Anjana unnikrishnan") {
-        console.log("preee", stats.present)
-      }
-      stats.present += uniqueHolidays?.length
-      if (userName.trim() === "Anjana unnikrishnan") {
-        console.log("preee", stats.present)
-      }
-      stats.present -= Math.floor(stats?.late / 3) * 1
-      stats.present -= Math.floor(stats?.earlyGoing / 3) * 1
+      const combined = stats.earlyGoing + stats.late
+      stats.latecutting =
+        Math.floor(combined / 6) * 1 + (Math.floor(combined / 3) % 2) * 0.5
 
-      stats.present -= stats?.halfDayLeave / 2
+      stats.present -=
+        Math.floor(combined / 6) * 1 + (Math.floor(combined / 3) % 2) * 0.5
 
       staffAttendanceStats.push(stats)
     }
-
-    // console.log("ddddddddddddd", staffAttendanceStats)
-
-    return res
-      .status(200)
-      .json({ message: "Attendence report found", data: staffAttendanceStats })
+    // console.log("statssss", staffAttendanceStats)
+    return res.status(200).json({
+      message: "Attendence report found",
+      data: staffAttendanceStats
+    })
   } catch (error) {
-    console.log("error", error.message)
+    console.log("error", error)
     return res.status(500).json({ message: "Internal server error" })
   }
 }
@@ -1859,7 +2179,6 @@ export const GetStaffCallList = async (req, res) => {
     // Fetch staff details
     const staff = await Staff.find()
     const a = await Staff.find().select("name _id callstatus.totalCall").lean()
-    console.log("ggggggggggg")
     // Fetch customer calls and populate callerId in attendedBy array
     const customerCalls = await CallRegistration.find()
       .populate("callregistration.formdata.attendedBy.callerId") // Populate callerId field
@@ -2114,5 +2433,996 @@ export const GetindividualStaffCall = async (req, res) => {
     return res
       .status(500)
       .json({ message: "An error occurred while fetching data." })
+  }
+}
+export const UpdateLeaveSummary = async (req, res) => {
+  try {
+    const { userid } = req.query
+    const formData = req.body
+
+    const { editDate, ...dynamicDateDetails } = formData
+    const dynamicDateKey = Object.keys(dynamicDateDetails)[0] // Get the key, e.g. '2025-02-01'
+    const details = dynamicDateDetails[dynamicDateKey]
+    // Define which fields belong to which collection
+    const fieldMappings = {
+      leave: ["leaveCategory"],
+      attendance: ["inTime", "outTime"],
+      onsite: ["onsiteType", "halfDayPeriod"]
+    }
+
+    const getUpdatedFields = async (collection, fields, dateFeild) => {
+      const existingRecord = await collection.findOne({
+        userId: userid,
+        [dateFeild]: editDate
+      })
+      if (!existingRecord) return {} // No existing record means nothing to update
+
+      const updatedFields = {}
+      fields.forEach((key) => {
+        if (
+          details[key] !== undefined &&
+          (!Object.hasOwn(existingRecord, key) ||
+            existingRecord[key] !== details[key])
+        ) {
+          updatedFields[key] = details[key]
+        }
+      })
+
+      return updatedFields
+    }
+    // Get updates for each collection
+    const leaveUpdates = await getUpdatedFields(
+      LeaveRequest,
+      fieldMappings.leave,
+      "leaveDate"
+    )
+    const attendanceUpdates = await getUpdatedFields(
+      Attendance,
+      fieldMappings.attendance,
+      "attendanceDate"
+    )
+    const onsiteUpdates = await getUpdatedFields(
+      Onsite,
+      fieldMappings.onsite,
+      "onsiteDate"
+    )
+
+    // Perform updates only if necessary
+    const updateOperations = []
+
+    if (Object.keys(leaveUpdates).length) {
+      updateOperations.push(
+        LeaveRequest.updateOne(
+          { userId: userid, leaveDate: editDate },
+          { $set: leaveUpdates }
+        )
+      )
+    }
+
+    if (Object.keys(attendanceUpdates).length) {
+      updateOperations.push(
+        Attendance.updateOne(
+          { userid, attendanceDate: editDate },
+          { $set: attendanceUpdates }
+        )
+      )
+    }
+
+    if (Object.keys(onsiteUpdates).length) {
+      updateOperations.push(
+        Onsite.updateOne(
+          { userid, onsiteDate: editDate },
+          { $set: onsiteUpdates }
+        )
+      )
+    }
+
+    // Execute all updates in parallel
+    await Promise.all(updateOperations)
+    return res.status(200).json({ message: "update succesfully" })
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const EditLeave = async (req, res) => {
+  try {
+    const { userid } = req.query
+    const formData = req.body
+    const { leaveDate, ...updatedFeild } = formData
+   
+    const dateObj = new Date(leaveDate)
+
+    // Extract year and month (without leading zero)
+    const year = dateObj.getFullYear() // "2025"
+    const month = dateObj.getMonth() + 1
+    const result = await LeaveRequest.findOneAndUpdate(
+      { userId: userid, leaveDate: formData.leaveDate }, // Find criteria
+      { $set: updatedFeild }, // Update only selected fields
+      { new: true } // Return updated document
+    )
+    if (result) {
+      const fakeReq = { query: { year, month } }
+
+      // Call GetsomeAll with fake req
+      const a = await GetsomeAllsummary(fakeReq, res)
+      if (a) {
+        return res.status(200).json({ message: "leave updated", data: a })
+      }
+    }
+  } catch (error) {
+    console.log("error", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const EditAttendance = async (req, res) => {
+  try {
+    const { userid } = req.query
+    const formData = req.body
+    // const { attendanceDate, ...updatedFeild } = formData
+   
+    const {
+      attendanceDate,
+      inTime: { hours: inTimeHours, minutes: inTimeMinutes, amPm: inTimeAmPm },
+      outTime: {
+        hours: outTimeHours,
+        minutes: outTimeMinutes,
+        amPm: outTimeAmPm
+      }
+    } = formData
+    const dateObj = new Date(attendanceDate)
+
+    // Merge hours, minutes, and amPm into time strings
+    const inTimeString = `${inTimeHours}:${inTimeMinutes} ${inTimeAmPm}`
+    const outTimeString = `${outTimeHours}:${outTimeMinutes} ${outTimeAmPm}`
+    // Extract year and month (without leading zero)
+    const year = dateObj.getFullYear() // "2025"
+    const month = dateObj.getMonth() + 1
+    const existingAttendance = await Attendance.findOne({
+      userId: userid,
+      attendanceDate
+    })
+    if (existingAttendance) {
+      // Update existing record with new time data
+      existingAttendance.inTime = inTimeString
+      existingAttendance.outTime = outTimeString
+      await existingAttendance.save()
+      const fakeReq = { query: { year, month } }
+
+      // Call GetsomeAll with fake req
+      const a = await GetsomeAllsummary(fakeReq, res)
+      // console.log("ddddddddddd", a.data)
+      if (a) {
+        return res.status(200).json({ message: "leave updated", data: a })
+      }
+      // return res.status(200).json({
+      //   message: "Attendance updated successfully",
+      //   attendance: existingAttendance
+      // })
+    }
+    // const result = await Attendance.findOneAndUpdate(
+    //   { userId: userid, attendanceDate: formData.attendanceDate }, // Find criteria
+    //   { $set: updatedFeild }, // Update only selected fields
+    //   { new: true } // Return updated document
+    // )
+    // if (existingAttendance) {
+    //   const fakeReq = { query: { year, month } }
+
+    //   // Call GetsomeAll with fake req
+    //   const a = await GetsomeAllsummary(fakeReq, res)
+    //   // console.log("ddddddddddd", a.data)
+    //   if (a) {
+    //     return res.status(200).json({ message: "leave updated", data: a })
+    //   }
+    //   // console.log("resultsssssssssss", result)
+    // }
+    // console.log("llllll", leave)
+  } catch (error) {
+    console.log("error", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+
+export const GetsomeAllsummary = async (
+  req,
+  res,
+  yearParam = {},
+  monthParam = {}
+) => {
+  try {
+    const { year, month } = req.query || { year: yearParam, month: monthParam }
+
+    function getSundays(year, month) {
+      const sundays = []
+      const date = new Date(year, month - 1, 1) // Start from the 1st day of the month
+
+      while (date.getMonth() === month - 1) {
+        if (date.getDay() === 0) {
+          // 0 represents Sunday
+          sundays.push(date.getDate()) // Get only the day (1-31)
+        }
+        date.setDate(date.getDate() + 1) // Move to the next day
+      }
+
+      return sundays
+    }
+    function generateMonthDates(year, month) {
+      const dates = {}
+      const daysInMonth = new Date(year, month, 0).getDate()
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        let date = new Date(year, month - 1, day)
+        // let dateKey =
+        //   String(date.getDate()).padStart(2, "0") +
+        //   "-" +
+        //   String(date.getMonth() + 1).padStart(2, "0") +
+        //   "-" +
+        //   date.getFullYear()
+
+        // let dateKey =
+        //   String(date.getDate()).padStart(2, "0") +
+        //   +"-" +
+        //   String(date.getMonth() + 1).padStart(2, "0") +
+        //   "-" +
+        //   date.getFullYear()
+        let dateKey =
+          date.getFullYear() +
+          "-" +
+          String(date.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(date.getDate()).padStart(2, "0")
+
+        dates[dateKey] = {
+          inTime: "",
+          outTime: "",
+          present: 0,
+          late: "",
+          onsite: [],
+          early: "",
+          halfDayperiod: "",
+          notMarked: 1,
+          casualLeave: "",
+          privileageLeave: "",
+          compensatoryLeave: "",
+          otherLeave: ""
+        } // Initialize empty object for each date
+      }
+
+      return dates
+    }
+
+    const sundays = getSundays(year, month)
+
+    const startDate = new Date(Date.UTC(year, month - 1, 1))
+    const endDate = new Date(Date.UTC(year, month, 0))
+
+    const users = await Staff.find({}, { _id: 1, name: 1 })
+    const convertToMinutes = (timeStr) => {
+      const [time, modifier] = timeStr.split(" ")
+      let [hours, minutes] = time.split(":").map(Number)
+
+      if (modifier === "PM" && hours !== 12) hours += 12 // Convert PM times correctly
+      if (modifier === "AM" && hours === 12) hours = 0 // Midnight case
+
+      return hours * 60 + minutes // Return total minutes since midnight
+    }
+
+    function createDates(b, month, year) {
+      return b.map((day) => {
+        const date = new Date(year, month - 1, day)
+        const yyyy = date.getFullYear() // Full year (4 digits)
+        const mm = String(date.getMonth() + 1).padStart(2, "0") // Add leading zero
+        const dd = String(date.getDate()).padStart(2, "0") // Add leading zero
+        return `${yyyy}-${mm}-${dd}` // Full year format
+      })
+    }
+
+    const morningLimit = convertToMinutes("9:35 AM")
+    const lateLimit = convertToMinutes("10:00 AM")
+    const minOutTime = convertToMinutes("5:00 PM")
+    const earlyLeaveLimit = convertToMinutes("5:30 PM")
+    const noonLimit = convertToMinutes("1:30 PM")
+    let staffAttendanceStats = []
+    // const holidays = await Holymaster.find({})
+    const holidays = await Holymaster.find({
+      holyDate: {
+        $gte: startDate,
+        $lt: endDate
+      }
+    })
+
+    const holiday = Array.isArray(holidays)
+      ? holidays.map((date) => date.holyDate.getDate())
+      : []
+    for (const user of users) {
+      const userId = user._id
+      const userName = user.name
+
+      // Fetch attendance-related data for the given month
+      const results = await Promise.allSettled([
+        Attendance.find({
+          userId,
+          attendanceDate: { $gte: startDate, $lte: endDate }
+        }),
+        Onsite.find({ userId, onsiteDate: { $gte: startDate, $lte: endDate } }),
+        LeaveRequest.find({
+          userId,
+          leaveDate: { $gte: startDate, $lte: endDate }
+        }),
+        Holymaster.find({ holyDate: { $gte: startDate, $lte: endDate } })
+      ])
+      const attendances =
+        results[0].status === "fulfilled" ? results[0].value || [] : []
+      const onsites =
+        results[1].status === "fulfilled" ? results[1].value || [] : []
+      const leaves =
+        results[2].status === "fulfilled" ? results[2].value || [] : []
+
+      const uniqueHolidays = holiday.filter(
+        (holiday) => !sundays.includes(holiday)
+      )
+      let stats = {
+        name: userName,
+        userId: userId,
+        present: 0,
+        absent: 0,
+        latecutting: 0,
+        late: 0,
+        earlyGoing: 0,
+        halfDayLeave: 0,
+        fullDayLeave: 0,
+        onsite: 0,
+        holiday: 0,
+        notMarked: 0,
+        attendancedates: generateMonthDates(year, month)
+      }
+
+      let daysInMonth = new Set(
+        [...Array(endDate.getDate()).keys()].map((i) => i + 1)
+      )
+      function getTimeDifference(start, end) {
+        // Convert times to Date objects using 12-hour format
+        const startTime = new Date(`1970-01-01 ${start}`)
+        const endTime = new Date(`1970-01-01 ${end}`)
+
+        if (isNaN(startTime) || isNaN(endTime)) {
+          return "Invalid date format"
+        }
+
+        // Calculate difference in minutes
+        const differenceInMinutes = (endTime - startTime) / (1000 * 60)
+        return differenceInMinutes >= 0
+          ? differenceInMinutes
+          : differenceInMinutes + 1440
+      }
+
+      const arr = []
+      const present = []
+      const fulldayarr = []
+      const halfdayarr = []
+      attendances?.length &&
+        attendances?.forEach((att) => {
+          const day = att.attendanceDate.getDate()
+          const dayTime = att.attendanceDate.toISOString().split("T")[0]
+          // const date = new Date(att.attendanceDate)
+          // const day = String(date.getDate()).padStart(2, "0")
+          // const month = String(date.getMonth() + 1).padStart(2, "0")
+          // const year = date.getFullYear()
+
+          // const dayTime = `${day}-${month}-${year}`
+          // console.log("daytime", dayTime)
+
+          const punchIn = att.inTime ? convertToMinutes(att.inTime) : null
+          const punchOut = att.outTime ? convertToMinutes(att.outTime) : null
+
+          stats.attendancedates[dayTime].inTime = att?.inTime
+          stats.attendancedates[dayTime].outTime = att?.outTime
+          const isOnsite =
+            Array.isArray(onsites) &&
+            onsites.some(
+              (o) =>
+                o.onsiteDate.toISOString().split("T")[0] === dayTime &&
+                (o.departmentverified === true || o.adminverified === true)
+            )
+          // const isOnsite =
+          //   Array.isArray(onsites) &&
+          //   onsites.some((o) => {
+          //     const onsiteDate =
+          //       String(o.onsiteDate.getDate()).padStart(2, "0") +
+          //       "-" +
+          //       String(o.onsiteDate.getMonth() + 1).padStart(2, "0") +
+          //       "-" +
+          //       o.onsiteDate.getFullYear()
+
+          //     return (
+          //       onsiteDate === dayTime &&
+          //       (o.departmentverified === true || o.adminverified === true)
+          //     )
+          //   })
+          // if (userName.trim() === "Muhammed Rasik K.M") {
+          //   console.log("ISSSSS", isOnsite)
+          // }
+
+          const onsiteRecord = Array.isArray(onsites)
+            ? onsites.find(
+                (o) =>
+                  o.onsiteDate.toISOString().split("T")[0] === dayTime &&
+                  (o.departmentverified === true || o.adminverified === true)
+              )
+            : null
+          // const onsiteRecord = Array.isArray(onsites)
+          //   ? onsites.find((o) => {
+          //       const onsiteDate =
+          //         String(o.onsiteDate.getDate()).padStart(2, "0") +
+          //         "-" +
+          //         String(o.onsiteDate.getMonth() + 1).padStart(2, "0") +
+          //         "-" +
+          //         o.onsiteDate.getFullYear()
+
+          //       return (
+          //         onsiteDate === dayTime &&
+          //         (o.departmentverified === true || o.adminverified === true)
+          //       )
+          //     })
+          //   : null
+
+          const onsiteDetails = onsiteRecord
+            ? {
+                onsiteData: onsiteRecord.onsiteData,
+                onsiteType: onsiteRecord.onsiteType,
+                halfDayPeriod:
+                  onsiteRecord.onsiteType === "Half Day"
+                    ? onsiteRecord.halfDayPeriod
+                    : null
+              }
+            : null
+          ////
+          // const isLeave =
+          //   Array.isArray(leaves) &&
+          //   leaves.some((l) => {
+          //     const leaveDate =
+          //       String(l.leaveDate.getDate()).padStart(2, "0") +
+          //       "-" +
+          //       String(l.leaveDate.getMonth() + 1).padStart(2, "0") +
+          //       "-" +
+          //       l.leaveDate.getFullYear()
+
+          //     return (
+          //       leaveDate === dayTime &&
+          //       l.onsite === false &&
+          //       (l.departmentverified === true || l.adminverified === true)
+          //     )
+          //   })
+
+          const isLeave =
+            Array.isArray(leaves) &&
+            leaves.some(
+              (l) =>
+                l.leaveDate.toISOString().split("T")[0] === dayTime &&
+                l.onsite === false &&
+                (l.departmentverified === true || l.adminverified === true)
+            )
+          const leaveRecord = Array.isArray(leaves)
+            ? leaves.find(
+                (l) =>
+                  l.leaveDate.toISOString().split("T")[0] === dayTime &&
+                  l.onsite === false &&
+                  (l.departmentverified === true || l.adminverified === true)
+              )
+            : null
+          // const leaveRecord = Array.isArray(leaves)
+          //   ? leaves.find((l) => {
+          //       const leaveDate =
+          //         String(l.leaveDate.getDate()).padStart(2, "0") +
+          //         "-" +
+          //         String(l.leaveDate.getMonth() + 1).padStart(2, "0") +
+          //         "-" +
+          //         l.leaveDate.getFullYear()
+
+          //       return (
+          //         leaveDate === dayTime &&
+          //         l.onsite === false &&
+          //         (l.departmentverified === true || l.adminverified === true)
+          //       )
+          //     })
+          //   : null
+          const leaveDetails = leaveRecord
+            ? {
+                leaveType: leaveRecord.leaveType,
+                halfDayPeriod:
+                  leaveRecord.leaveType === "Half Day"
+                    ? leaveRecord.halfDayPeriod
+                    : null,
+                leaveCategory: leaveRecord?.leaveCategory || null
+              }
+            : null
+
+          // const leaveType = leaveRecord ? leaveRecord.leaveType : null
+
+          if (!punchIn || !punchOut) {
+            arr.push(day)
+
+            stats.attendancedates[dayTime].notMarked = 1
+          } else if (punchIn <= morningLimit && punchOut >= earlyLeaveLimit) {
+            stats.attendancedates[dayTime].present = 1
+            stats.attendancedates[dayTime].inTime = att.inTime
+            stats.attendancedates[dayTime].outTime = att.outTime
+            stats.attendancedates[dayTime].notMarked = ""
+
+            if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+              stats.onsite++
+              // stats.attendancedates[dayTime].onsite = 1
+            } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
+              stats.onsite += 0.5
+              // stats.attendancedates[dayTime].onsite = 0.5
+            }
+          } else if (
+            punchIn >= morningLimit &&
+            punchIn <= lateLimit &&
+            punchOut >= earlyLeaveLimit
+          ) {
+            const a = getTimeDifference("09:35 AM", att.inTime)
+
+            stats.attendancedates[dayTime].late = a
+            stats.late++
+            stats.attendancedates[dayTime].present = 1
+            stats.attendancedates[dayTime].inTime = att.inTime
+            stats.attendancedates[dayTime].outTime = att.outTime
+            stats.attendancedates[dayTime].notMarked = ""
+            if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+              stats.onsite++
+              // stats.attendancedates[dayTime].onsite = 1
+            } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
+              stats.onsite += 0.5
+              // stats.attendancedates[dayTime].onsite = 0.5
+            }
+            present.push(day)
+          } else if (
+            punchOut > minOutTime &&
+            punchOut < earlyLeaveLimit &&
+            punchIn <= morningLimit
+          ) {
+            const b = getTimeDifference(att.outTime, "05:30 PM")
+            stats.attendancedates[dayTime].present = 1
+            stats.attendancedates[dayTime].early = b
+            stats.attendancedates[dayTime].inTime = att.inTime
+            stats.attendancedates[dayTime].outTime = att.outTime
+            stats.attendancedates[dayTime].notMarked = ""
+            stats.earlyGoing++
+            if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+              stats.onsite++
+              // stats.attendancedates[dayTime].onsite = 1
+            } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
+              stats.onsite += 0.5
+              // stats.attendancedates[dayTime].onsite = 0.5
+            }
+            present.push(day)
+          } else if (
+            punchIn < lateLimit &&
+            punchIn > morningLimit &&
+            punchOut > minOutTime &&
+            punchOut < earlyLeaveLimit
+          ) {
+            const a = getTimeDifference("09:35 AM", att.inTime)
+            const b = getTimeDifference(att.outTime, "05:30 PM")
+            stats.earlyGoing++
+            stats.late++
+            stats.attendancedates[dayTime].present = 1
+            stats.attendancedates[dayTime].inTime = att.inTime
+            stats.attendancedates[dayTime].outTime = att.outTime
+            stats.attendancedates[dayTime].notMarked = ""
+            stats.attendancedates[dayTime].early = b
+            stats.attendancedates[dayTime].late = a
+            if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+              stats.onsite++
+              // stats.attendancedates[dayTime].onsite = 1
+            } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
+              stats.onsite += 0.5
+              // stats.attendancedates[dayTime].onsite = 0.5
+            }
+          } else if (
+            (punchIn < noonLimit && punchOut < noonLimit) ||
+            (punchIn > noonLimit && punchOut > noonLimit) ||
+            (punchIn > lateLimit &&
+              punchIn < noonLimit &&
+              punchOut < minOutTime &&
+              punchOut > noonLimit)
+          ) {
+            stats.attendancedates[dayTime].notMarked = 1
+            if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+              stats.onsite++
+              stats.attendancedates[dayTime].present = 1
+              stats.attendancedates[dayTime].notMarked = ""
+            } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
+              stats.onsite += 0.5
+              stats.attendancedates[dayTime].present = 0.5
+              stats.attendancedates[dayTime].notMarked = 0.5
+            }
+
+            fulldayarr.push(day)
+          } else if (
+            (punchIn < lateLimit &&
+              punchOut >= noonLimit &&
+              punchOut < minOutTime) ||
+            (punchIn <= noonLimit &&
+              punchOut >= earlyLeaveLimit &&
+              punchIn > lateLimit)
+          ) {
+            arr.push(day)
+            halfdayarr.push(day)
+            stats.attendancedates[dayTime].present = 0.5
+            stats.attendancedates[dayTime].notMarked = 0.5
+            if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+              stats.onsite++
+              stats.attendancedates[dayTime].present = 1
+              stats.attendancedates[dayTime].notMarked = ""
+            } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
+              if (
+                punchIn < lateLimit &&
+                punchOut >= noonLimit &&
+                onsiteDetails.halfDayPeriod === "Afternoon"
+              ) {
+                stats.onsite += 0.5
+                stats.attendancedates[dayTime].present = 1
+                stats.attendancedates[dayTime].notMarked = ""
+                // stats.attendancedates[dayTime].onsite = 0.5
+              } else if (
+                punchIn < lateLimit &&
+                punchOut >= noonLimit &&
+                onsiteDetails.halfDayPeriod === "Morning"
+              ) {
+                stats.onsite += 0.5
+                // stats.attendancedates[dayTime].onsite = 0.5
+              } else if (
+                punchIn <= noonLimit &&
+                punchOut >= earlyLeaveLimit &&
+                onsiteDetails.halfDayPeriod === "Afternoon"
+              ) {
+                stats.onsite += 0.5
+                // stats.attendancedates[dayTime].onsite = 0.5
+              } else if (
+                punchIn <= noonLimit &&
+                punchOut >= earlyLeaveLimit &&
+                onsiteDetails.halfDayPeriod === "Morning"
+              ) {
+                stats.onsite += 0.5
+                stats.attendancedates[dayTime].present = 1
+                // stats.attendancedates[dayTime].onsite = 0.5
+                stats.attendancedates[dayTime].notMarked = ""
+              }
+            }
+            if (isLeave && leaveDetails.leaveType === "Full Day") {
+              if (leaveDetails.leaveCategory) {
+                switch (leaveDetails.leaveCategory) {
+                  case "casual Leave":
+                    stats.attendancedates[leaveDate].casualLeave = 1
+                    break
+                  case "other Leave":
+                    stats.attendancedates[leaveDate].otherLeave = 1
+                    break
+                  case "privileage Leave":
+                    stats.attendancedates[leaveDate].privileageLeave = 1
+                    break
+                  case "compensatory Leave":
+                    stats.attendancedates[leaveDate].compensatoryLeave = 1
+                    break
+                  default:
+                    stats.attendancedates[leaveDate].others = 1 // Default case
+                    break
+                }
+                // stats.attendancedates[dayTime].leaveDetails.leaveCategory = 1
+              } else {
+                stats.attendancedates[dayTime].otherLeave = 1
+              }
+              // stats.absent++
+              stats.attendancedates[dayTime].notMarked = ""
+            } else if (isLeave && leaveDetails.leaveType === "Half Day") {
+              if (leaveDetails.leaveCategory) {
+                switch (leaveDetails.leaveCategory) {
+                  case "casual Leave":
+                    stats.attendancedates[dayTime].casualLeave = 0.5
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod
+                    break
+                  case "other Leave":
+                    stats.attendancedates[dayTime].otherLeave = 0.5
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod
+                    break
+                  case "privileage Leave":
+                    stats.attendancedates[dayTime].privileageLeave = 0.5
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod
+                    break
+                  case "compensatory Leave":
+                    stats.attendancedates[dayTime].compensatoryLeave = 0.5
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod
+                    break
+                  default:
+                    stats.attendancedates[dayTime].others = 0.5
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod // Default case
+                    break
+                }
+                // stats.attendancedates[dayTime].leaveDetails.leaveCategory = 0.5
+              } else {
+                stats.attendancedates[dayTime].otherLeave = 0.5
+                stats.attendancedates[dayTime].halfDayperiod =
+                  leaveDetails.halfDayPeriod
+              }
+              // stats.absent += 0.5
+              stats.attendancedates[dayTime].notMarked = ""
+            }
+          }
+          daysInMonth.delete(day)
+        })
+      // if (userName.trim() === "Muhammed Rasik K.M") {
+      //   console.log("staaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", stats)
+      // }
+      onsites?.length &&
+        onsites?.forEach((onsite) => {
+          const onsiteDate = onsite.onsiteDate.toISOString().split("T")[0]
+
+          // const date = onsite.onsiteDate
+          // const day = String(date.getDate()).padStart(2, "0")
+          // const month = String(date.getMonth() + 1).padStart(2, "0")
+          // const year = date.getFullYear()
+
+          // const onsiteDate = `${day}-${month}-${year}`
+          const isAttendance =
+            Array.isArray(attendances) &&
+            // attendances.some((o) => {
+            //   const formattedDate = o.attendancedates
+            //     ?.toISOString()
+            //     .split("T")[0]
+            //     .split("-")
+            //     .reverse()
+            //     .join("-")
+
+            //   return formattedDate === onsiteDate
+            // })
+            attendances.some(
+              (o) => o.attendanceDate.toISOString().split("T")[0] === onsiteDate
+            )
+          if (Array.isArray(onsite.onsiteData)) {
+            onsite.onsiteData.flat().forEach((item) => {
+              stats.attendancedates[onsiteDate].onsite.push({
+                place: item?.place,
+                siteName: item?.siteName,
+                onsiteType: onsite?.onsiteType,
+                halfDayPeriod:
+                  onsite?.onsiteType === "Half Day"
+                    ? onsite?.halfDayPeriod
+                    : null
+              })
+            })
+          }
+          if (!isAttendance) {
+            if (onsite.onsiteType === "Full Day") {
+              stats.attendancedates[onsiteDate].present = 1
+              stats.attendancedates[onsiteDate].notMarked = ""
+              stats.onsite++
+            } else if (onsite.onsiteType === "Half Day") {
+              stats.attendancedates[onsiteDate].present = 0.5
+              stats.attendancedates[onsiteDate].notMarked = 0.5
+            }
+          }
+        })
+      leaves?.length &&
+        leaves.forEach((leave) => {
+          const leaveDate = leave.leaveDate.toISOString().split("T")[0]
+          const leaveCategory = leave?.leaveCategory
+
+          const isAttendance =
+            Array.isArray(attendances) &&
+            attendances.some(
+              (o) => o.attendanceDate.toISOString().split("T")[0] === leaveDate
+            )
+          if (!isAttendance) {
+            if (leave.leaveType === "Full Day" && leave.onsite === false) {
+              if (leaveCategory) {
+                switch (leaveCategory) {
+                  case "casual Leave":
+                    stats.attendancedates[leaveDate].casualLeave = 1
+                    break
+                  case "other Leave":
+                    stats.attendancedates[leaveDate].otherLeave = 1
+                    break
+                  case "privileage Leave":
+                    stats.attendancedates[leaveDate].privileageLeave = 1
+                    break
+                  case "compensatory Leave":
+                    stats.attendancedates[leaveDate].compensatoryLeave = 1
+                    break
+                  default:
+                    stats.attendancedates[leaveDate].others = 1 // Default case
+                    break
+                }
+              } else {
+                stats.attendancedates[leaveDate].otherLeave = 1
+              }
+              // stats.absent++
+
+              stats.attendancedates[leaveDate].notMarked = ""
+            } else if (
+              leave.leaveType === "Half Day" &&
+              leave.onsite === false
+            ) {
+              if (leaveCategory) {
+                switch (leaveCategory) {
+                  case "casual Leave":
+                    stats.attendancedates[leaveDate].casualLeave = 0.5
+                    stats.attendancedates[leaveDate].halfDayperiod =
+                      leave.halfDayPeriod
+                    break
+                  case "other Leave":
+                    stats.attendancedates[leaveDate].otherLeave = 0.5
+                    stats.attendancedates[leaveDate].halfDayperiod =
+                      leave.halfDayPeriod
+                    break
+                  case "privileage Leave":
+                    stats.attendancedates[leaveDate].privileageLeave = 0.5
+                    stats.attendancedates[leaveDate].halfDayperiod =
+                      leave.halfDayPeriod
+                    break
+                  case "compensatory Leave":
+                    stats.attendancedates[leaveDate].compensatoryLeave = 0.5
+                    stats.attendancedates[leaveDate].halfDayperiod =
+                      leave.halfDayPeriod
+                    break
+                  default:
+                    stats.attendancedates[leaveDate].others = 0.5
+                    stats.attendancedates[leaveDate].halfDayperiod =
+                      leave.halfDayPeriod // Default case
+                    break
+                }
+                // stats.attendancedates[leaveDate].leaveCategory = 0.5
+              } else {
+                stats.attendancedates[leaveDate].otherLeave = 0.5
+                stats.attendancedates[leaveDate].halfDayperiod =
+                  leave.halfDayPeriod
+              }
+
+              // stats.notMarked += 0.5
+              stats.attendancedates[leaveDate].notMarked = 0.5
+            }
+          }
+        })
+
+      const uniqueDates = [...new Set([...sundays, ...holiday])]
+
+      const c = createDates(uniqueDates, month, year)
+      function getNextDate(dateString) {
+        // Parse the date string (YYYY-MM-DD)
+        const [year, month, day] = dateString.split("-").map(Number)
+
+        // Create a date object
+        const date = new Date(year, month - 1, day)
+
+        // Add one day
+        date.setDate(date.getDate() + 1)
+
+        // Format the result back to 'YYYY-MM-DD'
+        const nextDay = String(date.getDate()).padStart(2, "0")
+        const nextMonth = String(date.getMonth() + 1).padStart(2, "0")
+        const nextYear = date.getFullYear() // Full year
+
+        return `${nextYear}-${nextMonth}-${nextDay}`
+      }
+      function getPreviousDate(dateString) {
+        // Parse the date string (YYYY-MM-DD)
+        const [year, month, day] = dateString.split("-").map(Number)
+
+        // Create a date object
+        const date = new Date(year, month - 1, day)
+
+        // Subtract one day
+        date.setDate(date.getDate() - 1)
+
+        // Format the result back to 'YYYY-MM-DD'
+        const prevDay = String(date.getDate()).padStart(2, "0")
+        const prevMonth = String(date.getMonth() + 1).padStart(2, "0")
+        const prevYear = date.getFullYear() // Full year
+
+        return `${prevYear}-${prevMonth}-${prevDay}`
+      }
+
+      ;(function calculateAbsences(sundays, attendances, onsites) {
+        const isPresent = (date) => {
+          for (const dates in attendances.attendancedates) {
+            if (date === dates) {
+              const attendance = attendances.attendancedates[dates]
+
+              if (attendance.otherLeave !== "") {
+                return {
+                  status: true,
+                  present: attendance.present,
+                  otherLeave: attendance.others,
+                  notMarked: attendance.notMarked
+                }
+              } else {
+                return {
+                  status: false,
+                  present: attendance.present,
+                  notMarked: attendance.notMarked
+                }
+              }
+            }
+          }
+        }
+
+        sundays.forEach((sunday) => {
+          const previousDay = getPreviousDate(sunday)
+          const nextDay = getNextDate(sunday)
+
+          const prevPresent = isPresent(previousDay)
+          const nextPresent = isPresent(nextDay)
+
+          if (prevPresent?.status && nextPresent?.status) {
+            if (
+              prevPresent?.otherLeave === 0.5 &&
+              prevPresent?.present === 0.5
+            ) {
+              stats.attendancedates[previousDay].present = 0
+            }
+            if (nextPresent?.others === 0.5 && nextPresent?.present === 0.5) {
+              stats.attendancedates[nextDay].present = 0
+            }
+            stats.attendancedates[previousDay].others = 1
+            stats.attendancedates[sunday].otherLeave = 1
+            stats.attendancedates[nextDay].otherLeave = 1
+            stats.attendancedates[sunday].notMarked = ""
+          } else if (
+            (prevPresent?.notMarked < 1 || prevPresent?.notMarked === "") &&
+            (nextPresent?.notMarked < 1 || nextPresent?.notMarked === "")
+          ) {
+            stats.attendancedates[sunday].present = 1
+            stats.attendancedates[sunday].notMarked = ""
+          }
+        })
+      })(c, stats, onsites)
+
+      for (const dates in stats.attendancedates) {
+        stats.present += stats.attendancedates[dates].present
+        stats.present +=
+          stats.attendancedates[dates].privileageLeave !== ""
+            ? Number(stats.attendancedates[dates].privileageLeave)
+            : 0
+        stats.present +=
+          stats.attendancedates[dates].compensatoryLeave !== ""
+            ? Number(stats.attendancedates[dates].compensatoryLeave)
+            : 0
+        stats.absent +=
+          stats.attendancedates[dates].otherLeave &&
+          !isNaN(stats.attendancedates[dates].otherLeave)
+            ? Number(stats.attendancedates[dates].otherLeave)
+            : stats.attendancedates[dates].casualLeave &&
+              !isNaN(stats.attendancedates[dates].casualLeave)
+            ? Number(stats.attendancedates[dates].casualLeave)
+            : 0
+
+        stats.notMarked +=
+          stats.attendancedates[dates].notMarked !== ""
+            ? Number(stats.attendancedates[dates].notMarked)
+            : 0
+      }
+      const combined = stats.earlyGoing + stats.late
+      stats.latecutting =
+        Math.floor(combined / 6) * 1 + (Math.floor(combined / 3) % 2) * 0.5
+
+      stats.present -=
+        Math.floor(combined / 6) * 1 + (Math.floor(combined / 3) % 2) * 0.5
+
+      staffAttendanceStats.push(stats)
+    }
+    // console.log("statssss", staffAttendanceStats)
+    return {
+      message: "Attendence report found",
+      data: staffAttendanceStats
+    }
+  } catch (error) {
+    console.log("error", error)
+    return { message: "Internal server error" }
   }
 }

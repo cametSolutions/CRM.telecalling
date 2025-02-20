@@ -73,10 +73,10 @@ const leaveRequestSchema = new Schema(
       ref: "Staff", // Reference to the user who made the request
       required: true
     },
-    assignedto:{
-      type:mongoose.Schema.Types.ObjectId,
-      ref:"Staff",
-      required:true
+    assignedto: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Staff",
+      required: true
     },
     leaveDate: {
       type: Date,
@@ -86,6 +86,16 @@ const leaveRequestSchema = new Schema(
     leaveType: {
       type: String,
       enum: ["Half Day", "Full Day"],
+      required: true
+    },
+    leaveCategory: {
+      type: String,
+      enum: [
+        "casual Leave",
+        "privileage Leave",
+        "compensatory Leave",
+        "other Leave"
+      ],
       required: true
     },
     halfDayPeriod: {
@@ -108,12 +118,12 @@ const leaveRequestSchema = new Schema(
       type: Boolean,
       default: false
     },
-    onsitestatus:{
+    onsitestatus: {
       type: String,
-      enum: ["Not Approved","Approved"],
+      enum: ["Not Approved", "Approved"],
       default: "Not Approved"
     },
-    onsiteData:[],
+    onsiteData: [],
 
     adminverified: {
       type: Boolean,
@@ -122,12 +132,12 @@ const leaveRequestSchema = new Schema(
     departmentverified: { type: Boolean, default: false },
     departmentstatus: {
       type: String,
-      enum: ["Not Approved","Dept Approved","Dept Rejected"],
+      enum: ["Not Approved", "Dept Approved", "Dept Rejected"],
       default: "Not Approved"
     },
     hrstatus: {
       type: String,
-      enum: ["Not Approved","HR/Onsite Approved","HR Rejected"],
+      enum: ["Not Approved", "HR/Onsite Approved", "HR Rejected"],
       default: "Not Approved"
     },
     cancelstatus: {

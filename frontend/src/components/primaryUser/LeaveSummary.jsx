@@ -1,25 +1,38 @@
 import React, { useState, useEffect } from "react"
 
+import Modal from "./Modal"
+import api from "../../api/api"
 import UseFetch from "../../hooks/useFetch"
-
+import { toast } from "react-toastify"
 const leaveSummary = () => {
   const [selectedIndex, setSelectedIndex] = useState(null)
+  const [modalOpen, setModalOpen] = useState(false)
   const currentYear = new Date().getFullYear()
   const currentMonth = new Date().getMonth() + 1 // JavaScript months are 0-based, so adding 1
-
+  const [selectedStaff, setselectedStaff] = useState(null)
   const [selectedYear, setSelectedYear] = useState(currentYear)
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)
   const [onsiteTypes, setOnsiteTypes] = useState({})
+  const [editIndex, setEditIndex] = useState(null)
+  const [formData, setFormData] = useState({})
+  const [selectedDate, setselectedDate] = useState(null)
+  const [Loading, setLoading] = useState(null)
+  const [type, setType] = useState("")
 
+  const [leavesummaryList, setleaveSummary] = useState([])
+  const userData = localStorage.getItem("user")
+  const user = JSON.parse(userData)
   // API URL with selected year and month
   const apiUrl = `/auth/getsomeall?year=${selectedYear}&month=${selectedMonth}`
 
   // Use custom useFetch hook
   const { data: newattende, loading, refreshHook } = UseFetch(apiUrl)
-  const { data: attendance } = UseFetch(
-    `/auth/getallAttendance?year=${selectedYear}&month=${selectedMonth}`
-  )
- 
+  useEffect(() => {
+    if (newattende && newattende.length) {
+      setleaveSummary(newattende)
+    }
+  }, [newattende])
+
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i)
   const months = [
     { name: "January", value: 1 },
@@ -36,11 +49,10 @@ const leaveSummary = () => {
     { name: "December", value: 12 }
   ]
   const selectedUser = (attendeeid) => {
-    const filteredAttendance = attendance.filter((id) => {
-      console.log(attendeeid)
-      console.log(id.userId)
+    const filteredAttendance = newattende.filter((id) => {
       return id.userId === attendeeid
     })
+    setselectedStaff(filteredAttendance)
   }
   // Handle onsite type change
   const handleOnsiteTypeChange = (date, index, newType) => {
@@ -49,364 +61,500 @@ const leaveSummary = () => {
       [`${date}-${index}`]: newType
     }))
   }
-  
-  return (
-    <div className="p-3 text-center ">
-     
-      <h1 className="text-2xl font-bold mb-1">User Leave Summary</h1>
-      <div className="flex justify-end space-x-4 m-4">
-        {/* Year Select */}
-        <select
-          value={selectedYear}
-          onChange={(e) => setSelectedYear(Number(e.target.value))}
-          className="border p-2 rounded"
-        >
-          {years.map((year) => (
-            <option key={year} value={year}>
-              {year}
-            </option>
-          ))}
-        </select>
+  const handleAttendance = (date, type, inTime, outTime) => {
+    setModalOpen(true)
+    setselectedDate(date)
+    setType(type)
+    if (type === "Attendance") {
+      setFormData({
+        attendanceDate: date,
+        inTime,
+        outTime
+      })
+    }
+  }
+  const handleLeave = (date, type, category, leaveType, halfDayperiod) => {
+    setModalOpen(true)
+    setselectedDate(date)
+    setType(type)
+    if (type === "Leave") {
+      setFormData({
+        leaveDate: date,
+        leaveCategory: category,
+        leaveType:
+          leaveType === 1 ? "Full Day" : leaveType === 0.5 ? "Half Day" : null,
+        halfDayPeriod: leaveType === 0.5 ? halfDayperiod : null
+      })
+    }
+  }
+  const handleScroll = (event) => {
+    const tables = document.querySelectorAll(".scroll-container")
+    tables.forEach((table) => {
+      table.scrollLeft = event.target.scrollLeft
+    })
+  }
+  const handleClose = () => {
+    setModalOpen(false)
+  }
 
-        {/* Month Select */}
-        <select
-          value={selectedMonth}
-          onChange={(e) => setSelectedMonth(Number(e.target.value))}
-          className="border p-2 rounded"
-        >
-          {months.map((month) => (
-            <option key={month.value} value={month.value}>
-              {month.name}
-            </option>
-          ))}
-        </select>
+  const handleUpdate = async (date) => {
+    setLoading(true)
+    try {
+      const response = await api.post(
+        `/auth/editLeaveSummary?userid=${selectedStaff[0].userId}`,
+        formData
+      )
+      if (response.status === 200) {
+        toast.success("Succesfully Edited")
+        setLoading(false)
+        refreshHook()
+      }
+    } catch (error) {
+      toast.error(error.message)
+      console.log("error:", error.message)
+    }
+  }
+  const handleApply = async (staffId, selected, setIsApplying, type) => {
+    if (type === "Leave") {
+      const response = await api.post(
+        `/auth/editLeave?userid=${staffId}`,
+        selected
+      )
+      const data = response.data.data.data
+      if (response.status === 200) {
+        toast.success("leave edited sucessfully")
+        setleaveSummary(data)
+        setIsApplying(false)
+      } else {
+        toast.error("error in updating")
+      }
+    } else if (type === "Attendance") {
+      const response = await api.post(
+        `/auth/editAttendance?userid=${staffId}`,
+        selected
+      )
+      const data = response.data.data.data
+      if (response.status === 200) {
+        toast.success("Attendance edited sucessfully")
+        setleaveSummary(data)
+        setIsApplying(false)
+      } else {
+        toast.error("error in updating")
+      }
+    }
+  }
+  return (
+    <div className="w-full">
+      {/* Header Section */}
+
+      <div className="p-3 text-center">
+        <h1 className="text-2xl font-bold mb-1">User Leave Summary</h1>
+        <div className="flex flex-wrap justify-end gap-4 ">
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            className="border p-2 rounded"
+          >
+            {years.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(Number(e.target.value))}
+            className="border p-2 rounded"
+          >
+            {months.map((month) => (
+              <option key={month.value} value={month.value}>
+                {month.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
+      {/* Main Content */}
       {loading ? (
-        <div className="text-lg font-semibold text-blue-600">
+        <div className="text-lg font-semibold text-blue-600 text-center">
           Loading users...
         </div>
       ) : (
-        <div className="max-h-[500px] overflow-auto">
-          {newattende?.length > 0 &&
-            newattende.map((attendee, index) => (
-              <div key={index}>
-                {selectedIndex === null || selectedIndex === index ? (
-                  <>
-                    <div
-                      className={`bg-white p-2 w-full shadow-lg rounded-xl mb-2 border flex items-center cursor-pointer overflow-x-auto max-w-full
+        <>
+          <div className="max-h-[calc(100vh-200px)] overflow-y-auto px-5 ">
+            {leavesummaryList &&
+              leavesummaryList.length &&
+              leavesummaryList?.map((attendee, index) => (
+                <div key={index}>
+                  {selectedIndex === null || selectedIndex === index ? (
+                    <>
+                      <div
+                        className={`${
+                          selectedIndex === index && !modalOpen
+                            ? "sticky top-0 z-20 bg-white"
+                            : ""
+                        }`}
+                      >
+                        {/* Your existing summary card code */}
+                        <div
+                          className={`p-2 mr-4 shadow-lg rounded-xl border cursor-pointer
                       ${
                         selectedIndex === index
-                          ? "sticky top-0 z-20 bg-blue-400"
-                          : "bg-green-300"
-                      }
-                    `}
-                      // className="bg-white p-2 w-full shadow-lg rounded-xl mb-2 border flex items-center cursor-pointer overflow-x-auto max-w-full"
-                      onClick={() => {
-                        setSelectedIndex(selectedIndex === index ? null : index)
-                        selectedUser(attendee.userId)
-                      }}
-                    >
-                      <div className="text-md font-semibold text-gray-800 w-[215px] text-left p-2">
-                        {attendee.name}
-                      </div>
+                          ? "bg-gray-300"
+                          : "bg-gray-100 mb-2"
+                      }`}
+                          onClick={() => {
+                            setSelectedIndex(
+                              selectedIndex === index ? null : index
+                            )
+                            selectedUser(attendee.userId)
+                            setEditIndex(null)
+                            setFormData(
+                              Object.fromEntries(
+                                Object.keys(formData).map((key) => [key, ""])
+                              )
+                            )
+                          }}
+                        >
+                          <div className="flex flex-wrap items-center">
+                            <div className="text-md font-semibold text-gray-800 w-full md:w-[225px] p-2">
+                              {attendee.name}
+                            </div>
 
-                      <div className="w-full sm:w-10/12 flex text-center ">
-                        {[
-                          {
-                            label: "Present",
-                            value: attendee.present,
-                            // bg: "bg-green-300",
-                            width: "w-[230px]"
-                          },
-                          {
-                            label: "Absent",
-                            value: attendee.absent,
-                            // bg: "bg-orange-200",
-                            width: "w-[115px]"
-                          },
-                          {
-                            label: "Late Coming",
-                            value: attendee.late,
-                            // bg: "bg-pink-500",
-                            width: "w-[110px]"
-                          },
-                          {
-                            label: "Early Going",
-                            value: attendee.earlyGoing,
-                            // bg: "bg-green-700",
-                            width: "w-[100px]"
-                          },
-                          {
-                            label: "Not Marked",
-                            value: attendee.notMarked,
-                            // bg: "bg-rose-300",
-                            width: "w-[130px]"
-                          },
-                          {
-                            label: "Onsite",
-                            value: attendee.onsite,
-                            // bg: "bg-green-400",
-                            width: "w-[510px]"
-                          }
-                          // {
-                          //   label: "Edited",
-                          //   value: attendee.edited,
-                          //   // bg: "bg-gray-400",
-                          //   width: "w-[106px]"
-                          // }
-                        ].map((item, idx) => (
-                          <div
-                            key={idx}
-                            className={`flex flex-col items-center p-1 ${item.bg} ${item.width}`}
-                          >
-                            <span className="font-medium text-gray-600 text-sm">
-                              {item.label}
-                            </span>
-                            <span>{item.value}</span>
+                            <div className="w-full md:w-10/12 flex flex-wrap justify-around">
+                              {[
+                                {
+                                  label: "Present",
+                                  value: attendee.present,
+                                  width: "w-full sm:w-[230px]"
+                                },
+                                {
+                                  label: "Leave",
+                                  value: attendee.absent,
+                                  width: "w-full sm:w-[115px]"
+                                },
+                                {
+                                  label: "Late Cutting",
+                                  value: attendee.latecutting,
+                                  width: "w-full sm:w-[110px]"
+                                },
+                                {
+                                  label: "Not Marked",
+                                  value: attendee.notMarked,
+                                  width: "w-full sm:w-[130px]"
+                                },
+                                {
+                                  label: "Onsite",
+                                  value: attendee.onsite,
+                                  width: "w-full sm:w-[510px]"
+                                }
+                              ].map((item, idx) => (
+                                <div
+                                  key={idx}
+                                  className={`flex flex-col items-center p-1 ${item.width}`}
+                                >
+                                  <span className="font-medium text-gray-600 text-sm">
+                                    {item.label}
+                                  </span>
+                                  <span>{item.value}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        ))}
-                      </div>
-                    </div>
+                        </div>
 
-                    {selectedIndex === index && (
-                      <div className="bg-gray-100 rounded-lg shadow-md mt-2 p-4 overflow-auto max-h-[500px]">
-                        <div className="overflow-x-auto">
-                          <table className="w-full border-collapse table-fixed">
-                            <thead className="bg-gray-300 sticky top-0">
-                              <tr className="text-left text-xs sm:text-sm">
-                                {[
-                                  {
-                                    label: "Date",
-                                    width: "w-[180px] min-w-[180px]"
-                                  },
-                                  {
-                                    label: "In Time",
-                                    width: "w-[90px] min-w-[200px]"
-                                  },
-                                  {
-                                    label: "Out Time",
-                                    width: "w-[90px] min-w-[50px]"
-                                  },
-                                  {
-                                    label: "Absent",
-                                    width: "w-[100px] min-w-[60px]"
-                                  },
-                                  {
-                                    label: "Late Coming",
-                                    width: "w-[80px] min-w-[80px]"
-                                  },
-                                  {
-                                    label: "Early Going",
-                                    width: "w-[100px] min-w-[100px]"
-                                  },
-                                  {
-                                    label: "Not Marked",
-                                    width: "w-[100px] min-w-[100px]"
-                                  },
-                                  {
-                                    label: "Onsite Place",
-                                    width: "w-[120px] min-w-[120px]"
-                                  },
-                                  {
-                                    label: "Onsite Name",
-                                    width: "w-[130px] min-w-[130px]"
-                                  },
-                                  {
-                                    label: "Onsite Type",
-                                    width: "w-[100px] min-w-[120px]"
-                                  },
-                                  {
-                                    label: "Onsite Period",
-                                    width: "w-[100px] min-w-[110px]"
-                                  }
-                                  // {
-                                  //   label: "Actions",
-                                  //   width: "w-[100px] min-w-[100px]"
-                                  // }
-                                ].map((heading, i) => (
-                                  <th
-                                    key={i}
-                                    className={`p-2 border border-gray-400 text-center ${heading.width}`}
-                                  >
-                                    {heading.label}
-                                  </th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-300 bg-white text-xs sm:text-sm">
+                        {/* Table Header - Hidden scrollbar but syncs with body */}
+                        {selectedIndex === index && !modalOpen && (
+                          <div className="sticky top-0 z-20 bg-white mr-4">
+                            <div className="overflow-hidden border-b">
+                              <div
+                                className="scroll-container"
+                                style={{ overflow: "hidden" }}
+                              >
+                                <table className="w-full min-w-[1200px] border-collapse text-sm ">
+                                  {/* Your existing thead content */}
+                                  <thead className="bg-gray-100 ">
+                                    <tr>
+                                      <th
+                                        rowSpan="2"
+                                        className="border border-gray-300 p-2 w-[105px] min-w-[105px] sticky left-0 bg-gray-100 z-10"
+                                      >
+                                        Date
+                                      </th>
+                                      <th
+                                        colSpan="2"
+                                        className="border border-gray-300 p-1 w-[180px] min-w-[180px]"
+                                      >
+                                        Present
+                                      </th>
+                                      <th
+                                        colSpan="4"
+                                        className="border border-gray-300 p-1 w-[360px] min-w-[360px]"
+                                      >
+                                        Leave
+                                      </th>
+                                      <th
+                                        rowSpan="2"
+                                        className="border border-gray-300 p-2 w-[120px] min-w-[120px]"
+                                      >
+                                        Early Out
+                                      </th>
+                                      <th
+                                        rowSpan="2"
+                                        className="border border-gray-300 p-2 w-[130px] min-w-[130px]"
+                                      >
+                                        Late In
+                                      </th>
+                                      <th
+                                        rowSpan="2"
+                                        className="border border-gray-300 p-2 w-[120px] min-w-[120px]"
+                                      >
+                                        Not Marked
+                                      </th>
+                                      <th
+                                        colSpan="4"
+                                        className="border border-gray-300 p-1 w-[440px] min-w-[440px]"
+                                      >
+                                        Onsite
+                                      </th>
+                                    </tr>
+                                    <tr>
+                                      <th className="border border-gray-300 p-1 w-[90px] min-w-[90px]">
+                                        In Time
+                                      </th>
+                                      <th className="border border-gray-300 p-1 w-[90px] min-w-[90px]">
+                                        Out Time
+                                      </th>
+                                      <th className="border border-gray-300 p-1 w-[80px] min-w-[80px]">
+                                        CL
+                                      </th>
+                                      <th className="border border-gray-300 p-1 w-[80px] min-w-[80px]">
+                                        PL
+                                      </th>
+                                      <th className="border border-gray-300 p-1 w-[100px] min-w-[100px]">
+                                        Comp.leave
+                                      </th>
+                                      <th className="border border-gray-300 p-1 w-[100px] min-w-[100px]">
+                                        Others
+                                      </th>
+                                      <th className="border border-gray-300 p-1 w-[110px] min-w-[110px]">
+                                        Place
+                                      </th>
+                                      <th className="border border-gray-300 p-1 w-[110px] min-w-[110px]">
+                                        SiteName
+                                      </th>
+                                      <th className="border border-gray-300 p-1 w-[110px] min-w-[110px]">
+                                        Onsite Type
+                                      </th>
+                                      <th className="border border-gray-300 p-1 w-[110px] min-w-[110px]">
+                                        Period
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                </table>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Table Body - Visible scrollbar that controls both */}
+                      {selectedIndex === index && (
+                        <div
+                          className="scroll-container overflow-x-auto max-h-[calc(100vh-200px)]"
+                          onScroll={handleScroll}
+                        >
+                          <table className="w-full min-w-[1200px]">
+                            {/* Your existing tbody content */}
+                            <tbody>
                               {Object.entries(attendee.attendancedates).map(
                                 ([date, details], idx) => (
-                                  <tr key={idx} className="text-center ">
-                                    <td className="p-2 border border-gray-300 text-left w-[105px] min-w-[105px]">
+                                  <tr
+                                    key={idx}
+                                    className="hover:bg-gray-50 text-center"
+                                  >
+                                    <td className="border border-gray-300 p-2 w-[105px] min-w-[105px] sticky left-0 bg-white">
                                       {date}
                                     </td>
-                                    <td className="p-2 border border-gray-300 w-[200px] min-w-[200px]">
-                                      <input
-                                        type="text"
-                                        className="w-full text-center border rounded p-1"
-                                        defaultValue={details?.inTime || ""}
-                                      />
+                                    <td
+                                      className="border border-gray-300 p-2 w-[90px] min-w-[90px]"
+                                      onClick={() => {
+                                        handleAttendance(
+                                          date,
+                                          "Attendance",
+                                          details?.inTime,
+                                          details?.outTime
+                                        )
+                                      }}
+                                    >
+                                      {details?.inTime || "-"}
                                     </td>
-                                    <td className="p-2 border border-gray-300 w-[50px] min-w-[50px]">
-                                      <input
-                                        type="text"
-                                        className="w-full text-center border rounded p-1"
-                                        defaultValue={details?.outTime || ""}
-                                      />
+                                    <td
+                                      className="border border-gray-300 p-2 w-[90px] min-w-[90px]"
+                                      onClick={() => {
+                                        handleAttendance(
+                                          date,
+                                          "Attendance",
+                                          details?.inTime,
+                                          details?.outTime
+                                        )
+                                      }}
+                                    >
+                                      {details?.outTime || "-"}
                                     </td>
-                                    <td className="p-2 border border-gray-300 w-[80px] min-w-[80px]">
-                                      {details?.absent || "-"}
+                                    <td
+                                      className="border border-gray-300 p-2 w-[80px] min-w-[80px]"
+                                      onClick={() =>
+                                        handleLeave(
+                                          date,
+                                          "Leave",
+                                          details?.otherLeave
+                                            ? "other Leave"
+                                            : details?.compensatoryLeave
+                                            ? "compensatory Leave"
+                                            : details?.privileageLeave
+                                            ? "privileage Leave"
+                                            : details?.casualLeave
+                                            ? "casual Leave"
+                                            : null,
+                                          details?.otherLeave ||
+                                            details?.compensatoryLeave ||
+                                            details?.privileageLeave ||
+                                            details?.casualLeave,
+                                          details?.halfDayperiod
+                                        )
+                                      }
+                                    >
+                                      {details?.casualLeave || "-"}
                                     </td>
-                                    <td className="p-2 border border-gray-300 w-[80px] min-w-[80px]">
-                                      {details?.late
-                                        ? `${details.late} minutes`
-                                        : "-"}
+                                    <td
+                                      className="border border-gray-300 p-2 w-[80px] min-w-[80px]"
+                                      onClick={() =>
+                                        handleLeave(
+                                          date,
+                                          "Leave",
+                                          details?.otherLeave
+                                            ? "other Leave"
+                                            : details?.compensatoryLeave
+                                            ? "compensatory Leave"
+                                            : details?.privileageLeave
+                                            ? "privileage Leave"
+                                            : details?.casualLeave
+                                            ? "casual Leave"
+                                            : null,
+                                          details?.otherLeave ||
+                                            details?.compensatoryLeave ||
+                                            details?.privileageLeave ||
+                                            details?.casualLeave,
+                                          details?.halfDayperiod
+                                        )
+                                      }
+                                    >
+                                      {details?.privileageLeave || "-"}
                                     </td>
-                                    <td className="p-2 border border-gray-300 w-[100px] min-w-[100px]">
+                                    <td
+                                      className="border border-gray-300 p-2 w-[100px] min-w-[100px]"
+                                      onClick={() =>
+                                        handleLeave(
+                                          date,
+                                          "Leave",
+                                          details?.otherLeave
+                                            ? "other Leave"
+                                            : details?.compensatoryLeave
+                                            ? "compensatory Leave"
+                                            : details?.privileageLeave
+                                            ? "privileage Leave"
+                                            : details?.casualLeave
+                                            ? "casual Leave"
+                                            : null,
+                                          details?.otherLeave ||
+                                            details?.compensatoryLeave ||
+                                            details?.privileageLeave ||
+                                            details?.casualLeave,
+                                          details?.halfDayperiod
+                                        )
+                                      }
+                                    >
+                                      {details?.compensatoryLeave || "-"}
+                                    </td>
+                                    <td
+                                      className="border border-gray-300 p-2 w-[100px] min-w-[100px]"
+                                      onClick={() =>
+                                        handleLeave(
+                                          date,
+                                          "Leave",
+                                          details?.otherLeave
+                                            ? "other Leave"
+                                            : details?.compensatoryLeave
+                                            ? "compensatory Leave"
+                                            : details?.privileageLeave
+                                            ? "privileage Leave"
+                                            : details?.casualLeave
+                                            ? "casual Leave"
+                                            : null,
+                                          details?.otherLeave ||
+                                            details?.compensatoryLeave ||
+                                            details?.privileageLeave ||
+                                            details?.casualLeave,
+                                          details?.halfDayperiod
+                                        )
+                                      }
+                                    >
+                                      {details?.otherLeave || "-"}
+                                    </td>
+                                    <td className="border border-gray-300 p-2 w-[120px] min-w-[120px]">
                                       {details?.early
                                         ? `${details.early} minutes`
                                         : "-"}
                                     </td>
-                                    <td className="p-2 border border-gray-300 w-[100px] min-w-[100px]">
-                                      {details?.notemarked || "-"}
+                                    <td className="border border-gray-300 p-2 w-[130px] min-w-[130px]">
+                                      {details?.late
+                                        ? `${details.late} minutes`
+                                        : "-"}
                                     </td>
-                                    <td
-                                      title={details?.onsite?.[0]?.place}
-                                      className="p-2 border border-gray-300 w-[120px] min-w-[120px] truncate overflow-hidden whitespace-nowrap cursor-pointer"
-                                    >
+                                    <td className="border border-gray-300 p-2 w-[120px] min-w-[120px]">
+                                      {details?.notMarked || "-"}
+                                    </td>
+                                    <td className="border border-gray-300 p-2 w-[110px] min-w-[110px]">
                                       {details?.onsite?.[0]?.place || "-"}
                                     </td>
-                                    <td
-                                      title={details?.onsite?.[0]?.siteName}
-                                      className="p-2 border border-gray-300 w-[130px] min-w-[130px] truncate overflow-hidden whitespace-nowrap cursor-pointer"
-                                    >
+                                    <td className="border border-gray-300 p-2 w-[110px] min-w-[110px]">
                                       {details?.onsite?.[0]?.siteName || "-"}
                                     </td>
-                                    <td className="p-2 border border-gray-300 w-[120px] min-w-[120px]">
+                                    <td className="border border-gray-300 p-2 w-[110px] min-w-[110px]">
                                       {details?.onsite?.[0]?.onsiteType || "-"}
                                     </td>
-                                    <td className="p-2 border border-gray-300 w-[110px] min-w-[110px]">
-                                      {details?.onsite?.[0]?.period || "-"}
+                                    <td className="border border-gray-300 p-2 w-[110px] min-w-[110px]">
+                                      {details?.onsite?.[0]?.onsiteType ===
+                                      "Half Day"
+                                        ? details?.onsite?.[0].halfDayPeriod
+                                        : "-"}
                                     </td>
-                                    {/* <td className="p-2 border border-gray-300 w-[100px] min-w-[100px]">
-                                      <button className="text-blue-500 hover:text-blue-700">
-                                        <CiEdit size={20} />
-                                      </button>
-                                    </td> */}
                                   </tr>
                                 )
                               )}
                             </tbody>
                           </table>
                         </div>
-                      </div>
-
-                      // <div className="bg-gray-100 rounded-lg shadow-md mt-2 p-4 overflow-auto max-h-[500px]">
-                      //   <div className="overflow-x-auto">
-                      //     <table className="w-full border-collapse">
-                      //       <thead className="bg-gray-300 sticky top-0">
-                      //         <tr className="text-left text-xs sm:text-sm">
-                      //           {[
-                      //             { label: "Date", width: "min-w-[105px]" },
-                      //             { label: "In Time", width: "min-w-[200px]" },
-                      //             { label: "Out Time", width: "min-w-[50px]" },
-                      //             { label: "Absent", width: "min-w-[80px]" },
-                      //             { label: "Late", width: "min-w-[80px]" },
-                      //             { label: "Early", width: "min-w-[100px]" },
-                      //             {
-                      //               label: "Not Marked",
-                      //               width: "min-w-[10px]"
-                      //             },
-                      //             {
-                      //               label: "Onsite Place",
-                      //               width: "min-w-[10px]"
-                      //             },
-                      //             {
-                      //               label: "Onsite Name",
-                      //               width: "min-w-[13px]"
-                      //             },
-                      //             {
-                      //               label: "Onsite Type",
-                      //               width: "min-w-[10px]"
-                      //             },
-                      //             {
-                      //               label: "Onsite Period",
-                      //               width: "min-w-[110px]"
-                      //             },
-                      //             { label: "Actions", width: "min-w-[100px]" }
-                      //           ].map((heading, i) => (
-                      //             <th
-                      //               key={i}
-                      //               className={`p-2 border border-gray-400 ${heading.width} text-center`}
-                      //             >
-                      //               {heading.label}
-                      //             </th>
-                      //           ))}
-                      //         </tr>
-                      //       </thead>
-                      //       <tbody className="divide-y divide-gray-300 bg-white text-xs sm:text-sm">
-                      //         {Object.entries(attendee.attendancedates).map(
-                      //           ([date, details], idx) => (
-                      //             <tr key={idx} className="text-center">
-                      //               <td className="p-2 border border-gray-300 bg-gray-300 text-left">
-                      //                 {date}
-                      //               </td>
-                      //               <td className="p-2 border border-gray-300 bg-green-300">
-                      //                 <input
-                      //                   type="text"
-                      //                   className=" text-center border rounded p-1"
-                      //                   defaultValue={details?.inTime || ""}
-                      //                 />
-                      //               </td>
-                      //               <td className="p-2 border border-gray-300">
-                      //                 <input
-                      //                   type="text"
-                      //                   className=" text-center border rounded p-1"
-                      //                   defaultValue={details?.outTime || ""}
-                      //                 />
-                      //               </td>
-                      //               <td className="p-2 border border-gray-300">
-                      //                 {details?.absent || "-"}
-                      //               </td>
-                      //               <td className="p-2 border border-gray-300">
-                      //                 {details?.late || "-"}
-                      //               </td>
-                      //               <td className="p-2 border border-gray-300">
-                      //                 {details?.early || "-"}
-                      //               </td>
-                      //               <td className="p-2 border border-gray-300">
-                      //                 {details?.notMarked || "-"}
-                      //               </td>
-                      //               <td className="p-2 border border-gray-300">
-                      //                 {details?.onsite?.[0]?.place || "-"}
-                      //               </td>
-                      //               <td className="p-2 border border-gray-300">
-                      //                 {details?.onsite?.[0]?.siteName || "-"}
-                      //               </td>
-                      //               <td className="p-2 border border-gray-300">
-                      //                 {details?.onsite?.[0]?.onsiteType || "-"}
-                      //               </td>
-                      //               <td className="p-2 border border-gray-300">
-                      //                 {details?.onsite?.[0]?.period || "-"}
-                      //               </td>
-                      //               <td className="p-2 border border-gray-300">
-                      //                 <button className="text-blue-500 hover:text-blue-700">
-                      //                   <CiEdit size={20} />
-                      //                 </button>
-                      //               </td>
-                      //             </tr>
-                      //           )
-                      //         )}
-                      //       </tbody>
-                      //     </table>
-                      //   </div>
-                      // </div>
-                    )}
-                  </>
-                ) : null}
-              </div>
-            ))}
-        </div>
+                      )}
+                    </>
+                  ) : null}
+                </div>
+              ))}
+          </div>
+        </>
+      )}
+      {modalOpen && (
+        <Modal
+          type={type}
+          onClose={handleClose}
+          selectedDate={selectedDate}
+          isOpen={modalOpen}
+          formData={formData}
+          staffId={selectedStaff[0]?.userId}
+          handleApply={handleApply}
+        />
       )}
     </div>
   )
