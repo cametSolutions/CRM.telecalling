@@ -818,6 +818,8 @@ export const OnsiteApply = async (req, res) => {
   }
 }
 export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
+  
+  consoe
   try {
     const { year, month } = req.query || { year: yearParam, month: monthParam }
 
@@ -1606,11 +1608,13 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
       staffAttendanceStats.push(stats)
     }
+    
+      return res.status(200).json({
+        message: "Attendence report found",
+        data: staffAttendanceStats
+      })
+    
     // console.log("statssss", staffAttendanceStats)
-    return res.status(200).json({
-      message: "Attendence report found",
-      data: staffAttendanceStats
-    })
   } catch (error) {
     console.log("error", error)
     return res.status(500).json({ message: "Internal server error" })
@@ -2530,7 +2534,7 @@ export const EditLeave = async (req, res) => {
     const { userid } = req.query
     const formData = req.body
     const { leaveDate, ...updatedFeild } = formData
-   
+
     const dateObj = new Date(leaveDate)
 
     // Extract year and month (without leading zero)
@@ -2560,7 +2564,7 @@ export const EditAttendance = async (req, res) => {
     const { userid } = req.query
     const formData = req.body
     // const { attendanceDate, ...updatedFeild } = formData
-   
+
     const {
       attendanceDate,
       inTime: { hours: inTimeHours, minutes: inTimeMinutes, amPm: inTimeAmPm },
@@ -2595,28 +2599,7 @@ export const EditAttendance = async (req, res) => {
       if (a) {
         return res.status(200).json({ message: "leave updated", data: a })
       }
-      // return res.status(200).json({
-      //   message: "Attendance updated successfully",
-      //   attendance: existingAttendance
-      // })
     }
-    // const result = await Attendance.findOneAndUpdate(
-    //   { userId: userid, attendanceDate: formData.attendanceDate }, // Find criteria
-    //   { $set: updatedFeild }, // Update only selected fields
-    //   { new: true } // Return updated document
-    // )
-    // if (existingAttendance) {
-    //   const fakeReq = { query: { year, month } }
-
-    //   // Call GetsomeAll with fake req
-    //   const a = await GetsomeAllsummary(fakeReq, res)
-    //   // console.log("ddddddddddd", a.data)
-    //   if (a) {
-    //     return res.status(200).json({ message: "leave updated", data: a })
-    //   }
-    //   // console.log("resultsssssssssss", result)
-    // }
-    // console.log("llllll", leave)
   } catch (error) {
     console.log("error", error.message)
     return res.status(500).json({ message: "Internal server error" })
