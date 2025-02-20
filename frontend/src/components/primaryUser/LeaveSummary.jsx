@@ -22,6 +22,7 @@ const leaveSummary = () => {
   const [leavesummaryList, setleaveSummary] = useState([])
   const userData = localStorage.getItem("user")
   const user = JSON.parse(userData)
+  console.log(user)
   // API URL with selected year and month
   const apiUrl = `/auth/getsomeall?year=${selectedYear}&month=${selectedMonth}`
 
@@ -380,12 +381,15 @@ const leaveSummary = () => {
                                     <td
                                       className="border border-gray-300 p-2 w-[90px] min-w-[90px]"
                                       onClick={() => {
-                                        handleAttendance(
-                                          date,
-                                          "Attendance",
-                                          details?.inTime,
-                                          details?.outTime
-                                        )
+                                        console.log(user.role)
+                                        if (user.role === "Admin") {
+                                          handleAttendance(
+                                            date,
+                                            "Attendance",
+                                            details?.inTime,
+                                            details?.outTime
+                                          )
+                                        }
                                       }}
                                     >
                                       {details?.inTime || "-"}
@@ -393,12 +397,13 @@ const leaveSummary = () => {
                                     <td
                                       className="border border-gray-300 p-2 w-[90px] min-w-[90px]"
                                       onClick={() => {
-                                        handleAttendance(
-                                          date,
-                                          "Attendance",
-                                          details?.inTime,
-                                          details?.outTime
-                                        )
+                                        if (user.role === "Admin")
+                                          handleAttendance(
+                                            date,
+                                            "Attendance",
+                                            details?.inTime,
+                                            details?.outTime
+                                          )
                                       }}
                                     >
                                       {details?.outTime || "-"}
