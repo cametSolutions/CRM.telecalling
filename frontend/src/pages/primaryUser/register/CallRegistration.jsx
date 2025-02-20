@@ -107,7 +107,6 @@ export default function CallRegistration() {
 
   useEffect(() => {
     if (calldetails) {
-    
       // Fetch the call details using the ID
       fetchCallDetails(calldetails)
         .then((callData) => {
@@ -116,12 +115,13 @@ export default function CallRegistration() {
             callData.callDetails.callregistration.find(
               (registration) => registration.timedata.token === token
             )
+          console.log(matchingRegistration)
 
           // If a matching registration is found, extract the product details
           const productName = matchingRegistration
             ? matchingRegistration.product.productName
             : null
-         
+
           const matchingProducts =
             callData.callDetails.customerid.selected.filter(
               (product) => product.productName === productName
@@ -129,7 +129,6 @@ export default function CallRegistration() {
 
           setSelectedCustomer(callData?.callDetails?.customerid)
           setName(callData?.callDetails?.customerid?.customerName)
-        
 
           setProductDetails(matchingProducts)
 
@@ -371,8 +370,6 @@ export default function CallRegistration() {
       )
 
       if (response.status === 200) {
-       
-
         toast.success(response.data.message)
         refreshHook()
 
