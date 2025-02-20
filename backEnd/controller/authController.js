@@ -818,8 +818,6 @@ export const OnsiteApply = async (req, res) => {
   }
 }
 export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
-  
-  consoe
   try {
     const { year, month } = req.query || { year: yearParam, month: monthParam }
 
@@ -1608,12 +1606,12 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
       staffAttendanceStats.push(stats)
     }
-    
-      return res.status(200).json({
-        message: "Attendence report found",
-        data: staffAttendanceStats
-      })
-    
+
+    return res.status(200).json({
+      message: "Attendence report found",
+      data: staffAttendanceStats
+    })
+
     // console.log("statssss", staffAttendanceStats)
   } catch (error) {
     console.log("error", error)
