@@ -30,7 +30,14 @@ const leaveSummary = () => {
   const { data: newattende, loading, refreshHook } = UseFetch(apiUrl)
   useEffect(() => {
     if (newattende && newattende.length) {
-      setleaveSummary(newattende)
+      if (user.role === "Admin") {
+        setleaveSummary(newattende)
+      } else if (user.role === "Staff") {
+        const filteredUser = newattende.filter(
+          (item) => item.userId === user._id
+        )
+        setleaveSummary(filteredUser)
+      }
     }
   }, [newattende])
 
