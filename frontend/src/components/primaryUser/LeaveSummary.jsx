@@ -499,24 +499,26 @@ const leaveSummary = () => {
                                     <td
                                       className="border border-gray-300 p-2 w-[100px] min-w-[100px]"
                                       onClick={() => {
-                                        handleLeave(
-                                          date,
-                                          "Leave",
-                                          details?.otherLeave
-                                            ? "other Leave"
-                                            : details?.compensatoryLeave
-                                            ? "compensatory Leave"
-                                            : details?.privileageLeave
-                                            ? "privileage Leave"
-                                            : details?.casualLeave
-                                            ? "casual Leave"
-                                            : null,
-                                          details?.otherLeave ||
-                                            details?.compensatoryLeave ||
-                                            details?.privileageLeave ||
-                                            details?.casualLeave,
-                                          details?.halfDayperiod
-                                        )
+                                        if (user.role === "Admin") {
+                                          handleLeave(
+                                            date,
+                                            "Leave",
+                                            details?.otherLeave
+                                              ? "other Leave"
+                                              : details?.compensatoryLeave
+                                              ? "compensatory Leave"
+                                              : details?.privileageLeave
+                                              ? "privileage Leave"
+                                              : details?.casualLeave
+                                              ? "casual Leave"
+                                              : null,
+                                            details?.otherLeave ||
+                                              details?.compensatoryLeave ||
+                                              details?.privileageLeave ||
+                                              details?.casualLeave,
+                                            details?.halfDayperiod
+                                          )
+                                        }
                                       }}
                                     >
                                       {details?.otherLeave || "-"}
