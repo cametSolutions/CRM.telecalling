@@ -389,7 +389,7 @@ const leaveSummary = () => {
                                       className="border border-gray-300 p-2 w-[90px] min-w-[90px]"
                                       onClick={() => {
                                         console.log(user.role)
-                                        if (user.role === "Admin") {
+                                        if (user?.role === "Admin") {
                                           handleAttendance(
                                             date,
                                             "Attendance",
@@ -404,7 +404,7 @@ const leaveSummary = () => {
                                     <td
                                       className="border border-gray-300 p-2 w-[90px] min-w-[90px]"
                                       onClick={() => {
-                                        if (user.role === "Admin")
+                                        if (user?.role === "Admin")
                                           handleAttendance(
                                             date,
                                             "Attendance",
@@ -417,82 +417,88 @@ const leaveSummary = () => {
                                     </td>
                                     <td
                                       className="border border-gray-300 p-2 w-[80px] min-w-[80px]"
-                                      onClick={() =>
-                                        handleLeave(
-                                          date,
-                                          "Leave",
-                                          details?.otherLeave
-                                            ? "other Leave"
-                                            : details?.compensatoryLeave
-                                            ? "compensatory Leave"
-                                            : details?.privileageLeave
-                                            ? "privileage Leave"
-                                            : details?.casualLeave
-                                            ? "casual Leave"
-                                            : null,
-                                          details?.otherLeave ||
-                                            details?.compensatoryLeave ||
-                                            details?.privileageLeave ||
-                                            details?.casualLeave,
-                                          details?.halfDayperiod
-                                        )
-                                      }
+                                      onClick={() => {
+                                        if (user?.role === "Admin") {
+                                          handleLeave(
+                                            date,
+                                            "Leave",
+                                            details?.otherLeave
+                                              ? "other Leave"
+                                              : details?.compensatoryLeave
+                                              ? "compensatory Leave"
+                                              : details?.privileageLeave
+                                              ? "privileage Leave"
+                                              : details?.casualLeave
+                                              ? "casual Leave"
+                                              : null,
+                                            details?.otherLeave ||
+                                              details?.compensatoryLeave ||
+                                              details?.privileageLeave ||
+                                              details?.casualLeave,
+                                            details?.halfDayperiod
+                                          )
+                                        }
+                                      }}
                                     >
                                       {details?.casualLeave || "-"}
                                     </td>
                                     <td
                                       className="border border-gray-300 p-2 w-[80px] min-w-[80px]"
-                                      onClick={() =>
-                                        handleLeave(
-                                          date,
-                                          "Leave",
-                                          details?.otherLeave
-                                            ? "other Leave"
-                                            : details?.compensatoryLeave
-                                            ? "compensatory Leave"
-                                            : details?.privileageLeave
-                                            ? "privileage Leave"
-                                            : details?.casualLeave
-                                            ? "casual Leave"
-                                            : null,
-                                          details?.otherLeave ||
-                                            details?.compensatoryLeave ||
-                                            details?.privileageLeave ||
-                                            details?.casualLeave,
-                                          details?.halfDayperiod
-                                        )
-                                      }
+                                      onClick={() => {
+                                        if (user?.role === "Admin") {
+                                          handleLeave(
+                                            date,
+                                            "Leave",
+                                            details?.otherLeave
+                                              ? "other Leave"
+                                              : details?.compensatoryLeave
+                                              ? "compensatory Leave"
+                                              : details?.privileageLeave
+                                              ? "privileage Leave"
+                                              : details?.casualLeave
+                                              ? "casual Leave"
+                                              : null,
+                                            details?.otherLeave ||
+                                              details?.compensatoryLeave ||
+                                              details?.privileageLeave ||
+                                              details?.casualLeave,
+                                            details?.halfDayperiod
+                                          )
+                                        }
+                                      }}
                                     >
                                       {details?.privileageLeave || "-"}
                                     </td>
                                     <td
                                       className="border border-gray-300 p-2 w-[100px] min-w-[100px]"
-                                      onClick={() =>
-                                        handleLeave(
-                                          date,
-                                          "Leave",
-                                          details?.otherLeave
-                                            ? "other Leave"
-                                            : details?.compensatoryLeave
-                                            ? "compensatory Leave"
-                                            : details?.privileageLeave
-                                            ? "privileage Leave"
-                                            : details?.casualLeave
-                                            ? "casual Leave"
-                                            : null,
-                                          details?.otherLeave ||
-                                            details?.compensatoryLeave ||
-                                            details?.privileageLeave ||
-                                            details?.casualLeave,
-                                          details?.halfDayperiod
-                                        )
-                                      }
+                                      onClick={() => {
+                                        if (user?.role === "Admin") {
+                                          handleLeave(
+                                            date,
+                                            "Leave",
+                                            details?.otherLeave
+                                              ? "other Leave"
+                                              : details?.compensatoryLeave
+                                              ? "compensatory Leave"
+                                              : details?.privileageLeave
+                                              ? "privileage Leave"
+                                              : details?.casualLeave
+                                              ? "casual Leave"
+                                              : null,
+                                            details?.otherLeave ||
+                                              details?.compensatoryLeave ||
+                                              details?.privileageLeave ||
+                                              details?.casualLeave,
+                                            details?.halfDayperiod
+                                          )
+                                        }
+                                      }}
                                     >
                                       {details?.compensatoryLeave || "-"}
                                     </td>
                                     <td
                                       className="border border-gray-300 p-2 w-[100px] min-w-[100px]"
-                                      onClick={() =>
+                                      onClick={() => {
                                         handleLeave(
                                           date,
                                           "Leave",
@@ -511,7 +517,7 @@ const leaveSummary = () => {
                                             details?.casualLeave,
                                           details?.halfDayperiod
                                         )
-                                      }
+                                      }}
                                     >
                                       {details?.otherLeave || "-"}
                                     </td>
