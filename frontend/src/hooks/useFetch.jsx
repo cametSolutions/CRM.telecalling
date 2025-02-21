@@ -46,6 +46,7 @@ const UseFetch = (url) => {
   console.log("fff")
   const [refresh, setRefresh] = useState(false)
   const [data, setData] = useState(null)
+  const [fulldateholiday, setfulldateHoliday] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -64,6 +65,7 @@ const UseFetch = (url) => {
 
         if (result) {
           setData(result.data)
+          setfulldateHoliday(result.fulldateholiday)
           setLoading(false)
         } else {
           setError("Expected data to be an array")
@@ -83,7 +85,7 @@ const UseFetch = (url) => {
     setRefresh(!refresh)
   }
 
-  return { data, loading, error, refreshHook }
+  return { data, loading, error, refreshHook, fulldateholiday }
 }
 
 export default UseFetch

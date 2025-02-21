@@ -1,5 +1,5 @@
 import models from "../model/auth/authSchema.js"
-
+import Leavemaster from "../model/secondaryUser/leavemasterSchema.js"
 import mongoose from "mongoose"
 import Branch from "../model/primaryUser/branchSchema.js"
 import Attendance from "../model/primaryUser/attendanceSchema.js"
@@ -841,19 +841,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
       for (let day = 1; day <= daysInMonth; day++) {
         let date = new Date(year, month - 1, day)
-        // let dateKey =
-        //   String(date.getDate()).padStart(2, "0") +
-        //   "-" +
-        //   String(date.getMonth() + 1).padStart(2, "0") +
-        //   "-" +
-        //   date.getFullYear()
 
-        // let dateKey =
-        //   String(date.getDate()).padStart(2, "0") +
-        //   +"-" +
-        //   String(date.getMonth() + 1).padStart(2, "0") +
-        //   "-" +
-        //   date.getFullYear()
         let dateKey =
           date.getFullYear() +
           "-" +
@@ -880,6 +868,36 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       return dates
     }
 
+    //
+    const getMidTime = (startTime, endTime) => {
+      const convertToMinutes = (timeString) => {
+        const [time, period] = timeString.split(" ")
+        let [hours, minutes] = time.split(":").map(Number)
+
+        if (period === "PM" && hours !== 12) hours += 12
+        if (period === "AM" && hours === 12) hours = 0
+
+        return hours * 60 + minutes // Convert to total minutes
+      }
+
+      const convertToTimeString = (totalMinutes) => {
+        let hours = Math.floor(totalMinutes / 60)
+        let minutes = (totalMinutes % 60).toString().padStart(2, "0")
+        const period = hours >= 12 ? "PM" : "AM"
+
+        if (hours > 12) hours -= 12
+        if (hours === 0) hours = 12
+
+        return `${hours}:${minutes} ${period}`
+      }
+
+      const startMinutes = convertToMinutes(startTime)
+      const endMinutes = convertToMinutes(endTime)
+      const midMinutes = Math.floor((startMinutes + endMinutes) / 2)
+
+      return convertToTimeString(midMinutes)
+    }
+
     const sundays = getSundays(year, month)
 
     const startDate = new Date(Date.UTC(year, month - 1, 1))
@@ -895,6 +913,31 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
       return hours * 60 + minutes // Return total minutes since midnight
     }
+    const leavemaster = await Leavemaster.find({})
+    const latecuttingCount = leavemaster[0].deductSalaryMinute
+    console.log("latearrival", latecuttingCount)
+    const addMinutesToTime = (timeString, minutesToAdd) => {
+      // Convert to Date object
+      const [time, period] = timeString.split(" ")
+      let [hours, minutes] = time.split(":").map(Number)
+
+      // Convert to 24-hour format
+      if (period === "PM" && hours !== 12) hours += 12
+      if (period === "AM" && hours === 12) hours = 0
+
+      // Add minutes
+      const newDate = new Date(2000, 0, 1, hours, minutes + minutesToAdd)
+
+      // Convert back to 12-hour format
+      let newHours = newDate.getHours()
+      const newMinutes = newDate.getMinutes().toString().padStart(2, "0")
+      const newPeriod = newHours >= 12 ? "PM" : "AM"
+
+      if (newHours > 12) newHours -= 12
+      if (newHours === 0) newHours = 12
+
+      return `${newHours}:${newMinutes} ${newPeriod}`
+    }
 
     function createDates(b, month, year) {
       return b.map((day) => {
@@ -906,13 +949,21 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       })
     }
 
-    const morningLimit = convertToMinutes("9:35 AM")
-    const lateLimit = convertToMinutes("10:00 AM")
-    const minOutTime = convertToMinutes("5:00 PM")
-    const earlyLeaveLimit = convertToMinutes("5:30 PM")
-    const noonLimit = convertToMinutes("1:30 PM")
+    const morning = addMinutesToTime(
+      leavemaster[0].checkIn,
+      leavemaster[0].lateArrival
+    )
+    const noonTime = getMidTime(leavemaster[0].checkIn, leavemaster[0].checkOut)
+    // console.log("master", leavemaster)
+
+    const morningLimit = convertToMinutes(morning)
+    console.log("morlinit", morningLimit)
+    const lateLimit = convertToMinutes(leavemaster[0].checkInEndAt)
+    const minOutTime = convertToMinutes(leavemaster[0].checkOutStartAt)
+    const earlyLeaveLimit = convertToMinutes(leavemaster[0].checkOut)
+    const noonLimit = convertToMinutes(noonTime)
+    console.log("noon", noonTime)
     let staffAttendanceStats = []
-    // const holidays = await Holymaster.find({})
     const holidays = await Holymaster.find({
       holyDate: {
         $gte: startDate,
@@ -947,9 +998,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       const leaves =
         results[2].status === "fulfilled" ? results[2].value || [] : []
 
-      const uniqueHolidays = holiday.filter(
-        (holiday) => !sundays.includes(holiday)
-      )
       let stats = {
         name: userName,
         userId: userId,
@@ -993,13 +1041,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         attendances?.forEach((att) => {
           const day = att.attendanceDate.getDate()
           const dayTime = att.attendanceDate.toISOString().split("T")[0]
-          // const date = new Date(att.attendanceDate)
-          // const day = String(date.getDate()).padStart(2, "0")
-          // const month = String(date.getMonth() + 1).padStart(2, "0")
-          // const year = date.getFullYear()
-
-          // const dayTime = `${day}-${month}-${year}`
-          // console.log("daytime", dayTime)
 
           const punchIn = att.inTime ? convertToMinutes(att.inTime) : null
           const punchOut = att.outTime ? convertToMinutes(att.outTime) : null
@@ -1013,24 +1054,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                 o.onsiteDate.toISOString().split("T")[0] === dayTime &&
                 (o.departmentverified === true || o.adminverified === true)
             )
-          // const isOnsite =
-          //   Array.isArray(onsites) &&
-          //   onsites.some((o) => {
-          //     const onsiteDate =
-          //       String(o.onsiteDate.getDate()).padStart(2, "0") +
-          //       "-" +
-          //       String(o.onsiteDate.getMonth() + 1).padStart(2, "0") +
-          //       "-" +
-          //       o.onsiteDate.getFullYear()
-
-          //     return (
-          //       onsiteDate === dayTime &&
-          //       (o.departmentverified === true || o.adminverified === true)
-          //     )
-          //   })
-          // if (userName.trim() === "Muhammed Rasik K.M") {
-          //   console.log("ISSSSS", isOnsite)
-          // }
 
           const onsiteRecord = Array.isArray(onsites)
             ? onsites.find(
@@ -1039,21 +1062,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                   (o.departmentverified === true || o.adminverified === true)
               )
             : null
-          // const onsiteRecord = Array.isArray(onsites)
-          //   ? onsites.find((o) => {
-          //       const onsiteDate =
-          //         String(o.onsiteDate.getDate()).padStart(2, "0") +
-          //         "-" +
-          //         String(o.onsiteDate.getMonth() + 1).padStart(2, "0") +
-          //         "-" +
-          //         o.onsiteDate.getFullYear()
-
-          //       return (
-          //         onsiteDate === dayTime &&
-          //         (o.departmentverified === true || o.adminverified === true)
-          //       )
-          //     })
-          //   : null
 
           const onsiteDetails = onsiteRecord
             ? {
@@ -1065,23 +1073,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                     : null
               }
             : null
-          ////
-          // const isLeave =
-          //   Array.isArray(leaves) &&
-          //   leaves.some((l) => {
-          //     const leaveDate =
-          //       String(l.leaveDate.getDate()).padStart(2, "0") +
-          //       "-" +
-          //       String(l.leaveDate.getMonth() + 1).padStart(2, "0") +
-          //       "-" +
-          //       l.leaveDate.getFullYear()
-
-          //     return (
-          //       leaveDate === dayTime &&
-          //       l.onsite === false &&
-          //       (l.departmentverified === true || l.adminverified === true)
-          //     )
-          //   })
 
           const isLeave =
             Array.isArray(leaves) &&
@@ -1099,22 +1090,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                   (l.departmentverified === true || l.adminverified === true)
               )
             : null
-          // const leaveRecord = Array.isArray(leaves)
-          //   ? leaves.find((l) => {
-          //       const leaveDate =
-          //         String(l.leaveDate.getDate()).padStart(2, "0") +
-          //         "-" +
-          //         String(l.leaveDate.getMonth() + 1).padStart(2, "0") +
-          //         "-" +
-          //         l.leaveDate.getFullYear()
 
-          //       return (
-          //         leaveDate === dayTime &&
-          //         l.onsite === false &&
-          //         (l.departmentverified === true || l.adminverified === true)
-          //       )
-          //     })
-          //   : null
           const leaveDetails = leaveRecord
             ? {
                 leaveType: leaveRecord.leaveType,
@@ -1125,8 +1101,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                 leaveCategory: leaveRecord?.leaveCategory || null
               }
             : null
-
-          // const leaveType = leaveRecord ? leaveRecord.leaveType : null
 
           if (!punchIn || !punchOut) {
             arr.push(day)
@@ -1140,10 +1114,8 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.onsite++
-              // stats.attendancedates[dayTime].onsite = 1
             } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
               stats.onsite += 0.5
-              // stats.attendancedates[dayTime].onsite = 0.5
             }
           } else if (
             punchIn >= morningLimit &&
@@ -1160,10 +1132,8 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             stats.attendancedates[dayTime].notMarked = ""
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.onsite++
-              // stats.attendancedates[dayTime].onsite = 1
             } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
               stats.onsite += 0.5
-              // stats.attendancedates[dayTime].onsite = 0.5
             }
             present.push(day)
           } else if (
@@ -1254,21 +1224,18 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                 stats.onsite += 0.5
                 stats.attendancedates[dayTime].present = 1
                 stats.attendancedates[dayTime].notMarked = ""
-                // stats.attendancedates[dayTime].onsite = 0.5
               } else if (
                 punchIn < lateLimit &&
                 punchOut >= noonLimit &&
                 onsiteDetails.halfDayPeriod === "Morning"
               ) {
                 stats.onsite += 0.5
-                // stats.attendancedates[dayTime].onsite = 0.5
               } else if (
                 punchIn <= noonLimit &&
                 punchOut >= earlyLeaveLimit &&
                 onsiteDetails.halfDayPeriod === "Afternoon"
               ) {
                 stats.onsite += 0.5
-                // stats.attendancedates[dayTime].onsite = 0.5
               } else if (
                 punchIn <= noonLimit &&
                 punchOut >= earlyLeaveLimit &&
@@ -1276,7 +1243,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               ) {
                 stats.onsite += 0.5
                 stats.attendancedates[dayTime].present = 1
-                // stats.attendancedates[dayTime].onsite = 0.5
                 stats.attendancedates[dayTime].notMarked = ""
               }
             }
@@ -1300,11 +1266,9 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                     stats.attendancedates[dayTime].others = 1 // Default case
                     break
                 }
-                // stats.attendancedates[dayTime].leaveDetails.leaveCategory = 1
               } else {
                 stats.attendancedates[dayTime].otherLeave = 1
               }
-              // stats.absent++
               stats.attendancedates[dayTime].notMarked = ""
             } else if (isLeave && leaveDetails.leaveType === "Half Day") {
               if (leaveDetails.leaveCategory) {
@@ -1335,43 +1299,23 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                       leaveDetails.halfDayPeriod // Default case
                     break
                 }
-                // stats.attendancedates[dayTime].leaveDetails.leaveCategory = 0.5
               } else {
                 stats.attendancedates[dayTime].otherLeave = 0.5
                 stats.attendancedates[dayTime].halfDayperiod =
                   leaveDetails.halfDayPeriod
               }
-              // stats.absent += 0.5
               stats.attendancedates[dayTime].notMarked = ""
             }
           }
           daysInMonth.delete(day)
         })
-      // if (userName.trim() === "Muhammed Rasik K.M") {
-      //   console.log("staaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", stats)
-      // }
+
       onsites?.length &&
         onsites?.forEach((onsite) => {
           const onsiteDate = onsite.onsiteDate.toISOString().split("T")[0]
 
-          // const date = onsite.onsiteDate
-          // const day = String(date.getDate()).padStart(2, "0")
-          // const month = String(date.getMonth() + 1).padStart(2, "0")
-          // const year = date.getFullYear()
-
-          // const onsiteDate = `${day}-${month}-${year}`
           const isAttendance =
             Array.isArray(attendances) &&
-            // attendances.some((o) => {
-            //   const formattedDate = o.attendancedates
-            //     ?.toISOString()
-            //     .split("T")[0]
-            //     .split("-")
-            //     .reverse()
-            //     .join("-")
-
-            //   return formattedDate === onsiteDate
-            // })
             attendances.some(
               (o) => o.attendanceDate.toISOString().split("T")[0] === onsiteDate
             )
@@ -1432,7 +1376,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               } else {
                 stats.attendancedates[leaveDate].otherLeave = 1
               }
-              // stats.absent++
 
               stats.attendancedates[leaveDate].notMarked = ""
             } else if (
@@ -1467,14 +1410,12 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                       leave.halfDayPeriod // Default case
                     break
                 }
-                // stats.attendancedates[leaveDate].leaveCategory = 0.5
               } else {
                 stats.attendancedates[leaveDate].otherLeave = 0.5
                 stats.attendancedates[leaveDate].halfDayperiod =
                   leave.halfDayPeriod
               }
 
-              // stats.notMarked += 0.5
               stats.attendancedates[leaveDate].notMarked = 0.5
             }
           }
@@ -1483,6 +1424,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       const uniqueDates = [...new Set([...sundays, ...holiday])]
 
       const c = createDates(uniqueDates, month, year)
+
       function getNextDate(dateString) {
         // Parse the date string (YYYY-MM-DD)
         const [year, month, day] = dateString.split("-").map(Number)
@@ -1597,19 +1539,27 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             ? Number(stats.attendancedates[dates].notMarked)
             : 0
       }
+
       const combined = stats.earlyGoing + stats.late
       stats.latecutting =
-        Math.floor(combined / 6) * 1 + (Math.floor(combined / 3) % 2) * 0.5
+        Math.floor(combined / (latecuttingCount * 2)) * 1 +
+        (Math.floor(combined / latecuttingCount) % 2) * 0.5
 
       stats.present -=
-        Math.floor(combined / 6) * 1 + (Math.floor(combined / 3) % 2) * 0.5
+        Math.floor(combined / (latecuttingCount * 2)) * 1 +
+        (Math.floor(combined / latecuttingCount) % 2) * 0.5
 
       staffAttendanceStats.push(stats)
     }
+    const listofHolidays = holidays.map((item) => ({
+      date: item.holyDate.toISOString().split("T")[0],
+      holyname: item.customTextInput
+    }))
 
     return res.status(200).json({
       message: "Attendence report found",
-      data: staffAttendanceStats
+      data: staffAttendanceStats,
+      fulldateholiday: listofHolidays || []
     })
 
     // console.log("statssss", staffAttendanceStats)
@@ -2593,7 +2543,6 @@ export const EditAttendance = async (req, res) => {
 
       // Call GetsomeAll with fake req
       const a = await GetsomeAllsummary(fakeReq, res)
-      // console.log("ddddddddddd", a.data)
       if (a) {
         return res.status(200).json({ message: "leave updated", data: a })
       }
@@ -2671,7 +2620,34 @@ export const GetsomeAllsummary = async (
 
       return dates
     }
+    const getMidTime = (startTime, endTime) => {
+      const convertToMinutes = (timeString) => {
+        const [time, period] = timeString.split(" ")
+        let [hours, minutes] = time.split(":").map(Number)
 
+        if (period === "PM" && hours !== 12) hours += 12
+        if (period === "AM" && hours === 12) hours = 0
+
+        return hours * 60 + minutes // Convert to total minutes
+      }
+
+      const convertToTimeString = (totalMinutes) => {
+        let hours = Math.floor(totalMinutes / 60)
+        let minutes = (totalMinutes % 60).toString().padStart(2, "0")
+        const period = hours >= 12 ? "PM" : "AM"
+
+        if (hours > 12) hours -= 12
+        if (hours === 0) hours = 12
+
+        return `${hours}:${minutes} ${period}`
+      }
+
+      const startMinutes = convertToMinutes(startTime)
+      const endMinutes = convertToMinutes(endTime)
+      const midMinutes = Math.floor((startMinutes + endMinutes) / 2)
+
+      return convertToTimeString(midMinutes)
+    }
     const sundays = getSundays(year, month)
 
     const startDate = new Date(Date.UTC(year, month - 1, 1))
@@ -2687,6 +2663,30 @@ export const GetsomeAllsummary = async (
 
       return hours * 60 + minutes // Return total minutes since midnight
     }
+    const leavemaster = await Leavemaster.find({})
+    const latecuttingCount = leavemaster[0].deductSalaryMinute
+    const addMinutesToTime = (timeString, minutesToAdd) => {
+      // Convert to Date object
+      const [time, period] = timeString.split(" ")
+      let [hours, minutes] = time.split(":").map(Number)
+
+      // Convert to 24-hour format
+      if (period === "PM" && hours !== 12) hours += 12
+      if (period === "AM" && hours === 12) hours = 0
+
+      // Add minutes
+      const newDate = new Date(2000, 0, 1, hours, minutes + minutesToAdd)
+
+      // Convert back to 12-hour format
+      let newHours = newDate.getHours()
+      const newMinutes = newDate.getMinutes().toString().padStart(2, "0")
+      const newPeriod = newHours >= 12 ? "PM" : "AM"
+
+      if (newHours > 12) newHours -= 12
+      if (newHours === 0) newHours = 12
+
+      return `${newHours}:${newMinutes} ${newPeriod}`
+    }
 
     function createDates(b, month, year) {
       return b.map((day) => {
@@ -2698,11 +2698,21 @@ export const GetsomeAllsummary = async (
       })
     }
 
-    const morningLimit = convertToMinutes("9:35 AM")
-    const lateLimit = convertToMinutes("10:00 AM")
-    const minOutTime = convertToMinutes("5:00 PM")
-    const earlyLeaveLimit = convertToMinutes("5:30 PM")
-    const noonLimit = convertToMinutes("1:30 PM")
+    const morning = addMinutesToTime(
+      leavemaster[0].checkIn,
+      leavemaster[0].lateArrival
+    )
+    const noonTime = getMidTime(leavemaster[0].checkIn, leavemaster[0].checkOut)
+
+    const morningLimit = convertToMinutes(morning)
+    const lateLimit = convertToMinutes(leavemaster[0].checkInEndAt)
+    const minOutTime = convertToMinutes(leavemaster[0].checkOutStartAt)
+    const earlyLeaveLimit = convertToMinutes(leavemaster[0].checkOut)
+    const noonLimit = convertToMinutes(noonTime)
+
+  
+
+   
     let staffAttendanceStats = []
     // const holidays = await Holymaster.find({})
     const holidays = await Holymaster.find({
@@ -3389,11 +3399,18 @@ export const GetsomeAllsummary = async (
             : 0
       }
       const combined = stats.earlyGoing + stats.late
+      // stats.latecutting =
+      //   Math.floor(combined / 6) * 1 + (Math.floor(combined / 3) % 2) * 0.5
+
+      // stats.present -=
+      //   Math.floor(combined / 6) * 1 + (Math.floor(combined / 3) % 2) * 0.5
       stats.latecutting =
-        Math.floor(combined / 6) * 1 + (Math.floor(combined / 3) % 2) * 0.5
+        Math.floor(combined / (latecuttingCount * 2)) * 1 +
+        (Math.floor(combined / latecuttingCount) % 2) * 0.5
 
       stats.present -=
-        Math.floor(combined / 6) * 1 + (Math.floor(combined / 3) % 2) * 0.5
+        Math.floor(combined / (latecuttingCount * 2)) * 1 +
+        (Math.floor(combined / latecuttingCount) % 2) * 0.5
 
       staffAttendanceStats.push(stats)
     }
