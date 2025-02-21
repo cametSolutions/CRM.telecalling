@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react"
-
+import ResponsiveTable from "./ResponsiveTable"
 import Modal from "./Modal"
 import api from "../../api/api"
 import UseFetch from "../../hooks/useFetch"
@@ -18,6 +18,7 @@ const leaveSummary = () => {
   const [selectedDate, setselectedDate] = useState(null)
   const [Loading, setLoading] = useState(null)
   const [type, setType] = useState("")
+  const [holiday, setHoly] = useState(null)
 
   const [leavesummaryList, setleaveSummary] = useState([])
   const userData = localStorage.getItem("user")
@@ -27,12 +28,19 @@ const leaveSummary = () => {
   const apiUrl = `/auth/getsomeall?year=${selectedYear}&month=${selectedMonth}`
 
   // Use custom useFetch hook
-  const { data: newattende, loading, refreshHook } = UseFetch(apiUrl)
+  const {
+    data: newattende,
+    fulldateholiday: holy,
+    loading,
+    refreshHook
+  } = UseFetch(apiUrl)
   useEffect(() => {
     if (newattende && newattende.length) {
       if (user.role === "Admin") {
+        setHoly(holy)
         setleaveSummary(newattende)
       } else if (user.role === "Staff") {
+        setHoly(holy)
         const filteredUser = newattende.filter(
           (item) => item.userId === user._id
         )
@@ -40,6 +48,7 @@ const leaveSummary = () => {
       }
     }
   }, [newattende])
+  console.log(holy)
 
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i)
   const months = [
@@ -155,9 +164,9 @@ const leaveSummary = () => {
     <div className="w-full">
       {/* Header Section */}
 
-      <div className="p-3 text-center">
+      <div className=" text-center">
         <h1 className="text-2xl font-bold mb-1">User Leave Summary</h1>
-        <div className="flex flex-wrap justify-end gap-4 ">
+        <div className="flex flex-wrap justify-end gap-4 mb-3">
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -234,28 +243,28 @@ const leaveSummary = () => {
                               {[
                                 {
                                   label: "Present",
-                                  value: attendee.present,
-                                  width: "w-full sm:w-[230px]"
+                                  value: attendee.present
+                                  // width: "w-full sm:w-[230px]"
                                 },
                                 {
                                   label: "Leave",
-                                  value: attendee.absent,
-                                  width: "w-full sm:w-[115px]"
+                                  value: attendee.absent
+                                  // width: "w-full sm:w-[115px]"
                                 },
                                 {
                                   label: "Late Cutting",
-                                  value: attendee.latecutting,
-                                  width: "w-full sm:w-[110px]"
+                                  value: attendee.latecutting
+                                  // width: "w-full sm:w-[110px]"
                                 },
                                 {
                                   label: "Not Marked",
-                                  value: attendee.notMarked,
-                                  width: "w-full sm:w-[130px]"
+                                  value: attendee.notMarked
+                                  // width: "w-full sm:w-[130px]"
                                 },
                                 {
                                   label: "Onsite",
-                                  value: attendee.onsite,
-                                  width: "w-full sm:w-[510px]"
+                                  value: attendee.onsite
+                                  // width: "w-full sm:w-[510px]"
                                 }
                               ].map((item, idx) => (
                                 <div
@@ -271,110 +280,118 @@ const leaveSummary = () => {
                             </div>
                           </div>
                         </div>
+                        {selectedIndex === index && (
+                          <ResponsiveTable
+                            attendee={attendee}
+                            user={user}
+                            handleAttendance={handleAttendance}
+                            handleLeave={handleLeave}
+                            handleScroll={handleScroll}
+                            modalOpen={modalOpen}
+                            holiday={holiday}
+                          />
+                        )}
 
                         {/* Table Header - Hidden scrollbar but syncs with body */}
-                        {selectedIndex === index && !modalOpen && (
+                        {/* {selectedIndex === index && !modalOpen && (
                           <div className="sticky top-0 z-20 bg-white mr-4">
-                            <div className="overflow-hidden border-b">
-                              <div
-                                className="scroll-container"
-                                style={{ overflow: "hidden" }}
-                              >
-                                <table className="w-full min-w-[1200px] border-collapse text-sm ">
-                                  {/* Your existing thead content */}
-                                  <thead className="bg-gray-100 ">
-                                    <tr>
-                                      <th
-                                        rowSpan="2"
-                                        className="border border-gray-300 p-2 w-[105px] min-w-[105px] sticky left-0 bg-gray-100 z-10"
-                                      >
-                                        Date
-                                      </th>
-                                      <th
-                                        colSpan="2"
-                                        className="border border-gray-300 p-1 w-[180px] min-w-[180px]"
-                                      >
-                                        Present
-                                      </th>
-                                      <th
-                                        colSpan="4"
-                                        className="border border-gray-300 p-1 w-[360px] min-w-[360px]"
-                                      >
-                                        Leave
-                                      </th>
-                                      <th
-                                        rowSpan="2"
-                                        className="border border-gray-300 p-2 w-[120px] min-w-[120px]"
-                                      >
-                                        Early Out
-                                      </th>
-                                      <th
-                                        rowSpan="2"
-                                        className="border border-gray-300 p-2 w-[130px] min-w-[130px]"
-                                      >
-                                        Late In
-                                      </th>
-                                      <th
-                                        rowSpan="2"
-                                        className="border border-gray-300 p-2 w-[120px] min-w-[120px]"
-                                      >
-                                        Not Marked
-                                      </th>
-                                      <th
-                                        colSpan="4"
-                                        className="border border-gray-300 p-1 w-[440px] min-w-[440px]"
-                                      >
-                                        Onsite
-                                      </th>
-                                    </tr>
-                                    <tr>
-                                      <th className="border border-gray-300 p-1 w-[90px] min-w-[90px]">
-                                        In Time
-                                      </th>
-                                      <th className="border border-gray-300 p-1 w-[90px] min-w-[90px]">
-                                        Out Time
-                                      </th>
-                                      <th className="border border-gray-300 p-1 w-[80px] min-w-[80px]">
-                                        CL
-                                      </th>
-                                      <th className="border border-gray-300 p-1 w-[80px] min-w-[80px]">
-                                        PL
-                                      </th>
-                                      <th className="border border-gray-300 p-1 w-[100px] min-w-[100px]">
-                                        Comp.leave
-                                      </th>
-                                      <th className="border border-gray-300 p-1 w-[100px] min-w-[100px]">
-                                        Others
-                                      </th>
-                                      <th className="border border-gray-300 p-1 w-[110px] min-w-[110px]">
-                                        Place
-                                      </th>
-                                      <th className="border border-gray-300 p-1 w-[110px] min-w-[110px]">
-                                        SiteName
-                                      </th>
-                                      <th className="border border-gray-300 p-1 w-[110px] min-w-[110px]">
-                                        Onsite Type
-                                      </th>
-                                      <th className="border border-gray-300 p-1 w-[110px] min-w-[110px]">
-                                        Period
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                </table>
-                              </div>
+                            <div
+                              className="scroll-container overflow-x-auto max-h-[calc(100vh-200px)]"
+                              style={{ overflow: "hidden" }}
+                            >
+                              <table className="w-full min-w-max border-collapse text-sm">
+                                <thead className="bg-gray-100">
+                                  <tr>
+                                    <th
+                                      rowSpan="2"
+                                      className="border border-gray-300 p-2 sticky left-0 bg-gray-100 z-10"
+                                    >
+                                      Date
+                                    </th>
+                                    <th
+                                      colSpan="2"
+                                      className="border border-gray-300 p-1"
+                                    >
+                                      Present
+                                    </th>
+                                    <th
+                                      colSpan="4"
+                                      className="border border-gray-300 p-1"
+                                    >
+                                      Leave
+                                    </th>
+                                    <th
+                                      rowSpan="2"
+                                      className="border border-gray-300 p-2"
+                                    >
+                                      Early Out
+                                    </th>
+                                    <th
+                                      rowSpan="2"
+                                      className="border border-gray-300 p-2"
+                                    >
+                                      Late In
+                                    </th>
+                                    <th
+                                      rowSpan="2"
+                                      className="border border-gray-300 p-2"
+                                    >
+                                      Not Marked
+                                    </th>
+                                    <th
+                                      colSpan="4"
+                                      className="border border-gray-300 p-1"
+                                    >
+                                      Onsite
+                                    </th>
+                                  </tr>
+                                  <tr>
+                                    <th className="border border-gray-300 p-1">
+                                      In Time
+                                    </th>
+                                    <th className="border border-gray-300 p-1">
+                                      Out Time
+                                    </th>
+                                    <th className="border border-gray-300 p-1">
+                                      CL
+                                    </th>
+                                    <th className="border border-gray-300 p-1">
+                                      PL
+                                    </th>
+                                    <th className="border border-gray-300 p-1">
+                                      Comp.leave
+                                    </th>
+                                    <th className="border border-gray-300 p-1">
+                                      Others
+                                    </th>
+                                    <th className="border border-gray-300 p-1">
+                                      Place
+                                    </th>
+                                    <th className="border border-gray-300 p-1">
+                                      Site Name
+                                    </th>
+                                    <th className="border border-gray-300 p-1">
+                                      Onsite Type
+                                    </th>
+                                    <th className="border border-gray-300 p-1">
+                                      Period
+                                    </th>
+                                  </tr>
+                                </thead>
+                              </table>
                             </div>
                           </div>
-                        )}
+                        )} */}
                       </div>
 
                       {/* Table Body - Visible scrollbar that controls both */}
-                      {selectedIndex === index && (
+                      {/* {selectedIndex === index && (
                         <div
                           className="scroll-container overflow-x-auto max-h-[calc(100vh-200px)]"
                           onScroll={handleScroll}
                         >
-                          <table className="w-full min-w-[1200px]">
-                            {/* Your existing tbody content */}
+                          <table className="w-full min-w-max border-collapse text-sm">
+                        
                             <tbody>
                               {Object.entries(attendee.attendancedates).map(
                                 ([date, details], idx) => (
@@ -382,11 +399,11 @@ const leaveSummary = () => {
                                     key={idx}
                                     className="hover:bg-gray-50 text-center"
                                   >
-                                    <td className="border border-gray-300 p-2 w-[105px] min-w-[105px] sticky left-0 bg-white">
+                                    <td className="border border-gray-300 p-2  sticky left-0 bg-white">
                                       {date}
                                     </td>
                                     <td
-                                      className="border border-gray-300 p-2 w-[90px] min-w-[90px]"
+                                      className="border border-gray-300 p-2 "
                                       onClick={() => {
                                         console.log(user.role)
                                         if (user?.role === "Admin") {
@@ -402,7 +419,7 @@ const leaveSummary = () => {
                                       {details?.inTime || "-"}
                                     </td>
                                     <td
-                                      className="border border-gray-300 p-2 w-[90px] min-w-[90px]"
+                                      className="border border-gray-300 p-2"
                                       onClick={() => {
                                         if (user?.role === "Admin")
                                           handleAttendance(
@@ -416,7 +433,7 @@ const leaveSummary = () => {
                                       {details?.outTime || "-"}
                                     </td>
                                     <td
-                                      className="border border-gray-300 p-2 w-[80px] min-w-[80px]"
+                                      className="border border-gray-300 p-2 "
                                       onClick={() => {
                                         if (user?.role === "Admin") {
                                           handleLeave(
@@ -443,7 +460,7 @@ const leaveSummary = () => {
                                       {details?.casualLeave || "-"}
                                     </td>
                                     <td
-                                      className="border border-gray-300 p-2 w-[80px] min-w-[80px]"
+                                      className="border border-gray-300 p-2"
                                       onClick={() => {
                                         if (user?.role === "Admin") {
                                           handleLeave(
@@ -470,7 +487,7 @@ const leaveSummary = () => {
                                       {details?.privileageLeave || "-"}
                                     </td>
                                     <td
-                                      className="border border-gray-300 p-2 w-[100px] min-w-[100px]"
+                                      className="border border-gray-300 p-2 "
                                       onClick={() => {
                                         if (user?.role === "Admin") {
                                           handleLeave(
@@ -497,7 +514,7 @@ const leaveSummary = () => {
                                       {details?.compensatoryLeave || "-"}
                                     </td>
                                     <td
-                                      className="border border-gray-300 p-2 w-[100px] min-w-[100px]"
+                                      className="border border-gray-300 p-2"
                                       onClick={() => {
                                         if (user.role === "Admin") {
                                           handleLeave(
@@ -523,29 +540,29 @@ const leaveSummary = () => {
                                     >
                                       {details?.otherLeave || "-"}
                                     </td>
-                                    <td className="border border-gray-300 p-2 w-[120px] min-w-[120px]">
+                                    <td className="border border-gray-300 p-2">
                                       {details?.early
                                         ? `${details.early} minutes`
                                         : "-"}
                                     </td>
-                                    <td className="border border-gray-300 p-2 w-[130px] min-w-[130px]">
+                                    <td className="border border-gray-300 p-2">
                                       {details?.late
                                         ? `${details.late} minutes`
                                         : "-"}
                                     </td>
-                                    <td className="border border-gray-300 p-2 w-[120px] min-w-[120px]">
+                                    <td className="border border-gray-300 p-2">
                                       {details?.notMarked || "-"}
                                     </td>
-                                    <td className="border border-gray-300 p-2 w-[110px] min-w-[110px]">
+                                    <td className="border border-gray-300 p-2">
                                       {details?.onsite?.[0]?.place || "-"}
                                     </td>
-                                    <td className="border border-gray-300 p-2 w-[110px] min-w-[110px]">
+                                    <td className="border border-gray-300 p-2 ">
                                       {details?.onsite?.[0]?.siteName || "-"}
                                     </td>
-                                    <td className="border border-gray-300 p-2 w-[110px] min-w-[110px]">
+                                    <td className="border border-gray-300 p-2">
                                       {details?.onsite?.[0]?.onsiteType || "-"}
                                     </td>
-                                    <td className="border border-gray-300 p-2 w-[110px] min-w-[110px]">
+                                    <td className="border border-gray-300 p-2 ">
                                       {details?.onsite?.[0]?.onsiteType ===
                                       "Half Day"
                                         ? details?.onsite?.[0].halfDayPeriod
@@ -557,7 +574,7 @@ const leaveSummary = () => {
                             </tbody>
                           </table>
                         </div>
-                      )}
+                      )} */}
                     </>
                   ) : null}
                 </div>

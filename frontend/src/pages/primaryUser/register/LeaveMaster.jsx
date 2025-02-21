@@ -28,7 +28,6 @@ function LeaveMaster() {
   })
   const [tableholy, setTableHoly] = useState([])
   const { data: leaveData, refreshHook } = UseFetch("/customer/getleavemaster")
-  console.log(leaveData)
   const { data: holydata, refreshHook: holyrefresh } = UseFetch(
     "/customer/getallholy"
   )
@@ -105,9 +104,9 @@ function LeaveMaster() {
 
     // Split the time into hours and minutes
     const [hour, minute] = time.split(":")
-
+    
     // Return the values as an object
-    return parseInt(minute, 10) // Convert minute to number
+    return minute // Convert minute to number
   }
   const splitTimePeriod = (timeString) => {
     // Split the string into time and period parts
@@ -153,7 +152,6 @@ function LeaveMaster() {
   }
   // Handle form submission
   const onSubmit = async (data) => {
-    console.log(data)
     if (data) {
       setLoading(true)
 
@@ -271,7 +269,7 @@ function LeaveMaster() {
                 </span>
               )}
             </div>
-            <div>
+            {/* <div>
               <label
                 htmlFor="earlyOut"
                 className="block text-sm font-medium text-gray-700"
@@ -291,14 +289,14 @@ function LeaveMaster() {
                   {errors.earlyOut.message}
                 </span>
               )}
-            </div>
+            </div> */}
 
             <div>
               <label
                 htmlFor=" deductSalaryMinute"
                 className="block text-sm font-medium text-gray-700"
               >
-                Deduct salary if staff is late or early by more than(minutes)
+                Deduct salary if staff is late or early by more than
               </label>
               <input
                 id="deductsalaryMinute"
