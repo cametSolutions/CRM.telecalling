@@ -23,7 +23,6 @@ const leaveSummary = () => {
   const [leavesummaryList, setleaveSummary] = useState([])
   const userData = localStorage.getItem("user")
   const user = JSON.parse(userData)
-  console.log(user)
   // API URL with selected year and month
   const apiUrl = `/auth/getsomeall?year=${selectedYear}&month=${selectedMonth}`
 

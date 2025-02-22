@@ -19,7 +19,9 @@ const ResponsiveTable = ({
         <table className="w-full min-w-max border-collapse text-sm">
           {/* <thead className={`sticky top-0 z-20 bg-white}> */}
           <thead
-            className={` ${!modalOpen && " text-sm top-0 z-20 bg-gray-100"}`}
+            className={` ${
+              !modalOpen && " text-sm  sticky top-0 z-20 bg-gray-100"
+            }`}
           >
             <tr>
               <th
