@@ -60,14 +60,13 @@ function LeaveApplication() {
   const { data: allonsite, refreshHook: refreshHookOnsite } = UseFetch(
     user && `/auth/getallOnsite?userid=${user._id}`
   )
-  
+
   useEffect(() => {
     if (MonthData && currentMonth) {
       setcurrentMonthData(MonthData[currentMonth])
     }
   }, [currentMonth, MonthData])
 
- 
   const { data: attendee, refreshHook: refreshattendee } = UseFetch(
     user && `/auth/getallAttendance?userid=${user._id}`
   )
@@ -104,7 +103,6 @@ function LeaveApplication() {
 
   useEffect(() => {
     if (events && events.length > 0 && currentMonth && currentYear) {
-    
       calculateRemainingDays(currentYear, currentMonth)
     }
   }, [events, currentMonth, currentYear])
@@ -122,13 +120,11 @@ function LeaveApplication() {
       (attendee && attendee.length > 0) ||
       (allonsite && allonsite.length > 0)
     ) {
-     
       let formattedonsite
       const formattedEvents = formatEventData(leaves)
       if (allonsite && allonsite.length > 0) {
         formattedonsite = formatonsite(allonsite)
       }
-
 
       let attendanceDetails
       if (
@@ -174,10 +170,14 @@ function LeaveApplication() {
         // const parseTime = (timeStr) =>
         //   new Date(`2024-01-01 ${timeStr.replace(/([ap]m)/i, " $1")}`)
         const parseTime = (timeStr) => {
+          if (!timeStr) {
+            return false
+          }
+          console.log(timeStr)
           // const [time, modifier] = timeStr.split(/(?<=\d)(?=[AP]M)/i) // Splits "1:31pm" -> ["1:31", "pm"]
           const [time, modifier] = timeStr?.split(" ")
           const [hours, minutes] = time.split(":").map(Number)
-          
+
           if (timeStr !== "") {
             let hours24 =
               modifier.toLowerCase() === "pm" && hours !== 12
@@ -188,8 +188,8 @@ function LeaveApplication() {
             return new Date(Date.UTC(2024, 0, 1, hours24, minutes))
           }
         }
-        attendanceDetails = attendee.map((item) => {
-          const monthKey = getMonthKey(item.attendanceDate)
+        attendanceDetails = attendee?.map((item) => {
+          const monthKey = getMonthKey(item?.attendanceDate)
 
           // Initialize if monthKey doesn't exist
           if (!monthlyAttendance[monthKey]) {
@@ -203,8 +203,11 @@ function LeaveApplication() {
               absent: 0
             }
           }
-          const inTimeDate = parseTime(item.inTime)
-          const outTimeDate = parseTime(item.outTime)
+
+          console.log(item?.inTime, item?.attendanceDate)
+          const inTimeDate = parseTime(item?.inTime)
+          console.log(inTimeDate)
+          const outTimeDate = parseTime(item?.outTime)
 
           const morningLimit = parseTime("9:35 AM").getTime()
           const lateLimit = parseTime("10:00 AM").getTime()
@@ -221,8 +224,7 @@ function LeaveApplication() {
             console.error("Error: halfDayLimit is NaN. Check time format!")
           }
 
-          if (item.inTime === "" || item.outTime === "") {
-           
+          if (!item.inTime || !item.outTime) {
             monthlyAttendance[monthKey].present++
             monthlyAttendance[monthKey].halfDay++
             monthlyAttendance[monthKey].present -= Math.floor(
@@ -231,9 +233,9 @@ function LeaveApplication() {
             // monthlyAttendance[monthKey].absent += Math.floor(
             //   monthlyAttendance[monthKey].halfDay / 2
             // )
-            const fdate = new Date(item.attendanceDate) // Convert to Date object
+            const fdate = new Date(item?.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
-           
+
             dayObject.start = date
 
             dayObject.inTime = item?.inTime
@@ -243,18 +245,16 @@ function LeaveApplication() {
             inTimeDate.getTime() < noonLimit &&
             outTimeDate.getTime() < noonLimit
           ) {
-           
             ////
-            if (check(item.attendanceDate)) {
-          
+            if (check(item?.attendanceDate)) {
               // Full Day: Increase present and decrease fullDay
               if (monthlyAttendance[monthKey]) {
                 monthlyAttendance[monthKey].present++
                 // monthlyAttendance[monthKey].fullDay--
-               
-                const fdate = new Date(item.attendanceDate) // Convert to Date object
+
+                const fdate = new Date(item?.attendanceDate) // Convert to Date object
                 let date = fdate.toISOString().split("T")[0]
-              
+
                 dayObject.start = date
 
                 dayObject.inTime = item?.inTime
@@ -263,9 +263,9 @@ function LeaveApplication() {
               }
             } else {
               monthlyAttendance[monthKey].fullDay++
-              const fdate = new Date(item.attendanceDate) // Convert to Date object
+              const fdate = new Date(item?.attendanceDate) // Convert to Date object
               let date = fdate.toISOString().split("T")[0]
-            
+
               dayObject.start = date
 
               dayObject.inTime = item?.inTime
@@ -279,14 +279,13 @@ function LeaveApplication() {
             inTimeDate.getTime() > noonLimit &&
             outTimeDate.getTime() > noonLimit
           ) {
-            
             monthlyAttendance[monthKey].fullDay++
             // monthlyAttendance[monthKey].absent +=
             //   monthlyAttendance[monthKey].fullDay
 
             const fdate = new Date(item.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
-          
+
             dayObject.start = date
 
             dayObject.inTime = item?.inTime
@@ -297,12 +296,11 @@ function LeaveApplication() {
             inTimeDate.getTime() > morningLimit &&
             outTimeDate.getTime() > earlyLeaveLimit
           ) {
-           
             monthlyAttendance[monthKey].present++
             monthlyAttendance[monthKey].lateComing++
-            const fdate = new Date(item.attendanceDate) // Convert to Date object
+            const fdate = new Date(item?.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
-           
+
             dayObject.start = date
 
             dayObject.inTime = item?.inTime
@@ -313,12 +311,11 @@ function LeaveApplication() {
             outTimeDate.getTime() > minOutTime &&
             outTimeDate.getTime() < earlyLeaveLimit
           ) {
-           
             monthlyAttendance[monthKey].present++
             monthlyAttendance[monthKey].earlyGoing++
             const fdate = new Date(item.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
-           
+
             dayObject.start = date
 
             dayObject.inTime = item?.inTime
@@ -330,14 +327,12 @@ function LeaveApplication() {
             outTimeDate.getTime() > minOutTime &&
             outTimeDate.getTime() < earlyLeaveLimit
           ) {
-           
-
             monthlyAttendance[monthKey].present++
             monthlyAttendance[monthKey].earlyGoing++
             monthlyAttendance[monthKey].lateComing++
             const fdate = new Date(item.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
-          
+
             dayObject.start = date
 
             dayObject.inTime = item?.inTime
@@ -348,7 +343,6 @@ function LeaveApplication() {
             outTimeDate.getTime() > minOutTime &&
             outTimeDate.getTime() < earlyLeaveLimit
           ) {
-           
             monthlyAttendance[monthKey].present++
             monthlyAttendance[monthKey].earlyGoing++
             monthlyAttendance[monthKey].halfDay++
@@ -360,7 +354,7 @@ function LeaveApplication() {
             // )
             const fdate = new Date(item.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
-           
+
             dayObject.start = date
 
             dayObject.inTime = item?.inTime
@@ -372,7 +366,6 @@ function LeaveApplication() {
             outTimeDate.getTime() > minOutTime &&
             outTimeDate.getTime() < earlyLeaveLimit
           ) {
-          
             monthlyAttendance[monthKey].present++
             monthlyAttendance[monthKey].earlyGoing++
             monthlyAttendance[monthKey].halfDay++
@@ -384,7 +377,7 @@ function LeaveApplication() {
             // )
             const fdate = new Date(item.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
-          
+
             dayObject.start = date
 
             dayObject.inTime = item?.inTime
@@ -395,7 +388,6 @@ function LeaveApplication() {
             inTimeDate.getTime() < noonLimit &&
             outTimeDate.getTime() > earlyLeaveLimit
           ) {
-           
             monthlyAttendance[monthKey].present++
             monthlyAttendance[monthKey].halfDay++
             monthlyAttendance[monthKey].present -= Math.floor(
@@ -406,7 +398,7 @@ function LeaveApplication() {
             // )
             const fdate = new Date(item.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
-           
+
             dayObject.start = date
 
             dayObject.inTime = item?.inTime
@@ -417,7 +409,6 @@ function LeaveApplication() {
             noonLimit <= outTimeDate.getTime() &&
             outTimeDate.getTime() < minOutTime
           ) {
-           
             monthlyAttendance[monthKey].present++
             monthlyAttendance[monthKey].halfDay++
             monthlyAttendance[monthKey].present -= Math.floor(
@@ -428,22 +419,20 @@ function LeaveApplication() {
             // )
             const fdate = new Date(item.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
-           
+
             dayObject.start = date
 
             dayObject.inTime = item?.inTime
             dayObject.outTime = item?.outTime
             dayObject.color = "green"
           } else if (outTimeDate.getTime() < noonLimit) {
-           
-
             monthlyAttendance[monthKey].fullDay++
             // monthlyAttendance[monthKey].absent += Math.floor(
             //   monthlyAttendance[monthKey].fullDay
             // )
             const fdate = new Date(item.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
-           
+
             dayObject.start = date
 
             dayObject.inTime = item?.inTime
@@ -453,15 +442,13 @@ function LeaveApplication() {
             inTimeDate.getTime() > noonLimit &&
             inTimeDate.getTime() > earlyLeaveLimit
           ) {
-          
-
             monthlyAttendance[monthKey].fullDay++
             // monthlyAttendance[monthKey].absent += Math.floor(
             //   monthlyAttendance[monthKey].fullDay
             // )
             const fdate = new Date(item.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
-           
+
             dayObject.start = date
 
             dayObject.inTime = item?.inTime
@@ -471,11 +458,10 @@ function LeaveApplication() {
             inTimeDate.getTime() <= morningLimit &&
             outTimeDate.getTime() >= earlyLeaveLimit
           ) {
-         
             monthlyAttendance[monthKey].present++
             const fdate = new Date(item.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
-            
+
             dayObject.start = date
 
             dayObject.inTime = item?.inTime
@@ -486,7 +472,6 @@ function LeaveApplication() {
             inTimeDate.getTime() < lateLimit &&
             outTimeDate.getTime() < noonLimit
           ) {
-          
             monthlyAttendance[monthKey].present++
             monthlyAttendance[monthKey].lateComing++
             monthlyAttendance[monthKey].halfDay++
@@ -498,14 +483,13 @@ function LeaveApplication() {
             // )
             const fdate = new Date(item.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
-           
+
             dayObject.start = date
 
             dayObject.inTime = item?.inTime
             dayObject.outTime = item?.outTime
             dayObject.color = "green"
           }
-         
 
           return dayObject
 
@@ -533,7 +517,7 @@ function LeaveApplication() {
           //   return dayObject
           // }
         })
-       
+
         Object.keys(monthlyAttendance).forEach((monthKey) => {
           const monthData = monthlyAttendance[monthKey]
 
@@ -543,7 +527,6 @@ function LeaveApplication() {
           monthData.absent = totalAbsent
           const a = monthData?.lateComing
           const b = monthData?.earlyGoing
-
 
           // Check if lateComing is a multiple of 3
           if (a % 3 === 0 && a !== 0) {
@@ -561,7 +544,6 @@ function LeaveApplication() {
         // Function to update monthlyAttendance based on formattedonsite
 
         setMonthData(monthlyAttendance)
-
 
         setEvents([
           ...formattedEvents,
@@ -593,10 +575,13 @@ function LeaveApplication() {
         // const parseTime = (timeStr) =>
         //   new Date(`2024-01-01 ${timeStr.replace(/([ap]m)/i, " $1")}`)
         const parseTime = (timeStr) => {
+          if(!timeStr){
+            return false
+          }
           // const [time, modifier] = timeStr.split(/(?<=\d)(?=[AP]M)/i) // Splits "1:31pm" -> ["1:31", "pm"]
           const [time, modifier] = timeStr?.split(" ")
           const [hours, minutes] = time.split(":").map(Number)
-         
+
           if (timeStr !== "") {
             let hours24 =
               modifier.toLowerCase() === "pm" && hours !== 12
@@ -608,8 +593,8 @@ function LeaveApplication() {
           }
         }
         attendanceDetails = attendee.map((item) => {
-          const inTimeDate = parseTime(item.inTime)
-          const outTimeDate = parseTime(item.outTime)
+          const inTimeDate = parseTime(item?.inTime)
+          const outTimeDate = parseTime(item?.outTime)
 
           const morningLimit = parseTime("9:35 AM").getTime()
           const lateLimit = parseTime("10:00 AM").getTime()
@@ -622,24 +607,19 @@ function LeaveApplication() {
             console.error("Error: halfDayLimit is NaN. Check time format!")
           }
 
-          if (item.inTime === "" || item.outTime === "") {
-         
+          if (!item.inTime || !item.outTime) {
             present++
             halfDay++
           } else if (inTimeDate && outTimeDate < noonLimit) {
-          
             ////
             fullDay++
           } else if (inTimeDate && outTimeDate > noonLimit) {
-         
-
             fullDay++
           } else if (
             inTimeDate.getTime() <= lateLimit &&
             inTimeDate.getTime() > morningLimit &&
             outTimeDate.getTime() > earlyLeaveLimit
           ) {
-           
             present++
             lateComing++
           } else if (
@@ -647,7 +627,6 @@ function LeaveApplication() {
             outTimeDate.getTime() > minOutTime &&
             outTimeDate.getTime() < earlyLeaveLimit
           ) {
-           
             present++
             earlyGoing++
           } else if (
@@ -656,8 +635,6 @@ function LeaveApplication() {
             outTimeDate.getTime() > minOutTime &&
             outTimeDate.getTime() < earlyLeaveLimit
           ) {
-           
-
             present++
             earlyGoing++
             lateComing++
@@ -666,7 +643,6 @@ function LeaveApplication() {
             outTimeDate.getTime() > minOutTime &&
             outTimeDate.getTime() < earlyLeaveLimit
           ) {
-           
             present++
             earlyGoing++
             halfDay++
@@ -676,7 +652,6 @@ function LeaveApplication() {
             outTimeDate.getTime() > minOutTime &&
             outTimeDate.getTime() < earlyLeaveLimit
           ) {
-           
             present++
             earlyGoing++
             halfDay++
@@ -685,7 +660,6 @@ function LeaveApplication() {
             inTimeDate.getTime() < noonLimit &&
             outTimeDate.getTime() > earlyLeaveLimit
           ) {
-           
             present++
             halfDay++
           } else if (
@@ -693,45 +667,37 @@ function LeaveApplication() {
             noonLimit <= outTimeDate.getTime() &&
             outTimeDate.getTime() < minOutTime
           ) {
-           
             present++
             halfDay++
           } else if (outTimeDate.getTime() < noonLimit) {
-         
-
             fullDay++
           } else if (
             inTimeDate.getTime() > noonLimit &&
             inTimeDate.getTime() > earlyLeaveLimit
           ) {
-           
-
             fullDay++
           } else if (
             inTimeDate.getTime() <= morningLimit &&
             outTimeDate.getTime() >= earlyLeaveLimit
           ) {
-           
             present++
           } else if (
             inTimeDate.getTime() >= morningLimit &&
             inTimeDate.getTime() < lateLimit &&
             outTimeDate.getTime() < noonLimit
           ) {
-           
             present++
             lateComing++
             halfDay++
           }
-         
 
           let dayObject = {
             start: "",
             color: "green"
           }
-          const fdate = new Date(item.attendanceDate) // Convert to Date object
+          const fdate = new Date(item?.attendanceDate) // Convert to Date object
           let date = fdate.toISOString().split("T")[0]
-         
+
           let existingDate = formattedEvents?.find((event) => {
             return event.start === date
           })
@@ -741,7 +707,7 @@ function LeaveApplication() {
             dayObject.inTime = item?.inTime
             dayObject.outTime = item?.outTime
             // dayObject.color = existingDate.color
-           
+
             formattedEvents.filter((item) => item.start !== date)
 
             return dayObject
@@ -753,7 +719,6 @@ function LeaveApplication() {
             return dayObject
           }
         })
-
 
         setEvents([...formattedEvents, ...attendanceDetails])
       } else if (attendee && attendee.length > 0) {
@@ -788,7 +753,6 @@ function LeaveApplication() {
     if (isOnsite && clickedDate) {
       // Find the event that matches the clicked date
       const existingEvent = events.filter((event) => {
-       
         return event.start === clickedDate && event.onsiteData
       })
       // If a matching event is found and it has onsite data
@@ -834,7 +798,6 @@ function LeaveApplication() {
   // }
 
   const formatonsite = (events) => {
-  
     return events.map((event) => {
       const date = new Date(event.onsiteDate) // Convert to Date object
       const formattedDate = date.toISOString().split("T")[0] // Format as YYYY-MM-DD
@@ -950,13 +913,11 @@ function LeaveApplication() {
     // Check if there's already an event on this date
     // const existingEvent = events?.filter((event) => event.start === clickedDate)
     const existingEvent = events?.filter((event) => {
-
       const eventDate = event.start // Normalize to YYYY-MM-DD
-   
+
       return eventDate == clickedDate // Compare only the date part
     })
 
-   
     // setexistingEvent(existingEvent)
 
     if (existingEvent && existingEvent.length > 0) {
@@ -986,7 +947,7 @@ function LeaveApplication() {
 
       // Find the relevant event
       const relevantEvent = findRelevantEvent(existingEvent)
-    
+
       setselectedAttendance((prev) => ({
         ...prev, // Spread the previous state to keep other values intact
         attendanceDate: relevantEvent?.start, // Set the attendance date
@@ -1285,7 +1246,6 @@ function LeaveApplication() {
     if (!time24) return null
     // Split the time string into hours, minutes, and seconds
     const [hours, minutes] = time24.split(":").map(Number)
-    
 
     // Determine AM/PM
     const period = hours >= 12 ? "PM" : "AM"
@@ -1411,7 +1371,6 @@ function LeaveApplication() {
               onsite: false // Add or update the `attendanceDate` field
             }))
           } else {
-          
             setselectedAttendance((prev) => ({
               ...prev, // Spread the previous state
               attendanceDate: clickedDate // Add or update the `attendanceDate` field
@@ -1862,25 +1821,21 @@ function LeaveApplication() {
     <div className=" p-4">
       <div className="w-full">
         <div className="calendar-header flex flex-wrap justify-center gap-4">
-          {/* Attendance */}
           <div className="flex items-center space-x-2">
             <div className="h-3 w-3 bg-green-500 "></div>
             <span className="text-sm md:text-base">Present</span>
           </div>
 
-          {/* Leave */}
           <div className="flex items-center space-x-2">
             <div className="h-3 w-3 bg-red-500 "></div>
             <span className="text-sm md:text-base">Leave</span>
           </div>
 
-          {/* Pending */}
           <div className="flex items-center space-x-2">
             <div className="h-3 w-3 bg-orange-500 "></div>
             <span className="text-sm md:text-base">Pending</span>
           </div>
 
-          {/* Not Selected */}
           <div className="flex items-center space-x-2">
             <div className="h-3 w-3 bg-pink-300 "></div>
             <span className="text-sm md:text-base">Not selected</span>
@@ -1890,32 +1845,26 @@ function LeaveApplication() {
             <span className="text-sm md:text-base">Onsite</span>
           </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 justify-items-center">
+        {/* <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 justify-items-center">
           <div className="mr-5">
             <span>Present-{currentMonthData?.present}</span>
-            {/* <span>{totalAttendance?.length}</span> */}
           </div>
           <div className="mr-5">
             <span>Absent-{currentMonthData?.absent}</span>
-            {/* <span>{totalAttendance?.length}</span> */}
           </div>
           <div className="mr-5">
             <span>Latecoming-{currentMonthData?.lateComing}</span>
-            {/* <span>{totalAttendance?.length}</span> */}
           </div>
           <div className="mr-5">
             <span>Earlygoing-{currentMonthData?.earlyGoing}</span>
-            {/* <span>{totalAttendance?.length}</span> */}
           </div>
           <div className="mr-5">
             <span>Onsite-{currentMonthData?.onsite}</span>
-            {/* <span>{totalAttendance?.length}</span> */}
           </div>
           <div>
             <span>Not Marked-{currentMonthData?.lateComing}</span>
-            {/* <span>{attendee?.length}</span> */}
           </div>
-        </div>
+        </div> */}
 
         <FullCalendar
           key={events?.length}
