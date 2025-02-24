@@ -96,7 +96,7 @@ const leaveRequestSchema = new Schema(
         "compensatory Leave",
         "other Leave"
       ],
-      required: true
+      // required: true
     },
     halfDayPeriod: {
       type: String,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react"
-
+import * as XLSX from "xlsx"
 import BarLoader from "react-spinners/BarLoader"
 import MyDatePicker from "./MyDatePicker"
 import api from "../../api/api"
@@ -11,13 +11,15 @@ const LeaveApprovalAndPending = () => {
   const [loading, setLoading] = useState(true)
   const [loader, setLoader] = useState(false)
   const [leaveList, setLeaveList] = useState([])
+  const [allleaveRequest, setallleaveReques] = useState([])
+  const [ispending, setPending] = useState(true)
 
   const [leaveStatus, setLeaveStatus] = useState({})
   const [isToggled, setIsToggled] = useState({})
-  const [isOnsite, setOnsite] = useState(false)
+  const [pendingOnsite, setpendingOnsite] = useState(false)
+  const [approvedOnsite, setapprovedOnsite] = useState(false)
   const [isSelected, setIsSelected] = useState({})
   const [dates, setDates] = useState({ startDate: "", endDate: "" })
-
   useEffect(() => {
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
@@ -38,25 +40,27 @@ const LeaveApprovalAndPending = () => {
     // Last date of the month
   }, [])
   useEffect(() => {
-    const fetchLeaveList = async () => {
+    const fetchPendingList = async () => {
       if (dates.startDate !== "" && dates.endDate !== "" && user) {
         try {
           let response
-          if (isOnsite) {
+          if (!pendingOnsite) {
             response = await api.get(
-              `/auth/leaveList?startdate=${dates.startDate}&enddate=${
-                dates.endDate
-              }&role=${user?.role}&userid=${user?._id}&onsite=${true}`
+              `/auth/pendingleaveList?onsite=false&startdate=${dates.startDate}&enddate=${dates.endDate}&role=${user?.role}&userid=${user?._id}`
             )
           } else {
             response = await api.get(
-              `/auth/leaveList?startdate=${dates.startDate}&enddate=${
-                dates.endDate
-              }&userid=${user?._id}&role=${user?.role}&onsite=${false}`
+              `/auth/pendingOnsiteList?onsite=true&startdate=${dates.startDate}&enddate=${dates.endDate}&userid=${user?._id}&role=${user?.role}`
             )
           }
 
-          const list = response.data.data // Assuming API returns data in response.data
+          const list = response.data.data
+          setallleaveReques(list) // Assuming API returns data in response.data
+          const pendingleaveRequest = list.filter(
+            (item) =>
+              item.departmentverified === false && item.adminverified === false
+          )
+        
           if (Array.isArray(list) && list.length > 0) {
             setLoading(false)
             setLeaveList(list) // Update state only if the list has items
@@ -100,22 +104,90 @@ const LeaveApprovalAndPending = () => {
       }
     }
 
-    fetchLeaveList() // Call the async function
-  }, [dates, user])
+    const fetchApprovedList = async () => {
+      if (dates.startDate !== "" && dates.endDate !== "" && user) {
+        try {
+          let response
+          if (!approvedOnsite) {
+            response = await api.get(
+              `/auth/approvedOnsiteList?onsite=true&startdate=${dates.startDate}&enddate=${dates.endDate}&role=${user?.role}&userid=${user?._id}`
+            )
+          } else {
+            response = await api.get(
+              `/auth/approvedLeaveList?onsite=false&startdate=${dates.startDate}&enddate=${dates.endDate}&userid=${user?._id}&role=${user?.role}`
+            )
+          }
 
-  const onsitetoggle = async () => {
+          const list = response.data.data
+          setallleaveReques(list) // Assuming API returns data in response.data
+          const pendingleaveRequest = list.filter(
+            (item) =>
+              item.departmentverified === false && item.adminverified === false
+          )
+      
+          if (Array.isArray(list) && list.length > 0) {
+            setLoading(false)
+            setLeaveList(list) // Update state only if the list has items
+          } else {
+            setLoading(false)
+            setLeaveList([])
+          }
+
+          // Initialize isToggled state based on the status of each leave request
+          const initialToggles = {}
+          const initialReject = {}
+          const initialSelectAll = {}
+          if (user.role === "Admin") {
+            list.forEach((userLeave) => {
+              // Check the `status` field for each leave and set the toggle accordingly
+              initialToggles[userLeave._id] =
+                userLeave.hrstatus === "HR/Onsite Approved" // Toggle on if approved
+              initialReject[userLeave._id] =
+                userLeave.hrstatus === "HR Rejected"
+              initialSelectAll[userLeave.userId._id] =
+                userLeave.hrstatus === "HR/Onsite Approved"
+            })
+          } else {
+            list.forEach((userLeave) => {
+              // Check the `status` field for each leave and set the toggle accordingly
+              initialToggles[userLeave._id] =
+                userLeave.departmentstatus === "Dept Approved" // Toggle on if approved
+              initialReject[userLeave._id] =
+                userLeave.departmentstatus === "Dept Rejected"
+              initialSelectAll[userLeave.userId._id] =
+                userLeave.departmentstatus === "Dept Approved"
+            })
+          }
+
+          setIsToggled(initialToggles)
+          setLeaveStatus(initialReject)
+          setIsSelected(initialSelectAll)
+        } catch (error) {
+          console.error("Error fetching leave list:", error)
+        }
+      }
+    }
+    if (!approvedOnsite) {
+      fetchPendingList()
+    } else {
+      fetchApprovedList()
+    } // Call the async function
+  }, [dates, user, ispending])
+  const ApprovedToggle = async () => {
     try {
       setLoading(true)
       let response
-      if (!isOnsite) {
+      if (!approvedOnsite) {
         response = await api.get(
-          `/auth/leaveList?startdate=${dates.startDate}&enddate=${
+          `/auth/approvedOnsiteList?startdate=${dates.startDate}&enddate=${
             dates.endDate
           }&onsite=${true}&userid=${user?._id}&role=${user?.role}`
         )
       } else {
         response = await api.get(
-          `/auth/leaveList?startdate=${dates.startDate}&enddate=${dates.endDate}&userid=${user?._id}&role=${user?.role}`
+          `/auth/approvedLeaveList?onsite=${false}&startdate=${
+            dates.startDate
+          }&enddate=${dates.endDate}&userid=${user?._id}&role=${user?.role}`
         )
       }
 
@@ -152,7 +224,63 @@ const LeaveApprovalAndPending = () => {
             userLeave.departmentstatus === "Dept Approved"
         })
       }
-      setOnsite(!isOnsite)
+      setapprovedOnsite(!approvedOnsite)
+      setIsSelected(initialSelectAll)
+      setIsToggled(initialToggles)
+      setLeaveStatus(initialReject)
+    } catch (error) {
+      console.log("error:", error.message)
+    }
+  }
+
+  const PendingToggle = async () => {
+    try {
+      setLoading(true)
+      let response
+      if (!pendingOnsite) {
+        response = await api.get(
+          `/auth/pendingonsiteList?onsite=true&startdate=${dates.startDate}&enddate=${dates.endDate}&userid=${user?._id}&role=${user?.role}`
+        )
+      } else {
+        response = await api.get(
+          `/auth/pendingleaveList?onsite=false&startdate=${dates.startDate}&enddate=${dates.endDate}&userid=${user?._id}&role=${user?.role}`
+        )
+      }
+
+      const list = response.data.data // Assuming API returns data in response.data
+      if (Array.isArray(list) && list.length > 0) {
+        setLoading(false)
+        setLeaveList(list) // Update state only if the list has items
+      } else {
+        setLoading(false)
+        setLeaveList([])
+      }
+
+      // Initialize isToggled state based on the status of each leave request
+      const initialToggles = {}
+      const initialReject = {}
+      const initialSelectAll = {}
+      if (user?.role === "Admin") {
+        list.forEach((userLeave) => {
+          // Check the `status` field for each leave and set the toggle accordingly
+          initialToggles[userLeave._id] =
+            userLeave.hrstatus === "HR/Onsite Approved" // Toggle on if approved
+          initialReject[userLeave._id] = userLeave.hrstatus === "HR Rejected"
+          initialSelectAll[userLeave.userId._id] =
+            userLeave.hrstatus === "HR/Onsite Approved"
+        })
+      } else {
+        list.forEach((userLeave) => {
+          // Check the `status` field for each leave and set the toggle accordingly
+          initialToggles[userLeave._id] =
+            userLeave.departmentstatus === "Dept Approved" // Toggle on if approved
+          initialReject[userLeave._id] =
+            userLeave.departmentstatus === "Dept Rejected"
+          initialSelectAll[userLeave.userId._id] =
+            userLeave.departmentstatus === "Dept Approved"
+        })
+      }
+      setpendingOnsite(!pendingOnsite)
       setIsSelected(initialSelectAll)
       setIsToggled(initialToggles)
       setLeaveStatus(initialReject)
@@ -307,6 +435,7 @@ const LeaveApprovalAndPending = () => {
       setLoader(false)
     }
   }
+ 
 
   const handleToggleStatus = (index) => {
     setLeaveStatus((prevStatus) => {
@@ -315,7 +444,6 @@ const LeaveApprovalAndPending = () => {
       return newStatus
     })
   }
-
   const handleDate = (selectedDate) => {
     const extractDateAndMonth = (date) => {
       const year = date.getFullYear()
@@ -332,6 +460,7 @@ const LeaveApprovalAndPending = () => {
       selectedDate.endDate instanceof Date &&
       !isNaN(selectedDate.endDate.getTime())
     ) {
+     
       // If both startDate and endDate are valid Date objects
       setDates({
         startDate: extractDateAndMonth(selectedDate.startDate),
@@ -345,7 +474,20 @@ const LeaveApprovalAndPending = () => {
       })
     }
   }
-
+  const handlecheck = async () => {
+    const response = await api.get("/auth/check")
+    const data = response.data
+    console.log(data)
+  }
+  const handleDropdownSelect = (option) => {
+    if (option === "pending") {
+      // setpendingOnsite(false)
+      setPending(true)
+    } else if (option === "approved") {
+      // setapprovedOnsite(false)
+      setPending(false)
+    }
+  }
   return (
     <div>
       {loader && (
@@ -359,21 +501,53 @@ const LeaveApprovalAndPending = () => {
       <div className="text-center p-8 ">
         <div className="flex justify-between mb-4">
           <h1 className="text-2xl font-bold mb-1">Leave Approval/Pending</h1>
+
           {/* <MyDatePicker handleSelect={handleDate} dates={dates} /> */}
-          <div className="flex justify-end flex-grow mx-5">
-            <span className="text-gray-600 mr-4 font-bold">On Site</span>
-            <button
-              onClick={onsitetoggle}
-              className={`${
-                isOnsite ? "bg-green-500" : "bg-gray-300"
-              } w-11 h-6 flex items-center rounded-full p-0 transition-colors duration-300`}
+          <div className="flex justify-end flex-grow mx-5 items-center">
+            <select
+              onChange={(e) => handleDropdownSelect(e.target.value)}
+              className="border rounded px-2 py-1 mr-4"
             >
-              <div
-                className={`${
-                  isOnsite ? "translate-x-5" : "translate-x-0"
-                } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-              ></div>
-            </button>
+              <option value="pending">Pending </option>
+              <option value="approved">Approved</option>
+            </select>
+            {ispending ? (
+              <div className="flex justify-center">
+                <span className="text-gray-600 mr-4 font-bold">
+                  {pendingOnsite ? "Pending Onsite" : "Pending Leave"}
+                </span>
+                <button
+                  onClick={PendingToggle}
+                  className={`${
+                    pendingOnsite ? "bg-green-500" : "bg-gray-300"
+                  } w-11 h-6 flex items-center rounded-full p-0 transition-colors duration-300`}
+                >
+                  <div
+                    className={`${
+                      pendingOnsite ? "translate-x-5" : "translate-x-0"
+                    } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                  ></div>
+                </button>
+              </div>
+            ) : (
+              <div className="flex">
+                <span className="text-gray-600 mr-4 font-bold">
+                  {approvedOnsite ? "Approved Onsite" : "Approved Leave"}
+                </span>
+                <button
+                  onClick={ApprovedToggle}
+                  className={`${
+                    approvedOnsite ? "bg-green-500" : "bg-gray-300"
+                  } w-11 h-6 flex items-center rounded-full p-0 transition-colors duration-300`}
+                >
+                  <div
+                    className={`${
+                      approvedOnsite ? "translate-x-5" : "translate-x-0"
+                    } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                  ></div>
+                </button>
+              </div>
+            )}
           </div>
           {dates.startDate && (
             <MyDatePicker handleSelect={handleDate} dates={dates} />
@@ -394,7 +568,7 @@ const LeaveApprovalAndPending = () => {
                 <th className="py-3">Leave Date</th>
                 <th className="py-3">Leave Type</th>
                 <th className="py-3">Shift</th>
-                <th className="py-3">{isOnsite ? "Remarks" : "Reason"}</th>
+                <th className="py-3">{pendingOnsite ? "Remarks" : "Reason"}</th>
                 <th className="py-3">Dpt.Status</th>
                 <th className="py-3">Hr.Status</th>
                 <th className="py-3">Approve</th>
@@ -508,10 +682,10 @@ const LeaveApprovalAndPending = () => {
                     className="px-4 py-4 text-center text-gray-500"
                   >
                     {loading
-                      ? isOnsite
+                      ? pendingOnsite
                         ? "Loading..."
                         : "Loading..."
-                      : isOnsite
+                      : pendingOnsite
                       ? "No Onsite Request"
                       : "No Leave Request"}
                   </td>
