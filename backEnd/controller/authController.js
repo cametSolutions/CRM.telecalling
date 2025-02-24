@@ -756,6 +756,7 @@ export const OnsiteApply = async (req, res) => {
       return res.status(404).json({ message: "no table content" })
     }
     const { startDate, onsiteType, description, halfDayPeriod } = formData
+    console.log("type", onsiteType)
 
     const existingOnsite = await Onsite.findOne({
       onsiteDate: startDate,
