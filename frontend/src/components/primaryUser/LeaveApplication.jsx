@@ -52,7 +52,7 @@ function LeaveApplication() {
   const [tableRows, setTableRows] = useState([])
   const [clickedDate, setclickedDate] = useState(null)
   const userData = localStorage.getItem("user")
-  const tabs = ["Leave", "Onsite", "Attendance"]
+  const tabs = ["Leave", "Onsite"]
   const user = JSON.parse(userData)
   const { data: leaves, refreshHook } = UseFetch(
     user && `/auth/getallLeave?userid=${user._id}`
@@ -173,7 +173,6 @@ function LeaveApplication() {
           if (!timeStr) {
             return false
           }
-          console.log(timeStr)
           // const [time, modifier] = timeStr.split(/(?<=\d)(?=[AP]M)/i) // Splits "1:31pm" -> ["1:31", "pm"]
           const [time, modifier] = timeStr?.split(" ")
           const [hours, minutes] = time.split(":").map(Number)
@@ -204,9 +203,7 @@ function LeaveApplication() {
             }
           }
 
-          console.log(item?.inTime, item?.attendanceDate)
           const inTimeDate = parseTime(item?.inTime)
-          console.log(inTimeDate)
           const outTimeDate = parseTime(item?.outTime)
 
           const morningLimit = parseTime("9:35 AM").getTime()
@@ -575,7 +572,7 @@ function LeaveApplication() {
         // const parseTime = (timeStr) =>
         //   new Date(`2024-01-01 ${timeStr.replace(/([ap]m)/i, " $1")}`)
         const parseTime = (timeStr) => {
-          if(!timeStr){
+          if (!timeStr) {
             return false
           }
           // const [time, modifier] = timeStr.split(/(?<=\d)(?=[AP]M)/i) // Splits "1:31pm" -> ["1:31", "pm"]
@@ -751,7 +748,7 @@ function LeaveApplication() {
   }, [showModal])
   useEffect(() => {
     if (isOnsite && clickedDate) {
-      // Find the event that matches the clicked date
+      console.log("hh") // Find the event that matches the clicked date
       const existingEvent = events.filter((event) => {
         return event.start === clickedDate && event.onsiteData
       })
@@ -774,7 +771,6 @@ function LeaveApplication() {
       }
     }
   }, [isOnsite, clickedDate])
-  // const handleEventRendering = (info) => {
   //   const eventDate = new Date(info.date)
   //   const eventMonth = eventDate.getMonth()
   //   const dayOfWeek = eventDate.getDay() // 0 = Sunday
@@ -909,7 +905,10 @@ function LeaveApplication() {
   const handleDateClick = (arg) => {
     setclickedDate(arg.dateStr)
     const clickedDate = arg.dateStr
-
+    setFormData((prev) => ({
+      ...prev, // Keeps previous form data intact
+      startDate: arg.dateStr // Updates only startDate
+    }))
     // Check if there's already an event on this date
     // const existingEvent = events?.filter((event) => event.start === clickedDate)
     const existingEvent = events?.filter((event) => {
@@ -932,52 +931,31 @@ function LeaveApplication() {
         return { hours, minutes, amPm }
       }
       const findRelevantEvent = (events) => {
-        return (
-          events.find((event) => {
-            // Example condition: prioritize events without inTime and outTime, or with specific keys like onsite
-            return (
-              !event.inTime &&
-              !event.outTime &&
-              !event.onsite &&
-              !event.onsiteData
-            )
-          }) || events[0]
-        ) // Fallback to the first event if no specific match is found
+        return events.find((event) => {
+          // Example condition: prioritize events without inTime and outTime, or with specific keys like onsite
+          return (
+            !event.inTime &&
+            !event.outTime &&
+            !event.onsite &&
+            !event.onsiteData
+          )
+        }) // Fallback to the first event if no specific match is found
       }
 
       // Find the relevant event
       const relevantEvent = findRelevantEvent(existingEvent)
 
-      setselectedAttendance((prev) => ({
-        ...prev, // Spread the previous state to keep other values intact
-        attendanceDate: relevantEvent?.start, // Set the attendance date
-        inTime: {
-          hours: parseTime(relevantEvent?.inTime)?.hours, // Update hours from parsed inTime
-          minutes: parseTime(relevantEvent?.inTime)?.minutes, // Update minutes from parsed inTime
-          amPm: parseTime(relevantEvent?.inTime)?.amPm // Update AM/PM from parsed inTime
-        },
-        outTime: {
-          hours: parseTime(relevantEvent?.outTime)?.hours, // Update hours from parsed outTime
-          minutes: parseTime(relevantEvent?.outTime)?.minutes, // Update minutes from parsed outTime
-          amPm: parseTime(relevantEvent?.outTime)?.amPm // Update AM/PM from parsed outTime
-        }
-      }))
+      if (relevantEvent) {
+        setFormData({
+          ...formData,
+          startDate: relevantEvent?.start,
+          halfDayPeriod: relevantEvent?.halfDayPeriod || "",
+          leaveType: relevantEvent?.leaveType || "Full Day",
 
-      // Set the form data dynamically based on the relevant event
-      setFormData({
-        ...formData,
-        startDate: relevantEvent?.start,
-        halfDayPeriod: relevantEvent?.halfDayPeriod || "",
-        leaveType: relevantEvent?.leaveType || "",
-        onsiteType: relevantEvent?.onsiteType || "",
-
-        reason: relevantEvent?.reason || "",
-        description: relevantEvent?.description || ""
-      })
-
-      if (existingEvent?.onsite) {
-        setIsOnsite(true)
+          reason: relevantEvent?.reason || ""
+        })
       }
+      // Set the form data dynamically based on the relevant event
     } else {
       setFormData({
         ...formData,
@@ -994,7 +972,6 @@ function LeaveApplication() {
     }
     setShowModal(true)
   }
-
   const handleUpdate = async (updatedData) => {
     try {
       const eventId = formData.eventId
@@ -1147,6 +1124,7 @@ function LeaveApplication() {
           if (!response.ok) {
             throw new Error("Failed to apply for leave")
           } else {
+            setSelectedTab("Leave")
             refreshHook()
 
             setShowModal(false)
@@ -1167,6 +1145,7 @@ function LeaveApplication() {
         )
 
         if (response.status === 200) {
+          setSelectedTab("Leave")
           setFormData((prev) => ({
             ...prev,
             description: "",
@@ -1298,18 +1277,27 @@ function LeaveApplication() {
 
       case value === "Onsite":
         existingEvent = events?.filter((event) => {
-          const eventDate = new Date(event.start).toISOString().split("T")[0] // Normalize to YYYY-MM-DD
+          const eventDate = event.start
           return eventDate === clickedDate // Compare only the date part
         })
         if (existingEvent && existingEvent.length > 0) {
           const findRelevantEvent = (events) => {
-            return events.find((event) => {
-              // Example condition: prioritize events without inTime and outTime, or with specific keys like onsite
-              return !event.inTime && !event.outTime && event.onsiteData
-            }) // Fallback to the first event if no specific match is found
+            return events.find(
+              (event) =>
+                // Example condition: prioritize events without inTime and outTime, or with specific keys like onsite
+                !event.inTime &&
+                !event.outTime &&
+                event.onsiteData &&
+                !event.leaveType
+            )
           }
+          // console.log(events)
+          // Fallback to the first event if no specific match is found
+
           // Find the relevant event
+
           const relevantEvent = findRelevantEvent(existingEvent)
+
           if (relevantEvent) {
             // Set the form data dynamically based on the relevant event
             setFormData({
@@ -1328,7 +1316,7 @@ function LeaveApplication() {
 
       case value === "Attendance":
         existingEvent = events?.filter((event) => {
-          const eventDate = new Date(event.start).toISOString().split("T")[0] // Normalize to YYYY-MM-DD
+          const eventDate = event.start // Normalize to YYYY-MM-DD
           return eventDate === clickedDate // Compare only the date part
         })
         if (existingEvent && existingEvent.length > 0) {
@@ -1646,172 +1634,172 @@ function LeaveApplication() {
             </div>
           </div>
         )
-      case "Attendance":
-        return (
-          <div className="">
-            <div className="attendance-content mt-2 justify-center">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div>
-                  <label className="block mb-2">Attendance Date</label>
-                  <input
-                    type="date"
-                    name="startDate"
-                    defaultValue={formData.startDate}
-                    onChange={handleChange}
-                    className="border p-2 rounded w-full"
-                  />
-                </div>
-                <div>
-                  <label className="block mb-2">Attendance Type</label>
-                  <select
-                    name="attendanceType"
-                    defaultValue={formData.attendanceType}
-                    onChange={(e) => {
-                      const { value } = e.target
-                      setFormData((prev) => ({
-                        ...prev,
-                        attendanceType: value,
-                        halfDayPeriod: value === "Half Day" ? "Morning" : "" // Default to "Morning" for Half Day
-                      }))
-                    }}
-                    className="border p-2 rounded w-full"
-                  >
-                    <option value="Full Day">Full Day</option>
-                    <option value="Half Day">Half Day</option>
-                  </select>
-                </div>
+      // case "Attendance":
+      //   return (
+      //     <div className="">
+      //       <div className="attendance-content mt-2 justify-center">
+      //         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      //           <div>
+      //             <label className="block mb-2">Attendance Date</label>
+      //             <input
+      //               type="date"
+      //               name="startDate"
+      //               defaultValue={formData.startDate}
+      //               onChange={handleChange}
+      //               className="border p-2 rounded w-full"
+      //             />
+      //           </div>
+      //           <div>
+      //             <label className="block mb-2">Attendance Type</label>
+      //             <select
+      //               name="attendanceType"
+      //               defaultValue={formData.attendanceType}
+      //               onChange={(e) => {
+      //                 const { value } = e.target
+      //                 setFormData((prev) => ({
+      //                   ...prev,
+      //                   attendanceType: value,
+      //                   halfDayPeriod: value === "Half Day" ? "Morning" : "" // Default to "Morning" for Half Day
+      //                 }))
+      //               }}
+      //               className="border p-2 rounded w-full"
+      //             >
+      //               <option value="Full Day">Full Day</option>
+      //               <option value="Half Day">Half Day</option>
+      //             </select>
+      //           </div>
 
-                {formData.attendanceType === "Half Day" && (
-                  <div>
-                    <label className="block mb-2">Select Half Day Period</label>
-                    <select
-                      name="halfDayPeriod"
-                      defaultValue={formData.halfDayPeriod}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          halfDayPeriod: e.target.value
-                        }))
-                      }
-                      className="border p-2 rounded w-full"
-                    >
-                      <option value="Morning">Morning</option>
-                      <option value="Afternoon">Afternoon</option>
-                    </select>
-                  </div>
-                )}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="grid ">
-                  <label htmlFor="startTime" className="font-bold mb-1">
-                    In Time
-                  </label>
-                  <div className="flex gap-2">
-                    <select
-                      id="hours"
-                      name="hours"
-                      value={selectedAttendance?.inTime?.hours}
-                      onChange={(e) =>
-                        handleTimeChange("inTime", "hours", e.target.value)
-                      }
-                      className="border border-gray-300 py-1 px-1 rounded "
-                    >
-                      {Array.from({ length: 13 }, (_, i) => (
-                        <option key={i + 1} value={i}>
-                          {String(i).padStart(2, "0")}
-                        </option>
-                      ))}
-                    </select>
+      //           {formData.attendanceType === "Half Day" && (
+      //             <div>
+      //               <label className="block mb-2">Select Half Day Period</label>
+      //               <select
+      //                 name="halfDayPeriod"
+      //                 defaultValue={formData.halfDayPeriod}
+      //                 onChange={(e) =>
+      //                   setFormData((prev) => ({
+      //                     ...prev,
+      //                     halfDayPeriod: e.target.value
+      //                   }))
+      //                 }
+      //                 className="border p-2 rounded w-full"
+      //               >
+      //                 <option value="Morning">Morning</option>
+      //                 <option value="Afternoon">Afternoon</option>
+      //               </select>
+      //             </div>
+      //           )}
+      //         </div>
+      //         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      //           <div className="grid ">
+      //             <label htmlFor="startTime" className="font-bold mb-1">
+      //               In Time
+      //             </label>
+      //             <div className="flex gap-2">
+      //               <select
+      //                 id="hours"
+      //                 name="hours"
+      //                 value={selectedAttendance?.inTime?.hours}
+      //                 onChange={(e) =>
+      //                   handleTimeChange("inTime", "hours", e.target.value)
+      //                 }
+      //                 className="border border-gray-300 py-1 px-1 rounded "
+      //               >
+      //                 {Array.from({ length: 13 }, (_, i) => (
+      //                   <option key={i + 1} value={i}>
+      //                     {String(i).padStart(2, "0")}
+      //                   </option>
+      //                 ))}
+      //               </select>
 
-                    <select
-                      id="minutes"
-                      name="minutes"
-                      value={selectedAttendance?.inTime?.minutes}
-                      onChange={(e) =>
-                        handleTimeChange("inTime", "minutes", e.target.value)
-                      }
-                      className="border border-gray-300 py-1 px-1 rounded "
-                    >
-                      {Array.from({ length: 60 }, (_, i) => (
-                        <option key={i} value={i}>
-                          {String(i).padStart(2, "0")}
-                        </option>
-                      ))}
-                    </select>
+      //               <select
+      //                 id="minutes"
+      //                 name="minutes"
+      //                 value={selectedAttendance?.inTime?.minutes}
+      //                 onChange={(e) =>
+      //                   handleTimeChange("inTime", "minutes", e.target.value)
+      //                 }
+      //                 className="border border-gray-300 py-1 px-1 rounded "
+      //               >
+      //                 {Array.from({ length: 60 }, (_, i) => (
+      //                   <option key={i} value={i}>
+      //                     {String(i).padStart(2, "0")}
+      //                   </option>
+      //                 ))}
+      //               </select>
 
-                    <select
-                      id="amPm"
-                      name="amPm"
-                      value={selectedAttendance?.inTime?.amPm}
-                      onChange={(e) =>
-                        handleTimeChange("inTime", "amPm", e.target.value)
-                      }
-                      className="border border-gray-300 py-1 px-1 rounded "
-                    >
-                      <option value="AM">AM</option>
-                      <option value="PM">PM</option>
-                    </select>
-                  </div>
-                </div>
+      //               <select
+      //                 id="amPm"
+      //                 name="amPm"
+      //                 value={selectedAttendance?.inTime?.amPm}
+      //                 onChange={(e) =>
+      //                   handleTimeChange("inTime", "amPm", e.target.value)
+      //                 }
+      //                 className="border border-gray-300 py-1 px-1 rounded "
+      //               >
+      //                 <option value="AM">AM</option>
+      //                 <option value="PM">PM</option>
+      //               </select>
+      //             </div>
+      //           </div>
 
-                <div className="grid ">
-                  <label
-                    htmlFor="endTime"
-                    className="font-bold mb-1 sm:justify-self-end"
-                  >
-                    Out Time
-                  </label>
-                  <div className=" flex sm:justify-end gap-2">
-                    <select
-                      id="hours"
-                      name="hours"
-                      value={selectedAttendance?.outTime?.hours}
-                      onChange={(e) =>
-                        handleTimeChange("outTime", "hours", e.target.value)
-                      }
-                      className="border border-gray-300 py-1 px-1 rounded"
-                    >
-                      {Array.from({ length: 13 }, (_, i) => (
-                        <option key={i + 1} value={i}>
-                          {String(i).padStart(2, "0")}
-                        </option>
-                      ))}
-                    </select>
+      //           <div className="grid ">
+      //             <label
+      //               htmlFor="endTime"
+      //               className="font-bold mb-1 sm:justify-self-end"
+      //             >
+      //               Out Time
+      //             </label>
+      //             <div className=" flex sm:justify-end gap-2">
+      //               <select
+      //                 id="hours"
+      //                 name="hours"
+      //                 value={selectedAttendance?.outTime?.hours}
+      //                 onChange={(e) =>
+      //                   handleTimeChange("outTime", "hours", e.target.value)
+      //                 }
+      //                 className="border border-gray-300 py-1 px-1 rounded"
+      //               >
+      //                 {Array.from({ length: 13 }, (_, i) => (
+      //                   <option key={i + 1} value={i}>
+      //                     {String(i).padStart(2, "0")}
+      //                   </option>
+      //                 ))}
+      //               </select>
 
-                    <select
-                      id="minutes"
-                      name="minutes"
-                      value={selectedAttendance?.outTime?.minutes}
-                      onChange={(e) =>
-                        handleTimeChange("outTime", "minutes", e.target.value)
-                      }
-                      className="border border-gray-300 py-1 px-1 rounded"
-                    >
-                      {Array.from({ length: 60 }, (_, i) => (
-                        <option key={i} value={i}>
-                          {String(i).padStart(2, "0")}
-                        </option>
-                      ))}
-                    </select>
+      //               <select
+      //                 id="minutes"
+      //                 name="minutes"
+      //                 value={selectedAttendance?.outTime?.minutes}
+      //                 onChange={(e) =>
+      //                   handleTimeChange("outTime", "minutes", e.target.value)
+      //                 }
+      //                 className="border border-gray-300 py-1 px-1 rounded"
+      //               >
+      //                 {Array.from({ length: 60 }, (_, i) => (
+      //                   <option key={i} value={i}>
+      //                     {String(i).padStart(2, "0")}
+      //                   </option>
+      //                 ))}
+      //               </select>
 
-                    <select
-                      id="amPm"
-                      name="amPm"
-                      value={selectedAttendance?.outTime?.amPm}
-                      onChange={(e) =>
-                        handleTimeChange("outTime", "amPm", e.target.value)
-                      }
-                      className="border border-gray-300 py-1 px-1 rounded"
-                    >
-                      <option value="AM">AM</option>
-                      <option value="PM">PM</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )
+      //               <select
+      //                 id="amPm"
+      //                 name="amPm"
+      //                 value={selectedAttendance?.outTime?.amPm}
+      //                 onChange={(e) =>
+      //                   handleTimeChange("outTime", "amPm", e.target.value)
+      //                 }
+      //                 className="border border-gray-300 py-1 px-1 rounded"
+      //               >
+      //                 <option value="AM">AM</option>
+      //                 <option value="PM">PM</option>
+      //               </select>
+      //             </div>
+      //           </div>
+      //         </div>
+      //       </div>
+      //     </div>
+      //   )
       default:
         return <p>Select a tab to view the content.</p>
     }
