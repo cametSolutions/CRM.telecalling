@@ -904,8 +904,9 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
     const users = await Staff.find(
       {},
-      { _id: 1, name: 1, attendanceId: 1, assingnedto: 1 }
+      { _id: 1, name: 1, attendanceId: 1, assignedto: 1 }
     )
+
     const convertToMinutes = (timeStr) => {
       const [time, modifier] = timeStr.split(" ")
       let [hours, minutes] = time.split(":").map(Number)
@@ -978,7 +979,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       const userId = user._id
       const userName = user.name
       const staffId = user.attendanceId
-      const assingnedto = user.assignedto
+      const assignedto = user.assignedto
 
       // Fetch attendance-related data for the given month
       const results = await Promise.allSettled([
@@ -2681,19 +2682,7 @@ export const GetsomeAllsummary = async (
 
       for (let day = 1; day <= daysInMonth; day++) {
         let date = new Date(year, month - 1, day)
-        // let dateKey =
-        //   String(date.getDate()).padStart(2, "0") +
-        //   "-" +
-        //   String(date.getMonth() + 1).padStart(2, "0") +
-        //   "-" +
-        //   date.getFullYear()
 
-        // let dateKey =
-        //   String(date.getDate()).padStart(2, "0") +
-        //   +"-" +
-        //   String(date.getMonth() + 1).padStart(2, "0") +
-        //   "-" +
-        //   date.getFullYear()
         let dateKey =
           date.getFullYear() +
           "-" +
@@ -2752,7 +2741,11 @@ export const GetsomeAllsummary = async (
     const startDate = new Date(Date.UTC(year, month - 1, 1))
     const endDate = new Date(Date.UTC(year, month, 0))
 
-    const users = await Staff.find({}, { _id: 1, name: 1, attendanceId: 1 })
+    const users = await Staff.find(
+      {},
+      { _id: 1, name: 1, attendanceId: 1, assignedto: 1 }
+    )
+
     const convertToMinutes = (timeStr) => {
       const [time, modifier] = timeStr.split(" ")
       let [hours, minutes] = time.split(":").map(Number)
@@ -2824,6 +2817,7 @@ export const GetsomeAllsummary = async (
     for (const user of users) {
       const userId = user._id
       const userName = user.name
+      const staffId = user.attendanceId
 
       // Fetch attendance-related data for the given month
       const results = await Promise.allSettled([
@@ -2851,6 +2845,7 @@ export const GetsomeAllsummary = async (
       let stats = {
         name: userName,
         staffId,
+        assignedto,
         userId: userId,
         present: 0,
         absent: 0,
