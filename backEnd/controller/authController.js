@@ -637,7 +637,6 @@ export const LeaveApply = async (req, res) => {
           .json({ message: "leave updated", data: updatedLeave })
       }
     } else {
-      
       const leave = new LeaveRequest({
         leaveDate: startDate,
         leaveType,
@@ -903,7 +902,10 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
     const startDate = new Date(Date.UTC(year, month - 1, 1))
     const endDate = new Date(Date.UTC(year, month, 0))
 
-    const users = await Staff.find({}, { _id: 1, name: 1,attendanceId: 1,assingnedto: 1})
+    const users = await Staff.find(
+      {},
+      { _id: 1, name: 1, attendanceId: 1, assingnedto: 1 }
+    )
     const convertToMinutes = (timeStr) => {
       const [time, modifier] = timeStr.split(" ")
       let [hours, minutes] = time.split(":").map(Number)
@@ -976,6 +978,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       const userId = user._id
       const userName = user.name
       const staffId = user.attendanceId
+      const assingnedto = user.assignedto
 
       // Fetch attendance-related data for the given month
       const results = await Promise.allSettled([
@@ -1812,9 +1815,7 @@ export const GetAllapprovedORonsiteRequest = async (req, res) => {
     }
 
     if (onsite === "true") {
-
-      const allonsite = await Onsite.find(query)
-      .populate({
+      const allonsite = await Onsite.find(query).populate({
         path: "userId",
         select: "name role department", // Select fields from User
         populate: [
@@ -2751,7 +2752,7 @@ export const GetsomeAllsummary = async (
     const startDate = new Date(Date.UTC(year, month - 1, 1))
     const endDate = new Date(Date.UTC(year, month, 0))
 
-    const users = await Staff.find({}, { _id: 1, name: 1,attendanceId: 1})
+    const users = await Staff.find({}, { _id: 1, name: 1, attendanceId: 1 })
     const convertToMinutes = (timeStr) => {
       const [time, modifier] = timeStr.split(" ")
       let [hours, minutes] = time.split(":").map(Number)
@@ -2891,7 +2892,6 @@ export const GetsomeAllsummary = async (
         attendances?.forEach((att) => {
           const day = att.attendanceDate.getDate()
           const dayTime = att.attendanceDate.toISOString().split("T")[0]
-       
 
           const punchIn = att.inTime ? convertToMinutes(att.inTime) : null
           const punchOut = att.outTime ? convertToMinutes(att.outTime) : null
@@ -2905,7 +2905,7 @@ export const GetsomeAllsummary = async (
                 o.onsiteDate.toISOString().split("T")[0] === dayTime &&
                 (o.departmentverified === true || o.adminverified === true)
             )
-          
+
           const onsiteRecord = Array.isArray(onsites)
             ? onsites.find(
                 (o) =>
@@ -2913,7 +2913,6 @@ export const GetsomeAllsummary = async (
                   (o.departmentverified === true || o.adminverified === true)
               )
             : null
-         
 
           const onsiteDetails = onsiteRecord
             ? {
@@ -2925,7 +2924,6 @@ export const GetsomeAllsummary = async (
                     : null
               }
             : null
-          
 
           const isLeave =
             Array.isArray(leaves) &&
@@ -3190,15 +3188,13 @@ export const GetsomeAllsummary = async (
           }
           daysInMonth.delete(day)
         })
-    
+
       onsites?.length &&
         onsites?.forEach((onsite) => {
           const onsiteDate = onsite.onsiteDate.toISOString().split("T")[0]
 
-        
           const isAttendance =
             Array.isArray(attendances) &&
-          
             attendances.some(
               (o) => o.attendanceDate.toISOString().split("T")[0] === onsiteDate
             )
