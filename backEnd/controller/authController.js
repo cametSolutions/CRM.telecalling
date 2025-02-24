@@ -523,7 +523,6 @@ export const AttendanceApply = async (req, res) => {
   try {
     const selectattendance = req.body
     const { selectedid, attendanceId } = req.query
-    console.log("id", attendanceId)
 
     if (!selectedid && !attendanceId) {
       return res
@@ -638,6 +637,7 @@ export const LeaveApply = async (req, res) => {
           .json({ message: "leave updated", data: updatedLeave })
       }
     } else {
+      
       const leave = new LeaveRequest({
         leaveDate: startDate,
         leaveType,
@@ -649,8 +649,7 @@ export const LeaveApply = async (req, res) => {
         assignedto: assignedTo
       })
 
-      await leave.save()
-
+      const a = await leave.save()
       const leaveSubmit = await LeaveRequest.find({ userId: objectId })
 
       return res
@@ -658,6 +657,7 @@ export const LeaveApply = async (req, res) => {
         .json({ message: "leave submitted", data: leaveSubmit })
     }
   } catch (error) {
+    console.log("error:", error.message)
     res.status(500).json({ message: "internal server error" })
   }
 }
@@ -903,7 +903,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
     const startDate = new Date(Date.UTC(year, month - 1, 1))
     const endDate = new Date(Date.UTC(year, month, 0))
 
-    const users = await Staff.find({}, { _id: 1, name: 1 })
+    const users = await Staff.find({}, { _id: 1, name: 1,attendanceId: 1,assingnedto: 1})
     const convertToMinutes = (timeStr) => {
       const [time, modifier] = timeStr.split(" ")
       let [hours, minutes] = time.split(":").map(Number)
@@ -915,7 +915,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
     }
     const leavemaster = await Leavemaster.find({})
     const latecuttingCount = leavemaster[0].deductSalaryMinute
-    console.log("latearrival", latecuttingCount)
     const addMinutesToTime = (timeString, minutesToAdd) => {
       // Convert to Date object
       const [time, period] = timeString.split(" ")
@@ -954,15 +953,14 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       leavemaster[0].lateArrival
     )
     const noonTime = getMidTime(leavemaster[0].checkIn, leavemaster[0].checkOut)
-    // console.log("master", leavemaster)
 
     const morningLimit = convertToMinutes(morning)
-    console.log("morlinit", morningLimit)
+
     const lateLimit = convertToMinutes(leavemaster[0].checkInEndAt)
     const minOutTime = convertToMinutes(leavemaster[0].checkOutStartAt)
     const earlyLeaveLimit = convertToMinutes(leavemaster[0].checkOut)
     const noonLimit = convertToMinutes(noonTime)
-    console.log("noon", noonTime)
+
     let staffAttendanceStats = []
     const holidays = await Holymaster.find({
       holyDate: {
@@ -977,6 +975,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
     for (const user of users) {
       const userId = user._id
       const userName = user.name
+      const staffId = user.attendanceId
 
       // Fetch attendance-related data for the given month
       const results = await Promise.allSettled([
@@ -1000,6 +999,8 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
       let stats = {
         name: userName,
+        staffId,
+        assignedto,
         userId: userId,
         present: 0,
         absent: 0,
@@ -1037,6 +1038,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       const present = []
       const fulldayarr = []
       const halfdayarr = []
+
       attendances?.length &&
         attendances?.forEach((att) => {
           const day = att.attendanceDate.getDate()
@@ -1137,7 +1139,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             }
             present.push(day)
           } else if (
-            punchOut > minOutTime &&
+            punchOut >= minOutTime &&
             punchOut < earlyLeaveLimit &&
             punchIn <= morningLimit
           ) {
@@ -1157,9 +1159,9 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             }
             present.push(day)
           } else if (
-            punchIn < lateLimit &&
+            punchIn <= lateLimit &&
             punchIn > morningLimit &&
-            punchOut > minOutTime &&
+            punchOut >= minOutTime &&
             punchOut < earlyLeaveLimit
           ) {
             const a = getTimeDifference("09:35 AM", att.inTime)
@@ -1664,29 +1666,35 @@ export const GetallLeave = async (req, res) => {
       .json({ error: "An error occurred while fetching leave records" })
   }
 }
-export const GetAllLeaveRequest = async (req, res) => {
+export const GetAllpendingORonsiteRequest = async (req, res) => {
   try {
     const startdate = req?.query?.startdate
     const enddate = req?.query?.enddate
+    const startDate = startdate.toString().split("T")[0]
+    const endDate = enddate.toString().split("T")[0]
+
     const onsite = req?.query?.onsite
     const userid = req?.query?.userid
     const role = req?.query?.role
+    let query
 
     const objectId = new mongoose.Types.ObjectId(userid)
 
-    // Ensure the dates are valid and convert them to ISO format
-    const startDate = new Date(startdate) // Convert to Date object
-    const endDate = new Date(enddate) // Convert to Date object
-
-    // Check if the dates are valid
-    if (isNaN(startDate) || isNaN(endDate)) {
-      return res.status(400).send({ message: "Invalid date format" })
-    }
     // Initialize the query with common conditions
-    const query = {
-      leaveDate: {
-        $gte: startDate, // Greater than or equal to startDate
-        $lte: endDate // Less than or equal to endDate
+    if (onsite === "true") {
+      query = {
+        onsiteDate: {
+          $gte: startDate, // Greater than or equal to startDate
+          $lte: endDate // Less than or equal to endDate
+        }
+      }
+    } else if (onsite === "false") {
+      ////
+      query = {
+        leaveDate: {
+          $gte: startDate, // Greater than or equal to startDate
+          $lte: endDate // Less than or equal to endDate
+        }
       }
     }
 
@@ -1695,87 +1703,177 @@ export const GetAllLeaveRequest = async (req, res) => {
       query.assignedto = objectId // Only include assignedto for non-admin users
     }
 
-    // Check for onsite status
     if (onsite === "true") {
-      query.onsite = true
-    } else {
-      query.onsite = false
+      const allonsite = await Onsite.find(query).populate({
+        path: "userId",
+        select: "name role department", // Select fields from User
+        populate: [
+          {
+            path: "department",
+            select: "department",
+            options: { strictPopulate: false } // Graceful fallback for missing departments
+          },
+          {
+            path: "selected.branch_id",
+            model: "Branch",
+            select: "branchName",
+            options: { strictPopulate: false } // Avoid errors for missing branches
+          }
+        ]
+      })
+
+      const pendingonsiteRequest = allonsite.filter(
+        (item) =>
+          item.departmentverified === false && item.adminverified === false
+      )
+
+      if (pendingonsiteRequest) {
+        return res
+          .status(200)
+          .json({ message: "leaves found", data: pendingonsiteRequest })
+      }
+    } else if (onsite === "false") {
+      const allleaveRequest = await LeaveRequest.find(query).populate({
+        path: "userId",
+        select: "name role department", // Select fields from User
+        populate: [
+          {
+            path: "department",
+            select: "department",
+            options: { strictPopulate: false } // Graceful fallback for missing departments
+          },
+          {
+            path: "selected.branch_id",
+            model: "Branch",
+            select: "branchName",
+            options: { strictPopulate: false } // Avoid errors for missing branches
+          }
+        ]
+      })
+      const pendingleaveRequest = allleaveRequest.filter(
+        (item) =>
+          item.departmentverified === false && item.adminverified === false
+      )
+
+      if (pendingleaveRequest) {
+        return res
+          .status(200)
+          .json({ message: "leaves found", data: pendingleaveRequest })
+      }
     }
 
     // Execute the query with population
-    const leaveList = await LeaveRequest.find(query).populate({
-      path: "userId",
-      select: "name role department", // Select fields from User
-      populate: [
-        {
-          path: "department",
-          select: "department",
-          options: { strictPopulate: false } // Graceful fallback for missing departments
-        },
-        {
-          path: "selected.branch_id",
-          model: "Branch",
-          select: "branchName",
-          options: { strictPopulate: false } // Avoid errors for missing branches
-        }
-      ]
-    })
+  } catch (error) {
+    console.log("error:", error.message)
+  }
+}
 
-    // if (onsite === "true") {
-    //   leaveList = await LeaveRequest.find({
-    //     leaveDate: {
-    //       $gte: startDate, // Greater than or equal to startDate
-    //       $lte: endDate // Less than or equal to endDate
-    //     },
-    //     onsite: true,
-    //     assignedto: objectId
-    //   }).populate({
-    //     path: "userId",
-    //     select: "name role department", // Select fields from User
-    //     populate: [
-    //       {
-    //         path: "department",
-    //         select: "department",
-    //         options: { strictPopulate: false } // Allow graceful fallback for missing departments
-    //       },
-    //       {
-    //         path: "selected.branch_id",
-    //         model: "Branch",
-    //         select: "branchName",
-    //         options: { strictPopulate: false } // Avoid errors for missing branches
-    //       }
-    //     ]
-    //   })
-    // } else {
-    //   leaveList = await LeaveRequest.find({
-    //     leaveDate: {
-    //       $gte: startDate, // Greater than or equal to startDate
-    //       $lte: endDate // Less than or equal to endDate
-    //     },
-    //     onsite: false,
-    //     assignedto: objectId
-    //   }).populate({
-    //     path: "userId",
-    //     select: "name role department", // Select fields from User
-    //     populate: [
-    //       {
-    //         path: "department",
-    //         select: "department",
-    //         options: { strictPopulate: false } // Allow graceful fallback for missing departments
-    //       },
-    //       {
-    //         path: "selected.branch_id",
-    //         model: "Branch",
-    //         select: "branchName",
-    //         options: { strictPopulate: false } // Avoid errors for missing branches
-    //       }
-    //     ]
-    //   })
-    // }
+export const GetAllapprovedORonsiteRequest = async (req, res) => {
+  try {
+    const startdate = new Date(req.query.startdate) // Convert to Date object
+    startdate.setUTCHours(0, 0, 0, 0) // Set to start of the day in UTC
 
-    if (leaveList) {
-      return res.status(200).json({ message: "leaves found", data: leaveList })
+    const enddate = new Date(req.query.enddate) // Convert to Date object
+    enddate.setUTCHours(23, 59, 59, 999)
+    // Convert to Date object
+
+    if (isNaN(startdate) || isNaN(enddate)) {
+      return res.status(400).send({ message: "Invalid date format" })
     }
+
+    const onsite = req?.query?.onsite
+    const userid = req?.query?.userid
+    const role = req?.query?.role
+    let query
+
+    const objectId = new mongoose.Types.ObjectId(userid)
+
+    // Ensure the dates are valid and convert them to ISO format
+    // Convert to Date object
+
+    // Check if the dates are valid
+
+    if (onsite === "true") {
+      // Initialize the query with common conditions
+      query = {
+        onsiteDate: {
+          $gte: startdate,
+          $lte: enddate //ess than or equal to endDate
+        }
+      }
+    } else if (onsite === "false") {
+      // Initialize the query with common conditions
+      query = {
+        leaveDate: {
+          $gte: startdate,
+          $lte: enddate
+        }
+      }
+    }
+
+    if (onsite === "true") {
+
+      const allonsite = await Onsite.find(query)
+      .populate({
+        path: "userId",
+        select: "name role department", // Select fields from User
+        populate: [
+          {
+            path: "department",
+            select: "department",
+            options: { strictPopulate: false } // Graceful fallback for missing departments
+          },
+          {
+            path: "selected.branch_id",
+            model: "Branch",
+            select: "branchName",
+            options: { strictPopulate: false } // Avoid errors for missing branches
+          }
+        ]
+      })
+
+      const approvedonsiteRequest = allonsite.filter(
+        (item) =>
+          item.departmentverified === true || item.adminverified === true
+      )
+
+      if (approvedonsiteRequest) {
+        return res
+          .status(200)
+          .json({ message: "leaves found", data: approvedonsiteRequest })
+      }
+    } else if (onsite === "false") {
+      const allleaveRequest = await LeaveRequest.find(query).populate({
+        path: "userId",
+        select: "name role department", // Select fields from User
+        populate: [
+          {
+            path: "department",
+            select: "department",
+            options: { strictPopulate: false } // Graceful fallback for missing departments
+          },
+          {
+            path: "selected.branch_id",
+            model: "Branch",
+            select: "branchName",
+            options: { strictPopulate: false } // Avoid errors for missing branches
+          }
+        ]
+      })
+
+      const approvedleaveRequest = allleaveRequest.filter(
+        (item) =>
+          item.departmentverified === true || item.adminverified === true
+      )
+
+      if (approvedleaveRequest) {
+        return res
+          .status(200)
+          .json({ message: "leaves found", data: approvedleaveRequest })
+      }
+    }
+
+    // Execute the query with population
   } catch (error) {
     console.log("error:", error.message)
   }
@@ -2653,7 +2751,7 @@ export const GetsomeAllsummary = async (
     const startDate = new Date(Date.UTC(year, month - 1, 1))
     const endDate = new Date(Date.UTC(year, month, 0))
 
-    const users = await Staff.find({}, { _id: 1, name: 1 })
+    const users = await Staff.find({}, { _id: 1, name: 1,attendanceId: 1})
     const convertToMinutes = (timeStr) => {
       const [time, modifier] = timeStr.split(" ")
       let [hours, minutes] = time.split(":").map(Number)
@@ -2710,9 +2808,6 @@ export const GetsomeAllsummary = async (
     const earlyLeaveLimit = convertToMinutes(leavemaster[0].checkOut)
     const noonLimit = convertToMinutes(noonTime)
 
-  
-
-   
     let staffAttendanceStats = []
     // const holidays = await Holymaster.find({})
     const holidays = await Holymaster.find({
@@ -2754,6 +2849,7 @@ export const GetsomeAllsummary = async (
       )
       let stats = {
         name: userName,
+        staffId,
         userId: userId,
         present: 0,
         absent: 0,
@@ -2795,13 +2891,7 @@ export const GetsomeAllsummary = async (
         attendances?.forEach((att) => {
           const day = att.attendanceDate.getDate()
           const dayTime = att.attendanceDate.toISOString().split("T")[0]
-          // const date = new Date(att.attendanceDate)
-          // const day = String(date.getDate()).padStart(2, "0")
-          // const month = String(date.getMonth() + 1).padStart(2, "0")
-          // const year = date.getFullYear()
-
-          // const dayTime = `${day}-${month}-${year}`
-          // console.log("daytime", dayTime)
+       
 
           const punchIn = att.inTime ? convertToMinutes(att.inTime) : null
           const punchOut = att.outTime ? convertToMinutes(att.outTime) : null
@@ -2815,25 +2905,7 @@ export const GetsomeAllsummary = async (
                 o.onsiteDate.toISOString().split("T")[0] === dayTime &&
                 (o.departmentverified === true || o.adminverified === true)
             )
-          // const isOnsite =
-          //   Array.isArray(onsites) &&
-          //   onsites.some((o) => {
-          //     const onsiteDate =
-          //       String(o.onsiteDate.getDate()).padStart(2, "0") +
-          //       "-" +
-          //       String(o.onsiteDate.getMonth() + 1).padStart(2, "0") +
-          //       "-" +
-          //       o.onsiteDate.getFullYear()
-
-          //     return (
-          //       onsiteDate === dayTime &&
-          //       (o.departmentverified === true || o.adminverified === true)
-          //     )
-          //   })
-          // if (userName.trim() === "Muhammed Rasik K.M") {
-          //   console.log("ISSSSS", isOnsite)
-          // }
-
+          
           const onsiteRecord = Array.isArray(onsites)
             ? onsites.find(
                 (o) =>
@@ -2841,21 +2913,7 @@ export const GetsomeAllsummary = async (
                   (o.departmentverified === true || o.adminverified === true)
               )
             : null
-          // const onsiteRecord = Array.isArray(onsites)
-          //   ? onsites.find((o) => {
-          //       const onsiteDate =
-          //         String(o.onsiteDate.getDate()).padStart(2, "0") +
-          //         "-" +
-          //         String(o.onsiteDate.getMonth() + 1).padStart(2, "0") +
-          //         "-" +
-          //         o.onsiteDate.getFullYear()
-
-          //       return (
-          //         onsiteDate === dayTime &&
-          //         (o.departmentverified === true || o.adminverified === true)
-          //       )
-          //     })
-          //   : null
+         
 
           const onsiteDetails = onsiteRecord
             ? {
@@ -2867,23 +2925,7 @@ export const GetsomeAllsummary = async (
                     : null
               }
             : null
-          ////
-          // const isLeave =
-          //   Array.isArray(leaves) &&
-          //   leaves.some((l) => {
-          //     const leaveDate =
-          //       String(l.leaveDate.getDate()).padStart(2, "0") +
-          //       "-" +
-          //       String(l.leaveDate.getMonth() + 1).padStart(2, "0") +
-          //       "-" +
-          //       l.leaveDate.getFullYear()
-
-          //     return (
-          //       leaveDate === dayTime &&
-          //       l.onsite === false &&
-          //       (l.departmentverified === true || l.adminverified === true)
-          //     )
-          //   })
+          
 
           const isLeave =
             Array.isArray(leaves) &&
@@ -3148,31 +3190,15 @@ export const GetsomeAllsummary = async (
           }
           daysInMonth.delete(day)
         })
-      // if (userName.trim() === "Muhammed Rasik K.M") {
-      //   console.log("staaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", stats)
-      // }
+    
       onsites?.length &&
         onsites?.forEach((onsite) => {
           const onsiteDate = onsite.onsiteDate.toISOString().split("T")[0]
 
-          // const date = onsite.onsiteDate
-          // const day = String(date.getDate()).padStart(2, "0")
-          // const month = String(date.getMonth() + 1).padStart(2, "0")
-          // const year = date.getFullYear()
-
-          // const onsiteDate = `${day}-${month}-${year}`
+        
           const isAttendance =
             Array.isArray(attendances) &&
-            // attendances.some((o) => {
-            //   const formattedDate = o.attendancedates
-            //     ?.toISOString()
-            //     .split("T")[0]
-            //     .split("-")
-            //     .reverse()
-            //     .join("-")
-
-            //   return formattedDate === onsiteDate
-            // })
+          
             attendances.some(
               (o) => o.attendanceDate.toISOString().split("T")[0] === onsiteDate
             )
@@ -3414,7 +3440,6 @@ export const GetsomeAllsummary = async (
 
       staffAttendanceStats.push(stats)
     }
-    // console.log("statssss", staffAttendanceStats)
     return {
       message: "Attendence report found",
       data: staffAttendanceStats
@@ -3423,4 +3448,10 @@ export const GetsomeAllsummary = async (
     console.log("error", error)
     return { message: "Internal server error" }
   }
+}
+export const Check = async (req, res) => {
+  try {
+    const result = await LeaveRequest.find({ onsite: true })
+    console.log("res", result)
+  } catch (error) {}
 }

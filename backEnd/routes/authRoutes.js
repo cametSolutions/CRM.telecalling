@@ -9,7 +9,6 @@ import {
   UpdateUserandAdmin,
   UpdateUserPermission,
   DeleteUser,
-  GetAllLeaveRequest,
   resetCallStatus,
   GetStaffCallList,
   GetindividualStaffCall,
@@ -27,7 +26,10 @@ import {
   GetsomeAll,
   UpdateLeaveSummary,
   EditLeave,
-  EditAttendance
+  EditAttendance,
+  GetAllapprovedORonsiteRequest,
+  GetAllpendingORonsiteRequest,
+  Check
 } from "../controller/authController.js"
 const router = express.Router()
 
@@ -43,7 +45,10 @@ router.get("/getallLeave", authMiddleware, GetallLeave)
 router.get("/getallAttendance", authMiddleware, GetAllAttendance)
 router.get("/getallOnsite", authMiddleware, GetallOnsite)
 router.get("/getsomeall", authMiddleware, GetsomeAll)
-router.get("/leaveList", authMiddleware, GetAllLeaveRequest)
+router.get("/pendingonsiteList", authMiddleware, GetAllpendingORonsiteRequest)
+router.get("/pendingleaveList", authMiddleware, GetAllpendingORonsiteRequest)
+router.get("/approvedLeaveList", authMiddleware, GetAllapprovedORonsiteRequest)
+router.get("/approvedOnsiteList", authMiddleware, GetAllapprovedORonsiteRequest)
 router.get("/getStaffCallStatus", authMiddleware, GetStaffCallList)
 router.get("/staffcallList", authMiddleware, GetindividualStaffCall)
 router.put("/approveLeave", authMiddleware, ApproveLeave)
@@ -52,7 +57,7 @@ router.put("/updateLeave", authMiddleware, UpdateLeave)
 router.get("/merge", authMiddleware, mergeonsite)
 router.post("/onsiteLeave", authMiddleware, OnsiteApply)
 router.post("/editLeaveSummary", authMiddleware, UpdateLeaveSummary)
-// router.post("/onsiteLeave", authMiddleware, OnsiteleaveApply)
+router.get("/check", authMiddleware, Check)
 router.post("/attendance", authMiddleware, AttendanceApply)
 router.post("/editLeave", authMiddleware, EditLeave)
 router.post("/editAttendance", authMiddleware, EditAttendance)
