@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react"
 import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
 import { FaCalendarAlt } from "react-icons/fa"
-const MyDatePicker = ({ handleSelect, dates, onClear }) => {
+const MyDatePicker = ({ handleSelect, dates, onClear, loader }) => {
   console.log(dates)
   const [dateRange, setDateRange] = useState({
     startDate: dates.startDate,
@@ -59,7 +59,7 @@ const MyDatePicker = ({ handleSelect, dates, onClear }) => {
   )
 
   return (
-    <div className="relative z-50">
+    <div className="relative z-40">
       <DatePicker
         // selected={endDate}
         onChange={handleDateRange}

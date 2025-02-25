@@ -748,7 +748,7 @@ function LeaveApplication() {
   }, [showModal])
   useEffect(() => {
     if (isOnsite && clickedDate) {
-      console.log("hh") // Find the event that matches the clicked date
+      // Find the event that matches the clicked date
       const existingEvent = events.filter((event) => {
         return event.start === clickedDate && event.onsiteData
       })

@@ -13,6 +13,7 @@ import {
   GetStaffCallList,
   GetindividualStaffCall,
   ApproveLeave,
+  ApproveOnsite,
   RejectLeave,
   mergeonsite,
   UpdateLeave,
@@ -27,6 +28,7 @@ import {
   UpdateLeaveSummary,
   EditLeave,
   EditAttendance,
+  EditOnsite,
   GetAllapprovedORonsiteRequest,
   GetAllpendingORonsiteRequest,
   Check
@@ -52,6 +54,7 @@ router.get("/approvedOnsiteList", authMiddleware, GetAllapprovedORonsiteRequest)
 router.get("/getStaffCallStatus", authMiddleware, GetStaffCallList)
 router.get("/staffcallList", authMiddleware, GetindividualStaffCall)
 router.put("/approveLeave", authMiddleware, ApproveLeave)
+router.put("/approveOnsite", authMiddleware, ApproveOnsite)
 router.put("/rejectLeave", authMiddleware, RejectLeave)
 router.put("/updateLeave", authMiddleware, UpdateLeave)
 router.get("/merge", authMiddleware, mergeonsite)
@@ -60,6 +63,7 @@ router.post("/editLeaveSummary", authMiddleware, UpdateLeaveSummary)
 router.get("/check", authMiddleware, Check)
 router.post("/attendance", authMiddleware, AttendanceApply)
 router.post("/editLeave", authMiddleware, EditLeave)
+router.post("/editOnsite", authMiddleware, EditOnsite)
 router.post("/editAttendance", authMiddleware, EditAttendance)
 router.get("/getallusersLeaves", authMiddleware, GetallusersLeaves)
 router.get("/getallusersAttendance", authMiddleware, GetallusersAttendance)

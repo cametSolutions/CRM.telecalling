@@ -5,11 +5,11 @@ const ResponsiveTable = ({
   user,
   handleAttendance,
   handleLeave,
+  handleOnsite,
   handleScroll,
   modalOpen,
   holiday
 }) => {
-  console.log(holiday)
   return (
     <div className="relative">
       <div
@@ -26,7 +26,10 @@ const ResponsiveTable = ({
             <tr>
               <th
                 rowSpan="2"
-                className="border border-gray-300 p-2 sticky left-0  z-10 bg-gray-100"
+                className={`border border-gray-300 p-2 ${
+                  !modalOpen ? "sticky left-0 z-10" : ""
+                } bg-gray-100`}
+                // className={`border border-gray-300 p-2 sticky ${ !modalOpen&&left-0  z-10 }bg-gray-100`}
               >
                 Date
               </th>
@@ -65,15 +68,12 @@ const ResponsiveTable = ({
           <tbody>
             {Object.entries(attendee.attendancedates).map(
               ([date, details], idx) => {
-                console.log(date)
                 const currentDate = new Date(date)
 
                 const isSunday = currentDate.getDay() === 0 // 0 represents Sunday
-                console.log(isSunday)
                 const isHoliday = holiday.some((item) => item.date === date) // Assuming `holidays` is an array of holiday dates
                 const holidayName =
                   holiday.find((h) => h.date === date)?.holyname || null
-                console.log(holidayName)
                 const highlightClass =
                   isSunday || isHoliday ? "bg-green-200" : "" // Light green background
 
@@ -131,21 +131,121 @@ const ResponsiveTable = ({
                       <>
                         <td
                           className={`border border-gray-300 p-2 ${highlightClass}`}
+                          onClick={() => {
+                            if (user?.role === "Admin") {
+                              handleLeave(
+                                date,
+                                "Leave",
+                                {
+                                  field: details?.casualLeave
+                                    ? "casual Leave"
+                                    : details?.compensatoryLeave
+                                    ? "compensatory Leave"
+                                    : details?.privileageLeave
+                                    ? "privileage Leave"
+                                    : details?.otherLeave
+                                    ? "other Leave"
+                                    : null,
+                                  value:
+                                    details?.casualLeave ||
+                                    details?.compensatoryLeave ||
+                                    details?.privileageLeave ||
+                                    details?.otherLeave
+                                },
+                                details?.halfDayperiod
+                              )
+                            }
+                          }}
                         >
                           {details?.casualLeave || "-"}
                         </td>
                         <td
                           className={`border border-gray-300 p-2 ${highlightClass}`}
+                          onClick={() => {
+                            if (user?.role === "Admin") {
+                              handleLeave(
+                                date,
+                                "Leave",
+                                {
+                                  field: details?.casualLeave
+                                    ? "casual Leave"
+                                    : details?.compensatoryLeave
+                                    ? "compensatory Leave"
+                                    : details?.privileageLeave
+                                    ? "privileage Leave"
+                                    : details?.otherLeave
+                                    ? "other Leave"
+                                    : null,
+                                  value:
+                                    details?.casualLeave ||
+                                    details?.compensatoryLeave ||
+                                    details?.privileageLeave ||
+                                    details?.otherLeave
+                                },
+                                details?.halfDayperiod
+                              )
+                            }
+                          }}
                         >
                           {details?.privileageLeave || "-"}
                         </td>
                         <td
                           className={`border border-gray-300 p-2 ${highlightClass}`}
+                          onClick={() => {
+                            if (user?.role === "Admin") {
+                              handleLeave(
+                                date,
+                                "Leave",
+                                {
+                                  field: details?.casualLeave
+                                    ? "casual Leave"
+                                    : details?.compensatoryLeave
+                                    ? "compensatory Leave"
+                                    : details?.privileageLeave
+                                    ? "privileage Leave"
+                                    : details?.otherLeave
+                                    ? "other Leave"
+                                    : null,
+                                  value:
+                                    details?.casualLeave ||
+                                    details?.compensatoryLeave ||
+                                    details?.privileageLeave ||
+                                    details?.otherLeave
+                                },
+                                details?.halfDayperiod
+                              )
+                            }
+                          }}
                         >
                           {details?.compensatoryLeave || "-"}
                         </td>
                         <td
                           className={`border border-gray-300 p-2 ${highlightClass}`}
+                          onClick={() => {
+                            if (user?.role === "Admin") {
+                              handleLeave(
+                                date,
+                                "Leave",
+                                {
+                                  field: details?.casualLeave
+                                    ? "casual Leave"
+                                    : details?.compensatoryLeave
+                                    ? "compensatory Leave"
+                                    : details?.privileageLeave
+                                    ? "privileage Leave"
+                                    : details?.otherLeave
+                                    ? "other Leave"
+                                    : null,
+                                  value:
+                                    details?.casualLeave ||
+                                    details?.compensatoryLeave ||
+                                    details?.privileageLeave ||
+                                    details?.otherLeave
+                                },
+                                details?.halfDayperiod
+                              )
+                            }
+                          }}
                         >
                           {details?.otherLeave || "-"}
                         </td>
@@ -166,42 +266,6 @@ const ResponsiveTable = ({
                         </td>
                       </>
                     )}
-                    {/* Start applying green background from here */}
-                    {/* <td
-                      className={`border border-gray-300 p-2 ${highlightClass}`}
-                    >
-                      {details?.casualLeave || "-"}
-                    </td>
-                    <td
-                      className={`border border-gray-300 p-2 ${highlightClass}`}
-                    >
-                      {details?.privileageLeave || "-"}
-                    </td>
-                    <td
-                      className={`border border-gray-300 p-2 ${highlightClass}`}
-                    >
-                      {details?.compensatoryLeave || "-"}
-                    </td>
-                    <td
-                      className={`border border-gray-300 p-2 ${highlightClass}`}
-                    >
-                      {details?.otherLeave || "-"}
-                    </td>
-                    <td
-                      className={`border border-gray-300 p-2 ${highlightClass}`}
-                    >
-                      {details?.early ? `${details.early} minutes` : "-"}
-                    </td>
-                    <td
-                      className={`border border-gray-300 p-2 ${highlightClass}`}
-                    >
-                      {details?.late ? `${details.late} minutes` : "-"}
-                    </td>
-                    <td
-                      className={`border border-gray-300 p-2 ${highlightClass}`}
-                    >
-                      {details?.notMarked || "-"}
-                    </td> */}
 
                     {/* Remaining columns without highlight */}
                     <td className="border border-gray-300 p-2">
@@ -210,7 +274,19 @@ const ResponsiveTable = ({
                     <td className="border border-gray-300 p-2">
                       {details?.onsite?.[0]?.siteName || "-"}
                     </td>
-                    <td className="border border-gray-300 p-2">
+                    <td
+                      className="border border-gray-300 p-2"
+                      onClick={() => {
+                        if (user?.role === "Admin") {
+                          handleOnsite(
+                            date,
+                            "Onsite",
+                            details?.onsite?.[0]?.onsiteType,
+                            details?.onsite?.[0].halfDayperiod
+                          )
+                        }
+                      }}
+                    >
                       {details?.onsite?.[0]?.onsiteType || "-"}
                     </td>
                     <td className="border border-gray-300 p-2">

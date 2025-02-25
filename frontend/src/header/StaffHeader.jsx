@@ -40,7 +40,7 @@ export default function StaffHeader() {
       label: "Company",
       control: user?.permissions?.[0]?.Company ?? false
     },
-   
+
     {
       to: "/staff/masters/branch",
       label: "Branch",
@@ -340,7 +340,7 @@ export default function StaffHeader() {
               {link.label === "Masters" &&
                 masterMenuOpen &&
                 masters.some((master) => master.control) && (
-                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md">
+                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md z-50 ">
                     {masters.map(
                       (master) =>
                         master.control && (
@@ -389,7 +389,7 @@ export default function StaffHeader() {
               {link.label === "Transactions" &&
                 transactionMenuOpen &&
                 transactions.some((transaction) => transaction.control) && (
-                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 shadow-lg block rounded-md ">
+                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 shadow-lg block rounded-md z-50">
                     {transactions.map(
                       (transaction) =>
                         transaction.control && (
@@ -408,7 +408,7 @@ export default function StaffHeader() {
               {link.label === "Reports" &&
                 reportsMenuOpen &&
                 reports.some((report) => report.control) && (
-                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md">
+                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md z-50">
                     {reports.map(
                       (report) =>
                         report.control && (
@@ -426,7 +426,7 @@ export default function StaffHeader() {
               {link.label === "Task" &&
                 tasksMenuOpen &&
                 tasks.some((task) => task.control) && (
-                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md">
+                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md z-50">
                     {tasks.map(
                       (task) =>
                         task.control && (

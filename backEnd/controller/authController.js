@@ -1738,6 +1738,7 @@ export const GetAllpendingORonsiteRequest = async (req, res) => {
           .json({ message: "leaves found", data: pendingonsiteRequest })
       }
     } else if (onsite === "false") {
+      console.log("query", query)
       const allleaveRequest = await LeaveRequest.find(query).populate({
         path: "userId",
         select: "name role department", // Select fields from User
@@ -1908,6 +1909,8 @@ export const GetallusersAttendance = async (req, res) => {
 export const ApproveLeave = async (req, res) => {
   try {
     const { role, userId, selectedId, startDate, endDate, onsite } = req.query
+    console.log("date", startDate, endDate)
+    // return
 
     // Validate common parameters
     if (!role || !startDate || !endDate || !onsite) {
@@ -1999,12 +2002,14 @@ export const ApproveLeave = async (req, res) => {
         })
       }
     } else if (isSingle) {
+      console.log("field", updateFields)
       // Handle single case
       if (!selectedObjectId) {
         return res.status(400).json({
           message: "Missing required parameter: selectedId for single update."
         })
       }
+
       result = await LeaveRequest.updateOne(
         { _id: selectedObjectId },
         { $set: updateFields }
@@ -2031,10 +2036,14 @@ export const ApproveLeave = async (req, res) => {
           }
         ]
       })
+      const filteredPendingLeave = updatedLeaveList.filter(
+        (item) =>
+          item.departmentverified === false && item.adminverified === false
+      )
 
       return res.status(200).json({
-        message: "Leave request(s) updated successfully",
-        data: updatedLeaveList
+        message: "Leave Approved successfully",
+        data: filteredPendingLeave
       })
     }
 
@@ -2044,6 +2053,160 @@ export const ApproveLeave = async (req, res) => {
   } catch (error) {
     console.error("Error:", error.message)
     return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const ApproveOnsite = async (req, res) => {
+  try {
+    const { role, userId, selectedId, startDate, endDate, onsite } = req.query
+    console.log("date", startDate, endDate)
+    // return
+
+    // Validate common parameters
+    if (!role || !startDate || !endDate || !onsite) {
+      return res
+        .status(400)
+        .json({ message: "Missing required query parameters." })
+    }
+
+    // Extract additional query strings, dynamically handle `selectAll` and `single`
+    const isSelectAll = req?.query?.selectAll === "true"
+    const isSingle = req?.query?.single === "true"
+
+    // Ensure at least one specific query is provided
+    if (!isSelectAll && !isSingle) {
+      return res.status(400).json({
+        message: "Missing specific action parameter (selectAll or single)."
+      })
+    }
+
+    // Convert IDs to ObjectId if provided
+    const userObjectId = userId ? new mongoose.Types.ObjectId(userId) : null
+    const selectedObjectId = selectedId
+      ? new mongoose.Types.ObjectId(selectedId)
+      : null
+
+    // Base query common to both cases
+    const baseQuery = {
+      onsiteDate: { $gte: startDate, $lte: endDate }
+    }
+
+    // Add user-specific filtering for non-admin roles
+    if (role !== "Admin" && userObjectId) {
+      baseQuery.assignedto = userObjectId
+    }
+
+    // Define role-based update fields
+    const updateFields =
+      role === "Admin"
+        ? {
+            hrstatus: "HR/Onsite Approved",
+            adminverified: true,
+            ...(onsite === "true" && { onsitestatus: "Approved" })
+          }
+        : {
+            departmentstatus: "Dept Approved",
+            departmentverified: true,
+            ...(onsite === "true" && { onsitestatus: "Approved" })
+          }
+
+    let result
+
+    if (isSelectAll) {
+      // Handle selectAll case
+      if (!selectedObjectId) {
+        return res.status(400).json({
+          message: "Missing required parameter: selectedId for selectAll."
+        })
+      }
+
+      const queryForUpdate = { ...baseQuery, userId: selectedObjectId }
+      result = await Onsite.updateMany(queryForUpdate, {
+        $set: updateFields
+      })
+      // Check if any document was updated
+      if (result && result.modifiedCount > 0) {
+        // Fetch updated leave requests for display
+        const updatedLeaveList = await Onsite.find(baseQuery).populate({
+          path: "userId",
+          select: "name role department",
+          populate: [
+            {
+              path: "department",
+              select: "department",
+              options: { strictPopulate: false }
+            },
+            {
+              path: "selected.branch_id",
+              model: "Branch",
+              select: "branchName",
+              options: { strictPopulate: false }
+            }
+          ]
+        })
+
+        return res.status(200).json({
+          message: "Onsite updated successfully",
+          data: updatedLeaveList
+        })
+      }
+    } else if (isSingle) {
+      console.log("field", updateFields)
+      // Handle single case
+      if (!selectedObjectId) {
+        console.log("eeeeeeeeee")
+        return res.status(400).json({
+          message: "Missing required parameter: selectedId for single update."
+        })
+      }
+      console.log("ttttt")
+      result = await Onsite.updateOne(
+        { _id: selectedObjectId },
+        { $set: updateFields }
+      )
+      console.log("ppp")
+    }
+
+    // Check if any document was updated
+    if (result && result.modifiedCount > 0) {
+      console.log("hhhh")
+      console.log("basequery", baseQuery)
+      // Fetch updated leave requests for display
+      const updatedOnsiteList = await Onsite.find(baseQuery).populate({
+        path: "userId",
+        select: "name role department",
+        populate: [
+          {
+            path: "department",
+            select: "department",
+            options: { strictPopulate: false }
+          },
+          {
+            path: "selected.branch_id",
+            model: "Branch",
+            select: "branchName",
+            options: { strictPopulate: false }
+          }
+        ]
+      })
+      console.log("reee", updatedOnsiteList)
+      const filteredPendingOnsite = updatedOnsiteList.filter(
+        (item) =>
+          item.adminverified === false && item.departmentverified === false
+      )
+      console.log("filter", filteredPendingOnsite)
+
+      return res.status(200).json({
+        message: "Onsite Approved successfully",
+        data: filteredPendingOnsite
+      })
+    }
+
+    return res
+      .status(404)
+      .json({ message: "No matching onsite requests found to update." })
+  } catch (error) {
+    console.log(error.message)
+    return res.status(500).json({ message: "Onsite approved" })
   }
 }
 
@@ -2578,6 +2741,36 @@ export const UpdateLeaveSummary = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+export const EditOnsite = async (req, res) => {
+  try {
+    const { userid } = req.query
+    const formData = req.body
+    const { onsiteDate, ...updatedFeild } = formData
+
+    const dateObj = new Date(onsiteDate)
+
+    // Extract year and month (without leading zero)
+    const year = dateObj.getFullYear() // "2025"
+    const month = dateObj.getMonth() + 1
+    const result = await Onsite.findOneAndUpdate(
+      { userId: userid, onsiteDate: formData.onsiteDate }, // Find criteria
+      { $set: updatedFeild }, // Update only selected fields
+      { new: true } // Return updated document
+    )
+    if (result) {
+      const fakeReq = { query: { year, month } }
+
+      // Call GetsomeAll with fake req
+      const a = await GetsomeAllsummary(fakeReq, res)
+      if (a) {
+        return res.status(200).json({ message: "onsite updated", data: a })
+      }
+    }
+  } catch (error) {
+    console.log("error", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const EditLeave = async (req, res) => {
   try {
     const { userid } = req.query
@@ -2660,6 +2853,7 @@ export const GetsomeAllsummary = async (
   yearParam = {},
   monthParam = {}
 ) => {
+  console.log("hhh")
   try {
     const { year, month } = req.query || { year: yearParam, month: monthParam }
 
@@ -2818,6 +3012,7 @@ export const GetsomeAllsummary = async (
     for (const user of users) {
       const userId = user._id
       const userName = user.name
+      const assignedto = user.assignedto
       const staffId = user.attendanceId
 
       // Fetch attendance-related data for the given month

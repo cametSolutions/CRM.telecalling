@@ -135,7 +135,6 @@ export const UpdatePartners = async (req, res) => {
 export const GetselectedDateCalls = async (req, res) => {
   try {
     const { startDate, endDate } = req.query
-    console.log("hh")
     const customerCalls = await CallRegistration.aggregate([
       {
         $match: {
@@ -353,7 +352,6 @@ export const GetselectedDateCalls = async (req, res) => {
       }
     ])
 
-    console.log("calls", customerCalls)
     return res
       .status(200)
       .json({ message: "customercalls found", data: customerCalls })
@@ -448,7 +446,6 @@ export const CustomerRegister = async (req, res) => {
       licensenumber: { $in: licenseNumbers }
     })
     if (existingLicenses && existingLicenses?.length > 0) {
-      console.log("undo")
       return res
         .status(400)
         .json({ message: "License number already registered" })
@@ -860,7 +857,6 @@ export const GetCustomer = async (req, res) => {
     } else {
       try {
         let customers
-
         if (role === "Admin" || pendingCustomerList) {
           // Admin: Fetch all customers
           customers = await Customer.find().sort({ customerName: 1 }).exec()
@@ -881,7 +877,6 @@ export const GetCustomer = async (req, res) => {
             .sort({ customerName: 1 })
             .exec()
         }
-
         if (customers.length === 0) {
           return res
             .status(404)
@@ -2358,7 +2353,6 @@ export const LeavemasterRegister = async (req, res) => {
       // Step 3: If everything is the same, don't create a new instance, just return
       if (isSame) {
         if (editstate === "true") {
-          console.log("edittreee")
 
           const b = await Holymaster.updateOne(
             { customTextInput }, // Find the existing record using its ID
@@ -2369,7 +2363,7 @@ export const LeavemasterRegister = async (req, res) => {
               }
             }
           )
-         
+
           if (b.modifiedCount > 0) {
             return res
               .status(200)
@@ -2394,12 +2388,10 @@ export const LeavemasterRegister = async (req, res) => {
 
             // const a = await Holymaster.find({ holyDate })
             if (a && a.length > 0) {
-              console.log("aaaa", a)
               return res.status(401).json({
                 message: `${customTextInput} is already registered with this Year`
               })
             } else {
-              console.log("uuuuuu")
               const newHoly = await Holymaster({
                 holyDate,
                 customTextInput,
@@ -2453,9 +2445,7 @@ export const LeavemasterRegister = async (req, res) => {
       // Save to database
       await newTime.save()
       if (holyDate && customTextInput) {
-        console.log("date", holyDate)
-        console.log("text", customTextInput)
-        console.log("hhhhhh")
+       
         const newHoly = await Holymaster({
           holyDate,
           customTextInput,
@@ -2487,7 +2477,6 @@ export const Getleavemaster = async (req, res) => {
   try {
     const a = await Leavemaster.find({})
     if (a) {
-      console.log("aa", a)
       return res.status(200).json({ message: "Leave master found", data: a })
     }
   } catch (error) {

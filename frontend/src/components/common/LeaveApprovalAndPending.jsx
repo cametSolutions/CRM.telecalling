@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react"
-import * as XLSX from "xlsx"
+import { toast } from "react-toastify"
 import BarLoader from "react-spinners/BarLoader"
 import MyDatePicker from "./MyDatePicker"
 import api from "../../api/api"
@@ -11,12 +11,15 @@ const LeaveApprovalAndPending = () => {
   const [loading, setLoading] = useState(true)
   const [loader, setLoader] = useState(false)
   const [leaveList, setLeaveList] = useState([])
+  const [searchQuery, setSearchQuery] = useState("")
   const [allleaveRequest, setallleaveReques] = useState([])
   const [ispending, setPending] = useState(true)
 
   const [leaveStatus, setLeaveStatus] = useState({})
   const [isToggled, setIsToggled] = useState({})
   const [pendingOnsite, setpendingOnsite] = useState(false)
+  const [pendingLeave, setPendingLeave] = useState(true)
+  const [approvedLeave, setApprovedLeave] = useState(false)
   const [approvedOnsite, setapprovedOnsite] = useState(false)
   const [isSelected, setIsSelected] = useState({})
   const [dates, setDates] = useState({ startDate: "", endDate: "" })
@@ -43,12 +46,13 @@ const LeaveApprovalAndPending = () => {
     const fetchPendingList = async () => {
       if (dates.startDate !== "" && dates.endDate !== "" && user) {
         try {
+          setLoader(true)
           let response
-          if (!pendingOnsite) {
+          if (pendingLeave && !pendingOnsite) {
             response = await api.get(
               `/auth/pendingleaveList?onsite=false&startdate=${dates.startDate}&enddate=${dates.endDate}&role=${user?.role}&userid=${user?._id}`
             )
-          } else {
+          } else if (pendingOnsite && !pendingLeave) {
             response = await api.get(
               `/auth/pendingOnsiteList?onsite=true&startdate=${dates.startDate}&enddate=${dates.endDate}&userid=${user?._id}&role=${user?.role}`
             )
@@ -60,10 +64,18 @@ const LeaveApprovalAndPending = () => {
             (item) =>
               item.departmentverified === false && item.adminverified === false
           )
-        
+
           if (Array.isArray(list) && list.length > 0) {
+            const filteredList =
+              searchQuery.trim() === ""
+                ? list // Show all data if search is empty
+                : list?.filter((user) => {
+                    const staffName = user?.userId?.name?.toLowerCase() || ""
+                    return staffName.includes(searchQuery.toLowerCase())
+                  })
+
+            setLeaveList(filteredList) // Update state only if the list has items
             setLoading(false)
-            setLeaveList(list) // Update state only if the list has items
           } else {
             setLoading(false)
             setLeaveList([])
@@ -94,7 +106,7 @@ const LeaveApprovalAndPending = () => {
                 userLeave.departmentstatus === "Dept Approved"
             })
           }
-
+          setLoader(false)
           setIsToggled(initialToggles)
           setLeaveStatus(initialReject)
           setIsSelected(initialSelectAll)
@@ -107,12 +119,13 @@ const LeaveApprovalAndPending = () => {
     const fetchApprovedList = async () => {
       if (dates.startDate !== "" && dates.endDate !== "" && user) {
         try {
+          setLoader(true)
           let response
-          if (!approvedOnsite) {
+          if (approvedOnsite && !approvedLeave) {
             response = await api.get(
               `/auth/approvedOnsiteList?onsite=true&startdate=${dates.startDate}&enddate=${dates.endDate}&role=${user?.role}&userid=${user?._id}`
             )
-          } else {
+          } else if (approvedLeave && !approvedOnsite) {
             response = await api.get(
               `/auth/approvedLeaveList?onsite=false&startdate=${dates.startDate}&enddate=${dates.endDate}&userid=${user?._id}&role=${user?.role}`
             )
@@ -120,14 +133,19 @@ const LeaveApprovalAndPending = () => {
 
           const list = response.data.data
           setallleaveReques(list) // Assuming API returns data in response.data
-          const pendingleaveRequest = list.filter(
-            (item) =>
-              item.departmentverified === false && item.adminverified === false
-          )
-      
+
           if (Array.isArray(list) && list.length > 0) {
+            const filteredList =
+              searchQuery.trim() === ""
+                ? list // Show all data if search is empty
+                : list?.filter((user) => {
+                    const staffName = user?.userId?.name?.toLowerCase() || ""
+                    return staffName.includes(searchQuery.toLowerCase())
+                  })
+
+            setLeaveList(filteredList)
             setLoading(false)
-            setLeaveList(list) // Update state only if the list has items
+            // Update state only if the list has items
           } else {
             setLoading(false)
             setLeaveList([])
@@ -158,7 +176,7 @@ const LeaveApprovalAndPending = () => {
                 userLeave.departmentstatus === "Dept Approved"
             })
           }
-
+          setLoader(false)
           setIsToggled(initialToggles)
           setLeaveStatus(initialReject)
           setIsSelected(initialSelectAll)
@@ -167,14 +185,16 @@ const LeaveApprovalAndPending = () => {
         }
       }
     }
-    if (!approvedOnsite) {
+
+    if (pendingLeave || pendingOnsite) {
       fetchPendingList()
-    } else {
+    } else if (approvedLeave || approvedOnsite) {
       fetchApprovedList()
     } // Call the async function
-  }, [dates, user, ispending])
+  }, [dates, user, ispending, searchQuery])
   const ApprovedToggle = async () => {
     try {
+      setLoader(true)
       setLoading(true)
       let response
       if (!approvedOnsite) {
@@ -183,19 +203,25 @@ const LeaveApprovalAndPending = () => {
             dates.endDate
           }&onsite=${true}&userid=${user?._id}&role=${user?.role}`
         )
+        setapprovedOnsite(!approvedOnsite)
+        setApprovedLeave(!approvedLeave)
       } else {
         response = await api.get(
           `/auth/approvedLeaveList?onsite=${false}&startdate=${
             dates.startDate
           }&enddate=${dates.endDate}&userid=${user?._id}&role=${user?.role}`
         )
+        setapprovedOnsite(!approvedOnsite)
+        setApprovedLeave(!approvedLeave)
       }
 
       const list = response.data.data // Assuming API returns data in response.data
       if (Array.isArray(list) && list.length > 0) {
+        setLoader(false)
         setLoading(false)
         setLeaveList(list) // Update state only if the list has items
       } else {
+        setLoader(false)
         setLoading(false)
         setLeaveList([])
       }
@@ -224,7 +250,7 @@ const LeaveApprovalAndPending = () => {
             userLeave.departmentstatus === "Dept Approved"
         })
       }
-      setapprovedOnsite(!approvedOnsite)
+
       setIsSelected(initialSelectAll)
       setIsToggled(initialToggles)
       setLeaveStatus(initialReject)
@@ -235,23 +261,30 @@ const LeaveApprovalAndPending = () => {
 
   const PendingToggle = async () => {
     try {
+      setLoader(true)
       setLoading(true)
       let response
       if (!pendingOnsite) {
         response = await api.get(
           `/auth/pendingonsiteList?onsite=true&startdate=${dates.startDate}&enddate=${dates.endDate}&userid=${user?._id}&role=${user?.role}`
         )
+        setpendingOnsite(!pendingOnsite)
+        setPendingLeave(!pendingLeave)
       } else {
         response = await api.get(
           `/auth/pendingleaveList?onsite=false&startdate=${dates.startDate}&enddate=${dates.endDate}&userid=${user?._id}&role=${user?.role}`
         )
+        setpendingOnsite(!pendingOnsite)
+        setPendingLeave(!pendingLeave)
       }
 
       const list = response.data.data // Assuming API returns data in response.data
       if (Array.isArray(list) && list.length > 0) {
+        setLoader(false)
         setLoading(false)
         setLeaveList(list) // Update state only if the list has items
       } else {
+        setLoader(false)
         setLoading(false)
         setLeaveList([])
       }
@@ -280,7 +313,7 @@ const LeaveApprovalAndPending = () => {
             userLeave.departmentstatus === "Dept Approved"
         })
       }
-      setpendingOnsite(!pendingOnsite)
+
       setIsSelected(initialSelectAll)
       setIsToggled(initialToggles)
       setLeaveStatus(initialReject)
@@ -288,59 +321,65 @@ const LeaveApprovalAndPending = () => {
       console.log("error:", error.message)
     }
   }
-
   const singleApproval = async (id, userId) => {
-    setLoader(true)
-    let leaveApprove
-    if (isOnsite) {
-      leaveApprove = await api.put(
-        `/auth/approveLeave/?role=${user?.role}&selectedId=${id}&startDate=${
-          dates.startDate
-        }&endDate=${dates.endDate}&onsite=${true}&userId=${
-          user?._id
-        }&single=${true}`
-      )
-    } else {
-      leaveApprove = await api.put(
-        `/auth/approveLeave/?role=${user?.role}&selectedId=${id}&userId=${
-          user?._id
-        }&startDate=${dates.startDate}&endDate=${
-          dates.endDate
-        }&single=${true}&onsite=${false}`
-      )
-    }
-    const successApprove = leaveApprove.data.data
-
-    if (leaveApprove.status === 200) {
-      setIsToggled((prevState) => ({
-        ...prevState,
-        [id]: !prevState[id] // Toggle the specific user's state
-      }))
-      const initialReject = {}
-
-      if (user?.role === "Admin") {
-        successApprove.forEach((userLeave) => {
-          // Check the `status` field for each leave and set the toggle accordingly
-          initialReject[userLeave._id] = userLeave.hrstatus === "HR Rejected" // Toggle on if approved
-        })
-      } else {
-        successApprove.forEach((userLeave) => {
-          // Check the `status` field for each leave and set the toggle accordingly
-          initialReject[userLeave._id] =
-            userLeave.departmentstatus === "Dept Rejected" // Toggle on if approved
-        })
+    try {
+      setLoader(true)
+      let Approve
+      if (pendingOnsite && !pendingLeave) {
+        Approve = await api.put(
+          `/auth/approveOnsite/?role=${user?.role}&selectedId=${id}&startDate=${
+            dates.startDate
+          }&endDate=${dates.endDate}&onsite=${true}&userId=${
+            user?._id
+          }&single=${true}`
+        )
+      } else if (!pendingOnsite && pendingLeave) {
+        Approve = await api.put(
+          `/auth/approveLeave/?role=${user?.role}&selectedId=${id}&userId=${
+            user?._id
+          }&startDate=${dates.startDate}&endDate=${
+            dates.endDate
+          }&single=${true}&onsite=${false}`
+        )
       }
-      setLeaveStatus(initialReject)
 
-      // Check if isSelected is not empty and has the userId as true
-      if (Object.keys(isSelected).length > 0 && isSelected[userId]) {
-        setIsSelected((prevState) => ({
-          ...prevState,
-          [userId]: !prevState[userId] // Toggle the specific user's state
-        }))
+      if (Approve.status === 200) {
+        const successApprove = Approve.data.data
+        toast.success(Approve.data.message)
+        setLeaveList(successApprove)
+
+        // setIsToggled((prevState) => ({
+        //   ...prevState,
+        //   [id]: !prevState[id] // Toggle the specific user's state
+        // }))
+        // const initialReject = {}
+
+        // if (user?.role === "Admin") {
+        //   successApprove.forEach((userLeave) => {
+        //     // Check the `status` field for each leave and set the toggle accordingly
+        //     initialReject[userLeave._id] = userLeave.hrstatus === "HR Rejected" // Toggle on if approved
+        //   })
+        // } else {
+        //   successApprove.forEach((userLeave) => {
+        //     // Check the `status` field for each leave and set the toggle accordingly
+        //     initialReject[userLeave._id] =
+        //       userLeave.departmentstatus === "Dept Rejected" // Toggle on if approved
+        //   })
+        // }
+        // setLeaveStatus(initialReject)
+
+        // // Check if isSelected is not empty and has the userId as true
+        // if (Object.keys(isSelected).length > 0 && isSelected[userId]) {
+        //   setIsSelected((prevState) => ({
+        //     ...prevState,
+        //     [userId]: !prevState[userId] // Toggle the specific user's state
+        //   }))
+        // }
+        // setLeaveList(successApprove)
+        setLoader(false)
       }
-      setLeaveList(successApprove)
-      setLoader(false)
+    } catch (error) {
+      console.log(error.message)
     }
   }
 
@@ -435,7 +474,6 @@ const LeaveApprovalAndPending = () => {
       setLoader(false)
     }
   }
- 
 
   const handleToggleStatus = (index) => {
     setLeaveStatus((prevStatus) => {
@@ -460,7 +498,6 @@ const LeaveApprovalAndPending = () => {
       selectedDate.endDate instanceof Date &&
       !isNaN(selectedDate.endDate.getTime())
     ) {
-     
       // If both startDate and endDate are valid Date objects
       setDates({
         startDate: extractDateAndMonth(selectedDate.startDate),
@@ -477,17 +514,25 @@ const LeaveApprovalAndPending = () => {
   const handlecheck = async () => {
     const response = await api.get("/auth/check")
     const data = response.data
-    console.log(data)
   }
   const handleDropdownSelect = (option) => {
     if (option === "pending") {
-      // setpendingOnsite(false)
+      setpendingOnsite(false)
+      setapprovedOnsite(false)
+      setApprovedLeave(false)
+      setLoader(true)
+      setPendingLeave(true)
       setPending(true)
     } else if (option === "approved") {
-      // setapprovedOnsite(false)
+      setLoader(true)
+      setpendingOnsite(false)
+      setPendingLeave(false)
+      setApprovedLeave(true)
+      setapprovedOnsite(false)
       setPending(false)
     }
   }
+
   return (
     <div>
       {loader && (
@@ -498,183 +543,251 @@ const LeaveApprovalAndPending = () => {
         />
       )}
 
-      <div className="text-center p-8 ">
-        <div className="flex justify-between mb-4">
-          <h1 className="text-2xl font-bold mb-1">Leave Approval/Pending</h1>
-
-          {/* <MyDatePicker handleSelect={handleDate} dates={dates} /> */}
-          <div className="flex justify-end flex-grow mx-5 items-center">
-            <select
-              onChange={(e) => handleDropdownSelect(e.target.value)}
-              className="border rounded px-2 py-1 mr-4"
-            >
-              <option value="pending">Pending </option>
-              <option value="approved">Approved</option>
-            </select>
-            {ispending ? (
-              <div className="flex justify-center">
-                <span className="text-gray-600 mr-4 font-bold">
-                  {pendingOnsite ? "Pending Onsite" : "Pending Leave"}
-                </span>
-                <button
-                  onClick={PendingToggle}
-                  className={`${
-                    pendingOnsite ? "bg-green-500" : "bg-gray-300"
-                  } w-11 h-6 flex items-center rounded-full p-0 transition-colors duration-300`}
-                >
-                  <div
+      <div className="text-center px-8 ">
+        <h1 className="text-2xl font-bold mb-1 mt-2">
+          Leave & Onsite Approval
+        </h1>
+        <div className="flex justify-around mb-3">
+          <div>
+            <input
+              type="text"
+              placeholder="Search by Staff Name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="border border-gray-300 px-3 py-1 rounded-md w-[300px]"
+            />
+          </div>
+          <div className="flex">
+            {/* <MyDatePicker handleSelect={handleDate} dates={dates} /> */}
+            <div className="flex justify-end flex-grow mx-5 items-center">
+              <select
+                onChange={(e) => handleDropdownSelect(e.target.value)}
+                className="border rounded px-2 py-1 mr-4"
+              >
+                <option value="pending">Pending </option>
+                <option value="approved">Approved</option>
+              </select>
+              {ispending ? (
+                <div className="flex justify-center">
+                  <span className="text-gray-600 mr-4 font-bold">
+                    {pendingOnsite ? "Pending Onsite" : "Pending Leave"}
+                  </span>
+                  <button
+                    onClick={PendingToggle}
                     className={`${
-                      pendingOnsite ? "translate-x-5" : "translate-x-0"
-                    } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                  ></div>
-                </button>
-              </div>
-            ) : (
-              <div className="flex">
-                <span className="text-gray-600 mr-4 font-bold">
-                  {approvedOnsite ? "Approved Onsite" : "Approved Leave"}
-                </span>
-                <button
-                  onClick={ApprovedToggle}
-                  className={`${
-                    approvedOnsite ? "bg-green-500" : "bg-gray-300"
-                  } w-11 h-6 flex items-center rounded-full p-0 transition-colors duration-300`}
-                >
-                  <div
+                      pendingOnsite ? "bg-green-500" : "bg-gray-300"
+                    } w-11 h-6 flex items-center rounded-full p-0 transition-colors duration-300`}
+                  >
+                    <div
+                      className={`${
+                        pendingOnsite ? "translate-x-5" : "translate-x-0"
+                      } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                    ></div>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex">
+                  <span className="text-gray-600 mr-4 font-bold">
+                    {approvedOnsite ? "Approved Onsite" : "Approved Leave"}
+                  </span>
+                  <button
+                    onClick={ApprovedToggle}
                     className={`${
-                      approvedOnsite ? "translate-x-5" : "translate-x-0"
-                    } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                  ></div>
-                </button>
-              </div>
+                      approvedOnsite ? "bg-green-500" : "bg-gray-300"
+                    } w-11 h-6 flex items-center rounded-full p-0 transition-colors duration-300`}
+                  >
+                    <div
+                      className={`${
+                        approvedOnsite ? "translate-x-5" : "translate-x-0"
+                      } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                    ></div>
+                  </button>
+                </div>
+              )}
+            </div>
+            {dates.startDate && (
+              <MyDatePicker
+                handleSelect={handleDate}
+                dates={dates}
+                loader={setLoader}
+              />
             )}
           </div>
-          {dates.startDate && (
-            <MyDatePicker handleSelect={handleDate} dates={dates} />
-          )}
         </div>
 
         {/* Outer div with max height for scrolling the user list */}
         <div className="text-center max-h-60 sm:max-h-80 md:max-h-96 lg:max-h-[500px] overflow-y-auto overflow-x-axis">
           <table className="min-w-full table-auto">
-            <thead className="bg-gray-300 sticky top-0 z-40">
+            <thead className="bg-gray-300 sticky top-0 z-30 text-sm">
               <tr>
-                <th className="border-l border-gray-300 py-3">No</th>
-                <th className="py-3">User/Admin Name</th>
+                <th className="border-l border-gray-300 py-2">No</th>
+                <th className="py-2">Staff Name</th>
 
-                <th className="py-3">Department</th>
-                <th className="py-3">Branch</th>
-                <th className="py-3">Apply Date</th>
-                <th className="py-3">Leave Date</th>
-                <th className="py-3">Leave Type</th>
-                <th className="py-3">Shift</th>
-                <th className="py-3">{pendingOnsite ? "Remarks" : "Reason"}</th>
-                <th className="py-3">Dpt.Status</th>
-                <th className="py-3">Hr.Status</th>
-                <th className="py-3">Approve</th>
-                <th className="py-3">Approve All</th>
+                <th className="py-2">Department</th>
+                <th className="py-2">Branch</th>
+                <th className="py-2">Apply Date</th>
+                <th className="py-2">
+                  {pendingLeave || approvedLeave
+                    ? "Leave Date"
+                    : pendingOnsite || approvedOnsite
+                    ? "Onsite Date"
+                    : ""}
+                </th>
+                <th className="py-2">
+                  {pendingLeave || approvedLeave
+                    ? "Leave Type"
+                    : pendingOnsite || approvedOnsite
+                    ? "Onsite Type"
+                    : ""}
+                </th>
+                <th className="py-2">Shift</th>
+                <th className="py-2">{pendingOnsite ? "Remarks" : "Reason"}</th>
+                <th className="py-2">Dpt.Status</th>
+                <th className="py-2">Hr.Status</th>
+                <th className="py-2">Approve</th>
+                <th className="py-2">Approve All</th>
 
-                <th className="py-3">Reject</th>
+                <th className="py-2">Reject</th>
                 {/* <th className="border-r border-gray-300 py-3">Permissions</th> */}
               </tr>
             </thead>
             <tbody>
-              {leaveList.length > 0 ? (
-                leaveList?.map((user, index) => (
-                  <tr key={user._id}>
-                    <td className="border border-gray-300 py-1">{index + 1}</td>
-                    <td className="border border-gray-300 py-1">
-                      {user?.userId?.name}
-                    </td>
+              {leaveList?.length > 0 ? (
+                leaveList
+                  .slice()
+                  .sort((a, b) => {
+                    const dateA = new Date(a.leaveDate || a.onsiteDate)
+                    const dateB = new Date(b.leaveDate || b.onsiteDate)
+                    return dateA - dateB
+                  })
+                  .map((user, index) => (
+                    <tr key={user._id}>
+                      <td className="border border-gray-300 py-1">
+                        {index + 1}
+                      </td>
+                      <td className="border border-gray-300 py-1 px-1">
+                        {user?.userId?.name}
+                      </td>
 
-                    <td className="border border-gray-300 py-1 px-1">
-                      {user?.userId?.department?.department}
-                    </td>
-                    <td className="border border-gray-300 py-1 px-1">
-                      {user?.userId?.selected
-                        ?.map((branch) => branch?.branch_id?.branchName)
-                        .join(", ")}
-                    </td>
-                    <td className="border border-gray-300 py-1 px-2">
-                      {new Date(user?.createdAt).toLocaleDateString("en-GB", {
-                        timeZone: "UTC",
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric"
-                      })}
-                    </td>
-                    <td className="border border-gray-300 py-1 px-2">
-                      {new Date(user?.leaveDate).toLocaleDateString("en-GB", {
-                        timeZone: "UTC",
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric"
-                      })}
-                    </td>
-                    <td className="border border-gray-300 py-1 px-4">
-                      {user?.leaveType}
-                    </td>
-                    <td className="border border-gray-300 py-1 px-4">
-                      {user?.halfDayPeriod}
-                    </td>
-                    <td className="border border-gray-300 py-1">
+                      <td className="border border-gray-300 py-1 px-1 ">
+                        {user?.userId?.department?.department}
+                      </td>
+                      <td className="border border-gray-300 py-1 px-1">
+                        {user?.userId?.selected
+                          ?.map((branch) => branch?.branch_id?.branchName)
+                          .join(", ")}
+                      </td>
+                      <td className="border border-gray-300 py-1 px-1">
+                        {new Date(user?.createdAt).toLocaleDateString("en-GB", {
+                          timeZone: "UTC",
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric"
+                        })}
+                      </td>
+                      <td className="border border-gray-300 py-1 px-1">
+                        {pendingLeave || approvedLeave
+                          ? new Date(user?.leaveDate).toLocaleDateString(
+                              "en-GB",
+                              {
+                                timeZone: "UTC",
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric"
+                              }
+                            )
+                          : pendingOnsite || approvedOnsite
+                          ? new Date(user?.onsiteDate).toLocaleDateString(
+                              "en-GB",
+                              {
+                                timeZone: "UTC",
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric"
+                              }
+                            )
+                          : new Date(user?.leaveDate).toLocaleDateString(
+                              "en-GB",
+                              {
+                                timeZone: "UTC",
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric"
+                              }
+                            )}
+                      </td>
+                      <td className="border border-gray-300 py-1 px-1 ">
+                        {pendingLeave || approvedLeave
+                          ? user?.leaveType
+                          : pendingOnsite || approvedOnsite
+                          ? user?.onsiteType
+                          : user?.leaveType}
+                      </td>
+                      <td className="border border-gray-300 py-1 px-2">
+                        {user?.halfDayPeriod}
+                      </td>
+                      <td className="border border-gray-300 py-1 px-2 ">
+                        {user?.reason || user?.description}
+                      </td>
+
+                      {/* <td className="border border-gray-300 py-1 truncate max-w-[140px] relative group">
                       {user?.reason || user?.description}
-                    </td>
-                    <td className="border border-gray-300 py-1">
-                      {user?.departmentstatus}
-                    </td>
-                    <td className="border border-gray-300 py-1">
-                      {user?.hrstatus}
-                    </td>
-                    {/* <td className="border border-gray-300 py-1">
-                      <input
-                        type="text"
-                        className="w-full px-2 py-1 border rounded focus:outline-none "
-                      ></input>
+                      <div className="absolute left-0 top-full mt-1 w-auto min-w-max max-w-xs bg-gray-700 text-white text-xs rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        {user?.reason || user?.description}
+                      </div>
                     </td> */}
-                    <td className="border border-gray-300 py-1">
-                      <div className="flex justify-center">
-                        <button
-                          onClick={() =>
-                            singleApproval(user._id, user.userId._id)
-                          }
-                          className={`${
-                            isToggled[user._id] ? "bg-green-500" : "bg-gray-300"
-                          } w-12 h-6 flex items-center rounded-full  transition-colors duration-300`}
-                        >
-                          <div
+                      <td className="border border-gray-300 py-1 px-1">
+                        {user?.departmentstatus}
+                      </td>
+                      <td className="border border-gray-300 py-1 px-1">
+                        {user?.hrstatus}
+                      </td>
+
+                      <td className="border border-gray-300 py-1 px-1">
+                        <div className="flex justify-center">
+                          <button
+                            onClick={() =>
+                              singleApproval(user._id, user.userId._id)
+                            }
                             className={`${
                               isToggled[user._id]
-                                ? "translate-x-6"
-                                : "translate-x-0"
-                            } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                          ></div>
+                                ? "bg-green-500"
+                                : "bg-gray-300"
+                            } w-12 h-6 flex items-center rounded-full  transition-colors duration-300`}
+                          >
+                            <div
+                              className={`${
+                                isToggled[user._id]
+                                  ? "translate-x-6"
+                                  : "translate-x-0"
+                              } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                            ></div>
+                          </button>
+                        </div>
+                      </td>
+                      <td className="border border-gray-300 py-1 px-1">
+                        <button
+                          onClick={() => approveAll(user.userId._id)}
+                          className={` px-4 py-0 rounded text-white transition-colors duration-300 ${
+                            isSelected[user.userId._id]
+                              ? "bg-green-500"
+                              : "bg-orange-500"
+                          }`}
+                        >
+                          All
                         </button>
-                      </div>
-                    </td>
-                    <td className="border border-gray-300 py-1">
-                      <button
-                        onClick={() => approveAll(user.userId._id)}
-                        className={` px-4 py-0 rounded text-white transition-colors duration-300 ${
-                          isSelected[user.userId._id]
-                            ? "bg-green-500"
-                            : "bg-orange-500"
-                        }`}
-                      >
-                        All
-                      </button>
-                    </td>
-                    <td className="border border-gray-300 py-1 relative">
-                      <button onClick={() => toggleReject(user._id)}>
-                        {leaveStatus[user._id] ? (
-                          <FaCheckCircle className="text-green-500" />
-                        ) : (
-                          <FaTimesCircle className="text-red-500" />
-                        )}
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="border border-gray-300 py-1 relative px-1">
+                        <button onClick={() => toggleReject(user._id)}>
+                          {leaveStatus[user._id] ? (
+                            <FaCheckCircle className="text-green-500" />
+                          ) : (
+                            <FaTimesCircle className="text-red-500" />
+                          )}
+                        </button>
+                      </td>
+                    </tr>
+                  ))
               ) : (
                 <tr>
                   <td
