@@ -168,38 +168,38 @@ const CustomerListform = () => {
             <thead className="bg-gray-200 sticky top-0 z-40">
               {/* Table Headers */}
               <tr>
-                <th className="py-1 px-2 border-b border-gray-300 text-left">
+                <th className="py-2 px-2 border-b border-gray-300 text-left">
                   S.NO
                 </th>
-                <th className="py-1 px-2 border-b border-gray-300 text-left">
+                <th className="py-2 px-2 border-b border-gray-300 text-left">
                   Branch Name
                 </th>
-                <th className="py-1 px-2 border-b border-gray-300 text-left">
+                <th className="py-2 px-2 border-b border-gray-300 text-left">
                   Customer Name
                 </th>
-                <th className="py-1 px-2 border-b border-gray-300 text-left">
+                <th className="py-2 px-2 border-b border-gray-300 text-left">
                   Product Name
                 </th>
-                <th className="py-1 px-2 border-b border-gray-300 text-left">
+                <th className="py-2 px-2 border-b border-gray-300 text-left">
                   License
                 </th>
-                <th className="py-1 px-2 border-b border-gray-300 text-left">
+                <th className="py-2 px-2 border-b border-gray-300 text-left">
                   Address1
                 </th>
 
-                <th className="py-1 px-2 border-b border-gray-300 text-left">
+                <th className="py-2 px-2 border-b border-gray-300 text-left">
                   Pin code
                 </th>
-                <th className="py-1 px-2 border-b border-gray-300 text-left">
+                <th className="py-2 px-2 border-b border-gray-300 text-left">
                   Mobile
                 </th>
-                <th className="py-1 px-2 border-b border-gray-300 text-left">
+                <th className="py-2 px-2 border-b border-gray-300 text-left">
                   Email
                 </th>
-                <th className="py-1 px-2 border-b border-gray-300 text-left">
+                <th className="py-2 px-2 border-b border-gray-300 text-left">
                   Status
                 </th>
-                <th className="py-1 px-2 border-b border-gray-300 text-left">
+                <th className="py-2 px-2 border-b border-gray-300 text-left">
                   Edit
                 </th>
               </tr>

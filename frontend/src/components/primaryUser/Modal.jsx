@@ -12,18 +12,10 @@ const Modal = ({
   staffId,
   handleApply
 }) => {
- 
-  const [leaveType, setLeaveType] = useState({
-    leaveDate: formData?.leaveDate,
-    leaveCategory: formData?.leaveCategory || "",
-    description: formData?.description || ""
-  })
+
   const [leaveOption, setLeaveOption] = useState({
     leaveType: formData.leaveType || "Full Day"
   })
-  const [leaveStart, setLeaveStart] = useState(selectedDate)
-  const [leaveEnd, setLeaveEnd] = useState(selectedDate)
-  const [leaveDescription, setLeaveDescription] = useState("")
 
   const [selectedAttendance, setselectedAttendance] = useState({
     attendanceDate: "",
@@ -36,6 +28,11 @@ const Modal = ({
     leaveCategory: "",
     halfDayPeriod: "",
     description: ""
+  })
+  const [selectedOnsite, setselectedOnsite] = useState({
+    onsiteDate: "",
+    onsiteType: "",
+    halfDayPeriod: ""
   })
   const [isApplying, setIsApplying] = useState(false)
   const parseTime = (timeString) => {
@@ -61,6 +58,12 @@ const Modal = ({
         leaveCategory: formData?.leaveCategory,
         reason: formData?.description
       })
+    } else if (formData && type === "Onsite") {
+      setselectedOnsite({
+        onsiteDate: formData?.onsiteDate,
+        onsiteType: formData?.onsiteType,
+        halfDayPeriod: formData?.halfDayPeriod
+      })
     }
   }, [formData])
   const handleTimeChange = (type, field, value) => {
@@ -83,6 +86,8 @@ const Modal = ({
       handleApply(staffId, selectedLeave, setIsApplying, type)
     } else if (type === "Attendance") {
       handleApply(staffId, selectedAttendance, setIsApplying, type)
+    } else if (type === "Onsite") {
+      handleApply(staffId, selectedOnsite, setIsApplying, type)
     }
   }
   return (
@@ -110,8 +115,8 @@ const Modal = ({
                     onChange={(e) => {
                       setselectedLeave((prev) => ({
                         ...prev,
-                        leaveType: e.target.value ,
-                        halfDayPeriod:""// Replace `newDate` with the actual value you want to set
+                        leaveType: e.target.value,
+                        halfDayPeriod: "" // Replace `newDate` with the actual value you want to set
                       }))
                     }}
                   />
@@ -242,6 +247,112 @@ const Modal = ({
                   }}
                 ></textarea>
               </div>
+            </div>
+          )}
+          {/*Onsite Application*/}
+          {type === "Onsite" && (
+            <div className="mt-4">
+              {/* Full Day / Half Day Selection */}
+              <div className="flex gap-4">
+                <label>
+                  <input
+                    type="radio"
+                    value="Full Day"
+                    checked={selectedOnsite.onsiteType === "Full Day"}
+                    // onChange={(e) => setLeaveOption(e.target.value)}
+                    onChange={(e) => {
+                      setselectedOnsite((prev) => ({
+                        ...prev,
+                        onsiteType: e.target.value,
+                        halfDayPeriod: "" // Replace `newDate` with the actual value you want to set
+                      }))
+                    }}
+                  />
+                  Full Day
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    value="Half Day"
+                    checked={selectedOnsite.onsiteType === "Half Day"}
+                    // onChange={(e) => setLeaveOption(e.target.value)}
+                    onChange={(e) => {
+                      setselectedOnsite((prev) => ({
+                        ...prev,
+                        onsiteType: e.target.value // Replace `newDate` with the actual value you want to set
+                      }))
+                    }}
+                  />
+                  Half Day
+                </label>
+                {selectedOnsite.onsiteType === "Half Day" && (
+                  <select
+                    className="border p-2 rounded w-auto"
+                    value={selectedOnsite?.halfDayPeriod || "Morning"}
+                    // onChange={(e) => setLeaveOption(e.target.value)}
+                    onChange={(e) => {
+                      setselectedOnsite((prev) => ({
+                        ...prev,
+                        halfDayPeriod: e.target.value // Replace `newDate` with the actual value you want to set
+                      }))
+                    }}
+                  >
+                    <option value="">Select Period</option>
+                    <option value="Morning">Morning</option>
+                    <option value="Afternoon">Afternoon</option>
+                  </select>
+                )}
+              </div>
+
+              {/* Leave Dates */}
+              {leaveOption.leaveType === "Full Day" ? (
+                <div className="mt-3 flex flex-col">
+                  <label className="text-sm font-semibold">Onsite Date</label>
+                  <input
+                    type="date"
+                    value={selectedOnsite?.onsiteDate}
+                    onChange={(e) => {
+                      setselectedOnsite((prev) => ({
+                        ...prev,
+                        onsiteDate: e.target.value // Replace `newDate` with the actual value you want to set
+                      }))
+                    }}
+                    className="border p-2 rounded"
+                  />
+
+                  <label className="text-sm font-semibold mt-2">
+                    Onsite End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={selectedOnsite?.onsiteDate}
+                    // onChange={(e) => setLeaveEnd(e.target.value)}
+                    onChange={(e) => {
+                      setselectedOnsite((prev) => ({
+                        ...prev,
+                        onsiteDate: e.target.value // Replace `newDate` with the actual value you want to set
+                      }))
+                    }}
+                    className="border p-2 rounded"
+                  />
+                </div>
+              ) : (
+                <div className="mt-3">
+                  <label className="text-sm font-semibold">Onsite Date</label>
+                  <input
+                    type="date"
+                    value={selectedOnsite?.onsiteDate}
+                    // onChange={(e) => setLeaveStart(e.target.value)}
+                    onChange={(e) => {
+                      setselectedLeave((prev) => ({
+                        ...prev,
+                        onsiteDate: e.target.value // Replace `newDate` with the actual value you want to set
+                      }))
+                    }}
+                    className="border p-2 rounded w-full"
+                  />
+                </div>
+              )}
             </div>
           )}
 

@@ -36,14 +36,13 @@ const leaveSummary = () => {
     loading,
     refreshHook
   } = UseFetch(apiUrl)
- 
+
   useEffect(() => {
     if (newattende && newattende.length) {
       if (user.role === "Admin") {
         setHoly(holy)
         setleaveSummary(newattende)
       } else if (user.role === "Staff") {
-
         setHoly(holy)
         const filteredUser = newattende.filter(
           (item) => item.userId === user._id
@@ -93,20 +92,38 @@ const leaveSummary = () => {
       })
     }
   }
-  const handleLeave = (date, type, category, leaveType, halfDayperiod) => {
+  const handleOnsite = (date, type, onsiteType, halfDayperiod) => {
+    setModalOpen(true)
+    setselectedDate(date)
+    setType(type)
+    if (type === "Onsite") {
+      setFormData({
+        onsiteDate: date,
+        onsiteType: onsiteType,
+        halfDayPeriod: halfDayperiod ? halfDayperiod : null
+      })
+    }
+  }
+  const handleLeave = (date, type, leaveDetails, halfDayperiod) => {
+   
     setModalOpen(true)
     setselectedDate(date)
     setType(type)
     if (type === "Leave") {
       setFormData({
         leaveDate: date,
-        leaveCategory: category,
+        leaveCategory: leaveDetails.field,
         leaveType:
-          leaveType === 1 ? "Full Day" : leaveType === 0.5 ? "Half Day" : null,
-        halfDayPeriod: leaveType === 0.5 ? halfDayperiod : null
+          leaveDetails.value === 1
+            ? "Full Day"
+            : leaveDetails.value === 0.5
+            ? "Half Day"
+            : null,
+        halfDayPeriod: halfDayperiod ? halfDayperiod : null
       })
     }
   }
+
   const handleScroll = (event) => {
     const tables = document.querySelectorAll(".scroll-container")
     tables.forEach((table) => {
@@ -145,6 +162,7 @@ const leaveSummary = () => {
         toast.success("leave edited sucessfully")
         setleaveSummary(data)
         setIsApplying(false)
+        handleClose()
       } else {
         toast.error("error in updating")
       }
@@ -158,8 +176,21 @@ const leaveSummary = () => {
         toast.success("Attendance edited sucessfully")
         setleaveSummary(data)
         setIsApplying(false)
+        handleClose()
       } else {
         toast.error("error in updating")
+      }
+    } else if (type === "Onsite") {
+      const response = await api.post(
+        `/auth/editOnsite?userid=${staffId}`,
+        selected
+      )
+      const data = response.data.data.data
+      if (response.status === 200) {
+        toast.success("Onsite edited successfully")
+        setleaveSummary(data)
+        setIsApplying(false)
+        handleClose()
       }
     }
   }
@@ -508,296 +539,14 @@ const leaveSummary = () => {
                             attendee={attendee}
                             user={user}
                             handleAttendance={handleAttendance}
+                            handleOnsite={handleOnsite}
                             handleLeave={handleLeave}
                             handleScroll={handleScroll}
                             modalOpen={modalOpen}
                             holiday={holiday}
                           />
                         )}
-
-                        {/* Table Header - Hidden scrollbar but syncs with body */}
-                        {/* {selectedIndex === index && !modalOpen && (
-                          <div className="sticky top-0 z-20 bg-white mr-4">
-                            <div
-                              className="scroll-container overflow-x-auto max-h-[calc(100vh-200px)]"
-                              style={{ overflow: "hidden" }}
-                            >
-                              <table className="w-full min-w-max border-collapse text-sm">
-                                <thead className="bg-gray-100">
-                                  <tr>
-                                    <th
-                                      rowSpan="2"
-                                      className="border border-gray-300 p-2 sticky left-0 bg-gray-100 z-10"
-                                    >
-                                      Date
-                                    </th>
-                                    <th
-                                      colSpan="2"
-                                      className="border border-gray-300 p-1"
-                                    >
-                                      Present
-                                    </th>
-                                    <th
-                                      colSpan="4"
-                                      className="border border-gray-300 p-1"
-                                    >
-                                      Leave
-                                    </th>
-                                    <th
-                                      rowSpan="2"
-                                      className="border border-gray-300 p-2"
-                                    >
-                                      Early Out
-                                    </th>
-                                    <th
-                                      rowSpan="2"
-                                      className="border border-gray-300 p-2"
-                                    >
-                                      Late In
-                                    </th>
-                                    <th
-                                      rowSpan="2"
-                                      className="border border-gray-300 p-2"
-                                    >
-                                      Not Marked
-                                    </th>
-                                    <th
-                                      colSpan="4"
-                                      className="border border-gray-300 p-1"
-                                    >
-                                      Onsite
-                                    </th>
-                                  </tr>
-                                  <tr>
-                                    <th className="border border-gray-300 p-1">
-                                      In Time
-                                    </th>
-                                    <th className="border border-gray-300 p-1">
-                                      Out Time
-                                    </th>
-                                    <th className="border border-gray-300 p-1">
-                                      CL
-                                    </th>
-                                    <th className="border border-gray-300 p-1">
-                                      PL
-                                    </th>
-                                    <th className="border border-gray-300 p-1">
-                                      Comp.leave
-                                    </th>
-                                    <th className="border border-gray-300 p-1">
-                                      Others
-                                    </th>
-                                    <th className="border border-gray-300 p-1">
-                                      Place
-                                    </th>
-                                    <th className="border border-gray-300 p-1">
-                                      Site Name
-                                    </th>
-                                    <th className="border border-gray-300 p-1">
-                                      Onsite Type
-                                    </th>
-                                    <th className="border border-gray-300 p-1">
-                                      Period
-                                    </th>
-                                  </tr>
-                                </thead>
-                              </table>
-                            </div>
-                          </div>
-                        )} */}
                       </div>
-
-                      {/* Table Body - Visible scrollbar that controls both */}
-                      {/* {selectedIndex === index && (
-                        <div
-                          className="scroll-container overflow-x-auto max-h-[calc(100vh-200px)]"
-                          onScroll={handleScroll}
-                        >
-                          <table className="w-full min-w-max border-collapse text-sm">
-                        
-                            <tbody>
-                              {Object.entries(attendee.attendancedates).map(
-                                ([date, details], idx) => (
-                                  <tr
-                                    key={idx}
-                                    className="hover:bg-gray-50 text-center"
-                                  >
-                                    <td className="border border-gray-300 p-2  sticky left-0 bg-white">
-                                      {date}
-                                    </td>
-                                    <td
-                                      className="border border-gray-300 p-2 "
-                                      onClick={() => {
-                                        console.log(user.role)
-                                        if (user?.role === "Admin") {
-                                          handleAttendance(
-                                            date,
-                                            "Attendance",
-                                            details?.inTime,
-                                            details?.outTime
-                                          )
-                                        }
-                                      }}
-                                    >
-                                      {details?.inTime || "-"}
-                                    </td>
-                                    <td
-                                      className="border border-gray-300 p-2"
-                                      onClick={() => {
-                                        if (user?.role === "Admin")
-                                          handleAttendance(
-                                            date,
-                                            "Attendance",
-                                            details?.inTime,
-                                            details?.outTime
-                                          )
-                                      }}
-                                    >
-                                      {details?.outTime || "-"}
-                                    </td>
-                                    <td
-                                      className="border border-gray-300 p-2 "
-                                      onClick={() => {
-                                        if (user?.role === "Admin") {
-                                          handleLeave(
-                                            date,
-                                            "Leave",
-                                            details?.otherLeave
-                                              ? "other Leave"
-                                              : details?.compensatoryLeave
-                                              ? "compensatory Leave"
-                                              : details?.privileageLeave
-                                              ? "privileage Leave"
-                                              : details?.casualLeave
-                                              ? "casual Leave"
-                                              : null,
-                                            details?.otherLeave ||
-                                              details?.compensatoryLeave ||
-                                              details?.privileageLeave ||
-                                              details?.casualLeave,
-                                            details?.halfDayperiod
-                                          )
-                                        }
-                                      }}
-                                    >
-                                      {details?.casualLeave || "-"}
-                                    </td>
-                                    <td
-                                      className="border border-gray-300 p-2"
-                                      onClick={() => {
-                                        if (user?.role === "Admin") {
-                                          handleLeave(
-                                            date,
-                                            "Leave",
-                                            details?.otherLeave
-                                              ? "other Leave"
-                                              : details?.compensatoryLeave
-                                              ? "compensatory Leave"
-                                              : details?.privileageLeave
-                                              ? "privileage Leave"
-                                              : details?.casualLeave
-                                              ? "casual Leave"
-                                              : null,
-                                            details?.otherLeave ||
-                                              details?.compensatoryLeave ||
-                                              details?.privileageLeave ||
-                                              details?.casualLeave,
-                                            details?.halfDayperiod
-                                          )
-                                        }
-                                      }}
-                                    >
-                                      {details?.privileageLeave || "-"}
-                                    </td>
-                                    <td
-                                      className="border border-gray-300 p-2 "
-                                      onClick={() => {
-                                        if (user?.role === "Admin") {
-                                          handleLeave(
-                                            date,
-                                            "Leave",
-                                            details?.otherLeave
-                                              ? "other Leave"
-                                              : details?.compensatoryLeave
-                                              ? "compensatory Leave"
-                                              : details?.privileageLeave
-                                              ? "privileage Leave"
-                                              : details?.casualLeave
-                                              ? "casual Leave"
-                                              : null,
-                                            details?.otherLeave ||
-                                              details?.compensatoryLeave ||
-                                              details?.privileageLeave ||
-                                              details?.casualLeave,
-                                            details?.halfDayperiod
-                                          )
-                                        }
-                                      }}
-                                    >
-                                      {details?.compensatoryLeave || "-"}
-                                    </td>
-                                    <td
-                                      className="border border-gray-300 p-2"
-                                      onClick={() => {
-                                        if (user.role === "Admin") {
-                                          handleLeave(
-                                            date,
-                                            "Leave",
-                                            details?.otherLeave
-                                              ? "other Leave"
-                                              : details?.compensatoryLeave
-                                              ? "compensatory Leave"
-                                              : details?.privileageLeave
-                                              ? "privileage Leave"
-                                              : details?.casualLeave
-                                              ? "casual Leave"
-                                              : null,
-                                            details?.otherLeave ||
-                                              details?.compensatoryLeave ||
-                                              details?.privileageLeave ||
-                                              details?.casualLeave,
-                                            details?.halfDayperiod
-                                          )
-                                        }
-                                      }}
-                                    >
-                                      {details?.otherLeave || "-"}
-                                    </td>
-                                    <td className="border border-gray-300 p-2">
-                                      {details?.early
-                                        ? `${details.early} minutes`
-                                        : "-"}
-                                    </td>
-                                    <td className="border border-gray-300 p-2">
-                                      {details?.late
-                                        ? `${details.late} minutes`
-                                        : "-"}
-                                    </td>
-                                    <td className="border border-gray-300 p-2">
-                                      {details?.notMarked || "-"}
-                                    </td>
-                                    <td className="border border-gray-300 p-2">
-                                      {details?.onsite?.[0]?.place || "-"}
-                                    </td>
-                                    <td className="border border-gray-300 p-2 ">
-                                      {details?.onsite?.[0]?.siteName || "-"}
-                                    </td>
-                                    <td className="border border-gray-300 p-2">
-                                      {details?.onsite?.[0]?.onsiteType || "-"}
-                                    </td>
-                                    <td className="border border-gray-300 p-2 ">
-                                      {details?.onsite?.[0]?.onsiteType ===
-                                      "Half Day"
-                                        ? details?.onsite?.[0].halfDayPeriod
-                                        : "-"}
-                                    </td>
-                                  </tr>
-                                )
-                              )}
-                            </tbody>
-                          </table>
-                        </div>
-                      )} */}
                     </>
                   ) : null}
                 </div>
