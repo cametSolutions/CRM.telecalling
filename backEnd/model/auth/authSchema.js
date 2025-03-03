@@ -29,6 +29,17 @@ const staffSchema = new Schema(
     role: {
       type: String
     },
+   
+
+    privilegeleavestartsfrom: {
+      type: String
+    },
+    casualleavestartsfrom: {
+      type: String
+    },
+    sickleavestartsfrom: {
+      type: String
+    },
 
     isVerified: {
       type: Boolean,
@@ -81,20 +92,20 @@ const staffSchema = new Schema(
     documentUrl: {
       type: [String]
     },
-    attendanceId:{type:Number},
+    attendanceId: { type: Number },
     callstatus: {
       totalCall: { type: Number, default: 0 },
       solvedCalls: { type: Number, default: 0 },
       colleagueSolved: { type: Number, default: 0 },
       pendingCalls: { type: Number, default: 0 },
-      totalDuration: { type: Number,default:0 }
+      totalDuration: { type: Number, default: 0 }
     },
     permissions: [
       {
         Company: Boolean,
         Branch: Boolean,
         Customer: Boolean,
-        CallNotes:Boolean,
+        CallNotes: Boolean,
         UsersAndPasswords: Boolean,
         MenuRights: Boolean,
         VoucherMaster: Boolean,
@@ -173,7 +184,7 @@ const adminSchema = new Schema(
       solvedCalls: { type: Number, default: 0 },
       colleagueSolved: { type: Number, default: 0 },
       pendingCalls: { type: Number, default: 0 },
-      totalDuration: { type: Number,default:0 }
+      totalDuration: { type: Number, default: 0 }
     }
     // Other admin-specific fieldss
   },

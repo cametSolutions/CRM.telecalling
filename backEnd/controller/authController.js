@@ -602,7 +602,7 @@ export const LeaveApply = async (req, res) => {
     startDate,
 
     leaveType,
-
+    leaveCategory,
     reason,
 
     halfDayPeriod
@@ -623,7 +623,7 @@ export const LeaveApply = async (req, res) => {
           leaveDate: startDate, // Update fields with formData
           leaveType,
           ...(leaveType === "Half Day" && { halfDayPeriod }),
-
+          leaveCategory,
           reason,
 
           userId: objectId,
@@ -643,7 +643,7 @@ export const LeaveApply = async (req, res) => {
         ...(leaveType === "Half Day" && { halfDayPeriod }),
 
         reason,
-
+        leaveCategory,
         userId: objectId,
         assignedto: assignedTo
       })
@@ -756,7 +756,6 @@ export const OnsiteApply = async (req, res) => {
       return res.status(404).json({ message: "no table content" })
     }
     const { startDate, onsiteType, description, halfDayPeriod } = formData
-    console.log("type", onsiteType)
 
     const existingOnsite = await Onsite.findOne({
       onsiteDate: startDate,
@@ -856,6 +855,8 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           late: "",
           onsite: [],
           early: "",
+          reason: "",
+          description: "",
           halfDayperiod: "",
           notMarked: 1,
           casualLeave: "",
@@ -903,11 +904,24 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
     const startDate = new Date(Date.UTC(year, month - 1, 1))
     const endDate = new Date(Date.UTC(year, month, 0))
 
-    const users = await Staff.find(
-      {},
-      { _id: 1, name: 1, attendanceId: 1, assignedto: 1 }
-    )
+   
+    const users = await Staff.aggregate([
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          attendanceId: 1,
+          assignedto: 1,
+          casualleavestartsfrom: { $ifNull: ["$casualleavestartsfrom", null] },
+          sickleavestartsfrom: { $ifNull: ["$sickleavestartsfrom", null] },
+          privilegeleavestartsfrom: {
+            $ifNull: ["$privilegeleavestartsfrom", null]
+          }
+        }
+      }
+    ])
 
+    
     const convertToMinutes = (timeStr) => {
       const [time, modifier] = timeStr.split(" ")
       let [hours, minutes] = time.split(":").map(Number)
@@ -981,6 +995,9 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       const userName = user.name
       const staffId = user.attendanceId
       const assignedto = user.assignedto
+      const casualleavestartsfrom = user.casualleavestartsfrom
+      const sickleavestartsfrom = user.sickleavestartsfrom
+      const privilegeleavestartsfrom = user.privilegeleavestartsfrom
 
       // Fetch attendance-related data for the given month
       const results = await Promise.allSettled([
@@ -1004,6 +1021,9 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
       let stats = {
         name: userName,
+        casualleavestartsfrom,
+        sickleavestartsfrom,
+        privilegeleavestartsfrom,
         staffId,
         assignedto,
         userId: userId,
@@ -1105,7 +1125,8 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                   leaveRecord.leaveType === "Half Day"
                     ? leaveRecord.halfDayPeriod
                     : null,
-                leaveCategory: leaveRecord?.leaveCategory || null
+                leaveCategory: leaveRecord?.leaveCategory || null,
+                reason: leaveRecord?.reason || null
               }
             : null
 
@@ -1157,10 +1178,8 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             stats.earlyGoing++
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.onsite++
-              // stats.attendancedates[dayTime].onsite = 1
             } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
               stats.onsite += 0.5
-              // stats.attendancedates[dayTime].onsite = 0.5
             }
             present.push(day)
           } else if (
@@ -1181,10 +1200,8 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             stats.attendancedates[dayTime].late = a
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.onsite++
-              // stats.attendancedates[dayTime].onsite = 1
             } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
               stats.onsite += 0.5
-              // stats.attendancedates[dayTime].onsite = 0.5
             }
           } else if (
             (punchIn < noonLimit && punchOut < noonLimit) ||
@@ -1258,23 +1275,29 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                 switch (leaveDetails.leaveCategory) {
                   case "casual Leave":
                     stats.attendancedates[dayTime].casualLeave = 1
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
 
                     break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 1
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
                     break
                   case "privileage Leave":
                     stats.attendancedates[dayTime].privileageLeave = 1
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
                     break
                   case "compensatory Leave":
                     stats.attendancedates[dayTime].compensatoryLeave = 1
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
                     break
                   default:
                     stats.attendancedates[dayTime].others = 1 // Default case
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
                     break
                 }
               } else {
                 stats.attendancedates[dayTime].otherLeave = 1
+                stats.attendancedates[dayTime].reason = leaveDetails.reason
               }
               stats.attendancedates[dayTime].notMarked = ""
             } else if (isLeave && leaveDetails.leaveType === "Half Day") {
@@ -1282,32 +1305,38 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                 switch (leaveDetails.leaveCategory) {
                   case "casual Leave":
                     stats.attendancedates[dayTime].casualLeave = 0.5
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
                     break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 0.5
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
                     break
                   case "privileage Leave":
                     stats.attendancedates[dayTime].privileageLeave = 0.5
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
                     break
                   case "compensatory Leave":
                     stats.attendancedates[dayTime].compensatoryLeave = 0.5
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
                     break
                   default:
                     stats.attendancedates[dayTime].others = 0.5
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod // Default case
                     break
                 }
               } else {
                 stats.attendancedates[dayTime].otherLeave = 0.5
+                stats.attendancedates[dayTime].reason = leaveDetails.reason
                 stats.attendancedates[dayTime].halfDayperiod =
                   leaveDetails.halfDayPeriod
               }
@@ -1316,11 +1345,12 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           }
           daysInMonth.delete(day)
         })
+     
 
       onsites?.length &&
         onsites?.forEach((onsite) => {
           const onsiteDate = onsite.onsiteDate.toISOString().split("T")[0]
-
+          
           const isAttendance =
             Array.isArray(attendances) &&
             attendances.some(
@@ -1335,20 +1365,24 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                 halfDayPeriod:
                   onsite?.onsiteType === "Half Day"
                     ? onsite?.halfDayPeriod
-                    : null
+                    : null,
+                description: onsite?.description
               })
             })
           }
-          if (!isAttendance) {
-            if (onsite.onsiteType === "Full Day") {
-              stats.attendancedates[onsiteDate].present = 1
-              stats.attendancedates[onsiteDate].notMarked = ""
-              stats.onsite++
-            } else if (onsite.onsiteType === "Half Day") {
-              stats.attendancedates[onsiteDate].present = 0.5
-              stats.attendancedates[onsiteDate].notMarked = 0.5
+         
+            if (!isAttendance) {
+              if (onsite.onsiteType === "Full Day") {
+                stats.attendancedates[onsiteDate].present = 1
+                stats.attendancedates[onsiteDate].notMarked = ""
+                stats.onsite++
+              } else if (onsite.onsiteType === "Half Day") {
+                stats.attendancedates[onsiteDate].present = 0.5
+                stats.attendancedates[onsiteDate].notMarked = 0.5
+              }
             }
-          }
+          
+         
         })
       leaves?.length &&
         leaves.forEach((leave) => {
@@ -1366,22 +1400,28 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                 switch (leaveCategory) {
                   case "casual Leave":
                     stats.attendancedates[leaveDate].casualLeave = 1
+                    stats.attendancedates[leaveDate].reason = leave.reason
                     break
                   case "other Leave":
                     stats.attendancedates[leaveDate].otherLeave = 1
+                    stats.attendancedates[leaveDate].reason = leave.reason
                     break
                   case "privileage Leave":
                     stats.attendancedates[leaveDate].privileageLeave = 1
+                    stats.attendancedates[leaveDate].reason = leave.reason
                     break
                   case "compensatory Leave":
                     stats.attendancedates[leaveDate].compensatoryLeave = 1
+                    stats.attendancedates[leaveDate].reason = leave.reason
                     break
                   default:
                     stats.attendancedates[leaveDate].others = 1 // Default case
+                    stats.attendancedates[leaveDate].reason = leave.reason
                     break
                 }
               } else {
                 stats.attendancedates[leaveDate].otherLeave = 1
+                stats.attendancedates[leaveDate].reason = leave.reason
               }
 
               stats.attendancedates[leaveDate].notMarked = ""
@@ -1393,32 +1433,38 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                 switch (leaveCategory) {
                   case "casual Leave":
                     stats.attendancedates[leaveDate].casualLeave = 0.5
+                    stats.attendancedates[leaveDate].reason = leave.reason
                     stats.attendancedates[leaveDate].halfDayperiod =
                       leave.halfDayPeriod
                     break
                   case "other Leave":
                     stats.attendancedates[leaveDate].otherLeave = 0.5
+                    stats.attendancedates[leaveDate].reason = leave.reason
                     stats.attendancedates[leaveDate].halfDayperiod =
                       leave.halfDayPeriod
                     break
                   case "privileage Leave":
                     stats.attendancedates[leaveDate].privileageLeave = 0.5
+                    stats.attendancedates[leaveDate].reason = leave.reason
                     stats.attendancedates[leaveDate].halfDayperiod =
                       leave.halfDayPeriod
                     break
                   case "compensatory Leave":
                     stats.attendancedates[leaveDate].compensatoryLeave = 0.5
+                    stats.attendancedates[leaveDate].reason = leave.reason
                     stats.attendancedates[leaveDate].halfDayperiod =
                       leave.halfDayPeriod
                     break
                   default:
                     stats.attendancedates[leaveDate].others = 0.5
+                    stats.attendancedates[leaveDate].reason = leave.reason
                     stats.attendancedates[leaveDate].halfDayperiod =
                       leave.halfDayPeriod // Default case
                     break
                 }
               } else {
                 stats.attendancedates[leaveDate].otherLeave = 0.5
+                stats.attendancedates[leaveDate].reason = leave.reason
                 stats.attendancedates[leaveDate].halfDayperiod =
                   leave.halfDayPeriod
               }
@@ -1569,7 +1615,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       fulldateholiday: listofHolidays || []
     })
 
-    // console.log("statssss", staffAttendanceStats)
   } catch (error) {
     console.log("error", error)
     return res.status(500).json({ message: "Internal server error" })
@@ -1709,6 +1754,7 @@ export const GetAllpendingORonsiteRequest = async (req, res) => {
     }
 
     if (onsite === "true") {
+     
       const allonsite = await Onsite.find(query).populate({
         path: "userId",
         select: "name role department", // Select fields from User
@@ -1738,7 +1784,6 @@ export const GetAllpendingORonsiteRequest = async (req, res) => {
           .json({ message: "leaves found", data: pendingonsiteRequest })
       }
     } else if (onsite === "false") {
-      console.log("query", query)
       const allleaveRequest = await LeaveRequest.find(query).populate({
         path: "userId",
         select: "name role department", // Select fields from User
@@ -1908,8 +1953,16 @@ export const GetallusersAttendance = async (req, res) => {
 }
 export const ApproveLeave = async (req, res) => {
   try {
-    const { role, userId, selectedId, startDate, endDate, onsite } = req.query
-    console.log("date", startDate, endDate)
+    const {
+      role,
+      userId,
+      selectedId,
+      startDate,
+      endDate,
+      onsite,
+      departmentapproved,
+      adminapproved
+    } = req.query
     // return
 
     // Validate common parameters
@@ -2002,7 +2055,6 @@ export const ApproveLeave = async (req, res) => {
         })
       }
     } else if (isSingle) {
-      console.log("field", updateFields)
       // Handle single case
       if (!selectedObjectId) {
         return res.status(400).json({
@@ -2036,15 +2088,26 @@ export const ApproveLeave = async (req, res) => {
           }
         ]
       })
-      const filteredPendingLeave = updatedLeaveList.filter(
-        (item) =>
-          item.departmentverified === false && item.adminverified === false
-      )
+      if (departmentapproved || adminapproved) {
+        const filteredapprovedleave = updatedLeaveList.filter(
+          (item) =>
+            item.departmentverified === true || item.adminverified === true
+        )
+        return res.status(200).json({
+          message: "Leave Approved successfully",
+          data: filteredapprovedleave
+        })
+      } else if (!departmentapproved && !adminapproved) {
+        const filteredPendingLeave = updatedLeaveList.filter(
+          (item) =>
+            item.departmentverified === false && item.adminverified === false
+        )
 
-      return res.status(200).json({
-        message: "Leave Approved successfully",
-        data: filteredPendingLeave
-      })
+        return res.status(200).json({
+          message: "Leave Approved successfully",
+          data: filteredPendingLeave
+        })
+      }
     }
 
     return res
@@ -2057,8 +2120,18 @@ export const ApproveLeave = async (req, res) => {
 }
 export const ApproveOnsite = async (req, res) => {
   try {
-    const { role, userId, selectedId, startDate, endDate, onsite } = req.query
-    console.log("date", startDate, endDate)
+    const {
+      role,
+      userId,
+      selectedId,
+      startDate,
+      endDate,
+      onsite,
+      adminapproved,
+
+      departmentapproved
+    } = req.query
+
     // return
 
     // Validate common parameters
@@ -2150,26 +2223,21 @@ export const ApproveOnsite = async (req, res) => {
         })
       }
     } else if (isSingle) {
-      console.log("field", updateFields)
       // Handle single case
       if (!selectedObjectId) {
-        console.log("eeeeeeeeee")
         return res.status(400).json({
           message: "Missing required parameter: selectedId for single update."
         })
       }
-      console.log("ttttt")
       result = await Onsite.updateOne(
         { _id: selectedObjectId },
         { $set: updateFields }
       )
-      console.log("ppp")
     }
 
     // Check if any document was updated
     if (result && result.modifiedCount > 0) {
-      console.log("hhhh")
-      console.log("basequery", baseQuery)
+     
       // Fetch updated leave requests for display
       const updatedOnsiteList = await Onsite.find(baseQuery).populate({
         path: "userId",
@@ -2188,17 +2256,25 @@ export const ApproveOnsite = async (req, res) => {
           }
         ]
       })
-      console.log("reee", updatedOnsiteList)
-      const filteredPendingOnsite = updatedOnsiteList.filter(
-        (item) =>
-          item.adminverified === false && item.departmentverified === false
-      )
-      console.log("filter", filteredPendingOnsite)
-
-      return res.status(200).json({
-        message: "Onsite Approved successfully",
-        data: filteredPendingOnsite
-      })
+      if (departmentapproved || adminapproved) {
+        const filteredApprovedOnsite = updatedOnsiteList.filter(
+          (item) =>
+            item.adminverified === true || item.departmentverified === true
+        )
+        return res.status(200).json({
+          message: "Onsite Approved successfully",
+          data: filteredApprovedOnsite
+        })
+      } else {
+        const filteredPendingOnsite = updatedOnsiteList.filter(
+          (item) =>
+            item.adminverified === false && item.departmentverified === false
+        )
+        return res.status(200).json({
+          message: "Onsite Approved successfully",
+          data: filteredPendingOnsite
+        })
+      }
     }
 
     return res
@@ -2209,13 +2285,98 @@ export const ApproveOnsite = async (req, res) => {
     return res.status(500).json({ message: "Onsite approved" })
   }
 }
+export const RejectOnsite = async (req, res) => {
+  try {
+    const role = req?.query?.role
+    const selectedId = req?.query?.selectedId
+    const userId = req?.query?.userId
+    const feild = req?.query.feild
+    const startdate = req?.query?.startdate
+
+    const enddate = req?.query?.enddate
+    // Ensure the dates are valid and convert them to ISO format
+    const startDate = new Date(startdate) // Convert to Date object
+    const endDate = new Date(enddate) // Convert to Date object
+
+    const selectedObjectId = new mongoose.Types.ObjectId(selectedId)
+    const userObjectId = new mongoose.Types.ObjectId(userId)
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" })
+    }
+
+    // const leaveRequest = await LeaveRequest.findOne({ _id: selectedObjectId })
+    const deletedOnsiteRequest = await Onsite.deleteOne({
+      _id: selectedObjectId
+    })
+
+    if (deletedOnsiteRequest.deletedCount === 0) {
+      return res.status(404).json({ message: "Onsite request not found" })
+    } else if (deletedOnsiteRequest.deletedCount > 0) {
+      const query = {
+        onsiteDate: {
+          $gte: startDate, // Greater than or equal to startDate
+          $lte: endDate // Less than or equal to endDate
+        }
+      }
+
+      // Check if the role is not admin
+      if (role !== "Admin") {
+        query.assignedto = userObjectId // Only include assignedto for non-admin users
+      }
+
+      // Execute the query with population
+      const onsiteList = await Onsite.find(query).populate({
+        path: "userId",
+        select: "name role department", // Select fields from User
+        populate: [
+          {
+            path: "department",
+            select: "department",
+            options: { strictPopulate: false } // Graceful fallback for missing departments
+          },
+          {
+            path: "selected.branch_id",
+            model: "Branch",
+            select: "branchName",
+            options: { strictPopulate: false } // Avoid errors for missing branches
+          }
+        ]
+      })
+      let filteredlist
+      if (feild === "pendingOnsite") {
+        filteredlist = onsiteList.filter(
+          (onsite) =>
+            onsite.departmentverified === false &&
+            onsite.adminverified === false
+        )
+        return res.status(200).json({
+          message: "onsite request deleted successfully",
+          data: filteredlist
+        })
+      } else if (feild === "approvedOnsite") {
+        filteredlist = onsiteList.filter(
+          (onsite) =>
+            onsite.departmentverified === true || onsite.adminverified === true
+        )
+        return res.status(200).json({
+          message: "onsite request deleted successfully",
+          data: filteredlist
+        })
+      }
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 
 export const RejectLeave = async (req, res) => {
   try {
     const role = req?.query?.role
     const selectedId = req?.query?.selectedId
     const userId = req?.query?.userId
-    const onsite = req?.query?.onsite
+    const feild = req?.query?.feild
     const startdate = req?.query?.startdate
 
     const enddate = req?.query?.enddate
@@ -2229,28 +2390,14 @@ export const RejectLeave = async (req, res) => {
       return res.status(400).json({ message: "User ID is required" })
     }
 
-    const leaveRequest = await LeaveRequest.findOne({ _id: selectedObjectId })
+    // const leaveRequest = await LeaveRequest.findOne({ _id: selectedObjectId })
+    const deletedLeaveRequest = await LeaveRequest.deleteOne({
+      _id: selectedObjectId
+    })
 
-    if (!leaveRequest) {
+    if (deletedLeaveRequest.deletedCount === 0) {
       return res.status(404).json({ message: "Leave request not found" })
-    }
-    // Validate the role and update logic
-    if (role === "Admin") {
-      // Update the leave request for admins
-      leaveRequest.hrstatus = "HR Rejected"
-    } else if (role === "Staff") {
-      // Update the leave request for managers
-      leaveRequest.departmentstatus = "Dept Rejected"
-    }
-
-    // Save the updated leave request
-    const succesreject = await leaveRequest.save()
-    if (succesreject) {
-      // Check if the dates are valid
-      if (isNaN(startDate) || isNaN(endDate)) {
-        return res.status(400).send({ message: "Invalid date format" })
-      }
-      // Initialize the query with common conditions
+    } else if (deletedLeaveRequest.deletedCount > 0) {
       const query = {
         leaveDate: {
           $gte: startDate, // Greater than or equal to startDate
@@ -2261,13 +2408,6 @@ export const RejectLeave = async (req, res) => {
       // Check if the role is not admin
       if (role !== "Admin") {
         query.assignedto = userObjectId // Only include assignedto for non-admin users
-      }
-
-      // Check for onsite status
-      if (onsite === "true") {
-        query.onsite = true
-      } else {
-        query.onsite = false
       }
 
       // Execute the query with population
@@ -2288,11 +2428,26 @@ export const RejectLeave = async (req, res) => {
           }
         ]
       })
-
-      return res.status(200).json({
-        message: "Leave request updated successfully",
-        data: leaveList
-      })
+      let filteredlist
+      if (feild === "pendingLeave") {
+        filteredlist = leaveList.filter(
+          (leave) =>
+            leave.departmentverified === false && leave.adminverified === false
+        )
+        return res.status(200).json({
+          message: "Leave request deleted successfully",
+          data: filteredlist
+        })
+      } else if (feild === "approvedLeave") {
+        filteredlist = leaveList.filter(
+          (leave) =>
+            leave.departmentverified === true && leave.adminverified === true
+        )
+        return res.status(200).json({
+          message: "Leave request deleted successfully",
+          data: filteredlist
+        })
+      }
     }
   } catch (error) {
     console.log("error:", error.message)
@@ -2773,12 +2928,13 @@ export const EditOnsite = async (req, res) => {
 }
 export const EditLeave = async (req, res) => {
   try {
-    const { userid } = req.query
+    const { userid, assignedto } = req.query
     const formData = req.body
     const { leaveDate, ...updatedFeild } = formData
-
     const dateObj = new Date(leaveDate)
-
+    const userobjectId = new mongoose.Types.ObjectId(userid)
+    const assignedtoObjectId = new mongoose.Types.ObjectId(assignedto)
+   
     // Extract year and month (without leading zero)
     const year = dateObj.getFullYear() // "2025"
     const month = dateObj.getMonth() + 1
@@ -2794,6 +2950,29 @@ export const EditLeave = async (req, res) => {
       const a = await GetsomeAllsummary(fakeReq, res)
       if (a) {
         return res.status(200).json({ message: "leave updated", data: a })
+      }
+    } else {
+      const leave = new LeaveRequest({
+        leaveDate: formData.leaveDate,
+        leaveType: formData.leaveType,
+        ...(formData.leaveType === "Half Day" && {
+          halfDayPeriod: formData.halfDayPeriod
+        }),
+
+        reason: formData.reason,
+        leaveCategory: formData.leaveCategory,
+        userId: userobjectId,
+        assignedto: assignedtoObjectId
+      })
+      const savedleave = await leave.save()
+      if (savedleave) {
+        const fakeReq = { query: { year, month } }
+
+        // Call GetsomeAll with fake req
+        const a = await GetsomeAllsummary(fakeReq, res)
+        if (a) {
+          return res.status(200).json({ message: "leave updated", data: a })
+        }
       }
     }
   } catch (error) {
@@ -2817,10 +2996,15 @@ export const EditAttendance = async (req, res) => {
       }
     } = formData
     const dateObj = new Date(attendanceDate)
-
     // Merge hours, minutes, and amPm into time strings
-    const inTimeString = `${inTimeHours}:${inTimeMinutes} ${inTimeAmPm}`
-    const outTimeString = `${outTimeHours}:${outTimeMinutes} ${outTimeAmPm}`
+    const inTimeString =
+      inTimeHours && inTimeMinutes && inTimeAmPm
+        ? `${inTimeHours}:${inTimeMinutes} ${inTimeAmPm}`
+        : ""
+    const outTimeString =
+      outTimeHours && outTimeMinutes && outTimeAmPm
+        ? `${outTimeHours}:${outTimeMinutes} ${outTimeAmPm}`
+        : ""
     // Extract year and month (without leading zero)
     const year = dateObj.getFullYear() // "2025"
     const month = dateObj.getMonth() + 1
@@ -2832,6 +3016,7 @@ export const EditAttendance = async (req, res) => {
       // Update existing record with new time data
       existingAttendance.inTime = inTimeString
       existingAttendance.outTime = outTimeString
+      existingAttendance.edited = true
       await existingAttendance.save()
       const fakeReq = { query: { year, month } }
 
@@ -2853,7 +3038,6 @@ export const GetsomeAllsummary = async (
   yearParam = {},
   monthParam = {}
 ) => {
-  console.log("hhh")
   try {
     const { year, month } = req.query || { year: yearParam, month: monthParam }
 
@@ -3639,6 +3823,115 @@ export const GetsomeAllsummary = async (
 export const Check = async (req, res) => {
   try {
     const result = await LeaveRequest.find({ onsite: true })
-    console.log("res", result)
   } catch (error) {}
+}
+export const GetleavemasterLeavecount = async (req, res) => {
+  try {
+    const totalleavecount = await Leavemaster.findOne()
+    if (totalleavecount) {
+      const totalprivilegeLeave = totalleavecount.privilegeleave
+      const totalcasualleave = totalleavecount.casualleave
+      return res.status(200).json({
+        message: "leavecount found",
+        data: { totalprivilegeLeave, totalcasualleave }
+      })
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const DeleteEvent = async (req, res) => {
+  try {
+    const payload = req.body
+    const { userid, type } = req.query // Extract userid from query parameters
+    if (!userid) {
+      return res.status(400).json({ error: "User ID is required" })
+    }
+    const objectId = new mongoose.Types.ObjectId(userid)
+
+    if (type === "leave") {
+      const leaveRequest = await LeaveRequest.findOne({
+        userId: objectId,
+        leaveType: payload.leaveType,
+        reason: payload.reason,
+        leaveDate: payload.leaveDate
+      })
+
+      if (!leaveRequest) {
+        return res.status(404).json({ message: "Leave request not found" })
+      }
+
+      // Prevent deletion if approved
+      if (
+        leaveRequest.departmentstatus === "Dept Approved" ||
+        leaveRequest.hrstatus === "HR/Onsite Approved"
+      ) {
+        return res
+          .status(400)
+          .json({ message: "Cannot delete an approved leave request" })
+      }
+      const isDeleteLeave = await LeaveRequest.deleteOne({
+        userId: objectId,
+        leaveType: payload.leaveType,
+        reason: payload.reason,
+        leaveDate: payload.leaveDate
+      })
+      if (isDeleteLeave.deletedCount > 0) {
+        const leaves = await LeaveRequest.find({ userId: objectId })
+        // Check if no records found
+        if (leaves.length === 0) {
+          return res
+            .status(404)
+            .json({ message: "No leave records found for this user", data: [] })
+        }
+
+        // Send the leave records as a JSON response
+        res.status(200).json({ message: "leaves found", data: leaves })
+      }
+    } else if (type === "onsite") {
+      const onsiteRequest = await Onsite.findOne({
+        userId: objectId,
+        onsiteType: payload.onsiteType,
+        description: payload.description,
+        onsiteDate: payload.onsiteDate
+      })
+
+      if (!onsiteRequest) {
+        return res.status(404).json({ message: "Onsite request not found" })
+      }
+
+      // Prevent deletion if approved
+      if (
+        onsiteRequest.departmentstatus === "Dept Approved" ||
+        onsiteRequest.hrstatus === "HR/Onsite Approved"
+      ) {
+        return res
+          .status(400)
+          .json({ message: "Cannot delete an approved onsite request" })
+      }
+      const isDeleteOnsite = await Onsite.deleteOne({
+        userId: objectId,
+        onsiteType: payload.onsiteType,
+        description: payload.description,
+        onsiteDate: payload.onsiteDate
+      })
+      if (isDeleteOnsite.deletedCount > 0) {
+        const onsites = await Onsite.find({ userId: objectId })
+        // Check if no records found
+        if (onsites.length === 0) {
+          return res.status(404).json({
+            message: "No onsite records found for this user",
+            data: []
+          })
+        }
+
+        // Send the leave records as a JSON response
+        res.status(200).json({ message: "onsites found", data: onsites })
+      }
+    }
+  } catch (error) {
+    console.log(error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
 }

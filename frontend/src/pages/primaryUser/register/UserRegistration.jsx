@@ -6,10 +6,8 @@ import { useNavigate } from "react-router-dom"
 function UserRegistration() {
   const navigate = useNavigate()
   const handleSubmit = async (userData, image, tabledata) => {
-    console.log(tabledata)
-    console.log("image", image)
+  
     try {
-      console.log("ravi")
       const response = await api.post(
         "/auth/userRegistration",
         { userData, image, tabledata },
@@ -17,7 +15,6 @@ function UserRegistration() {
           withCredentials: true
         }
       )
-      console.log("hiiljjfdldjl")
       if (response.status === 200) {
         toast.success(response?.data?.message)
         navigate("/admin/masters/users-&-passwords")

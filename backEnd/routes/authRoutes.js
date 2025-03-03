@@ -31,7 +31,10 @@ import {
   EditOnsite,
   GetAllapprovedORonsiteRequest,
   GetAllpendingORonsiteRequest,
-  Check
+  Check,
+  GetleavemasterLeavecount,
+  DeleteEvent,
+  RejectOnsite
 } from "../controller/authController.js"
 const router = express.Router()
 
@@ -39,6 +42,12 @@ router.post("/login", Login)
 router.post("/resetAdminstatus", authMiddleware, resetCallStatus)
 router.post("/userEdit", authMiddleware, UpdateUserandAdmin)
 router.post("/userPermissionUpdate", authMiddleware, UpdateUserPermission)
+router.get(
+  "/getleavemasterleavecount",
+  authMiddleware,
+  GetleavemasterLeavecount
+)
+router.post("/deleteEvent", authMiddleware, DeleteEvent)
 router.post("/userRegistration", authMiddleware, StaffRegister)
 router.delete("/userDelete", authMiddleware, DeleteUser)
 router.get("/getallUsers", authMiddleware, GetallUsers)
@@ -56,9 +65,10 @@ router.get("/staffcallList", authMiddleware, GetindividualStaffCall)
 router.put("/approveLeave", authMiddleware, ApproveLeave)
 router.put("/approveOnsite", authMiddleware, ApproveOnsite)
 router.put("/rejectLeave", authMiddleware, RejectLeave)
+router.put("/rejectOnsite", authMiddleware, RejectOnsite)
 router.put("/updateLeave", authMiddleware, UpdateLeave)
 router.get("/merge", authMiddleware, mergeonsite)
-router.post("/onsiteLeave", authMiddleware, OnsiteApply)
+router.post("/onsiteRegister", authMiddleware, OnsiteApply)
 router.post("/editLeaveSummary", authMiddleware, UpdateLeaveSummary)
 router.get("/check", authMiddleware, Check)
 router.post("/attendance", authMiddleware, AttendanceApply)
