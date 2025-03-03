@@ -21,13 +21,22 @@ import PendingCustomer from "../../components/secondaryUser/PendingCustomer"
 import ProductEdit from "../../pages/primaryUser/edit/ProductEdit"
 import UserListform from "../../pages/primaryUser/List/UserListform"
 import UserPermissions from "../../pages/primaryUser/List/UserPermissions"
-
+import UserRegistration from "../../pages/primaryUser/register/UserRegistration"
 import DepartmentRegistration from "../../pages/primaryUser/register/DepartmentRegistration"
+import UserEdit from "../../pages/primaryUser/edit/UserEdit"
 const staffmastersRoutes = [
   {
     path: "/staff/masters/company",
 
     component: CompanyList
+  },
+  {
+    path: "/staff/masters/userRegistration",
+    component: UserRegistration
+  },
+  {
+    path: "/staff/masters/userEdit",
+    component: UserEdit
   },
   {
     path: "/staff/masters/companyRegistration",
@@ -46,7 +55,7 @@ const staffmastersRoutes = [
     path: "/staff/masters/callnotes",
     component: CallNoteRegistration
   },
-  {path:"/staff/masters/partners",component:PartnerRegistration},
+  { path: "/staff/masters/partners", component: PartnerRegistration },
   { path: "/staff/masters/branchEdit", component: BranchEdit },
   { path: "/staff/masters/customer", component: CustomerListform },
   { path: "/staff/masters/customerEdit", component: CustomerEdit },

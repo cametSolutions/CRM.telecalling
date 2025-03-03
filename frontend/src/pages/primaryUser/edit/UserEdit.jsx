@@ -17,7 +17,6 @@ function UserEdit() {
 
   const handleSubmit = async (userData, userId, tabledata) => {
     try {
-      console.log(userData)
       const response = await api.post(
         "/auth/userEdit",
         { userData, userId, tabledata },
@@ -27,13 +26,9 @@ function UserEdit() {
       )
       if (response) {
         toast.success("User updated successfully:")
-        console.log(loggeduser)
         if (parsedlogged.role === "Admin") {
-          console.log("hhh")
           navigate("/admin/masters/users-&-passwords")
         } else if (parsedlogged.role === "Staff") {
-          console.log(loggeduser)
-          console.log("ddd")
           navigate("/staff/masters/users-&-passwords")
         }
       }

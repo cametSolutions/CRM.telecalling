@@ -187,7 +187,7 @@ export const AttendanceExceltoJson = async (socket, fileData) => {
             total: totalData
           })
         }
-      } else {
+      } else if (!existingAttendance) {
         if (item["User ID"] && (item["In"] || item["Out"])) {
           totalData++
           const staff = await Staff.findOne({ attendanceId: item["User ID"] })
@@ -203,10 +203,12 @@ export const AttendanceExceltoJson = async (socket, fileData) => {
               attendanceDate: date,
               inTime: inTime12,
               outTime: outTime12,
+              edited: false,
               excel: true
             })
             const uploadattendance = await saveAttendance.save()
             if (uploadattendance) {
+              console.log("ittt", item)
               uploadedCount++
               socket.emit("attendanceconversionProgress", {
                 current: uploadedCount,
@@ -224,7 +226,7 @@ export const AttendanceExceltoJson = async (socket, fileData) => {
       console.log("error:", error.message)
     }
   }
-
+  console.log("existingexcel", existingexcel)
   //Final socket emission
   if (uploadedCount > 0 && existingexcel.length > 0) {
     socket.emit("attendanceconversionComplete", {

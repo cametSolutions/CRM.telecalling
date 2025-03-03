@@ -27,6 +27,15 @@ const LeavemasterSchema = new mongoose.Schema({
     required: true,
     min: 0 // Ensure no negative values
   },
+  privilegeleave:{
+    type:Number
+  },
+  casualleave:{
+    type:Number
+  },
+  sickleave:{
+    type:Number
+  },
   earlyOut: {
     type: Number,
     required: true,

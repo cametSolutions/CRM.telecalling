@@ -1000,13 +1000,11 @@ export const customerCallRegistration = async (req, res) => {
           callToUpdate.timedata.endTime = calldata.timedata.endTime
           // Convert the total duration back to "HH:MM:SS" format
           callToUpdate.timedata.duration += calldata.timedata.duration
-          console.log("time", callToUpdate.timedata)
 
           callToUpdate.timedata.time = addTimes(
             callToUpdate.timedata.time,
             calldata.timedata.time
           )
-          console.log(callToUpdate.timedata)
 
           callToUpdate.timedata.token = calldata.timedata.token
           callToUpdate.formdata.incomingNumber =
@@ -2332,6 +2330,9 @@ export const LeavemasterRegister = async (req, res) => {
       checkInEndAt,
       checkOutStartAt,
       lateArrival,
+      privilegeleave,
+      casualleave,
+      sickleave,
       earlyOut,
       holyDate,
       customTextInput,
@@ -2348,12 +2349,13 @@ export const LeavemasterRegister = async (req, res) => {
         existingRecord.checkInEndAt === checkInEndAt &&
         existingRecord.checkOutStartAt === checkOutStartAt &&
         existingRecord.lateArrival === lateArrival &&
-        existingRecord.earlyOut === earlyOut &&
+        existingRecord.privilegeleave === privilegeleave &&
+        existingRecord.casualleave === casualleave &&
+        existingRecord.sickleave === sickleave &&
         existingRecord.deductSalaryMinute === deductSalaryMinute
       // Step 3: If everything is the same, don't create a new instance, just return
       if (isSame) {
         if (editstate === "true") {
-
           const b = await Holymaster.updateOne(
             { customTextInput }, // Find the existing record using its ID
             {
@@ -2417,6 +2419,9 @@ export const LeavemasterRegister = async (req, res) => {
               checkInEndAt,
               checkOutStartAt,
               lateArrival,
+              privilegeleave,
+              casualleave,
+              sickleave,
               earlyOut,
               deductSalaryMinute
             }
@@ -2445,7 +2450,6 @@ export const LeavemasterRegister = async (req, res) => {
       // Save to database
       await newTime.save()
       if (holyDate && customTextInput) {
-       
         const newHoly = await Holymaster({
           holyDate,
           customTextInput,

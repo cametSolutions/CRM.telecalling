@@ -232,6 +232,9 @@ const UserAdd = ({
       setValue("name", User.name)
       setValue("email", User.email)
       setValue("mobile", User.mobile)
+      setValue("privilegeleavestartsfrom", User.privilegeleavestartsfrom)
+      setValue("casualleavestartsfrom", User.casualleavestartsfrom)
+      setValue("sickleavestartsfrom", User.sickleavestartsfrom)
       setValue("address", User.address)
       setValue("department", User.department?._id)
       setValue("assignedto", User.assignedto?._id)
@@ -673,6 +676,55 @@ const UserAdd = ({
                 <option value="Staff">Staff</option>
                 <option value="Admin">Admin</option>
               </select>
+            </div>
+
+            <div>
+              <label className="block mb-1 font-semibold">
+                Privilege Leave Starts From
+              </label>
+              <input
+                type="date"
+                {...register("privilegeleavestartsfrom")}
+                // value={User && User.joiningdate}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-2 py-1 sm:text-md focus:border-gray-500 outline-none"
+              />
+              {errors.privilegeleavestartsfrom && (
+                <span className="text-red-500 text-sm">
+                  {errors.privilegeleavestartsfrom.message}
+                </span>
+              )}
+            </div>
+            <div>
+              <label className="block mb-1 font-semibold">
+                Casul Leave Starts From
+              </label>
+              <input
+                type="date"
+                {...register("casualleavestartsfrom")}
+                // value={User && User.joiningdate}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-2 py-1 sm:text-md focus:border-gray-500 outline-none"
+              />
+              {errors.casualleavestartsfrom && (
+                <span className="text-red-500 text-sm">
+                  {errors.casualleavestartsfrom.message}
+                </span>
+              )}
+            </div>
+            <div>
+              <label className="block mb-1 font-semibold">
+                Sick Leave Starts From
+              </label>
+              <input
+                type="date"
+                {...register("sickleavestartsfrom")}
+                // value={User && User.joiningdate}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-2 py-1 sm:text-md focus:border-gray-500 outline-none"
+              />
+              {errors.sickleavestartsfrom && (
+                <span className="text-red-500 text-sm">
+                  {errors.sickleavestartsfrom.message}
+                </span>
+              )}
             </div>
 
             <div>

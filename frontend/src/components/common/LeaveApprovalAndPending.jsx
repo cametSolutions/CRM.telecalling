@@ -11,6 +11,7 @@ const LeaveApprovalAndPending = () => {
   const [loading, setLoading] = useState(true)
   const [loader, setLoader] = useState(false)
   const [leaveList, setLeaveList] = useState([])
+  const [onsite, setonsite] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [allleaveRequest, setallleaveReques] = useState([])
   const [ispending, setPending] = useState(true)
@@ -60,10 +61,10 @@ const LeaveApprovalAndPending = () => {
 
           const list = response.data.data
           setallleaveReques(list) // Assuming API returns data in response.data
-          const pendingleaveRequest = list.filter(
-            (item) =>
-              item.departmentverified === false && item.adminverified === false
-          )
+          // const pendingleaveRequest = list.filter(
+          //   (item) =>
+          //     item.departmentverified === false && item.adminverified === false
+          // )
 
           if (Array.isArray(list) && list.length > 0) {
             const filteredList =
@@ -115,7 +116,6 @@ const LeaveApprovalAndPending = () => {
         }
       }
     }
-
     const fetchApprovedList = async () => {
       if (dates.startDate !== "" && dates.endDate !== "" && user) {
         try {
@@ -205,6 +205,7 @@ const LeaveApprovalAndPending = () => {
         )
         setapprovedOnsite(!approvedOnsite)
         setApprovedLeave(!approvedLeave)
+        setonsite(true)
       } else {
         response = await api.get(
           `/auth/approvedLeaveList?onsite=${false}&startdate=${
@@ -213,6 +214,7 @@ const LeaveApprovalAndPending = () => {
         )
         setapprovedOnsite(!approvedOnsite)
         setApprovedLeave(!approvedLeave)
+        setonsite(false)
       }
 
       const list = response.data.data // Assuming API returns data in response.data
@@ -270,12 +272,14 @@ const LeaveApprovalAndPending = () => {
         )
         setpendingOnsite(!pendingOnsite)
         setPendingLeave(!pendingLeave)
+        setonsite(true)
       } else {
         response = await api.get(
           `/auth/pendingleaveList?onsite=false&startdate=${dates.startDate}&enddate=${dates.endDate}&userid=${user?._id}&role=${user?.role}`
         )
         setpendingOnsite(!pendingOnsite)
         setPendingLeave(!pendingLeave)
+        setonsite(false)
       }
 
       const list = response.data.data // Assuming API returns data in response.data
@@ -325,6 +329,7 @@ const LeaveApprovalAndPending = () => {
     try {
       setLoader(true)
       let Approve
+     
       if (pendingOnsite && !pendingLeave) {
         Approve = await api.put(
           `/auth/approveOnsite/?role=${user?.role}&selectedId=${id}&startDate=${
@@ -341,17 +346,32 @@ const LeaveApprovalAndPending = () => {
             dates.endDate
           }&single=${true}&onsite=${false}`
         )
+      } else if (approvedLeave) {
+        Approve = await api.put(
+          `/auth/approveLeave/?role=${user?.role}&selectedId=${id}&userId=${
+            user?._id
+          }&startDate=${dates.startDate}&endDate=${
+            dates.endDate
+          }&single=${true}&onsite=${false}&departmentapproved=${true}&adminapproved=${true}`
+        )
+      } else if (approvedOnsite) {
+        Approve = await api.put(
+          `/auth/approveOnsite/?role=${user?.role}&selectedId=${id}&startDate=${
+            dates.startDate
+          }&endDate=${dates.endDate}&onsite=${true}&userId=${
+            user?._id
+          }&single=${true}&departmentapproved=${true}&adminapproved=${true}`
+        )
       }
-
       if (Approve.status === 200) {
         const successApprove = Approve.data.data
         toast.success(Approve.data.message)
         setLeaveList(successApprove)
 
-        // setIsToggled((prevState) => ({
-        //   ...prevState,
-        //   [id]: !prevState[id] // Toggle the specific user's state
-        // }))
+        setIsToggled((prevState) => ({
+          ...prevState,
+          [id]: !prevState[id] // Toggle the specific user's state
+        }))
         // const initialReject = {}
 
         // if (user?.role === "Admin") {
@@ -386,43 +406,100 @@ const LeaveApprovalAndPending = () => {
   const toggleReject = async (id) => {
     setLoader(true)
 
-    const checkOnsite = isOnsite ? true : false
-    const leaveReject = await api.put(
-      `/auth/rejectLeave/?role=${user.role}&selectedId=${id}&userId=${user._id}&startdate=${dates.startDate}&enddate=${dates.endDate}&onsite=${checkOnsite}`
-    )
+    const states = {
+      pendingOnsite,
+      approvedOnsite,
+      pendingLeave,
+      approvedLeave
+    }
 
-    if (leaveReject.status === 200) {
-      const list = leaveReject.data.data
+    const trueState = Object.keys(states).find((key) => states[key] === true)
 
-      const initialToggles = {}
-      const initialSelectAll = {}
+    const checkOnsite =
+      pendingOnsite || approvedOnsite
+        ? true
+        : pendingLeave || approvedLeave
+        ? false
+        : false
 
-      if (user?.role === "Admin") {
-        list.forEach((userLeave) => {
-          // Check the `status` field for each leave and set the toggle accordingly
-          initialToggles[userLeave._id] =
-            userLeave.hrstatus === "HR/Onsite Approved" // Toggle on if approved
-          initialSelectAll[userLeave._id] =
-            userLeave.hrstatus === "HR/Onsite Approved"
-        })
-      } else {
-        list.forEach((userLeave) => {
-          // Check the `status` field for each leave and set the toggle accordingly
-          initialToggles[userLeave._id] =
-            userLeave.departmentstatus === "Dept Approved" // Toggle on if approved
-          initialSelectAll[userLeave.userId._id] =
-            userLeave.departmentstatus === "Dept Approved"
-        })
+    if (checkOnsite) {
+      const onsiteReject = await api.put(
+        `/auth/rejectOnsite/?role=${user.role}&selectedId=${id}&userId=${user._id}&startdate=${dates.startDate}&enddate=${dates.endDate}&feild=${trueState}`
+      )
+
+      if (onsiteReject.status === 200) {
+        const list = onsiteReject.data.data
+
+        const initialToggles = {}
+        const initialSelectAll = {}
+
+        if (user?.role === "Admin") {
+          list.forEach((userOnsite) => {
+            // Check the `status` field for each leave and set the toggle accordingly
+            initialToggles[userOnsite._id] =
+              userOnsite.hrstatus === "HR/Onsite Approved" // Toggle on if approved
+            initialSelectAll[userOnsite._id] =
+              userOnsite.hrstatus === "HR/Onsite Approved"
+          })
+        } else {
+          list.forEach((userOnsite) => {
+            // Check the `status` field for each leave and set the toggle accordingly
+            initialToggles[userOnsite._id] =
+              userOnsite.departmentstatus === "Dept Approved" // Toggle on if approved
+            initialSelectAll[userOnsite.userId._id] =
+              userOnsite.departmentstatus === "Dept Approved"
+          })
+        }
+        setIsToggled(initialToggles)
+        setIsSelected(initialSelectAll)
+        setLeaveList(list)
+
+        setLeaveStatus((prevState) => ({
+          ...prevState,
+          [id]: !prevState[id] // Toggle the specific user's state
+        }))
+        toast.success(onsiteReject.data.message)
+        setLoader(false)
       }
-      setIsToggled(initialToggles)
-      setIsSelected(initialSelectAll)
-      setLeaveList(list)
+    } else if (!checkOnsite) {
+      const leaveReject = await api.put(
+        `/auth/rejectLeave/?role=${user.role}&selectedId=${id}&userId=${user._id}&startdate=${dates.startDate}&enddate=${dates.endDate}&feild=${trueState}`
+      )
 
-      setLeaveStatus((prevState) => ({
-        ...prevState,
-        [id]: !prevState[id] // Toggle the specific user's state
-      }))
-      setLoader(false)
+      if (leaveReject.status === 200) {
+        const list = leaveReject.data.data
+
+        const initialToggles = {}
+        const initialSelectAll = {}
+
+        if (user?.role === "Admin") {
+          list.forEach((userLeave) => {
+            // Check the `status` field for each leave and set the toggle accordingly
+            initialToggles[userLeave._id] =
+              userLeave.hrstatus === "HR/Onsite Approved" // Toggle on if approved
+            initialSelectAll[userLeave._id] =
+              userLeave.hrstatus === "HR/Onsite Approved"
+          })
+        } else {
+          list.forEach((userLeave) => {
+            // Check the `status` field for each leave and set the toggle accordingly
+            initialToggles[userLeave._id] =
+              userLeave.departmentstatus === "Dept Approved" // Toggle on if approved
+            initialSelectAll[userLeave.userId._id] =
+              userLeave.departmentstatus === "Dept Approved"
+          })
+        }
+        setIsToggled(initialToggles)
+        setIsSelected(initialSelectAll)
+        setLeaveList(list)
+
+        setLeaveStatus((prevState) => ({
+          ...prevState,
+          [id]: !prevState[id] // Toggle the specific user's state
+        }))
+        toast.success(leaveReject.data.message)
+        setLoader(false)
+      }
     }
   }
 
@@ -517,22 +594,42 @@ const LeaveApprovalAndPending = () => {
   }
   const handleDropdownSelect = (option) => {
     if (option === "pending") {
-      setpendingOnsite(false)
-      setapprovedOnsite(false)
-      setApprovedLeave(false)
+      if (onsite) {
+        setpendingOnsite(true)
+        setPendingLeave(false)
+        setapprovedOnsite(false)
+        setApprovedLeave(false)
+      } else {
+        setPendingLeave(true)
+        setpendingOnsite(false)
+        setapprovedOnsite(false)
+        setApprovedLeave(false)
+      }
+      // setpendingOnsite(false)
+      // setapprovedOnsite(false)
+      // setApprovedLeave(false)
       setLoader(true)
-      setPendingLeave(true)
+      // setPendingLeave(true)
       setPending(true)
     } else if (option === "approved") {
+      if (onsite) {
+        setapprovedOnsite(true)
+        setpendingOnsite(!pendingOnsite)
+        setApprovedLeave(false)
+        setPendingLeave(false)
+      } else {
+        setApprovedLeave(true)
+        setapprovedOnsite(false)
+        setpendingOnsite(false)
+        setPendingLeave(false)
+      }
       setLoader(true)
-      setpendingOnsite(false)
-      setPendingLeave(false)
-      setApprovedLeave(true)
-      setapprovedOnsite(false)
+      // setpendingOnsite(false)
+      // setPendingLeave(false)
+
       setPending(false)
     }
   }
-
   return (
     <div>
       {loader && (
@@ -730,12 +827,6 @@ const LeaveApprovalAndPending = () => {
                         {user?.reason || user?.description}
                       </td>
 
-                      {/* <td className="border border-gray-300 py-1 truncate max-w-[140px] relative group">
-                      {user?.reason || user?.description}
-                      <div className="absolute left-0 top-full mt-1 w-auto min-w-max max-w-xs bg-gray-700 text-white text-xs rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                        {user?.reason || user?.description}
-                      </div>
-                    </td> */}
                       <td className="border border-gray-300 py-1 px-1">
                         {user?.departmentstatus}
                       </td>

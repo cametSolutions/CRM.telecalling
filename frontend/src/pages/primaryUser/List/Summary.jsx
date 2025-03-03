@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react"
 import MyDatePicker from "../../../components/common/MyDatePicker"
 
-import { FaSearch } from "react-icons/fa"
 import api from "../../../api/api"
 import Tiles from "../../../components/common/Tiles"
 import UseFetch from "../../../hooks/useFetch"

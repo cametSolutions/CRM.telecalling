@@ -82,6 +82,9 @@ function LeaveMaster() {
         )
 
         setValue("lateArrival", leaveData[0]?.lateArrival)
+        setValue("privilegeleave", leaveData[0]?.privilegeleave)
+        setValue("sickleave", leaveData[0]?.sickleave)
+        setValue("casualleave", leaveData[0]?.casualleave)
         setValue("earlyOut", leaveData[0]?.earlyOut)
         setValue("deductsalaryMinute", leaveData[0]?.deductSalaryMinute)
       }
@@ -104,7 +107,7 @@ function LeaveMaster() {
 
     // Split the time into hours and minutes
     const [hour, minute] = time.split(":")
-    
+
     // Return the values as an object
     return minute // Convert minute to number
   }
@@ -164,6 +167,9 @@ function LeaveMaster() {
 
         // Plain fields
         lateArrival: data.lateArrival,
+        privilegeleave: data.privilegeleave,
+        casualleave: data.casualleave,
+        sickleave: data.sickleave,
         earlyOut: data.earlyOut,
         deductSalaryMinute: data.deductsalaryMinute,
         holyDate: data.holyDate,
@@ -246,9 +252,8 @@ function LeaveMaster() {
               errors={errors}
               watch={watch}
             />
-
             {/* Late Arrival */}
-            <div className="">
+            <div>
               <label
                 htmlFor="lateArrival"
                 className="block text-sm font-medium text-gray-700"
@@ -269,34 +274,63 @@ function LeaveMaster() {
                 </span>
               )}
             </div>
-            {/* <div>
-              <label
-                htmlFor="earlyOut"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Early Out Before (minutes)
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Privilege Leave
               </label>
               <input
-                id="earlyOut"
                 type="number"
-                {...register("earlyOut", {
-                  required: "Early Out is required"
-                })}
-                className="mt-1 py-1 border rounded w-auto px-5"
+                {...register("privilegeleave")}
+                // value={User && User.joiningdate}
+                className="mt-1 py-1 border border-gray-400 rounded w-56 px-2 focus:outline-none focus:ring-0 focus:border-gray-300"
               />
-              {errors.earlyOut && (
-                <span className="text-red-500 text-sm ">
-                  {errors.earlyOut.message}
+              {errors.privilegeleave && (
+                <span className="text-red-500 text-sm">
+                  {errors.privilegeleave.message}
                 </span>
               )}
-            </div> */}
-
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Casual Leave
+              </label>
+              <input
+                type="number"
+                {...register("casualleave")}
+                // value={User && User.joiningdate}
+                className="mt-1 py-1 border  border-gray-300 rounded w-56 px-2 focus:outline-none focus:ring-0 focus:border-gray-300"
+              />
+              {errors.casualleave && (
+                <span className="text-red-500 text-sm">
+                  {errors.casualleave.message}
+                </span>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Sick Leave
+              </label>
+              <input
+                type="number"
+                {...register("sickleave")}
+                // value={User && User.joiningdate}
+                className="mt-1 py-1 border border-gray-300 rounded w-56 px-2 focus:outline-none focus:ring-0 focus:border-gray-300"
+              />
+              {errors.sickleave && (
+                <span className="text-red-500 text-sm">
+                  {errors.sickleave.message}
+                </span>
+              )}
+            </div>
             <div>
               <label
                 htmlFor=" deductSalaryMinute"
                 className="block text-sm font-medium text-gray-700"
               >
-                Deduct salary if staff is late or early by more than
+                Deduct salary if staff is late or early
+                <br />
+                by more than
               </label>
               <input
                 id="deductsalaryMinute"
@@ -304,7 +338,7 @@ function LeaveMaster() {
                 {...register("deductsalaryMinute", {
                   required: "Late Arrival is required"
                 })}
-                className="mt-1 py-1 border rounded w-auto px-5"
+                className="mt-1 py-1 border border-gray-300 rounded w-56 px-2 focus:outline-none focus:ring-0 focus:border-gray-300"
               />
               {errors.deductsalaryMinute && (
                 <span className="text-red-500 text-sm">

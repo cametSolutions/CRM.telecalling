@@ -18,14 +18,17 @@ const UserListform = () => {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
   const [users, setUser] = useState([])
+  const [loggeduser, setloggeduser] = useState(null)
   const { data, loading } = UseFetch("/auth/getallUsers")
+  const loggeduserData = localStorage.getItem("user")
+  const logged = JSON.parse(loggeduserData)
   useEffect(() => {
     if (data) {
       const { allusers } = data
       setUser(allusers)
+      setloggeduser(logged)
     }
-  }, [data])
-  console.log("user", users)
+  }, [data, loggeduser])
   const handleSearch = debounce((query) => {
     const { allusers } = data
     const input = query.trim()
@@ -35,7 +38,6 @@ const UserListform = () => {
     const filteredName = allusers.filter((user) =>
       user.name.toLowerCase().includes(lowerCaseQuery)
     )
-    console.log("filteredname", filteredName)
     const filteredMobile = allusers.filter((user) =>
       user.mobile.toString().toLowerCase().includes(lowerCaseQuery)
     )
@@ -82,7 +84,11 @@ const UserListform = () => {
         <hr className="border-t-2 border-gray-300 mb-3" />
         <div className="flex flex-wrap space-x-4 mb-2">
           <Link
-            to="/admin/masters/userRegistration"
+            to={
+              loggeduser?.role === "Admin"
+                ? "/admin/masters/userRegistration"
+                : "/staff/masters/userRegistration"
+            }
             className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center"
           >
             <FaUserPlus className="mr-2" />
@@ -117,7 +123,7 @@ const UserListform = () => {
                 <th className="py-2 px-4 border-b border-gray-300">
                   AssignedTo
                 </th>
-            
+
                 <th className="py-2 px-4 border-b border-gray-300">Edit</th>
                 <th className="py-2 px-4 border-b border-gray-300">Delete</th>
               </tr>
@@ -165,14 +171,23 @@ const UserListform = () => {
                         <td className="py-3 whitespace-nowrap text-xl text-black text-center">
                           <div className="flex justify-center items-center">
                             <CiEdit
-                              onClick={() =>
-                                navigate("/admin/masters/userEdit", {
-                                  state: {
-                                    user,
-                                    selected: item
-                                  }
-                                })
-                              }
+                              onClick={() => {
+                                if (loggeduser?.role === "Admin") {
+                                  navigate("/admin/masters/userEdit", {
+                                    state: {
+                                      user,
+                                      selected: item
+                                    }
+                                  })
+                                } else if (loggeduser?.role === "Staff") {
+                                  navigate("/staff/masters/userEdit", {
+                                    state: {
+                                      user,
+                                      selected: item
+                                    }
+                                  })
+                                }
+                              }}
                               className="cursor-pointer"
                             />
                           </div>
@@ -213,13 +228,21 @@ const UserListform = () => {
                         <td className="py-3 whitespace-nowrap text-xl text-black text-center">
                           <div className="flex justify-center items-center">
                             <CiEdit
-                              onClick={() =>
-                                navigate("/admin/masters/userEdit", {
-                                  state: {
-                                    user
-                                  }
-                                })
-                              }
+                              onClick={() => {
+                                if (loggeduser?.role === "Admin") {
+                                  navigate("/admin/masters/userEdit", {
+                                    state: {
+                                      user
+                                    }
+                                  })
+                                } else if (loggeduser?.role === "Staff") {
+                                  navigate("/staff/masters/userEdit", {
+                                    state: {
+                                      user
+                                    }
+                                  })
+                                }
+                              }}
                               className="cursor-pointer"
                             />
                           </div>

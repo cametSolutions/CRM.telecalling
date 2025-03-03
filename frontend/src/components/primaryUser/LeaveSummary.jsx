@@ -36,7 +36,6 @@ const leaveSummary = () => {
     loading,
     refreshHook
   } = UseFetch(apiUrl)
-
   useEffect(() => {
     if (newattende && newattende.length) {
       if (user.role === "Admin") {
@@ -45,7 +44,7 @@ const leaveSummary = () => {
       } else if (user.role === "Staff") {
         setHoly(holy)
         const filteredUser = newattende.filter(
-          (item) => item.userId === user._id
+          (item) => item.userId === user._id || item.assignedto === user._id
         )
         setleaveSummary(filteredUser)
       }
@@ -92,7 +91,7 @@ const leaveSummary = () => {
       })
     }
   }
-  const handleOnsite = (date, type, onsiteType, halfDayperiod) => {
+  const handleOnsite = (date, type, onsiteType, halfDayperiod, description) => {
     setModalOpen(true)
     setselectedDate(date)
     setType(type)
@@ -100,18 +99,19 @@ const leaveSummary = () => {
       setFormData({
         onsiteDate: date,
         onsiteType: onsiteType,
-        halfDayPeriod: halfDayperiod ? halfDayperiod : null
+        halfDayPeriod: halfDayperiod ? halfDayperiod : null,
+        description
       })
     }
   }
-  const handleLeave = (date, type, leaveDetails, halfDayperiod) => {
-   
+  const handleLeave = (date, type, leaveDetails, halfDayperiod, reason) => {
     setModalOpen(true)
     setselectedDate(date)
     setType(type)
     if (type === "Leave") {
       setFormData({
         leaveDate: date,
+        reason,
         leaveCategory: leaveDetails.field,
         leaveType:
           leaveDetails.value === 1
@@ -152,9 +152,15 @@ const leaveSummary = () => {
     }
   }
   const handleApply = async (staffId, selected, setIsApplying, type) => {
+    
+
     if (type === "Leave") {
+      const matchedStaff = leavesummaryList.find(
+        (staff) => staff.userId === staffId
+      )
+      const assignedTo = matchedStaff ? matchedStaff.assignedto : null
       const response = await api.post(
-        `/auth/editLeave?userid=${staffId}`,
+        `/auth/editLeave?userid=${staffId}&assignedto=${assignedTo}`,
         selected
       )
       const data = response.data.data.data
@@ -407,7 +413,6 @@ const leaveSummary = () => {
 
     FileSaver.saveAs(fileData, "Attendance_Report.xlsx")
   }
-
   return (
     <div className="w-full">
       {/* Header Section */}
@@ -562,6 +567,11 @@ const leaveSummary = () => {
           isOpen={modalOpen}
           formData={formData}
           staffId={selectedStaff[0]?.userId}
+          assignedto={selectedStaff[0]?.assignedto}
+          staffName={selectedStaff[0]?.name}
+          casualleavestartsfrom={selectedStaff[0]?.casualleavestartsfrom}
+          sickleavestartsfrom={selectedStaff[0]?.sickleavestartsfrom}
+          privilegeleavestartsfrom={selectedStaff[0]?.privilegeleavestartsfrom}
           handleApply={handleApply}
         />
       )}

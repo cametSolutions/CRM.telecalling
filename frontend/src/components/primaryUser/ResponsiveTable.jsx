@@ -152,7 +152,8 @@ const ResponsiveTable = ({
                                     details?.privileageLeave ||
                                     details?.otherLeave
                                 },
-                                details?.halfDayperiod
+                                details?.halfDayperiod,
+                                details?.reason
                               )
                             }
                           }}
@@ -182,7 +183,8 @@ const ResponsiveTable = ({
                                     details?.privileageLeave ||
                                     details?.otherLeave
                                 },
-                                details?.halfDayperiod
+                                details?.halfDayperiod,
+                                details?.reason
                               )
                             }
                           }}
@@ -212,7 +214,8 @@ const ResponsiveTable = ({
                                     details?.privileageLeave ||
                                     details?.otherLeave
                                 },
-                                details?.halfDayperiod
+                                details?.halfDayperiod,
+                                details?.reason
                               )
                             }
                           }}
@@ -242,7 +245,8 @@ const ResponsiveTable = ({
                                     details?.privileageLeave ||
                                     details?.otherLeave
                                 },
-                                details?.halfDayperiod
+                                details?.halfDayperiod,
+                                details?.reason
                               )
                             }
                           }}
@@ -277,12 +281,15 @@ const ResponsiveTable = ({
                     <td
                       className="border border-gray-300 p-2"
                       onClick={() => {
-                        if (user?.role === "Admin") {
+                        if (
+                          user?.role === "Admin"
+                        ) {
                           handleOnsite(
                             date,
                             "Onsite",
                             details?.onsite?.[0]?.onsiteType,
-                            details?.onsite?.[0].halfDayperiod
+                            details?.onsite?.[0].halfDayperiod,
+                            details?.onsite[0]?.description
                           )
                         }
                       }}
@@ -299,175 +306,6 @@ const ResponsiveTable = ({
               }
             )}
 
-            {/* {Object.entries(attendee.attendancedates).map(
-              ([date, details], idx) => (
-                <tr key={idx} className="hover:bg-gray-50 text-center">
-                  <td className="border border-gray-300 p-2 sticky left-0 bg-white">
-                    {date}
-                  </td>
-                  <td
-                    className="border border-gray-300 p-2"
-                    onClick={() => {
-                      if (user?.role === "Admin") {
-                        handleAttendance(
-                          date,
-                          "Attendance",
-                          details?.inTime,
-                          details?.outTime
-                        )
-                      }
-                    }}
-                  >
-                    {details?.inTime || "-"}
-                  </td>
-                  <td
-                    className="border border-gray-300 p-2"
-                    onClick={() => {
-                      if (user?.role === "Admin")
-                        handleAttendance(
-                          date,
-                          "Attendance",
-                          details?.inTime,
-                          details?.outTime
-                        )
-                    }}
-                  >
-                    {details?.outTime || "-"}
-                  </td>
-                  <td
-                    className="border border-gray-300 p-2"
-                    onClick={() => {
-                      if (user?.role === "Admin") {
-                        handleLeave(
-                          date,
-                          "Leave",
-                          details?.otherLeave
-                            ? "other Leave"
-                            : details?.compensatoryLeave
-                            ? "compensatory Leave"
-                            : details?.privileageLeave
-                            ? "privileage Leave"
-                            : details?.casualLeave
-                            ? "casual Leave"
-                            : null,
-                          details?.otherLeave ||
-                            details?.compensatoryLeave ||
-                            details?.privileageLeave ||
-                            details?.casualLeave,
-                          details?.halfDayperiod
-                        )
-                      }
-                    }}
-                  >
-                    {details?.casualLeave || "-"}
-                  </td>
-                  <td
-                    className="border border-gray-300 p-2"
-                    onClick={() => {
-                      if (user?.role === "Admin") {
-                        handleLeave(
-                          date,
-                          "Leave",
-                          details?.otherLeave
-                            ? "other Leave"
-                            : details?.compensatoryLeave
-                            ? "compensatory Leave"
-                            : details?.privileageLeave
-                            ? "privileage Leave"
-                            : details?.casualLeave
-                            ? "casual Leave"
-                            : null,
-                          details?.otherLeave ||
-                            details?.compensatoryLeave ||
-                            details?.privileageLeave ||
-                            details?.casualLeave,
-                          details?.halfDayperiod
-                        )
-                      }
-                    }}
-                  >
-                    {details?.privileageLeave || "-"}
-                  </td>
-                  <td
-                    className="border border-gray-300 p-2"
-                    onClick={() => {
-                      if (user?.role === "Admin") {
-                        handleLeave(
-                          date,
-                          "Leave",
-                          details?.otherLeave
-                            ? "other Leave"
-                            : details?.compensatoryLeave
-                            ? "compensatory Leave"
-                            : details?.privileageLeave
-                            ? "privileage Leave"
-                            : details?.casualLeave
-                            ? "casual Leave"
-                            : null,
-                          details?.otherLeave ||
-                            details?.compensatoryLeave ||
-                            details?.privileageLeave ||
-                            details?.casualLeave,
-                          details?.halfDayperiod
-                        )
-                      }
-                    }}
-                  >
-                    {details?.compensatoryLeave || "-"}
-                  </td>
-                  <td
-                    className="border border-gray-300 p-2"
-                    onClick={() => {
-                      if (user?.role === "Admin") {
-                        handleLeave(
-                          date,
-                          "Leave",
-                          details?.otherLeave
-                            ? "other Leave"
-                            : details?.compensatoryLeave
-                            ? "compensatory Leave"
-                            : details?.privileageLeave
-                            ? "privileage Leave"
-                            : details?.casualLeave
-                            ? "casual Leave"
-                            : null,
-                          details?.otherLeave ||
-                            details?.compensatoryLeave ||
-                            details?.privileageLeave ||
-                            details?.casualLeave,
-                          details?.halfDayperiod
-                        )
-                      }
-                    }}
-                  >
-                    {details?.otherLeave || "-"}
-                  </td>
-                  <td className="border border-gray-300 p-2">
-                    {details?.early ? `${details.early} minutes` : "-"}
-                  </td>
-                  <td className="border border-gray-300 p-2">
-                    {details?.late ? `${details.late} minutes` : "-"}
-                  </td>
-                  <td className="border border-gray-300 p-2">
-                    {details?.notMarked || "-"}
-                  </td>
-                  <td className="border border-gray-300 p-2">
-                    {details?.onsite?.[0]?.place || "-"}
-                  </td>
-                  <td className="border border-gray-300 p-2">
-                    {details?.onsite?.[0]?.siteName || "-"}
-                  </td>
-                  <td className="border border-gray-300 p-2">
-                    {details?.onsite?.[0]?.onsiteType || "-"}
-                  </td>
-                  <td className="border border-gray-300 p-2">
-                    {details?.onsite?.[0]?.onsiteType === "Half Day"
-                      ? details?.onsite?.[0].halfDayPeriod
-                      : "-"}
-                  </td>
-                </tr>
-              )
-            )} */}
           </tbody>
         </table>
       </div>
