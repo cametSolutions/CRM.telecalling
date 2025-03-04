@@ -53,7 +53,6 @@ const Summary = () => {
   }, [branches])
 
   useEffect(() => {
-  
     if (dates.startDate) {
       const fetchUserList = async () => {
         try {
@@ -220,7 +219,6 @@ const Summary = () => {
 
   useEffect(() => {
     if (isModalOpen && selectedCustomer) {
-
       const customerData = callList
         .filter((customer) => customer._id === selectedCustomer) // Filter for the selected customer
         .map((customer) => {
@@ -419,7 +417,7 @@ const Summary = () => {
           `/customer/getselectedDateCalls?${query}`
         ) // Replace with your API endpoint
         const data = response.data.data
-  
+
         if (users?.role === "Admin") {
           setCallList(data)
         } else {
@@ -451,7 +449,6 @@ const Summary = () => {
                 return hasMatchingBranch
               })
           )
-        
 
           setCallList(filtered)
         }
@@ -463,54 +460,6 @@ const Summary = () => {
     fetchCalls()
   }, [branch, users, dates])
 
-  // useEffect(() => {
-  //   if (branch) {
-  //     console.log(branch)
-  //     // const customercalls =
-  //     socket.emit("updatedCalls")
-  //     // Listen for initial data from the server
-  //     socket.on("updatedCalls", (data) => {
-  //       if (users?.role === "Admin") {
-  //         setCallList(data.calls)
-  //       } else {
-  //         const userBranchName = new Set(
-  //           users?.selected.map((branch) => branch.branchName)
-  //         )
-  //         const branchNamesArray = Array.from(userBranchName)
-  //         const filtered = data.calls.filter(
-  //           (call) =>
-  //             Array.isArray(call?.callregistration) && // Check if callregistration is an array
-  //             call.callregistration.some((registration) => {
-  //               const hasMatchingBranch =
-  //                 Array.isArray(registration?.branchName) && // Check if branchName is an array
-  //                 registration.branchName.some(
-  //                   (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
-  //                 )
-
-  //               // If user has only one branch, ensure it matches exactly and no extra branches
-  //               if (branchNamesArray.length === 1) {
-  //                 return (
-  //                   hasMatchingBranch &&
-  //                   registration.branchName.length === 1 &&
-  //                   registration.branchName[0] === branchNamesArray[0]
-  //                 )
-  //               }
-
-  //               // If user has more than one branch, just check for any match
-  //               return hasMatchingBranch
-  //             })
-  //         )
-
-  //         setCallList(filtered)
-  //       }
-  //     })
-
-  //     // Cleanup the socket connection when the component unmounts
-  //     return () => {
-  //       socket.off("updatedCalls")
-  //     }
-  //   }
-  // }, [branch, users])
   const handleDate = (selectedDate) => {
     const extractDateAndMonth = (date) => {
       const year = date.getFullYear()
@@ -520,7 +469,6 @@ const Summary = () => {
         .toString()
         .padStart(2, "0")}`
     }
- 
 
     if (
       selectedDate.startDate instanceof Date &&
@@ -556,7 +504,6 @@ const Summary = () => {
   const toggle = () => setIsToggled(!isToggled)
 
   const openModal = (id) => {
-
     if (isToggled) {
       setSelectedUser(id)
     } else {
@@ -571,8 +518,7 @@ const Summary = () => {
     setSelectedCustomer(null)
     setSelectedUser(null)
   }
-  console.log(customerCalls)
-  console.log(Calls)
+
 
   return (
     <div className="antialiased font-sans container mx-auto px-4 sm:px-8">

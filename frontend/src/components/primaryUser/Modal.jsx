@@ -34,8 +34,8 @@ const Modal = ({
 
   const [selectedAttendance, setselectedAttendance] = useState({
     attendanceDate: "",
-    inTime: { hours: "", minutes: "", amPm: "AM" },
-    outTime: { hours: "", minutes: "", amPm: "AM" }
+    inTime: { hours: "00", minutes: "00", amPm: "AM" },
+    outTime: { hours: "00", minutes: "00", amPm: "AM" }
   })
   const [selectedLeave, setselectedLeave] = useState({
     leaveDate: "",
@@ -54,14 +54,14 @@ const Modal = ({
   const [isApplying, setIsApplying] = useState(false)
   const [errors, setErrors] = useState({})
   const parseTime = (timeString) => {
-    if (!timeString) return { hours: "", minutes: "", amPm: "" }
+    if (!timeString) return { hours: "00", minutes: "00", amPm: "AM" }
 
     const [time, period] = timeString.split(" ")
     const [hours, minutes] = time.split(":")
 
     return { hours, minutes, amPm: period }
   }
-  const currentMonth = new Date().toISOString().slice(0, 7)
+  const currentMonth = new Date(formData?.leaveDate).toString().slice(0, 7)
   const { data: leaves, refreshHook } = UseFetch(
     staffId && `/auth/getallLeave?userid=${staffId}`
   )
@@ -101,24 +101,39 @@ const Modal = ({
       })
     }
   }, [formData])
-  ///leavebalance checking
   useEffect(() => {
-    if (allleaves && allleaves.length > 0) {
+    if (allleaves && allleaves.length > 0 && leavemasterleavecount) {
       const currentDate = new Date()
       const currentYear = currentDate.getFullYear()
       const currentmonth = currentDate.getMonth() + 1
+      const leaveDate = new Date(formData.startDate)
+      const leaveYear = leaveDate.getFullYear()
       const startDate = new Date(privilegeleavestartsfrom)
       const startYear = startDate.getFullYear()
       const startmonth = startDate.getMonth() + 1 // 1-based month
-      const totalprivilegeLeave = 12 // or 24, based on policy
-      const privilegePerMonth = totalprivilegeLeave / 12 // 1 or 2 per month
+      const totalprivilegeLeave = leavemasterleavecount?.totalprivilegeLeave
+      const privilegePerMonth = totalprivilegeLeave / 12
+      const totalcasualLeave = leavemasterleavecount?.totalcasualleave
+      const casualPerMonth = totalcasualLeave / 12
 
       let ownedprivilegeCount = 0
 
-      if (startYear < currentYear) {
-        // If privilege started in a past year, give leaves from Jan to current month
-        ownedprivilegeCount = currentmonth * privilegePerMonth
-      } else if (startYear === currentYear) {
+      if (startYear < currentYear && privilegeleavestartsfrom !== null) {
+        let privilegeCount
+        if (startYear < leaveYear && leaveYear < currentYear) {
+          privilegeCount = 12 * privilegePerMonth
+        } else if (startYear < leaveYear) {
+          privilegeCount = currentmonth * privilegePerMonth
+        } else if (startYear === leaveYear) {
+          const monthsRemainingInStartYear = 12 - startmonth + 1 // Calculate remaining months including startMonth
+          privilegeCount = monthsRemainingInStartYear * privilegePerMonth
+        }
+
+        ownedprivilegeCount = privilegeCount
+      } else if (
+        startYear === currentYear &&
+        privilegeleavestartsfrom !== null
+      ) {
         // If privilege started this year, give leaves from start month to current month
         if (currentmonth >= startmonth) {
           ownedprivilegeCount =
@@ -131,51 +146,113 @@ const Modal = ({
         ownedprivilegeCount = 0
       }
 
-      const usedcasualcount = allleaves?.reduce((count, leave) => {
-        const leaveDate = new Date(leave.leaveDate)
+      const usedCasualCount = allleaves?.reduce((count, leave) => {
+        if (!leave.leaveDate) return count
+        const leaveDate = new Date(formData.leaveDate)
         const leaveMonthYear = `${leaveDate.getFullYear()}-${String(
           leaveDate.getMonth() + 1
         ).padStart(2, "0")}`
 
+        const leaveDateObj = new Date(leave.leaveDate)
+        const leaveMonthYearFromData = `${leaveDateObj.getFullYear()}-${String(
+          leaveDateObj.getMonth() + 1
+        ).padStart(2, "0")}`
         if (
           leave.leaveCategory === "casual Leave" &&
-          leaveMonthYear === currentMonth
+          leaveMonthYear === leaveMonthYearFromData
         ) {
           return count + (leave.leaveType === "Half Day" ? 0.5 : 1)
         }
+
         return count
       }, 0)
 
-      const usedprivilegecount = allleaves?.reduce((count, leave) => {
-        const leaveYear = parseInt(currentMonth.split("-")[0], 10)
-
+      const takenPrivilegeCount = allleaves?.reduce((count, leave) => {
+        if (!leave.leaveDate) return count
+        const leaveYear = new Date(formData.leaveDate).getFullYear()
+        const leaveYearFromData = new Date(leave.leaveDate).getFullYear()
         if (
-          new Date(leave.leaveDate).getFullYear() === leaveYear &&
-          leave.leaveCategory === "privileage Leave"
+          leave.leaveCategory === "privileage Leave" &&
+          leaveYear === leaveYearFromData
         ) {
           return count + (leave.leaveType === "Half Day" ? 0.5 : 1)
         }
+
         return count
       }, 0)
 
-      const balancecasualcount = usedcasualcount === 1 ? 0 : 1
-      const balanceprivilege = ownedprivilegeCount - usedprivilegecount
-      setBalanceprivilegeLeaveCount(ownedprivilegeCount - usedprivilegecount)
+      const balancecasualcount = usedCasualCount === casualPerMonth ? 0 : 1
+      const balanceprivilege = ownedprivilegeCount - takenPrivilegeCount
+      setBalanceprivilegeLeaveCount(Math.max(balanceprivilege, 0))
       setBalancecasualLeaveCount(balancecasualcount)
 
       setLeaveBalance({
         casual: balancecasualcount,
-        privilege: balanceprivilege,
+        privilege: Math.max(balanceprivilege, 0),
+        sick: BalancesickleaveCount,
+        compensatory: BalancecompensatoryleaveCount
+      })
+    } else if (allleaves && allleaves.length === 0 && leavemasterleavecount) {
+      const currentDate = new Date()
+      const currentYear = currentDate.getFullYear()
+      const currentmonth = currentDate.getMonth() + 1
+      const leaveDate = new Date(formData.leaveDate)
+      const leaveYear = leaveDate.getFullYear()
+      const startDate = new Date(privilegeleavestartsfrom)
+      const startYear = startDate.getFullYear()
+      const startmonth = startDate.getMonth() + 1 // 1-based month
+
+      const totalprivilegeLeave = leavemasterleavecount?.totalprivilegeLeave
+      const privilegePerMonth = totalprivilegeLeave / 12
+      const totalcasualLeave = leavemasterleavecount?.totalcasualleave
+      const casualPerMonth = totalcasualLeave / 12
+      let ownedprivilegeCount = 0
+
+      if (startYear < currentYear && privilegeleavestartsfrom !== null) {
+        let privilegeCount
+        if (startYear < leaveYear && leaveYear < currentYear) {
+          privilegeCount = 12 * privilegePerMonth
+        } else if (startYear < leaveYear) {
+          privilegeCount = currentmonth * privilegePerMonth
+        } else if (startYear === leaveYear) {
+          const monthsRemainingInStartYear = 12 - startmonth + 1 // Calculate remaining months including startMonth
+          privilegeCount = monthsRemainingInStartYear * privilegePerMonth
+        }
+        ownedprivilegeCount = privilegeCount
+      } else if (
+        startYear === currentYear &&
+        privilegeleavestartsfrom !== null
+      ) {
+        // If privilege started this year, give leaves from start month to current month
+        if (currentmonth >= startmonth) {
+          ownedprivilegeCount =
+            (currentmonth - startmonth + 1) * privilegePerMonth
+        } else {
+          ownedprivilegeCount = 0 // Not eligible yet
+        }
+      } else {
+        // If privilege starts in a future year, no leaves yet
+        ownedprivilegeCount = 0
+      }
+      setBalanceprivilegeLeaveCount(ownedprivilegeCount)
+      setBalancecasualLeaveCount(0)
+
+      setLeaveBalance({
+        casual: casualPerMonth,
+        privilege: ownedprivilegeCount,
         sick: BalancesickleaveCount,
         compensatory: BalancecompensatoryleaveCount
       })
     }
-  }, [currentMonth, allleaves, leavemasterleavecount])
+  }, [currentMonth, allleaves, leavemasterleavecount, formData])
   const handleTimeChange = (type, field, value) => {
     setselectedAttendance((prev) => {
       // Ensure the nested object exists for `type`
-      const currentType = prev[type] || { hours: "", minutes: "", amPm: "" }
-
+      const currentType = prev[type] || {
+        hours: "00",
+        minutes: "00",
+        amPm: "AM"
+      }
       return {
         ...prev,
         [type]: {
@@ -186,7 +263,6 @@ const Modal = ({
     })
   }
   const Apply = async () => {
-   
     if (type === "Leave") {
       // Validation
       let newErrors = {}
@@ -206,9 +282,12 @@ const Modal = ({
         return
       }
       setIsApplying(true)
+
       handleApply(staffId, selectedLeave, setIsApplying, type)
     } else if (type === "Attendance") {
       setIsApplying(true)
+
+
       handleApply(staffId, selectedAttendance, setIsApplying, type)
     } else if (type === "Onsite") {
       setIsApplying(true)

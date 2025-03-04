@@ -365,128 +365,7 @@ export const UpdateUserPermission = async (req, res) => {
   }
 }
 
-// export const GetallUsers = async (req, res) => {
-//   try {
-//     // const allusers = await Staff.find()
-//     //   .populate({
-//     //     path: "department",
-//     //     model: "Department",
-//     //     select: "department" // Select only the department field
-//     //   })
-//     //   .populate({
-//     //     path: "assignedto", // Mongoose will handle the model based on assignedtoModel
-//     //     select: "name" // Select only the name field
-//     //   })
-//     //   .then((data) => {
-//     //     console.log("Fetched all users:", JSON.stringify(data, null, 2))
-//     //     return data
-//     //   })
-//     //   .catch((error) => {
-//     //     console.error("Error fetching users:", error)
-//     //     throw error // Rethrow error if necessary
-//     //   })
-//     const allusers = await Staff.find().lean() // Convert to plain JavaScript objects
-//     console.log(
-//       "Raw users before population:",
-//       JSON.stringify(allusers, null, 2)
-//     )
 
-//     // Populate the data after fetching
-//     const populatedUsers = await Staff.populate(allusers, [
-//       {
-//         path: "department",
-//         model: "Department",
-//         select: "department"
-//       },
-//       {
-//         path: "assignedto",
-//         select: "name" // Ensure this is correctly referencing the assigned model
-//       }
-//     ])
-//     console.log("indoallusrs", populatedUsers)
-//     // const allusers = await Staff.find()
-//     //   .populate({
-//     //     path: "department",
-//     //     model: "Department",
-//     //     select: "department" // Select only the department field
-//     //   })
-//     //   .populate({
-//     //     path: "assignedto",
-//     //     model: function (doc) {
-//     //       return doc.assignedModel
-//     //     }
-//     //   })
-
-//     // const allusers = await Staff.find()
-//     //   .populate({
-//     //     path: "department",
-//     //     model: "Department",
-//     //     select: "department"
-//     //   })
-//     //   .populate({
-//     //     path: "assignedto", // This will use refPath to determine the correct model
-//     //     select: "name" // Select only the name field from either Staff or Admin
-//     //   })
-//     //   .then((data) => console.log(data))
-//     //   .catch((error) => console.log(error))
-
-//     // const populatedUsers = await Promise.all(
-//     //   allusers.map(async (user) => {
-//     //     if (user.assignedtoModel === "Admin") {
-//     //       // If assignedtoModel is "Admin", populate from Admin collection
-//     //       await user.populate({
-//     //         path: "assignedto",
-//     //         model: "Admin", // Directly specify the model
-//     //         select: "name"
-//     //       })
-//     //     } else if (user.assignedtoModel === "Staff") {
-//     //       // If assignedtoModel is "Staff", populate from Staff collection
-//     //       await user.populate({
-//     //         path: "assignedto",
-//     //         model: "Staff", // Directly specify the model
-//     //         select: "name"
-//     //       })
-//     //     }
-//     //     return user // Return the populated user
-//     //   })
-//     // )
-//     // console.log("populatedusers", populatedUsers)
-
-//     const allAdmins = await Admin.find()
-
-//     if (allusers.length || allAdmins.length) {
-//       const data = {}
-
-//       if (allusers.length) {
-//         data.allusers = allusers
-//       }
-
-//       if (allAdmins.length) {
-//         data.allAdmins = allAdmins
-//       }
-//       console.log("alldata", data)
-//       return res.status(200).json({
-//         message: "Users found",
-//         data: data
-//       })
-//     } else {
-//       return res.status(404).json({ message: "No users or admins found" })
-//     }
-
-//     // const allusers = await Staff.find()
-//     // const allAdmins = await Admin.find()
-//     // if (allusers || allAdmins) {
-//     //   return res
-//     //     .status(200)
-//     //     .json({ message: " users found", data: { allusers, allAdmins } })
-//     // } else {
-//     //   res.status(400).json({ message: "users not found" })
-//     // }
-//   } catch (error) {
-//     console.log("error:", error)
-//     res.status(500).json({ message: "server error" })
-//   }
-// }
 
 export const GetallUsers = async (req, res) => {
   try {
@@ -904,7 +783,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
     const startDate = new Date(Date.UTC(year, month - 1, 1))
     const endDate = new Date(Date.UTC(year, month, 0))
 
-   
     const users = await Staff.aggregate([
       {
         $project: {
@@ -921,7 +799,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       }
     ])
 
-    
     const convertToMinutes = (timeStr) => {
       const [time, modifier] = timeStr.split(" ")
       let [hours, minutes] = time.split(":").map(Number)
@@ -1345,12 +1222,11 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           }
           daysInMonth.delete(day)
         })
-     
 
       onsites?.length &&
         onsites?.forEach((onsite) => {
           const onsiteDate = onsite.onsiteDate.toISOString().split("T")[0]
-          
+
           const isAttendance =
             Array.isArray(attendances) &&
             attendances.some(
@@ -1370,19 +1246,17 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               })
             })
           }
-         
-            if (!isAttendance) {
-              if (onsite.onsiteType === "Full Day") {
-                stats.attendancedates[onsiteDate].present = 1
-                stats.attendancedates[onsiteDate].notMarked = ""
-                stats.onsite++
-              } else if (onsite.onsiteType === "Half Day") {
-                stats.attendancedates[onsiteDate].present = 0.5
-                stats.attendancedates[onsiteDate].notMarked = 0.5
-              }
+
+          if (!isAttendance) {
+            if (onsite.onsiteType === "Full Day") {
+              stats.attendancedates[onsiteDate].present = 1
+              stats.attendancedates[onsiteDate].notMarked = ""
+              stats.onsite++
+            } else if (onsite.onsiteType === "Half Day") {
+              stats.attendancedates[onsiteDate].present = 0.5
+              stats.attendancedates[onsiteDate].notMarked = 0.5
             }
-          
-         
+          }
         })
       leaves?.length &&
         leaves.forEach((leave) => {
@@ -1570,14 +1444,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
       for (const dates in stats.attendancedates) {
         stats.present += stats.attendancedates[dates].present
-        stats.present +=
-          stats.attendancedates[dates].privileageLeave !== ""
-            ? Number(stats.attendancedates[dates].privileageLeave)
-            : 0
-        stats.present +=
-          stats.attendancedates[dates].compensatoryLeave !== ""
-            ? Number(stats.attendancedates[dates].compensatoryLeave)
-            : 0
+       
         stats.absent +=
           stats.attendancedates[dates].otherLeave &&
           !isNaN(stats.attendancedates[dates].otherLeave)
@@ -1585,8 +1452,13 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             : stats.attendancedates[dates].casualLeave &&
               !isNaN(stats.attendancedates[dates].casualLeave)
             ? Number(stats.attendancedates[dates].casualLeave)
+            : stats.attendancedates[dates].privileageLeave &&
+              !isNaN(stats.attendancedates[dates].privileageLeave)
+            ? Number(stats.attendancedates[dates].privileageLeave)
+            : stats.attendancedates[dates].compensatoryLeave &&
+              !isNaN(stats.attendancedates[dates].compensatoryLeave)
+            ? Number(stats.attendancedates[dates].compensatoryLeave)
             : 0
-
         stats.notMarked +=
           stats.attendancedates[dates].notMarked !== ""
             ? Number(stats.attendancedates[dates].notMarked)
@@ -1614,7 +1486,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       data: staffAttendanceStats,
       fulldateholiday: listofHolidays || []
     })
-
   } catch (error) {
     console.log("error", error)
     return res.status(500).json({ message: "Internal server error" })
@@ -1754,7 +1625,6 @@ export const GetAllpendingORonsiteRequest = async (req, res) => {
     }
 
     if (onsite === "true") {
-     
       const allonsite = await Onsite.find(query).populate({
         path: "userId",
         select: "name role department", // Select fields from User
@@ -2237,7 +2107,6 @@ export const ApproveOnsite = async (req, res) => {
 
     // Check if any document was updated
     if (result && result.modifiedCount > 0) {
-     
       // Fetch updated leave requests for display
       const updatedOnsiteList = await Onsite.find(baseQuery).populate({
         path: "userId",
@@ -2915,7 +2784,6 @@ export const EditOnsite = async (req, res) => {
     if (result) {
       const fakeReq = { query: { year, month } }
 
-      // Call GetsomeAll with fake req
       const a = await GetsomeAllsummary(fakeReq, res)
       if (a) {
         return res.status(200).json({ message: "onsite updated", data: a })
@@ -2934,7 +2802,7 @@ export const EditLeave = async (req, res) => {
     const dateObj = new Date(leaveDate)
     const userobjectId = new mongoose.Types.ObjectId(userid)
     const assignedtoObjectId = new mongoose.Types.ObjectId(assignedto)
-   
+
     // Extract year and month (without leading zero)
     const year = dateObj.getFullYear() // "2025"
     const month = dateObj.getMonth() + 1
@@ -2998,13 +2866,13 @@ export const EditAttendance = async (req, res) => {
     const dateObj = new Date(attendanceDate)
     // Merge hours, minutes, and amPm into time strings
     const inTimeString =
-      inTimeHours && inTimeMinutes && inTimeAmPm
-        ? `${inTimeHours}:${inTimeMinutes} ${inTimeAmPm}`
-        : ""
+      inTimeHours === "00"
+        ? ""
+        : `${inTimeHours}:${inTimeMinutes} ${inTimeAmPm}`
     const outTimeString =
-      outTimeHours && outTimeMinutes && outTimeAmPm
-        ? `${outTimeHours}:${outTimeMinutes} ${outTimeAmPm}`
-        : ""
+      outTimeHours === "00"
+        ? ""
+        : `${outTimeHours}:${outTimeMinutes} ${outTimeAmPm}`
     // Extract year and month (without leading zero)
     const year = dateObj.getFullYear() // "2025"
     const month = dateObj.getMonth() + 1

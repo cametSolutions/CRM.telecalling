@@ -16,7 +16,6 @@ import "tippy.js/themes/light.css" // Example for light theme
 
 function LeaveApplication() {
   const [events, setEvents] = useState([])
-  const [casualleaveCount, setcasualLeaveCount] = useState(0)
   const [BalanceprivilegeleaveCount, setBalanceprivilegeLeaveCount] =
     useState(0)
   const [leaveBalance, setLeaveBalance] = useState({})
@@ -27,18 +26,15 @@ function LeaveApplication() {
   const [allleaves, setAllleaves] = useState([])
   const [allOnsites, setAllOnsite] = useState([])
   const [errors, setErrors] = useState({})
-  const [noEventCount, setNoEventCount] = useState(0)
-  const [selectedMonth, setSelectedMonth] = useState("")
+  
   const [MonthData, setMonthData] = useState({})
   const [currentMonthData, setcurrentMonthData] = useState({})
   // const [currentMonth, setCurrentMonth] = useState("")
   const [remainingDays, setRemainingDays] = useState(0)
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth())
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
-  const [presentMonth, setpresentMonth] = useState(new Date().getMonth())
   const [message, setMessage] = useState("")
   const [showModal, setShowModal] = useState(false)
-  const [t, setIn] = useState(null)
   const [pastDate, setPastDate] = useState(null)
   const [selectedTab, setSelectedTab] = useState("Leave")
   const [formData, setFormData] = useState({
@@ -97,21 +93,34 @@ function LeaveApplication() {
     }
   }, [leaves, allonsite])
   useEffect(() => {
-    if (allleaves && allleaves.length > 0) {
+    if (allleaves && allleaves.length > 0 && leavemasterleavecount) {
       const currentDate = new Date()
+
       const currentYear = currentDate.getFullYear()
       const currentmonth = currentDate.getMonth() + 1
-      const startDate = new Date(user.privilegeleavestartsfrom)
+      const leaveDate = new Date(formData.startDate)
+      const leaveYear = leaveDate.getFullYear()
+      const startDate = new Date(user?.privilegeleavestartsfrom)
       const startYear = startDate.getFullYear()
       const startmonth = startDate.getMonth() + 1 // 1-based month
-
-      const totalprivilegeLeave = 12 // or 24, based on policy
-      const privilegePerMonth = totalprivilegeLeave / 12 // 1 or 2 per month
-
+      const totalprivilegeLeave = leavemasterleavecount?.totalprivilegeLeave
+      const privilegePerMonth = totalprivilegeLeave / 12
+      const totalcasualLeave = leavemasterleavecount?.totalcasualleave
+      const casualPerMonth = totalcasualLeave / 12
       let ownedprivilegeCount = 0
       if (startYear < currentYear) {
-        // If privilege started in a past year, give leaves from Jan to current month
-        ownedprivilegeCount = currentmonth * privilegePerMonth
+        consoel.log("h")
+        let privilegeCount
+        if (startYear < leaveYear && leaveYear < currentYear) {
+          privilegeCount = 12 * privilegePerMonth
+        } else if (startYear < leaveYear) {
+          privilegeCount = currentmonth * privilegePerMonth
+        } else if (startYear === leaveYear) {
+          const monthsRemainingInStartYear = 12 - startmonth + 1 // Calculate remaining months including startMonth
+          privilegeCount = monthsRemainingInStartYear * privilegePerMonth
+        }
+
+        ownedprivilegeCount = privilegeCount
       } else if (startYear === currentYear) {
         // If privilege started this year, give leaves from start month to current month
         if (currentmonth >= startmonth) {
@@ -124,7 +133,6 @@ function LeaveApplication() {
         // If privilege starts in a future year, no leaves yet
         ownedprivilegeCount = 0
       }
-     
       const filteredcurrentmonthlyLeaves = allleaves.filter((leaves) => {
         ///leavedate is iso format like "2025-03-03T12:00:00Z" so here slice 0 takes the first part and get the first 7 means 2025-03 because current month includes year also 2025-03
         const leaveMonth = leaves.leaveDate.split("T")[0].slice(0, 7)
@@ -133,65 +141,83 @@ function LeaveApplication() {
       })
 
       setcurrentmonthLeaveData(filteredcurrentmonthlyLeaves)
-      const usedcasualcount = allleaves?.reduce((count, leave) => {
-        const leaveDate = new Date(leave.leaveDate)
+
+      const usedCasualCount = allleaves?.reduce((count, leave) => {
+        if (!leave.leaveDate) return count
+        const leaveDate = new Date(formData.startDate)
         const leaveMonthYear = `${leaveDate.getFullYear()}-${String(
           leaveDate.getMonth() + 1
         ).padStart(2, "0")}`
 
+        const leaveDateObj = new Date(leave.leaveDate)
+        const leaveMonthYearFromData = `${leaveDateObj.getFullYear()}-${String(
+          leaveDateObj.getMonth() + 1
+        ).padStart(2, "0")}`
         if (
           leave.leaveCategory === "casual Leave" &&
-          leaveMonthYear === currentMonth
+          leaveMonthYear === leaveMonthYearFromData
         ) {
           return count + (leave.leaveType === "Half Day" ? 0.5 : 1)
         }
+
         return count
       }, 0)
 
-      const usedprivilegecount = allleaves?.reduce((count, leave) => {
-        const leaveYear = parseInt(currentMonth.split("-")[0], 10)
+      const takenPrivilegeCount = allleaves?.reduce((count, leave) => {
+        if (!leave.leaveDate) return count
+
+        const leaveYear = new Date(formData.startDate).getFullYear()
+        const leaveYearFromData = new Date(leave.leaveDate).getFullYear()
 
         if (
-          new Date(leave.leaveDate).getFullYear() === leaveYear &&
-          leave.leaveCategory === "privileage Leave"
+          leave.leaveCategory === "privileage Leave" &&
+          leaveYear === leaveYearFromData
         ) {
           return count + (leave.leaveType === "Half Day" ? 0.5 : 1)
         }
+
         return count
       }, 0)
 
-      const balancecasualcount = usedcasualcount === 1 ? 0 : 1
-      const balanceprivilege = ownedprivilegeCount - usedprivilegecount
-      setBalanceprivilegeLeaveCount(ownedprivilegeCount - usedprivilegecount)
+      const balancecasualcount = usedCasualCount === casualPerMonth ? 0 : 1
+      const balanceprivilege = ownedprivilegeCount - takenPrivilegeCount
+      setBalanceprivilegeLeaveCount(Math.max(balanceprivilege, 0))
       setBalancecasualLeaveCount(balancecasualcount)
-      
+
       setLeaveBalance({
         casual: balancecasualcount,
-        privilege: balanceprivilege,
+        privilege: Math.max(balanceprivilege, 0),
         sick: BalancesickleaveCount,
         compensatory: BalancecompensatoryleaveCount
       })
-    } else if (allleaves && allleaves.length === 0) {
+    } else if (allleaves && allleaves.length === 0 && leavemasterleavecount) {
       const currentDate = new Date()
       const currentYear = currentDate.getFullYear()
       const currentmonth = currentDate.getMonth() + 1
-      const startDate = new Date(user.privilegeleavestartsfrom)
+      const leaveDate = new Date(formData.startDate)
+      const leaveYear = leaveDate.getFullYear()
+      const startDate = new Date(user?.privilegeleavestartsfrom)
       const startYear = startDate.getFullYear()
       const startmonth = startDate.getMonth() + 1 // 1-based month
-
-      const totalprivilegeLeave = 12 // or 24, based on policy
+      const totalprivilegeLeave = leavemasterleavecount.totalprivilegeLeave
       const privilegePerMonth = totalprivilegeLeave / 12 // 1 or 2 per month
-
+      const totalcasualLeave = leavemasterleavecount.totalcasualleave
+      const casualPerMonth = totalcasualLeave / 12
       let ownedprivilegeCount = 0
-      let ownedcasualCount = 0
       if (startYear < currentYear) {
-        ownedcasualCount = 1
-        // If privilege started in a past year, give leaves from Jan to current month
-        ownedprivilegeCount = currentmonth * privilegePerMonth
+        let privilegeCount
+        if (startYear < leaveYear && leaveYear < currentYear) {
+          privilegeCount = 12 * privilegePerMonth
+        } else if (startYear < leaveYear) {
+          privilegeCount = currentmonth * privilegePerMonth
+        } else if (startYear === leaveYear) {
+          const monthsRemainingInStartYear = 12 - startmonth + 1 // Calculate remaining months including startMonth
+          privilegeCount = monthsRemainingInStartYear * privilegePerMonth
+        }
+        ownedprivilegeCount = privilegeCount
       } else if (startYear === currentYear) {
         // If privilege started this year, give leaves from start month to current month
         if (currentmonth >= startmonth) {
-          ownedcasualCount = 1
           ownedprivilegeCount =
             (currentmonth - startmonth + 1) * privilegePerMonth
         } else {
@@ -202,13 +228,13 @@ function LeaveApplication() {
         ownedprivilegeCount = 0
       }
       setLeaveBalance({
-        casual: ownedcasualCount,
+        casual: casualPerMonth,
         privilege: ownedprivilegeCount,
         sick: BalancesickleaveCount,
         compensatory: BalancecompensatoryleaveCount
       })
     }
-  }, [currentMonth, allleaves, leavemasterleavecount])
+  }, [currentMonth, allleaves, leavemasterleavecount, formData])
   const { data: attendee, refreshHook: refreshattendee } = UseFetch(
     user && `/auth/getallAttendance?userid=${user._id}`
   )
@@ -370,7 +396,7 @@ function LeaveApplication() {
             monthlyAttendance[monthKey].present -= Math.floor(
               monthlyAttendance[monthKey].halfDay / 2
             )
-            
+
             const fdate = new Date(item?.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
 
@@ -410,14 +436,11 @@ function LeaveApplication() {
               dayObject.outTime = item?.outTime
               dayObject.color = "red"
             }
-
-           
           } else if (
             inTimeDate.getTime() > noonLimit &&
             outTimeDate.getTime() > noonLimit
           ) {
             monthlyAttendance[monthKey].fullDay++
-           
 
             const fdate = new Date(item.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
@@ -485,7 +508,7 @@ function LeaveApplication() {
             monthlyAttendance[monthKey].present -= Math.floor(
               monthlyAttendance[monthKey].halfDay / 2
             )
-           
+
             const fdate = new Date(item.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
 
@@ -506,7 +529,7 @@ function LeaveApplication() {
             monthlyAttendance[monthKey].present -= Math.floor(
               monthlyAttendance[monthKey].halfDay / 2
             )
-           
+
             const fdate = new Date(item.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
 
@@ -525,7 +548,7 @@ function LeaveApplication() {
             monthlyAttendance[monthKey].present -= Math.floor(
               monthlyAttendance[monthKey].halfDay / 2
             )
-           
+
             const fdate = new Date(item.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
 
@@ -544,7 +567,7 @@ function LeaveApplication() {
             monthlyAttendance[monthKey].present -= Math.floor(
               monthlyAttendance[monthKey].halfDay / 2
             )
-           
+
             const fdate = new Date(item.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
 
@@ -555,7 +578,7 @@ function LeaveApplication() {
             dayObject.color = "green"
           } else if (outTimeDate.getTime() < noonLimit) {
             monthlyAttendance[monthKey].fullDay++
-            
+
             const fdate = new Date(item.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
 
@@ -569,7 +592,7 @@ function LeaveApplication() {
             inTimeDate.getTime() > earlyLeaveLimit
           ) {
             monthlyAttendance[monthKey].fullDay++
-            
+
             const fdate = new Date(item.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
 
@@ -602,7 +625,7 @@ function LeaveApplication() {
             monthlyAttendance[monthKey].present -= Math.floor(
               monthlyAttendance[monthKey].halfDay / 2
             )
-           
+
             const fdate = new Date(item.attendanceDate) // Convert to Date object
             let date = fdate.toISOString().split("T")[0]
 
@@ -614,8 +637,6 @@ function LeaveApplication() {
           }
 
           return dayObject
-
-          
         })
 
         Object.keys(monthlyAttendance).forEach((monthKey) => {
@@ -670,7 +691,6 @@ function LeaveApplication() {
         let halfDay = 0
         let fullDay = 0
 
-   
         const parseTime = (timeStr) => {
           if (!timeStr) {
             return false
@@ -871,7 +891,6 @@ function LeaveApplication() {
       }
     }
   }, [isOnsite, clickedDate])
-  
 
   const formatonsite = (events) => {
     return events.map((event) => {
@@ -937,7 +956,6 @@ function LeaveApplication() {
           dayObject.color = "orange"
         }
         return dayObject
-
       })
   }
 
@@ -1074,7 +1092,6 @@ function LeaveApplication() {
       return eventDate == clickedDate // Compare only the date part
     })
 
-
     if (existingEvent && existingEvent.length > 0) {
       // Parse the inTime and outTime (assuming they are in "hh:mm AM/PM" format)
       const parseTime = (timeString) => {
@@ -1152,7 +1169,6 @@ function LeaveApplication() {
     const month = String(currentDate.getMonth() + 1).padStart(2, "0") // Convert to "01-12" format
 
     setCurrentMonth(`${year}-${month}`)
-   
   }
 
   const handleInputChange = debounce((e) => {
@@ -1216,21 +1232,9 @@ function LeaveApplication() {
         if (existingLeave) {
           setMessage("This leave is already approved. Do not make any changes.")
         } else {
-
           //Assuming you have an API endpoint for creating leave requests
-          const response = await fetch(
-            `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify(formData),
-              credentials: "include"
-            }
-          )
           // const response = await fetch(
-          //   `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
           //   {
           //     method: "POST",
           //     headers: {
@@ -1240,6 +1244,17 @@ function LeaveApplication() {
           //     credentials: "include"
           //   }
           // )
+          const response = await fetch(
+            `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(formData),
+              credentials: "include"
+            }
+          )
 
           const responseData = await response.json()
 
@@ -1251,7 +1266,7 @@ function LeaveApplication() {
             refreshHook()
 
             setShowModal(false)
-            
+
             setFormData({
               startDate: "",
 
@@ -1549,7 +1564,6 @@ function LeaveApplication() {
     }
   }
 
-  
   const renderContent = () => {
     switch (selectedTab) {
       case "Leave":

@@ -208,7 +208,6 @@ export const AttendanceExceltoJson = async (socket, fileData) => {
             })
             const uploadattendance = await saveAttendance.save()
             if (uploadattendance) {
-              console.log("ittt", item)
               uploadedCount++
               socket.emit("attendanceconversionProgress", {
                 current: uploadedCount,
@@ -226,7 +225,6 @@ export const AttendanceExceltoJson = async (socket, fileData) => {
       console.log("error:", error.message)
     }
   }
-  console.log("existingexcel", existingexcel)
   //Final socket emission
   if (uploadedCount > 0 && existingexcel.length > 0) {
     socket.emit("attendanceconversionComplete", {
