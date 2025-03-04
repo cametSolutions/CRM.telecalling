@@ -106,7 +106,7 @@ const Modal = ({
       const currentDate = new Date()
       const currentYear = currentDate.getFullYear()
       const currentmonth = currentDate.getMonth() + 1
-      const leaveDate = new Date(formData.startDate)
+      const leaveDate = new Date(formData?.leaveDate)
       const leaveYear = leaveDate.getFullYear()
       const startDate = new Date(privilegeleavestartsfrom)
       const startYear = startDate.getFullYear()
@@ -118,10 +118,10 @@ const Modal = ({
 
       let ownedprivilegeCount = 0
       let ownedcasualCount = 0
-
       if (startYear < currentYear && privilegeleavestartsfrom !== null) {
         let privilegeCount
         let casualCount
+       
         if (startYear < leaveYear && leaveYear < currentYear) {
           casualCount = casualPerMonth
           privilegeCount = 12 * privilegePerMonth
@@ -188,12 +188,11 @@ const Modal = ({
 
         return count
       }, 0)
-  
+
       const balancecasualcount = usedCasualCount === ownedcasualCount ? 0 : 1
       const balanceprivilege = ownedprivilegeCount - takenPrivilegeCount
       setBalanceprivilegeLeaveCount(Math.max(balanceprivilege, 0))
       setBalancecasualLeaveCount(balancecasualcount)
-
       setLeaveBalance({
         casual: balancecasualcount,
         privilege: Math.max(balanceprivilege, 0),
@@ -236,7 +235,6 @@ const Modal = ({
         startYear === currentYear &&
         privilegeleavestartsfrom !== null
       ) {
-       
         // If privilege started this year, give leaves from start month to current month
         if (currentmonth >= startmonth) {
           ownedcasualCount = casualPerMonth
@@ -253,7 +251,7 @@ const Modal = ({
       }
       setBalanceprivilegeLeaveCount(ownedprivilegeCount)
       setBalancecasualLeaveCount(ownedcasualCount)
-     
+
       setLeaveBalance({
         casual: ownedcasualCount,
         privilege: ownedprivilegeCount,
@@ -523,8 +521,8 @@ const Modal = ({
                     {BalanceprivilegeleaveCount + BalancedcasualleaveCount}
                     leaves
                   </p>
-                  <div className="grid grid-cols-2 gap-1 border border-gray-300 rounded-lg p-2 bg-gray-50">
-                    <div className="font-semibold text-gray-700 text-left">
+                  <div className="grid grid-cols-[3fr_1fr] gap-1 border border-gray-300 rounded-lg p-2 bg-gray-50">
+                    <div className="font-semibold text-gray-700 text-left ">
                       Category
                     </div>
                     <div className="font-semibold text-gray-700 text-right">
@@ -536,7 +534,7 @@ const Modal = ({
                         <div className="capitalize text-gray-600 text-left">
                           {category} Leave
                         </div>
-                        <div className="text-gray-600 text-right font-medium">
+                        <div className="text-gray-600 text-center font-medium">
                           {balance}
                         </div>
                       </React.Fragment>
