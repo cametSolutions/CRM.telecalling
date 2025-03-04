@@ -2893,6 +2893,8 @@ export const EditAttendance = async (req, res) => {
       if (a) {
         return res.status(200).json({ message: "leave updated", data: a })
       }
+    }else {
+      
     }
   } catch (error) {
     console.log("error", error.message)
