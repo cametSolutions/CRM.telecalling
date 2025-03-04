@@ -1630,57 +1630,7 @@ const updateProcessedAttendees = async (processedAttendedBy, attendedId) => {
   return updateResults
 }
 
-// const updateProcessedAttendees = async (processedAttendedBy, attendedId) => {
-//   const updateResults = []
 
-//   for (const item of processedAttendedBy) {
-//     const { callerId } = item
-
-//     try {
-//       // Find the staff member by name
-//       let staff = await Staff.findOne({ _id: callerId })
-
-//       if (staff) {
-//         // Update the pendingCalls and colleagueSolved fields
-//         staff.callstatus.pendingCalls = staff.callstatus.pendingCalls - 1
-//         staff.callstatus.colleagueSolved = callerId.equals(attendedId)
-//           ? staff.callstatus.colleagueSolved
-//           : staff.callstatus.colleagueSolved + 1
-//         staff.callstatus.solvedCalls = staff.callstatus.solvedCalls
-//         staff.callstatus.totalCall = staff.callstatus.totalCall
-//         staff.callstatus.totalDuration = staff.callstatus.totalDuration
-//         // Save the updated document
-//         await staff.save()
-
-//         // Record success status for this item
-//         updateResults.push({ callerId, status: "success" })
-//       }
-//       let admin = await Admin.findOne({ _id: callerId })
-//       if (admin) {
-//         // Update the pendingCalls and colleagueSolved fields
-//         admin.callstatus.pendingCalls-=1
-//         admin.callstatus.colleagueSolved = callerId.equals(attendedId)
-//           ? admin.callstatus.colleagueSolved
-//           : admin.callstatus.colleagueSolved + 1
-//         admin.callstatus.solvedCalls = admin.callstatus.solvedCalls
-//         admin.callstatus.totalCall = admin.callstatus.totalCall
-//         admin.callstatus.totalDuration = admin.callstatus.totalDuration
-//         // Save the updated document
-//         await admin.save()
-
-//         // Record success status for this item
-//         updateResults.push({ callerId, status: "success" })
-//       }
-//     } catch (error) {
-//       console.error(`Error updating call status for ${callerId}:`, error)
-//       // Record error status for this item
-//       updateResults.push({ callerId, status: "error", error: error.message })
-//     }
-//   }
-
-//   // Return the final status after all updates
-//   return updateResults
-// }
 
 export const GetCallRegister = async (req, res) => {
   try {
@@ -2018,69 +1968,7 @@ export const GetCallRegister = async (req, res) => {
   }
 }
 
-// export const updateBranchNames = async (req, res) => {
-//   const users = req.body // Expecting customerName and newBranchNames array in request body
-//   console.log("hiiiiiiiii")
-//   console.log("usersfss", users)
-//   const branches = users.selected.map((item) => item.branchName)
-//   console.log("branchessssss", branches)
-//   try {
-//     // const newBranchNames = ["CAMET", "ACCUANET"]
-//     // Find the document by customerName
-//     const document = await CallRegistration.find({
-//       "callregistration.userName": "Fathima Nazrin CM"
-//     })
-//     console.log("docccccccccc", document)
-//     console.log("doclength", document.length)
 
-//     if (!document) {
-//       return res.status(404).json({ message: "No document found" })
-//     }
-
-//     // // Update branchName by assigning the newBranchNames array
-//     // document.callregistration = document.callregistration.map(
-//     //   (registration) => {
-//     //     return {
-//     //       ...registration,
-//     //       branchName: branches // Assign the entire newBranchNames array
-//     //     }
-//     //   }
-//     // )
-//     /////
-//     const updatedDocuments = document.map((document) => {
-//       // Update the callregistration array for each document
-//       document.callregistration = document.callregistration.map(
-//         (registration) => {
-//           if (registration.userName === "Fathima Nazrin CM") {
-//             return {
-//               ...registration,
-//               branchName: branches // Assign the new branch names
-//             }
-//           }
-//         }
-//       )
-//       return document // Return the updated document
-//     })
-//     console.log("updateddoc", updatedDocuments)
-//     const a = updatedDocuments.map((item) => item.callregistration)
-//     console.log("abhidas", a)
-//     console.log("updoc", updatedDocuments)
-
-//     await Promise.all(updatedDocuments.map((doc) => doc.save()))
-
-//     // Save the updated document
-//     // await document.save()
-//     console.log("documme", document)
-//     return res
-//       .status(200)
-//       .json({ message: "Branch names updated successfully", document })
-//   } catch (error) {
-//     console.error(error)
-//     return res
-//       .status(500)
-//       .json({ message: "Server error", error: error.message })
-//   }
-// }
 export const GetAllExpiryRegister = async (req, res) => {
   const { nextmonthReport } = req.query
 

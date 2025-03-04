@@ -110,12 +110,10 @@ export default function CallRegistration() {
       // Fetch the call details using the ID
       fetchCallDetails(calldetails)
         .then((callData) => {
-          console.log(callData)
           const matchingRegistration =
             callData.callDetails.callregistration.find(
               (registration) => registration.timedata.token === token
             )
-          console.log(matchingRegistration)
 
           // If a matching registration is found, extract the product details
           const productName = matchingRegistration
@@ -380,14 +378,11 @@ export default function CallRegistration() {
     }
   }
   const sendWhatapp = (calldata) => {
-    console.log(calldata)
     if (!calldata?.formdata?.incomingNumber) {
       console.error("Incoming number is missing in calldata.")
       return
     }
-    console.log("calldata", calldata)
     const phoneNumber = `+91${calldata.formdata.incomingNumber}`
-    console.log("numm", phoneNumber)
     const textToShare = "hii"
 
     // Open WhatsApp Web with the message

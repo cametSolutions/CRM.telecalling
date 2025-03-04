@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react"
 import * as XLSX from "xlsx"
 import FileSaver from "file-saver"
-
+import BarLoader from "react-spinners/BarLoader"
 import ResponsiveTable from "./ResponsiveTable"
 import Modal from "./Modal"
 import api from "../../api/api"
@@ -38,10 +38,10 @@ const leaveSummary = () => {
   } = UseFetch(apiUrl)
   useEffect(() => {
     if (newattende && newattende.length) {
-      if (user.role === "Admin") {
+      if (user?.role === "Admin") {
         setHoly(holy)
         setleaveSummary(newattende)
-      } else if (user.role === "Staff") {
+      } else if (user?.role === "Staff") {
         setHoly(holy)
         const filteredUser = newattende.filter(
           (item) => item.userId === user._id || item.assignedto === user._id
@@ -134,26 +134,7 @@ const leaveSummary = () => {
     setModalOpen(false)
   }
 
-  const handleUpdate = async (date) => {
-    setLoading(true)
-    try {
-      const response = await api.post(
-        `/auth/editLeaveSummary?userid=${selectedStaff[0].userId}`,
-        formData
-      )
-      if (response.status === 200) {
-        toast.success("Succesfully Edited")
-        setLoading(false)
-        refreshHook()
-      }
-    } catch (error) {
-      toast.error(error.message)
-      console.log("error:", error.message)
-    }
-  }
   const handleApply = async (staffId, selected, setIsApplying, type) => {
-    
-
     if (type === "Leave") {
       const matchedStaff = leavesummaryList.find(
         (staff) => staff.userId === staffId
@@ -215,6 +196,7 @@ const leaveSummary = () => {
       XLSX.writeFile(workbook, "failed_data.xlsx")
     }
   }
+  
   // const handleDownloadFailedData = () => {
   //   if (nonsavedData.length > 0) {
   //     // Define the desired headers
@@ -335,91 +317,179 @@ const leaveSummary = () => {
 
     // Convert JSON to array format
     const worksheetData = [headers] // Add headers to the first row
+    if (user?.role === "Staff") {
+      const filteredUser = newattende.filter(
+        (item) => item.userId === user?._id || item?.assignedto === user._id
+      )
+      filteredUser.forEach((user) => {
+        let casualLeave = 0,
+          privilegeLeave = 0,
+          compensatoryLeave = 0,
+          otherLeave = 0
 
-    data.forEach((user) => {
-      let casualLeave = 0,
-        privilegeLeave = 0,
-        compensatoryLeave = 0,
-        otherLeave = 0
+        Object.values(user.attendancedates).forEach((details) => {
+          casualLeave += details.casualLeave || 0
+          privilegeLeave += details.privileageLeave || 0
+          compensatoryLeave += details.compensatoryLeave || 0
+          otherLeave += details.otherLeave || 0
+        })
 
-      Object.values(user.attendancedates).forEach((details) => {
-        casualLeave += details.casualLeave || 0
-        privilegeLeave += details.privilegeLeave || 0
-        compensatoryLeave += details.compensatoryLeave || 0
-        otherLeave += details.otherLeave || 0
+        worksheetData.push([
+          user.name,
+          user.staffId,
+          casualLeave,
+          privilegeLeave,
+          compensatoryLeave,
+          otherLeave,
+          user.latecutting,
+          user.present
+        ])
       })
 
-      worksheetData.push([
-        user.name,
-        user.staffId,
-        casualLeave,
-        privilegeLeave,
-        compensatoryLeave,
-        otherLeave,
-        user.latecutting,
-        user.present
-      ])
-    })
+      // Create a worksheet
+      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance")
 
-    // Create a worksheet
-    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance")
-
-    // Apply styles to headers and other columns
-    const headerRange = XLSX.utils.decode_range(worksheet["!ref"])
-    for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
-      const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C })
-      if (!worksheet[cellAddress]) continue
-      worksheet[cellAddress].s = {
-        font: { bold: true }, // Make headers bold
-        alignment: { horizontal: "center", vertical: "center" } // Center align all headers
-      }
-    }
-
-    // Apply center alignment except for "Employ_Name" column (first column)
-    for (let R = 1; R <= headerRange.e.r; ++R) {
-      for (let C = 1; C <= headerRange.e.c; ++C) {
-        const cellAddress = XLSX.utils.encode_cell({ r: R, c: C })
+      // Apply styles to headers and other columns
+      const headerRange = XLSX.utils.decode_range(worksheet["!ref"])
+      for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C })
         if (!worksheet[cellAddress]) continue
         worksheet[cellAddress].s = {
-          alignment: { horizontal: "center", vertical: "center" } // Center align all columns except name
+          font: { bold: true }, // Make headers bold
+          alignment: { horizontal: "center", vertical: "center" } // Center align all headers
         }
       }
+
+      // Apply center alignment except for "Employ_Name" column (first column)
+      for (let R = 1; R <= headerRange.e.r; ++R) {
+        for (let C = 1; C <= headerRange.e.c; ++C) {
+          const cellAddress = XLSX.utils.encode_cell({ r: R, c: C })
+          if (!worksheet[cellAddress]) continue
+          worksheet[cellAddress].s = {
+            alignment: { horizontal: "center", vertical: "center" } // Center align all columns except name
+          }
+        }
+      }
+
+      // Adjust column widths
+      worksheet["!cols"] = [
+        { wch: 25 }, // Employ_Name (wider)
+        { wch: 15 },
+        { wch: 15 }, // Casual_Leave
+        { wch: 15 }, // Privileage_Leave
+        { wch: 15 }, // Comp_Leave
+        { wch: 15 }, // Other_Leave
+        { wch: 15 }, // Late_Cutting
+        { wch: 15 } // Total Present
+      ]
+
+      // Convert to Excel file
+      const excelBuffer = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array"
+      })
+
+      // Save file
+      const fileData = new Blob([excelBuffer], {
+        type: "application/octet-stream"
+      })
+
+      FileSaver.saveAs(fileData, "Attendance_Report.xlsx")
+    } else if (user?.role === "Admin") {
+      data.forEach((user) => {
+        let casualLeave = 0,
+          privilegeLeave = 0,
+          compensatoryLeave = 0,
+          otherLeave = 0
+
+        Object.values(user.attendancedates).forEach((details) => {
+          casualLeave += details.casualLeave || 0
+          privilegeLeave += details.privileageLeave || 0
+          compensatoryLeave += details.compensatoryLeave || 0
+          otherLeave += details.otherLeave || 0
+        })
+
+        worksheetData.push([
+          user.name,
+          user.staffId,
+          casualLeave,
+          privilegeLeave,
+          compensatoryLeave,
+          otherLeave,
+          user.latecutting,
+          user.present
+        ])
+      })
+
+      // Create a worksheet
+      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance")
+
+      // Apply styles to headers and other columns
+      const headerRange = XLSX.utils.decode_range(worksheet["!ref"])
+      for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C })
+        if (!worksheet[cellAddress]) continue
+        worksheet[cellAddress].s = {
+          font: { bold: true }, // Make headers bold
+          alignment: { horizontal: "center", vertical: "center" } // Center align all headers
+        }
+      }
+
+      // Apply center alignment except for "Employ_Name" column (first column)
+      for (let R = 1; R <= headerRange.e.r; ++R) {
+        for (let C = 1; C <= headerRange.e.c; ++C) {
+          const cellAddress = XLSX.utils.encode_cell({ r: R, c: C })
+          if (!worksheet[cellAddress]) continue
+          worksheet[cellAddress].s = {
+            alignment: { horizontal: "center", vertical: "center" } // Center align all columns except name
+          }
+        }
+      }
+
+      // Adjust column widths
+      worksheet["!cols"] = [
+        { wch: 25 }, // Employ_Name (wider)
+        { wch: 15 },
+        { wch: 15 }, // Casual_Leave
+        { wch: 15 }, // Privileage_Leave
+        { wch: 15 }, // Comp_Leave
+        { wch: 15 }, // Other_Leave
+        { wch: 15 }, // Late_Cutting
+        { wch: 15 } // Total Present
+      ]
+
+      // Convert to Excel file
+      const excelBuffer = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array"
+      })
+
+      // Save file
+      const fileData = new Blob([excelBuffer], {
+        type: "application/octet-stream"
+      })
+
+      FileSaver.saveAs(fileData, "Attendance_Report.xlsx")
     }
-
-    // Adjust column widths
-    worksheet["!cols"] = [
-      { wch: 25 }, // Employ_Name (wider)
-      { wch: 15 },
-      { wch: 15 }, // Casual_Leave
-      { wch: 15 }, // Privileage_Leave
-      { wch: 15 }, // Comp_Leave
-      { wch: 15 }, // Other_Leave
-      { wch: 15 }, // Late_Cutting
-      { wch: 15 } // Total Present
-    ]
-
-    // Convert to Excel file
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "array"
-    })
-
-    // Save file
-    const fileData = new Blob([excelBuffer], {
-      type: "application/octet-stream"
-    })
-
-    FileSaver.saveAs(fileData, "Attendance_Report.xlsx")
   }
   return (
     <div className="w-full">
+      {loading && (
+        <BarLoader
+          cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
+          color="#4A90E2" // Change color as needed
+          // loader={true}
+        />
+      )}
       {/* Header Section */}
 
       <div className=" text-center">
         <h1 className="text-2xl font-bold mb-1">User Leave Summary</h1>
-        <div className="flex flex-wrap justify-end gap-4 mb-3">
+        <div className="flex flex-wrap justify-end gap-4 mb-3 mr-10">
           <button
             className="bg-blue-600 rounded px-2 py-0.5 text-white"
             onClick={() => handleDownload(newattende)}
@@ -453,9 +523,7 @@ const leaveSummary = () => {
       </div>
       {/* Main Content */}
       {loading ? (
-        <div className="text-lg font-semibold text-blue-600 text-center">
-          Loading users...
-        </div>
+        ""
       ) : (
         <>
           <div className="max-h-[calc(100vh-200px)] overflow-y-auto px-5 ">
