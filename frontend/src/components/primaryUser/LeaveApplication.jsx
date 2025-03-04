@@ -26,7 +26,7 @@ function LeaveApplication() {
   const [allleaves, setAllleaves] = useState([])
   const [allOnsites, setAllOnsite] = useState([])
   const [errors, setErrors] = useState({})
-  
+
   const [MonthData, setMonthData] = useState({})
   const [currentMonthData, setcurrentMonthData] = useState({})
   // const [currentMonth, setCurrentMonth] = useState("")
@@ -55,7 +55,6 @@ function LeaveApplication() {
     inTime: { hours: "12", minutes: "00", amPm: "AM" },
     outTime: { hours: "12", minutes: "00", amPm: "AM" }
   })
-
   const [isOnsite, setIsOnsite] = useState(false)
 
   const [tableRows, setTableRows] = useState([])
@@ -74,7 +73,6 @@ function LeaveApplication() {
   const { data: leavemasterleavecount } = UseFetch(
     "/auth/getleavemasterleavecount"
   )
-
   useEffect(() => {
     if (MonthData && currentMonth) {
       setcurrentMonthData(MonthData[currentMonth])
@@ -108,28 +106,35 @@ function LeaveApplication() {
       const totalcasualLeave = leavemasterleavecount?.totalcasualleave
       const casualPerMonth = totalcasualLeave / 12
       let ownedprivilegeCount = 0
+      let ownedcasualCount = 0
       if (startYear < currentYear) {
-        consoel.log("h")
         let privilegeCount
+        let casualCount
         if (startYear < leaveYear && leaveYear < currentYear) {
+          casualCount = casualPerMonth
           privilegeCount = 12 * privilegePerMonth
         } else if (startYear < leaveYear) {
+          casualCount = casualPerMonth
           privilegeCount = currentmonth * privilegePerMonth
         } else if (startYear === leaveYear) {
+          casualCount = casualPerMonth
           const monthsRemainingInStartYear = 12 - startmonth + 1 // Calculate remaining months including startMonth
           privilegeCount = monthsRemainingInStartYear * privilegePerMonth
         }
-
+        ownedcasualCount = casualCount
         ownedprivilegeCount = privilegeCount
       } else if (startYear === currentYear) {
         // If privilege started this year, give leaves from start month to current month
         if (currentmonth >= startmonth) {
+          ownedcasualCount = casualPerMonth
           ownedprivilegeCount =
             (currentmonth - startmonth + 1) * privilegePerMonth
         } else {
+          ownedcasualCount = 0
           ownedprivilegeCount = 0 // Not eligible yet
         }
       } else {
+        ownedcasualCount = 0
         // If privilege starts in a future year, no leaves yet
         ownedprivilegeCount = 0
       }
@@ -139,7 +144,6 @@ function LeaveApplication() {
         //here currentMonth have year and month no date
         return leaveMonth === currentMonth
       })
-
       setcurrentmonthLeaveData(filteredcurrentmonthlyLeaves)
 
       const usedCasualCount = allleaves?.reduce((count, leave) => {
@@ -178,8 +182,7 @@ function LeaveApplication() {
 
         return count
       }, 0)
-
-      const balancecasualcount = usedCasualCount === casualPerMonth ? 0 : 1
+      const balancecasualcount = usedCasualCount === ownedcasualCount ? 0 : 1
       const balanceprivilege = ownedprivilegeCount - takenPrivilegeCount
       setBalanceprivilegeLeaveCount(Math.max(balanceprivilege, 0))
       setBalancecasualLeaveCount(balancecasualcount)
@@ -204,31 +207,43 @@ function LeaveApplication() {
       const totalcasualLeave = leavemasterleavecount.totalcasualleave
       const casualPerMonth = totalcasualLeave / 12
       let ownedprivilegeCount = 0
+      let ownedcasualCount = 0
       if (startYear < currentYear) {
         let privilegeCount
+        let casualCount
         if (startYear < leaveYear && leaveYear < currentYear) {
+          casualCount = casualPerMonth
           privilegeCount = 12 * privilegePerMonth
         } else if (startYear < leaveYear) {
+          casualCount = casualPerMonth
           privilegeCount = currentmonth * privilegePerMonth
         } else if (startYear === leaveYear) {
+          casualCount = casualPerMonth
           const monthsRemainingInStartYear = 12 - startmonth + 1 // Calculate remaining months including startMonth
           privilegeCount = monthsRemainingInStartYear * privilegePerMonth
         }
+        ownedcasualCount = casualCount
         ownedprivilegeCount = privilegeCount
       } else if (startYear === currentYear) {
         // If privilege started this year, give leaves from start month to current month
         if (currentmonth >= startmonth) {
+          ownedcasualCount = casualPerMonth
           ownedprivilegeCount =
             (currentmonth - startmonth + 1) * privilegePerMonth
         } else {
+          ownedcasualCount = 0
           ownedprivilegeCount = 0 // Not eligible yet
         }
       } else {
+        ownedcasualCount = 0
         // If privilege starts in a future year, no leaves yet
         ownedprivilegeCount = 0
       }
+
+      setBalanceprivilegeLeaveCount(ownedprivilegeCount)
+      setBalancecasualLeaveCount(ownedcasualCount)
       setLeaveBalance({
-        casual: casualPerMonth,
+        casual: ownedcasualCount,
         privilege: ownedprivilegeCount,
         sick: BalancesickleaveCount,
         compensatory: BalancecompensatoryleaveCount
