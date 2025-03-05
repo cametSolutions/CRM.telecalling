@@ -121,7 +121,7 @@ const Modal = ({
       if (startYear < currentYear && privilegeleavestartsfrom !== null) {
         let privilegeCount
         let casualCount
-       
+
         if (startYear < leaveYear && leaveYear < currentYear) {
           casualCount = casualPerMonth
           privilegeCount = 12 * privilegePerMonth
@@ -189,10 +189,11 @@ const Modal = ({
         return count
       }, 0)
 
-      const balancecasualcount = usedCasualCount === ownedcasualCount ? 0 : 1
+      const balancecasualcount = ownedcasualCount - usedCasualCount
+
       const balanceprivilege = ownedprivilegeCount - takenPrivilegeCount
       setBalanceprivilegeLeaveCount(Math.max(balanceprivilege, 0))
-      setBalancecasualLeaveCount(balancecasualcount)
+      setBalancecasualLeaveCount(Math.max(balancecasualcount, 0))
       setLeaveBalance({
         casual: balancecasualcount,
         privilege: Math.max(balanceprivilege, 0),
@@ -308,6 +309,7 @@ const Modal = ({
       handleApply(staffId, selectedOnsite, setIsApplying, type)
     }
   }
+ 
   return (
     isOpen && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center  ">
@@ -347,7 +349,8 @@ const Modal = ({
                       onChange={(e) => {
                         setselectedLeave((prev) => ({
                           ...prev,
-                          leaveType: e.target.value // Replace `newDate` with the actual value you want to set
+                          leaveType: e.target.value, // Replace `newDate` with the actual value you want to set
+                          halfDayPeriod: "Morning"
                         }))
                       }}
                     />
@@ -356,7 +359,7 @@ const Modal = ({
                   {errors.leaveType && (
                     <p className="text-red-500">{errors.leaveType}</p>
                   )}
-                  {selectedLeave.leaveType === "Half Day" && (
+                  {selectedLeave?.leaveType === "Half Day" && (
                     <>
                       <select
                         className="border py-1  rounded w-auto"
@@ -457,7 +460,32 @@ const Modal = ({
                     }}
                   >
                     <option value="">Select Leave Type</option>
-                    {BalancedcasualleaveCount > 0 && (
+                    <option
+                      value="casual Leave"
+                      disabled={BalancedcasualleaveCount === 0}
+                    >
+                      Casual Leave
+                    </option>
+                    <option
+                      value="privileage Leave"
+                      disabled={BalanceprivilegeleaveCount === 0}
+                    >
+                      Privilege Leave
+                    </option>
+                    <option
+                      value="compensatory Leave"
+                      disabled={BalancecompensatoryleaveCount === 0}
+                    >
+                      Compensatory Leave
+                    </option>
+                    <option
+                      value="sick Leave"
+                      disabled={BalancesickleaveCount === 0}
+                    >
+                      Sick Leave
+                    </option>
+
+                    {/* {BalancedcasualleaveCount > 0 && (
                       <option value="casual Leave">Casual Leave</option>
                     )}
                     {BalanceprivilegeleaveCount > 0 && (
@@ -470,8 +498,7 @@ const Modal = ({
                     )}
                     {BalancesickleaveCount > 0 && (
                       <option value="sick Leave">Sick Leave</option>
-                    )}
-
+                    )} */}
                     <option value="other Leave">Other Leave</option>
                   </select>
                 </div>
@@ -513,6 +540,9 @@ const Modal = ({
               {/* Leave Balance Section */}
               <div>
                 <div className="bg-gray-200 py-2 text-center">{staffName}</div>
+                <p className="mt-2 text-center text-gray-600">
+                  Selected Date: {selectedDate.split("-").reverse().join("-")}
+                </p>
                 <div className="p-2">
                   <h2 className="text-gray-600 font-semibold text-md ">
                     Leave Balance
@@ -599,55 +629,21 @@ const Modal = ({
                 )}
               </div>
 
-              {/* Leave Dates */}
-              {leaveOption.leaveType === "Full Day" ? (
-                <div className="mt-3 flex flex-col">
-                  <label className="text-sm font-semibold">Onsite Date</label>
-                  <input
-                    type="date"
-                    value={selectedOnsite?.onsiteDate}
-                    onChange={(e) => {
-                      setselectedOnsite((prev) => ({
-                        ...prev,
-                        onsiteDate: e.target.value // Replace `newDate` with the actual value you want to set
-                      }))
-                    }}
-                    className="border p-2 rounded"
-                  />
-
-                  <label className="text-sm font-semibold mt-2">
-                    Onsite End Date
-                  </label>
-                  <input
-                    type="date"
-                    value={selectedOnsite?.onsiteDate}
-                    // onChange={(e) => setLeaveEnd(e.target.value)}
-                    onChange={(e) => {
-                      setselectedOnsite((prev) => ({
-                        ...prev,
-                        onsiteDate: e.target.value // Replace `newDate` with the actual value you want to set
-                      }))
-                    }}
-                    className="border p-2 rounded"
-                  />
-                </div>
-              ) : (
-                <div className="mt-3">
-                  <label className="text-sm font-semibold">Onsite Date</label>
-                  <input
-                    type="date"
-                    value={selectedOnsite?.onsiteDate}
-                    // onChange={(e) => setLeaveStart(e.target.value)}
-                    onChange={(e) => {
-                      setselectedLeave((prev) => ({
-                        ...prev,
-                        onsiteDate: e.target.value // Replace `newDate` with the actual value you want to set
-                      }))
-                    }}
-                    className="border p-2 rounded w-full"
-                  />
-                </div>
-              )}
+              <div className="mt-3">
+                <label className="text-sm font-semibold">Onsite Date</label>
+                <input
+                  type="date"
+                  value={selectedOnsite?.onsiteDate}
+                  // onChange={(e) => setLeaveStart(e.target.value)}
+                  onChange={(e) => {
+                    setselectedLeave((prev) => ({
+                      ...prev,
+                      onsiteDate: e.target.value // Replace `newDate` with the actual value you want to set
+                    }))
+                  }}
+                  className="border p-2 rounded w-full"
+                />
+              </div>
             </div>
           )}
 

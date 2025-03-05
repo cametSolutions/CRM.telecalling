@@ -182,10 +182,10 @@ function LeaveApplication() {
 
         return count
       }, 0)
-      const balancecasualcount = usedCasualCount === ownedcasualCount ? 0 : 1
+      const balancecasualcount = ownedcasualCount - usedCasualCount
       const balanceprivilege = ownedprivilegeCount - takenPrivilegeCount
       setBalanceprivilegeLeaveCount(Math.max(balanceprivilege, 0))
-      setBalancecasualLeaveCount(balancecasualcount)
+      setBalancecasualLeaveCount(Math.max(balancecasualcount, 0))
 
       setLeaveBalance({
         casual: balancecasualcount,

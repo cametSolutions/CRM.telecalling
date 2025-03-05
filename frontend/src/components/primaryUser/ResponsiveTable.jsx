@@ -281,15 +281,23 @@ const ResponsiveTable = ({
                     <td
                       className="border border-gray-300 p-2"
                       onClick={() => {
-                        if (
-                          user?.role === "Admin"
-                        ) {
+                        if (user?.role === "Admin") {
+                        
                           handleOnsite(
                             date,
                             "Onsite",
-                            details?.onsite?.[0]?.onsiteType,
-                            details?.onsite?.[0].halfDayperiod,
-                            details?.onsite[0]?.description
+                            details.onsite.length > 0
+                              ? details.onsite[0].onsiteType
+                              : null,
+                            details.onsite.length > 0
+                              ? details.onsite[0].halfDayperiod
+                              : null,
+                            details.onsite.length > 0
+                              ? details.onsite[0].description
+                              : null
+                            // details?.onsite?.[0]?.onsiteType || null,
+                            // details?.onsite?.[0].halfDayperiod || null,
+                            // details?.onsite[0]?.description || null
                           )
                         }
                       }}
@@ -305,7 +313,6 @@ const ResponsiveTable = ({
                 )
               }
             )}
-
           </tbody>
         </table>
       </div>
