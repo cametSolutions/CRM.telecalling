@@ -28,7 +28,6 @@ const leaveSummary = () => {
   const user = JSON.parse(userData)
   // API URL with selected year and month
   const apiUrl = `/auth/getsomeall?year=${selectedYear}&month=${selectedMonth}`
-
   // Use custom useFetch hook
   const {
     data: newattende,
@@ -50,7 +49,7 @@ const leaveSummary = () => {
       }
     }
   }, [newattende])
-
+ 
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i)
   const months = [
     { name: "January", value: 1 },
@@ -93,6 +92,7 @@ const leaveSummary = () => {
   }
   const handleOnsite = (date, type, onsiteType, halfDayperiod, description) => {
     setModalOpen(true)
+  
     setselectedDate(date)
     setType(type)
     if (type === "Onsite") {
@@ -105,6 +105,7 @@ const leaveSummary = () => {
     }
   }
   const handleLeave = (date, type, leaveDetails, halfDayperiod, reason) => {
+ 
     setModalOpen(true)
     setselectedDate(date)
     setType(type)
@@ -135,50 +136,62 @@ const leaveSummary = () => {
   }
 
   const handleApply = async (staffId, selected, setIsApplying, type) => {
-    if (type === "Leave") {
-      const matchedStaff = leavesummaryList.find(
-        (staff) => staff.userId === staffId
-      )
-      const assignedTo = matchedStaff ? matchedStaff.assignedto : null
-      const response = await api.post(
-        `/auth/editLeave?userid=${staffId}&assignedto=${assignedTo}`,
-        selected
-      )
-      const data = response.data.data.data
-      if (response.status === 200) {
-        toast.success("leave edited sucessfully")
-        setleaveSummary(data)
-        setIsApplying(false)
-        handleClose()
-      } else {
-        toast.error("error in updating")
+    try {
+      if (type === "Leave") {
+        const matchedStaff = leavesummaryList.find(
+          (staff) => staff.userId === staffId
+        )
+        const assignedTo = matchedStaff ? matchedStaff.assignedto : null
+        const response = await api.post(
+          `/auth/editLeave?userid=${staffId}&assignedto=${assignedTo}`,
+          selected
+        )
+        const data = response.data.data.data
+        const holy = response.data.data.fulldateholiday
+        if (response.status === 200) {
+          toast.success("leave edited sucessfully")
+          setleaveSummary(data)
+          setHoly(holy)
+          setIsApplying(false)
+          handleClose()
+        } else {
+          toast.error("error in updating")
+        }
+      } else if (type === "Attendance") {
+        const response = await api.post(
+          `/auth/editAttendance?userid=${staffId}`,
+          selected
+        )
+        const data = response.data.data.data
+        const holy = response.data.data.fulldateholiday
+
+        if (response.status === 200) {
+          toast.success("Attendance edited sucessfully")
+          setleaveSummary(data)
+          setHoly(holy)
+          setIsApplying(false)
+          handleClose()
+        } else {
+          toast.error("error in updating")
+        }
+      } else if (type === "Onsite") {
+        const response = await api.post(
+          `/auth/editOnsite?userid=${staffId}`,
+          selected
+        )
+        const data = response.data.data.data
+        const holy = response.data.data.fulldateholiday
+        if (response.status === 200) {
+          toast.success("Onsite edited successfully")
+          setleaveSummary(data)
+          setHoly(holy)
+          setIsApplying(false)
+          handleClose()
+        }
       }
-    } else if (type === "Attendance") {
-      const response = await api.post(
-        `/auth/editAttendance?userid=${staffId}`,
-        selected
-      )
-      const data = response.data.data.data
-      if (response.status === 200) {
-        toast.success("Attendance edited sucessfully")
-        setleaveSummary(data)
-        setIsApplying(false)
-        handleClose()
-      } else {
-        toast.error("error in updating")
-      }
-    } else if (type === "Onsite") {
-      const response = await api.post(
-        `/auth/editOnsite?userid=${staffId}`,
-        selected
-      )
-      const data = response.data.data.data
-      if (response.status === 200) {
-        toast.success("Onsite edited successfully")
-        setleaveSummary(data)
-        setIsApplying(false)
-        handleClose()
-      }
+    } catch (error) {
+      console.log(error.response.data.message)
+      toast.error(error.response.data.message)
     }
   }
   const handleDownloadFailedData = () => {
@@ -196,7 +209,7 @@ const leaveSummary = () => {
       XLSX.writeFile(workbook, "failed_data.xlsx")
     }
   }
-  
+
   // const handleDownloadFailedData = () => {
   //   if (nonsavedData.length > 0) {
   //     // Define the desired headers
@@ -476,6 +489,7 @@ const leaveSummary = () => {
       FileSaver.saveAs(fileData, "Attendance_Report.xlsx")
     }
   }
+
   return (
     <div className="w-full">
       {loading && (
