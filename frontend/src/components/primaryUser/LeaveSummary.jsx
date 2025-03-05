@@ -49,7 +49,7 @@ const leaveSummary = () => {
       }
     }
   }, [newattende])
- 
+
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i)
   const months = [
     { name: "January", value: 1 },
@@ -92,7 +92,7 @@ const leaveSummary = () => {
   }
   const handleOnsite = (date, type, onsiteType, halfDayperiod, description) => {
     setModalOpen(true)
-  
+
     setselectedDate(date)
     setType(type)
     if (type === "Onsite") {
@@ -105,7 +105,6 @@ const leaveSummary = () => {
     }
   }
   const handleLeave = (date, type, leaveDetails, halfDayperiod, reason) => {
- 
     setModalOpen(true)
     setselectedDate(date)
     setType(type)
@@ -158,8 +157,12 @@ const leaveSummary = () => {
           toast.error("error in updating")
         }
       } else if (type === "Attendance") {
+        const matchedStaff = leavesummaryList.find(
+          (staff) => staff.userId === staffId
+        )
+        const attendanceid = matchedStaff ? matchedStaff.attendanceId : null
         const response = await api.post(
-          `/auth/editAttendance?userid=${staffId}`,
+          `/auth/editAttendance?userid=${staffId}&attendanceid=${attendanceid}`,
           selected
         )
         const data = response.data.data.data

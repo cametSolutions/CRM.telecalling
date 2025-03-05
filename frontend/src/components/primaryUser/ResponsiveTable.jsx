@@ -83,7 +83,7 @@ const ResponsiveTable = ({
                       {date}
                     </td>
                     <td
-                      className="border border-gray-300 p-2"
+                      className="border border-gray-300 p-2 hover:cursor-pointer"
                       onClick={() => {
                         if (user?.role === "Admin") {
                           handleAttendance(
@@ -98,7 +98,7 @@ const ResponsiveTable = ({
                       {details?.inTime || "-"}
                     </td>
                     <td
-                      className="border border-gray-300 p-2"
+                      className="border border-gray-300 p-2 hover:cursor-pointer"
                       onClick={() => {
                         if (user?.role === "Admin") {
                           handleAttendance(
@@ -130,7 +130,7 @@ const ResponsiveTable = ({
                     ) : (
                       <>
                         <td
-                          className={`border border-gray-300 p-2 ${highlightClass}`}
+                          className={`border border-gray-300  hover:cursor-pointer p-2 ${highlightClass}`}
                           onClick={() => {
                             if (user?.role === "Admin") {
                               handleLeave(
@@ -161,7 +161,7 @@ const ResponsiveTable = ({
                           {details?.casualLeave || "-"}
                         </td>
                         <td
-                          className={`border border-gray-300 p-2 ${highlightClass}`}
+                          className={`border border-gray-300 p-2  hover:cursor-pointer ${highlightClass}`}
                           onClick={() => {
                             if (user?.role === "Admin") {
                               handleLeave(
@@ -192,7 +192,7 @@ const ResponsiveTable = ({
                           {details?.privileageLeave || "-"}
                         </td>
                         <td
-                          className={`border border-gray-300 p-2 ${highlightClass}`}
+                          className={`border border-gray-300 p-2  hover:cursor-pointer ${highlightClass}`}
                           onClick={() => {
                             if (user?.role === "Admin") {
                               handleLeave(
@@ -223,7 +223,7 @@ const ResponsiveTable = ({
                           {details?.compensatoryLeave || "-"}
                         </td>
                         <td
-                          className={`border border-gray-300 p-2 ${highlightClass}`}
+                          className={`border border-gray-300 p-2 hover:cursor-pointer ${highlightClass}`}
                           onClick={() => {
                             if (user?.role === "Admin") {
                               handleLeave(
@@ -254,7 +254,7 @@ const ResponsiveTable = ({
                           {details?.otherLeave || "-"}
                         </td>
                         <td
-                          className={`border border-gray-300 p-2 ${highlightClass}`}
+                          className={`border border-gray-300 p-2  ${highlightClass}`}
                         >
                           {details?.early ? `${details.early} minutes` : "-"}
                         </td>
@@ -272,39 +272,88 @@ const ResponsiveTable = ({
                     )}
 
                     {/* Remaining columns without highlight */}
-                    <td className="border border-gray-300 p-2">
-                      {details?.onsite?.[0]?.place || "-"}
-                    </td>
-                    <td className="border border-gray-300 p-2">
-                      {details?.onsite?.[0]?.siteName || "-"}
-                    </td>
                     <td
-                      className="border border-gray-300 p-2"
+                      className="border border-gray-300 p-2 hover:cursor-pointer"
                       onClick={() => {
-                        if (user?.role === "Admin") {
-                        
+                        if (
+                          user?.role === "Admin" &&
+                          details.onsite.length > 0
+                        ) {
                           handleOnsite(
                             date,
                             "Onsite",
-                            details.onsite.length > 0
-                              ? details.onsite[0].onsiteType
-                              : null,
-                            details.onsite.length > 0
-                              ? details.onsite[0].halfDayperiod
-                              : null,
-                            details.onsite.length > 0
-                              ? details.onsite[0].description
-                              : null
-                            // details?.onsite?.[0]?.onsiteType || null,
-                            // details?.onsite?.[0].halfDayperiod || null,
-                            // details?.onsite[0]?.description || null
+                            details?.onsite?.[0]?.onsiteType,
+
+                            details?.onsite?.[0]?.halfDayperiod,
+
+                            details?.onsite?.[0]?.description
+                          )
+                        }
+                      }}
+                    >
+                      {details?.onsite?.[0]?.place || "-"}
+                    </td>
+                    <td
+                      className="border border-gray-300 p-2 hover:cursor-pointer"
+                      onClick={() => {
+                        if (
+                          user?.role === "Admin" &&
+                          details.onsite.length > 0
+                        ) {
+                          handleOnsite(
+                            date,
+                            "Onsite",
+                            details?.onsite?.[0]?.onsiteType,
+
+                            details?.onsite?.[0]?.halfDayperiod,
+
+                            details?.onsite?.[0]?.description
+                          )
+                        }
+                      }}
+                    >
+                      {details?.onsite?.[0]?.siteName || "-"}
+                    </td>
+                    <td
+                      className="border border-gray-300 p-2 hover:cursor-pointer"
+                      onClick={() => {
+                        if (
+                          user?.role === "Admin" &&
+                          details.onsite.length > 0
+                        ) {
+                          handleOnsite(
+                            date,
+                            "Onsite",
+                            details?.onsite?.[0]?.onsiteType,
+
+                            details?.onsite?.[0]?.halfDayperiod,
+
+                            details?.onsite?.[0]?.description
                           )
                         }
                       }}
                     >
                       {details?.onsite?.[0]?.onsiteType || "-"}
                     </td>
-                    <td className="border border-gray-300 p-2">
+                    <td
+                      className="border border-gray-300 p-2 hover:cursor-pointer"
+                      onClick={() => {
+                        if (
+                          user?.role === "Admin" &&
+                          details.onsite.length > 0
+                        ) {
+                          handleOnsite(
+                            date,
+                            "Onsite",
+                            details?.onsite?.[0]?.onsiteType,
+
+                            details?.onsite?.[0]?.halfDayperiod,
+
+                            details?.onsite?.[0]?.description
+                          )
+                        }
+                      }}
+                    >
                       {details?.onsite?.[0]?.onsiteType === "Half Day"
                         ? details?.onsite?.[0].halfDayPeriod
                         : "-"}
