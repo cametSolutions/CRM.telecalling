@@ -867,6 +867,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       : []
     for (const user of users) {
       const userId = user._id
+      const attendanceId = user.attendanceId
       const userName = user.name
       const staffId = user.attendanceId
       const assignedto = user.assignedto
@@ -900,6 +901,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         sickleavestartsfrom,
         privilegeleavestartsfrom,
         staffId,
+        attendanceId,
         assignedto,
         userId: userId,
         present: 0,
@@ -2876,7 +2878,7 @@ export const EditLeave = async (req, res) => {
 }
 export const EditAttendance = async (req, res) => {
   try {
-    const { userid } = req.query
+    const { userid, attendanceid } = req.query
     const formData = req.body
     // const { attendanceDate, ...updatedFeild } = formData
 
@@ -2917,9 +2919,28 @@ export const EditAttendance = async (req, res) => {
       // Call GetsomeAll with fake req
       const a = await GetsomeAllsummary(fakeReq, res)
       if (a) {
-        return res.status(200).json({ message: "leave updated", data: a })
+        return res.status(200).json({ message: "Attendance updated", data: a })
       }
     } else {
+      
+      const saveAttendance = new Attendance({
+        userId: userid,
+
+        attendanceId: Number(attendanceid),
+        attendanceDate,
+        inTime: inTimeString,
+        outTime: outTimeString,
+        edited: true,
+        excel: false
+      })
+      await saveAttendance.save()
+      const fakeReq = { query: { year, month } }
+
+      // Call GetsomeAll with fake req
+      const a = await GetsomeAllsummary(fakeReq, res)
+      if (a) {
+        return res.status(200).json({ message: "Attendance updated", data: a })
+      }
     }
   } catch (error) {
     console.log("error", error.message)
@@ -3106,6 +3127,7 @@ export const GetsomeAllsummary = async (
     for (const user of users) {
       const userId = user._id
       const userName = user.name
+      const attendanceId = user.attendanceId
       const assignedto = user.assignedto
       const staffId = user.attendanceId
       const casualleavestartsfrom = user.casualleavestartsfrom
@@ -3141,6 +3163,7 @@ export const GetsomeAllsummary = async (
         sickleavestartsfrom,
         privilegeleavestartsfrom,
         staffId,
+        attendanceId,
         assignedto,
         userId: userId,
         present: 0,
@@ -3626,7 +3649,6 @@ export const GetsomeAllsummary = async (
                     stats.attendancedates[leaveDate].reason = leave?.reason
                     break
                   case "privileage Leave":
-                   
                     stats.attendancedates[leaveDate].privileageLeave = 1
                     stats.attendancedates[leaveDate].reason = leave?.reason
                     break
@@ -3735,7 +3757,11 @@ export const GetsomeAllsummary = async (
             if (date === dates) {
               const attendance = attendances.attendancedates[dates]
 
-              if (attendance.otherLeave !== "" || attendance.privileageLeave !==""||attendance.casualLeave !=="") {
+              if (
+                attendance.otherLeave !== "" ||
+                attendance.privileageLeave !== "" ||
+                attendance.casualLeave !== ""
+              ) {
                 return {
                   status: true,
                   present: attendance.present,
