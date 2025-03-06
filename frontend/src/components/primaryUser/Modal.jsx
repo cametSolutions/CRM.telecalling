@@ -169,9 +169,10 @@ const Modal = ({
           leave.leaveCategory === "casual Leave" &&
           leaveMonthYear === leaveMonthYearFromData
         ) {
+         
+         
           return count + (leave.leaveType === "Half Day" ? 0.5 : 1)
         }
-
         return count
       }, 0)
 
@@ -195,7 +196,7 @@ const Modal = ({
       setBalanceprivilegeLeaveCount(Math.max(balanceprivilege, 0))
       setBalancecasualLeaveCount(Math.max(balancecasualcount, 0))
       setLeaveBalance({
-        casual: balancecasualcount,
+        casual:Math.max(balancecasualcount,0),
         privilege: Math.max(balanceprivilege, 0),
         sick: BalancesickleaveCount,
         compensatory: BalancecompensatoryleaveCount
@@ -309,7 +310,7 @@ const Modal = ({
       handleApply(staffId, selectedOnsite, setIsApplying, type)
     }
   }
- 
+
   return (
     isOpen && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center  ">
