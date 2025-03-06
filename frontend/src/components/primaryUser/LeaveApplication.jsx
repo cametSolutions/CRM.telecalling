@@ -188,7 +188,7 @@ function LeaveApplication() {
       setBalancecasualLeaveCount(Math.max(balancecasualcount, 0))
 
       setLeaveBalance({
-        casual: balancecasualcount,
+        casual:Math.max(balancecasualcount,0),
         privilege: Math.max(balanceprivilege, 0),
         sick: BalancesickleaveCount,
         compensatory: BalancecompensatoryleaveCount

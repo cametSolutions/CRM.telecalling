@@ -845,6 +845,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       leavemaster[0].checkIn,
       leavemaster[0].lateArrival
     )
+    const evening = leavemaster[0].checkOut
     const noonTime = getMidTime(leavemaster[0].checkIn, leavemaster[0].checkOut)
 
     const morningLimit = convertToMinutes(morning)
@@ -852,6 +853,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
     const lateLimit = convertToMinutes(leavemaster[0].checkInEndAt)
     const minOutTime = convertToMinutes(leavemaster[0].checkOutStartAt)
     const earlyLeaveLimit = convertToMinutes(leavemaster[0].checkOut)
+
     const noonLimit = convertToMinutes(noonTime)
 
     let staffAttendanceStats = []
@@ -1035,7 +1037,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             punchIn <= lateLimit &&
             punchOut >= earlyLeaveLimit
           ) {
-            const a = getTimeDifference("09:35 AM", att.inTime)
+            const a = getTimeDifference(morning, att.inTime)
 
             stats.attendancedates[dayTime].late = a
             stats.late++
@@ -1054,7 +1056,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             punchOut < earlyLeaveLimit &&
             punchIn <= morningLimit
           ) {
-            const b = getTimeDifference(att.outTime, "05:30 PM")
+            const b = getTimeDifference(att.outTime, evening)
             stats.attendancedates[dayTime].present = 1
             stats.attendancedates[dayTime].early = b
             stats.attendancedates[dayTime].inTime = att.inTime
@@ -1073,8 +1075,8 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             punchOut >= minOutTime &&
             punchOut < earlyLeaveLimit
           ) {
-            const a = getTimeDifference("09:35 AM", att.inTime)
-            const b = getTimeDifference(att.outTime, "05:30 PM")
+            const a = getTimeDifference(morning, att.inTime)
+            const b = getTimeDifference(att.outTime, evening)
             stats.earlyGoing++
             stats.late++
             stats.attendancedates[dayTime].present = 1
@@ -1268,6 +1270,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             }
           }
         })
+
       leaves?.length &&
         leaves.forEach((leave) => {
           const leaveDate = leave.leaveDate.toISOString().split("T")[0]
@@ -1280,7 +1283,12 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             )
 
           if (!isAttendance) {
-            if (leave.leaveType === "Full Day" && leave.onsite === false) {
+            if (
+              leave.leaveType === "Full Day" &&
+              leave.onsite === false &&
+              (leave.adminverified === true ||
+                leave.departmentverified === true)
+            ) {
               if (leaveCategory) {
                 switch (leaveCategory) {
                   case "casual Leave":
@@ -1312,7 +1320,9 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               stats.attendancedates[leaveDate].notMarked = ""
             } else if (
               leave.leaveType === "Half Day" &&
-              leave.onsite === false
+              leave.onsite === false &&
+              (leave.adminverified === true ||
+                leave.departmentverified === true)
             ) {
               if (leaveCategory) {
                 switch (leaveCategory) {
@@ -1434,19 +1444,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           const nextPresent = isPresent(nextDay)
 
           if (prevPresent?.status && nextPresent?.status) {
-            // if (
-            //   prevPresent?.otherLeave === 0.5 &&
-            //   prevPresent?.present === 0.5
-            // ) {
-            //   stats.attendancedates[previousDay].present = 0
-            // }
-            // if (
-            //   nextPresent?.otherLeave === 0.5 &&
-            //   nextPresent?.present === 0.5
-            // ) {
-            //   stats.attendancedates[nextDay].present = 0
-            // }
-            // stats.attendancedates[previousDay].otherLeave = 1
             stats.attendancedates[sunday].otherLeave = 1
             // stats.attendancedates[nextDay].otherLeave = 1
             stats.attendancedates[sunday].notMarked = ""
@@ -1473,10 +1470,8 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             : stats.attendancedates[dates].privileageLeave &&
               !isNaN(stats.attendancedates[dates].privileageLeave)
             ? Number(stats.attendancedates[dates].privileageLeave)
-            : stats.attendancedates[dates].compensatoryLeave &&
-              !isNaN(stats.attendancedates[dates].compensatoryLeave)
-            ? Number(stats.attendancedates[dates].compensatoryLeave)
             : 0
+
         stats.notMarked +=
           stats.attendancedates[dates].notMarked !== ""
             ? Number(stats.attendancedates[dates].notMarked)
@@ -2922,7 +2917,6 @@ export const EditAttendance = async (req, res) => {
         return res.status(200).json({ message: "Attendance updated", data: a })
       }
     } else {
-      
       const saveAttendance = new Attendance({
         userId: userid,
 
@@ -3036,10 +3030,6 @@ export const GetsomeAllsummary = async (
     const startDate = new Date(Date.UTC(year, month - 1, 1))
     const endDate = new Date(Date.UTC(year, month, 0))
 
-    // const users = await Staff.find(
-    //   {},
-    //   { _id: 1, name: 1, attendanceId: 1, assignedto: 1 }
-    // )
     const users = await Staff.aggregate([
       {
         $project: {
@@ -3323,7 +3313,7 @@ export const GetsomeAllsummary = async (
             }
             present.push(day)
           } else if (
-            punchOut > minOutTime &&
+            punchOut >= minOutTime &&
             punchOut < earlyLeaveLimit &&
             punchIn <= morningLimit
           ) {
@@ -3343,9 +3333,9 @@ export const GetsomeAllsummary = async (
             }
             present.push(day)
           } else if (
-            punchIn < lateLimit &&
+            punchIn <= lateLimit &&
             punchIn > morningLimit &&
-            punchOut > minOutTime &&
+            punchOut >= minOutTime &&
             punchOut < earlyLeaveLimit
           ) {
             const a = getTimeDifference("09:35 AM", att.inTime)
@@ -3637,7 +3627,12 @@ export const GetsomeAllsummary = async (
               (o) => o.attendanceDate.toISOString().split("T")[0] === leaveDate
             )
           if (!isAttendance) {
-            if (leave.leaveType === "Full Day" && leave.onsite === false) {
+            if (
+              leave.leaveType === "Full Day" &&
+              leave.onsite === false &&
+              (leave.adminverified === true ||
+                leave.departmentverified === true)
+            ) {
               if (leaveCategory) {
                 switch (leaveCategory) {
                   case "casual Leave":
@@ -3670,7 +3665,9 @@ export const GetsomeAllsummary = async (
               stats.attendancedates[leaveDate].notMarked = ""
             } else if (
               leave.leaveType === "Half Day" &&
-              leave.onsite === false
+              leave.onsite === false &&
+              (leave.adminverified === true ||
+                leave.departmentverified === true)
             ) {
               if (leaveCategory) {
                 switch (leaveCategory) {
