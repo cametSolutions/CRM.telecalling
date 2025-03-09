@@ -40,8 +40,8 @@ export default function StaffHeader() {
     { label: "Task" }
   ]
   const desiredMobileMenu = [
-    { to: "/staff/transaction/leave-application", label: "Transactions" },
-    { to: "/staff/reports/leave-summary", label: "Reports" }
+    { to: "/staff/transaction/leave-application", label: "LeaveApplication" },
+    { to: "/staff/reports/leave-summary", label: "LeaveSummary" }
   ]
 
   const masters = [
