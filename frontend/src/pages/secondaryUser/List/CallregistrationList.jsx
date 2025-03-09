@@ -70,6 +70,7 @@ const CallregistrationList = () => {
       // Listen for initial data from the server
       socket.on("updatedCalls", ({ calls, user }) => {
         if (users.role === "Admin") {
+          console.log(calls)
           setCallList(calls)
 
           setUserCallstatus(user.callstatus)
@@ -258,22 +259,7 @@ const CallregistrationList = () => {
     const secs = seconds % 60
     return `${hrs} hr ${mins} min ${secs} sec`
   }
-  // const handleupdateadmin = async () => {
-  //   const id = users._id
-  //   // const id = "66af560dfa230b0b30e69c9c"
-
-  //   const url = `http://localhost:9000/api/auth/resetAdminstatus?adminid=${encodeURIComponent(
-  //     id
-  //   )}`
-  //   const response = await fetch(url, {
-  //     method: "POST",
-  //     credentials: "include"
-  //   })
-  //   const b = await response.json()
-  //   if (response.ok) {
-  //     toast.success(b.message)
-  //   }
-  // }
+  
   const handlemerge = async () => {
     console.log("loggg")
     try {
@@ -301,7 +287,7 @@ const CallregistrationList = () => {
       }
     }
   }
-
+  console.log(filteredCalls)
   return (
     <div className="container mx-auto  p-5 ">
       <div className="w-auto  bg-white shadow-lg rounded p-4 pt-1 h-full ">

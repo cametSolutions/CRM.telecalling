@@ -1,4 +1,4 @@
-import React from "react"
+import React ,{useState,useEffect} from "react"
 import { Routes, Route } from "react-router-dom"
 //import Home from "../pages/Home"
 
@@ -16,7 +16,16 @@ import staffmastersRoutes from "./staffRoutes/staffmasterRoutes.js"
 import staffreportsRoutes from "./staffRoutes/staffreportRoutes.js"
 import UsersLeaveApplicationSummary from "../components/primaryUser/UsersLeaveApplicationSummary.jsx"
 
-const Mainrouter = () => {
+const Mainrouter = ({ headerHeight }) => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768) // Mobile view if width < 768px
+    }
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
   const allRoutes = [
     ...mastersRoutes,
     ...reportsRoutes,
@@ -28,13 +37,19 @@ const Mainrouter = () => {
     ...staffreportsRoutes
   ]
   return (
-    <div>
+    <div
+      className="overflow-auto"
+      style={{ height: `calc(100vh - ${headerHeight}px)` }}
+    >
       <Routes>
         <Route path="/" element={<Login />} />
         {/* <Route path="/admin/productlist" element={<ProductList />} /> */}
-        <Route path="/admin/home" element={<CallregistrationList />} />
-        <Route path="/admin/usersleave-application" element={<UsersLeaveApplicationSummary/>}/>
-        <Route path="/staff/home" element={<CallregistrationList />} />
+        {!isMobile&&<Route path="/admin/home" element={<CallregistrationList />} />}
+        <Route
+          path="/admin/usersleave-application"
+          element={<UsersLeaveApplicationSummary />}
+        />
+       {!isMobile&&<Route path="/staff/home" element={<CallregistrationList />} />} 
         {allRoutes.map((route, index) => {
           const { path, component: Component, title } = route
           return (

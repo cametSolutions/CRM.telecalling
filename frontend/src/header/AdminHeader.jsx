@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react"
 import { Link, NavLink, useNavigate } from "react-router-dom"
 import { FaSearch, FaTimes, FaChevronRight } from "react-icons/fa"
 import { VscAccount } from "react-icons/vsc"
-
+import { FaUserCircle } from "react-icons/fa" // Import the icon
+import { toast } from "react-toastify"
 export default function AdminHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [user, setUser] = useState(null)
@@ -27,7 +28,7 @@ export default function AdminHeader() {
     localStorage.removeItem("authToken")
     localStorage.removeItem("user")
     localStorage.removeItem("timer")
-
+    toast.success("Logout successfully")
     // Redirect to login page
     navigate("/")
   }
@@ -38,7 +39,10 @@ export default function AdminHeader() {
     { label: "Reports" },
     { label: "Task" }
   ]
-
+  const desiredMobileMenu = [
+    { to: "/admin/transaction/leave-application", label: "Transactions" },
+    { to: "/admin/reports/leave-summary", label: "Reports" }
+  ]
   const masters = [
     {
       to: "/admin/masters/company",
@@ -200,12 +204,11 @@ export default function AdminHeader() {
       // control: user.permissions[0].LeaveSummary
     }
   ]
-
   return (
     <>
       <header className="sticky top-0 z-50 h-20 flex bg-white shadow-md items-center">
         {/* Mobile menu button */}
-        <div className="md:hidden flex justify-between py-2 ">
+        <div className="md:hidden flex justify-between py-2 px-4">
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="hover:text-red-800 focus:outline-none"
@@ -228,9 +231,9 @@ export default function AdminHeader() {
         </div>
         {/* Mobile menu */}
         <div
-          className={`lg:hidden ${
+          className={`sm:hidden ${
             mobileMenuOpen
-              ? "absolute top-0 left-0 z-50 bg-white shadow-md"
+              ? "absolute top-0 left-0 z-50 bg-blue-950 shadow-md w-3/5 h-screen"
               : "hidden"
           }`}
         >
@@ -239,21 +242,77 @@ export default function AdminHeader() {
               onClick={() => setMobileMenuOpen(false)}
               className="absolute right-0 mt-2 mr-2 text-gray-600 hover:text-black"
             >
-              <FaTimes className="h-3 font-extralight" />
+              <FaTimes className="h-4 w-4 font-extralight text-white" />
             </button>
           </div>
-          <div className="block leading-10 text-blue-600 mt-5">
-            {links.map((link) => (
-              <div key={link?.to}>
-                <Link to={link?.to} className="block px-4 hover:bg-gray-300">
+          <div className="flex items-center space-x-2 p-2">
+            <svg
+              className="w-12 h-12 text-green-400"
+              viewBox="0 0 64 64"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="32"
+                cy="32"
+                r="30"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <path
+                d="M32 2 A30 30 0 0 1 32 62"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <text
+                x="50%"
+                y="50%"
+                textAnchor="middle"
+                fill="currentColor"
+                fontSize="18"
+                fontFamily="Arial, Helvetica, sans-serif"
+                dy=".3em"
+              >
+                CRm
+              </text>
+            </svg>
+            <span className="text-md sm:text-2xl md:text-2xl lg:text-3xl font-bold text-green-400">
+              MANAGEMENT
+            </span>
+
+            {/* <span className="text-3xl font-bold text-green-600">MANAGEMENT</span> */}
+          </div>
+          <hr className="border-t-4 border-gray-300" />
+          <div className="flex p-2 text-white text-center items-center space-x-4">
+            <FaUserCircle className="h-6 w-6" />
+            <span>{user?.name}</span>
+          </div>
+          <div className="text-black bg-gray-50 py-1 px-4">
+            {user?.branchName.join(",")}
+          </div>
+          <div className="text-gray-50 mt-3 px-4">Menu</div>
+          <div className="block leading-10 text-white mt-3">
+            {desiredMobileMenu.map((link) => (
+              <div
+                key={link?.to}
+                className="px-8 hover:bg-gray-400 cursor-pointer"
+              >
+                <Link to={link?.to} className="block w-full h-full py-2">
                   {link.label}
                 </Link>
               </div>
             ))}
           </div>
+          <div
+            onClick={logout}
+            className="mt-auto bg-red-600 text-white text-center py-3 cursor-pointer"
+          >
+            Logout
+          </div>
         </div>
         {/* Logo and links */}
-        <div className="flex items-center space-x-2 sm:px-12">
+        <div className="flex items-center space-x-2 sm:px-4">
           <svg
             className="w-12 h-12 text-green-600"
             viewBox="0 0 64 64"
@@ -290,7 +349,7 @@ export default function AdminHeader() {
           </span>
         </div>
         <div className="flex flex-grow justify-center items-center">
-          <nav className="hidden md:flex items-center gap-3 space-x-4">
+          <nav className="hidden md:flex items-center md:gap-2 lg:gap-8">
             {links.map((link) => (
               <div
                 key={link.to}
@@ -417,55 +476,51 @@ export default function AdminHeader() {
           </nav>
         </div>
 
-        <div className="relative flex items-center flex-grow">
-          <VscAccount
-            className="text-2xl"
-            onMouseEnter={() => setProfileMenuOpen(true)}
-            onMouseLeave={() => setProfileMenuOpen(false)}
-          />
-          {/* {user?.imageUrl && (
-            <img
-              src={user?.imageUrl}
-              // alt={`${userData.name}'s profile`}
+        <div className=" hidden md:flex flex-grow justify-center items-center ">
+          <div className="relative flex items-center">
+            {user?.profileUrl && user?.profileUrl?.length > 0 ? (
+              <img
+                src={user?.profileUrl}
+                // alt={`${user?.name}'s profile`}
+                onMouseEnter={() => setProfileMenuOpen(true)}
+                onMouseLeave={() => setProfileMenuOpen(false)}
+                className="w-10 h-10 rounded-full" // Add styling as needed
+              />
+            ) : (
+              <FaUserCircle
+                className="text-3xl text-gray-600 cursor-pointer"
+                onMouseEnter={() => setProfileMenuOpen(true)}
+                onMouseLeave={() => setProfileMenuOpen(false)}
+              />
+            )}
+            <span
               onMouseEnter={() => setProfileMenuOpen(true)}
               onMouseLeave={() => setProfileMenuOpen(false)}
-              className="w-20 h-20 rounded-full" // Add styling as needed
-            />
-          )} */}
-          <span
-            className="text-gray-700 mx-4 rounded-md cursor-pointer"
-            onMouseEnter={() => setProfileMenuOpen(true)}
-            onMouseLeave={() => setProfileMenuOpen(false)}
-          >
-            {user?.name || "Profile"}
-          </span>
-          {profileMenuOpen && (
-            <div
-              onMouseEnter={() => setProfileMenuOpen(true)}
-              onMouseLeave={() => setProfileMenuOpen(false)}
-              className="absolute bg-white border rounded top-full l-0 mt-0  w-40 shadow-lg"
+              className="text-gray-700 mx-4 rounded-md cursor-pointer"
             >
-              <Link
-                to="/admin/profile"
-                className="block px-4 py-2 hover:bg-gray-200 cursor-pointer"
+              {user?.name || "Profile"}
+            </span>
+            {profileMenuOpen && (
+              <div
+                onMouseEnter={() => setProfileMenuOpen(true)}
+                onMouseLeave={() => setProfileMenuOpen(false)}
+                className="absolute bg-white border rounded top-full mt-0  w-40 shadow-lg"
               >
-                View Profile
-              </Link>
-              <button
-                onClick={logout}
-                className="block px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 w-full text-left"
-              >
-                Logout
-              </button>
-            </div>
-          )}
+                <button
+                  onClick={logout}
+                  className="block px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 w-full text-left"
+                >
+                  Logout
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
     </>
   )
 }
 ////responsive header
-
 
 // import React, { useEffect, useState } from "react";
 // import { Link, NavLink, useNavigate } from "react-router-dom";
@@ -537,7 +592,7 @@ export default function AdminHeader() {
 //             >
 //               Home
 //             </NavLink>
-            
+
 //             {["Masters", "Transactions", "Reports", "Task"].map((item) => (
 //               <div
 //                 key={item}
@@ -548,7 +603,7 @@ export default function AdminHeader() {
 //                 <button className="text-lg hover:text-primary transition-colors px-3 py-2">
 //                   {item}
 //                 </button>
-                
+
 //                 {activeDropdown === item && (
 //                   <div className="absolute top-full left-0 w-48 bg-white border rounded-md shadow-lg py-1">
 //                     {menus[item.toLowerCase()]?.map((menuItem) => (
@@ -585,7 +640,7 @@ export default function AdminHeader() {
 //                   {user?.name || "Profile"}
 //                 </span>
 //               </button>
-              
+
 //               <div className="hidden group-hover:block absolute right-0 w-48 mt-2 py-1 bg-white rounded-md shadow-lg">
 //                 <Link
 //                   to="/admin/profile"
@@ -614,7 +669,7 @@ export default function AdminHeader() {
 //               >
 //                 Home
 //               </Link>
-              
+
 //               {["Masters", "Transactions", "Reports", "Task"].map((item) => (
 //                 <div key={item} className="relative">
 //                   <button
@@ -628,7 +683,7 @@ export default function AdminHeader() {
 //                       }`}
 //                     />
 //                   </button>
-                  
+
 //                   {activeDropdown === item && (
 //                     <div className="pl-4">
 //                       {menus[item.toLowerCase()]?.map((menuItem) => (
@@ -644,7 +699,7 @@ export default function AdminHeader() {
 //                   )}
 //                 </div>
 //               ))}
-              
+
 //               <button
 //                 onClick={logout}
 //                 className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"

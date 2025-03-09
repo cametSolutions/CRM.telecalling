@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useLocation } from "react"
 import { Link, NavLink, useNavigate } from "react-router-dom"
+import { toast } from "react-toastify"
 import { FaSearch, FaTimes, FaChevronRight } from "react-icons/fa"
 import { VscAccount } from "react-icons/vsc"
-
+import { FaUserCircle } from "react-icons/fa" // Import the icon
 export default function StaffHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  // const [user, setUser] = useState(null)
+  const [user, setUser] = useState(null)
   const [transactionMenuOpen, setTransactionMenuOpen] = useState(false)
   const [masterMenuOpen, setMasterMenuOpen] = useState(false)
   const [reportsMenuOpen, setReportsMenuOpen] = useState(false)
@@ -14,8 +15,12 @@ export default function StaffHeader() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [inventoryMenuOpen, setInventoryMenuOpen] = useState(false)
   const navigate = useNavigate()
-
-  const user = JSON.parse(localStorage.getItem("user"))
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user")
+    if (storedUser) {
+      setUser(JSON.parse(storedUser)) // Parse the user data from string to object
+    }
+  }, [])
 
   const logout = () => {
     // Clear the authentication token from local storage
@@ -24,6 +29,7 @@ export default function StaffHeader() {
     localStorage.removeItem("timer")
 
     // Redirect to login page
+    toast.success("Logout successfully")
     navigate("/")
   }
   const links = [
@@ -32,6 +38,10 @@ export default function StaffHeader() {
     { label: "Transactions" },
     { label: "Reports" },
     { label: "Task" }
+  ]
+  const desiredMobileMenu = [
+    { to: "/staff/transaction/leave-application", label: "Transactions" },
+    { to: "/staff/reports/leave-summary", label: "Reports" }
   ]
 
   const masters = [
@@ -208,9 +218,9 @@ export default function StaffHeader() {
 
       {/* Mobile menu */}
       <div
-        className={`lg:hidden ${
+        className={`sm:hidden ${
           mobileMenuOpen
-            ? "absolute top-0 left-0 z-50 bg-white shadow-md"
+            ? "absolute top-0 left-0 z-50 bg-blue-950 shadow-md w-3/5 h-screen"
             : "hidden"
         }`}
       >
@@ -219,22 +229,78 @@ export default function StaffHeader() {
             onClick={() => setMobileMenuOpen(false)}
             className="absolute right-0 mt-2 mr-2 text-gray-600 hover:text-black"
           >
-            <FaTimes className="h-3 font-extralight" />
+            <FaTimes className="h-4 w-4 font-extralight text-white" />
           </button>
         </div>
-        <div className="block leading-10 text-blue-600 mt-5">
-          {links.map((link) => (
-            <div key={link?.to}>
-              <Link to={link?.to} className="block px-4 hover:bg-gray-300">
+        <div className="flex items-center space-x-2 p-2">
+          <svg
+            className="w-12 h-12 text-green-400"
+            viewBox="0 0 64 64"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <circle
+              cx="32"
+              cy="32"
+              r="30"
+              stroke="currentColor"
+              strokeWidth="4"
+              fill="none"
+            />
+            <path
+              d="M32 2 A30 30 0 0 1 32 62"
+              stroke="currentColor"
+              strokeWidth="4"
+              fill="none"
+            />
+            <text
+              x="50%"
+              y="50%"
+              textAnchor="middle"
+              fill="currentColor"
+              fontSize="18"
+              fontFamily="Arial, Helvetica, sans-serif"
+              dy=".3em"
+            >
+              CRm
+            </text>
+          </svg>
+          <span className="text-md sm:text-2xl md:text-2xl lg:text-3xl font-bold text-green-400">
+            MANAGEMENT
+          </span>
+
+          {/* <span className="text-3xl font-bold text-green-600">MANAGEMENT</span> */}
+        </div>
+        <hr className="border-t-4 border-gray-300" />
+        <div className="p-2 flex text-white text-center items-center space-x-4">
+          <FaUserCircle className="w-6 h-6" />
+          <span>{user?.name}</span>
+        </div>
+        <div className="text-black bg-gray-50 py-1 px-4">
+          {user?.selected?.[0]?.branchName}
+        </div>
+        <div className="text-gray-50 mt-3 px-4">Menu</div>
+        <div className="block leading-10 text-white mt-3">
+          {desiredMobileMenu.map((link) => (
+            <div
+              key={link?.to}
+              className="px-8 hover:bg-gray-400 cursor-pointer"
+            >
+              <Link to={link?.to} className="block w-full h-full py-2">
                 {link.label}
               </Link>
             </div>
           ))}
         </div>
+        <div
+          onClick={logout}
+          className="mt-auto bg-red-600 text-white text-center py-3 cursor-pointer"
+        >
+          Logout
+        </div>
       </div>
 
       {/* Logo and links */}
-      <div className="flex items-center space-x-2 sm:px-12">
+      <div className="flex items-center space-x-2 sm:px-4">
         <svg
           className="w-12 h-12 text-green-600"
           viewBox="0 0 64 64"
@@ -273,11 +339,11 @@ export default function StaffHeader() {
         {/* <span className="text-3xl font-bold text-green-600">MANAGEMENT</span> */}
       </div>
       <div className="flex flex-grow justify-center items-center">
-        <nav className="hidden md:flex  items-center gap-3 space-x-4">
+        <nav className="hidden md:flex  items-center md:gap-2 lg:gap-8 ">
           {links.map((link) => (
             <div
               key={link.to}
-              className="relative mb-2"
+              className="relative mb-2 "
               onMouseEnter={() => {
                 if (
                   link.label === "Masters" &&
@@ -446,9 +512,9 @@ export default function StaffHeader() {
         </nav>
       </div>
 
-      <div className="flex flex-grow justify-center items-center">
+      <div className=" hidden md:flex flex-grow justify-center items-center ">
         <div className="relative flex items-center">
-          {user?.profileUrl && user.profileUrl.length > 0 ? (
+          {user?.profileUrl && user?.profileUrl?.length > 0 ? (
             <img
               src={user?.profileUrl}
               // alt={`${user?.name}'s profile`}
@@ -457,8 +523,8 @@ export default function StaffHeader() {
               className="w-10 h-10 rounded-full" // Add styling as needed
             />
           ) : (
-            <VscAccount
-              className="text-2xl"
+            <FaUserCircle
+              className="text-3xl text-gray-600 cursor-pointer"
               onMouseEnter={() => setProfileMenuOpen(true)}
               onMouseLeave={() => setProfileMenuOpen(false)}
             />
@@ -485,9 +551,6 @@ export default function StaffHeader() {
             </div>
           )}
         </div>
-        {/* <span>
-          <FaSearch className="h-3 text-gray-500 ml-12 cursor-pointer" />
-        </span> */}
       </div>
     </header>
   )

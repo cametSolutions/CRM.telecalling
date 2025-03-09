@@ -1,4 +1,5 @@
 //import Footer from "../components/Footer/Footer"
+import { useEffect, useRef, useState } from "react"
 import AdminHeader from "../header/AdminHeader.jsx"
 import StaffHeader from "../header/StaffHeader.jsx"
 
@@ -7,20 +8,29 @@ import Mainrouter from "../router/Mainrouter.jsx"
 import { useLocation } from "react-router-dom"
 
 const Layout = () => {
+  const [headerHeight, setHeaderHeight] = useState(0)
+  const headerRef = useRef(null)
   const location = useLocation()
 
   const adminHeader = location.pathname.startsWith("/admin")
   const staffHeader = location.pathname.startsWith("/staff")
+  useEffect(() => {
+    if (headerRef.current) {
+      setHeaderHeight(headerRef.current.offsetHeight)
+    }
+  }, [location.pathname]) // Update height on route change
 
   return (
-    <div>
-      {/* Conditional Header */}
-      {adminHeader ? <AdminHeader /> : null}
-      {staffHeader ? <StaffHeader /> : null}
+    <div className="h-screen flex flex-col">
+      <div ref={headerRef}>
+        {/* Conditional Header */}
+        {adminHeader ? <AdminHeader /> : null}
+        {staffHeader ? <StaffHeader /> : null}
+      </div>
 
       {/* Main Content */}
-      <main>
-        <Mainrouter />
+      <main className="flex-1">
+        <Mainrouter headerHeight={headerHeight} />
       </main>
     </div>
     // <>

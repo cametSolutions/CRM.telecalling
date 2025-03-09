@@ -2,6 +2,7 @@ import React, { useState } from "react"
 import { useForm } from "react-hook-form"
 import api from "../../../api/api"
 import { useNavigate, Link } from "react-router-dom"
+import { FaSpinner } from "react-icons/fa"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons"
 import { toast } from "react-toastify"
@@ -24,17 +25,17 @@ const Login = () => {
       const { token, User, role } = datas
       console.log("userinlogin", User)
       if (response.status === 200) {
-        
         toast.success(response.data.message, {
           icon: "🚀",
           style: {
             backgroundColor: "#fff", // White background
             color: "#000", // Black text for better contrast
-            boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.3), 0px 1px 3px rgba(0, 0, 0, 0.1)", // 3D shadow effect
+            boxShadow:
+              "0px 4px 10px rgba(0, 0, 0, 0.3), 0px 1px 3px rgba(0, 0, 0, 0.1)", // 3D shadow effect
             borderRadius: "8px", // Rounded corners for a polished look
             padding: "10px 15px", // Comfortable padding
-            fontWeight: "bold", // Bold text for prominence
-          },
+            fontWeight: "bold" // Bold text for prominence
+          }
         })
         localStorage.setItem("authToken", token)
         localStorage.setItem("user", JSON.stringify(User))
@@ -64,7 +65,7 @@ const Login = () => {
       className="flex items-center justify-center min-h-screen bg-cover bg-center"
       style={{ backgroundImage: "url('/background.jpg')" }}
     >
-      <div className="w-full max-w-md p-8 space-y-6 bg-white shadow-md rounded-lg">
+      <div className=" w-[350px] md:w-[400px] p-8 space-y-6 bg-white shadow-md rounded-lg">
         <h2 className="text-2xl font-bold text-center">Login</h2>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="mb-4">
@@ -96,32 +97,7 @@ const Login = () => {
               </p>
             )}
           </div>
-          {/* <div className="mb-4">
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              {...register("email", {
-                required: "Email is required",
-                pattern: {
-                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: "Invalid email address"
-                }
-              })}
-              className="w-full px-3 py-2 mt-1 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              autoComplete="off"
-            />
-            {errors.email && (
-              <p className="mt-2 text-sm text-red-600">
-                {errors.email.message}
-              </p>
-            )}
-          </div> */}
+
           <div className="mb-4 relative">
             <label
               htmlFor="password"
@@ -138,10 +114,7 @@ const Login = () => {
               />
               <span
                 className="absolute inset-y-0 right-0 flex items-center px-2 cursor-pointer"
-                onClick={() => 
-                  setPasswordVisible(!passwordVisible)
-                 
-                }
+                onClick={() => setPasswordVisible(!passwordVisible)}
               >
                 <FontAwesomeIcon icon={passwordVisible ? faEyeSlash : faEye} />
               </span>
@@ -155,9 +128,14 @@ const Login = () => {
 
           <button
             type="submit"
-            className="w-full px-4 py-2 font-semibold text-white bg-indigo-500 rounded-md hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full flex items-center justify-center  px-4 py-2 font-semibold text-white bg-indigo-500 rounded-md hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
-            {loading ? "Loading..." : "Login"}
+            {/* {loading ? "Loading..." : "Login"} */}
+            {loading ? (
+              <FaSpinner className="animate-spin h-5 w-5  text-white " />
+            ) : (
+              "Login"
+            )}
           </button>
         </form>
         {/* <p className="mt-4 text-center">

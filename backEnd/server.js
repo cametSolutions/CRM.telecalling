@@ -53,6 +53,92 @@ io.on("connection", (socket) => {
     console.log("Received request for initial data")
 
     try {
+      const startOfDay = new Date()
+      startOfDay.setHours(0, 0, 0, 0) // Start of today
+      const endOfDay = new Date()
+      endOfDay.setHours(23, 59, 59, 999)
+
+      // const calls = await CallRegistration.aggregate([
+      //   {
+      //     $addFields: {
+      //       "callregistration.formdata.attendedBy": {
+      //         $cond: {
+      //           if: { $isArray: "$callregistration.formdata.attendedBy" },
+      //           then: "$callregistration.formdata.attendedBy", // Keep as array
+      //           else: [{ calldate: "$callregistration.formdata.attendedBy" }] // Convert single value to array
+      //         }
+      //       }
+      //     }
+      //   },
+      //   {
+      //     $unwind: {
+      //       path: "$callregistration.formdata.attendedBy",
+      //       preserveNullAndEmptyArrays: true // Keeps documents that have no attendedBy
+      //     }
+      //   },
+      //   {
+      //     $addFields: {
+      //       "callregistration.formdata.attendedBy.calldate": {
+      //         $cond: {
+      //           if: {
+      //             $and: [
+      //               {
+      //                 $ne: [
+      //                   "$callregistration.formdata.attendedBy.calldate",
+      //                   ""
+      //                 ]
+      //               }, // Ensure it's not empty
+      //               {
+      //                 $not: {
+      //                   $isArray:
+      //                     "$callregistration.formdata.attendedBy.calldate"
+      //                 }
+      //               } // Ensure it's not an array
+      //             ]
+      //           },
+      //           then: {
+      //             $toDate: "$callregistration.formdata.attendedBy.calldate"
+      //           }, // Convert to Date
+      //           else: null // Set to null if it's missing or an array
+      //         }
+      //       }
+      //     }
+      //   },
+      //   {
+      //     $match: {
+      //       "callregistration.formdata.attendedBy.calldate": {
+      //         $gte: startOfDay,
+      //         $lte: endOfDay
+      //       }
+      //     }
+      //   }
+      // ])
+
+      // const calls = await CallRegistration.aggregate([
+      //   {
+      //     $addFields: {
+      //       "callregistration.formdata.attendedBy": {
+      //         $map: {
+      //           input: "$callregistration.formdata.attendedBy",
+      //           as: "attended",
+      //           in: {
+      //             calldate: { $toDate: "$$attended.calldate" }, // Convert calldate to Date
+      //             otherFields: "$$attended"
+      //           }
+      //         }
+      //       }
+      //     }
+      //   },
+      //   {
+      //     $match: {
+      //       "callregistration.formdata.attendedBy.calldate": {
+      //         $gte: startOfDay,
+      //         $lte: endOfDay
+      //       }
+      //     }
+      //   }
+      // ]);
+
       const calls = await CallRegistration.find({})
         .populate([
           {
@@ -227,6 +313,7 @@ io.on("connection", (socket) => {
           user = await Admin.findOne({ _id: objectId })
         }
       }
+      
 
       io.emit("updatedCalls", { calls, user })
     } catch (error) {

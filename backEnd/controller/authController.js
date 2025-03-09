@@ -35,7 +35,7 @@ export const resetCallStatus = async (req, res) => {
     console.error("Error resetting call status fields:", error)
   }
 }
-/////
+
 export const Register = async (req, res) => {
   let isaved = false
   const { userData, image, tabledata } = req.body
@@ -370,7 +370,7 @@ export const GetallUsers = async (req, res) => {
     const allusers = await Staff.find()
       .populate({ path: "department", select: "department" })
       .populate({ path: "assignedto", select: "name" })
-
+   
     const allAdmins = await Admin.find()
 
     if (allusers.length || allAdmins.length) {
@@ -476,7 +476,7 @@ export const LeaveApply = async (req, res) => {
   const assignedTo = new mongoose.Types.ObjectId(assignedto)
 
   const {
-    startDate,
+    leaveDate,
 
     leaveType,
     leaveCategory,
@@ -488,7 +488,7 @@ export const LeaveApply = async (req, res) => {
   try {
     // Save each date as a separate document
     const existingDateLeave = await LeaveRequest.findOne({
-      leaveDate: startDate,
+      leaveDate,
       userId: objectId
     })
 
@@ -497,7 +497,7 @@ export const LeaveApply = async (req, res) => {
       const updatedLeave = await LeaveRequest.findByIdAndUpdate(
         existingDateLeave._id, // Use the existing leave's ID
         {
-          leaveDate: startDate, // Update fields with formData
+          leaveDate, // Update fields with formData
           leaveType,
           ...(leaveType === "Half Day" && { halfDayPeriod }),
           leaveCategory,
@@ -515,7 +515,7 @@ export const LeaveApply = async (req, res) => {
       }
     } else {
       const leave = new LeaveRequest({
-        leaveDate: startDate,
+        leaveDate,
         leaveType,
         ...(leaveType === "Half Day" && { halfDayPeriod }),
 
@@ -632,10 +632,10 @@ export const OnsiteApply = async (req, res) => {
     if (!tableRows) {
       return res.status(404).json({ message: "no table content" })
     }
-    const { startDate, onsiteType, description, halfDayPeriod } = formData
+    const { onsiteDate, onsiteType, description, halfDayPeriod } = formData
 
     const existingOnsite = await Onsite.findOne({
-      onsiteDate: startDate,
+      onsiteDate,
       userId: selectedObjectId
     })
 
@@ -655,7 +655,7 @@ export const OnsiteApply = async (req, res) => {
       // Update record
       const updatedOnsite = await Onsite.findOneAndUpdate(
         {
-          onsiteDate: startDate,
+          onsiteDate,
           userId: selectedObjectId
         },
         {
@@ -673,7 +673,7 @@ export const OnsiteApply = async (req, res) => {
     } else {
       // If no existing record, create a new one
       const onsitedata = new Onsite({
-        onsiteDate: startDate,
+        onsiteDate,
         onsiteType,
         ...(onsiteType === "Half Day" && { halfDayPeriod }),
         description,
@@ -2380,51 +2380,7 @@ export const DeleteUser = async (req, res) => {
     return res.status(500).json({ message: "Server error" })
   }
 }
-// export const GetStaffCallList = async (req, res) => {
-//   try {
-//     const staff = await Staff.find()
-//     const customerCalls = await CallRegistration.find()
 
-//     const userCallsCount = customerCalls
-//       .map((item) => {
-//         return item.callregistration
-//           .filter((calls) =>
-//             calls.formdata.attendedBy.some((call) => {
-//               const callDate = new Date(call.calldate) // Assuming `callDate` is in a parsable date format
-//               const filterDate = new Date("2024-12-10")
-//               return callDate > filterDate // Filter out calls after 10-12-2024
-//             })
-//           )
-//           .map((calls) => {
-//             return calls.formdata.attendedBy.map((call) => {
-//               const isColleagueSolved =
-//                 calls.formdata.status === "solved" &&
-//                 calls.formdata.attendedBy.lastIndexOf(call.callerId) ===
-//                   calls.formdata.completedBy
-
-//               return {
-//                 callDate: call.calldate, // Ensure `callDate` exists in each `call`
-//                 callerId: call.callerId, // Assuming `callerId` is a property of `call`
-//                 callStatus: calls.formdata.status,
-//                 colleagueSolved: isColleagueSolved ? 1 : 0
-//               }
-//             })
-//           })
-//       })
-//       .flat()
-
-//     console.log("counts", userCallsCount)
-
-//     if (staff) {
-//       return res
-//         .status(200)
-//         .json({ message: "Staff founds", data: { staff, userCallsCount } })
-//     }
-//   } catch (error) {
-//     console.log(error.message)
-//     return res.status(500).json({ message: "internal server error" })
-//   }
-// }
 export const GetStaffCallList = async (req, res) => {
   try {
     const { startDate, endDate } = req.query
