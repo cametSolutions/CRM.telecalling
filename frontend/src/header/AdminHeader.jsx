@@ -40,8 +40,8 @@ export default function AdminHeader() {
     { label: "Task" }
   ]
   const desiredMobileMenu = [
-    { to: "/admin/transaction/leave-application", label: "Transactions" },
-    { to: "/admin/reports/leave-summary", label: "Reports" }
+    { to: "/admin/transaction/leave-application", label: "LeaveApplication" },
+    { to: "/admin/reports/leave-summary", label: "LeaveSummary" }
   ]
   const masters = [
     {
