@@ -2,7 +2,6 @@ import ComingSoon from "../../pages/common/ComingSoon"
 import Summary from "../../pages/primaryUser/List/Summary"
 import ExpiredCustomer from "../../pages/primaryUser/List/ExpiredCustomer"
 import AccountSearch from "../../pages/primaryUser/List/AccountSearch"
-import LeaveRegister from "../../pages/primaryUser/calender/LeaveRegister"
 import leaveSummary from "../../components/primaryUser/LeaveSummary"
 const staffreportsRoutes = [
   { path: "/staff/reports/summary", component: Summary },

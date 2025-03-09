@@ -49,7 +49,7 @@ const leaveSummary = () => {
       }
     }
   }, [newattende])
- 
+
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i)
   const months = [
     { name: "January", value: 1 },
@@ -505,10 +505,12 @@ const leaveSummary = () => {
       {/* Header Section */}
 
       <div className=" text-center">
-        <h1 className="text-2xl font-bold mb-1">User Leave Summary</h1>
-        <div className="flex flex-wrap justify-end gap-4 mb-3 mr-10">
+        <h1 className=" sm:text-md md:text-2xl font-bold mb-1">
+          User Leave Summary
+        </h1>
+        <div className="flex justify-center md:justify-end md:gap-4 gap-2  mb-3 md:mr-8">
           <button
-            className="bg-blue-600 rounded px-2 py-0.5 text-white"
+            className="bg-blue-600 rounded px-1 py-0.5  text-white text-sm md:text-md"
             onClick={() => handleDownload(newattende)}
           >
             Download to Excel
@@ -559,11 +561,11 @@ const leaveSummary = () => {
                       >
                         {/* Your existing summary card code */}
                         <div
-                          className={`p-2 mr-4 shadow-lg rounded-xl border cursor-pointer
+                          className={` md:py-2 md:mr-4 shadow-lg rounded-lg w-full border cursor-pointer
                       ${
                         selectedIndex === index
-                          ? "bg-gray-300"
-                          : "bg-gray-100 mb-2"
+                          ? "bg-gray-200"
+                          : "bg-gray-200 mb-2"
                       }`}
                           onClick={() => {
                             setSelectedIndex(
@@ -578,50 +580,89 @@ const leaveSummary = () => {
                             )
                           }}
                         >
-                          <div className="flex flex-wrap items-center">
-                            <div className="text-md font-semibold text-gray-800 w-full md:w-[225px] p-2">
+                          <div className="md:flex w-full">
+                            <div className=" text-sm md:text-md font-semibold text-gray-800 w-full  md:w-[225px] p-2">
                               {attendee.name}
                             </div>
-
-                            <div className="w-full md:w-10/12 flex flex-wrap justify-around">
-                              {[
-                                {
-                                  label: "Present",
-                                  value: attendee.present
-                                  // width: "w-full sm:w-[230px]"
-                                },
-                                {
-                                  label: "Leave",
-                                  value: attendee.absent
-                                  // width: "w-full sm:w-[115px]"
-                                },
-                                {
-                                  label: "Late Cutting",
-                                  value: attendee.latecutting
-                                  // width: "w-full sm:w-[110px]"
-                                },
-                                {
-                                  label: "Not Marked",
-                                  value: attendee.notMarked
-                                  // width: "w-full sm:w-[130px]"
-                                },
-                                {
-                                  label: "Onsite",
-                                  value: attendee.onsite
-                                  // width: "w-full sm:w-[510px]"
-                                }
-                              ].map((item, idx) => (
-                                <div
-                                  key={idx}
-                                  className={`flex flex-col items-center p-1 ${item.width}`}
-                                >
-                                  <span className="font-medium text-gray-600 text-sm">
-                                    {item.label}
-                                  </span>
-                                  <span>{item.value}</span>
-                                </div>
-                              ))}
+                            <div className="w-full overflow-x-auto">
+                              <table className="w-full ">
+                                <thead className="bg-gray-200 text-gray-800">
+                                  <tr>
+                                    {[
+                                      "Present",
+                                      "Leave",
+                                      "Late Cutting",
+                                      "Not Marked",
+                                      "Onsite"
+                                    ].map((label, idx) => (
+                                      <th
+                                        key={idx}
+                                        className="s py-1 text-gray-800 text-sm font-medium text-center min-w-[100px]"
+                                      >
+                                        {label}
+                                      </th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr className="bg-gray-200 text-gray-800">
+                                    {[
+                                      attendee.present,
+                                      attendee.absent,
+                                      attendee.latecutting,
+                                      attendee.notMarked,
+                                      attendee.onsite
+                                    ].map((value, idx) => (
+                                      <td
+                                        key={idx}
+                                        className="px-4 py-2 text-lg font-semibold text-center "
+                                      >
+                                        {value}
+                                      </td>
+                                    ))}
+                                  </tr>
+                                </tbody>
+                              </table>
                             </div>
+
+                            {/* <table className="w-full ">
+                              <thead className="bg-gray-100">
+                                <tr className="bg-gray-100">
+                                  {[
+                                    "Present",
+                                    "Leave",
+                                    "Late Cutting",
+                                    "Not Marked",
+                                    "Onsite"
+                                  ].map((label, idx) => (
+                                    <th
+                                      key={idx}
+                                      className=" px-4 py-2 text-gray-700 text-sm font-medium text-center"
+                                    >
+                                      {label}
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  {[
+                                    attendee.present,
+                                    attendee.absent,
+                                    attendee.latecutting,
+                                    attendee.notMarked,
+                                    attendee.onsite
+                                  ].map((value, idx) => (
+                                    <td
+                                      key={idx}
+                                      className=" px-4 py-2 text-lg font-semibold text-center"
+                                    >
+                                      {value}
+                                    </td>
+                                  ))}
+                                </tr>
+                              </tbody>
+                            </table> */}
                           </div>
                         </div>
                         {selectedIndex === index && (

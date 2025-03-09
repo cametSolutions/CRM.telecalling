@@ -213,6 +213,7 @@ const UserAdd = ({
       setValue("country", defaultCountry.value)
     }
   }, [defaultCountry])
+  console.log(User)
 
   useEffect(() => {
     if (
