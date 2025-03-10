@@ -1,4 +1,4 @@
-import React ,{useState,useEffect} from "react"
+import React, { useState, useEffect } from "react"
 import { Routes, Route } from "react-router-dom"
 //import Home from "../pages/Home"
 
@@ -44,12 +44,15 @@ const Mainrouter = ({ headerHeight }) => {
       <Routes>
         <Route path="/" element={<Login />} />
         {/* <Route path="/admin/productlist" element={<ProductList />} /> */}
+        {/* <Route path="/admin/home" element={<CallregistrationList />} /> */}
         {!isMobile&&<Route path="/admin/home" element={<CallregistrationList />} />}
         <Route
           path="/admin/usersleave-application"
           element={<UsersLeaveApplicationSummary />}
         />
-       {!isMobile&&<Route path="/staff/home" element={<CallregistrationList />} />} 
+        {!isMobile && (
+          <Route path="/staff/home" element={<CallregistrationList />} />
+        )}
         {allRoutes.map((route, index) => {
           const { path, component: Component, title } = route
           return (

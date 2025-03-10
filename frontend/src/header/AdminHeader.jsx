@@ -1,7 +1,12 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import { Link, NavLink, useNavigate } from "react-router-dom"
-import { FaSearch, FaTimes, FaChevronRight } from "react-icons/fa"
-import { VscAccount } from "react-icons/vsc"
+import {
+  FaSearch,
+  FaTimes,
+  FaChevronRight,
+  FaChevronDown
+} from "react-icons/fa"
+import { FaSignOutAlt } from "react-icons/fa"
 import { FaUserCircle } from "react-icons/fa" // Import the icon
 import { toast } from "react-toastify"
 export default function AdminHeader() {
@@ -11,17 +16,44 @@ export default function AdminHeader() {
   const [masterMenuOpen, setMasterMenuOpen] = useState(false)
   const [reportsMenuOpen, setReportsMenuOpen] = useState(false)
   const [tasksMenuOpen, setTasksMenuOpen] = useState(false)
-  const [crmMenuOpen, setCrmMenuOpen] = useState(false)
+  const [activeSubmenu, setActiveSubmenu] = useState(null)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [inventoryMenuOpen, setInventoryMenuOpen] = useState(false)
+  const [openInnerMenu, setOpenInnerMenu] = useState(null) // Inner submenu state
   const navigate = useNavigate()
-
+  const menuContainerRef = useRef(null)
   useEffect(() => {
     const storedUser = localStorage.getItem("user")
     if (storedUser) {
       setUser(JSON.parse(storedUser)) // Parse the user data from string to object
     }
   }, [])
+  const toggleInnerMenu = (innerIndex) => {
+    setOpenInnerMenu(openInnerMenu === innerIndex ? null : innerIndex)
+  }
+  const toggleSubmenu = (index) => {
+  
+    const newActiveSubmenu = activeSubmenu === index ? null : index
+    setActiveSubmenu(newActiveSubmenu)
+
+    // Scroll to keep the active submenu in view after a small delay to allow render
+    if (newActiveSubmenu !== null) {
+      setTimeout(() => {
+        const menuItem = document.querySelector(`.menu-item-${index}`)
+        if (menuItem && menuContainerRef.current) {
+          const containerRect = menuContainerRef.current.getBoundingClientRect()
+          const itemRect = menuItem.getBoundingClientRect()
+
+          // If submenu would extend beyond visible area, scroll to show it
+          if (itemRect.bottom + 200 > containerRect.bottom) {
+            // 200px buffer for submenu
+            menuContainerRef.current.scrollTop +=
+              itemRect.bottom + 200 - containerRect.bottom
+          }
+        }
+      }, 50)
+    }
+  }
 
   const logout = () => {
     // Clear the authentication token from local storage
@@ -39,77 +71,62 @@ export default function AdminHeader() {
     { label: "Reports" },
     { label: "Task" }
   ]
-  const desiredMobileMenu = [
-    { to: "/admin/transaction/leave-application", label: "LeaveApplication" },
-    { to: "/admin/reports/leave-summary", label: "LeaveSummary" }
-  ]
+
+  const desiredMobileMenu = [{ label: "Transactions" }, { label: "Reports" }]
   const masters = [
     {
       to: "/admin/masters/company",
       label: "Company"
-      // control: user.permissions[0].Company
     },
     {
       to: "/admin/masters/leavemaster",
       label: "Leavemaster"
-      // control: user.permissions[0].Branch
     },
     {
       to: "/admin/masters/branch",
       label: "Branch"
-      // control: user.permissions[0].Branch
     },
     {
       to: "/admin/masters/callnotes",
       label: "Call Notes"
-      // control: user.permissions[0].Customer
     },
     {
       to: "/admin/masters/customer",
       label: "Customer"
-      // control: user.permissions[0].Customer
     },
     {
       to: "/admin/masters/users-&-passwords",
       label: "users & Passwords"
-      // control: user.permissions[0].UsersAndPasswords
     },
     {
       to: "/admin/masters/menuRights",
       label: "Menu Rights"
-      // control: user.permissions[0].MenuRights
     },
     {
       to: "/admin/masters/voucherMaster",
       label: "Voucher Master"
-      // control: user.permissions[0].VoucherMaster
     },
     {
       to: "/admin/masters/target",
       label: "Target"
-      // control: user.permissions[0].Target
     },
     {
       to: "/admin/masters/product",
       label: "Product"
-      // control: user.permissions[0].Product
     },
     {
       to: "/admin/masters/inventory",
       label: "Inventory",
       hasChildren: true
-      // control: user.permissions[0].Inventory
     },
 
     {
       to: "/admin/masters/partners",
       label: "Partners"
-      // control: user.permissions[0].Partners
     },
     {
       to: "/admin/masters/department",
       label: "Department"
-      // control: user.permissions[0].Department
     }
   ]
 
@@ -117,17 +134,14 @@ export default function AdminHeader() {
     {
       to: "/admin/masters/inventory/brandRegistration",
       label: "Brand"
-      // control: user.permissions[0].Brand
     },
     {
       to: "/admin/masters/inventory/categoryRegistration",
       label: "Category"
-      // control: user.permissions[0].Category
     },
     {
       to: "/admin/masters/inventory/hsnlist",
       label: "HSN"
-      // control: user.permissions[0].HSN
     }
   ]
 
@@ -135,73 +149,59 @@ export default function AdminHeader() {
     {
       to: "/admin/transaction/lead",
       label: "Lead"
-      // control: user.permissions[0].Lead
     },
     {
       to: "/admin/transaction/call-registration",
       label: "Call Registration"
-      // control: user.permissions[0].CallRegistration
     },
     {
       to: "/admin/transaction/leave-application",
       label: "Leave Application"
-      // control: user.permissions[0].LeaveApplication
     }
   ]
   const tasks = [
     {
       to: "/admin/tasks/signUp-customer",
       label: "Sign Up Custmer"
-      // control: user.permissions[0].SignUpCustomer
     },
 
     {
       to: "/admin/tasks/leaveApproval-pending",
       label: "Leave Approval Pending"
-      // control: user.permissions[0].LeaveApprovalPending
     },
     {
       to: "/admin/tasks/workAllocation",
       label: "Work Allocation"
-      // control: user.permissions[0].WorkAllocation
     },
     {
-      to: "/admin/tasks/excelconverter",
-      label: "Excel Converter"
-      // control: user.permissions[0].ExcelConverter
+      to: "/admin/tasks/excelconverter"
     },
     {
       to: "/admin/tasks/attendanceExcelconverter",
       label: "Attendance Converter"
-      // control: user.permissions[0].ExcelConverter
     }
   ]
   const reports = [
     {
       to: "/admin/reports/summary",
       label: "Summary"
-      // control: user.permissions[0].Summary
     },
     {
       to: "/admin/reports/expiry-register",
       label: "Expiry Register"
-      // control: user.permissions[0].ExpiryRegister
     },
     {
       to: "/admin/reports/expired-customerCalls",
       label: "Expired Customer Calls"
-      // control: user.permissions[0].ExpiredCustomerCalls
     },
 
     {
       to: "/admin/reports/account-search",
       label: "Account Search"
-      // control: user.permissions[0].AccountSearch
     },
     {
       to: "/admin/reports/leave-summary",
       label: "Leave Summary"
-      // control: user.permissions[0].LeaveSummary
     }
   ]
   return (
@@ -229,22 +229,19 @@ export default function AdminHeader() {
             </svg>
           </button>
         </div>
+        {/* Mobile menu overlay */}
+        {mobileMenuOpen && (
+          <div
+            className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm z-40"
+            onClick={() => setMobileMenuOpen(false)}
+          ></div>
+        )}
         {/* Mobile menu */}
         <div
-          className={`sm:hidden ${
-            mobileMenuOpen
-              ? "absolute top-0 left-0 z-50 bg-blue-950 shadow-md w-3/5 h-screen"
-              : "hidden"
+          className={`sm:hidden fixed top-0 left-0 z-50 bg-white shadow-lg w-3/5 h-screen transition-transform duration-300 flex flex-col ${
+            mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          <div>
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="absolute right-0 mt-2 mr-2 text-gray-600 hover:text-black"
-            >
-              <FaTimes className="h-4 w-4 font-extralight text-white" />
-            </button>
-          </div>
           <div className="flex items-center space-x-2 p-2">
             <svg
               className="w-12 h-12 text-green-400"
@@ -284,31 +281,115 @@ export default function AdminHeader() {
             {/* <span className="text-3xl font-bold text-green-600">MANAGEMENT</span> */}
           </div>
           <hr className="border-t-4 border-gray-300" />
-          <div className="flex p-2 text-white text-center items-center space-x-4">
+          <div className="flex p-2 text-black text-center items-center space-x-4">
             <FaUserCircle className="h-6 w-6" />
             <span>{user?.name}</span>
           </div>
-          <div className="text-black bg-gray-50 py-1 px-4">
-            {user?.branchName.join(",")}
+          <div className="flex items-center space-x-2 pl-4">
+            <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></span>
+            <span>{user?.role}</span>
           </div>
-          <div className="text-gray-50 mt-3 px-4">Menu</div>
-          <div className="block leading-10 text-white mt-3">
-            {desiredMobileMenu.map((link) => (
-              <div
-                key={link?.to}
-                className="px-8 hover:bg-gray-400 cursor-pointer"
-              >
-                <Link to={link?.to} className="block w-full h-full py-2">
-                  {link.label}
-                </Link>
+          <div className="text-black bg-gray-200 py-1 px-4">
+            {user?.branchName.join(" | ")}
+          </div>
+          <div className="text-gray-500 mt-3 px-4">Menu</div>
+
+          {/* Menu - Scrollable */}
+          <div className="flex-grow  block leading-10 text-black">
+            {desiredMobileMenu.map((link, index) => (
+              <div key={index} className={`relative menu-item-${index}`}>
+                <div
+                  className={`flex items-center px-8 hover:bg-gray-200 cursor-pointer menu-trigger-${index}`}
+                  onClick={() => toggleSubmenu(index)}
+                >
+                  {link.to ? (
+                    <Link
+                      to={link.to}
+                      className="block  flex-grow"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setMobileMenuOpen(false)
+                      }}
+                    >
+                      {link.label}
+                    </Link>
+                  ) : (
+                    <span className="block  flex-grow">{link.label}</span>
+                  )}
+
+                  {activeSubmenu === index ? (
+                    <FaChevronDown className="w-3 h-3 text-gray-500" />
+                  ) : (
+                    <FaChevronRight className="w-3 h-3 text-gray-500" />
+                  )}
+                </div>
+
+                {/* Submenu */}
+                {activeSubmenu === index && (
+                  <div
+                    // ref={(el) => (menuRefs.current[index] = el)}
+                    ref={menuContainerRef}
+                    className="bg-white border-l-4 border-green-400 max-h-64 overflow-y-auto"
+                  >
+                    {["Transactions", "Reports"].includes(link.label)
+                      ? (link.label === "Transactions" ? transactions : reports)
+                          .filter(
+                            (master) =>
+                              master.label === "Leave Application" ||
+                              master.label === "Leave Summary"
+                          )
+                          .map((master, masterIndex) => (
+                            <div key={master.to} className="relative py-2">
+                              <div
+                                className="flex justify-between px-4 text-gray-600 text-sm hover:bg-gray-100 cursor-pointer"
+                                onClick={() => {
+                                  if (master.hasChildren) {
+                                    toggleInnerMenu(masterIndex)
+                                  } else {
+                                    setMobileMenuOpen(false)
+                                    navigate(master.to)
+                                  }
+                                }}
+                              >
+                                <span>{master.label}</span>
+                                {master.hasChildren &&
+                                  (openInnerMenu === masterIndex ? (
+                                    <FaChevronDown className="w-3 h-3 text-gray-500" />
+                                  ) : (
+                                    <FaChevronRight className="w-3 h-3 text-gray-500" />
+                                  ))}
+                              </div>
+
+                              {/* Inner Submenu */}
+                              {openInnerMenu === masterIndex &&
+                                master.hasChildren && (
+                                  <div className="ml-4 mt-2 border-l-4 border-blue-400 bg-gray-50 p-2 submenu-container">
+                                    {inventorys.map((child) => (
+                                      <Link
+                                        key={child.to}
+                                        to={child.to}
+                                        className="block px-4 py-1 text-gray-600 text-sm hover:bg-gray-200"
+                                      >
+                                        {child.label}
+                                      </Link>
+                                    ))}
+                                  </div>
+                                )}
+                            </div>
+                          ))
+                      : null}
+                  </div>
+                )}
               </div>
             ))}
           </div>
+
           <div
             onClick={logout}
-            className="mt-auto bg-red-600 text-white text-center py-3 cursor-pointer"
+            className=" bg-gray-300  py-5 text-center flex items-center justify-start space-x-2 p-2 cursor-pointer"
           >
-            Logout
+            <FaSignOutAlt className="w-5 h-5" /> {/* Logout Icon */}
+            <span>Logout</span>
           </div>
         </div>
         {/* Logo and links */}

@@ -169,8 +169,6 @@ const Modal = ({
           leave.leaveCategory === "casual Leave" &&
           leaveMonthYear === leaveMonthYearFromData
         ) {
-         
-         
           return count + (leave.leaveType === "Half Day" ? 0.5 : 1)
         }
         return count
@@ -196,12 +194,15 @@ const Modal = ({
       setBalanceprivilegeLeaveCount(Math.max(balanceprivilege, 0))
       setBalancecasualLeaveCount(Math.max(balancecasualcount, 0))
       setLeaveBalance({
-        casual:Math.max(balancecasualcount,0),
+        casual: Math.max(balancecasualcount, 0),
         privilege: Math.max(balanceprivilege, 0),
         sick: BalancesickleaveCount,
         compensatory: BalancecompensatoryleaveCount
       })
-    } else if (allleaves && allleaves.length === 0 && leavemasterleavecount) {
+    } else if (
+      (!allleaves && leavemasterleavecount) ||
+      (allleaves && allleaves.length === 0 && leavemasterleavecount)
+    ) {
       const currentDate = new Date()
       const currentYear = currentDate.getFullYear()
       const currentmonth = currentDate.getMonth() + 1

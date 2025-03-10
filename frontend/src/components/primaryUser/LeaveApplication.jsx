@@ -128,7 +128,7 @@ function LeaveApplication() {
     const today = dayjs().format("YYYY-MM-DD") // Get today's date in YYYY-MM-DD format
 
     const isPastDate =
-      formData?.startDate && dayjs(formData.startDate).isBefore(today)
+      formData?.leaveDate && dayjs(formData.leaveDate).isBefore(today)
     setPastDate(isPastDate)
   }, [formData])
   useEffect(() => {
@@ -138,14 +138,8 @@ function LeaveApplication() {
     }
   }, [leaves, allonsite])
   useEffect(() => {
-    if (
-      allleaves &&
-      allleaves.length > 0 &&
-      leavemasterleavecount &&
-      formData.leaveDate
-    ) {
+    if (allleaves && allleaves.length > 0 && leavemasterleavecount) {
       const currentDate = new Date()
-
       const currentYear = currentDate.getFullYear()
       const currentmonth = currentDate.getMonth() + 1
       const leaveDate = new Date(formData?.leaveDate)
@@ -247,19 +241,24 @@ function LeaveApplication() {
         sick: BalancesickleaveCount,
         compensatory: BalancecompensatoryleaveCount
       })
-    } else if (allleaves && allleaves.length === 0 && leavemasterleavecount) {
+    } else if (
+      (!allleaves && leavemasterleavecount) ||
+      (allleaves && allleaves.length === 0 && leavemasterleavecount)
+    ) {
       const currentDate = new Date()
       const currentYear = currentDate.getFullYear()
       const currentmonth = currentDate.getMonth() + 1
-      const leaveDate = new Date(formData.startDate)
+      const leaveDate = new Date(formData.leaveDate)
       const leaveYear = leaveDate.getFullYear()
       const startDate = new Date(user?.privilegeleavestartsfrom)
       const startYear = startDate.getFullYear()
       const startmonth = startDate.getMonth() + 1 // 1-based month
-      const totalprivilegeLeave = leavemasterleavecount.totalprivilegeLeave
+      const totalprivilegeLeave =
+        leavemasterleavecount?.totalprivilegeLeave || 0
       const privilegePerMonth = totalprivilegeLeave / 12 // 1 or 2 per month
-      const totalcasualLeave = leavemasterleavecount.totalcasualleave
+      const totalcasualLeave = leavemasterleavecount?.totalcasualleave || 0
       const casualPerMonth = totalcasualLeave / 12
+
       let ownedprivilegeCount = 0
       let ownedcasualCount = 0
       if (startYear < currentYear) {
@@ -1531,7 +1530,6 @@ function LeaveApplication() {
                           inTime: { hours: "12", minutes: "00", amPm: "AM" },
                           outTime: { hours: "12", minutes: "00", amPm: "AM" }
                         })
-                        setAttendance(false)
 
                         setSelectedTab("Leave")
                         setTableRows([])

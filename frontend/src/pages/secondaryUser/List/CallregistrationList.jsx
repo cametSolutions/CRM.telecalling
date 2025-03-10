@@ -259,7 +259,7 @@ const CallregistrationList = () => {
     const secs = seconds % 60
     return `${hrs} hr ${mins} min ${secs} sec`
   }
-  
+
   const handlemerge = async () => {
     console.log("loggg")
     try {
