@@ -425,14 +425,14 @@ function UsersLeaveApplicationSummary() {
   const handleApply = async () => {
     try {
       if (formData.onsite) {
-        // const response = await api.post(
-        //   `http://localhost:9000/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
-        //   { formData, tableRows }
-        // )
         const response = await api.post(
-          `https://www.crm.camet.in/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          `http://localhost:9000/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
           { formData, tableRows }
         )
+        // const response = await api.post(
+        //   `https://www.crm.camet.in/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+        //   { formData, tableRows }
+        // )
 
         if (response.status === 200) {
           setFormData((prev) => ({
@@ -459,19 +459,8 @@ function UsersLeaveApplicationSummary() {
         }
       } else {
         // Assuming you have an API endpoint for creating leave requests
-        // const response = await fetch(
-        //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
-        //   {
-        //     method: "POST",
-        //     headers: {
-        //       "Content-Type": "application/json"
-        //     },
-        //     body: JSON.stringify(formData),
-        //     credentials: "include"
-        //   }
-        // )
         const response = await fetch(
-          `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
           {
             method: "POST",
             headers: {
@@ -481,6 +470,17 @@ function UsersLeaveApplicationSummary() {
             credentials: "include"
           }
         )
+        // const response = await fetch(
+        //   `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+        //   {
+        //     method: "POST",
+        //     headers: {
+        //       "Content-Type": "application/json"
+        //     },
+        //     body: JSON.stringify(formData),
+        //     credentials: "include"
+        //   }
+        // )
 
         const responseData = await response.json()
 

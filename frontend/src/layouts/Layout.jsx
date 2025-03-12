@@ -21,15 +21,15 @@ const Layout = () => {
   }, [location.pathname]) // Update height on route change
 
   return (
-    <div className="h-screen flex flex-col">
-      <div ref={headerRef}>
+    <div className="h-screen flex flex-col ">
+      <div ref={headerRef} className="sticky top-0 z-50">
         {/* Conditional Header */}
         {adminHeader ? <AdminHeader /> : null}
         {staffHeader ? <StaffHeader /> : null}
       </div>
 
       {/* Main Content */}
-      <main className="flex-1">
+      <main className="flex-1 ">
         <Mainrouter headerHeight={headerHeight} />
       </main>
     </div>

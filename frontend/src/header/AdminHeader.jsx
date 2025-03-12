@@ -32,7 +32,6 @@ export default function AdminHeader() {
     setOpenInnerMenu(openInnerMenu === innerIndex ? null : innerIndex)
   }
   const toggleSubmenu = (index) => {
-  
     const newActiveSubmenu = activeSubmenu === index ? null : index
     setActiveSubmenu(newActiveSubmenu)
 
@@ -72,7 +71,11 @@ export default function AdminHeader() {
     { label: "Task" }
   ]
 
-  const desiredMobileMenu = [{ label: "Transactions" }, { label: "Reports" }]
+  const desiredMobileMenu = [
+    { label: "Transactions" },
+    { label: "Reports" },
+    { label: "Task" }
+  ]
   const masters = [
     {
       to: "/admin/masters/company",
@@ -331,12 +334,28 @@ export default function AdminHeader() {
                     ref={menuContainerRef}
                     className="bg-white border-l-4 border-green-400 max-h-64 overflow-y-auto"
                   >
-                    {["Transactions", "Reports"].includes(link.label)
-                      ? (link.label === "Transactions" ? transactions : reports)
+                    {["Transactions", "Reports", "Task"].includes(link.label)
+                      ? (link.label === "Transactions"
+                          ? transactions
+                          : link.label === "Reports"
+                          ? reports
+                          : link.label === "Task"
+                          ? tasks
+                          : null
+                        ) // Add a default case if none match
+
+                          // (link.label === "Transactions"
+                          //     ? transactions
+                          //     : "Reports"
+                          //     ? reports
+                          //     : "Task"
+                          //     ?tasks
+                          //   )
                           .filter(
                             (master) =>
                               master.label === "Leave Application" ||
-                              master.label === "Leave Summary"
+                              master.label === "Leave Summary" ||
+                              master.label === "Leave Approval Pending"
                           )
                           .map((master, masterIndex) => (
                             <div key={master.to} className="relative py-2">

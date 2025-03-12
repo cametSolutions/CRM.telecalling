@@ -17,6 +17,7 @@ import staffreportsRoutes from "./staffRoutes/staffreportRoutes.js"
 import UsersLeaveApplicationSummary from "../components/primaryUser/UsersLeaveApplicationSummary.jsx"
 
 const Mainrouter = ({ headerHeight }) => {
+  console.log(headerHeight)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
   useEffect(() => {
@@ -45,7 +46,9 @@ const Mainrouter = ({ headerHeight }) => {
         <Route path="/" element={<Login />} />
         {/* <Route path="/admin/productlist" element={<ProductList />} /> */}
         {/* <Route path="/admin/home" element={<CallregistrationList />} /> */}
-        {!isMobile&&<Route path="/admin/home" element={<CallregistrationList />} />}
+        {!isMobile && (
+          <Route path="/admin/home" element={<CallregistrationList />} />
+        )}
         <Route
           path="/admin/usersleave-application"
           element={<UsersLeaveApplicationSummary />}

@@ -370,7 +370,7 @@ export const GetallUsers = async (req, res) => {
     const allusers = await Staff.find()
       .populate({ path: "department", select: "department" })
       .populate({ path: "assignedto", select: "name" })
-   
+
     const allAdmins = await Admin.find()
 
     if (allusers.length || allAdmins.length) {
@@ -1834,6 +1834,154 @@ export const GetallusersAttendance = async (req, res) => {
     return res.status(500).json({ message: "internal server error" })
   }
 }
+export const cancelLeaveOrOnsiteApproval = async (req, res) => {
+  try {
+    const { role, userId, selectedId, startDate, endDate, onsite, name } =
+      req.query
+    // Validate common parameters
+    if (!role || !startDate || !endDate || !onsite) {
+      return res
+        .status(400)
+        .json({ message: "Missing required query parameters." })
+    }
+
+    // Extract additional query strings, dynamically handle `selectAll` and `single`
+
+    const isSingle = req?.query?.single === "true"
+
+    // Ensure at least one specific query is provided
+    if (!isSingle) {
+      return res.status(400).json({
+        message: "Missing specific action parameter- single."
+      })
+    }
+
+    // Convert IDs to ObjectId if provided
+    const userObjectId = userId ? new mongoose.Types.ObjectId(userId) : null
+    const selectedObjectId = selectedId
+      ? new mongoose.Types.ObjectId(selectedId)
+      : null
+    let baseQuery
+    // Base query common to both cases
+    if (onsite === "true") {
+      baseQuery = {
+        onsiteDate: { $gte: startDate, $lte: endDate }
+      }
+    } else if (onsite === "false") {
+      baseQuery = {
+        leaveDate: { $gte: startDate, $lte: endDate }
+      }
+    }
+
+    // Add user-specific filtering for non-admin roles
+    else if (role !== "Admin" && userObjectId) {
+      baseQuery.assignedto = userObjectId
+    }
+
+    // Define role-based update fields
+    const updateFields =
+      role === "Admin"
+        ? {
+            hrstatus: "Not Approved",
+            adminverified: false
+          }
+        : {
+            departmentstatus: "Not Approved",
+            departmentverified: false
+          }
+    let result
+    if (isSingle && onsite === "true") {
+      if (!selectedObjectId) {
+        return res.status(400).json({
+          message: "Missing required parameter: selectedId for cancel request"
+        })
+      }
+
+      result = await Onsite.updateOne(
+        { _id: selectedObjectId },
+        { $set: updateFields }
+      )
+    } else if (isSingle && onsite === "false") {
+      if (!selectedObjectId) {
+        return res.status(400).json({
+          message: "Missing required parameter: selectedId for cancel request"
+        })
+      }
+     
+      result = await LeaveRequest.updateOne(
+        { _id: selectedObjectId },
+        { $set: updateFields }
+      )
+    }
+    if (result && result.modifiedCount > 0 && onsite === "false") {
+
+      // Fetch updated leave requests for display
+      const updatedLeaveList = await LeaveRequest.find(baseQuery).populate({
+        path: "userId",
+        select: "name role department",
+        populate: [
+          {
+            path: "department",
+            select: "department",
+            options: { strictPopulate: false }
+          },
+          {
+            path: "selected.branch_id",
+            model: "Branch",
+            select: "branchName",
+            options: { strictPopulate: false }
+          }
+        ]
+      })
+
+      const filteredApprovedLeave = updatedLeaveList.filter(
+        (item) =>
+          item.departmentverified === true || item.adminverified === true
+      )
+
+      return res.status(200).json({
+        message: `cancel leave approval successfully for ${name}`,
+        data: filteredApprovedLeave
+      })
+    } else if (result && result.modifiedCount > 0 && onsite === "true") {
+     
+      // Fetch updated leave requests for display
+      const updatedOnsiteList = await Onsite.find(baseQuery).populate({
+        path: "userId",
+        select: "name role department",
+        populate: [
+          {
+            path: "department",
+            select: "department",
+            options: { strictPopulate: false }
+          },
+          {
+            path: "selected.branch_id",
+            model: "Branch",
+            select: "branchName",
+            options: { strictPopulate: false }
+          }
+        ]
+      })
+      const filteredApprovedOnsite = updatedOnsiteList.filter(
+        (item) =>
+          item.departmentverified === true || item.adminverified === true
+      )
+
+      return res.status(200).json({
+        message: `cancel onsite approval successfully for ${name}`,
+        data: filteredApprovedOnsite
+      })
+    }
+
+    return res
+      .status(404)
+      .json({ message: "No matching  requests found to update." })
+  } catch (error) {
+    console.log(error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const ApproveLeave = async (req, res) => {
   try {
     const {
@@ -1843,9 +1991,10 @@ export const ApproveLeave = async (req, res) => {
       startDate,
       endDate,
       onsite,
-      departmentapproved,
-      adminapproved
+      name,
+      isPending
     } = req.query
+
     // return
 
     // Validate common parameters
@@ -1898,7 +2047,6 @@ export const ApproveLeave = async (req, res) => {
           }
 
     let result
-
     if (isSelectAll) {
       // Handle selectAll case
       if (!selectedObjectId) {
@@ -1906,7 +2054,7 @@ export const ApproveLeave = async (req, res) => {
           message: "Missing required parameter: selectedId for selectAll."
         })
       }
-
+      
       const queryForUpdate = { ...baseQuery, userId: selectedObjectId }
       result = await LeaveRequest.updateMany(queryForUpdate, {
         $set: updateFields
@@ -1931,11 +2079,27 @@ export const ApproveLeave = async (req, res) => {
             }
           ]
         })
+        if (isPending === "true") {
+          const filteredPendingLeave = updatedLeaveList.filter(
+            (item) =>
+              item.departmentverified === false && item.adminverified === false
+          )
 
-        return res.status(200).json({
-          message: "Leave request(s) updated successfully",
-          data: updatedLeaveList
-        })
+          return res.status(200).json({
+            message: `All leave Approved successfully for ${name}`,
+            data: filteredPendingLeave
+          })
+        } else if (isPending === "false") {
+          const filteredApprovedLeave = updatedLeaveList.filter(
+            (item) =>
+              item.departmentverified === true || item.adminverified === true
+          )
+
+          return res.status(200).json({
+            message: `All leave Approved successfully for ${name}`,
+            data: filteredApprovedLeave
+          })
+        }
       }
     } else if (isSingle) {
       // Handle single case
@@ -1944,7 +2108,7 @@ export const ApproveLeave = async (req, res) => {
           message: "Missing required parameter: selectedId for single update."
         })
       }
-
+  
       result = await LeaveRequest.updateOne(
         { _id: selectedObjectId },
         { $set: updateFields }
@@ -1971,26 +2135,16 @@ export const ApproveLeave = async (req, res) => {
           }
         ]
       })
-      if (departmentapproved || adminapproved) {
-        const filteredapprovedleave = updatedLeaveList.filter(
-          (item) =>
-            item.departmentverified === true || item.adminverified === true
-        )
-        return res.status(200).json({
-          message: "Leave Approved successfully",
-          data: filteredapprovedleave
-        })
-      } else if (!departmentapproved && !adminapproved) {
-        const filteredPendingLeave = updatedLeaveList.filter(
-          (item) =>
-            item.departmentverified === false && item.adminverified === false
-        )
 
-        return res.status(200).json({
-          message: "Leave Approved successfully",
-          data: filteredPendingLeave
-        })
-      }
+      const filteredPendingLeave = updatedLeaveList.filter(
+        (item) =>
+          item.departmentverified === false && item.adminverified === false
+      )
+
+      return res.status(200).json({
+        message: `Leave Approved successfully for ${name}`,
+        data: filteredPendingLeave
+      })
     }
 
     return res
@@ -2009,12 +2163,10 @@ export const ApproveOnsite = async (req, res) => {
       selectedId,
       startDate,
       endDate,
+      name,
       onsite,
-      adminapproved,
-
-      departmentapproved
+      isPending
     } = req.query
-
     // return
 
     // Validate common parameters
@@ -2082,7 +2234,7 @@ export const ApproveOnsite = async (req, res) => {
       // Check if any document was updated
       if (result && result.modifiedCount > 0) {
         // Fetch updated leave requests for display
-        const updatedLeaveList = await Onsite.find(baseQuery).populate({
+        const updatedOnsiteList = await Onsite.find(baseQuery).populate({
           path: "userId",
           select: "name role department",
           populate: [
@@ -2099,11 +2251,27 @@ export const ApproveOnsite = async (req, res) => {
             }
           ]
         })
+        if (isPending === "true") {
+          const filteredPendingOnsite = updatedOnsiteList.filter(
+            (item) =>
+              item.departmentverified === false && item.adminverified === false
+          )
 
-        return res.status(200).json({
-          message: "Onsite updated successfully",
-          data: updatedLeaveList
-        })
+          return res.status(200).json({
+            message: `All Onsite approved successfully for ${name}`,
+            data: filteredPendingOnsite
+          })
+        } else if (isPending === "false") {
+          const filteredApprovedOnsite = updatedOnsiteList.filter(
+            (item) =>
+              item.departmentverified === true || item.adminverified === true
+          )
+
+          return res.status(200).json({
+            message: `All Onsite approved successfully for ${name}`,
+            data: filteredApprovedOnsite
+          })
+        }
       }
     } else if (isSingle) {
       // Handle single case
@@ -2138,23 +2306,23 @@ export const ApproveOnsite = async (req, res) => {
           }
         ]
       })
-      if (departmentapproved || adminapproved) {
-        const filteredApprovedOnsite = updatedOnsiteList.filter(
-          (item) =>
-            item.adminverified === true || item.departmentverified === true
-        )
-        return res.status(200).json({
-          message: "Onsite Approved successfully",
-          data: filteredApprovedOnsite
-        })
-      } else {
+      if (isPending === "true") {
         const filteredPendingOnsite = updatedOnsiteList.filter(
           (item) =>
             item.adminverified === false && item.departmentverified === false
         )
         return res.status(200).json({
-          message: "Onsite Approved successfully",
+          message: `Onsite Approved successfully for ${name}`,
           data: filteredPendingOnsite
+        })
+      } else if (isPending === "false") {
+        const filteredApprovedOnsite = updatedOnsiteList.filter(
+          (item) =>
+            item.adminverified === true || item.departmentverified === true
+        )
+        return res.status(200).json({
+          message: `Onsite Approved successfully for ${name}`,
+          data: filteredApprovedOnsite
         })
       }
     }
