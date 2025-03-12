@@ -36,7 +36,6 @@ export default function StaffHeader() {
     setOpenInnerMenu(openInnerMenu === innerIndex ? null : innerIndex)
   }
   const toggleSubmenu = (index) => {
-  
     const newActiveSubmenu = activeSubmenu === index ? null : index
     setActiveSubmenu(newActiveSubmenu)
 
@@ -76,7 +75,11 @@ export default function StaffHeader() {
     { label: "Reports" },
     { label: "Task" }
   ]
-  const desiredMobileMenu = [{ label: "Transactions" }, { label: "Reports" }]
+  const desiredMobileMenu = [
+    { label: "Transactions" },
+    { label: "Reports" },
+    { label: "Task" }
+  ]
 
   const masters = [
     {
@@ -353,13 +356,24 @@ export default function StaffHeader() {
                   ref={menuContainerRef}
                   className="bg-white border-l-4 border-green-400 max-h-64 overflow-y-auto"
                 >
-                  {["Transactions", "Reports"].includes(link.label)
-                    ? (link.label === "Transactions" ? transactions : reports)
+                  {["Transactions", "Reports", "Task"].includes(link.label)
+                    ? (link.label === "Transactions"
+                        ? transactions
+                        : link.label === "Reports"
+                        ? reports
+                        : link.label === "Task"
+                        ? tasks
+                        : null
+                      )
                         .filter(
                           (master) =>
                             (master.label === "Leave Application" &&
                               master.control) ||
-                            (master.label === "Leave Summary" && master.control)
+                            (master.label === "Leave Summary" &&
+                              master.control) ||
+                            (
+                              master.label === "Leave Approval Pending" &&
+                              master.control)
                         )
                         .map((master, masterIndex) => (
                           <div key={master.to} className="relative py-2">

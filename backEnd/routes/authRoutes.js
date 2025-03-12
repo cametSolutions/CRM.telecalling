@@ -34,7 +34,8 @@ import {
   Check,
   GetleavemasterLeavecount,
   DeleteEvent,
-  RejectOnsite
+  RejectOnsite,
+  cancelLeaveOrOnsiteApproval
 } from "../controller/authController.js"
 const router = express.Router()
 
@@ -64,6 +65,8 @@ router.get("/getStaffCallStatus", authMiddleware, GetStaffCallList)
 router.get("/staffcallList", authMiddleware, GetindividualStaffCall)
 router.put("/approveLeave", authMiddleware, ApproveLeave)
 router.put("/approveOnsite", authMiddleware, ApproveOnsite)
+router.put("/cancelLeaveApproval", authMiddleware, cancelLeaveOrOnsiteApproval)
+router.put("/cancelOnsiteApproval", authMiddleware, cancelLeaveOrOnsiteApproval)
 router.put("/rejectLeave", authMiddleware, RejectLeave)
 router.put("/rejectOnsite", authMiddleware, RejectOnsite)
 router.put("/updateLeave", authMiddleware, UpdateLeave)

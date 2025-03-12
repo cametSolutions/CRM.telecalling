@@ -1,14 +1,12 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, forwardRef } from "react"
 import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
 import { FaCalendarAlt } from "react-icons/fa"
 const MyDatePicker = ({ handleSelect, dates, onClear, loader }) => {
-  console.log(dates)
   const [dateRange, setDateRange] = useState({
     startDate: dates.startDate,
     endDate: dates?.endDate
   })
-  console.log(dateRange)
   const { startDate, endDate } = dateRange
 
   useEffect(() => {
@@ -44,22 +42,33 @@ const MyDatePicker = ({ handleSelect, dates, onClear, loader }) => {
       endDate: dates[1] ? normalizeDateToUTC(dates[1]) : null
     })
   }
-  console.log(startDate)
 
-  const CustomInput = ({ value, onClick }) => (
+  // const CustomInput = ({ value, onClick }) => (
+  //   <div
+  //     className="flex items-center border border-gray-300 p-2 rounded-md cursor-pointer  w-[220px] md:w-[250px] gap-2"
+  //     onClick={onClick}
+  //   >
+  //     <FaCalendarAlt className="text-gray-600 md:mr-2" />
+  //     <span className={`text-md ${value ? "text-gray-900" : "text-gray-500"}`}>
+  //       {value || "Select a date range"}
+  //     </span>
+  //   </div>
+  // )
+  const CustomInput = forwardRef(({ value, onClick }, ref) => (
     <div
-      className="flex items-center border border-gray-300 p-2 rounded-md cursor-pointer md:w-[250px] gap-2"
+      ref={ref} // Attach ref here
+      className="flex items-center border border-gray-300 p-2 rounded-md cursor-pointer w-[220px] md:w-[250px] gap-2"
       onClick={onClick}
     >
-      <FaCalendarAlt className="text-gray-600 mr-2" />
-      <span className={`text-sm ${value ? "text-gray-900" : "text-gray-500"}`}>
+      <FaCalendarAlt className="text-gray-600 md:mr-2" />
+      <span className={`text-md ${value ? "text-gray-900" : "text-gray-500"}`}>
         {value || "Select a date range"}
       </span>
     </div>
-  )
+  ))
 
   return (
-    <div className="relative z-40">
+    <div className="z-40">
       <DatePicker
         // selected={endDate}
         onChange={handleDateRange}
@@ -70,13 +79,6 @@ const MyDatePicker = ({ handleSelect, dates, onClear, loader }) => {
         customInput={<CustomInput />}
         // isClearable
       />
-      {/* Clear Button */}
-      {/* {startDate && endDate && (
-        <button
-          className="absolute top-0 right-0 p-1 text-red-500"
-          onClick={() => handleDateRange([null, null])}
-        ></button>
-      )} */}
     </div>
   )
 }

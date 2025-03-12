@@ -525,9 +525,7 @@ const Summary = () => {
       <div className="py-2">
         <div className="flex justify-center text-2xl font-semibold ">
           <h1 className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-red-500 to-pink-600">
-            {/* {isToggled
-              ? "Upcoming Month Expired Customer's"
-              : "Expired Customer's"} */}
+          
             {isToggled ? "User Summary" : "Customer Summary"}
           </h1>
         </div>
@@ -571,19 +569,7 @@ const Summary = () => {
                 {dates.startDate && (
                   <MyDatePicker handleSelect={handleDate} dates={dates} />
                 )}
-                {/* <span className="text-gray-600 mr-4 font-bold">User</span>
-              <button
-                onClick={toggle}
-                className={`${
-                  isToggled ? "bg-green-500" : "bg-gray-300"
-                } w-16 h-8 flex items-center rounded-full p-1 transition-colors duration-300`}
-              >
-                <div
-                  className={`${
-                    isToggled ? "translate-x-8" : "translate-x-0"
-                  } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                ></div>
-              </button> */}
+                
               </div>
             </div>
           </div>

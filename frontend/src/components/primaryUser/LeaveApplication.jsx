@@ -129,6 +129,7 @@ function LeaveApplication() {
 
     const isPastDate =
       formData?.leaveDate && dayjs(formData.leaveDate).isBefore(today)
+
     setPastDate(isPastDate)
   }, [formData])
   useEffect(() => {
@@ -540,11 +541,14 @@ function LeaveApplication() {
 
   const handleInputChange = debounce((e) => {
     const { name, value } = e.target
-
+  
     setFormData({
       ...formData,
       [name]: value
     })
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" })) // ✅ Clear error
+    }
   }, 300)
   // Check if a date is the currently selected date
   const isSelected = (date) => {
@@ -576,7 +580,18 @@ function LeaveApplication() {
     setCurrentDate(new Date())
   }
   const handleChange = (e) => handleInputChange(e)
-
+  const handleDataChange = (e) => {
+    const { name, value } = e.target
+   
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
+    }))
+    if (errors[name]) {
+      console.log("h")
+      setErrors((prev) => ({ ...prev, [name]: "" })) // ✅ Clear error
+    }
+  }
   const handleTimeChange = (type, field, value) => {
     setselectedAttendance((prev) => {
       // Ensure the nested object exists for `type`
@@ -591,7 +606,7 @@ function LeaveApplication() {
       }
     })
   }
-
+  
   const handleSubmit = async (tab) => {
     // e.preventDefault()
     try {
@@ -678,6 +693,20 @@ function LeaveApplication() {
           }
         }
       } else if (tab === "Onsite") {
+        // Validation
+        let newErrors = {}
+        if (!formData.onsiteType) newErrors.onsiteType = "Shift is required"
+        if (formData.onsiteType === "Half Day" && !formData.halfDayPeriod)
+          newErrors.halfDayPeriod = "Please select Half Day period"
+        if (!formData.onsiteDate)
+          newErrors.onsiteDate = "Onsite Date is required"
+
+        if (!formData.description)
+          newErrors.description = "Description is required"
+        if (Object.keys(newErrors).length > 0) {
+          setErrors(newErrors)
+          return
+        }
         const formStartDate = new Date(formData.onsiteDate)
 
         // Find a leave matching the date (ignoring time) and adminverified or departmentverified is true
@@ -986,7 +1015,7 @@ function LeaveApplication() {
                   type="date"
                   name="onsiteDate"
                   defaultValue={formData.onsiteDate}
-                  onChange={handleChange}
+                  onChange={handleDataChange}
                   className="border p-2 rounded w-full"
                 />
               </div>
@@ -996,38 +1025,34 @@ function LeaveApplication() {
                 <select
                   name="onsiteType"
                   defaultValue={formData.onsiteType}
-                  onChange={(e) => {
-                    const { value } = e.target
-                    setFormData((prev) => ({
-                      ...prev,
-                      onsiteType: value,
-                      halfDayPeriod: value === "Half Day" ? "Morning" : "" // Default to "Morning" for Half Day
-                    }))
-                  }}
+                  onChange={handleDataChange}
                   className="border p-2 rounded w-full"
                 >
                   <option value="Full Day">Full Day</option>
                   <option value="Half Day">Half Day</option>
                 </select>
               </div>
+              {errors.onsiteType && (
+                <p className="text-red-500">{errors.onsiteType}</p>
+              )}
               {formData.onsiteType === "Half Day" && (
-                <div className="">
-                  <label className="block mb-1">Select Half Day Period</label>
-                  <select
-                    name="halfDayPeriod"
-                    defaultValue={formData.halfDayPeriod}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        halfDayPeriod: e.target.value
-                      }))
-                    }
-                    className="border p-2 rounded w-full appearance-none"
-                  >
-                    <option value="Morning">Morning</option>
-                    <option value="Afternoon">Afternoon</option>
-                  </select>
-                </div>
+                <>
+                  <div className="">
+                    <label className="block mb-1">Select Half Day Period</label>
+                    <select
+                      name="halfDayPeriod"
+                      defaultValue={formData.halfDayPeriod}
+                      onChange={handleDataChange}
+                      className="border p-2 rounded w-full appearance-none"
+                    >
+                      <option value="Morning">Morning</option>
+                      <option value="Afternoon">Afternoon</option>
+                    </select>
+                  </div>
+                  {errors.halfDayPeriod && (
+                    <p className="text-red-500">{errors.halfDayPeriod}</p>
+                  )}
+                </>
               )}
             </div>
             <div className="mb-4">
@@ -1165,11 +1190,15 @@ function LeaveApplication() {
               <textarea
                 name="description"
                 defaultValue={formData?.description}
-                onChange={handleChange}
+                onChange={handleDataChange}
                 rows="4"
                 className="border p-2 rounded w-full"
               ></textarea>
             </div>
+
+            {errors.description && (
+              <p className="text-red-500">{errors.description}</p>
+            )}
             <div className="text-center text-red-700 ">
               <p>{message}</p>
             </div>
@@ -1189,32 +1218,21 @@ function LeaveApplication() {
               <div className="flex gap-4">
                 <label>
                   <input
+                    name="leaveType"
                     type="radio"
                     value="Full Day"
                     checked={formData.leaveType === "Full Day"}
-                    // onChange={(e) => setLeaveOption(e.target.value)}
-                    onChange={(e) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        leaveType: e.target.value,
-                        halfDayPeriod: "" // Replace newDate with the actual value you want to set
-                      }))
-                    }}
+                    onChange={handleDataChange}
                   />
                   Full Day
                 </label>
                 <label>
                   <input
+                    name="leaveType"
                     type="radio"
                     value="Half Day"
                     checked={formData.leaveType === "Half Day"}
-                    // onChange={(e) => setLeaveOption(e.target.value)}
-                    onChange={(e) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        leaveType: e.target.value // Replace newDate with the actual value you want to set
-                      }))
-                    }}
+                    onChange={handleDataChange}
                   />
                   Half Day
                 </label>
@@ -1224,15 +1242,17 @@ function LeaveApplication() {
                 {formData.leaveType === "Half Day" && (
                   <>
                     <select
+                      name="halfDayPeriod"
                       className="border p-2 rounded w-auto"
                       value={formData?.halfDayPeriod || "Morning"}
                       // onChange={(e) => setLeaveOption(e.target.value)}
-                      onChange={(e) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          halfDayPeriod: e.target.value // Replace newDate with the actual value you want to set
-                        }))
-                      }}
+                      // onChange={(e) => {
+                      //   setFormData((prev) => ({
+                      //     ...prev,
+                      //     halfDayPeriod: e.target.value // Replace newDate with the actual value you want to set
+                      //   }))
+                      // }}
+                      onChange={handleDataChange}
                     >
                       <option value="">Select Period</option>
                       <option value="Morning">Morning</option>
@@ -1250,15 +1270,16 @@ function LeaveApplication() {
                   <div className="mt-1 flex flex-col">
                     <label className="text-sm font-semibold">Leave Date</label>
                     <input
-                      name="leavestartdate"
+                      name="leaveDate"
                       type="date"
                       value={formData?.leaveDate}
-                      onChange={(e) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          leaveDate: e.target.value // Replace newDate with the actual value you want to set
-                        }))
-                      }}
+                      // onChange={(e) => {
+                      //   setFormData((prev) => ({
+                      //     ...prev,
+                      //     leaveDate: e.target.value // Replace newDate with the actual value you want to set
+                      //   }))
+                      // }}
+                      onChange={handleDataChange}
                       className="border p-2 rounded"
                     />
 
@@ -1288,15 +1309,10 @@ function LeaveApplication() {
                   <div className="mt-1">
                     <label className="text-sm font-semibold">Leave Date</label>
                     <input
+                      name="leaveDate"
                       type="date"
                       value={formData?.leaveDate}
-                      // onChange={(e) => setLeaveStart(e.target.value)}
-                      onChange={(e) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          leaveDate: e.target.value // Replace newDate with the actual value you want to set
-                        }))
-                      }}
+                      onChange={handleDataChange}
                       className="border p-2 rounded w-full"
                     />
                   </div>
@@ -1309,19 +1325,23 @@ function LeaveApplication() {
               <div className="mt-1 w-full">
                 <label className="text-sm font-semibold">Leave Type</label>
                 <select
+                  name="leaveCategory"
                   className="border p-2 rounded w-full min-w-full"
                   value={formData?.leaveCategory || ""}
                   // onChange={(e) => setLeaveType(e.target.value)}
-                  onChange={(e) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      leaveCategory: e.target.value // Replace newDate with the actual value you want to set
-                    }))
-                  }}
+                  // onChange={(e) => {
+                  //   setFormData((prev) => ({
+                  //     ...prev,
+                  //     leaveCategory: e.target.value // Replace newDate with the actual value you want to set
+                  //   }))
+                  // }}
+                  onChange={handleDataChange}
                 >
                   <option value="">Select Leave Type</option>
                   {/* If the selected leave date is in the past, only show "Other Leave" */}
                   {pastDate ? (
+                    <option value="other Leave">Other Leave</option>
+                  ) : (
                     <>
                       {BalancedcasualleaveCount > 0 && (
                         <option value="casual Leave">Casual Leave</option>
@@ -1341,29 +1361,22 @@ function LeaveApplication() {
                       )}
                       <option value="other Leave">Other Leave</option>
                     </>
-                  ) : (
-                    <option value="other Leave">Other Leave</option>
                   )}
                 </select>
               </div>
               {errors.leaveCategory && (
                 <p className="text-red-500">{errors.leaveCategory}</p>
               )}
-              {/* Description */}
+              {/* Reason */}
               <div className="mt-1">
                 <label className="text-sm font-semibold">Reason</label>
                 <textarea
+                  name="reason"
                   className="border p-2 rounded w-full"
                   rows="3"
                   placeholder="Enter reason"
-                  value={formData?.reason || ""}
-                  // onChange={(e) => setLeaveDescription(e.target.value)}
-                  onChange={(e) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      reason: e.target.value // Replace newDate with the actual value you want to set
-                    }))
-                  }}
+                  value={formData?.reason}
+                  onChange={handleDataChange}
                 ></textarea>
               </div>
               {errors.reason && <p className="text-red-500">{errors.reason}</p>}
