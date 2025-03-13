@@ -1907,14 +1907,13 @@ export const cancelLeaveOrOnsiteApproval = async (req, res) => {
           message: "Missing required parameter: selectedId for cancel request"
         })
       }
-     
+
       result = await LeaveRequest.updateOne(
         { _id: selectedObjectId },
         { $set: updateFields }
       )
     }
     if (result && result.modifiedCount > 0 && onsite === "false") {
-
       // Fetch updated leave requests for display
       const updatedLeaveList = await LeaveRequest.find(baseQuery).populate({
         path: "userId",
@@ -1944,7 +1943,6 @@ export const cancelLeaveOrOnsiteApproval = async (req, res) => {
         data: filteredApprovedLeave
       })
     } else if (result && result.modifiedCount > 0 && onsite === "true") {
-     
       // Fetch updated leave requests for display
       const updatedOnsiteList = await Onsite.find(baseQuery).populate({
         path: "userId",
@@ -1994,8 +1992,8 @@ export const ApproveLeave = async (req, res) => {
       name,
       isPending
     } = req.query
-
-    // return
+    console.log("pending", isPending)
+    console.log("hh", isPending === "false")
 
     // Validate common parameters
     if (!role || !startDate || !endDate || !onsite) {
@@ -2023,8 +2021,7 @@ export const ApproveLeave = async (req, res) => {
 
     // Base query common to both cases
     const baseQuery = {
-      leaveDate: { $gte: startDate, $lte: endDate },
-      onsite: onsite === "true"
+      leaveDate: { $gte: startDate, $lte: endDate }
     }
 
     // Add user-specific filtering for non-admin roles
@@ -2054,7 +2051,7 @@ export const ApproveLeave = async (req, res) => {
           message: "Missing required parameter: selectedId for selectAll."
         })
       }
-      
+
       const queryForUpdate = { ...baseQuery, userId: selectedObjectId }
       result = await LeaveRequest.updateMany(queryForUpdate, {
         $set: updateFields
@@ -2108,7 +2105,7 @@ export const ApproveLeave = async (req, res) => {
           message: "Missing required parameter: selectedId for single update."
         })
       }
-  
+
       result = await LeaveRequest.updateOne(
         { _id: selectedObjectId },
         { $set: updateFields }
@@ -2117,6 +2114,7 @@ export const ApproveLeave = async (req, res) => {
 
     // Check if any document was updated
     if (result && result.modifiedCount > 0) {
+      console.log("query",)
       // Fetch updated leave requests for display
       const updatedLeaveList = await LeaveRequest.find(baseQuery).populate({
         path: "userId",
@@ -2135,16 +2133,29 @@ export const ApproveLeave = async (req, res) => {
           }
         ]
       })
+      if (isPending === "true") {
+        const filteredPendingLeave = updatedLeaveList.filter(
+          (item) =>
+            item.departmentverified === false && item.adminverified === false
+        )
 
-      const filteredPendingLeave = updatedLeaveList.filter(
-        (item) =>
-          item.departmentverified === false && item.adminverified === false
-      )
-
-      return res.status(200).json({
-        message: `Leave Approved successfully for ${name}`,
-        data: filteredPendingLeave
-      })
+        return res.status(200).json({
+          message: `Leave Approved successfully for ${name}`,
+          data: filteredPendingLeave
+        })
+      } else if (isPending === "false") {
+        console.log("entrerer")
+        console.log("updated", updatedLeaveList)
+        const filteredApprovedLeave = updatedLeaveList.filter(
+          (item) =>
+            item.departmentverified === true || item.adminverified === true
+        )
+        console.log("list", filteredApprovedLeave)
+        return res.status(200).json({
+          message: `Leave Approved successfully for ${name}`,
+          data: filteredApprovedLeave
+        })
+      }
     }
 
     return res

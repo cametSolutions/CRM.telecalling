@@ -64,8 +64,6 @@ export default function CallRegistration() {
   )
   const { data: callnotes } = UseFetch("/customer/getallcallNotes")
 
-  // useRef to keep track of the latest timeout for debouncing
-
   const handleQuillChange = (value) => {
     setValue("description", value, { shouldValidate: true }) // Update React Hook Form's value
   }
@@ -500,7 +498,6 @@ export default function CallRegistration() {
       }
     }, 300) // Adjust the delay time to your preference (e.g., 300 ms)
   }, [])
-
   const handleRowClick = (customer) => {
     flushSync(() => setSearching(false))
     flushSync(() => setCallData([]))
@@ -543,7 +540,7 @@ export default function CallRegistration() {
     // let updatedData = { ...data }
     setFormData(data)
   }
-
+ 
   return (
     <div className="container  justify-center items-center p-8 bg-gray-100">
       <div className="w-auto bg-white shadow-lg rounded min-h-screen p-8 mx-auto">
@@ -684,6 +681,12 @@ export default function CallRegistration() {
                 </p>
               </div>
               <div className="">
+                <h4 className="text-md font-bold text-white">Industry</h4>
+                <p className="text-white">
+                  {selectedCustomer?.industry || "N/A"}
+                </p>
+              </div>
+              <div className="">
                 <h4 className="text-md font-bold text-white">Status</h4>
                 <p
                   className={`bg-clip-text text-transparent ${
@@ -802,18 +805,15 @@ export default function CallRegistration() {
                           {product?.productName}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {/* {product?.customerAddDate} */}
                           {formatDate(product?.customerAddDate)}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                           {product?.licensenumber}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {/* {product?.customerAddDate} */}
                           {formatDate(product?.licenseExpiryDate)}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {/* {product?.customerAddDate} */}
                           {product?.licenseExpiryDate
                             ? calculateRemainingDays(product?.licenseExpiryDate)
                             : ""}
@@ -827,16 +827,24 @@ export default function CallRegistration() {
                         </td>
 
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {calculateRemainingDays(product?.amcendDate)}
+                          <span
+                            style={{
+                              color:
+                                calculateRemainingDays(product?.amcendDate) ===
+                                "Expired"
+                                  ? "red"
+                                  : "N/A"
+                                  ? "black"
+                                  : "black"
+                            }}
+                          >
+                            {calculateRemainingDays(product?.amcendDate)}
+                          </span>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                           {product?.tvuexpiryDate}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {/* {product?.tvuexpiryDate
-                            ? formatDate(product?.tvuexpiryDate)
-                            : ""} */}
-
                           {calculateRemainingDays(product?.tvuexpiryDate)}
                         </td>
 
@@ -1129,6 +1137,7 @@ export default function CallRegistration() {
                                 </td>
                                 <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
                                   {formatDate(call.timedata?.startTime)}
+                                  {/* {call.timedata?.startTime} */}
                                 </td>
 
                                 <td className="px-6 py-3 whitespace-nowrap text-sm text-black">

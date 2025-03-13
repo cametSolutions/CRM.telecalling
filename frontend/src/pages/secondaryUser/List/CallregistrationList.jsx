@@ -36,6 +36,7 @@ const CallregistrationList = () => {
   }, [])
 
   const filterCallData = useCallback((calls) => {
+   
     const allCallRegistrations = calls.flatMap((call) => call.callregistration)
 
     // Filter based on status
@@ -70,7 +71,6 @@ const CallregistrationList = () => {
       // Listen for initial data from the server
       socket.on("updatedCalls", ({ calls, user }) => {
         if (users.role === "Admin") {
-          console.log(calls)
           setCallList(calls)
 
           setUserCallstatus(user.callstatus)
@@ -158,14 +158,7 @@ const CallregistrationList = () => {
 
   const handleChange = (e) => handleSearch(e.target.value)
 
-  // useEffect(() => {
-  //   handleSearch(searchQuery)
-  // }, [searchQuery, handleSearch])
-
-  // Update the filteredCalls whenever activeFilter changes
-  // useEffect(() => {
-  //   setFilteredCalls(applyFilter())
-  // }, [activeFilter, callList])
+ 
   const getTodaysSolved = (calls) => {
     const today = new Date().toISOString().split("T")[0]
     let todaysSolvedCount = 0
@@ -216,44 +209,13 @@ const CallregistrationList = () => {
     }
     return callList // Return all if no specific filter is applied
   }
-  // const fetchData = async () => {
-  //   try {
-  //     const calldata = {
-  //       userName: "Akhila thomas",
-  //       product: "67051e69c6d1805013e91797",
-
-  //       license: 737805573,
-  //       branchName: ["CAMET"],
-  //       timedata: {
-  //         startTime: "2024-November-01 08:38:58",
-  //         endTime: "2024-November-01 08:47:09",
-  //         duration: "00:08:11",
-  //         token: "6902297019"
-  //       },
-  //       formdata: {
-  //         incomingNumber: "46646",
-  //         token: "",
-  //         description: "dfdfdf",
-  //         solution: "",
-  //         status: "pending",
-  //         attendedBy: "abhi",
-  //         completedBy: ""
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.log(error)
-  //   }
-  // }
+ 
 
   const formatDuration = (seconds, name) => {
     if (!seconds || isNaN(seconds)) {
       return "0 hr 0 min 0 sec"
     }
-    if (name === "JOSEPH'S AGENCIES") {
-      console.log(seconds)
-      const hrs = Math.floor(seconds / 3600)
-      console.log(hrs)
-    }
+   
     const hrs = Math.floor(seconds / 3600)
     const mins = Math.floor((seconds % 3600) / 60)
     const secs = seconds % 60
@@ -261,7 +223,6 @@ const CallregistrationList = () => {
   }
 
   const handlemerge = async () => {
-    console.log("loggg")
     try {
       const res = await api.get("/auth/merge")
 
@@ -287,7 +248,6 @@ const CallregistrationList = () => {
       }
     }
   }
-  console.log(filteredCalls)
   return (
     <div className="container mx-auto  p-5 ">
       <div className="w-auto  bg-white shadow-lg rounded p-4 pt-1 h-full ">

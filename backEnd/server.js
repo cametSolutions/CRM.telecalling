@@ -29,7 +29,6 @@ const server = http.createServer(app)
 
 // Running port configuration
 const PORT = process.env.PORT
-console.log(PORT)
 
 // MongoDB connection getting from config/db.js
 connectDB()
@@ -53,109 +52,109 @@ io.on("connection", (socket) => {
     console.log("Received request for initial data")
 
     try {
-      const startOfDay = new Date()
-      startOfDay.setHours(0, 0, 0, 0) // Start of today
-      const endOfDay = new Date()
-      endOfDay.setHours(23, 59, 59, 999)
-
+      const todayStart =
+        new Date().toISOString().split("T")[0] + "T00:00:00.000Z"
+      const todayEnd = new Date().toISOString().split("T")[0] + "T23:59:59.999Z"
+     
       // const calls = await CallRegistration.aggregate([
       //   {
-      //     $addFields: {
-      //       "callregistration.formdata.attendedBy": {
-      //         $cond: {
-      //           if: { $isArray: "$callregistration.formdata.attendedBy" },
-      //           then: "$callregistration.formdata.attendedBy", // Keep as array
-      //           else: [{ calldate: "$callregistration.formdata.attendedBy" }] // Convert single value to array
+      //     $match: {
+      //       $or: [
+      //         { "callregistration.formdata.status": "pending" }, // Get pending calls (any date)
+      //         {
+      //           "callregistration.formdata.attendedBy": { $type: "array" }, // If attendedBy is an array
+      //           "callregistration.formdata.attendedBy.calldate": {
+      //             $exists: true,
+      //             $gte: todayStart,
+      //             $lt: todayEnd
+      //           }
       //         }
-      //       }
+
+      //       ],
+
       //     }
-      //   },
-      //   {
-      //     $unwind: {
-      //       path: "$callregistration.formdata.attendedBy",
-      //       preserveNullAndEmptyArrays: true // Keeps documents that have no attendedBy
-      //     }
-      //   },
-      //   {
-      //     $addFields: {
-      //       "callregistration.formdata.attendedBy.calldate": {
-      //         $cond: {
-      //           if: {
-      //             $and: [
-      //               {
-      //                 $ne: [
-      //                   "$callregistration.formdata.attendedBy.calldate",
-      //                   ""
-      //                 ]
-      //               }, // Ensure it's not empty
-      //               {
-      //                 $not: {
-      //                   $isArray:
-      //                     "$callregistration.formdata.attendedBy.calldate"
-      //                 }
-      //               } // Ensure it's not an array
-      //             ]
-      //           },
-      //           then: {
-      //             $toDate: "$callregistration.formdata.attendedBy.calldate"
-      //           }, // Convert to Date
-      //           else: null // Set to null if it's missing or an array
-      //         }
-      //       }
-      //     }
-      //   },
+      //   }
+      // ])
+      // const calls = await CallRegistration.aggregate([
       //   {
       //     $match: {
-      //       "callregistration.formdata.attendedBy.calldate": {
-      //         $gte: startOfDay,
-      //         $lte: endOfDay
-      //       }
+      //       $or: [
+      //         { "callregistration.formdata.status": "pending" }, // Get all pending calls (any date)
+      //         {
+      //           "callregistration.formdata.attendedBy": {
+      //             $elemMatch: {
+      //               calldate: { $gte: todayStart, $lt: todayEnd }
+      //             }
+      //           } // Efficient filtering inside the attendedBy array
+      //         }
+      //       ]
       //     }
       //   }
       // ])
 
-      // const calls = await CallRegistration.aggregate([
+      // const pendingcalls = await CallRegistration.aggregate([
       //   {
-      //     $addFields: {
-      //       "callregistration.formdata.attendedBy": {
-      //         $map: {
-      //           input: "$callregistration.formdata.attendedBy",
-      //           as: "attended",
-      //           in: {
-      //             calldate: { $toDate: "$$attended.calldate" }, // Convert calldate to Date
-      //             otherFields: "$$attended"
-      //           }
-      //         }
-      //       }
-      //     }
+      //     $match: { "callregistration.formdata.status": "pending" }
       //   },
       //   {
-      //     $match: {
-      //       "callregistration.formdata.attendedBy.calldate": {
-      //         $gte: startOfDay,
-      //         $lte: endOfDay
-      //       }
+      //     $lookup: {
+      //       from: "products", // Replace with your actual product collection name
+      //       localField: "callregistration.product", // The field in CallRegistration that references products
+      //       foreignField: "_id", // The field in the Product collection that matches the reference
+      //       as: "productDetails"
       //     }
       //   }
-      // ]);
-
-      const calls = await CallRegistration.find({})
-        .populate([
-          {
-            path: "callregistration.product",
-            select: "productName"
-          },
-          {
-            path: "customerid",
-            select: "customerName"
+      // ])
+      const pendingcalls = await CallRegistration.aggregate([
+        {
+          $set: {
+            callregistration: {
+              $filter: {
+                input: "$callregistration",
+                as: "cr",
+                cond: { $eq: ["$$cr.formdata.status", "pending"] }
+              }
+            }
           }
-        ])
-        .lean()
+        },
+        {
+          $match: { "callregistration.0": { $exists: true } } // Ensures only documents with at least one pending call remain
+        },
+        {
+          $lookup: {
+            from: "products", // Replace with actual product collection name
+            localField: "callregistration.product", // Field in CallRegistration referencing products
+            foreignField: "_id", // Matching field in the Product collection
+            as: "productDetails"
+          }
+        }
+      ])
+
+
+      const todayscals = await CallRegistration.aggregate([
+        {
+          $match: {
+            "callregistration.formdata.attendedBy": {
+              $elemMatch: {
+                calldate: { $gte: todayStart, $lt: todayEnd }
+              }
+            }
+          }
+        },
+        {
+          $lookup: {
+            from: "products", // Replace with your actual product collection name
+            localField: "callregistration.product", // The field in CallRegistration that references products
+            foreignField: "_id", // The field in the Product collection that matches the reference
+            as: "productDetails"
+          }
+        }
+      ])
+      const calls = [...pendingcalls, ...todayscals]
 
       // Extract unique IDs for attendedBy and completedBy
       const attendedByIds = new Set()
       const completedByIds = new Set()
-
       calls.forEach((call) =>
         call.callregistration.forEach((entry) => {
           // Handle `attendedBy`
@@ -313,7 +312,6 @@ io.on("connection", (socket) => {
           user = await Admin.findOne({ _id: objectId })
         }
       }
-      
 
       io.emit("updatedCalls", { calls, user })
     } catch (error) {
@@ -329,17 +327,8 @@ io.on("connection", (socket) => {
   socket.on("startattendanceConversion", (fileData) => {
     AttendanceExceltoJson(socket, fileData)
   })
-  // socket.on("updateUserCallStatus", async (userId) => {
-  //   const objectId = new mongoose.Types.ObjectId(userId)
-  //   let user = await Staff.findOne({ _id: objectId })
-
-  //   if (!user) {
-  //     user = await Admin.findOne({ _id: objectId })
-  //   }
-
-  //   // Emit the updated calls and user data to the client
-  //   io.emit("updateUserCallStatus", { user })
-  // })
+ 
+ 
 
   socket.on("disconnect", () => {
     console.log("Client disconnected")
@@ -379,17 +368,7 @@ app.use("/api/product", productRoutes)
 app.use("/api/customer", secondaryUserRoutes)
 app.use("/api/master", departmentRoutes)
 
-//   console.log(process.env.NODE_ENV) // if (process.env.NODE_ENV === "production") {
-//   console.log("Serving static files from production build")
-//   app.use(express.static(path.join(__dirname, "frondEnd", "dist")))
-//   app.get("*", (req, res) =>
-//     res.sendFile(path.resolve(__dirname, "frondEnd", "dist", "index.html"))
-//   )
-// } else {
-//   app.get("/", (req, res) => {
-//     res.send("Server is Ready")
-//   })
-// }
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -398,12 +377,10 @@ app.use((err, req, res, next) => {
 })
 
 if (process.env.NODE_ENV === "production") {
-  console.log(process.env.NODE_ENV)
-  console.log("hai")
+
   const __dirname = path.resolve()
   //  const parentDir = path.join(__dirname ,'..');
   const parentDir = path.join(__dirname, "..")
-  console.log(parentDir)
   app.use(express.static(path.join(parentDir, "/frontend/dist")))
   app.get("*", (req, res) =>
     res.sendFile(path.resolve(parentDir, "frontend", "dist", "index.html"))
