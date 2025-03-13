@@ -9,10 +9,7 @@ const CustomerSchema = new mongoose.Schema({
   city: { type: String },
   pincode: {
     type: String
-    // validate: {
-    //   validator: Number.isInteger,
-    //   message: "{VALUE} is not a valid number!"
-    // }
+    
   },
   email: { type: String },
   incomingNumber: { type: String },

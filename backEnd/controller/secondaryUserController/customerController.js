@@ -714,6 +714,7 @@ export const GetCustomer = async (req, res) => {
               email: { $first: "$email" },
               mobile: { $first: "$mobile" },
               partner: { $first: "$partner" },
+              industry: { $first: "$industry" },
               selected: { $push: "$selected" } // Push the selected data
             }
           }
@@ -839,6 +840,7 @@ export const GetCustomer = async (req, res) => {
               pincode: { $first: "$pincode" },
               email: { $first: "$email" },
               mobile: { $first: "$mobile" },
+              industry: { $first: "$industry" },
               selected: { $push: "$selected" } // Push the selected data
             }
           }
@@ -1630,8 +1632,6 @@ const updateProcessedAttendees = async (processedAttendedBy, attendedId) => {
   return updateResults
 }
 
-
-
 export const GetCallRegister = async (req, res) => {
   try {
     const { customerid } = req.query
@@ -1789,7 +1789,6 @@ export const GetCallRegister = async (req, res) => {
             : { callerId: entry?.formdata?.completedBy } // Keep the original if no name found
         }
       })
-
       if (registeredCall) {
         return res
           .status(200)
@@ -1967,7 +1966,6 @@ export const GetCallRegister = async (req, res) => {
     res.status(500).json({ message: "internal server error" })
   }
 }
-
 
 export const GetAllExpiryRegister = async (req, res) => {
   const { nextmonthReport } = req.query
