@@ -55,7 +55,7 @@ io.on("connection", (socket) => {
       const todayStart =
         new Date().toISOString().split("T")[0] + "T00:00:00.000Z"
       const todayEnd = new Date().toISOString().split("T")[0] + "T23:59:59.999Z"
-     
+
       // const calls = await CallRegistration.aggregate([
       //   {
       //     $match: {
@@ -130,8 +130,7 @@ io.on("connection", (socket) => {
         }
       ])
 
-
-      const todayscals = await CallRegistration.aggregate([
+      const todayscalls = await CallRegistration.aggregate([
         {
           $match: {
             "callregistration.formdata.attendedBy": {
@@ -150,7 +149,12 @@ io.on("connection", (socket) => {
           }
         }
       ])
-      const calls = [...pendingcalls, ...todayscals]
+      const uniqueCalls = new Map()
+      ;[...pendingcalls, ...todayscalls].forEach((call) => {
+        uniqueCalls.set(call._id.toString(), call) // Ensures only one instance per _id
+      })
+
+      const calls = Array.from(uniqueCalls.values())
 
       // Extract unique IDs for attendedBy and completedBy
       const attendedByIds = new Set()
@@ -327,8 +331,6 @@ io.on("connection", (socket) => {
   socket.on("startattendanceConversion", (fileData) => {
     AttendanceExceltoJson(socket, fileData)
   })
- 
- 
 
   socket.on("disconnect", () => {
     console.log("Client disconnected")
@@ -368,8 +370,6 @@ app.use("/api/product", productRoutes)
 app.use("/api/customer", secondaryUserRoutes)
 app.use("/api/master", departmentRoutes)
 
-
-
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack)
@@ -377,7 +377,6 @@ app.use((err, req, res, next) => {
 })
 
 if (process.env.NODE_ENV === "production") {
-
   const __dirname = path.resolve()
   //  const parentDir = path.join(__dirname ,'..');
   const parentDir = path.join(__dirname, "..")
