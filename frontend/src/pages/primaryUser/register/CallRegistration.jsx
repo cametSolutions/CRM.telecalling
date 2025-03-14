@@ -223,7 +223,19 @@ export default function CallRegistration() {
     const [hours, minutes, seconds] = timeString.split(":").map(Number)
     return hours * 3600 + minutes * 60 + seconds
   }
+  const setDateandTime = (dateString) => {
+    const dateObj = new Date(dateString)
 
+    const date = dateObj.toLocaleDateString("en-GB") // Format: DD/MM/YYYY
+    const time = dateObj.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true // ✅ Enables 12-hour format with AM/PM
+    })
+
+    return `${date} ${time}` // Example: "03/02/2025 02:48:57 PM"
+  }
   const stopTimer = async (time) => {
     setSubmitLoading(true)
 
@@ -540,7 +552,7 @@ export default function CallRegistration() {
     // let updatedData = { ...data }
     setFormData(data)
   }
- 
+
   return (
     <div className="container  justify-center items-center p-8 bg-gray-100">
       <div className="w-auto bg-white shadow-lg rounded min-h-screen p-8 mx-auto">
@@ -1136,13 +1148,13 @@ export default function CallRegistration() {
                                   {call.product?.productName}
                                 </td>
                                 <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                  {formatDate(call.timedata?.startTime)}
+                                  {setDateandTime(call.timedata?.startTime)}
                                   {/* {call.timedata?.startTime} */}
                                 </td>
 
                                 <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
                                   {call.formdata?.status === "solved"
-                                    ? formatDate(call.timedata?.endTime)
+                                    ? setDateandTime(call.timedata?.endTime)
                                     : ""}
                                 </td>
                                 <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
