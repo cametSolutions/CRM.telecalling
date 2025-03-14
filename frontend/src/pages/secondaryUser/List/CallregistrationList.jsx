@@ -36,7 +36,6 @@ const CallregistrationList = () => {
   }, [])
 
   const filterCallData = useCallback((calls) => {
-   
     const allCallRegistrations = calls.flatMap((call) => call.callregistration)
 
     // Filter based on status
@@ -71,6 +70,8 @@ const CallregistrationList = () => {
       // Listen for initial data from the server
       socket.on("updatedCalls", ({ calls, user }) => {
         if (users.role === "Admin") {
+         
+         
           setCallList(calls)
 
           setUserCallstatus(user.callstatus)
@@ -158,7 +159,6 @@ const CallregistrationList = () => {
 
   const handleChange = (e) => handleSearch(e.target.value)
 
- 
   const getTodaysSolved = (calls) => {
     const today = new Date().toISOString().split("T")[0]
     let todaysSolvedCount = 0
@@ -209,13 +209,12 @@ const CallregistrationList = () => {
     }
     return callList // Return all if no specific filter is applied
   }
- 
 
   const formatDuration = (seconds, name) => {
     if (!seconds || isNaN(seconds)) {
       return "0 hr 0 min 0 sec"
     }
-   
+
     const hrs = Math.floor(seconds / 3600)
     const mins = Math.floor((seconds % 3600) / 60)
     const secs = seconds % 60
