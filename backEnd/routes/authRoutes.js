@@ -35,7 +35,8 @@ import {
   GetleavemasterLeavecount,
   DeleteEvent,
   RejectOnsite,
-  cancelLeaveOrOnsiteApproval
+  cancelLeaveOrOnsiteApproval,
+  Getallcompensatoryleave
 } from "../controller/authController.js"
 const router = express.Router()
 
@@ -56,6 +57,7 @@ router.post("/leave", authMiddleware, LeaveApply)
 router.get("/getallLeave", authMiddleware, GetallLeave)
 router.get("/getallAttendance", authMiddleware, GetAllAttendance)
 router.get("/getallOnsite", authMiddleware, GetallOnsite)
+router.get("/getallcompensatoryleave", authMiddleware, Getallcompensatoryleave)
 router.get("/getsomeall", authMiddleware, GetsomeAll)
 router.get("/pendingonsiteList", authMiddleware, GetAllpendingORonsiteRequest)
 router.get("/pendingleaveList", authMiddleware, GetAllpendingORonsiteRequest)

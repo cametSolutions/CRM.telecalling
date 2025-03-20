@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react"
 import { useLocation, Link } from "react-router-dom"
+
 import { flushSync } from "react-dom"
 import ReactQuill from "react-quill"
 import "react-quill/dist/quill.snow.css" // Import Quill styles
@@ -19,6 +20,7 @@ import { formatTime } from "../../../utils/timeUtils"
 import { debounce } from "lodash"
 import UseFetch from "../../../hooks/useFetch"
 import Timer from "../../../components/primaryUser/Timer"
+import PopUp from "../../../components/common/PopUp"
 import { toast } from "react-toastify"
 const socket = io("https://www.crm.camet.in")
 // const socket = io("http://localhost:9000")
@@ -33,12 +35,14 @@ export default function CallRegistration() {
     reset,
     formState: { errors }
   } = useForm()
-
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [callreport, setcallReport] = useState({})
   const [customerData, setCustomerData] = useState([])
   const [submitLoading, setSubmitLoading] = useState(false)
   const [loading, setloading] = useState(false)
   const [name, setName] = useState("")
   const [message, setMessage] = useState("")
+
   const [editform, setEditformdata] = useState({})
   const [productDetails, setProductDetails] = useState([])
   const [user, setUser] = useState(false)
@@ -63,7 +67,6 @@ export default function CallRegistration() {
       `/customer/getcallregister?customerid=${selectedCustomer?._id || null}`
   )
   const { data: callnotes } = UseFetch("/customer/getallcallNotes")
-
   const handleQuillChange = (value) => {
     setValue("description", value, { shouldValidate: true }) // Update React Hook Form's value
   }
@@ -112,20 +115,16 @@ export default function CallRegistration() {
             callData.callDetails.callregistration.find(
               (registration) => registration.timedata.token === token
             )
-
           // If a matching registration is found, extract the product details
-          const productName = matchingRegistration
-            ? matchingRegistration.product.productName
+          const productId = matchingRegistration
+            ? matchingRegistration.product._id
             : null
-
           const matchingProducts =
             callData.callDetails.customerid.selected.filter(
-              (product) => product.productName === productName
+              (product) => product.product_id === productId
             )
-
           setSelectedCustomer(callData?.callDetails?.customerid)
           setName(callData?.callDetails?.customerid?.customerName)
-
           setProductDetails(matchingProducts)
 
           const editData = {
@@ -180,13 +179,14 @@ export default function CallRegistration() {
   useEffect(() => {
     // Set the default product if there's only one
     if (productDetails.length === 1) {
-      setSelectedProducts(productDetails[0])
+      setSelectedProducts([productDetails[0]])
     }
   }, [productDetails])
 
   const handleCheckboxChange = (e, product) => {
     if (e.target.checked) {
-      setSelectedProducts(product)
+      // setSelectedProducts(product)
+      setSelectedProducts((prev) => [...prev, product])
     } else if (selectedProducts.productName === product.productName) {
       setSelectedProducts([]) // Deselect if it was previously selected
     }
@@ -244,11 +244,9 @@ export default function CallRegistration() {
     const branchName = user.selected
       .map((branch) => branch.branchName)
       .join(", ")
-
     const endTime = new Date().toISOString()
     const durationInSeconds = timeStringToSeconds(time)
     // Save timer value in local storage
-
     if (!token) {
       const uniqueToken = generateUniqueNumericToken()
       setTokenData(uniqueToken)
@@ -262,6 +260,8 @@ export default function CallRegistration() {
       }
 
       const updatedformData = { ...formData }
+      const [selectedId, selectedText] = updatedformData.callnote.split("|")
+      updatedformData.callnote = selectedId
 
       if (updatedformData.status === "pending") {
         updatedformData.attendedBy = {
@@ -275,8 +275,8 @@ export default function CallRegistration() {
       } else if (updatedformData.status === "solved") {
         updatedformData.attendedBy = {
           callerId: user._id,
-          role: user.role,
-          duration: timeData.duration,
+          role: user?.role,
+          duration: timeData?.duration,
           calldate: startTime
         }
         updatedformData.completedBy = {
@@ -285,21 +285,24 @@ export default function CallRegistration() {
         }
         // Set both attendedBy and completedBy if status is solved
       }
+      if (!selectedProducts[0]?.product_id) {
+        setIsModalOpen(true) // Open popup if no product is selected
+      }
 
       const calldata = {
-        product: selectedProducts.product_id,
-        license: selectedProducts.licensenumber,
+        product: selectedProducts[0]?.product_id,
+        license: selectedProducts[0]?.licensenumber,
         branchName:
-          user.role === "Admin"
+          user?.role === "Admin"
             ? user.branchName.map((branch) => branch)
             : user.selected.map((branch) => branch.branchName),
         timedata: timeData,
         formdata: updatedformData,
-        customeremail: selectedCustomer.email,
-        customerName: selectedCustomer.customerName,
-        productName: selectedProducts.productName
+        customeremail: selectedCustomer?.email,
+        customerName: selectedCustomer?.customerName,
+        productName: selectedProducts[0]?.productName
       }
-
+      setcallReport(calldata)
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
         calldata,
@@ -313,6 +316,8 @@ export default function CallRegistration() {
       )
       if (response.status === 200) {
         toast.success(response.data.message)
+
+        setSelectedProducts([])
         socket.emit("updatedCalls")
         socket.emit("updateUserCallStatus")
         refreshHook()
@@ -353,8 +358,8 @@ export default function CallRegistration() {
       }
 
       const calldata = {
-        product: selectedProducts.product_id,
-        license: selectedProducts.licensenumber,
+        product: selectedProducts[0]?.product_id,
+        license: selectedProducts[0]?.licensenumber,
         branchName:
           user.role === "Admin"
             ? user.branchName.map((branch) => branch)
@@ -363,9 +368,9 @@ export default function CallRegistration() {
         formdata: updatedformData,
         customeremail: selectedCustomer.email,
         customerName: selectedCustomer.customerName,
-        productName: selectedProducts.productName
+        productName: selectedProducts[0]?.productName
       }
-
+      setcallReport(calldata)
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
         calldata,
@@ -381,31 +386,73 @@ export default function CallRegistration() {
         toast.success(response.data.message)
         refreshHook()
 
+        setSelectedProducts([])
         socket.emit("updatedCalls")
       } else {
         toast.error(response.data.message)
       }
     }
   }
+  const formatTableToText = (calldata, selectedText) => {
+    const date = formatDate(calldata.timedata.startTime)
+    return `
+    Date:       \t${date}
+Token:      \t${calldata?.timedata?.token}
+Organization:\t${calldata?.customerName}
+Contact No: \t+91 ${calldata?.formdata?.incomingNumber}
+Product Name:\t${calldata?.productName}
+Serial No:  \t${calldata?.license}
+Call Status:\t${
+      calldata.formdata.status === "solved"
+        ? "Closed"
+        : calldata?.formdata?.status
+    }
+Problem:    \t${selectedText}
+  `.trim()
+  }
   const sendWhatapp = (calldata) => {
+
     if (!calldata?.formdata?.incomingNumber) {
       console.error("Incoming number is missing in calldata.")
       return
     }
-    const phoneNumber = `+91${calldata.formdata.incomingNumber}`
-    const textToShare = "hii"
 
-    // Open WhatsApp Web with the message
-    const whatsappUrl = `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodeURIComponent(
+    let whatsappWindow
+    let whatsappUrl
+    const phoneNumber = `+91${calldata.formdata.incomingNumber}`
+    const textToShare = `${calldata.customerName} - ${phoneNumber}`
+
+    // if (calldata.formdata.status === "solved") {
+    //   const message = formatTableToText(calldata, selectedText)
+    //   console.log("g")
+    //   whatsappUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(
+    //     message
+    //   )}&phone=${phoneNumber}`
+    //   console.log("g")
+    // } else {
+    //   // Open WhatsApp Web with the message
+    //   whatsappUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(
+    //     textToShare
+    //   )}`
+    // }
+    whatsappUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(
       textToShare
     )}`
+
     // Open WhatsApp Web
-    const newWindow = window.open(whatsappUrl, "_blank")
-    if (!newWindow) {
-      console.error(
-        "Failed to open WhatsApp Web. A popup blocker might be active."
-      )
+    // const newWindow = window.open(whatsappUrl, "_blank")
+
+    if (!whatsappWindow || whatsappWindow.closed) {
+      whatsappWindow = window.open(whatsappUrl, "_blank")
+    } else {
+      whatsappWindow.location.href = whatsappUrl
+      whatsappWindow.focus()
     }
+    // if (!newWindow) {
+    //   console.error(
+    //     "Failed to open WhatsApp Web. A popup blocker might be active."
+    //   )
+    // }
   }
   const formatDateTime = (date) => {
     const year = date.getFullYear()
@@ -422,7 +469,6 @@ export default function CallRegistration() {
 
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
   }
-
   const fetchCustomerData = async (query) => {
     let url
     if (user.role === "Admin") {
@@ -734,7 +780,11 @@ export default function CallRegistration() {
               </div>
               <div className="m-5 w-lg max-h-30 overflow-x-auto text-center overflow-y-auto">
                 <table className=" m-w-full divide-y divide-gray-200 shadow">
-                  <thead className="sticky  top-0 z-30 bg-green-300">
+                  <thead
+                    className={`${
+                      isModalOpen ? "" : "sticky top-0 z-30"
+                    } bg-green-300`}
+                  >
                     <tr>
                       <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                         select
@@ -805,10 +855,13 @@ export default function CallRegistration() {
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                           <input
                             className="form-checkbox h-4 w-4 text-blue-600 hover:bg-blue-200 focus:ring-blue-500 cursor-pointer"
-                            checked={
-                              selectedProducts?.productName ===
-                              product?.productName
-                            }
+                            // checked={
+                            //   selectedProducts?.productName ===
+                            //   product?.productName
+                            // }
+                            checked={selectedProducts.some(
+                              (p) => p.productName === product?.productName
+                            )}
                             type="checkbox"
                             onChange={(e) => handleCheckboxChange(e, product)}
                           />
@@ -898,6 +951,13 @@ export default function CallRegistration() {
                     startTime={startTime}
                     onStop={stopTimer}
                   />
+                  <PopUp
+                    isOpen={isModalOpen}
+                    report={callreport}
+                    onClose={() => setIsModalOpen(false)}
+                    handleWhatsapp={sendWhatapp}
+                    message="Product Name is missing please inform the admin to add product!"
+                  />
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)}>
@@ -962,7 +1022,10 @@ export default function CallRegistration() {
                           Select Callnote
                         </option>
                         {callnote.map((callnotes) => (
-                          <option key={callnotes._id} value={callnotes._id}>
+                          <option
+                            key={callnotes._id}
+                            value={`${callnotes._id}|${callnotes.callNotes}`}
+                          >
                             {callnotes.callNotes}
                           </option>
                         ))}
@@ -1086,7 +1149,11 @@ export default function CallRegistration() {
                 {callData.length > 0 && (
                   <div className="mt-8 overflow-y-auto w-full max-h-60 text-center">
                     <table className=" w-full divide-y divide-gray-200 rounded-xl shadow-lg overflow-hidden ">
-                      <thead className="sticky top-0 z-30 bg-purple-200 shadow-lg">
+                      <thead
+                        className={`${
+                          isModalOpen ? "" : "sticky top-0 z-30"
+                        } bg-purple-200`}
+                      >
                         <tr className="">
                           <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
                             Token No

@@ -9,13 +9,7 @@ import Select from "react-select"
 import ImageInput from "../common/ImageInput"
 import UseFetch from "../../hooks/useFetch"
 
-// const useTrimmedValues = (setValue, fields) => {
-//   useEffect(() => {
-//     fields.forEach((field) => {
-//       setValue(field, (value) => value.trim())
-//     })
-//   }, [setValue, fields])
-// }
+
 
 const UserAdd = ({
   process,

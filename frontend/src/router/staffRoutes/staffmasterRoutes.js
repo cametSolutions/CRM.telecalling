@@ -24,6 +24,7 @@ import UserPermissions from "../../pages/primaryUser/List/UserPermissions"
 import UserRegistration from "../../pages/primaryUser/register/UserRegistration"
 import DepartmentRegistration from "../../pages/primaryUser/register/DepartmentRegistration"
 import UserEdit from "../../pages/primaryUser/edit/UserEdit"
+import LeadRegister from "../../pages/primaryUser/register/LeadRegister"
 const staffmastersRoutes = [
   {
     path: "/staff/masters/company",
@@ -103,6 +104,7 @@ const staffmastersRoutes = [
   { path: "/staff/masters/product", component: ProductList },
 
   { path: "/staff/masters/partners", component: ComingSoon },
+  { path: "/staff/masters/leadRegister", component: LeadRegister },
   { path: "/staff/masters/department", component: DepartmentRegistration }
 ]
 

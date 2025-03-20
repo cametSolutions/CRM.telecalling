@@ -34,35 +34,43 @@ const CallregistrationList = () => {
 
     setUser(users)
   }, [])
+  console.log(filteredCalls)
+  const filterCallData = useCallback(
+    (calls) => {
+      const allCallRegistrations = calls.flatMap(
+        (call) => call.callregistration
+      )
 
-  const filterCallData = useCallback((calls) => {
-    const allCallRegistrations = calls.flatMap((call) => call.callregistration)
+      // Filter based on status
+      const pending = allCallRegistrations.filter(
+        (call) => call.formdata?.status?.toLowerCase() === "pending"
+      )
 
-    // Filter based on status
-    const pending = allCallRegistrations.filter(
-      (call) => call.formdata?.status?.toLowerCase() === "pending"
-    )
+      const todaysSolvedCount = getTodaysSolved(calls)
 
-    const todaysSolvedCount = getTodaysSolved(calls)
+      const todaysCallsCount = getTodaysCalls(calls)
 
-    const todaysCallsCount = getTodaysCalls(calls)
-
-    setPendingCallsCount(pending?.length)
-    setTodayCallsCount(todaysCallsCount)
-    setTodaysSolvedCount(todaysSolvedCount)
-  }, [])
+      setPendingCallsCount(pending?.length)
+      setTodayCallsCount(todaysCallsCount)
+      setTodaysSolvedCount(todaysSolvedCount)
+    },
+    [users]
+  )
 
   useEffect(() => {
     if (callList && callList.length > 0 && users) {
       const today = new Date().toISOString().split("T")[0]
       setToday(today)
-
+      const stats = getCallStats(callList, users.name)
+      console.log(stats)
+      console.log(formatDuration(stats.totalDuration))
+      setUserCallstatus(stats)
       setFilteredCalls(callList)
       filterCallData(callList)
       setLoading(false)
     }
   }, [callList])
-
+  console.log(userCallStatus)
   useEffect(() => {
     if (users) {
       const userId = users._id
@@ -70,11 +78,7 @@ const CallregistrationList = () => {
       // Listen for initial data from the server
       socket.on("updatedCalls", ({ calls, user }) => {
         if (users.role === "Admin") {
-         
-         
           setCallList(calls)
-
-          setUserCallstatus(user.callstatus)
         } else {
           const userBranchName = new Set(
             users?.selected?.map((branch) => branch.branchName)
@@ -107,8 +111,6 @@ const CallregistrationList = () => {
           )
 
           setCallList(filtered)
-
-          setUserCallstatus(user.callstatus)
         }
       })
 
@@ -176,8 +178,93 @@ const CallregistrationList = () => {
 
     return todaysSolvedCount
   }
+  const getCallStats = (calls, userName) => {
+    let totalCalls = 0
+    let pendingCalls = 0
+    let solvedCalls = 0
+    let collegeSolvedCalls = 0
+    let totalDuration = 0
+
+    const today = new Date().toISOString().split("T")[0] // Get today's date in YYYY-MM-DD format
+
+    calls.forEach((call) => {
+      call.callregistration.forEach((registration) => {
+        const { formdata, timedata } = registration
+        const callDate = timedata.startTime.split("T")[0]
+        console.log(formdata, timedata)
+        if (callDate === today) {
+          const lastAttended = formdata.attendedBy.length
+            ? formdata.attendedBy[formdata.attendedBy.length - 1]
+            : null
+          console.log(lastAttended)
+          if (lastAttended.callerId.name === userName) {
+            totalCalls++
+            // Count all calls for today
+
+            if (
+              formdata.status === "pending" &&
+              lastAttended.callerId.name === userName
+            ) {
+              pendingCalls++ // Pending call count
+            }
+
+            if (
+              formdata.status === "solved" &&
+              lastAttended.callerId.name === userName
+            ) {
+              if (
+                formdata.completedBy.length &&
+                formdata.completedBy[formdata.completedBy.length - 1].name ===
+                  userName
+              ) {
+                solvedCalls++ // Solved call count
+              }
+
+              if (
+                formdata.completedBy.length &&
+                lastAttended.callerId.name !==
+                  formdata.completedBy[formdata.completedBy.length - 1].name
+              ) {
+                console.log(lastAttended.callerId.name)
+                console.log(
+                  formdata.completedBy[formdata.completedBy.length - 1]
+                )
+                console.log(
+                  lastAttended.callerId.name !==
+                    formdata.completedBy[formdata.completedBy.length - 1].name
+                )
+                console.log("h")
+                collegeSolvedCalls++ // College solved call count
+              }
+            }
+
+            if (
+              lastAttended &&
+              lastAttended.duration &&
+              lastAttended.callerId.name === userName
+            ) {
+              totalDuration += lastAttended.duration // Sum total duration
+            }
+          }
+        }
+        // Get last attendedBy entry
+
+        // console.log(lastAttended, formdata.timedata.token)
+        // Check if call is from today
+      })
+    })
+
+    return {
+      totalCalls,
+      pendingCalls,
+      solvedCalls,
+      collegeSolvedCalls,
+      totalDuration
+    }
+  }
 
   const getTodaysCalls = (calls) => {
+    console.log(calls)
     const today = new Date().toISOString().split("T")[0] // Get today's date in 'YYYY-MM-DD' format
 
     let todaysCallsCount = 0
@@ -187,10 +274,11 @@ const CallregistrationList = () => {
         const callDate = call.timedata.startTime.split("T")[0] // Get the call date in 'YYYY-MM-DD' format
         if (callDate === today) {
           todaysCallsCount++
+          console.log(users)
         }
       })
     })
-
+    console.log
     return todaysCallsCount
   }
 
@@ -335,10 +423,10 @@ const CallregistrationList = () => {
                 </tr>
                 <tr>
                   <td style={{ padding: "2px", color: "#010bff" }}>
-                    {userCallStatus?.totalCall}
+                    {userCallStatus?.totalCalls}
                   </td>
                   <td style={{ padding: "2px", color: "#800080" }}>
-                    {userCallStatus?.colleagueSolved}
+                    {userCallStatus?.collegeSolvedCalls}
                   </td>
                   <td style={{ padding: "2px", color: "#dc3545" }}>
                     {userCallStatus?.pendingCalls}
@@ -518,7 +606,7 @@ const CallregistrationList = () => {
                               {item.calls?.customerName}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {item?.product?.productName}
+                              {item?.calls?.productDetails[0]?.productName}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.license}
@@ -698,7 +786,7 @@ const CallregistrationList = () => {
                               {item.calls?.customerName}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {item?.product?.productName}
+                              {item?.calls?.productDetails[0]?.productName}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.license}

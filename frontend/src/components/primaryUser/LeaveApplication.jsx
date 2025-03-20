@@ -11,6 +11,7 @@ import debounce from "lodash.debounce"
 
 function LeaveApplication() {
   const [events, setEvents] = useState([])
+  const [isHaveCompensatoryleave, setcompensatoryLeave] = useState(false)
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [visibleDays, setVisibleDays] = useState([])
   const [BalanceprivilegeleaveCount, setBalanceprivilegeLeaveCount] =
@@ -28,8 +29,6 @@ function LeaveApplication() {
 
   const [MonthData, setMonthData] = useState({})
   const [currentMonthData, setcurrentMonthData] = useState({})
-  // const [currentMonth, setCurrentMonth] = useState("")
-  const [remainingDays, setRemainingDays] = useState(0)
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth())
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
   const [message, setMessage] = useState("")
@@ -62,9 +61,14 @@ function LeaveApplication() {
   const userData = localStorage.getItem("user")
   const tabs = ["Leave", "Onsite"]
   const user = JSON.parse(userData)
-
   const { data: leaves, refreshHook } = UseFetch(
     user && `/auth/getallLeave?userid=${user._id}`
+  )
+  const { data: compensatoryleaves, refreshHook: refreshHookCompensatory } =
+    UseFetch(user && `/auth/getallcompensatoryleave?userid=${user._id}`)
+  const { data: monthlyHoly } = UseFetch(
+    currentMonth &&
+      `/customer/getallCurrentmonthHoly?currentmonth=${currentMonth}`
   )
   const { data: allonsite, refreshHook: refreshHookOnsite } = UseFetch(
     user && `/auth/getallOnsite?userid=${user._id}`
@@ -77,6 +81,24 @@ function LeaveApplication() {
       setcurrentMonthData(MonthData[currentMonth])
     }
   }, [currentMonth, MonthData])
+  useEffect(() => {
+    if (compensatoryleaves && compensatoryleaves.length > 0) {
+      const compensatoryleavecount = compensatoryleaves.filter((item) => {
+        return (
+          item.year === currentYear &&
+          item.compensatoryLeave === true &&
+          item.compensatoryLeaveUsed === false
+        )
+      })
+
+      setBalancecompensatoryLeaveCount(compensatoryleavecount.length)
+      setLeaveBalance((prev) => ({
+        ...prev,
+        compensatory: compensatoryleavecount.length
+      }))
+    }
+  }, [compensatoryleaves])
+  console.log(BalancecompensatoryleaveCount)
   useEffect(() => {
     const year = currentDate.getFullYear()
     const month = String(currentDate.getMonth() + 1).padStart(2, "0") // Convert to "01-12" format
@@ -91,6 +113,7 @@ function LeaveApplication() {
     })
     setcurrentmonthLeaveData(filteredcurrentmonthlyLeaves)
   }, [allleaves, currentDate, currentMonth])
+  console.log(leaveBalance)
   useEffect(() => {
     const days = []
 
@@ -138,6 +161,7 @@ function LeaveApplication() {
       setAllOnsite(allonsite)
     }
   }, [leaves, allonsite])
+
   useEffect(() => {
     if (allleaves && allleaves.length > 0 && leavemasterleavecount) {
       const currentDate = new Date()
@@ -158,6 +182,7 @@ function LeaveApplication() {
       if (startYear < currentYear) {
         let privilegeCount
         let casualCount
+
         if (startYear < leaveYear && leaveYear < currentYear) {
           casualCount = casualPerMonth
           privilegeCount = 12 * privilegePerMonth
@@ -237,10 +262,10 @@ function LeaveApplication() {
       setBalancecasualLeaveCount(Math.max(balancecasualcount, 0))
 
       setLeaveBalance({
+        ...leaveBalance,
         casual: Math.max(balancecasualcount, 0),
         privilege: Math.max(balanceprivilege, 0),
-        sick: BalancesickleaveCount,
-        compensatory: BalancecompensatoryleaveCount
+        sick: BalancesickleaveCount
       })
     } else if (
       (!allleaves && leavemasterleavecount) ||
@@ -297,10 +322,10 @@ function LeaveApplication() {
       setBalanceprivilegeLeaveCount(ownedprivilegeCount)
       setBalancecasualLeaveCount(ownedcasualCount)
       setLeaveBalance({
+        ...leaveBalance,
         casual: ownedcasualCount,
         privilege: ownedprivilegeCount,
-        sick: BalancesickleaveCount,
-        compensatory: BalancecompensatoryleaveCount
+        sick: BalancesickleaveCount
       })
     }
   }, [currentMonth, allleaves, leavemasterleavecount, formData])
@@ -507,6 +532,16 @@ function LeaveApplication() {
   const handleDateClick = (date) => {
     setclickedDate(date)
     const clickedDate = date
+    const dayOfWeek = new Date(clickedDate).getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    const isSunday = dayOfWeek === 0
+
+    const isHoliday = monthlyHoly.some((holiday) => {
+      const formattedHolyDate = holiday.holyDate.split("T")[0] // Extract YYYY-MM-DD
+      return formattedHolyDate === date
+    })
+    if (isHoliday || isSunday) {
+      setcompensatoryLeave(true)
+    }
 
     const existingEvent = events?.filter((event) => {
       const eventDate = event?.leaveDate // Normalize to YYYY-MM-DD
@@ -541,7 +576,7 @@ function LeaveApplication() {
 
   const handleInputChange = debounce((e) => {
     const { name, value } = e.target
-  
+
     setFormData({
       ...formData,
       [name]: value
@@ -582,13 +617,12 @@ function LeaveApplication() {
   const handleChange = (e) => handleInputChange(e)
   const handleDataChange = (e) => {
     const { name, value } = e.target
-   
+
     setFormData((prev) => ({
       ...prev,
       [name]: value
     }))
     if (errors[name]) {
-      console.log("h")
       setErrors((prev) => ({ ...prev, [name]: "" })) // ✅ Clear error
     }
   }
@@ -606,7 +640,7 @@ function LeaveApplication() {
       }
     })
   }
-  
+
   const handleSubmit = async (tab) => {
     // e.preventDefault()
     try {
@@ -674,6 +708,7 @@ function LeaveApplication() {
             toast.success("leave applied successfully")
             setSelectedTab("Leave")
             refreshHook()
+            refreshHookCompensatory()
 
             setShowModal(false)
 
@@ -730,7 +765,7 @@ function LeaveApplication() {
           )
         } else {
           // const response = await api.post(
-          //   `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          //   `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
           //   { formData, tableRows }
           // )
           const response = await api.post(
@@ -764,6 +799,7 @@ function LeaveApplication() {
             setShowModal(false)
             refreshHook()
             refreshHookOnsite()
+            refreshHookCompensatory()
           }
         }
       } else if (tab === "Attendance") {
@@ -901,7 +937,10 @@ function LeaveApplication() {
                 Leave Balance
               </h2>
               <p className="text-2xl font-bold text-gray-800">
-                {BalanceprivilegeleaveCount + BalancedcasualleaveCount}leaves
+                {BalanceprivilegeleaveCount +
+                  BalancedcasualleaveCount +
+                  BalancecompensatoryleaveCount}
+                leaves
               </p>
               <div className="grid grid-cols-2 gap-1 border border-gray-300 rounded-lg p-2 bg-gray-50">
                 <div className="font-semibold text-gray-700 text-left">
@@ -1436,7 +1475,6 @@ function LeaveApplication() {
                   {new Date(date.fullDate).toLocaleString("default", {
                     weekday: "long"
                   })}
-                  {/* {date.day.toLocaleString("default", { weekday: "long" })} */}
                 </div>
               </div>
             </div>

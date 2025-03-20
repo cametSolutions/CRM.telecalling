@@ -12,6 +12,7 @@ import { Link } from "react-router-dom"
 import _ from "lodash"
 
 const ProductListform = ({ productlist }) => {
+  const user = localStorage.getItem("user")
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredProducts, setFilteredProducts] = useState(productlist)
@@ -55,7 +56,11 @@ const ProductListform = ({ productlist }) => {
         <div className="flex justify-between">
           <div className="flex flex-wrap space-x-4 mb-2">
             <Link
-              to="/admin/masters/productRegistration"
+              to={
+                user.role === "Admin"
+                  ? "/admin/masters/productRegistration"
+                  : "/staff/masters/productRegistration"
+              }
               className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center"
             >
               <FaUserPlus className="mr-2" />

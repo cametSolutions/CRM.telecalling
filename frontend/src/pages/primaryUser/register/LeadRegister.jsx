@@ -3,26 +3,23 @@ import React from "react"
 import api from "../../../api/api"
 import { toast } from "react-toastify"
 import { useNavigate } from "react-router-dom"
-import ProductAdd from "../../../components/primaryUser/ProductAdd"
-function ProductMaster() {
+import LeadMaster from "../../common/LeadMaster"
+
+function LeadRegister() {
   const user = localStorage.getItem("user")
 
   const navigate = useNavigate()
-  const handleSubmit = async (productData, tableData) => {
+  const handleSubmit = async (leadData) => {
     try {
-      const response = await api.post(
-        "/product/productRegistration",
-        { productData: productData, tableData: tableData },
-        {
-          withCredentials: true
-        }
-      )
+      const response = await api.post("/lead/leadRegister", leadData, {
+        withCredentials: true
+      })
 
       toast.success(response && response.data && response.data.message)
       if (user.role === "Admin") {
-        navigate("/admin/masters/product")
+        navigate("/admin/transaction/lead")
       } else {
-        navigate("/staff/masters/product")
+        navigate("/staff/transaction/lead")
       }
     } catch (error) {
       console.error("Error creating product:", error)
@@ -38,10 +35,10 @@ function ProductMaster() {
     }
   }
   return (
-    <div>
-      <ProductAdd process="Registration" handleProductData={handleSubmit} />
+    <div className="h-full bg-gray-100">
+      <LeadMaster process="Registration" handleleadData={handleSubmit} />
     </div>
   )
 }
 
-export default ProductMaster
+export default LeadRegister

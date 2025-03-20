@@ -1,5 +1,6 @@
 import Customer from "../../model/secondaryUser/customerSchema.js"
 import Leavemaster from "../../model/secondaryUser/leavemasterSchema.js"
+
 import { sendWhatapp } from "../../helper/whatapp.js"
 import moment from "moment" // You can use moment.js to handle date manipulation easily
 import License from "../../model/secondaryUser/licenseSchema.js"
@@ -16,9 +17,10 @@ export const GetallCallnotes = async (req, res) => {
     const callnotes = await CallNote.find({})
 
     if (callnotes) {
-      return res
-        .status(200)
-        .json({ message: "callnotes found", data: callnotes })
+      return res.status(200).json({
+        message: "callnotes found",
+        data: callnotes
+      })
     }
   } catch (error) {
     console.log("error:", error.message)
@@ -557,6 +559,59 @@ export const DeleteCustomer = async (req, res) => {
   } catch (error) {
     console.error(error)
     return res.status(500).json({ message: "Server error" })
+  }
+}
+export const GetAllCustomer = async (req, res) => {
+  try {
+    const { userbranch } = req.query
+    console.log(userbranch)
+    let parsedBranch
+    if (userbranch) {
+      parsedBranch = JSON.parse(decodeURIComponent(userbranch))
+    }
+    const allcustomers = await Customer.find({})
+    const customers = await Customer.aggregate([
+      {
+        $match: {
+          "selected.productName": { $exists: false } // Customers where productName is missing in "selected"
+        }
+      },
+      {
+        $project: {
+          _id: 0, // Exclude _id
+          customerName: 1,
+          "selected.licensenumber": 1,
+          "selected.branchName": 1
+        }
+      }
+    ])
+    
+
+    if (!userbranch) {
+      return res
+        .status(200)
+        .json({ message: "customers found", data: customers })
+    } else {
+      const objectIds = parsedBranch?.map(
+        (id) => new mongoose.Types.ObjectId(id)
+      )
+
+      const filteredCustomers = allcustomers.filter((customer) =>
+        customer.selected.some(
+          (selection) =>
+            objectIds.some((objId) => objId.equals(selection.branch_id)) // Correct ObjectId comparison
+        )
+      )
+      if (filteredCustomers) {
+        return res.status(200).json({
+          message: "filtered customers found",
+          data: filteredCustomers
+        })
+      }
+    }
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({ message: "Internal server error" })
   }
 }
 
@@ -2361,6 +2416,23 @@ export const GetallHoly = async (req, res) => {
     }
   } catch (error) {
     console.log("error", error.message)
+  }
+}
+export const GetallcurrentMonthHoly = async (req, res) => {
+  try {
+    const { currentmonth } = req.query
+    const [year, month] = currentmonth.split("-").map(Number)
+    const holidays = await Holymaster.find({
+      holyDate: {
+        $gte: new Date(year, month - 1, 1), // Start of the month
+        $lt: new Date(year, month, 1) // Start of next month (excludes next month)
+      }
+    })
+  
+      return res.status(200).json({ message: "holyfound", data: holidays })
+    
+  } catch (error) {
+    console.log("error:", error.message)
   }
 }
 export const Getleavemaster = async (req, res) => {

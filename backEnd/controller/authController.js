@@ -7,7 +7,7 @@ import Holymaster from "../model/secondaryUser/holydaymasterSchema.js"
 import Onsite from "../model/primaryUser/onsiteSchema.js"
 const { Staff, Admin } = models
 import bcrypt from "bcrypt"
-
+import CompensatoryLeave from "../model/primaryUser/compensatoryLeaveSchema.js"
 import generateToken from "../utils/generateToken.js"
 import LeaveRequest from "../model/primaryUser/leaveRequestSchema.js"
 import CallRegistration from "../model/secondaryUser/CallRegistrationSchema.js"
@@ -514,23 +514,37 @@ export const LeaveApply = async (req, res) => {
           .json({ message: "leave updated", data: updatedLeave })
       }
     } else {
-      const leave = new LeaveRequest({
+      const newleave = new LeaveRequest({
         leaveDate,
         leaveType,
         ...(leaveType === "Half Day" && { halfDayPeriod }),
 
         reason,
         leaveCategory,
+
         userId: objectId,
         assignedto: assignedTo
       })
 
-      const a = await leave.save()
-      const leaveSubmit = await LeaveRequest.find({ userId: objectId })
+      await newleave.save()
+      if (leaveCategory === "compensatory Leave") {
+        const year = new Date(leaveDate).getFullYear()
+
+        const updatecompensatoryleave = await CompensatoryLeave.updateOne(
+          {
+            compensatoryLeave: true,
+            compensatoryLeaveUsed: false,
+            userId: selectedid,
+            year
+          },
+          { $set: { compensatoryLeaveUsed: true } }
+        )
+      }
+      const allleaves = await LeaveRequest.find({ userId: objectId })
 
       return res
         .status(200)
-        .json({ message: "leave submitted", data: leaveSubmit })
+        .json({ message: "leave submitted", data: allleaves })
     }
   } catch (error) {
     console.log("error:", error.message)
@@ -623,7 +637,7 @@ export const OnsiteleaveApply = async (req, res) => {
 }
 export const OnsiteApply = async (req, res) => {
   try {
-    const { selectedid, assignedto } = req.query
+    const { selectedid, assignedto, compensatoryLeave } = req.query
 
     const { formData, tableRows } = req.body
     const selectedObjectId = new mongoose.Types.ObjectId(selectedid)
@@ -684,6 +698,17 @@ export const OnsiteApply = async (req, res) => {
         onsitedata.onsiteData.push(tableRows)
       }
       const successonsite = await onsitedata.save()
+
+      if (compensatoryLeave) {
+        const year = new Date(onsiteDate).getFullYear()
+
+        const compensatoryleaveapply = new CompensatoryLeave({
+          year,
+          userId: selectedid,
+          compensatoryLeave
+        })
+        await compensatoryleaveapply.save()
+      }
       if (successonsite) {
         return res.status(200).json({ message: "onsite  applied success" })
       }
@@ -1244,7 +1269,11 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             attendances.some(
               (o) => o.attendanceDate.toISOString().split("T")[0] === onsiteDate
             )
-          if (Array.isArray(onsite.onsiteData)) {
+          if (
+            Array.isArray(onsite.onsiteData) &&
+            (onsite.adminverified === true ||
+              onsite.departmentverified === true)
+          ) {
             onsite.onsiteData.flat().forEach((item) => {
               stats.attendancedates[onsiteDate].onsite.push({
                 place: item?.place,
@@ -1259,7 +1288,11 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             })
           }
 
-          if (!isAttendance) {
+          if (
+            !isAttendance &&
+            (onsite.adminverified === true ||
+              onsite.departmentverified === true)
+          ) {
             if (onsite.onsiteType === "Full Day") {
               stats.attendancedates[onsiteDate].present = 1
               stats.attendancedates[onsiteDate].notMarked = ""
@@ -1539,6 +1572,18 @@ export const GetAllAttendance = async (req, res) => {
 
     // Send the leave records as a JSON response
     res.status(200).json({ message: "attendance found", data: attendance })
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const Getallcompensatoryleave = async (req, res) => {
+  try {
+    const { userid } = req.query
+    const compensatoryleave = await CompensatoryLeave.find({ userId: userid })
+    return res
+      .status(200)
+      .json({ message: "compensatoryleaves found", data: compensatoryleave })
   } catch (error) {
     console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })
@@ -1992,8 +2037,6 @@ export const ApproveLeave = async (req, res) => {
       name,
       isPending
     } = req.query
-    console.log("pending", isPending)
-    console.log("hh", isPending === "false")
 
     // Validate common parameters
     if (!role || !startDate || !endDate || !onsite) {
@@ -2114,7 +2157,6 @@ export const ApproveLeave = async (req, res) => {
 
     // Check if any document was updated
     if (result && result.modifiedCount > 0) {
-      console.log("query",)
       // Fetch updated leave requests for display
       const updatedLeaveList = await LeaveRequest.find(baseQuery).populate({
         path: "userId",
@@ -2144,13 +2186,10 @@ export const ApproveLeave = async (req, res) => {
           data: filteredPendingLeave
         })
       } else if (isPending === "false") {
-        console.log("entrerer")
-        console.log("updated", updatedLeaveList)
         const filteredApprovedLeave = updatedLeaveList.filter(
           (item) =>
             item.departmentverified === true || item.adminverified === true
         )
-        console.log("list", filteredApprovedLeave)
         return res.status(200).json({
           message: `Leave Approved successfully for ${name}`,
           data: filteredApprovedLeave
@@ -2644,86 +2683,6 @@ export const GetStaffCallList = async (req, res) => {
       })
       .flat() // Flatten nested arrays into a single array
 
-    // const userCallsCount = customerCalls.map((item) => {
-    //   return item.callregistration
-    //     .filter((calls) =>
-    //       calls.formdata.attendedBy.some((call) => {
-    //         const callDate = new Date(call.calldate) // Assuming `calldate` is a parsable date format
-    //         const filterDate = new Date("2024-12-10")
-    //         return callDate > filterDate // Only include calls after 10-12-2024
-    //       })
-    //     )
-    //     .map((calls) => {
-    //       return calls.formdata.attendedBy.map((call) => {
-    //         // Check if callerId matches any staff _id and add staff name to callerDetails
-    //         const matchedStaff = staff.find(
-    //           (staffMember) =>
-    //             staffMember._id.toString() === call?.callerId.toString()
-    //         )
-
-    //         const isColleagueSolved =
-    //           calls.formdata.status === "solved" &&
-    //           calls.formdata.attendedBy.findIndex(
-    //             (attendee) =>
-    //               attendee?.callerId.toString() ===
-    //               calls?.formdata?.completedBy[0]
-    //           ) ===
-    //             calls.formdata.attendedBy.lastIndexOf((attendee) =>
-    //               attendee?.callerId.toString()
-    //             )
-
-    //         return {
-    //           callDate: call.calldate, // Ensure `calldate` exists
-    //           callerId: call.callerId?._id, // Access the populated `_id` of `callerId`
-    //           callerName: matchedStaff
-    //             ? matchedStaff.name // Set the staff name if matched
-    //             : call.callerId, // Default to original callerDetails if no match
-    //           callStatus: calls.formdata.status,
-    //           colleagueSolved: isColleagueSolved ? 0 : 1
-    //         }
-    //       })
-    //     })
-    // }).flat()
-
-    // const userCallsCount = customerCalls
-    //   .map((item) => {
-    //     return item.callregistration
-    //       .filter((calls) =>
-    //         calls.formdata.attendedBy.some((call) => {
-    //           const callDate = new Date(call.calldate) // Assuming `calldate` is a parsable date format
-    //           const filterDate = new Date("2024-12-10")
-    //           return callDate > filterDate // Only include calls after 10-12-2024
-    //         })
-    //       )
-    //       .map((calls) => {
-    //         return calls.formdata.attendedBy.map((call) => {
-    //           const isColleagueSolved =
-    //             calls.formdata.status === "solved" &&
-    //             calls.formdata.attendedBy.findIndex(
-    //               (attendee) =>
-    //                 attendee.callerId?._id?.toString() ===
-    //                 calls.formdata.completedBy
-    //             ) ===
-    //               calls.formdata.attendedBy.lastIndexOf((attendee) =>
-    //                 attendee.callerId?._id?.toString()
-    //               )
-
-    //           return {
-    //             callDate: call.calldate, // Ensure `calldate` exists
-    //             callerId: call.callerId?._id, // Access the populated `_id` of `callerId`
-    //             callerDetails: call.callerId, // Include full populated details of `callerId`
-    //             callStatus: calls.formdata.status,
-    //             colleagueSolved: isColleagueSolved ? 1 : 0
-    //           }
-    //         })
-    //       })
-    //   })
-    //   .flat() // Flatten nested arrays into a single array
-
-    // Debugging output
-    // console.log("counts", userCallsCount)
-
-    // Response to client
     if (staff) {
       return res.status(200).json({
         message: "Staff found",
@@ -3727,7 +3686,11 @@ export const GetsomeAllsummary = async (
             attendances.some(
               (o) => o.attendanceDate.toISOString().split("T")[0] === onsiteDate
             )
-          if (Array.isArray(onsite.onsiteData)) {
+          if (
+            Array.isArray(onsite.onsiteData) &&
+            (onsite.adminverified === true ||
+              onsite.departmentverified === true)
+          ) {
             onsite.onsiteData.flat().forEach((item) => {
               stats.attendancedates[onsiteDate].onsite.push({
                 place: item?.place,
@@ -3740,7 +3703,11 @@ export const GetsomeAllsummary = async (
               })
             })
           }
-          if (!isAttendance) {
+          if (
+            !isAttendance &&
+            (onsite.adminverified === true ||
+              onsite.departmentverified === true)
+          ) {
             if (onsite.onsiteType === "Full Day") {
               stats.attendancedates[onsiteDate].present = 1
               stats.attendancedates[onsiteDate].notMarked = ""

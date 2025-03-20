@@ -25,6 +25,7 @@ import UserPermissions from "../../../pages/primaryUser/List/UserPermissions"
 import ComingSoon from "../../../pages/common/ComingSoon"
 import { CallNoteRegistration } from "../../../pages/primaryUser/register/CallNoteRegistration"
 import LeaveMaster from "../../../pages/primaryUser/register/LeaveMaster"
+import LeadRegister from "../../../pages/primaryUser/register/LeadRegister"
 
 const mastersRoutes = [
   {
@@ -105,6 +106,7 @@ const mastersRoutes = [
 
   { path: "/admin/masters/vouchermaster", component: ComingSoon },
   { path: "/admin/masters/target", component: ComingSoon },
+  
 
   { path: "/admin/masters/partners", component: PartnerRegistration },
   { path: "/admin/masters/department", component: DepartmentRegistration }

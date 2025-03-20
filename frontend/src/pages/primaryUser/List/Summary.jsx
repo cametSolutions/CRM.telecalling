@@ -9,8 +9,9 @@ const Summary = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null)
 
   const [selectedUser, setSelectedUser] = useState(null)
-
+  const [cachedsummary, setCachedsummary] = useState([])
   const [Calls, setCalls] = useState([])
+  const [searchTerm, setSearchTerm] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [customerSummary, setCustomerSummary] = useState([])
   const [customerCalls, setCustomerCalls] = useState([])
@@ -208,14 +209,33 @@ const Summary = () => {
             })
           if (customerSummaries) {
             setCustomerSummary(customerSummaries)
+            setCachedsummary(customerSummaries)
             // setLoading(false)
           }
         } else {
           setCustomerSummary([])
+          setCachedsummary([])
         }
       }
     }
   }, [callList, selectedBranch, isToggled, dates])
+  useEffect(() => {
+    if (customerSummary && customerSummary.length > 0) {
+      if (searchTerm === null) {
+        return
+      } else if (searchTerm === "") {
+        console.log(searchTerm)
+        console.log(cachedsummary)
+        setCustomerSummary(cachedsummary)
+      } else if (searchTerm) {
+        console.log(searchTerm)
+        const filteredCalls = customerSummary.filter((call) =>
+          call.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        setCustomerSummary(filteredCalls)
+      }
+    }
+  }, [searchTerm])
 
   useEffect(() => {
     if (isModalOpen && selectedCustomer) {
@@ -500,7 +520,7 @@ const Summary = () => {
       setSelectedBranch(branchDetails ? branchDetails.branchName : "All")
     }
   }
-
+  console.log(customerSummary)
   const toggle = () => setIsToggled(!isToggled)
 
   const openModal = (id) => {
@@ -519,13 +539,11 @@ const Summary = () => {
     setSelectedUser(null)
   }
 
-
   return (
     <div className="antialiased font-sans container mx-auto px-4 sm:px-8">
       <div className="py-2">
         <div className="flex justify-center text-2xl font-semibold ">
           <h1 className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-red-500 to-pink-600">
-          
             {isToggled ? "User Summary" : "Customer Summary"}
           </h1>
         </div>
@@ -538,7 +556,7 @@ const Summary = () => {
                 <div className="relative">
                   <select
                     onChange={handleChange}
-                    className="h-full rounded-r border-t sm:rounded-r-none sm:border-r-0 border-r border-b block appearance-none w-full bg-white border-gray-400 text-gray-700 py-2 px-4 pr-8 leading-tight focus:outline-none focus:border-l focus:border-r focus:bg-white focus:border-gray-500"
+                    className=" rounded-r border-t sm:rounded-r-none sm:border-r-0 border-r border-b block appearance-none w-full bg-white border-gray-400 text-gray-700 py-2 px-4 pr-8 leading-tight focus:outline-none focus:border-l focus:border-r focus:bg-white focus:border-gray-500"
                   >
                     <option value="All">All</option>
                     {branches?.map((branch) => (
@@ -560,6 +578,8 @@ const Summary = () => {
               </div>
               <div className="block relative">
                 <input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search"
                   className="appearance-none rounded-r rounded-l sm:rounded-l-none border border-gray-400 border-b block pl-8 pr-6 py-2 w-full bg-white text-sm placeholder-gray-400 text-gray-700 focus:bg-white focus:placeholder-gray-600 focus:text-gray-700 focus:outline-none"
                 />
@@ -569,16 +589,25 @@ const Summary = () => {
                 {dates.startDate && (
                   <MyDatePicker handleSelect={handleDate} dates={dates} />
                 )}
-                
               </div>
             </div>
           </div>
         )}
         {users?.role !== "Admin" && (
-          <div className="flex justify-end flex-grow gap-4 ">
-            {dates.startDate && (
-              <MyDatePicker handleSelect={handleDate} dates={dates} />
-            )}
+          <div className="flex">
+            <div className="">
+              <input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search"
+                className="appearance-none rounded-r rounded-l sm:rounded-l-none border border-gray-400 border-b block pl-8 pr-6 py-2 w-full bg-white text-sm placeholder-gray-400 text-gray-700 focus:bg-white focus:placeholder-gray-600 focus:text-gray-700 focus:outline-none"
+              />
+            </div>
+            <div className="flex justify-end flex-grow gap-4 ">
+              {dates.startDate && (
+                <MyDatePicker handleSelect={handleDate} dates={dates} />
+              )}
+            </div>
           </div>
         )}
 
@@ -592,8 +621,8 @@ const Summary = () => {
           <div></div>
         </div>
 
-        <div className="w-full mx-auto shadow-lg mt-6">
-          <div className="inline-block w-full mx-auto shadow rounded-lg overflow-x-auto lg:max-h-[440px] overflow-y-auto md:max-h-[390px]">
+        <div className="w-full mx-auto shadow-lg mt-6 ">
+          <div className="inline-block w-full mx-auto shadow rounded-lg  overflow-x-auto lg:max-h-[440px] overflow-y-auto md:max-h-[390px]">
             <table className="min-w-full leading-normal text-left max-w-7xl mx-auto">
               <thead className="sticky top-0 z-30 bg-purple-300">
                 <tr>
