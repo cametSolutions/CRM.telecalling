@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser"
 import departmentRoutes from "./routes/primaryUserRoutes/masterRoutes/departmentRoutes.js"
 import companyRoutes from "./routes/primaryUserRoutes/companyRoutes.js"
 import branchRoutes from "./routes/primaryUserRoutes/branchRoutes.js"
+import leadRoutes from "./routes/primaryUserRoutes/leadRoutes.js"
 import inventoryRoutes from "./routes/primaryUserRoutes/inventoryRoutes.js"
 import authRoutes from "./routes/authRoutes.js"
 import excelRoutes from "./routes/primaryUserRoutes/excelRoutes.js"
@@ -56,55 +57,6 @@ io.on("connection", (socket) => {
         new Date().toISOString().split("T")[0] + "T00:00:00.000Z"
       const todayEnd = new Date().toISOString().split("T")[0] + "T23:59:59.999Z"
 
-      // const calls = await CallRegistration.aggregate([
-      //   {
-      //     $match: {
-      //       $or: [
-      //         { "callregistration.formdata.status": "pending" }, // Get pending calls (any date)
-      //         {
-      //           "callregistration.formdata.attendedBy": { $type: "array" }, // If attendedBy is an array
-      //           "callregistration.formdata.attendedBy.calldate": {
-      //             $exists: true,
-      //             $gte: todayStart,
-      //             $lt: todayEnd
-      //           }
-      //         }
-
-      //       ],
-
-      //     }
-      //   }
-      // ])
-      // const calls = await CallRegistration.aggregate([
-      //   {
-      //     $match: {
-      //       $or: [
-      //         { "callregistration.formdata.status": "pending" }, // Get all pending calls (any date)
-      //         {
-      //           "callregistration.formdata.attendedBy": {
-      //             $elemMatch: {
-      //               calldate: { $gte: todayStart, $lt: todayEnd }
-      //             }
-      //           } // Efficient filtering inside the attendedBy array
-      //         }
-      //       ]
-      //     }
-      //   }
-      // ])
-
-      // const pendingcalls = await CallRegistration.aggregate([
-      //   {
-      //     $match: { "callregistration.formdata.status": "pending" }
-      //   },
-      //   {
-      //     $lookup: {
-      //       from: "products", // Replace with your actual product collection name
-      //       localField: "callregistration.product", // The field in CallRegistration that references products
-      //       foreignField: "_id", // The field in the Product collection that matches the reference
-      //       as: "productDetails"
-      //     }
-      //   }
-      // ])
       const pendingcalls = await CallRegistration.aggregate([
         {
           $set: {
@@ -364,6 +316,7 @@ app.use(cookieParser())
 app.use("/api/auth", authRoutes)
 app.use("/api/excel", excelRoutes)
 app.use("/api/company", companyRoutes)
+app.use("/api/lead", leadRoutes)
 app.use("/api/branch", branchRoutes)
 app.use("/api/inventory", inventoryRoutes)
 app.use("/api/product", productRoutes)

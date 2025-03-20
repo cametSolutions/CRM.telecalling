@@ -5,8 +5,9 @@ import { toast } from "react-toastify"
 import { useNavigate } from "react-router-dom"
 function UserRegistration() {
   const navigate = useNavigate()
+  const userData = localStorage.getItem("user")
+  const user = JSON.parse(userData)
   const handleSubmit = async (userData, image, tabledata) => {
-  
     try {
       const response = await api.post(
         "/auth/userRegistration",
@@ -17,7 +18,11 @@ function UserRegistration() {
       )
       if (response.status === 200) {
         toast.success(response?.data?.message)
-        navigate("/admin/masters/users-&-passwords")
+        if (user.role === "Staff") {
+          navigate("/staff/masters/users-&-passwords")
+        } else if (user.role === "Admin") {
+          navigate("/admin/masters/users-&-passwords")
+        }
       } else {
         toast.error(response?.data?.message)
       }

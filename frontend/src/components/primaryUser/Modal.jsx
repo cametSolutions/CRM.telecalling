@@ -68,7 +68,26 @@ const Modal = ({
   const { data: leavemasterleavecount } = UseFetch(
     "/auth/getleavemasterleavecount"
   )
-
+  const { data: compensatoryleaves, refreshHook: refreshHookCompensatory } =
+    UseFetch(staffId && `/auth/getallcompensatoryleave?userid=${staffId}`)
+  useEffect(() => {
+    if (compensatoryleaves && compensatoryleaves.length > 0) {
+      const leaveDate = new Date(formData?.leaveDate)
+      const leaveYear = leaveDate.getFullYear()
+      const compensatoryleavescount = compensatoryleaves.filter((item) => {
+        return (
+          item.year === leaveYear &&
+          item.compensatoryLeave === true &&
+          item.compensatoryLeaveUsed === false
+        )
+      })
+      setBalancecompensatoryLeaveCount(compensatoryleavescount.length)
+      setLeaveBalance((prev) => ({
+        ...prev,
+        compensatory: compensatoryleavescount.length
+      }))
+    }
+  }, [compensatoryleaves])
   useEffect(() => {
     if (leaves && leaves.length > 0) {
       setallLeaves(leaves)
@@ -196,8 +215,7 @@ const Modal = ({
       setLeaveBalance({
         casual: Math.max(balancecasualcount, 0),
         privilege: Math.max(balanceprivilege, 0),
-        sick: BalancesickleaveCount,
-        compensatory: BalancecompensatoryleaveCount
+        sick: BalancesickleaveCount
       })
     } else if (
       (!allleaves && leavemasterleavecount) ||
@@ -258,8 +276,7 @@ const Modal = ({
       setLeaveBalance({
         casual: ownedcasualCount,
         privilege: ownedprivilegeCount,
-        sick: BalancesickleaveCount,
-        compensatory: BalancecompensatoryleaveCount
+        sick: BalancesickleaveCount
       })
     }
   }, [currentMonth, allleaves, leavemasterleavecount, formData])
@@ -487,20 +504,6 @@ const Modal = ({
                       Sick Leave
                     </option>
 
-                    {/* {BalancedcasualleaveCount > 0 && (
-                      <option value="casual Leave">Casual Leave</option>
-                    )}
-                    {BalanceprivilegeleaveCount > 0 && (
-                      <option value="privileage Leave">Privilege Leave</option>
-                    )}
-                    {BalancecompensatoryleaveCount > 0 && (
-                      <option value="compensatory Leave">
-                        Compensatory Leave
-                      </option>
-                    )}
-                    {BalancesickleaveCount > 0 && (
-                      <option value="sick Leave">Sick Leave</option>
-                    )} */}
                     <option value="other Leave">Other Leave</option>
                   </select>
                 </div>
@@ -550,7 +553,9 @@ const Modal = ({
                     Leave Balance
                   </h2>
                   <p className="text-xl font-bold text-gray-800">
-                    {BalanceprivilegeleaveCount + BalancedcasualleaveCount}
+                    {BalanceprivilegeleaveCount +
+                      BalancedcasualleaveCount +
+                      BalancecompensatoryleaveCount}
                     leaves
                   </p>
                   <div className="grid grid-cols-[3fr_1fr] gap-1 border border-gray-300 rounded-lg p-2 bg-gray-50">

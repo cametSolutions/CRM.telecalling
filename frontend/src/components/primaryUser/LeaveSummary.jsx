@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import * as XLSX from "xlsx"
 import FileSaver from "file-saver"
 import BarLoader from "react-spinners/BarLoader"
@@ -8,6 +8,7 @@ import api from "../../api/api"
 import UseFetch from "../../hooks/useFetch"
 import { toast } from "react-toastify"
 const leaveSummary = () => {
+  const [searchTerm, setSearchTerm] = useState(null)
   const [selectedIndex, setSelectedIndex] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const currentYear = new Date().getFullYear()
@@ -24,6 +25,7 @@ const leaveSummary = () => {
   const [holiday, setHoly] = useState(null)
 
   const [leavesummaryList, setleaveSummary] = useState([])
+  const listRef = useRef(null)
   const userData = localStorage.getItem("user")
   const user = JSON.parse(userData)
   // API URL with selected year and month
@@ -35,6 +37,8 @@ const leaveSummary = () => {
     loading,
     refreshHook
   } = UseFetch(apiUrl)
+  const a = newattende?.filter((item) => item.name === "MOHAMMED ASHARAF S. K")
+  console.log(a)
   useEffect(() => {
     if (newattende && newattende.length) {
       if (user?.role === "Admin") {
@@ -49,7 +53,47 @@ const leaveSummary = () => {
       }
     }
   }, [newattende])
+  console.log(selectedStaff)
+  useEffect(() => {
+    console.log("h")
+    if (newattende && newattende.length > 0 && searchTerm) {
+      console.log(searchTerm)
+      const filteredStaff = newattende.filter((staff) =>
+        staff.name.toLowerCase().startsWith(searchTerm.toLowerCase())
+      )
+      console.log(filteredStaff.length)
+      setleaveSummary(filteredStaff)
+    } else if (
+      leavesummaryList &&
+      leavesummaryList.length > 0 &&
+      searchTerm === ""
+    ) {
+      if (user?.role === "Admin") {
+        setleaveSummary(newattende)
+      } else if (user?.role === "Staff") {
+        const filteredUser = newattende.filter(
+          (item) => item.userId === user._id || item.assignedto === user._id
+        )
+        setleaveSummary(filteredUser)
+      }
+    }
+  }, [searchTerm])
+  // Restore scroll position after render
+  useEffect(() => {
+    const storedScrollPosition = sessionStorage.getItem("scrollPosition")
+    if (storedScrollPosition && listRef.current) {
+      listRef.current.scrollTop = parseInt(storedScrollPosition, 10)
+      // sessionStorage.removeItem("scrollPosition") // Optional: Clear after restoring
+    }
+  }, [selectedIndex]) // Restore when selectedIndex changes
 
+  useEffect(() => {
+    const storedScrollPosition = sessionStorage.getItem("scrollPosition")
+    console.log(storedScrollPosition)
+    if (storedScrollPosition && listRef.current) {
+      listRef.current.scrollTop = parseInt(storedScrollPosition, 10)
+    }
+  }, [selectedIndex])
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i)
   const months = [
     { name: "January", value: 1 },
@@ -89,6 +133,18 @@ const leaveSummary = () => {
         outTime
       })
     }
+  }
+  const handleSelectAttendee = (index, attendee) => {
+    if (listRef.current) {
+      sessionStorage.setItem("scrollPosition", listRef.current.scrollTop)
+    }
+
+    setSelectedIndex(selectedIndex === index ? null : index)
+    selectedUser(attendee.userId)
+    setEditIndex(null)
+    setFormData(
+      Object.fromEntries(Object.keys(formData).map((key) => [key, ""]))
+    )
   }
   const handleOnsite = (date, type, onsiteType, halfDayperiod, description) => {
     setModalOpen(true)
@@ -386,14 +442,14 @@ const leaveSummary = () => {
       FileSaver.saveAs(fileData, "Attendance_Report.xlsx")
     }
   }
-
+  console.log(selectedStaff)
+  console.log(leavesummaryList)
   return (
     <div className="w-full">
       {loading && (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
           color="#4A90E2" // Change color as needed
-          // loader={true}
         />
       )}
       {/* Header Section */}
@@ -402,7 +458,18 @@ const leaveSummary = () => {
         <h1 className=" sm:text-md md:text-2xl font-bold mb-1">
           User Leave Summary
         </h1>
+
         <div className="flex justify-center md:justify-end md:gap-4 gap-2  mb-3 md:mr-8">
+          <div>
+            <input
+              value={
+                selectedStaff !== null ? selectedStaff[0].name : searchTerm
+              }
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search..."
+              className="appearance-none rounded-r rounded-l sm:rounded-lg-none border border-gray-400 border-b block pl-8 pr-6 py-2 w-auto bg-white text-sm placeholder-gray-400 text-gray-700 focus:bg-white focus:placeholder-gray-600 focus:text-gray-700 focus:outline-none"
+            />
+          </div>
           <button
             className="bg-blue-600 rounded px-1 py-0.5  text-white text-sm md:text-md"
             onClick={() => handleDownload(newattende)}
@@ -447,6 +514,7 @@ const leaveSummary = () => {
                   {selectedIndex === null || selectedIndex === index ? (
                     <>
                       <div
+                        ref={listRef}
                         className={`${
                           selectedIndex === index && !modalOpen
                             ? "sticky top-0 z-20 bg-white"
@@ -461,18 +529,7 @@ const leaveSummary = () => {
                           ? "bg-gray-200"
                           : "bg-gray-200 mb-2"
                       }`}
-                          onClick={() => {
-                            setSelectedIndex(
-                              selectedIndex === index ? null : index
-                            )
-                            selectedUser(attendee.userId)
-                            setEditIndex(null)
-                            setFormData(
-                              Object.fromEntries(
-                                Object.keys(formData).map((key) => [key, ""])
-                              )
-                            )
-                          }}
+                          onClick={() => handleSelectAttendee(index, attendee)}
                         >
                           <div className="md:flex w-full">
                             <div className=" text-sm md:text-md font-semibold text-gray-800 w-full  md:w-[225px] p-2">
@@ -518,45 +575,6 @@ const leaveSummary = () => {
                                 </tbody>
                               </table>
                             </div>
-
-                            {/* <table className="w-full ">
-                              <thead className="bg-gray-100">
-                                <tr className="bg-gray-100">
-                                  {[
-                                    "Present",
-                                    "Leave",
-                                    "Late Cutting",
-                                    "Not Marked",
-                                    "Onsite"
-                                  ].map((label, idx) => (
-                                    <th
-                                      key={idx}
-                                      className=" px-4 py-2 text-gray-700 text-sm font-medium text-center"
-                                    >
-                                      {label}
-                                    </th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <tr>
-                                  {[
-                                    attendee.present,
-                                    attendee.absent,
-                                    attendee.latecutting,
-                                    attendee.notMarked,
-                                    attendee.onsite
-                                  ].map((value, idx) => (
-                                    <td
-                                      key={idx}
-                                      className=" px-4 py-2 text-lg font-semibold text-center"
-                                    >
-                                      {value}
-                                    </td>
-                                  ))}
-                                </tr>
-                              </tbody>
-                            </table> */}
                           </div>
                         </div>
                         {selectedIndex === index && (

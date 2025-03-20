@@ -21,7 +21,9 @@ import {
   DeletePartner,
   LeavemasterRegister,
   GetallHoly,
-  Getleavemaster
+  Getleavemaster,
+  GetAllCustomer,
+  GetallcurrentMonthHoly
 } from "../../controller/secondaryUserController/customerController.js"
 
 const router = express.Router()
@@ -34,6 +36,7 @@ router.put("/callnotesEdit", authMiddleware, UpdateCallnotes)
 router.post("/customerEdit", authMiddleware, CustomerEdit)
 router.get("/getLicensenumber", authMiddleware, GetLicense)
 router.get("/getCustomer", authMiddleware, GetCustomer)
+router.get("/getallCustomer", authMiddleware, GetAllCustomer)
 router.post("/callRegistration", customerCallRegistration)
 router.get("/getcallregister/:callId", GetCallRegister)
 router.get("/getcallregister/", GetCallRegister)
@@ -45,6 +48,7 @@ router.put("/partnerEdit", authMiddleware, UpdatePartners)
 router.delete("/partnerDelete", authMiddleware, DeletePartner)
 router.post("/leavemasterRegistration", authMiddleware, LeavemasterRegister)
 router.get("/getallholy", authMiddleware, GetallHoly)
+router.get("/getallCurrentmonthHoly", authMiddleware, GetallcurrentMonthHoly)
 router.get("/getleavemaster", authMiddleware, Getleavemaster)
 router.get(
   "/getallExpiryregisterCustomer",

@@ -342,17 +342,10 @@ export default function AdminHeader() {
                           : link.label === "Task"
                           ? tasks
                           : null
-                        ) // Add a default case if none match
-
-                          // (link.label === "Transactions"
-                          //     ? transactions
-                          //     : "Reports"
-                          //     ? reports
-                          //     : "Task"
-                          //     ?tasks
-                          //   )
+                        )
                           .filter(
                             (master) =>
+                              master.label === "Lead" ||
                               master.label === "Leave Application" ||
                               master.label === "Leave Summary" ||
                               master.label === "Leave Approval Pending"
