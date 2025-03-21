@@ -34,7 +34,6 @@ const CallregistrationList = () => {
 
     setUser(users)
   }, [])
-  console.log(filteredCalls)
   const filterCallData = useCallback(
     (calls) => {
       const allCallRegistrations = calls.flatMap(
@@ -62,15 +61,13 @@ const CallregistrationList = () => {
       const today = new Date().toISOString().split("T")[0]
       setToday(today)
       const stats = getCallStats(callList, users.name)
-      console.log(stats)
-      console.log(formatDuration(stats.totalDuration))
+    
       setUserCallstatus(stats)
       setFilteredCalls(callList)
       filterCallData(callList)
       setLoading(false)
     }
   }, [callList])
-  console.log(userCallStatus)
   useEffect(() => {
     if (users) {
       const userId = users._id
@@ -191,12 +188,10 @@ const CallregistrationList = () => {
       call.callregistration.forEach((registration) => {
         const { formdata, timedata } = registration
         const callDate = timedata.startTime.split("T")[0]
-        console.log(formdata, timedata)
         if (callDate === today) {
           const lastAttended = formdata.attendedBy.length
             ? formdata.attendedBy[formdata.attendedBy.length - 1]
             : null
-          console.log(lastAttended)
           if (lastAttended.callerId.name === userName) {
             totalCalls++
             // Count all calls for today
@@ -225,15 +220,8 @@ const CallregistrationList = () => {
                 lastAttended.callerId.name !==
                   formdata.completedBy[formdata.completedBy.length - 1].name
               ) {
-                console.log(lastAttended.callerId.name)
-                console.log(
-                  formdata.completedBy[formdata.completedBy.length - 1]
-                )
-                console.log(
-                  lastAttended.callerId.name !==
-                    formdata.completedBy[formdata.completedBy.length - 1].name
-                )
-                console.log("h")
+               
+                
                 collegeSolvedCalls++ // College solved call count
               }
             }
@@ -247,10 +235,7 @@ const CallregistrationList = () => {
             }
           }
         }
-        // Get last attendedBy entry
-
-        // console.log(lastAttended, formdata.timedata.token)
-        // Check if call is from today
+      
       })
     })
 
@@ -264,7 +249,6 @@ const CallregistrationList = () => {
   }
 
   const getTodaysCalls = (calls) => {
-    console.log(calls)
     const today = new Date().toISOString().split("T")[0] // Get today's date in 'YYYY-MM-DD' format
 
     let todaysCallsCount = 0
@@ -274,11 +258,9 @@ const CallregistrationList = () => {
         const callDate = call.timedata.startTime.split("T")[0] // Get the call date in 'YYYY-MM-DD' format
         if (callDate === today) {
           todaysCallsCount++
-          console.log(users)
         }
       })
     })
-    console.log
     return todaysCallsCount
   }
 

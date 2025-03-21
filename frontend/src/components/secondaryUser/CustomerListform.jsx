@@ -1,5 +1,5 @@
-// export default CustomerListform
 import React, { useState, useEffect, useRef } from "react"
+import { BarLoader } from "react-spinners"
 import { CiEdit } from "react-icons/ci"
 import { useNavigate } from "react-router-dom"
 import UseFetch from "../../hooks/useFetch"
@@ -104,6 +104,12 @@ const CustomerListform = () => {
 
   return (
     <div className=" mx-auto  overflow-y-hidden  ">
+      {searchAfterData.length==0 && (
+        <BarLoader
+          cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
+          color="#4A90E2" // Change color as needed
+        />
+      )}
       <div className="w-auto shadow-lg rounded p-8 ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-4">
           <h3 className="text-2xl text-black font-bold">Customer List</h3>

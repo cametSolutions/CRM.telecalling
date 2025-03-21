@@ -17,7 +17,7 @@ import staffreportsRoutes from "./staffRoutes/staffreportRoutes.js"
 import UsersLeaveApplicationSummary from "../components/primaryUser/UsersLeaveApplicationSummary.jsx"
 
 const Mainrouter = ({ headerHeight }) => {
-  console.log(headerHeight)
+  
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
   useEffect(() => {

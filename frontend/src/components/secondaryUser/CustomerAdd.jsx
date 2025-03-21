@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react"
 import Select, { components } from "react-select"
+
 import { useForm, Controller } from "react-hook-form"
 import UseFetch from "../../hooks/useFetch"
 import useDebounce from "../../hooks/useDebounce"
@@ -278,7 +279,7 @@ const CustomerAdd = ({
           if (!item || item.licensenumber === undefined) {
             return false // Skips this and moves to the next item
           }
-           return item?.licensenumber.toString() === debouncedLicenseNo
+          return item?.licensenumber.toString() === debouncedLicenseNo
         })
 
         if (checkLicense) {
@@ -552,6 +553,7 @@ const CustomerAdd = ({
 
   return (
     <div className="container justify-center items-center min-h-screen p-8 bg-gray-100">
+     
       <div className="w-auto bg-white shadow-lg rounded p-8 mx-auto">
         <h2 className="text-2xl font-semibold mb-6">Customer Master</h2>
         <form onSubmit={handleSubmit(onSubmit)}>
