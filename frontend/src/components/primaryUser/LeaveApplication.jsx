@@ -535,7 +535,7 @@ function LeaveApplication() {
     const dayOfWeek = new Date(clickedDate).getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
     const isSunday = dayOfWeek === 0
 
-    const isHoliday = monthlyHoly.some((holiday) => {
+    const isHoliday = monthlyHoly?.some((holiday) => {
       const formattedHolyDate = holiday.holyDate.split("T")[0] // Extract YYYY-MM-DD
       return formattedHolyDate === date
     })
