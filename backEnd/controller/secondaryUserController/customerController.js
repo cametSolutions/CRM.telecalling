@@ -585,7 +585,6 @@ export const GetAllCustomer = async (req, res) => {
         }
       }
     ])
-    
 
     if (!userbranch) {
       return res
@@ -1694,6 +1693,7 @@ export const GetCallRegister = async (req, res) => {
     const { callId } = req.params
 
     if (customerid !== "null" && customerid) {
+      console.log("hh")
       const customerId = new mongoose.Types.ObjectId(customerid)
       const registeredCall = await CallRegistration.findOne({
         customerid: customerId
@@ -1852,6 +1852,7 @@ export const GetCallRegister = async (req, res) => {
         return res.status(404).json({ message: "No registered Calls" })
       }
     } else if (callId) {
+      console.log("iddd")
       const callDetails = await CallRegistration.findById(callId)
         .populate("customerid")
         .populate({
@@ -2428,9 +2429,8 @@ export const GetallcurrentMonthHoly = async (req, res) => {
         $lt: new Date(year, month, 1) // Start of next month (excludes next month)
       }
     })
-  
-      return res.status(200).json({ message: "holyfound", data: holidays })
-    
+
+    return res.status(200).json({ message: "holyfound", data: holidays })
   } catch (error) {
     console.log("error:", error.message)
   }

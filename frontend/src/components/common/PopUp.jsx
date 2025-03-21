@@ -9,10 +9,10 @@ const PopUp = ({ isOpen, onClose, message, handleWhatsapp, report }) => {
         <h2 className="text-lg font-semibold">Warning</h2>
         <p className="text-gray-600">{message}</p>
         <button
-          onClick={() => {
+          onClick={() => 
             onClose()
-            handleWhatsapp(report)
-          }}
+            // handleWhatsapp(report)
+          }
           className="mt-4 px-4 py-2 bg-red-500 text-white rounded-md"
         >
           OK
