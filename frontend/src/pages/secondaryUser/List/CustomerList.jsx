@@ -3,14 +3,13 @@ import CustomerListform from "../../../components/secondaryUser/CustomerListform
 import UseFetch from "../../../hooks/useFetch"
 import { toast } from "react-toastify"
 function CustomerList() {
+  console.log("hh")
   const [customers, setCustomer] = useState([])
   const {
     data: customerData,
     loading,
     error
   } = UseFetch("/customer/getCustomer")
-
-  
 
   return (
     <div>
