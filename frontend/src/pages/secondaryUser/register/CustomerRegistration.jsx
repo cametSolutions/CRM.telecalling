@@ -5,6 +5,8 @@ import { toast } from "react-toastify"
 import { useNavigate } from "react-router-dom"
 function CustomerRegistration() {
   const navigate = useNavigate()
+  const userData = localStorage.getItem("user")
+  const user = JSON.parse(userData)
   const handleSubmit = async (customerData, tabledata) => {
     try {
       const response = await api.post(
@@ -17,7 +19,11 @@ function CustomerRegistration() {
       if (response.status === 200 || response.status === 201) {
         // Display success toast and navigate
         toast.success(response.data.message)
-        navigate("/admin/masters/customer")
+        if (user.role === "Admin") {
+          navigate("/admin/masters/customer")
+        } else if (user.role === "Staff") {
+          navigate("/staff/masters/customer")
+        }
       } else {
         // Handle unexpected status codes (other than 200 or 201)
         toast.error("Unexpected response from the server")

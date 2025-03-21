@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react"
+
+import LoadingBar from "react-top-loading-bar"
 import Select from "react-select"
 import { useForm } from "react-hook-form"
 import UseFetch from "../../hooks/useFetch"
@@ -19,8 +21,9 @@ const LeadMaster = ({
     formState: { errors }
   } = useForm()
 
-  const [selectedCompany, setSelectedCompany] = useState([])
   const [filteredProduct, setFilteredProduct] = useState([])
+  const [progress, setProgress] = useState(0)
+  const [customerOptions, setCustomerOptions] = useState([])
   const [isOpen, setIsOpen] = useState(false)
   const [selected, setSelected] = useState("")
   const [branches, setBranches] = useState([])
@@ -34,7 +37,6 @@ const LeadMaster = ({
   })
   const [showTable, setShowTable] = useState(false)
   const [users, setUsers] = useState(null)
-  const [tableData, setTableData] = useState([])
   const [allStaffs, setallStaffs] = useState([])
   // State to toggle the table
   const [editState, seteditState] = useState(true)
@@ -52,33 +54,28 @@ const LeadMaster = ({
     hsnName: ""
   })
 
-  const { data: productData, error: productError } = UseFetch(
+  const { data: productData, loading: productLoading } = UseFetch(
     "/product/getallProducts"
   )
-  const { data } = UseFetch("/auth/getallUsers")
-  console.log(productData)
-  const { data: customerData } = UseFetch(
+  const { data, loading: usersLoading } = UseFetch("/auth/getallUsers")
+  const { data: customerData, loading: customerLoading } = UseFetch(
     users && users.role === "Admin"
       ? "customer/getallCustomer"
       : branches && branches.length > 0
       ? `/customer/getallCustomer?userbranch=${encodeURIComponent(branches)}`
       : null
   )
-  console.log(branches)
-  console.log(customerData)
+
   // const a = customerData?.filter((item)=>item.)
   const accuanetCustomers = customerData?.filter((customer) =>
     customer.selected.some((selection) => selection.branchName === "ACCUANET")
   )
-  console.log(accuanetCustomers)
   const cammetCustomers = customerData?.filter((customer) =>
     customer.selected.some((selection) => selection.branchName === "CAMET")
   )
-  console.log(cammetCustomers)
   const hasCammetBranch = customerData?.some((customer) =>
     customer.selected.some((selection) => selection.branchName === "CAMET")
   )
-  console.log(hasCammetBranch)
   useEffect(() => {
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
@@ -92,6 +89,17 @@ const LeadMaster = ({
     setUsers(user)
   }, [])
   useEffect(() => {
+    if (customerData) {
+      setCustomerOptions(
+        customerData.map((item) => ({
+          value: item?._id,
+          label: item?.customerName,
+          mobile: item?.mobile
+        }))
+      )
+    }
+  }, [customerData])
+  useEffect(() => {
     if (data) {
       const { allusers = [], allAdmins = [] } = data
 
@@ -102,7 +110,6 @@ const LeadMaster = ({
       setallStaffs(combinedUsers)
     }
   }, [data])
-  console.log(allStaffs)
   useEffect(() => {
     if (productData && productData.length > 0 && users) {
       if (users.role === "Staff") {
@@ -117,7 +124,13 @@ const LeadMaster = ({
       }
     }
   }, [productData, users])
-  console.log(branches)
+  useEffect(() => {
+    if (productLoading || usersLoading || customerLoading) {
+      setProgress(50) // Mid-way loading
+    } else {
+      setProgress(100) // Complete when all are loaded
+    }
+  }, [productLoading, usersLoading, customerLoading])
 
   const handleEdit = (id) => {
     seteditState(false)
@@ -136,7 +149,6 @@ const LeadMaster = ({
   }
   const handleBranchChange = (e) => {
     const branchId = e.target.value
-    console.log("fotbraa", filteredBranches)
     const selectedBranch = filteredBranches.find(
       (branch) => branch._id === branchId
     )
@@ -150,12 +162,11 @@ const LeadMaster = ({
     setSelectedBranch(true)
     setValue("branch", branchId) // Update the value in react-hook-form
   }
-
-  const customerOptions = customerData?.map((item) => ({
-    value: item?._id,
-    label: item?.customerName,
-    mobile: item?.mobile
-  }))
+  // const customerOptions = customerData?.map((item) => ({
+  //   value: item?._id,
+  //   label: item?.customerName,
+  //   mobile: item?.mobile
+  // }))
   function generateUniqueNumericToken(length = 5) {
     const timestamp = Math.floor(Date.now() / 1000) // Current time in seconds
     const randomPart = Math.floor(Math.random() * 10 ** (length - 6)) // Random number with remaining digits
@@ -165,7 +176,6 @@ const LeadMaster = ({
 
     return token
   }
-  console.log(generateUniqueNumericToken())
 
   const customFilter = (option, inputValue) => {
     if (!inputValue) return true
@@ -181,12 +191,10 @@ const LeadMaster = ({
   }
 
   const onSubmit = async (data, event) => {
-    console.log("daaaaaaaaa", data)
     event.preventDefault()
 
     try {
       if (process === "Registration") {
-        console.log("tabledata", tableData)
         await handleleadData(data)
       } else if (process === "edit") {
         await handleEditedData(data, tableObject)
@@ -200,7 +208,22 @@ const LeadMaster = ({
 
   return (
     <div className="container justify-center items-center  p-2 md:p-8">
-      <div className="w-auto bg-white shadow-lg rounded p-5 md:p-8 mx-auto">
+      {/* Top Loading Bar */}
+      <LoadingBar
+        color="#f11946"
+        progress={progress}
+        onLoaderFinished={() => setProgress(0)}
+      />
+
+      <div
+        className="w-auto bg-white shadow-lg rounded p-5 md:p-8 mx-auto"
+        style={{
+          opacity: productLoading || usersLoading || customerLoading ? 0.2 : 1,
+          pointerEvents:
+            productLoading || usersLoading || customerLoading ? "none" : "auto",
+          transition: "opacity 0.3s ease-in-out"
+        }}
+      >
         <h2 className="text-md md:text-2xl font-semibold mb-2 md:mb-6">
           Lead Master
         </h2>
@@ -258,7 +281,9 @@ const LeadMaster = ({
               </label>
               <Select
                 options={customerOptions}
-                getOptionLabel={(option) => option.label} // Show only customer name
+                getOptionLabel={(option) =>
+                  `${option.label}-(${option.mobile})`
+                } // Show only customer name
                 getOptionValue={(option) => option._id}
                 filterOption={customFilter} // Enable searching by name & mobile
                 onChange={(selectedOption) =>

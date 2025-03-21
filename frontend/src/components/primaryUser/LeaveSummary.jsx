@@ -37,8 +37,7 @@ const leaveSummary = () => {
     loading,
     refreshHook
   } = UseFetch(apiUrl)
-  const a = newattende?.filter((item) => item.name === "MOHAMMED ASHARAF S. K")
-  console.log(a)
+ 
   useEffect(() => {
     if (newattende && newattende.length) {
       if (user?.role === "Admin") {
@@ -53,15 +52,11 @@ const leaveSummary = () => {
       }
     }
   }, [newattende])
-  console.log(selectedStaff)
   useEffect(() => {
-    console.log("h")
     if (newattende && newattende.length > 0 && searchTerm) {
-      console.log(searchTerm)
       const filteredStaff = newattende.filter((staff) =>
         staff.name.toLowerCase().startsWith(searchTerm.toLowerCase())
       )
-      console.log(filteredStaff.length)
       setleaveSummary(filteredStaff)
     } else if (
       leavesummaryList &&
@@ -89,7 +84,6 @@ const leaveSummary = () => {
 
   useEffect(() => {
     const storedScrollPosition = sessionStorage.getItem("scrollPosition")
-    console.log(storedScrollPosition)
     if (storedScrollPosition && listRef.current) {
       listRef.current.scrollTop = parseInt(storedScrollPosition, 10)
     }
@@ -442,8 +436,7 @@ const leaveSummary = () => {
       FileSaver.saveAs(fileData, "Attendance_Report.xlsx")
     }
   }
-  console.log(selectedStaff)
-  console.log(leavesummaryList)
+
   return (
     <div className="w-full">
       {loading && (
