@@ -126,7 +126,7 @@ export default function CallRegistration() {
           setSelectedCustomer(callData?.callDetails?.customerid)
           setName(callData?.callDetails?.customerid?.customerName)
           setProductDetails(matchingProducts)
-
+          console.log("callnote", matchingRegistration?.formdata?.callnote)
           const editData = {
             incomingNumber: matchingRegistration?.formdata?.incomingNumber,
             token: matchingRegistration?.timedata?.token,
@@ -1022,7 +1022,8 @@ Problem:    \t${selectedText}
                         {callnote.map((callnotes) => (
                           <option
                             key={callnotes._id}
-                            value={`${callnotes._id}|${callnotes.callNotes}`}
+                            // value={`${callnotes._id}|${callnotes.callNotes}`}
+                            value={`${callnotes._id}`}
                           >
                             {callnotes.callNotes}
                           </option>
