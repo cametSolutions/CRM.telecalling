@@ -13,10 +13,12 @@ function CustomerEdit() {
   const navigate = useNavigate()
   const location = useLocation()
   const customer = location.state?.customer
+  console.log(customer)
   const selected = location.state?.selected
   const index = location.state?.index
 
   const customerId = customer._id
+  console.log("id", customerId)
 
   function formatDateString(dateString) {
     const dateObject = new Date(dateString)

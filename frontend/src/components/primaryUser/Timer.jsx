@@ -7,10 +7,8 @@ import { formatTime } from "../../utils/timeUtils"
 const Timer = ({ isRunning, startTime, onStop }) => {
   const [time, setTime] = useState(0)
   const wasRunning = useRef(isRunning)
-  console.log(startTime)
   useEffect(() => {
-    console.log("isrunnning", isRunning)
-    console.log("starttime", startTime)
+   
 
     let interval = null
 
@@ -19,12 +17,10 @@ const Timer = ({ isRunning, startTime, onStop }) => {
         // Get the current time and calculate the difference in seconds
         const currentTime = new Date()
         const elapsedTime = Math.floor((currentTime - startTime) / 1000)
-        console.log(elapsedTime)
         if (isNaN(elapsedTime)) {
           console.error("Invalid elapsed time", currentTime, startTime)
           return
         }
-        console.log("hii")
 
         // Calculate hours, minutes, and seconds from elapsed time
         const hours = Math.floor(elapsedTime / 3600)
@@ -50,7 +46,6 @@ const Timer = ({ isRunning, startTime, onStop }) => {
 
   useEffect(() => {
     if (wasRunning.current && !isRunning && startTime !== null) {
-      console.log("time in useref", time)
       // Only call onStop when the timer transitions from running to stopped
       onStop(time)
     }
