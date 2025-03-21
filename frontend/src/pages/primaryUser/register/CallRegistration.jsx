@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react"
 import { useLocation, Link } from "react-router-dom"
-
+import { BarLoader } from "react-spinners"
 import { flushSync } from "react-dom"
 import ReactQuill from "react-quill"
 import "react-quill/dist/quill.snow.css" // Import Quill styles
@@ -285,9 +285,6 @@ export default function CallRegistration() {
         }
         // Set both attendedBy and completedBy if status is solved
       }
-      if (!selectedProducts[0]?.product_id) {
-        setIsModalOpen(true) // Open popup if no product is selected
-      }
 
       const calldata = {
         product: selectedProducts[0]?.product_id,
@@ -316,7 +313,9 @@ export default function CallRegistration() {
       )
       if (response.status === 200) {
         toast.success(response.data.message)
-
+        if (!selectedProducts[0]?.product_id) {
+          setIsModalOpen(true) // Open popup if no product is selected
+        }
         setSelectedProducts([])
         socket.emit("updatedCalls")
         socket.emit("updateUserCallStatus")
@@ -411,7 +410,6 @@ Problem:    \t${selectedText}
   `.trim()
   }
   const sendWhatapp = (calldata) => {
-
     if (!calldata?.formdata?.incomingNumber) {
       console.error("Incoming number is missing in calldata.")
       return
