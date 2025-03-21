@@ -62,7 +62,7 @@ const mastersRoutes = [
     path: "/admin/masters/customerRegistration",
     component: CustomerRegistration
   },
-  { path: "/admin/masters/customerEdit", component: ComingSoon },
+  { path: "/admin/masters/customerEdit", component:  CustomerEdit },
   {
     path: "/admin/masters/userRegistration",
     component: UserRegistration

@@ -7,8 +7,8 @@ import { useDispatch } from "react-redux"
 import { toast } from "react-toastify"
 
 function CustomerEdit() {
-  const users = localStorage.getItem("user")
-  console.log(users)
+  const userData = localStorage.getItem("user")
+  const users = JSON.parse(userData)
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const location = useLocation()
@@ -41,7 +41,6 @@ function CustomerEdit() {
     selected: selected ? [selected] : [], // If selected is falsy, fall back to an empty object
     index: index !== undefined ? index : null
   })
-
   const handleSubmit = async (customerData, tableData, index) => {
     try {
       const response = await api.post(
@@ -55,7 +54,7 @@ function CustomerEdit() {
       dispatch(removeSearch(""))
       if (users?.role === "Admin") {
         navigate("/admin/masters/customer")
-      } else {
+      } else if (users?.role === "Staff") {
         navigate("/staff/masters/customer")
       }
     } catch (error) {
