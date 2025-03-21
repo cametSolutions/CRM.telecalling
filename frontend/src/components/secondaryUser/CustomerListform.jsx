@@ -45,7 +45,6 @@ const CustomerListform = () => {
         branch
       )}`
   )
-  console.log("hi")
   useEffect(() => {
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
@@ -101,15 +100,14 @@ const CustomerListform = () => {
       ? `${address?.slice(0, maxLength)}...`
       : address
   }
-
   return (
     <div className=" mx-auto  overflow-y-hidden  ">
-      {searchAfterData.length==0 && (
+      {/* {searchAfterData.length == 0 && (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
           color="#4A90E2" // Change color as needed
         />
-      )}
+      )} */}
       <div className="w-auto shadow-lg rounded p-8 ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-4">
           <h3 className="text-2xl text-black font-bold">Customer List</h3>
