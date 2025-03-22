@@ -5,7 +5,6 @@ export const LeadRegister = async (req, res) => {
     const leadData = req.body
     console.log("l", leadData)
     const {
-      leadDate,
       customerName,
       mobile,
       phone,
@@ -18,7 +17,7 @@ export const LeadRegister = async (req, res) => {
       allocatedTo
     } = leadData
 
-    console.log(leadDate)
+    const leadDate = new Date()
     const lastLead = await LeadId.findOne().sort({ leadId: -1 })
 
     // Generate new leadId

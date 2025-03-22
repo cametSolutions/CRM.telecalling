@@ -65,7 +65,7 @@ const LeadMaster = ({
       ? `/customer/getallCustomer?userbranch=${encodeURIComponent(branches)}`
       : null
   )
-
+  console.log("h")
   // const a = customerData?.filter((item)=>item.)
   const accuanetCustomers = customerData?.filter((customer) =>
     customer.selected.some((selection) => selection.branchName === "ACCUANET")
@@ -73,6 +73,7 @@ const LeadMaster = ({
   const cammetCustomers = customerData?.filter((customer) =>
     customer.selected.some((selection) => selection.branchName === "CAMET")
   )
+  console.log("camet", cammetCustomers)
   const hasCammetBranch = customerData?.some((customer) =>
     customer.selected.some((selection) => selection.branchName === "CAMET")
   )
@@ -205,7 +206,7 @@ const LeadMaster = ({
       toast.error("Failed to add product!")
     }
   }
-
+  console.log("customer", customerOptions)
   return (
     <div className="container justify-center items-center  p-2 md:p-8">
       {/* Top Loading Bar */}
@@ -253,23 +254,6 @@ const LeadMaster = ({
                 )}
               </div>
             )}
-
-            {/* Product Price */}
-            <div>
-              <label
-                htmlFor="leadDate"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Lead Date
-              </label>
-              <input
-                id="leadDate"
-                type="Date"
-                {...register("leadDate")}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
-                placeholder=""
-              />
-            </div>
 
             {/* Customer Select Dropdown */}
             <div>
