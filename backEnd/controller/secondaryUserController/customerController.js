@@ -585,7 +585,6 @@ export const GetAllCustomer = async (req, res) => {
         }
       }
     ])
-
     if (!userbranch) {
       return res
         .status(200)

@@ -213,6 +213,7 @@ const Modal = ({
       setBalanceprivilegeLeaveCount(Math.max(balanceprivilege, 0))
       setBalancecasualLeaveCount(Math.max(balancecasualcount, 0))
       setLeaveBalance({
+        ...leaveBalance,
         casual: Math.max(balancecasualcount, 0),
         privilege: Math.max(balanceprivilege, 0),
         sick: BalancesickleaveCount
@@ -274,6 +275,7 @@ const Modal = ({
       setBalancecasualLeaveCount(ownedcasualCount)
 
       setLeaveBalance({
+        ...leaveBalance,
         casual: ownedcasualCount,
         privilege: ownedprivilegeCount,
         sick: BalancesickleaveCount
