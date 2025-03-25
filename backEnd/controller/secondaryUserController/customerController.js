@@ -6,6 +6,7 @@ import moment from "moment" // You can use moment.js to handle date manipulation
 import License from "../../model/secondaryUser/licenseSchema.js"
 import CallRegistration from "../../model/secondaryUser/CallRegistrationSchema.js"
 import Partner from "../../model/secondaryUser/partnerSchema.js"
+import Service from "../../model/primaryUser/servicesSchema.js"
 import CallNote from "../../model/secondaryUser/callNotesSchema.js"
 import models from "../../model/auth/authSchema.js"
 import { sendEmail } from "../../helper/nodemailer.js"
@@ -39,6 +40,17 @@ export const GetallPartners = async (req, res) => {
     console.log("error:", error.message)
   }
 }
+export const GetallServices = async (req, res) => {
+  try {
+    const services = await Service.find({})
+    if (services) {
+      return res.status(200).json({ message: "Services found", data: services })
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const DeleteCallnotes = async (req, res) => {
   const { id } = req.query
 
@@ -59,6 +71,25 @@ export const DeleteCallnotes = async (req, res) => {
   }
 }
 export const DeletePartner = async (req, res) => {
+  const { id } = req.query
+
+  const objectId = new mongoose.Types.ObjectId(id)
+
+  try {
+    // Perform the deletion
+    const result = await Partner.findByIdAndDelete(objectId)
+
+    if (result) {
+      return res.status(200).json({ message: " deleted successfully" })
+    } else {
+      return res.status(404).json({ message: "partner not found" })
+    }
+  } catch (error) {
+    console.error(error)
+    return res.status(500).json({ message: "Server error" })
+  }
+}
+export const DeleteService = async (req, res) => {
   const { id } = req.query
 
   const objectId = new mongoose.Types.ObjectId(id)
@@ -420,6 +451,36 @@ export const PartnerRegistration = async (req, res) => {
     console.log("error:", error.message)
   }
 }
+export const ServicesRegistration = async (req, res) => {
+  try {
+    const formdata = req.body
+    const { serviceName, price } = formdata
+
+    const existingItem = await Service.findOne({
+      serviceName
+    })
+    if (existingItem) {
+      return res
+        .status(400)
+        .json({ message: "This service is already registered" })
+    }
+
+    // Create and save call notes
+    const collection = new Service({
+      serviceName,
+      price
+    })
+
+    await collection.save()
+
+    res.status(200).json({
+      status: true,
+      message: "Service created successfully"
+    })
+  } catch (error) {
+    console.log("error:", error.message)
+  }
+}
 
 export const CustomerRegister = async (req, res) => {
   const { customerData, tabledata = {} } = req.body
@@ -564,31 +625,55 @@ export const DeleteCustomer = async (req, res) => {
 export const GetAllCustomer = async (req, res) => {
   try {
     const { userbranch } = req.query
-    console.log(userbranch)
+    let allcustomers
+    let customers
     let parsedBranch
     if (userbranch) {
       parsedBranch = JSON.parse(decodeURIComponent(userbranch))
     }
-    const allcustomers = await Customer.find({})
-    const customers = await Customer.aggregate([
-      {
-        $match: {
-          "selected.productName": { $exists: false } // Customers where productName is missing in "selected"
+    if (!userbranch) {
+      console.log("tttt")
+      allcustomers = await Customer.aggregate([
+        {
+          $match: {
+            "selected.productName": { $exists: true } // Customers where productName is missing in "selected"
+          }
+        },
+        {
+          $project: {
+            _id: 0, // Exclude _id
+            customerName: 1,
+            "selected.licensenumber": 1,
+            "selected.branchName": 1,
+            "selected.productName": 1,
+            "selected.procuct_id": 1
+          }
         }
-      },
-      {
-        $project: {
-          _id: 0, // Exclude _id
-          customerName: 1,
-          "selected.licensenumber": 1,
-          "selected.branchName": 1
+      ])
+    } else {
+      console.log("hhhhhhh")
+      customers = await Customer.aggregate([
+        {
+          $match: {
+            "selected.productName": { $exists: true } // Customers where productName is missing in "selected"
+          }
+        },
+        {
+          $project: {
+            _id: 0, // Exclude _id
+            customerName: 1,
+            "selected.licensenumber": 1,
+            "selected.branchName": 1
+          }
         }
-      }
-    ])
+      ])
+    }
+
+    // console.log(customers)
     if (!userbranch) {
       return res
         .status(200)
-        .json({ message: "customers found", data: customers })
+        .json({ message: "customers found", data: allcustomers })
     } else {
       const objectIds = parsedBranch?.map(
         (id) => new mongoose.Types.ObjectId(id)
@@ -600,12 +685,9 @@ export const GetAllCustomer = async (req, res) => {
             objectIds.some((objId) => objId.equals(selection.branch_id)) // Correct ObjectId comparison
         )
       )
-      if (filteredCustomers) {
-        return res.status(200).json({
-          message: "filtered customers found",
-          data: filteredCustomers
-        })
-      }
+      return res
+        .status(200)
+        .json({ message: "customers found", data: filteredCustomers })
     }
   } catch (error) {
     console.log(error)
@@ -1686,13 +1768,13 @@ const updateProcessedAttendees = async (processedAttendedBy, attendedId) => {
 }
 
 export const GetCallRegister = async (req, res) => {
+  console.log("hhhhhhhhh")
   try {
     const { customerid } = req.query
 
     const { callId } = req.params
 
     if (customerid !== "null" && customerid) {
-      console.log("hh")
       const customerId = new mongoose.Types.ObjectId(customerid)
       const registeredCall = await CallRegistration.findOne({
         customerid: customerId
@@ -1851,7 +1933,7 @@ export const GetCallRegister = async (req, res) => {
         return res.status(404).json({ message: "No registered Calls" })
       }
     } else if (callId) {
-      console.log("iddd")
+      console.log("doneeeee")
       const callDetails = await CallRegistration.findById(callId)
         .populate("customerid")
         .populate({

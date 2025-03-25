@@ -128,6 +128,10 @@ export default function AdminHeader() {
       label: "Partners"
     },
     {
+      to: "/admin/masters/servicesRegistration",
+      label: "Services"
+    },
+    {
       to: "/admin/masters/department",
       label: "Department"
     }
@@ -209,7 +213,7 @@ export default function AdminHeader() {
   ]
   return (
     <>
-      <header className="sticky top-0 z-50 h-20 flex bg-white shadow-md items-center">
+      <header className=" bg-white sticky top-0 z-40 h-20 flex  shadow-md items-center">
         {/* Mobile menu button */}
         <div className="md:hidden flex justify-between py-2 px-4">
           <button
@@ -613,198 +617,3 @@ export default function AdminHeader() {
     </>
   )
 }
-////responsive header
-
-// import React, { useEffect, useState } from "react";
-// import { Link, NavLink, useNavigate } from "react-router-dom";
-// import { FaSearch, FaTimes, FaChevronRight, FaBars } from "react-icons/fa";
-// import { VscAccount } from "react-icons/vsc";
-
-// const AdminHeader = () => {
-//   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-//   const [user, setUser] = useState(null);
-//   const [activeDropdown, setActiveDropdown] = useState(null);
-//   const navigate = useNavigate();
-
-//   useEffect(() => {
-//     const storedUser = localStorage.getItem("user");
-//     if (storedUser) {
-//       setUser(JSON.parse(storedUser));
-//     }
-//   }, []);
-
-//   const logout = () => {
-//     localStorage.removeItem("authToken");
-//     localStorage.removeItem("user");
-//     localStorage.removeItem("timer");
-//     navigate("/");
-//   };
-
-//   // Menu data structure remains the same as your original code
-//   const menus = {
-//     masters: [/* Your masters array */],
-//     transactions: [/* Your transactions array */],
-//     reports: [/* Your reports array */],
-//     tasks: [/* Your tasks array */],
-//     inventory: [/* Your inventory array */]
-//   };
-
-//   return (
-//     <header className="sticky top-0 z-50 bg-white shadow-md">
-//       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-//         <div className="flex justify-between items-center h-16 md:h-20">
-//           {/* Logo Section */}
-//           <div className="flex items-center">
-//             <div className="flex-shrink-0 flex items-center">
-//               <svg
-//                 className="w-8 h-8 md:w-12 md:h-12 text-green-600"
-//                 viewBox="0 0 64 64"
-//                 xmlns="http://www.w3.org/2000/svg"
-//               >
-//                 <circle cx="32" cy="32" r="30" stroke="currentColor" strokeWidth="4" fill="none" />
-//                 <path d="M32 2 A30 30 0 0 1 32 62" stroke="currentColor" strokeWidth="4" fill="none" />
-//                 <text x="50%" y="50%" textAnchor="middle" fill="currentColor" fontSize="18" dy=".3em">
-//                   CRM
-//                 </text>
-//               </svg>
-//               <span className="ml-2 text-lg md:text-2xl lg:text-3xl font-bold text-green-600">
-//                 MANAGEMENT
-//               </span>
-//             </div>
-//           </div>
-
-//           {/* Desktop Navigation */}
-//           <nav className="hidden md:flex items-center space-x-4">
-//             <NavLink
-//               to="/admin/home"
-//               className={({ isActive }) =>
-//                 `text-lg hover:text-primary transition-colors ${
-//                   isActive ? "text-primary font-bold" : "text-textColor"
-//                 }`
-//               }
-//             >
-//               Home
-//             </NavLink>
-
-//             {["Masters", "Transactions", "Reports", "Task"].map((item) => (
-//               <div
-//                 key={item}
-//                 className="relative"
-//                 onMouseEnter={() => setActiveDropdown(item)}
-//                 onMouseLeave={() => setActiveDropdown(null)}
-//               >
-//                 <button className="text-lg hover:text-primary transition-colors px-3 py-2">
-//                   {item}
-//                 </button>
-
-//                 {activeDropdown === item && (
-//                   <div className="absolute top-full left-0 w-48 bg-white border rounded-md shadow-lg py-1">
-//                     {menus[item.toLowerCase()]?.map((menuItem) => (
-//                       <Link
-//                         key={menuItem.to}
-//                         to={menuItem.to}
-//                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-//                       >
-//                         {menuItem.label}
-//                       </Link>
-//                     ))}
-//                   </div>
-//                 )}
-//               </div>
-//             ))}
-//           </nav>
-
-//           {/* Mobile Menu Button */}
-//           <div className="md:hidden">
-//             <button
-//               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-//               className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-//             >
-//               {mobileMenuOpen ? <FaTimes /> : <FaBars />}
-//             </button>
-//           </div>
-
-//           {/* Profile Section */}
-//           <div className="hidden md:flex items-center">
-//             <div className="relative group">
-//               <button className="flex items-center space-x-2">
-//                 <VscAccount className="w-6 h-6" />
-//                 <span className="text-sm font-medium text-gray-700">
-//                   {user?.name || "Profile"}
-//                 </span>
-//               </button>
-
-//               <div className="hidden group-hover:block absolute right-0 w-48 mt-2 py-1 bg-white rounded-md shadow-lg">
-//                 <Link
-//                   to="/admin/profile"
-//                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-//                 >
-//                   View Profile
-//                 </Link>
-//                 <button
-//                   onClick={logout}
-//                   className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-//                 >
-//                   Logout
-//                 </button>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Mobile Menu */}
-//         {mobileMenuOpen && (
-//           <div className="md:hidden">
-//             <div className="px-2 pt-2 pb-3 space-y-1">
-//               <Link
-//                 to="/admin/home"
-//                 className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-//               >
-//                 Home
-//               </Link>
-
-//               {["Masters", "Transactions", "Reports", "Task"].map((item) => (
-//                 <div key={item} className="relative">
-//                   <button
-//                     onClick={() => setActiveDropdown(activeDropdown === item ? null : item)}
-//                     className="w-full flex items-center justify-between px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-//                   >
-//                     {item}
-//                     <FaChevronRight
-//                       className={`transform transition-transform ${
-//                         activeDropdown === item ? "rotate-90" : ""
-//                       }`}
-//                     />
-//                   </button>
-
-//                   {activeDropdown === item && (
-//                     <div className="pl-4">
-//                       {menus[item.toLowerCase()]?.map((menuItem) => (
-//                         <Link
-//                           key={menuItem.to}
-//                           to={menuItem.to}
-//                           className="block px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-gray-50"
-//                         >
-//                           {menuItem.label}
-//                         </Link>
-//                       ))}
-//                     </div>
-//                   )}
-//                 </div>
-//               ))}
-
-//               <button
-//                 onClick={logout}
-//                 className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-//               >
-//                 Logout
-//               </button>
-//             </div>
-//           </div>
-//         )}
-//       </div>
-//     </header>
-//   );
-// };
-
-// export default AdminHeader;

@@ -43,7 +43,6 @@ import { useEffect, useState } from "react"
 import { fetchDataFromApi } from "../api/fetchDataFromApi"
 
 const UseFetch = (url) => {
-  console.log("fff")
   const [refresh, setRefresh] = useState(false)
   const [data, setData] = useState(null)
   const [fulldateholiday, setfulldateHoliday] = useState(null)
@@ -81,7 +80,6 @@ const UseFetch = (url) => {
   }, [url, refresh])
 
   const refreshHook = () => {
-    console.log("refredh")
     setRefresh(!refresh)
   }
 
