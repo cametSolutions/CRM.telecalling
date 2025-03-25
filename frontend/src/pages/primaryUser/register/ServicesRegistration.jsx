@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from "react"
 import DeleteAlert from "../../../components/common/DeleteAlert"
+import BarLoader from "react-spinners/BarLoader"
 import Edit from "../../../components/common/Edit"
 import api from "../../../api/api"
 import UseFetch from "../../../hooks/useFetch"
 import { toast } from "react-toastify"
-export const PartnerRegistration = () => {
+export const ServicesRegistration = () => {
   const [value, setValue] = useState("")
+  const [price, setPrice] = useState("")
   const [items, setItems] = useState([])
 
   const [editState, seteditState] = useState(true)
   const [editId, setEditId] = useState("")
   const { data, loading, error, refreshHook } = UseFetch(
-    "/customer/getallpartners"
+    "/customer/getallServices"
   )
   useEffect(() => {
     if (data) {
@@ -32,7 +34,7 @@ export const PartnerRegistration = () => {
   }
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/customer/partnerDelete?id=${id}`)
+      await api.delete(`/customer/serviceDelete?id=${id}`)
 
       // Remove the deleted item from the items array
       setItems((prevItems) => prevItems.filter((item) => item._id !== id))
@@ -49,7 +51,8 @@ export const PartnerRegistration = () => {
 
   const handleSubmit = async () => {
     const formData = {
-      partner: value
+      serviceName: value,
+      price: price
     }
 
     try {
@@ -63,29 +66,31 @@ export const PartnerRegistration = () => {
       } else {
         // Create a new item
 
-        await api.post("/customer/partnerRegistration", formData)
+        await api.post("/customer/servicesRegistration", formData)
 
-        toast.success("partner created successfully")
+        toast.success("Service created successfully")
       }
-      // Refresh the list
-      // const response = await api.get(
-      //   `/inventory/getproductsubDetails?tab=${tab}`
-      // )
+
       refreshHook()
-      //setItems(data.data)
-      // Reset form
-      // setValue("")
+
       setEditId(null)
     } catch (error) {
       console.error(error)
       toast.error("Something went wrong")
     }
   }
-
+  console.log("items", items)
+  console.log(loading)
   return (
     <div>
+      {loading && (
+        <BarLoader
+          cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
+          color="#4A90E2" // Change color as needed
+        />
+      )}
       <h1 className="text-sm font-bold mb-6  text-gray-800 px-6 pt-6  uppercase">
-        ADD PARTNERS
+        ADD SERVICES
       </h1>
 
       <div className="flex items-center  w-full px-6  ">
@@ -98,6 +103,13 @@ export const PartnerRegistration = () => {
           className="w-full md:w-1/2  p-1  border border-gray-300 rounded focus:border-gray-500 outline-none"
           value={value}
           //   onChange={(e) => setValue(e.target.value)}
+        />
+        <input
+          type="number"
+          placeholder="Enter price.."
+          className="w-1/4 p-1 border border-gray-300 rounded focus:border-gray-500 outline-none"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
         />
         <div className="flex justify-between m-4">
           <button
@@ -117,7 +129,10 @@ export const PartnerRegistration = () => {
                   <thead>
                     <tr className="bg-gray-300 sticky top-0 z-10">
                       <th className="w-3/6 px-6 text-left text-black  py-3 text-sm uppercase whitespace-nowrap font-semibold">
-                        Partner
+                        Services
+                      </th>
+                      <th className="w-3/6 px-6 text-left text-black  py-3 text-sm uppercase whitespace-nowrap font-semibold">
+                        Price
                       </th>
                       <th className="px-6 w-1/6 text-center text-blue-500 align-middle  py-3 text-sm uppercase  whitespace-nowrap font-semibold">
                         Edit
@@ -131,8 +146,11 @@ export const PartnerRegistration = () => {
                     {items?.map((el) => (
                       <tr key={el._id}>
                         <th className="px-6 text-left col-span-2 text-wrap border-t-0 align-middle border-l-0 border-r-0 whitespace-nowrap text-black p-2">
-                          {el.partner}
+                          {el.serviceName}
                         </th>
+                        <td className="px-6 text-left text-black p-2">
+                          {el.price}
+                        </td>
                         <td className="cursor-pointer text-center flex justify-center px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
                           <Edit onEdit={handleEdit} Id={el._id} />
                         </td>

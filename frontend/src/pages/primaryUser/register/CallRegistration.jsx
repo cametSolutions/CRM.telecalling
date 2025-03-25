@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react"
 import { useLocation, Link } from "react-router-dom"
 import { BarLoader } from "react-spinners"
+
 import { flushSync } from "react-dom"
 import ReactQuill from "react-quill"
 import "react-quill/dist/quill.snow.css" // Import Quill styles
@@ -123,6 +124,10 @@ export default function CallRegistration() {
             callData.callDetails.customerid.selected.filter(
               (product) => product.product_id === productId
             )
+          console.log(
+            "naaaaaaaaaaaameeee",
+            callData?.callDetails?.customerid?.customerName
+          )
           setSelectedCustomer(callData?.callDetails?.customerid)
           setName(callData?.callDetails?.customerid?.customerName)
           setProductDetails(matchingProducts)
@@ -149,11 +154,20 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
+    console.log("iiddd", callId)
     const response = await fetch(
-      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`
+       `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
+    {
+      method: "GET",
+      credentials: "include" // This allows cookies to be sent with the request
+    }
     )
     // const response = await fetch(
-    //   `http://localhost:9000/api/customer/getcallregister/${callId}`
+    //   `http://localhost:9000/api/customer/getcallregister/${callId}`,
+    //   {
+    //     method: "GET",
+    //     credentials: "include" // This allows cookies to be sent with the request
+    //   }
     // )
     const data = await response.json()
 
