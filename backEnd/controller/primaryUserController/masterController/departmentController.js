@@ -1,7 +1,6 @@
 import Department from "../../../model/primaryUser/departmentSchema.js"
 export const DepartmentRegistration = async (req, res) => {
   const formData = req.body
-  console.log("fom", formData)
   const { department } = formData
 
   try {
@@ -27,7 +26,6 @@ export const DepartmentRegistration = async (req, res) => {
 export const GetdepartmentList = async (req, res) => {
   try {
     const departmentlist = await Department.find()
-    console.log("list", departmentlist)
     if (departmentlist) {
       res
         .status(200)

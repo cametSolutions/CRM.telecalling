@@ -49,7 +49,6 @@ function HsnCreation() {
   }
   // function used to handle submit
   const handleSubmit = async () => {
-    console.log(formData.onValue.taxabilityType == "")
     if (formData.onValue.taxabilityType == "" && formData.onItem.length === 0) {
       return toast.error("Please select either On Value or On Item")
     }

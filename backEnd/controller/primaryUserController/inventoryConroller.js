@@ -8,7 +8,6 @@ export const ProductSubdetailsRegistration = async (req, res) => {
   const formData = req.body
   const tab = Object.keys(formData)[0]
   const value = formData[tab]
-  console.log("values of formData", value)
 
   let data
   switch (tab) {
@@ -39,7 +38,6 @@ export const ProductSubdetailsRegistration = async (req, res) => {
     const collection = new data.model({
       [data.field]: value
     })
-    console.log("collection:", collection)
     await collection.save()
 
     res.status(200).json({
@@ -207,7 +205,6 @@ export const CreateHsn = async (req, res) => {
     }
     const newHsn = new Hsn({ owner, hsnSac, description, onValue, onItem })
     const HsnData = await newHsn.save()
-    console.log("now created:", HsnData)
     return res
       .status(201)
       .json({ success: false, message: "Hsn created successfully" })
@@ -287,7 +284,6 @@ export const UpdateHsn = async (req, res) => {
 export const DeleteHsn = async (req, res) => {
   try {
     const { id } = req.query
-    console.log(id)
     const deletedHsn = await Hsn.findByIdAndDelete({ _id: id })
     if (!deletedHsn) {
       return res

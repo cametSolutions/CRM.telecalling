@@ -15,7 +15,6 @@ const BranchListform = ({ branchlist }) => {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredBranches, setFilteredBranches] = useState(branchlist)
-  console.log("branchlist", branchlist)
   const handleSearch = useCallback(
     _.debounce((query) => {
       const lowerCaseQuery = query.toLowerCase()

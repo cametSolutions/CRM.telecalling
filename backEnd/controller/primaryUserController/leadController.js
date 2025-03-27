@@ -3,7 +3,6 @@ import LeadId from "../../model/primaryUser/leadIdSchema.js"
 export const LeadRegister = async (req, res) => {
   try {
     const leadData = req.body
-    console.log("l", leadData)
     const {
       customerName,
       mobile,
@@ -27,7 +26,6 @@ export const LeadRegister = async (req, res) => {
       const lastId = parseInt(lastLead.leadId, 10) // Convert to number
       newLeadId = String(lastId + 1).padStart(5, "0") // Convert back to 5-digit string
     }
-    console.log("idddd", newLeadId)
 
     const lead = new LeadMaster({
       leadId: newLeadId,

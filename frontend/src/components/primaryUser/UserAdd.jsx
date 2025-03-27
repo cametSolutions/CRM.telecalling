@@ -207,7 +207,6 @@ const UserAdd = ({
       setValue("country", defaultCountry.value)
     }
   }, [defaultCountry])
-  console.log(User)
 
   useEffect(() => {
     if (
@@ -222,7 +221,6 @@ const UserAdd = ({
       users &&
       users.length > 0
     ) {
-      console.log(User)
       setIsEditMode(true)
       setValue("name", User.name)
       setValue("email", User.email)
@@ -371,7 +369,6 @@ const UserAdd = ({
 
       handleUserData(formattedData, imageData, tableData)
     } else if (process === "Edit") {
-      console.log(data)
       handleEditedData(data, User?._id, tableData)
     }
   }
@@ -546,7 +543,6 @@ const UserAdd = ({
                 options={stateOptions}
                 value={selectedState}
                 onChange={(option) => {
-                  console.log("hii")
                   setSelectedState(option)
                   setValue("state", option.value)
                 }}

@@ -96,7 +96,7 @@ export const DeleteService = async (req, res) => {
 
   try {
     // Perform the deletion
-    const result = await Partner.findByIdAndDelete(objectId)
+    const result = await Service.findByIdAndDelete(objectId)
 
     if (result) {
       return res.status(200).json({ message: " deleted successfully" })
@@ -137,6 +137,7 @@ export const UpdateCallnotes = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error" })
   }
 }
+
 export const UpdatePartners = async (req, res) => {
   const { id } = req.query
 
@@ -160,6 +161,30 @@ export const UpdatePartners = async (req, res) => {
     }
 
     res.status(200).json({ data: updatedPartners })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: "Internal Server Error" })
+  }
+}
+export const UpdateServices = async (req, res) => {
+  const { id } = req.query
+
+  const objectId = new mongoose.Types.ObjectId(id)
+  const formData = req.body
+  if (!id) {
+    return res.status(400).json({ message: "Invalid id" })
+  }
+
+  try {
+    const updatedService = await Service.findByIdAndUpdate(objectId, formData, {
+      new: true
+    })
+
+    if (!updatedService) {
+      return res.status(404).json({ message: "service not found" })
+    }
+
+    res.status(200).json({ data: updatedService })
   } catch (error) {
     console.error(error)
     res.status(500).json({ message: "Internal Server Error" })
@@ -632,7 +657,6 @@ export const GetAllCustomer = async (req, res) => {
       parsedBranch = JSON.parse(decodeURIComponent(userbranch))
     }
     if (!userbranch) {
-      console.log("tttt")
       allcustomers = await Customer.aggregate([
         {
           $match: {
@@ -651,7 +675,6 @@ export const GetAllCustomer = async (req, res) => {
         }
       ])
     } else {
-      console.log("hhhhhhh")
       customers = await Customer.aggregate([
         {
           $match: {
@@ -669,7 +692,6 @@ export const GetAllCustomer = async (req, res) => {
       ])
     }
 
-    // console.log(customers)
     if (!userbranch) {
       return res
         .status(200)
@@ -1768,7 +1790,6 @@ const updateProcessedAttendees = async (processedAttendedBy, attendedId) => {
 }
 
 export const GetCallRegister = async (req, res) => {
-  console.log("hhhhhhhhh")
   try {
     const { customerid } = req.query
 
@@ -1933,7 +1954,6 @@ export const GetCallRegister = async (req, res) => {
         return res.status(404).json({ message: "No registered Calls" })
       }
     } else if (callId) {
-      console.log("doneeeee")
       const callDetails = await CallRegistration.findById(callId)
         .populate("customerid")
         .populate({

@@ -65,7 +65,6 @@ export const BranchRegister = async (req, res) => {
   }
 }
 export const Getbranch = async (req, res) => {
-  console.log("ggggg")
   try {
     const branchData = await Branch.find().populate({
       path: "companyName",

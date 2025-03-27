@@ -56,7 +56,6 @@ const UserPermissionList = ({ user, closeModal, Loader }) => {
       const allPermissionsTrue = Object.keys(updatedPermissions).every(
         (key) => updatedPermissions[key] === true
       )
-      console.log(allPermissionsTrue)
       // Set selectAll based on whether all permissions are true
       setSelectAll(allPermissionsTrue)
 
@@ -98,7 +97,6 @@ const UserPermissionList = ({ user, closeModal, Loader }) => {
 
     setUserPermissions(updatedPermissions)
   }
-  console.log(selectAll)
 
   const handleSubmit = async () => {
     try {
@@ -124,7 +122,6 @@ const UserPermissionList = ({ user, closeModal, Loader }) => {
       toast.error("error saving customer")
     }
   }
-  console.log(userPermissions)
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">

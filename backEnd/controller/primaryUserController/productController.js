@@ -2,8 +2,7 @@ import Product from "../../model/primaryUser/productSchema.js"
 import mongoose from "mongoose"
 export const ProductRegistration = async (req, res) => {
   const { productData, tableData } = req.body
-  console.log("productData:", productData)
-  console.log("table Data:", tableData)
+ 
 
   // Check if user already exists
 
@@ -232,7 +231,6 @@ export const CreateHsn = async (req, res) => {
     }
     const newHsn = new Hsn({ owner, hsnSac, description, onValue, onItem })
     const HsnData = await newHsn.save()
-    console.log("now created:", HsnData)
     return res
       .status(201)
       .json({ success: false, message: "Hsn created successfully" })
@@ -312,7 +310,6 @@ export const UpdateHsn = async (req, res) => {
 export const DeleteHsn = async (req, res) => {
   try {
     const { id } = req.query
-    console.log(id)
     const deletedHsn = await Hsn.findByIdAndDelete({ _id: id })
     if (!deletedHsn) {
       return res

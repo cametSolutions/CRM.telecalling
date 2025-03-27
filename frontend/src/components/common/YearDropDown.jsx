@@ -19,7 +19,6 @@ const YearDropdown = ({ handleyear }) => {
     const selectedYear = event.target.value // Get the selected year
     handleyear(selectedYear) // Pass the selected year to the parent
   }
-  console.log(years)
 
   return (
     <div className="flex items-center">

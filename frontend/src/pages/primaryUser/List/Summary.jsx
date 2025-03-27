@@ -224,11 +224,9 @@ const Summary = () => {
       if (searchTerm === null) {
         return
       } else if (searchTerm === "") {
-        console.log(searchTerm)
-        console.log(cachedsummary)
+   
         setCustomerSummary(cachedsummary)
       } else if (searchTerm) {
-        console.log(searchTerm)
         const filteredCalls = customerSummary.filter((call) =>
           call.customerName.toLowerCase().includes(searchTerm.toLowerCase())
         )
@@ -520,7 +518,6 @@ const Summary = () => {
       setSelectedBranch(branchDetails ? branchDetails.branchName : "All")
     }
   }
-  console.log(customerSummary)
   const toggle = () => setIsToggled(!isToggled)
 
   const openModal = (id) => {

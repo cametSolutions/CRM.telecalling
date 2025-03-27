@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useRef } from "react"
+
+import BarLoader from "react-spinners/BarLoader"
 import api from "../../../api/api"
 import { formatDate } from "../../../utils/dateUtils"
 import UseFetch from "../../../hooks/useFetch"
@@ -13,6 +15,7 @@ import {
 const ExpiredCustomer = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   const [noofCalls, setnoofCalls] = useState([])
+  const [hasMounted, setHasMounted] = useState(false)
   const [user, setUser] = useState(null)
   const [Calls, setCalls] = useState([])
   const [callList, setCallList] = useState([])
@@ -27,16 +30,31 @@ const ExpiredCustomer = () => {
   const [loading, setLoading] = useState(true)
   const [selectedBranch, setSelectedBranch] = useState("All")
   const [expiredCustomerCalls, setExpiredCustomerCalls] = useState([])
-  const { data: expiryRegisterCustomer } = UseFetch(
+  const { data: expiryRegisterCustomer, loading: expiryloding } = UseFetch(
     "/customer/getallExpiryregisterCustomer"
   )
-
+  const isFirstRender = useRef(true)
   useEffect(() => {
     if (expiryRegisterCustomer) {
       const userData = localStorage.getItem("user")
       const user = JSON.parse(userData)
       setUser(user)
-      setexpiryRegisterList(expiryRegisterCustomer)
+      if (user.role === "Admin") {
+        setexpiryRegisterList(expiryRegisterCustomer)
+      } else {
+        const userBranchName = new Set(
+          user?.selected?.map((branch) => branch.branchName)
+        )
+
+        const branchNamesArray = Array.from(userBranchName)
+
+        const filtered = expiryRegisterCustomer.filter((customer) =>
+          customer.selected.some((selection) =>
+            branchNamesArray.includes(selection.branchName)
+          )
+        )
+        setexpiryRegisterList(filtered)
+      }
       const expiredCustomerIds = expiryRegisterCustomer.map(
         (customer) => customer._id
       )
@@ -51,6 +69,10 @@ const ExpiredCustomer = () => {
   }, [branches])
 
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return // Prevent initial API call
+    }
     const fetchExpiryRegisterList = async () => {
       try {
         const endpoint = isToggled
@@ -59,8 +81,25 @@ const ExpiredCustomer = () => {
 
         const response = await api.get(endpoint)
         const data = response.data.data
+        if (user.role === "Admin") {
+          setexpiryRegisterList(data)
+        } else {
+          const userBranchName = new Set(
+            user?.selected?.map((branch) => branch.branchName)
+          )
 
-        setexpiryRegisterList(data) // Update state with new data
+          const branchNamesArray = Array.from(userBranchName)
+
+          const filtered = data.filter((customer) =>
+            customer.selected.some((selection) =>
+              branchNamesArray.includes(selection.branchName)
+            )
+          )
+          setexpiryRegisterList(filtered)
+        }
+        const expiredCustomerIds = data.map((customer) => customer._id)
+        setExpiredCustomerId(expiredCustomerIds)
+
         setTimeout(() => setLoading(false), 0)
       } catch (error) {
         console.error("Error fetching user list:", error)
@@ -111,8 +150,13 @@ const ExpiredCustomer = () => {
       }
     }
   }, [callList])
+  useEffect(() => {
+    setHasMounted(true) // Set this to true AFTER the first render
+  }, [])
 
   useEffect(() => {
+    if (!hasMounted) return
+
     const fetchExpiryRegisterList = async () => {
       try {
         let endpoint = ""
@@ -134,10 +178,63 @@ const ExpiredCustomer = () => {
 
         const data = response.data
         if (data) {
+          setLoading(false)
           if (isCallsToggled) {
-            setCallList(data.calls)
+          
+            if (user.role === "Admin") {
+              setCallList(data.calls)
+            } else {
+              const userBranchName = new Set(
+                user?.selected?.map((branch) => branch.branchName)
+              )
+
+              const branchNamesArray = Array.from(userBranchName)
+
+              const filtered = data.calls.filter(
+                (call) =>
+                  Array.isArray(call?.callregistration) && // Check if callregistration is an array
+                  call.callregistration.some((registration) => {
+                    const hasMatchingBranch =
+                      Array.isArray(registration?.branchName) && // Check if branchName is an array
+                      registration.branchName.some(
+                        (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
+                      )
+
+                    // If user has only one branch, ensure it matches exactly and no extra branches
+                    if (branchNamesArray.length === 1) {
+                      return (
+                        hasMatchingBranch &&
+                        registration.branchName.length === 1 &&
+                        registration.branchName[0] === branchNamesArray[0]
+                      )
+                    }
+
+                    // If user has more than one branch, just check for any match
+                    return hasMatchingBranch
+                  })
+              )
+
+              setCallList(filtered)
+            }
           } else {
-            setexpiryRegisterList(data.data)
+            if (user.role === "Admin") {
+              setexpiryRegisterList(data.data)
+            } else {
+              const userBranchName = new Set(
+                user?.selected?.map((branch) => branch.branchName)
+              )
+
+              const branchNamesArray = Array.from(userBranchName)
+
+              const filtered = data.data.filter((customer) =>
+                customer.selected.some((selection) =>
+                  branchNamesArray.includes(selection.branchName)
+                )
+              )
+              setexpiryRegisterList(filtered)
+            }
+            const expiredCustomerIds = data.data.map((customer) => customer._id)
+            setExpiredCustomerId(expiredCustomerIds)
           }
         }
       } catch (error) {
@@ -149,7 +246,7 @@ const ExpiredCustomer = () => {
     } else if (!isCallsToggled && !isToggled) {
       fetchExpiryRegisterList()
     }
-  }, [isCallsToggled, expiredCustomerId])
+  }, [isCallsToggled, isToggled])
 
   useEffect(() => {
     if (isModalOpen && selectedCustomer) {
@@ -246,7 +343,6 @@ const ExpiredCustomer = () => {
   }
 
   const closeModal = () => {
-    setLoading(true)
     setIsModalOpen(false)
     setSelectedCustomer(null)
   }
@@ -270,6 +366,18 @@ const ExpiredCustomer = () => {
   }
   return (
     <div className="antialiased font-sans container mx-auto px-4 sm:px-8">
+      {expiryloding && (
+        <BarLoader
+          cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
+          color="#4A90E2" // Change color as needed
+        />
+      )}
+      {loading && (
+        <BarLoader
+          cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
+          color="#4A90E2" // Change color as needed
+        />
+      )}
       <div className="py-4 ">
         <div className="flex justify-center text-2xl font-semibold ">
           <h1 className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-red-500 to-pink-600">
