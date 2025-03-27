@@ -30,7 +30,6 @@ const uploadImageToCloudinary = async (file) => {
       }
     )
 
-    console.log(res)
 
     if (!res.ok) {
       // Handle server errors
@@ -40,7 +39,6 @@ const uploadImageToCloudinary = async (file) => {
     }
 
     const data = await res.json()
-    console.log(data)
     return data
   } catch (error) {
     console.error("Error uploading image:", error)

@@ -5,7 +5,6 @@ import toast from "react-hot-toast"
 function BranchList() {
   const [branches, setBranch] = useState([])
   const { data: branchData, loading, error } = UseFetch("/branch/getBranch")
-  console.log("branchddata", branchData)
 
   // useEffect(() => {
   //   if (branchData) {

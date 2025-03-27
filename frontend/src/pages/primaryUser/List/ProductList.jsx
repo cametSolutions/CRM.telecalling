@@ -33,7 +33,6 @@ function ProductList() {
       }
     }
   }, [productData])
-  console.log("products in backend :", products)
   useEffect(() => {
     if (error) {
       if (error.response) {

@@ -12,13 +12,10 @@ function ProductEdit() {
   const location = useLocation()
   const { product, selected } = location.state
   const productId = product._id
-  console.log("produid", productId)
-  console.log("proddddddd", product)
-  console.log("selevtd", selected)
+ 
 
   const handleSubmit = async (productData, editData) => {
-    console.log("editdata", editData)
-    console.log("prrp", productData)
+   
     try {
       const response = await api.post(
         `/product/productEdit?productid=${productId}`,

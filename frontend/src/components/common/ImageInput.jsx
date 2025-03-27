@@ -19,12 +19,10 @@ function ImageInput({ onSelect, prevUrl, tag }) {
         const data = await uploadImageToCloudinary(file)
         uploadFiles.push(data.secure_url)
       }
-      console.log("uploadfiles", uploadFiles)
       onSelect(uploadFiles)
     } else if (files.length === 1) {
       const data = await uploadImageToCloudinary(files[0]) // Access the first file
       onSelect(data.secure_url)
-      console.log("dataurl",data.secure_url)
     }
   }
 

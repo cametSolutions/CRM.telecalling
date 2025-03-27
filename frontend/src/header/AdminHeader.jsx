@@ -197,10 +197,7 @@ export default function AdminHeader() {
       to: "/admin/reports/expiry-register",
       label: "Expiry Register"
     },
-    {
-      to: "/admin/reports/expired-customerCalls",
-      label: "Expired Customer Calls"
-    },
+   
 
     {
       to: "/admin/reports/account-search",

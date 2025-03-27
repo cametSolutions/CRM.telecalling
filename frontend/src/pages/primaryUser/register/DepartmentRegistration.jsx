@@ -18,8 +18,7 @@ export default function DepartmentRegistration() {
       // setTotalPages(data.data.totalPages)
     }
   }, [data])
-  console.log("d", value)
-  console.log("data", data)
+ 
   const handleChange = (e) => {
     setValue(e.target.value)
   }

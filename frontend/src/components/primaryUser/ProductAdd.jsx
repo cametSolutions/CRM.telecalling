@@ -69,8 +69,7 @@ const ProductAdd = ({
 
   useEffect(() => {
     if (selected) {
-      console.log("pro", product)
-      console.log("selected", selected)
+    
 
       setTableObject({
         company_id: selected.company_id || "",
@@ -86,9 +85,7 @@ const ProductAdd = ({
       })
 
       Object.keys(selected).forEach((key) => {
-        console.log("sel", selected)
         if (key === "brandName") {
-          console.log(key)
 
           setValue(key, selected.brand_id)
         } else if (key === "categoryName") {
@@ -97,10 +94,8 @@ const ProductAdd = ({
           setValue(key, selected.hsn_id)
         } else if (key === "companyName") {
           setSelectedCompany(selected.company_id)
-          console.log("id", selected.company_id)
           setValue(key, selected.company_id)
         } else if (key === "branchName") {
-          console.log("selceid", selected.branch_id)
           setValue(key, selected.branch_id)
         }
         // Log the key if necessary
@@ -167,7 +162,6 @@ const ProductAdd = ({
   }
   const handleBranchChange = (e) => {
     const branchId = e.target.value
-    console.log("fotbraa", filteredBranches)
     const selectedBranch = filteredBranches.find(
       (branch) => branch._id === branchId
     )
@@ -207,7 +201,6 @@ const ProductAdd = ({
       toast.error("Compnay and brach already added")
       return
     }
-    console.log("tableo", tableObject)
     setTableData((prev) => [
       ...prev, // Spread the existing items in the state
       tableObject // Add the new item to the array
@@ -216,12 +209,10 @@ const ProductAdd = ({
 
   const handleCompanyChange = (e) => {
     const companyId = e.target.value
-    console.log("id", companyId)
 
     const selectedCompany = data.companies.find(
       (branch) => branch._id === companyId
     )
-    console.log("selectedcom", selectedCompany.companyName)
     setTableObject((prev) => ({
       ...prev,
       company_id: companyId,
@@ -236,10 +227,7 @@ const ProductAdd = ({
   const handleBrandChange = (e) => {
     const brandId = e.target.value
     const selectedBrand = data.brands.find((brand) => brand._id === brandId)
-    console.log("selctedbbb", selectedBrand)
-    console.log("brandid", brandId)
-    console.log("selecrbrand", selectedBrand.brand)
-    console.log("table", tableObject)
+   
     setTableObject((prev) => ({
       ...prev,
       brand_id: brandId,
@@ -253,7 +241,6 @@ const ProductAdd = ({
     const selectedCategory = data.categories.find(
       (category) => category._id === categoryId
     )
-    console.log("selectedcaa", selectedCategory.category)
     setTableObject((prev) => ({
       ...prev,
       category_id: categoryId,
@@ -265,7 +252,6 @@ const ProductAdd = ({
   const handleHsnChange = (e) => {
     const hsnId = e.target.value
     const selectedHsn = data.hsn.find((hsn) => hsn._id === hsnId)
-    console.log("selectedhsn", selectedHsn.hsnSac)
     setTableObject((prev) => ({
       ...prev,
       hsn_id: hsnId,
@@ -331,12 +317,10 @@ const ProductAdd = ({
   }
 
   const onSubmit = async (data, event) => {
-    console.log("daaaaaaaaa", data)
     event.preventDefault()
 
     try {
       if (process === "Registration") {
-        console.log("tabledata", tableData)
         await handleProductData(data, tableData)
       } else if (process === "edit") {
         await handleEditedData(data, tableObject)

@@ -52,7 +52,6 @@ const BrandAdd = ({
 
   //   }
   const handleDelete = async (id) => {
-    console.log("hiiiiii")
     try {
       await api.delete(`/inventory/deleteBrand/${id}`, {
         withCredentials: true

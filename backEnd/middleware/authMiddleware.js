@@ -8,7 +8,6 @@ const authMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY)
-    console.log(decoded)
     req.owner = decoded
 
     next()

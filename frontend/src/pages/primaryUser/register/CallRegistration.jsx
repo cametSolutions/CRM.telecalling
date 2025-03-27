@@ -124,14 +124,10 @@ export default function CallRegistration() {
             callData.callDetails.customerid.selected.filter(
               (product) => product.product_id === productId
             )
-          console.log(
-            "naaaaaaaaaaaameeee",
-            callData?.callDetails?.customerid?.customerName
-          )
+          
           setSelectedCustomer(callData?.callDetails?.customerid)
           setName(callData?.callDetails?.customerid?.customerName)
           setProductDetails(matchingProducts)
-          console.log("callnote", matchingRegistration?.formdata?.callnote)
           const editData = {
             incomingNumber: matchingRegistration?.formdata?.incomingNumber,
             token: matchingRegistration?.timedata?.token,
@@ -154,7 +150,6 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
-    console.log("iiddd", callId)
     const response = await fetch(
        `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
     {
@@ -436,11 +431,11 @@ Problem:    \t${selectedText}
 
     // if (calldata.formdata.status === "solved") {
     //   const message = formatTableToText(calldata, selectedText)
-    //   console.log("g")
+  
     //   whatsappUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(
     //     message
     //   )}&phone=${phoneNumber}`
-    //   console.log("g")
+ 
     // } else {
     //   // Open WhatsApp Web with the message
     //   whatsappUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(

@@ -11,7 +11,6 @@ const MyDatePicker = ({ handleSelect, dates, onClear, loader }) => {
 
   useEffect(() => {
     if (dateRange.startDate && dateRange.endDate) {
-      console.log("hiii")
       handleSelect(dateRange)
     }
   }, [dateRange])
@@ -33,10 +32,8 @@ const MyDatePicker = ({ handleSelect, dates, onClear, loader }) => {
   // }
 
   const handleDateRange = (dates) => {
-    console.log(dates)
     // setDateRange(dates)
     const normalizedDates = normalizeDateToUTC(dates[0])
-    // console.log(normalizedDates)
     setDateRange({
       startDate: dates[0] ? normalizeDateToUTC(dates[0]) : null,
       endDate: dates[1] ? normalizeDateToUTC(dates[1]) : null

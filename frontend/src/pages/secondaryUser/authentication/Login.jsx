@@ -17,11 +17,9 @@ const Login = () => {
 
   const onSubmit = async (data) => {
     try {
-      console.log("hiiii")
       const response = await api.post(`/auth/login`, data)
       //let result = await response.json()
       if (response.status === 200) {
-        console.log("hiiiiiiiiii")
         setTimeout(() => {
           toast.success(response.data.message, {
             icon: "🚀",

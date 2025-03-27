@@ -105,7 +105,6 @@ export const ExceltoJson = async (socket, fileData) => {
           item["Software HitDate"] &&
           typeof item["Software HitDate"] === "string"
         ) {
-          console.log("stringgg")
           item["Software HitDate"] = excelDateToFormatString(
             item["Software HitDate"]
           )

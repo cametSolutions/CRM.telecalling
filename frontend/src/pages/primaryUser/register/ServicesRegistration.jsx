@@ -26,7 +26,8 @@ export const ServicesRegistration = () => {
     seteditState(false)
     const itemToEdit = items.find((item) => item._id === id)
     if (itemToEdit) {
-      setValue(itemToEdit.partner)
+      setValue(itemToEdit.serviceName)
+      setPrice(itemToEdit.price)
       setEditId(id)
 
       // Store the ID of the brand being edited
@@ -59,9 +60,9 @@ export const ServicesRegistration = () => {
       if (editId) {
         // Update the existing item
 
-        await api.put(`/customer/partnerEdit?id=${editId}`, formData)
+        await api.put(`/customer/serviceEdit?id=${editId}`, formData)
 
-        toast.success("Call notes updated successfully")
+        toast.success("Service updated successfully")
         seteditState(true)
       } else {
         // Create a new item
@@ -72,15 +73,15 @@ export const ServicesRegistration = () => {
       }
 
       refreshHook()
-
+      setValue("")
+      setPrice("")
       setEditId(null)
     } catch (error) {
       console.error(error)
       toast.error("Something went wrong")
     }
   }
-  console.log("items", items)
-  console.log(loading)
+
   return (
     <div>
       {loading && (
@@ -96,16 +97,18 @@ export const ServicesRegistration = () => {
       <div className="flex items-center  w-full px-6  ">
         <input
           type="text"
+          name="serviceName"
           onChange={(e) => {
             handleChange(e)
           }}
-          placeholder="Enter your brand name"
+          placeholder="Enter your service name"
           className="w-full md:w-1/2  p-1  border border-gray-300 rounded focus:border-gray-500 outline-none"
           value={value}
           //   onChange={(e) => setValue(e.target.value)}
         />
         <input
           type="number"
+          name="price"
           placeholder="Enter price.."
           className="w-1/4 p-1 border border-gray-300 rounded focus:border-gray-500 outline-none"
           value={price}

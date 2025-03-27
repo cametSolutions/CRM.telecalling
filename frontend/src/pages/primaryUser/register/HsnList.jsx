@@ -37,7 +37,6 @@ function HsnList() {
   }, [data])
 
   const handleDelete = async (id) => {
-    console.log("id,", id)
     try {
       await api.delete(`/inventory/hsndelete?id=${id}`)
       refreshHook()
@@ -105,8 +104,7 @@ function HsnList() {
   //   //       }
   //   //     }
   //   //   };
-  //   console.log(hsn)
-  //   console.log(org)
+ 
 
   return (
     <section className="antialiased text-gray-600">

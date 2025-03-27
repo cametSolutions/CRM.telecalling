@@ -43,21 +43,17 @@ function LeaveRegister() {
   useEffect(() => {
     const year = currentDate.getFullYear()
     const month = String(currentDate.getMonth() + 1).padStart(2, "0") // Convert to "01-12" format
-    console.log(month)
     setCurrentMonth(`${year}-${month}`)
   }, [currentDate])
   useEffect(() => {
     const filteredcurrentmonthlyLeaves = allleaves?.filter((leaves) => {
       ///leavedate is iso format like "2025-03-03T12:00:00Z" so here slice 0 takes the first part and get the first 7 means 2025-03 because current month includes year also 2025-03
       const leaveMonth = leaves.leaveDate.split("T")[0].slice(0, 7)
-      console.log(currentMonth)
       //here currentMonth have year and month no date
       return leaveMonth === currentMonth
     })
-    console.log(filteredcurrentmonthlyLeaves)
     setcurrentmonthLeaveData(filteredcurrentmonthlyLeaves)
   }, [allleaves, currentDate, currentMonth])
-  console.log(currentmonthleaveData)
   useEffect(() => {
     const days = []
 
@@ -72,12 +68,10 @@ function LeaveRegister() {
 
     // Get last day of the month
     const lastDay = new Date(year, month, 0).getDate()
-    console.log(lastDay)
-    console.log(month)
+
     // Generate all days in the month
     for (let i = 1; i <= lastDay; i++) {
       const date = new Date(year, month - 1, i + 1)
-      console.log(date)
       days.push({
         fullDate: date.toISOString().split("T")[0], // Format: YYYY-MM-DD
         fullMonthDay: date.toLocaleDateString("en-GB", {
@@ -91,10 +85,8 @@ function LeaveRegister() {
 
     setVisibleDays(days)
   }, [currentDate])
-  console.log(visibleDays)
-  console.log(currentmonthleaveData)
+  
   const handleDateClick = (arg) => {
-    console.log(arg)
     setclickedDate(arg.dateStr)
     const clickedDate = arg.dateStr
     setFormData((prev) => ({
@@ -174,11 +166,8 @@ function LeaveRegister() {
 
   // Navigate to previous month
   const prevMonth = () => {
-    console.log(currentDate)
     const newDate = new Date(currentDate)
-    console.log(newDate)
     newDate.setMonth(newDate.getMonth() - 1)
-    console.log(newDate)
     setCurrentDate(newDate)
   }
 
@@ -199,8 +188,7 @@ function LeaveRegister() {
     const options = { weekday: "long", month: "short", day: "numeric" }
     return date.toLocaleDateString("en-US", options)
   }
-  console.log(visibleDays)
-  console.log(currentmonthleaveData)
+ 
   return (
     <div className="w-full ">
       <div className="flex items-center justify-between sticky top-0 py-3 px-4 z-30 bg-white">

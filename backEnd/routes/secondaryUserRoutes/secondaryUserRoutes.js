@@ -26,7 +26,8 @@ import {
   GetallcurrentMonthHoly,
   GetallServices,
   ServicesRegistration,
-  DeleteService
+  DeleteService,
+  UpdateServices
 } from "../../controller/secondaryUserController/customerController.js"
 
 const router = express.Router()
@@ -50,6 +51,7 @@ router.post("/servicesRegistration", authMiddleware, ServicesRegistration)
 router.get("/getallpartners", authMiddleware, GetallPartners)
 router.get("/getallServices", authMiddleware, GetallServices)
 router.put("/partnerEdit", authMiddleware, UpdatePartners)
+router.put("/serviceEdit", authMiddleware, UpdateServices)
 router.delete("/partnerDelete", authMiddleware, DeletePartner)
 router.delete("/serviceDelete", authMiddleware, DeleteService)
 router.post("/leavemasterRegistration", authMiddleware, LeavemasterRegister)

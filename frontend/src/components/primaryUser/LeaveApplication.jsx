@@ -98,7 +98,6 @@ function LeaveApplication() {
       }))
     }
   }, [compensatoryleaves])
-  console.log(BalancecompensatoryleaveCount)
   useEffect(() => {
     const year = currentDate.getFullYear()
     const month = String(currentDate.getMonth() + 1).padStart(2, "0") // Convert to "01-12" format
@@ -113,7 +112,6 @@ function LeaveApplication() {
     })
     setcurrentmonthLeaveData(filteredcurrentmonthlyLeaves)
   }, [allleaves, currentDate, currentMonth])
-  console.log(leaveBalance)
   useEffect(() => {
     const days = []
 
