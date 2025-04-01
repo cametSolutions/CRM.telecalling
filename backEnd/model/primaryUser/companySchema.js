@@ -12,6 +12,7 @@ const companySchema = new mongoose.Schema({
   mobile: String,
   website: String,
   pan: String,
+  selectedCompany: { type: Boolean, default: false },
   landlineno: String,
   GSTIN: String,
 

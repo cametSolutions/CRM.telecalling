@@ -35,7 +35,7 @@ function LeadRegister() {
     }
   }
   return (
-    <div className="h-full">
+    <div className="h-full ">
       <LeadMaster process="Registration" handleleadData={handleSubmit} />
     </div>
   )

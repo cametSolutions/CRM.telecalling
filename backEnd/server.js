@@ -18,6 +18,7 @@ import path from "path"
 import { Server } from "socket.io"
 import { fileURLToPath } from "url"
 import { ExceltoJson } from "./controller/primaryUserController/excelController.js"
+import { ExceltoJsonProduct } from "./controller/primaryUserController/excelController.js"
 import { AttendanceExceltoJson } from "./controller/primaryUserController/attendanceExcelController.js"
 import { customerCallRegistration } from "./controller/secondaryUserController/customerController.js"
 import CallRegistration from "./model/secondaryUser/CallRegistrationSchema.js"
@@ -279,6 +280,20 @@ io.on("connection", (socket) => {
   // Handle Excel to JSON conversion
   socket.on("startConversion", (fileData) => {
     ExceltoJson(socket, fileData)
+  })
+  // socket.onAny((eventName, ...args) => {
+  //   console.log("Received event:", eventName, "with data:", args)
+  // })
+  // socket.on("startConversionproduct",({ fileData, fileType }) => {
+  //   console.log("Received event: startConversionProduct")
+  //   console.log("File Type:", fileType)
+  //   console.log("File Data Type:", typeof fileData)
+  //   console.log("File Data Length:", fileData?.byteLength || "undefined")
+  //   await ExceltoJsonProduct(socket, fileData, fileType)
+  // })
+  socket.on("startproduct", (fileData) => {
+    console.log("dummmm")
+    ExceltoJsonProduct(socket, fileData)
   })
   socket.on("startattendanceConversion", (fileData) => {
     AttendanceExceltoJson(socket, fileData)

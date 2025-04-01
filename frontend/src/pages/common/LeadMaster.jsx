@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useRef } from "react"
 import LoadingBar from "react-top-loading-bar"
+import ExcelJS from "exceljs"
+import { saveAs } from "file-saver"
 import Select, { useStateManager } from "react-select"
 import { useForm } from "react-hook-form"
 import UseFetch from "../../hooks/useFetch"
-import { toast } from "react-toastify"
+import * as XLSX from "xlsx" // Import XLSX for creating the Excel file
+// import { toast } from "react-toastify"
 import { FaTrash, FaEdit } from "react-icons/fa" // Import icons
-import { use } from "react"
 
 const LeadMaster = ({
   process,
@@ -20,55 +22,39 @@ const LeadMaster = ({
     watch,
     formState: { errors }
   } = useForm()
-  const [showDropdown, setShowDropdown] = useState(false)
-  const [addedproductlist, setAddedProducts] = useState([])
-  const [openDropdown, setOpenDropdown] = useState(null) // Track which dropdown is open
-  const [tabledata, setTableData] = useState([])
+  const [productSelections, setProductSelections] = useState({})
+  const [licensewithoutProductSelection, setlicenseWithoutProductSelection] =
+    useState({})
+
   const [selectedProducts, setSelectedProducts] = useState(null)
   const [selectedleadlist, setSelectedLeadList] = useState([])
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   const [selectedLicense, setSelectedLicense] = useState(null)
-  const [selectedOption, setSelectedOption] = useState("Products")
   const [filteredProduct, setFilteredProduct] = useState([])
   const [modalOpen, setModalOpen] = useState(false)
   const [progress, setProgress] = useState(0)
   const [customerOptions, setCustomerOptions] = useState([])
-  const [isOpen, setIsOpen] = useState(false)
-  const [selected, setSelected] = useState("")
+  const [isleadForOpen, setIsleadForOpen] = useState(false)
+  const [isLicenseOpen, setIslicenseOpen] = useState(false)
   const [branches, setBranches] = useState([])
   const [customerTableData, setcustomerTableData] = useState([])
+  //State for added products
 
   // const [dd, setd] = useState(false)
-  const [selectedBranch, setSelectedBranch] = useState(false)
-  const [editObject, setEditObject] = useState({
-    brands: {},
-    categories: {},
-    hsn: {}
-    // products: [],
-  })
-  const [showTable, setShowTable] = useState(false)
+
   const [users, setUsers] = useState(null)
   const [allStaffs, setallStaffs] = useState([])
   const [allcustomer, setallcustomer] = useState([])
   // State to toggle the table
   const [editState, seteditState] = useState(true)
-  const [tableObject, setTableObject] = useState({
-    company_id: "",
-    companyName: "",
-    branch_id: "",
-    branchName: "",
-    brand_id: "",
-    brandName: "",
-    category_id: "",
-    categoryName: "",
-    hsn_id: "",
-    hsnName: ""
-  })
+
   // Create a ref for the dropdown container
   const dropdownRef = useRef(null)
   const { data: productData, loading: productLoading } = UseFetch(
     "/product/getallProducts"
   )
+
+  const { data: serviceData } = UseFetch("/product/getallServices")
   const { data, loading: usersLoading } = UseFetch("/auth/getallUsers")
   const { data: customerData, loading: customerLoading } = UseFetch(
     users && users.role === "Admin"
@@ -77,68 +63,41 @@ const LeadMaster = ({
       ? `/customer/getallCustomer?userbranch=${encodeURIComponent(branches)}`
       : null
   )
-
-  const a = customerData?.filter(
-    (item) => item.customerName === "CAPSON MARKETING"
-  )
-  const accuanetCustomers = customerData?.filter((customer) =>
-    customer.selected.some((selection) => selection.branchName === "ACCUANET")
-  )
-  const cammetCustomers = customerData?.filter((customer) =>
-    customer.selected.some((selection) => selection.branchName === "CAMET")
-  )
-  const hasCammetBranch = customerData?.some((customer) =>
-    customer.selected.some((selection) => selection.branchName === "CAMET")
-  )
+  console.log(customerData)
+  // const a = customerData?.filter(
+  //   (item) => item.customerName === "CAPSON MARKETING"
+  // )
+  // const accuanetCustomers = customerData?.filter((customer) =>
+  //   customer.selected.some((selection) => selection.branchName === "ACCUANET")
+  // )
+  // const cammetCustomers = customerData?.filter((customer) =>
+  //   customer.selected.some((selection) => selection.branchName === "CAMET")
+  // )
+  // const hasCammetBranch = customerData?.some((customer) =>
+  //   customer.selected.some((selection) => selection.branchName === "CAMET")
+  // )
   useEffect(() => {
     const userData = localStorage.getItem("user")
-    const user = JSON.parse(userData)
-    if (user.role === "Staff") {
-      const branch = user.selected.map((branch) => branch.branch_id)
-      const branches = JSON.stringify(branch)
+    console.log("daaaaaaaaaaaaaaa", userData)
+    if (userData) {
+      const user = JSON.parse(userData)
+      setUsers(user)
+      if (user.role === "Staff") {
+        const branch = user.selected.map((branch) => branch.branch_id)
+        const branches = JSON.stringify(branch)
 
-      setBranches(branches)
-    }
-
-    setUsers(user)
-  }, [])
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDropdown(null)
+        setBranches(branches)
       }
     }
-
-    // Add event listener
-    document.addEventListener("mousedown", handleClickOutside)
-
-    // Cleanup event listener on unmount
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
   }, [])
+  // Close dropdown when clicking outside
+
   useEffect(() => {
     if (customerData && customerData.length > 0) {
       setallcustomer(customerData)
     }
   }, [customerData])
-  // useEffect(() => {
-  //   if (customerTableData && customerTableData.length > 0) {
-  //     const matchingCustomers = customerTableData
-  //     ?.filter((customer) =>
-  //       customer.selected.some((item) => item.product_id === productId)
-  //     )
-  //     .flatMap((customer) =>
-  //       customer.selected
-  //         .filter((item) => item.product_id === productId)
-  //         .map((item) => ({
-  //           productName: item.productName,
-  //           licensenumber: item.licensenumber
-  //         }))
-  //     )
-  //   }
-  // }, [customerTableData])
+
   useEffect(() => {
     if (customerData) {
       setCustomerOptions(
@@ -193,9 +152,112 @@ const LeadMaster = ({
       setSelectedLeadList(mergedproductsandlicense)
     }
   }, [selectedProducts, selectedLicense])
+  useEffect(() => {
+    if (!selectedLicense && productData && productData.length > 0) {
+      const initialProductListwithoutlicense = productData?.map((product) => ({
+        ...product,
+        selected: false
+      }))
 
-  const handleToggle = () => {
-    setSelectedOption((prev) => (prev === "Products" ? "Services" : "Products"))
+      setlicenseWithoutProductSelection(initialProductListwithoutlicense)
+    }
+  }, [productData])
+  const handleLicenseSelect = (license) => {
+    // Ensure all products are initialized for this license if not already
+    if (!productSelections[license]) {
+      const initialProductList = productData.map((product) => ({
+        ...product,
+        selected: false
+      }))
+
+      setProductSelections((prev) => ({
+        ...prev,
+        [license]: initialProductList
+      }))
+    }
+    setIslicenseOpen(false) // Close dropdown
+    setSelectedLicense(license)
+  }
+  // const handleDownloadFailedData = () => {
+  //   if (customerData.length > 0) {
+  //     // Create a new workbook
+  //     const workbook = XLSX.utils.book_new()
+
+  //     // Convert failed data to sheet
+  //     const worksheet = XLSX.utils.json_to_sheet(customerData)
+
+  //     // Append sheet to workbook
+  //     XLSX.utils.book_append_sheet(
+  //       workbook,
+  //       worksheet,
+  //       "customer without product"
+  //     )
+
+  //     // Generate Excel file and trigger download
+  //     XLSX.writeFile(workbook, "customerwihoutproduct_data.xlsx")
+  //   }
+  // }
+
+  const handleDownloadFailedData = async () => {
+    if (customerData.length > 0) {
+      const workbook = new ExcelJS.Workbook()
+      const worksheet = workbook.addWorksheet("Customer Without Product")
+
+      // Define column structure
+      worksheet.columns = [
+        { header: "Customer Name", key: "customerName", width: 50 },
+        { header: "License Number", key: "licensenumber", width: 20 }
+      ]
+
+      // Add header styling
+      worksheet.getRow(1).eachCell((cell) => {
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFFF00" } // Yellow background
+        }
+        cell.font = { bold: true, color: { argb: "000000" } } // Black bold text
+        cell.alignment = { horizontal: "center" } // Center text
+      })
+
+      // Add data to sheet
+      customerData.forEach((customer) => {
+        worksheet.addRow({
+          customerName: customer.customerName,
+          licensenumber: customer.licensenumber || "N/A"
+        })
+      })
+
+      // Write to buffer and download
+      const buffer = await workbook.xlsx.writeBuffer()
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      })
+      saveAs(blob, "customer_without_product.xlsx")
+    }
+  }
+
+  const handleProductSelect = (productId) => {
+    if (selectedLicense) {
+      const updatedProductList = productSelections[selectedLicense].map(
+        (product) =>
+          product._id === productId
+            ? { ...product, selected: !product.selected }
+            : product
+      )
+      setProductSelections((prev) => ({
+        ...prev,
+        [selectedLicense]: updatedProductList
+      }))
+    } else {
+      const updatedProductList = licensewithoutProductSelection.map((product) =>
+        product._id === productId ? { ...product, selected: true } : product
+      )
+      setlicenseWithoutProductSelection(updatedProductList)
+    }
+  }
+  const handleToggleDropdown = () => {
+    setIsleadForOpen((prev) => !prev) // Toggle dropdown visibility
   }
 
   const handleSelectedCustomer = (name) => {
@@ -210,13 +272,14 @@ const LeadMaster = ({
 
     setcustomerTableData(filteredcustomer)
   }
-
-  const handleProductSelect = (productId, productName, isChecked) => {
-    const mergeprodcutandlicensenumber = []
-    mergeprodcutandlicensenumber.push({ productName, selectedLicense })
-
-    setSelectedProducts(mergeprodcutandlicensenumber)
+  const handlePriceChange = (index, newPrice) => {
+    setSelectedLeadList((prevList) =>
+      prevList.map((product, i) =>
+        i === index ? { ...product, price: newPrice } : product
+      )
+    )
   }
+
   const handleDelete = (name) => {
     const filteredLeadlist = selectedProducts.filter(
       (item) => item.productName !== name
@@ -254,14 +317,60 @@ const LeadMaster = ({
       mobile.includes(searchValue) // Search by mobile number
     )
   }
-  const handlePriceChange = (index, newPrice) => {
-    const updatedList = [...selectedleadlist]
-    updatedList[index].price = newPrice
-    setSelectedLeadList(updatedList)
+  const calculateTotalAmount = () => {
+    return selectedleadlist.reduce((total, product) => {
+      return total + (Number(product.price) || 0) // Ensure price is a number and handle null values
+    }, 0)
   }
-  const handleAddToTable = (product) => {
-    setAddedProducts((prev) => [...prev, product]) // Store added products
+  const handleAddProducts = () => {
+    setSelectedLeadList((prev) => {
+      let updatedList = [...prev]
+
+      if (selectedLicense) {
+        const selectedProducts = productSelections[selectedLicense]
+          .filter((product) => product.selected)
+          .map((product) => ({
+            licensenumber: selectedLicense,
+            productName: product.productName,
+            productId: product._id,
+            price: product.productPrice
+          }))
+
+        // Filter out products that are already added for the selected license
+        const newProducts = selectedProducts.filter(
+          (product) =>
+            !updatedList.some(
+              (p) =>
+                p.licensenumber === selectedLicense &&
+                p.productId === product.productId
+            )
+        )
+
+        updatedList = [...updatedList, ...newProducts]
+      } else {
+        const selectedProducts = licensewithoutProductSelection
+          .filter((product) => product.selected)
+          .map((product) => ({
+            productName: product.productName,
+            productId: product._id,
+            price: product.productPrice
+          }))
+
+        // Filter out products that are already added (without license)
+        const newProducts = selectedProducts.filter(
+          (product) =>
+            !updatedList.some(
+              (p) => !p.licensenumber && p.productId === product.productId
+            )
+        )
+
+        updatedList = [...updatedList, ...newProducts]
+      }
+
+      return updatedList
+    })
   }
+  console.log(users)
   const onSubmit = async (data, event) => {
     event.preventDefault()
 
@@ -287,7 +396,7 @@ const LeadMaster = ({
       /> */}
 
       <div
-        className="w-auto bg-white shadow-lg rounded p-5 md:p-8 mx-auto"
+        className="shadow-lg rounded p-2 md:p-3 mx-auto"
         // style={{
         //   opacity: productLoading || usersLoading || customerLoading ? 0.2 : 1,
         //   pointerEvents:
@@ -295,12 +404,12 @@ const LeadMaster = ({
         //   transition: "opacity 0.3s ease-in-out"
         // }}
       >
-        <h2 className="text-md md:text-2xl font-semibold mb-2 md:mb-6">
-          Lead Master
+        {/* <button onClick={handleDownloadFailedData}>click</button> */}
+        <h2 className="text-md md:text-2xl font-semibold md:px-5 mb-2 md:mb-1">
+          Lead
         </h2>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 md:gap-6 md:m-5">
-            {/* Other Input Fields */}
+          <div className="grid grid-cols-1 sm:grid-cols-1 gap-0 md:gap-6 md:mx-5">
             {process === "edit" && (
               <div>
                 <label
@@ -332,7 +441,7 @@ const LeadMaster = ({
               >
                 Customer Name
               </label>
-              <div className="flex">
+              <div className="flex w-full text-sm ">
                 <Select
                   options={customerOptions}
                   getOptionLabel={(option) =>
@@ -344,7 +453,7 @@ const LeadMaster = ({
                     handleSelectedCustomer(selectedOption.label)
                     setValue("customerName", selectedOption.value)
                   }}
-                  className="w-full"
+                  className="md:w-1/4 w-full"
                   styles={{
                     menu: (provided) => ({
                       ...provided,
@@ -363,12 +472,15 @@ const LeadMaster = ({
                 <button
                   type="button" // Prevents form submission
                   onClick={() => setModalOpen(true)}
-                  className="bg-blue-500 hover:bg-blue-600 py-1 px-4 rounded-md"
+                  className="bg-blue-500 hover:bg-blue-600 py-1 px-3 rounded-md text-white "
                 >
-                  Add
+                  ADD
                 </button>
               </div>
             </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-0 md:gap-6 md:mx-5 md:mt-2">
+            {/* Other Input Fields */}
 
             <div>
               <label
@@ -395,60 +507,8 @@ const LeadMaster = ({
                 id="phone"
                 {...register("phone")}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
-                placeholder="Landline...dddddddd"
+                placeholder="Landline..."
               ></input>
-            </div>
-
-            {tabledata && tabledata.length > 0 && (
-              <div className="col-span-1 sm:col-span-1 mt-6">
-                <table className="w-full border border-gray-300 rounded-md shadow-sm">
-                  <thead className="bg-gray-200">
-                    <tr>
-                      <th className="border p-2 text-left text-sm font-medium text-gray-700">
-                        License No
-                      </th>
-                      <th className="border p-2 text-left text-sm font-medium text-gray-700">
-                        Product Name
-                      </th>
-                      <th className="border p-2 text-left text-sm font-medium text-gray-700">
-                        Price
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tabledata?.map((item, index) => (
-                      <tr key={index} className="border">
-                        <td className="border p-2">{item?.licensenumber}</td>
-                        <td className="border p-2">{item?.productName}</td>
-                        <td className="border p-2">{item?.price}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            <div>
-              <label
-                htmlFor="allocatedTo"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Allocated To
-              </label>
-
-              <select
-                id="allocatedTo"
-                {...register("allocatedTo")}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
-              >
-                <option value="">-- Select User--</option>
-
-                {allStaffs?.map((staff) => (
-                  <option key={staff._id} value={staff._id}>
-                    {staff.name}
-                  </option>
-                ))}
-              </select>
             </div>
             <div>
               <label
@@ -461,7 +521,7 @@ const LeadMaster = ({
                 id="email"
                 {...register("email")}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
-                placeholder="Email...ddddd"
+                placeholder="Email..."
               ></input>
             </div>
 
@@ -480,99 +540,206 @@ const LeadMaster = ({
               ></input>
             </div>
           </div>
-          <div className="flex justify-between gap-3">
-            {/* License Selection Dropdown */}
-            {customerTableData && customerTableData.length > 0 && (
-              <div className="w-1/3">
-                <label className="block text-sm font-medium text-gray-700">
-                  Select License
-                </label>
-                <select
-                  className="w-full border rounded-md bg-white px-2 py-1.5"
-                  value={selectedLicense} // ✅ Keeps only the selected license number
-                  onChange={(e) => setSelectedLicense(e.target.value)}
+          <div className="md:flex md:gap-6 md:mx-5 md:mt-2">
+            <div className="md:w-72">
+              <label className="block text-sm font-medium text-gray-700">
+                Select License
+              </label>
+              {/* Button to open dropdown and show selected value */}
+              <button
+                type="button"
+                onClick={() => setIslicenseOpen(!isLicenseOpen)}
+                className="border px-2 md:py-1.5 py-2 md:w-72 w-full bg-white text-left rounded flex justify-between items-center"
+              >
+                {selectedLicense ?? "Select License"}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 transition-transform duration-200"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
                 >
-                  <option value="">Select License</option>
-                  {customerTableData.map((item, index) => (
-                    <option
-                      key={item.licensenumber || index}
-                      value={item.licensenumber}
-                    >
-                      {`${item.licensenumber}-${item.productName}`}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+                  <path
+                    fillRule="evenodd"
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
 
-            {/* Lead for Toggle & Product Selection */}
-            <div className="relative w-1/3" ref={dropdownRef}>
+              {/* Dropdown List */}
+              {isLicenseOpen && (
+                <ul className="left-0 md:w-72 mt-1 bg-white border rounded-md shadow-lg z-30">
+                  {/* Option to unselect license */}
+                  <li
+                    className="p-2 hover:bg-gray-200 cursor-pointer font-semibold text-red-500"
+                    onClick={() => handleLicenseSelect(null)}
+                  >
+                    No License
+                  </li>
+
+                  {/* List of available licenses */}
+                  {customerTableData?.map((item, index) => (
+                    <li
+                      key={item.licensenumber || index}
+                      className="p-2 hover:bg-gray-200 cursor-pointer"
+                      onClick={() => handleLicenseSelect(item.licensenumber)}
+                    >
+                      {`${item.licensenumber} - ${item.productName}`}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="relative" ref={dropdownRef}>
               <label
                 htmlFor="leadFor"
                 className="block text-sm font-medium text-gray-700"
               >
                 Lead for
               </label>
-              <select
-                className="w-full border rounded-md bg-white px-2 py-1.5"
-                value={selectedProducts ? selectedProducts._id : ""}
-                onChange={(e) => {
-                  const selectedProduct = filteredProduct.find(
-                    (item) => item._id === e.target.value
-                  )
-                  setSelectedProducts(selectedProduct || null) // Store full product details
-                }}
-              >
-                <option value="">Select a Product</option>
-                {filteredProduct.map((item, index) => (
-                  <option key={item.productName || index} value={item._id}>
-                    {item.productName}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {selectedleadlist?.map((product, index) => (
-              <div className="text-center w-full" key={index}>
-                <label className="block ">Selected Lead</label>
-                <div
-                  key={index}
-                  className="grid grid-cols-[3fr_3fr_2fr_1fr]  gap-2 mb-2"
+
+              <div className="flex items-center space-x-2">
+                {/* Toggle Dropdown Button */}
+                <button
+                  type="button"
+                  onClick={handleToggleDropdown}
+                  className="border px-2 md:py-1.5  py-2 md:w-80 w-full bg-white text-left rounded flex justify-between items-center"
                 >
-                  <input
-                    type="text"
-                    value={product.licensenumber}
-                    className="border p-2 rounded w-full"
-                    readOnly
-                    placeholder="Serial Number"
-                  />
-                  <input
-                    type="text"
-                    value={product.productName}
-                    className="border p-2 rounded w-full"
-                    readOnly
-                    placeholder="Product Name"
-                  />
-                  <input
-                    type="number"
-                    value={product.price}
-                    onChange={(e) => handlePriceChange(index, e.target.value)}
-                    className="border p-2 rounded w-full"
-                    placeholder="Price"
-                  />
-
-                  <button
-                    onClick={() => handleAddToTable(product)}
-                    className="bg-blue-500 text-white  p-2 rounded hover:bg-blue-600 transition-colors"
-                    type="button"
+                  Select a product/services
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 transition-transform duration-200"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
                   >
-                    ADD
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
 
-          <div className="grid grid-cols-2 gap-4 mb-3">
+                <button
+                  type="button"
+                  onClick={handleAddProducts}
+                  // disabled={
+                  //   !productSelections[selectedLicense]?.some((p) => p.selected)
+                  // }
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded "
+                >
+                  Add
+                </button>
+              </div>
+
+              {/* Product List (Visible when isOpen is true) */}
+              {isleadForOpen && (
+                <div className="absolute z-30 left-0 mt-2 md:w-80 border bg-white shadow-lg rounded-md p-2 max-h-40 overflow-y-auto">
+                  {selectedLicense &&
+                    productData?.map((product) => {
+                      const currentProductState = productSelections[
+                        selectedLicense
+                      ]?.find((p) => p._id === product._id) || {
+                        selected: false
+                      }
+
+                      return (
+                        <label
+                          key={product._id}
+                          className="flex items-center space-x-2 mb-1"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={currentProductState.selected}
+                            onChange={() => handleProductSelect(product._id)}
+                            className="form-checkbox"
+                          />
+                          <span>{product.productName}</span>
+                        </label>
+                      )
+                    })}
+                  {!selectedLicense &&
+                    productData?.map((product) => {
+                      const currentProductState =
+                        licensewithoutProductSelection?.find(
+                          (p) => p._id === product._id
+                        ) || { selected: false }
+                      return (
+                        <label
+                          key={product._id}
+                          className="flex items-center space-x-2 mb-1"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={currentProductState.selected}
+                            onChange={() => handleProductSelect(product._id)}
+                            className="form-checkbox"
+                          />
+                          <span>{product.productName}</span>
+                        </label>
+                      )
+                    })}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:mx-5 md:mt-2 md:gap-6 ">
+            {selectedleadlist && selectedleadlist.length > 0 && (
+              <div className=" bg-white border rounded-md  max-h-[200px] overflow-y-auto overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-100 border-b sticky top-0">
+                      <th className="p-2 text-left">License Number</th>
+                      <th className="p-2 text-left">Product Name</th>
+                      <th className="p-2 text-left">Price</th>
+                      <th className="p-2 text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedleadlist.map((product, index) => (
+                      <tr key={index} className="border-b hover:bg-gray-50">
+                        <td className="p-2">
+                          {product.licensenumber || "Not Selected"}
+                        </td>
+                        <td className="p-2">{product.productName}</td>
+                        {/* Editable Price Input */}
+                        <td className="p-2">
+                          <input
+                            type="number"
+                            value={product.price}
+                            onChange={(e) =>
+                              handlePriceChange(index, e.target.value)
+                            }
+                            className="w-full border rounded-md px-2 py-1 text-sm"
+                          />
+                        </td>
+                        <td className="p-2 items-center text-center space-x-2">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteProduct(product)}
+                            className="text-red-500 hover:text-red-700"
+                            title="Delete Product"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                            >
+                              <path d="M3 6h18" />
+                              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
             <div>
               <label
                 htmlFor="remark"
@@ -583,85 +750,48 @@ const LeadMaster = ({
               <textarea
                 id="description"
                 {...register("remark")}
-                className="block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500 "
+                className="block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500  min-h-[100px]"
                 placeholder="Remarks..."
               ></textarea>
             </div>
-            {addedproductlist.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Added Products
-                </label>
-
-                <div className="border rounded-md overflow-hidden max-h-[250px] overflow-y-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="bg-gray-100 border-b sticky top-0">
-                        <th className="p-2 text-left">License Number</th>
-                        <th className="p-2 text-left">Product Name</th>
-                        <th className="p-2 text-left">Price</th>
-                        <th className="p-2 text-center">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {addedproductlist.map((product, index) => (
-                        <tr key={index} className="border-b hover:bg-gray-50">
-                          <td className="p-2">{product.licensenumber}</td>
-                          <td className="p-2">{product.productName}</td>
-                          <td className="p-2">{product.price}</td>
-                          <td className="p-2 flex justify-center space-x-2">
-                            <button
-                              type="button"
-                              onClick={() => handleEditProduct(product)}
-                              className="text-blue-500 hover:text-blue-700"
-                              title="Edit Product"
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-5 w-5"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                              >
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                              </svg>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteProduct(product)}
-                              className="text-red-500 hover:text-red-700"
-                              title="Delete Product"
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-5 w-5"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                              >
-                                <path d="M3 6h18" />
-                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                              </svg>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
           </div>
-          <div className="justify-center items-center text-center">
-            <button
-              type="submit"
-              className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-            >
-              {process === "Registration" ? "SUBMIT" : "UPDATE"}
-            </button>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 md:gap-6 md:mx-5 md:mt-2 mb-6">
+            <div>
+              <label
+                htmlFor="leadBy"
+                className="block text-sm font-medium text-gray-700"
+              >
+                LeadBy
+              </label>
+              <input
+                type="text"
+                readOnly // Make it non-editable
+                value={users?.name || ""} // Auto-updates with total price
+                className=" mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Net Amount
+              </label>
+              <input
+                type="number"
+                readOnly // Make it non-editable
+                value={calculateTotalAmount()} // Auto-updates with total price
+                className=" mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
+                placeholder="Net Amount"
+              />
+            </div>
+
+            <div className="h-full flex items-end mt-2 md:mt-0">
+              <button
+                type="submit"
+                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+              >
+                {process === "Registration" ? "SUBMIT" : "UPDATE"}
+              </button>
+            </div>
           </div>
         </form>
         {modalOpen && (

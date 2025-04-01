@@ -1,4 +1,5 @@
 import XLSX from "xlsx" // Assuming you're using XLSX to parse Excel files
+// import xlsToJson from "xls-to-json-lc" // For .xls files
 import Product from "../../model/primaryUser/productSchema.js"
 import Company from "../../model/primaryUser/companySchema.js"
 import Branch from "../../model/primaryUser/branchSchema.js"
@@ -8,7 +9,6 @@ import {
   Brand,
   Category
 } from "../../model/primaryUser/productSubDetailsSchema.js"
-
 const excelDateToFormatNumber = (value) => {
   // Check if the value is a serial (number) or a string
   if (typeof value === "number") {
@@ -288,6 +288,140 @@ export const ExceltoJson = async (socket, fileData) => {
         failedData.length === totalData
           ? "This file is already uploaded"
           : "Error occurred during upload"
+    })
+  }
+}
+export const ExceltoJsonProduct = async (socket, fileData) => {
+  // Parse the uploaded Excel file
+  const workbook = XLSX.read(fileData, { type: "buffer" })
+
+  try {
+    let uploadedCount = 0
+    let totalData = 0
+    const failedData = []
+    for (const sheetName of workbook.SheetNames) {
+      // const worksheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName])
+      // const worksheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
+      //   raw: true // Keep original data types
+      // })
+      // const worksheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
+      //   header: 1, // Ensures the first row is treated as headers
+      //   defval: "", // Prevents undefined values
+      //   raw: true // Maintains original data types
+      // })
+      const worksheetRaw = XLSX.utils.sheet_to_json(
+        workbook.Sheets[sheetName],
+        {
+          header: 1,
+          defval: "",
+          raw: true
+        }
+      )
+
+      const headers = worksheetRaw[0]
+      const worksheet = worksheetRaw.slice(1).map((row) => {
+        let obj = {}
+        headers.forEach((header, index) => {
+          obj[header] = row[index]
+        })
+        return obj
+      })
+      totalData += worksheet.length
+      const productList = await Product.find({})
+      const licenseList = await License.find({})
+
+      for (const item of worksheet) {
+        try {
+          const matchingLicense = licenseList.find(
+            (license) =>
+              license.licensenumber === item["CUSTOMER ID"] || item["Wallet Id"]
+          )
+          // console.log("licen", matchingLicense)
+
+          if (matchingLicense) {
+            const existingCustomer = await Customer.findOne({
+              "selected.licensenumber":
+                item["CUSTOMER ID"] || item["Wallet Id"],
+              "selected.product_id": { $exists: false } // Ensures product_id does NOT exist
+            })
+
+            if (existingCustomer) {
+              for (let i = 0; i < existingCustomer.selected.length; i++) {
+                const selectedItem = existingCustomer.selected[i]
+
+                if (selectedItem.licensenumber === item["Wallet Id"]) {
+                  // console.log("exit undoooooo")
+                  const walletProduct = productList.find(
+                    (p) => p.productName.toUpperCase().trim() === "WALLET"
+                  )
+                  console.log("eeeeee", walletProduct)
+                  if (walletProduct) {
+                    // console.log("walletpro", walletProduct)
+                    selectedItem.product_id = walletProduct._id
+                    console.log("walte", selectedItem.product_id)
+                  }
+                } else if (selectedItem.licensenumber === item["CUSTOMER ID"]) {
+                  console.log("exist undooooooo")
+                  const mainProduct = productList.find((p) => {
+                    console.log(item["Type"])
+                      p.productName.toUpperCase().trim() ===
+                      item["Type"]?.toUpperCase()
+                  })
+                  if (mainProduct) {
+                    console.log("mainpro", mainProduct)
+                    selectedItem.product_id = mainProduct._id
+                    console.log("sle", selectedItem.product_id)
+                  }
+                }
+              }
+
+              const savedCustomer = await existingCustomer.save()
+              if (savedCustomer) {
+                uploadedCount++
+                socket.emit("conversionProgressProduct", {
+                  current: uploadedCount,
+                  total: totalData
+                })
+              }
+            } else {
+              failedData.push(item)
+            }
+          } else {
+            // console.log("nomathcing")
+            failedData.push(item)
+          }
+        } catch (error) {
+          console.error("Error processing customer:", error.message)
+          failedData.push(item)
+        }
+      }
+    }
+
+    /////nene
+
+    if (uploadedCount > 0) {
+      socket.emit("conversionCompleteProduct", {
+        message:
+          failedData.length === 0
+            ? "Conversion completed successfully"
+            : "Conversion partially completed",
+        secondaryMessage: failedData.length
+          ? "Some records could not be saved due to duplicate license numbers."
+          : "",
+        nonsavingData: failedData
+      })
+    } else {
+      socket.emit("conversionErrorProduct", {
+        message:
+          failedData.length === totalData
+            ? "This file has already been uploaded."
+            : "Error occurred during upload."
+      })
+    }
+  } catch (error) {
+    console.error("Conversion error:", error)
+    socket.emit("conversionErrorProduct", {
+      message: "Error processing file. Ensure it is a valid Excel file."
     })
   }
 }

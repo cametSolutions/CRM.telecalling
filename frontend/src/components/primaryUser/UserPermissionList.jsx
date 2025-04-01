@@ -65,6 +65,7 @@ const UserPermissionList = ({ user, closeModal, Loader }) => {
 
   const handleChange = (e) => {
     const { name, checked } = e.target
+    console.log("chedkedin", checked)
     // Update the user permissions
     const updatedPermissions = {
       ...userPermissions,
@@ -149,7 +150,6 @@ const UserPermissionList = ({ user, closeModal, Loader }) => {
                 name={key}
                 className="w-4 h-4"
                 checked={userPermissions[key]}
-                //
                 onChange={handleChange}
               />
               <span className="ml-2">{key}</span>

@@ -124,7 +124,7 @@ export default function CallRegistration() {
             callData.callDetails.customerid.selected.filter(
               (product) => product.product_id === productId
             )
-          
+
           setSelectedCustomer(callData?.callDetails?.customerid)
           setName(callData?.callDetails?.customerid?.customerName)
           setProductDetails(matchingProducts)
@@ -151,11 +151,11 @@ export default function CallRegistration() {
 
   const fetchCallDetails = async (callId) => {
     const response = await fetch(
-       `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
-    {
-      method: "GET",
-      credentials: "include" // This allows cookies to be sent with the request
-    }
+      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
+      {
+        method: "GET",
+        credentials: "include" // This allows cookies to be sent with the request
+      }
     )
     // const response = await fetch(
     //   `http://localhost:9000/api/customer/getcallregister/${callId}`,
@@ -250,9 +250,19 @@ export default function CallRegistration() {
 
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
-    const branchName = user.selected
-      .map((branch) => branch.branchName)
-      .join(", ")
+    let branchName
+    if (user.role === "Staff") {
+      branchName = user.selected.map((branch) => branch.branchName).join(", ")
+    } else if (user.role === "Admin") {
+      branchName = selectedProducts[0].product_id
+        ? selectedProducts
+            .map((item) =>
+              item.product_id?.selected.map((product) => product.branchName)
+            )
+            .flat()
+        : selectedCustomer.selected[0].branch_id.branchName
+    }
+
     const endTime = new Date().toISOString()
     const durationInSeconds = timeStringToSeconds(time)
     // Save timer value in local storage
@@ -431,11 +441,11 @@ Problem:    \t${selectedText}
 
     // if (calldata.formdata.status === "solved") {
     //   const message = formatTableToText(calldata, selectedText)
-  
+
     //   whatsappUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(
     //     message
     //   )}&phone=${phoneNumber}`
- 
+
     // } else {
     //   // Open WhatsApp Web with the message
     //   whatsappUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(

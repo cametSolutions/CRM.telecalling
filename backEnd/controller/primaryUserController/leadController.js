@@ -1,5 +1,6 @@
 import LeadMaster from "../../model/primaryUser/leadmasterSchema.js"
 import LeadId from "../../model/primaryUser/leadIdSchema.js"
+import Service from "../../model/primaryUser/servicesSchema.js"
 export const LeadRegister = async (req, res) => {
   try {
     const leadData = req.body
@@ -52,6 +53,17 @@ export const LeadRegister = async (req, res) => {
     })
   } catch (error) {
     console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const GetAllservices = async (req, res) => {
+  try {
+    const allservices = await Service.find({})
+    return res
+      .status(200)
+      .json({ message: "Services found", data: allservices })
+  } catch (error) {
+    console.log(error.message)
     return res.status(500).json({ message: "Internal server error" })
   }
 }
