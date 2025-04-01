@@ -11,6 +11,7 @@ import debounce from "lodash.debounce"
 
 function LeaveApplication() {
   const [events, setEvents] = useState([])
+  const [edit, setEdit] = useState(null)
   const [isHaveCompensatoryleave, setcompensatoryLeave] = useState(false)
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [visibleDays, setVisibleDays] = useState([])
@@ -686,6 +687,7 @@ function LeaveApplication() {
           //     credentials: "include"
           //   }
           // )
+
           const response = await fetch(
             `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
             {
@@ -801,19 +803,8 @@ function LeaveApplication() {
           }
         }
       } else if (tab === "Attendance") {
-        // const response = await fetch(
-        //   `http://localhost:9000/api/auth/attendance?selectedid=${user._id}&attendanceId=${user.attendanceId}`,
-        //   {
-        //     method: "POST",
-        //     headers: {
-        //       "Content-Type": "application/json"
-        //     },
-        //     body: JSON.stringify(selectedAttendance),
-        //     credentials: "include"
-        //   }
-        // )
         const response = await fetch(
-          `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}`,
+          `http://localhost:9000/api/auth/attendance?selectedid=${user._id}&attendanceId=${user.attendanceId}`,
           {
             method: "POST",
             headers: {
@@ -823,6 +814,17 @@ function LeaveApplication() {
             credentials: "include"
           }
         )
+        // const response = await fetch(
+        //   `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}`,
+        //   {
+        //     method: "POST",
+        //     headers: {
+        //       "Content-Type": "application/json"
+        //     },
+        //     body: JSON.stringify(selectedAttendance),
+        //     credentials: "include"
+        //   }
+        // )
 
         await response.json()
 
@@ -919,6 +921,7 @@ function LeaveApplication() {
       // Handle other cases
     }
   }
+ 
   const renderContent = () => {
     switch (selectedTab) {
       case "Leave":
@@ -1019,12 +1022,15 @@ function LeaveApplication() {
                         className="text-gray-500 cursor-pointer transition-transform duration-200 ease-in-out hover:scale-125"
                         onClick={() => {
                           setSelectedTab("New Leave")
+                          setEdit(true)
+                         
+
                           setFormData({
                             leaveDate: leave.leaveDate.toString().split("T")[0],
                             leaveType: leave.leaveType,
                             halfDayPeriod:
                               leave.leaveType === "Half Day"
-                                ? halfDayPeriod
+                                ? leave.halfDayPeriod
                                 : undefined,
                             leaveCategory: leave.leaveCategory,
                             reason: leave.reason
@@ -1380,20 +1386,20 @@ function LeaveApplication() {
                     <option value="other Leave">Other Leave</option>
                   ) : (
                     <>
-                      {BalancedcasualleaveCount > 0 && (
+                      {(BalancedcasualleaveCount > 0 || edit === true) && (
                         <option value="casual Leave">Casual Leave</option>
                       )}
-                      {BalanceprivilegeleaveCount > 0 && (
+                      {(BalanceprivilegeleaveCount > 0 || edit === true) && (
                         <option value="privileage Leave">
                           Privilege Leave
                         </option>
                       )}
-                      {BalancecompensatoryleaveCount > 0 && (
+                      {(BalancecompensatoryleaveCount > 0 || edit === true) && (
                         <option value="compensatory Leave">
                           Compensatory Leave
                         </option>
                       )}
-                      {BalancesickleaveCount > 0 && (
+                      {(BalancesickleaveCount > 0 || edit === true) && (
                         <option value="sick Leave">Sick Leave</option>
                       )}
                       <option value="other Leave">Other Leave</option>
