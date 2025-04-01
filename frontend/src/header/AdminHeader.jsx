@@ -181,8 +181,13 @@ export default function AdminHeader() {
       label: "Work Allocation"
     },
     {
-      to: "/admin/tasks/excelconverter"
+      to: "/admin/tasks/excelconverter",
+      label: "Customer Converter(excel to Json)"
     },
+    // {
+    //   to: "/admin/tasks/excelconvertertoproductaddonly",
+    //   label: "productadd(excel to Json)"
+    // },
     {
       to: "/admin/tasks/attendanceExcelconverter",
       label: "Attendance Converter"
@@ -197,7 +202,6 @@ export default function AdminHeader() {
       to: "/admin/reports/expiry-register",
       label: "Expiry Register"
     },
-   
 
     {
       to: "/admin/reports/account-search",

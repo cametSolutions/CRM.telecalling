@@ -2,11 +2,12 @@ import React, { useState, useEffect } from "react"
 import io from "socket.io-client"
 import * as XLSX from "xlsx" // Import XLSX for creating the Excel file
 
-const socket = io("https://www.crm.camet.in") // Adjust based on your backend address
-// const socket = io("http://localhost:9000")
+// const socket = io("https://www.crm.camet.in") // Adjust based on your backend address
+const socket = io("http://localhost:9000")
 
-const ExcelUploader = () => {
+const ExcelUploaderProduct = () => {
   const [file, setFile] = useState(null)
+  const [enableConversion, setEnableConversion] = useState(false)
   const [progress, setProgress] = useState({ current: 0, total: 0 })
   const [message, setMessage] = useState("")
   const [loading, setLoading] = useState(false)
@@ -20,9 +21,13 @@ const ExcelUploader = () => {
       setFile(selectedFile) // Save the selected file in state
     }
   }
-
+  console.log("nowwwwwwwwwww")
+  console.log("Socket connected:", socket?.connected)
   const handleUpload = () => {
-    if (file) {
+    if (!file) {
+      console.log("No file selected.")
+      return
+    } else {
       setLoading(true) // Set loading state to true
       setSuccess(false) // Reset success state
       const reader = new FileReader()
@@ -30,15 +35,45 @@ const ExcelUploader = () => {
         const fileData = event.target.result
 
         // Emit event to start the conversion
-        socket.emit("startConversion", fileData)
+        socket.emit("startproduct", fileData)
       }
       reader.readAsArrayBuffer(file)
     }
   }
 
+  //   const handleUpload = () => {
+  //     if (!file) {
+  //       console.log("No file selected.")
+  //       return
+  //     }
+
+  //     const fileExtension = file.name.split(".").pop().toLowerCase()
+  //     const fileType = fileExtension === "xls" ? "xls" : "xlsx"
+
+  //     const reader = new FileReader()
+  //     reader.onload = (event) => {
+  //     //   const fileData = event.target.result
+  //       const arrayBuffer = event.target.result;
+  //       const fileData = Buffer.from(arrayBuffer).toString("base64");
+
+  //       console.log("Emitting event to backend...")
+  //       console.log("File Type:", fileType)
+  //       console.log("File Data:", fileData)
+  //       console.log("Socket connected:", socket?.connected)
+  //       if (socket && socket.connected) {
+  //         setLoading(true)
+  //         socket.emit("startConversionproduct", { fileData, fileType })
+  //         console.log("Event emitted successfully!")
+  //       } else {
+  //         console.error("Socket not connected!")
+  //       }
+  //     }
+  //     reader.readAsArrayBuffer(file)
+  //   }
+
   // Listen for progress updates
   useEffect(() => {
-    socket.on("conversionProgress", (data) => {
+    socket.on("conversionProgressProduct", (data) => {
       setProgress({
         current: data.current,
         total: data.total
@@ -46,7 +81,7 @@ const ExcelUploader = () => {
     })
 
     // Listen for completion message
-    socket.on("conversionComplete", (data) => {
+    socket.on("conversionCompleteProduct", (data) => {
       setLoading(false) // Set loading to false on completion
       setMessage(data.message)
       setFailMessage(data.secondaryMessage)
@@ -57,7 +92,7 @@ const ExcelUploader = () => {
     })
 
     // Listen for error messages
-    socket.on("conversionError", (error) => {
+    socket.on("conversionErrorProduct", (error) => {
       setLoading(false) // Set loading to false on error
       setMessage(error.message)
       // setNonsavedData(error.nonsavingData) // Store failed data
@@ -65,11 +100,11 @@ const ExcelUploader = () => {
     })
 
     // Cleanup on component unmount
-    return () => {
-      socket.off("conversionProgress")
-      socket.off("conversionComplete")
-      socket.off("conversionError")
-    }
+    // return () => {
+    //   socket.off("conversionProgressProduct")
+    //   socket.off("conversionCompleteProduct")
+    //   socket.off("conversionErrorProduct")
+    // }
   }, [])
 
   const handleDownloadFailedData = () => {
@@ -90,9 +125,9 @@ const ExcelUploader = () => {
 
   return (
     <div className="w-full flex  justify-center items-center h-96">
-      <div className=" w-2/6 mx-auto p-6   bg-gray-100 rounded-lg shadow-md text-center">
+      <div className=" md:3/6 lg:w-2/6 mx-auto p-6   bg-gray-100 rounded-lg shadow-md text-center">
         <h1 className="text-2xl font-semibold mb-4 text-gray-800">
-          Customer Excel to JSON Conversion
+          Excel to JSON Conversion
         </h1>
         <input
           type="file"
@@ -136,4 +171,4 @@ const ExcelUploader = () => {
   )
 }
 
-export default ExcelUploader
+export default ExcelUploaderProduct

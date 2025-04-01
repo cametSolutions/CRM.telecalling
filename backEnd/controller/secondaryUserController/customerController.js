@@ -479,7 +479,7 @@ export const PartnerRegistration = async (req, res) => {
 export const ServicesRegistration = async (req, res) => {
   try {
     const formdata = req.body
-    const { serviceName, price } = formdata
+    const { serviceName, price, company, branch } = formdata
 
     const existingItem = await Service.findOne({
       serviceName
@@ -493,7 +493,9 @@ export const ServicesRegistration = async (req, res) => {
     // Create and save call notes
     const collection = new Service({
       serviceName,
-      price
+      price,
+      company,
+      branch
     })
 
     await collection.save()
@@ -653,6 +655,7 @@ export const GetAllCustomer = async (req, res) => {
     let allcustomers
     let customers
     let parsedBranch
+
     if (userbranch) {
       parsedBranch = JSON.parse(decodeURIComponent(userbranch))
     }
@@ -686,7 +689,9 @@ export const GetAllCustomer = async (req, res) => {
             _id: 0, // Exclude _id
             customerName: 1,
             "selected.licensenumber": 1,
-            "selected.branchName": 1
+            "selected.branchName": 1,
+            "selected.productName": 1,
+            "selected.procuct_id": 1
           }
         }
       ])
@@ -701,7 +706,7 @@ export const GetAllCustomer = async (req, res) => {
         (id) => new mongoose.Types.ObjectId(id)
       )
 
-      const filteredCustomers = allcustomers.filter((customer) =>
+      const filteredCustomers = customers.filter((customer) =>
         customer.selected.some(
           (selection) =>
             objectIds.some((objId) => objId.equals(selection.branch_id)) // Correct ObjectId comparison

@@ -9,8 +9,6 @@ import Select from "react-select"
 import ImageInput from "../common/ImageInput"
 import UseFetch from "../../hooks/useFetch"
 
-
-
 const UserAdd = ({
   process,
   User,
@@ -24,12 +22,19 @@ const UserAdd = ({
     setValue,
     formState: { errors },
     control,
+    getValues,
     reset,
     watch,
     trigger
-  } = useForm()
+  } = useForm({
+    defaultValues: {
+      permissionLevel: [] // Initialize as an array
+    }
+  })
 
   const [formMessage, setFormMessage] = useState("")
+
+  const [permissionOpen, setPermissionOpen] = useState(false)
   const [showTable, setShowTable] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
   const [tableEdit, settableEdit] = useState(false)
@@ -46,6 +51,11 @@ const UserAdd = ({
   const [selectedCountry, setSelectedCountry] = useState(null)
   const [selectedState, setSelectedState] = useState(null)
   const [tableData, setTableData] = useState([])
+  const [userlevelPermission, setUserLevelPermissions] = useState({
+    level1: false,
+    level2: false,
+    level3: false
+  })
 
   const [imageData, setImageData] = useState({
     profileUrl: [],
@@ -334,6 +344,36 @@ const UserAdd = ({
     setTableData(filtereddData)
   }
 
+  // const handleChangeLevelPermission = (e) => {
+  //   console.log("ggg")
+  //   const { name, checked } = e.target
+  //   console.log(name, "naem")
+  //   console.log("checked", checked)
+  //   setValue(`permissionLevel.${name}`, checked)
+  //   setUserLevelPermissions((prev) => ({
+  //     ...prev,
+  //     [name]: checked
+  //   }))
+  // }
+  const handleChangeLevelPermission = (e) => {
+    const { value, checked } = e.target
+    const selectedPermissions = getValues("permissionLevel") || []
+
+    if (checked) {
+      console.log("checked", checked)
+      setUserLevelPermissions((prev) => ({
+        ...prev,
+        [value]: checked
+      }))
+      setValue("permissionLevel", [...selectedPermissions, value]) // Add selected level
+    } else {
+      setValue(
+        "permissionLevel",
+        selectedPermissions.filter((level) => level !== value) // Remove unselected level
+      )
+    }
+  }
+  console.log(userlevelPermission)
   const profileImage = (url) => {
     setImageData((prevData) => ({
       ...prevData,
@@ -369,10 +409,11 @@ const UserAdd = ({
 
       handleUserData(formattedData, imageData, tableData)
     } else if (process === "Edit") {
-      handleEditedData(data, User?._id, tableData)
+      console.log("daa", data)
+
+      handleEditedData(data, User?._id, tableData, userlevelPermission)
     }
   }
-
   return (
     <div
       className="flex flex-col justify-center items-center min-h-screen p-8 bg-gray-100"
@@ -667,6 +708,61 @@ const UserAdd = ({
                 <option value="Staff">Staff</option>
                 <option value="Admin">Admin</option>
               </select>
+            </div>
+
+            <div>
+              <label className="block mb-1 font-semibold">
+                Permission Level
+              </label>
+
+              <button
+                type="button"
+                className="flex justify-between border border-gray-300 py-2 w-full rounded-md text-left px-3 mb-1"
+                onClick={() => setPermissionOpen(!permissionOpen)}
+              >
+                Select Permission
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 transition-transform duration-200"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
+
+              {permissionOpen && (
+                <div className="flex flex-col space-y-2 border rounded-lg px-2 bg-white">
+                  {["Level 1", "Level 2", "Level 3"].map((level, index) => {
+                    const value = level.toLowerCase().replace(/\s+/g, "") // Convert "Level 1" → "level1"
+                    return (
+                      <label
+                        key={index}
+                        className="flex items-center space-x-2"
+                      >
+                        <input
+                          type="checkbox"
+                          value={value}
+                          key={level}
+                          checked={
+                            watch("permissionLevel")?.includes(value) || false
+                          }
+                          onChange={handleChangeLevelPermission}
+                          {...register("permissionLevel", {
+                            onChange: handleChangeLevelPermission
+                          })}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring focus:ring-blue-300"
+                        />
+                        <span>{level}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
             <div>

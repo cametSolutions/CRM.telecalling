@@ -230,17 +230,21 @@ export const StaffRegister = async (req, res) => {
 }
 
 export const UpdateUserandAdmin = async (req, res) => {
-  const { userId, userData, tabledata } = req.body
+  const { userId, userData, tabledata, userlevelPermission } = req.body
 
   const { role } = userData
 
-  const { selected, ...filteredUserData } = userData
+  const { selected, permissionLevel, ...filteredUserData } = userData
+
   const { password } = filteredUserData
 
   try {
     if (role === "Staff") {
       const updateQuery = {
-        $set: filteredUserData // Set the fields from userData without 'selected'
+        $set: {
+          ...userData, // Other fields to update
+          permissionLevel: [userlevelPermission] // Wrap in an array as per schema
+        }
       }
 
       // Check if tableData is empty or not, and update the selected field accordingly

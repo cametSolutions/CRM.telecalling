@@ -20,7 +20,6 @@ const ProductAdd = ({
   } = useForm()
 
   const [selectedCompany, setSelectedCompany] = useState([])
-  // const [dd, setd] = useState(false)
   const [selectedBranch, setSelectedBranch] = useState(false)
   const [editObject, setEditObject] = useState({
     brands: {},

@@ -11,7 +11,7 @@ const stafftasksRoutes = [
   },
   { path: "/staff/tasks/workAllocation", component: ComingSoon },
 
-  { path: "/staff/tasks/excelconverter", component: ExcelUploader }
+  { path: "/staff/tasks/excelconverter", component: ComingSoon }
 ]
 
 export default stafftasksRoutes

@@ -15,11 +15,16 @@ function UserEdit() {
   const logged = localStorage.getItem("user")
   const parsedlogged = JSON.parse(logged)
 
-  const handleSubmit = async (userData, userId, tabledata) => {
+  const handleSubmit = async (
+    userData,
+    userId,
+    tabledata,
+    userlevelPermission
+  ) => {
     try {
       const response = await api.post(
         "/auth/userEdit",
-        { userData, userId, tabledata },
+        { userData, userId, tabledata, userlevelPermission },
         {
           withCredentials: true
         }

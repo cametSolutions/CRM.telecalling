@@ -29,7 +29,6 @@ const staffSchema = new Schema(
     role: {
       type: String
     },
-   
 
     privilegeleavestartsfrom: {
       type: String
@@ -134,6 +133,12 @@ const staffSchema = new Schema(
         CustomerActionSummary: Boolean,
         AccountSearch: Boolean,
         LeaveSummary: Boolean
+      }
+    ],
+    permissionLevel: [
+      {
+        level1: { type: Boolean, default: true },
+        level2: Boolean
       }
     ],
     selected: [
