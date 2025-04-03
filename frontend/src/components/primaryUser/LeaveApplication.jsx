@@ -42,13 +42,14 @@ function LeaveApplication() {
     leaveType: "Full Day",
     onsiteType: "Full Day",
 
-    halfDayPeriod: "",
+    halfDayPeriod: "Morning",
     onsite: false,
     leaveCategory: "",
     reason: "",
     description: "",
     eventId: null
   })
+  console.log(formData)
   const [selectedAttendance, setselectedAttendance] = useState({
     attendanceDate: "",
     inTime: { hours: "12", minutes: "00", amPm: "AM" },
@@ -615,8 +616,16 @@ function LeaveApplication() {
   }
   const handleChange = (e) => handleInputChange(e)
   const handleDataChange = (e) => {
+    console.log("hh")
     const { name, value } = e.target
-
+    console.log(name, value)
+    if (value === "Half Day") {
+      console.log("h")
+      // setFormData((prev) => ({
+      //   ...prev,
+      //   [name]: value
+      // }))
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: value
@@ -718,7 +727,7 @@ function LeaveApplication() {
               leaveType: "Full Day",
               onsiteType: "Full Day",
 
-              halfDayPeriod: "",
+              halfDayPeriod: "Morning",
               onsite: false,
               leaveCategory: "",
               reason: "",
@@ -781,7 +790,8 @@ function LeaveApplication() {
               leaveDate: "",
               description: "",
               onsite: false,
-              halfDayPeriod: "",
+              halfDayPeriod: "Morning",
+              onsiteType: "Full Day",
               leaveType: "Full Day"
             }))
             setTableRows((prev) => [
@@ -803,19 +813,8 @@ function LeaveApplication() {
           }
         }
       } else if (tab === "Attendance") {
-        const response = await fetch(
-          `http://localhost:9000/api/auth/attendance?selectedid=${user._id}&attendanceId=${user.attendanceId}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify(selectedAttendance),
-            credentials: "include"
-          }
-        )
         // const response = await fetch(
-        //   `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}`,
+        //   `http://localhost:9000/api/auth/attendance?selectedid=${user._id}&attendanceId=${user.attendanceId}`,
         //   {
         //     method: "POST",
         //     headers: {
@@ -825,6 +824,17 @@ function LeaveApplication() {
         //     credentials: "include"
         //   }
         // )
+        const response = await fetch(
+          `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(selectedAttendance),
+            credentials: "include"
+          }
+        )
 
         await response.json()
 
@@ -921,7 +931,7 @@ function LeaveApplication() {
       // Handle other cases
     }
   }
- 
+
   const renderContent = () => {
     switch (selectedTab) {
       case "Leave":
@@ -1023,7 +1033,6 @@ function LeaveApplication() {
                         onClick={() => {
                           setSelectedTab("New Leave")
                           setEdit(true)
-                         
 
                           setFormData({
                             leaveDate: leave.leaveDate.toString().split("T")[0],

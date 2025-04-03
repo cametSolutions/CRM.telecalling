@@ -1,4 +1,6 @@
 import LeadMaster from "../../model/primaryUser/leadmasterSchema.js"
+import models from "../../model/auth/authSchema.js"
+const { Staff, Admin } = models
 import LeadId from "../../model/primaryUser/leadIdSchema.js"
 import Service from "../../model/primaryUser/servicesSchema.js"
 export const LeadRegister = async (req, res) => {
@@ -14,7 +16,9 @@ export const LeadRegister = async (req, res) => {
       trade,
       leadFor,
       remark,
-      allocatedTo
+      netAmount,
+      allocatedTo,
+      leadBy
     } = leadData
     console.log("cstomername", customerName)
 
@@ -27,6 +31,21 @@ export const LeadRegister = async (req, res) => {
     if (lastLead) {
       const lastId = parseInt(lastLead.leadId, 10) // Convert to number
       newLeadId = String(lastId + 1).padStart(5, "0") // Convert back to 5-digit string
+    }
+    let assignedtoleadModel = null // Determine dynamically
+    // Check if leadBy exists in Staff or Admin collection
+    const isStaff = await Staff.findById(leadBy).lean()
+    if (isStaff) {
+      assignedtoleadModel = "Staff"
+    } else {
+      const isAdmin = await Admin.findById(leadBy).lean()
+      if (isAdmin) {
+        assignedtoleadModel = "Admin"
+      }
+    }
+
+    if (!assignedtoleadModel) {
+      return res.status(400).json({ message: "Invalid leadBy reference" })
     }
 
     const lead = new LeadMaster({
@@ -41,11 +60,15 @@ export const LeadRegister = async (req, res) => {
       trade,
       leadFor,
       remark,
+      leadBy,
+      assignedtoleadModel, // Now set dynamically
+      netAmount: Number(netAmount),
       allocatedTo
     })
     await lead.save()
     const leadidonly = new LeadId({
-      leadId: newLeadId
+      leadId: newLeadId,
+      assignedtoleadModel // Now set dynamically
     })
     await leadidonly.save()
     res.status(201).json({
@@ -76,6 +99,8 @@ export const GetallLead = async (req, res) => {
       const pendingLeads = await LeadMaster.find({
         allocatedTo: null
       })
+        .populate({ path: "customerName", select: "customerName" })
+        .populate({ path: "leadBy", select: "name" })
       if (pendingLeads) {
         return res
           .status(200)

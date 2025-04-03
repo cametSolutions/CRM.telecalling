@@ -67,18 +67,7 @@ const LeadMaster = ({
       : null
   )
   console.log(customerData)
-  // const a = customerData?.filter(
-  //   (item) => item.customerName === "CAPSON MARKETING"
-  // )
-  // const accuanetCustomers = customerData?.filter((customer) =>
-  //   customer.selected.some((selection) => selection.branchName === "ACCUANET")
-  // )
-  // const cammetCustomers = customerData?.filter((customer) =>
-  //   customer.selected.some((selection) => selection.branchName === "CAMET")
-  // )
-  // const hasCammetBranch = customerData?.some((customer) =>
-  //   customer.selected.some((selection) => selection.branchName === "CAMET")
-  // )
+
   useEffect(() => {
     if (allusers && allusers.length > 0) {
       const { allusers = [], allAdmins = [] } = data
@@ -90,6 +79,11 @@ const LeadMaster = ({
       setallStaffs(combinedUsers)
     }
   }, [allusers])
+  useEffect(() => {
+    if (loggeduser?._id) {
+      setValue("leadBy", loggeduser._id); // Manually set the value
+    }
+  }, [loggeduser, setValue])
   useEffect(() => {
     const userData = localStorage.getItem("user")
     console.log("daaaaaaaaaaaaaaa", userData)
@@ -800,42 +794,29 @@ const LeadMaster = ({
               >
                 LeadBy
               </label>
-              <select
-                id="leadBy"
-                {...register("leadBy")}
-                className="mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300 cursor-not-allowed"
-              >
-                {editMode ? (
-                  <>
-                    {allstaff
-                      ?.filter((user) => user._id === loggeduser._id)
-                      .map((user) => (
-                        <option key={user._id} value={user._id}>
-                          {user.name}
-                        </option>
-                      ))}
-                  </>
-                ) : (
-                  <>
-                    {allstaff
-                      ?.filter((user) => user._id === loggeduser._id)
-                      .map((user) => (
-                        <option key={user._id} value={user._id}>
-                          {user.name}
-                        </option>
-                      ))}
-                  </>
-                )}
-              </select>
-
-              {/* <input
-                type="text"
-                id="leadBy"
-                {...register("leadBy")}
-                readOnly // Make it non-editable
-                value={loggeduser?.name || ""} // Auto-updates with total price
-                className=" mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
-              /> */}
+              {editMode ? (
+                <select
+                  id="leadBy"
+                  {...register("leadBy")}
+                  className="mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
+                >
+                  {allstaff?.map((user) => (
+                    <option key={user._id} value={user._id}>
+                      {user.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <>
+                  <input
+                    type="hidden"
+                    {...register("leadBy")}
+                  />
+                  <p className="mt-1 w-full border rounded-md p-2 text-gray-600 cursor-not-allowed">
+                    {loggeduser?.name}
+                  </p>
+                </>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">

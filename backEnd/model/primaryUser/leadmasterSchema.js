@@ -14,13 +14,12 @@ const leadSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     refpath: "assignedtoleadModel"
   },
-  assingedtoleadModel: {
+  assignedtoleadModel: {
     type: String,
     enum: ["Staff", "Admin"]
-
   },
-  netAmount:{
-    type:Number
+  netAmount: {
+    type: Number
   },
   remark: { type: String },
   allocatedTo: {
