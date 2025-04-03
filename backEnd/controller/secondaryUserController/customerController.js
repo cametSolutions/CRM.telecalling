@@ -668,12 +668,15 @@ export const GetAllCustomer = async (req, res) => {
         },
         {
           $project: {
-            _id: 0, // Exclude _id
+            _id: 1, // Exclude _id
             customerName: 1,
             "selected.licensenumber": 1,
             "selected.branchName": 1,
             "selected.productName": 1,
-            "selected.procuct_id": 1
+            "selected.procuct_id": 1,
+            mobile: 1,
+            landline: 1,
+            email: 1
           }
         }
       ])
@@ -896,32 +899,197 @@ export const GetCustomer = async (req, res) => {
       if (!isNaN(search)) {
         const searchRegex = new RegExp(`^${search}`, "i")
 
-        const mobileCustomer = await Customer.find({
-          mobile: searchRegex
-        }).lean()
+        // const mobileCustomer = await Customer.find({
+        //   mobile: searchRegex
+        // }).lean()
 
-        const licenseCustomer = await Customer.find({
-          $expr: {
-            $gt: [
-              {
-                $size: {
-                  $filter: {
-                    input: "$selected",
-                    as: "item",
-                    cond: {
-                      $regexMatch: {
-                        input: { $toString: "$$item.licensenumber" }, // Convert to string
-                        regex: search, // your regex pattern
-                        options: "i" // case-insensitive if needed
+        // const licenseCustomer = await Customer.find({
+        //   $expr: {
+        //     $gt: [
+        //       {
+        //         $size: {
+        //           $filter: {
+        //             input: "$selected",
+        //             as: "item",
+        //             cond: {
+        //               $regexMatch: {
+        //                 input: { $toString: "$$item.licensenumber" }, // Convert to string
+        //                 regex: search, // your regex pattern
+        //                 options: "i" // case-insensitive if needed
+        //               }
+        //             }
+        //           }
+        //         }
+        //       },
+        //       0
+        //     ]
+        //   }
+        // }).lean()
+        const mobileCustomer = await Customer.aggregate([
+          {
+            $match: {
+              $expr: {
+                $regexMatch: {
+                  input: { $toString: "$mobile" },
+                  regex: search,
+                  options: "i"
+                }
+              }
+            }
+          },
+          {
+            $unwind: {
+              path: "$selected", // Unwind the selected array to access individual items
+              preserveNullAndEmptyArrays: true // Keep empty arrays if any
+            }
+          },
+          {
+            $addFields: {
+              "selected.branchObjectId": { $toObjectId: "$selected.branch_id" },
+              "selected.companyObjectId": {
+                $toObjectId: "$selected.company_id"
+              },
+              "selected.productObjectId": {
+                $toObjectId: "$selected.product_id"
+              }
+            }
+          },
+
+          {
+            $lookup: {
+              from: "branches", // Name of the Branch collection
+              localField: "selected.branchObjectId", // Field from the customer document
+              foreignField: "_id", // Match the _id field from the Branch collection
+              as: "branchDetails" // Alias for the resulting joined branch documents
+            }
+          },
+          {
+            $lookup: {
+              from: "companies", // Name of the Company collection
+              localField: "selected.companyObjectId", // Field from the customer document
+              foreignField: "_id", // Match the _id field from the Company collection
+              as: "companyDetails" // Alias for the resulting joined company documents
+            }
+          },
+          {
+            $lookup: {
+              from: "products", // Name of the Product collection
+              localField: "selected.productObjectId", // Field from the customer document
+              foreignField: "_id", // Match the _id field from the Product collection
+              as: "productDetails" // Alias for the resulting joined product documents
+            }
+          },
+          {
+            $addFields: {
+              "selected.product_id": { $arrayElemAt: ["$productDetails", 0] },
+              "selected.branch_id": { $arrayElemAt: ["$branchDetails", 0] },
+              "selected.company_id": { $arrayElemAt: ["$companyDetails", 0] } // Replace product_id with populated product data
+            }
+          },
+
+          {
+            $group: {
+              _id: "$_id", // Group by the customer's _id
+              customerName: { $first: "$customerName" }, // Keep customer name
+              address1: { $first: "$address1" },
+              state: { $first: "$state" },
+              pincode: { $first: "$pincode" },
+              email: { $first: "$email" },
+              mobile: { $first: "$mobile" },
+              industry: { $first: "$industry" },
+              selected: { $push: "$selected" } // Push the selected data
+            }
+          }
+        ])
+        const licenseCustomer = await Customer.aggregate([
+          {
+            $match: {
+              $expr: {
+                $gt: [
+                  {
+                    $size: {
+                      $filter: {
+                        input: "$selected",
+                        as: "item",
+                        cond: {
+                          $regexMatch: {
+                            input: { $toString: "$$item.licensenumber" },
+                            regex: search,
+                            options: "i"
+                          }
+                        }
                       }
                     }
-                  }
-                }
+                  },
+                  0
+                ]
+              }
+            }
+          },
+          {
+            $unwind: {
+              path: "$selected", // Unwind the selected array to access individual items
+              preserveNullAndEmptyArrays: true // Keep empty arrays if any
+            }
+          },
+          {
+            $addFields: {
+              "selected.branchObjectId": { $toObjectId: "$selected.branch_id" },
+              "selected.companyObjectId": {
+                $toObjectId: "$selected.company_id"
               },
-              0
-            ]
+              "selected.productObjectId": {
+                $toObjectId: "$selected.product_id"
+              }
+            }
+          },
+
+          {
+            $lookup: {
+              from: "branches", // Name of the Branch collection
+              localField: "selected.branchObjectId", // Field from the customer document
+              foreignField: "_id", // Match the _id field from the Branch collection
+              as: "branchDetails" // Alias for the resulting joined branch documents
+            }
+          },
+          {
+            $lookup: {
+              from: "companies", // Name of the Company collection
+              localField: "selected.companyObjectId", // Field from the customer document
+              foreignField: "_id", // Match the _id field from the Company collection
+              as: "companyDetails" // Alias for the resulting joined company documents
+            }
+          },
+          {
+            $lookup: {
+              from: "products", // Name of the Product collection
+              localField: "selected.productObjectId", // Field from the customer document
+              foreignField: "_id", // Match the _id field from the Product collection
+              as: "productDetails" // Alias for the resulting joined product documents
+            }
+          },
+          {
+            $addFields: {
+              "selected.product_id": { $arrayElemAt: ["$productDetails", 0] },
+              "selected.branch_id": { $arrayElemAt: ["$branchDetails", 0] },
+              "selected.company_id": { $arrayElemAt: ["$companyDetails", 0] } // Replace product_id with populated product data
+            }
+          },
+
+          {
+            $group: {
+              _id: "$_id", // Group by the customer's _id
+              customerName: { $first: "$customerName" }, // Keep customer name
+              address1: { $first: "$address1" },
+              state: { $first: "$state" },
+              pincode: { $first: "$pincode" },
+              email: { $first: "$email" },
+              mobile: { $first: "$mobile" },
+              industry: { $first: "$industry" },
+              selected: { $push: "$selected" } // Push the selected data
+            }
           }
-        }).lean()
+        ])
         const customers = [...mobileCustomer, ...licenseCustomer]
 
         if (!customers || customers.length === 0) {
@@ -1794,6 +1962,162 @@ const updateProcessedAttendees = async (processedAttendedBy, attendedId) => {
   return updateResults
 }
 
+export const loggeduserCallsCurrentDateCalls = async (req, res) => {
+  try {
+    console.log("hhhhh")
+    const { loggedUserId } = req.query
+    const loggeduserObjectId = new mongoose.Types.ObjectId(loggedUserId)
+    const today = new Date()
+    const startOfDayStr = new Date(today.setHours(0, 0, 0, 0)).toISOString()
+    const endOfDayStr = new Date(today.setHours(23, 59, 59, 999)).toISOString()
+    // Build the initial match condition that always includes the user ID
+
+    const pipeline = [
+      {
+        $unwind: {
+          path: "$callregistration",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $addFields: {
+          "callregistration.formdata.attendedBy": {
+            $cond: {
+              if: { $isArray: "$callregistration.formdata.attendedBy" },
+              then: {
+                $filter: {
+                  input: "$callregistration.formdata.attendedBy",
+                  as: "attended",
+                  cond: {
+                    $and: [
+                      { $eq: ["$$attended.callerId", loggeduserObjectId] },
+                      { $gte: ["$$attended.calldate", startOfDayStr] },
+                      { $lte: ["$$attended.calldate", endOfDayStr] }
+                    ]
+                  }
+                }
+              },
+              else: []
+            }
+          }
+        }
+      },
+      {
+        $match: {
+          "callregistration.formdata.attendedBy": { $ne: [] }
+        }
+      },
+      // Lookup product details and fetch only productName
+      {
+        $lookup: {
+          from: "products",
+          localField: "callregistration.product",
+          foreignField: "_id",
+          as: "callregistration.productDetails"
+        }
+      },
+      {
+        $addFields: {
+          "callregistration.productDetails": {
+            $map: {
+              input: "$callregistration.productDetails",
+              as: "product",
+              in: { productName: "$$product.productName" }
+            }
+          }
+        }
+      },
+      // Unwind attendedBy before lookup
+      {
+        $unwind: {
+          path: "$callregistration.formdata.attendedBy",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "staffs",
+          localField: "callregistration.formdata.attendedBy.callerId",
+          foreignField: "_id",
+          as: "callregistration.attendedByDetails"
+        }
+      },
+      {
+        $addFields: {
+          "callregistration.attendedByDetails": {
+            $map: {
+              input: "$callregistration.attendedByDetails",
+              as: "attended",
+              in: { name: "$$attended.name" }
+            }
+          }
+        }
+      },
+      {
+        $group: {
+          _id: "$_id",
+          customerid: { $first: "$customerid" },
+          customerName: { $first: "$customerName" },
+          attendedCalls: { $push: "$callregistration" },
+          createdAt: { $first: "$createdAt" },
+          updatedAt: { $first: "$updatedAt" }
+        }
+      },
+      {
+        $unwind: {
+          path: "$attendedCalls",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      // Lookup completedBy details per call
+      {
+        $unwind: {
+          path: "$attendedCalls.formdata.completedBy",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "staffs",
+          localField: "attendedCalls.formdata.completedBy.callerId",
+          foreignField: "_id",
+          as: "attendedCalls.completedByDetails"
+        }
+      },
+      {
+        $addFields: {
+          "attendedCalls.completedByDetails": {
+            $map: {
+              input: "$attendedCalls.completedByDetails",
+              as: "completed",
+              in: { name: "$$completed.name" }
+            }
+          }
+        }
+      },
+      {
+        $group: {
+          _id: "$_id",
+          customerid: { $first: "$customerid" },
+          customerName: { $first: "$customerName" },
+          attendedCalls: { $push: "$attendedCalls" },
+          createdAt: { $first: "$createdAt" },
+          updatedAt: { $first: "$updatedAt" }
+        }
+      }
+    ]
+
+    const calls = await CallRegistration.aggregate(pipeline)
+    console.log(calls)
+
+    console.log("loggeduser", calls)
+
+    return res.status(200).json({ message: "found", data: calls })
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const GetCallRegister = async (req, res) => {
   try {
     const { customerid } = req.query

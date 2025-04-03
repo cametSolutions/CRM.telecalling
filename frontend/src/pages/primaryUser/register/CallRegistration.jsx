@@ -1,9 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react"
 import { useLocation, Link } from "react-router-dom"
-import { BarLoader } from "react-spinners"
 
-import { flushSync } from "react-dom"
-import ReactQuill from "react-quill"
 import "react-quill/dist/quill.snow.css" // Import Quill styles
 import ClipLoader from "react-spinners/ClipLoader"
 import io from "socket.io-client"
@@ -16,9 +13,7 @@ import {
   format
 } from "date-fns"
 import api from "../../../api/api"
-import { formatTime } from "../../../utils/timeUtils"
-// import debounce from "lodash.debounce"
-import { debounce } from "lodash"
+
 import UseFetch from "../../../hooks/useFetch"
 import Timer from "../../../components/primaryUser/Timer"
 import PopUp from "../../../components/common/PopUp"
@@ -37,6 +32,10 @@ export default function CallRegistration() {
     formState: { errors }
   } = useForm()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [afterCallsubmitting, setafterCallSubmitting] = useState(false)
+  const [loggeduserCurrentDateCalls, setloggeduserCurrentDateCalls] = useState(
+    []
+  )
   const [callreport, setcallReport] = useState({})
   const [customerData, setCustomerData] = useState([])
   const [submitLoading, setSubmitLoading] = useState(false)
@@ -62,7 +61,6 @@ export default function CallRegistration() {
   const location = useLocation()
   const { calldetails, token } = location.state || {}
   const [tokenData, setTokenData] = useState(null)
-
   const { data: registeredCall, refreshHook } = UseFetch(
     selectedCustomer?._id &&
       `/customer/getcallregister?customerid=${selectedCustomer?._id || null}`
@@ -71,6 +69,23 @@ export default function CallRegistration() {
   const handleQuillChange = (value) => {
     setValue("description", value, { shouldValidate: true }) // Update React Hook Form's value
   }
+  useEffect(() => {
+    const submitCallRegistration = async () => {
+      try {
+        if (afterCallsubmitting) {
+          const response = await api.get(
+            `/customer/getloggeduserCurrentCalls?loggedUserId=${user._id}`
+          )
+          const data = response.data.data
+          if (response.status === 200) setloggeduserCurrentDateCalls(data)
+        }
+      } catch (error) {
+        console.error("Error submitting call registration:", error)
+      }
+    }
+
+    submitCallRegistration()
+  }, [afterCallsubmitting]) // Dependency array ensures it runs when 'afterCallsubmitting' changes
   useEffect(() => {
     if (callnotes && callnotes.length > 0) {
       const userData = localStorage.getItem("user")
@@ -183,6 +198,8 @@ export default function CallRegistration() {
       setCallData(sortedData)
       setSubmitLoading(false)
     }
+    // else if (registeredCall && afterCallsubmitting) {
+    // }
   }, [registeredCall])
 
   useEffect(() => {
@@ -245,23 +262,13 @@ export default function CallRegistration() {
 
     return `${date} ${time}` // Example: "03/02/2025 02:48:57 PM"
   }
+
   const stopTimer = async (time) => {
     setSubmitLoading(true)
 
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
-    let branchName
-    if (user.role === "Staff") {
-      branchName = user.selected.map((branch) => branch.branchName).join(", ")
-    } else if (user.role === "Admin") {
-      branchName = selectedProducts[0].product_id
-        ? selectedProducts
-            .map((item) =>
-              item.product_id?.selected.map((product) => product.branchName)
-            )
-            .flat()
-        : selectedCustomer.selected[0].branch_id.branchName
-    }
+    const branchName = selectedProducts[0].branch_id?.branchName
 
     const endTime = new Date().toISOString()
     const durationInSeconds = timeStringToSeconds(time)
@@ -319,6 +326,7 @@ export default function CallRegistration() {
         productName: selectedProducts[0]?.productName
       }
       setcallReport(calldata)
+
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
         calldata,
@@ -332,13 +340,16 @@ export default function CallRegistration() {
       )
       if (response.status === 200) {
         toast.success(response.data.message)
-        if (!selectedProducts[0]?.product_id) {
-          setIsModalOpen(true) // Open popup if no product is selected
-        }
+        // if (!selectedProducts[0]?.product_id) {
+        //   setIsModalOpen(true) // Open popup if no product is selected
+        // }
         setSelectedProducts([])
+        setSelectedCustomer(null)
+        setCustomerData([])
+        setSearching(false)
         socket.emit("updatedCalls")
-        socket.emit("updateUserCallStatus")
-        refreshHook()
+
+        setafterCallSubmitting(true)
       } else {
         toast.error(response.data.message)
       }
@@ -402,8 +413,10 @@ export default function CallRegistration() {
 
       if (response.status === 200) {
         toast.success(response.data.message)
-        refreshHook()
-
+        setafterCallSubmitting(true)
+        setCustomerData([])
+        setSearching(false)
+        setSelectedCustomer(null)
         setSelectedProducts([])
         socket.emit("updatedCalls")
       } else {
@@ -517,7 +530,6 @@ Problem:    \t${selectedText}
 
       if (response.ok) {
         const result = await response.json()
-
         setCustomerData(result.data)
         if (result.data.length > 0) {
           setMessage("")
@@ -539,7 +551,6 @@ Problem:    \t${selectedText}
       console.error("Error fetching customer data:", error.message)
     } finally {
       setloading(false)
-      // setSearching(false)
     }
   }
 
@@ -554,6 +565,7 @@ Problem:    \t${selectedText}
   }
 
   const handleInputChange = useCallback((e) => {
+    setafterCallSubmitting(false)
     setSelectedCustomer(null)
 
     const value = e.target.value
@@ -574,8 +586,8 @@ Problem:    \t${selectedText}
     }, 300) // Adjust the delay time to your preference (e.g., 300 ms)
   }, [])
   const handleRowClick = (customer) => {
-    flushSync(() => setSearching(false))
-    flushSync(() => setCallData([]))
+    setSearching(false)
+    setCallData([])
     setSelectedCustomer(customer)
     setSearch(customer.customerName)
     setProductDetails(customer.selected)
@@ -617,8 +629,8 @@ Problem:    \t${selectedText}
   }
 
   return (
-    <div className="container  justify-center items-center p-8 bg-gray-100">
-      <div className="w-auto bg-white shadow-lg rounded min-h-screen p-8 mx-auto">
+    <div className="container  justify-center items-center p-8 h-auto">
+      <div className="w-auto bg-white shadow-lg rounded  p-8 mx-auto h-auto">
         <div className="flex justify-between ">
           <h2 className="text-2xl font-semibold mb-4">Call Registration</h2>
           <div>
@@ -632,7 +644,7 @@ Problem:    \t${selectedText}
         </div>
 
         <hr className="border-t-2 border-gray-300 mb-4"></hr>
-        <div className="w-2/4 ml-5">
+        <div className="w-2/4 ">
           <div className="relative">
             <label
               htmlFor="customerName"
@@ -658,6 +670,182 @@ Problem:    \t${selectedText}
             </div>
           </div>
         </div>
+        {afterCallsubmitting &&
+          loggeduserCurrentDateCalls &&
+          loggeduserCurrentDateCalls.length > 0 && (
+            <>
+              {loggeduserCurrentDateCalls.length > 0 && (
+                <>
+                  <h1 className="text-xl inline-block border-b-2 border-black mt-3">
+                    Your Today's Call list
+                  </h1>
+                  <div className="mt-2 overflow-y-auto w-full max-h-[calc(100vh-300px)]  text-center relative rounded-lg">
+                    <table className="w-full divide-y divide-gray-200 rounded-xl shadow-lg">
+                      {/* Table Header */}
+                      <thead
+                        className={`${
+                          isModalOpen ? "" : "sticky top-0 z-50"
+                        } bg-purple-200  `}
+                      >
+                        <tr>
+                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                            Customer Name
+                          </th>
+                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                            Token No
+                          </th>
+                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                            Product Name
+                          </th>
+                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                            Start Date
+                          </th>
+                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                            End Date
+                          </th>
+                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                            Duration
+                          </th>
+                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                            Incoming Number
+                          </th>
+                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                            AttendedBy
+                          </th>
+                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                            CompletedBy
+                          </th>
+                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                            Status
+                          </th>
+                        </tr>
+                      </thead>
+
+                      {/* Sorting Calls: Pending Calls First, Then Latest Calls */}
+                      <tbody className="divide-gray-500">
+                        {loggeduserCurrentDateCalls
+                          .flatMap((customer) =>
+                            customer.attendedCalls.map((call) => ({
+                              ...call,
+                              customerName: customer.customerName
+                            }))
+                          )
+                          .sort((a, b) => {
+                            if (
+                              a.formdata?.status === "pending" &&
+                              b.formdata?.status !== "pending"
+                            )
+                              return -1
+                            if (
+                              b.formdata?.status === "pending" &&
+                              a.formdata?.status !== "pending"
+                            )
+                              return 1
+                            return (
+                              new Date(b.timedata?.startTime) -
+                              new Date(a.timedata?.startTime)
+                            )
+                          })
+                          .map((call, index) => {
+                            const today = new Date().toISOString().split("T")[0]
+                            const callDate = call.timedata?.startTime
+                              ? new Date(call.timedata?.startTime.split(" ")[0])
+                                  .toISOString()
+                                  .split("T")[0]
+                              : null
+
+                            return (
+                              <React.Fragment key={index}>
+                                {/* Main Call Row */}
+                                <tr
+                                  className={`border-0 ${
+                                    call.formdata?.status === "solved"
+                                      ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
+                                      : call.formdata?.status === "pending"
+                                      ? callDate === today
+                                        ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                        : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
+                                      : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
+                                  }`}
+                                >
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                    {call.customerName}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                    {call.timedata?.token}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                    {call.productDetails[0]?.productName}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                    {new Date(
+                                      call.timedata?.startTime
+                                    ).toLocaleString()}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                    {new Date(
+                                      call.timedata?.endTime
+                                    ).toLocaleString()}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                    {call.timedata?.time}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                    {call.formdata?.incomingNumber}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                    {call.attendedByDetails
+                                      ?.map((attendee) => attendee.name)
+                                      .join(", ") || ""}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                    {call.completedByDetails
+                                      ?.map((completer) => completer.name)
+                                      .join(", ") || ""}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                    {call.formdata?.status}
+                                  </td>
+                                </tr>
+
+                                {/* Description & Solution Row */}
+                                <tr
+                                  className={`text-center border-t-0 border-black ${
+                                    call.formdata?.status === "solved"
+                                      ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
+                                      : call.formdata?.status === "pending"
+                                      ? callDate === today
+                                        ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                        : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
+                                      : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
+                                  }`}
+                                  style={{ height: "5px" }}
+                                >
+                                  <td
+                                    colSpan="5"
+                                    className="py-1 px-8 text-sm text-black text-left"
+                                  >
+                                    <strong>Description:</strong>{" "}
+                                    {call.formdata?.description || "N/A"}
+                                  </td>
+                                  <td
+                                    colSpan="5"
+                                    className="py-1 px-12 text-sm text-black text-left"
+                                  >
+                                    <strong>Solution:</strong>{" "}
+                                    {call.formdata?.solution || "N/A"}
+                                  </td>
+                                </tr>
+                              </React.Fragment>
+                            )
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </>
+          )}
 
         {searching && customerData.length > 0 ? (
           <div className="ml-5 w-2/4 max-h-40 overflow-y-auto overflow-x-auto  mt-4 border border-gray-200 shadow-md rounded-lg">
@@ -973,7 +1161,7 @@ Problem:    \t${selectedText}
                     report={callreport}
                     onClose={() => setIsModalOpen(false)}
                     handleWhatsapp={sendWhatapp}
-                    message="Product Name is missing please inform the admin to add product!"
+                    message="Product Name is missing in the current call please inform the admin to add product!"
                   />
                 </div>
 
@@ -1151,7 +1339,15 @@ Problem:    \t${selectedText}
                         type="submit"
                         className="px-4 py-2 font-medium text-white bg-gradient-to-r from-red-500 to-red-700 rounded-md shadow-md hover:shadow-lg focus:outline-none transition-shadow duration-200"
                       >
-                        {submitLoading ? "Loading..." : "End call"}
+                        {/* {submitLoading ? "Loading..." : "End call"} */}
+                        {submitLoading ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <span>Loading...</span>
+                          </div>
+                        ) : (
+                          <span>End call</span>
+                        )}
                       </button>
                     </div>
                   )}
@@ -1165,11 +1361,11 @@ Problem:    \t${selectedText}
                   </Link>
                 </div>
                 {callData.length > 0 && (
-                  <div className="mt-8 overflow-y-auto w-full max-h-60 text-center">
-                    <table className=" w-full divide-y divide-gray-200 rounded-xl shadow-lg overflow-hidden ">
+                  <div className="relative mt-8 overflow-y-auto w-full max-h-60 text-center">
+                    <table className=" w-full divide-y divide-gray-200 rounded-xl shadow-lg ">
                       <thead
                         className={`${
-                          isModalOpen ? "" : "sticky top-0 z-30"
+                          isModalOpen ? "" : " sticky top-0 z-30"
                         } bg-purple-200`}
                       >
                         <tr className="">
@@ -1203,113 +1399,139 @@ Problem:    \t${selectedText}
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="  divide-gray-500">
-                        {callData?.map((call, index) => {
-                          const today = new Date().toISOString().split("T")[0]
-                          const startTimeRaw = call?.timedata?.startTime
-                          const callDate = startTimeRaw
-                            ? new Date(startTimeRaw.split(" ")[0])
-                                .toISOString()
-                                .split("T")[0]
-                            : null
-                          return (
-                            <>
-                              <tr
-                                key={index}
-                                className={`border-0 ${
-                                  call.formdata?.status === "solved"
-                                    ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
-                                    : call?.formdata?.status === "pending"
-                                    ? callDate === today
-                                      ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                      <tbody className=" divide-gray-500 border-gray-200">
+                        {callData
+                          ?.sort((a, b) => {
+                            // Prioritize pending calls over solved calls
+                            if (
+                              a.formdata?.status === "pending" &&
+                              b.formdata?.status !== "pending"
+                            ) {
+                              return -1
+                            }
+                            if (
+                              a.formdata?.status !== "pending" &&
+                              b.formdata?.status === "pending"
+                            ) {
+                              return 1
+                            }
+
+                            // If statuses are the same, sort by startTime (latest first)
+                            const timeA = new Date(
+                              a.timedata?.startTime || 0
+                            ).getTime()
+                            const timeB = new Date(
+                              b.timedata?.startTime || 0
+                            ).getTime()
+
+                            return timeB - timeA // Sort in descending order (latest first)
+                          })
+                          .map((call, index) => {
+                            const today = new Date().toISOString().split("T")[0]
+                            const startTimeRaw = call?.timedata?.startTime
+                            const callDate = startTimeRaw
+                              ? new Date(startTimeRaw.split(" ")[0])
+                                  .toISOString()
+                                  .split("T")[0]
+                              : null
+
+                            return (
+                              <>
+                                <tr
+                                  key={index}
+                                  className={`border-0 ${
+                                    call.formdata?.status === "solved"
+                                      ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
+                                      : call?.formdata?.status === "pending"
+                                      ? callDate === today
+                                        ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                        : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                       : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                    : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                }`}
-                              >
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                  {call.timedata?.token}
-                                </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                  {call.product?.productName}
-                                </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                  {setDateandTime(call.timedata?.startTime)}
-                                  {/* {call.timedata?.startTime} */}
-                                </td>
-
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                  {call.formdata?.status === "solved"
-                                    ? setDateandTime(call.timedata?.endTime)
-                                    : ""}
-                                </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                  {formatDuration(call?.timedata?.duration) ||
-                                    "N/A"}
-                                </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                  {call.formdata?.incomingNumber}
-                                </td>
-
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                  {Array.isArray(call?.formdata?.attendedBy)
-                                    ? call?.formdata?.attendedBy
-                                        ?.map(
-                                          (attendee) =>
-                                            attendee?.callerId?.name ||
-                                            attendee?.name
-                                        )
-                                        .join(", ")
-                                    : call?.formdata?.attendedBy?.callerId
-                                        ?.name}
-                                </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                  {call?.formdata.status
-                                    ? Array.isArray(call?.formdata?.completedBy)
-                                      ? call?.formdata?.completedBy
+                                  }`}
+                                >
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                    {call.timedata?.token}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                    {call.product?.productName}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                    {setDateandTime(call.timedata?.startTime)}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                    {call.formdata?.status === "solved"
+                                      ? setDateandTime(call.timedata?.endTime)
+                                      : ""}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                    {formatDuration(call?.timedata?.duration) ||
+                                      "N/A"}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                    {call.formdata?.incomingNumber}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                    {Array.isArray(call?.formdata?.attendedBy)
+                                      ? call?.formdata?.attendedBy
                                           ?.map(
                                             (attendee) =>
                                               attendee?.callerId?.name ||
                                               attendee?.name
                                           )
                                           .join(", ")
-                                      : call?.formdata?.completedBy?.callerId
-                                          ?.name
-                                    : ""}
-                                </td>
-                                <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                  {call.formdata?.status}
-                                </td>
-                              </tr>
-                              <tr
-                                className={`text-center border-t-0 border-black ${
-                                  call?.formdata?.status === "solved"
-                                    ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
-                                    : call?.formdata?.status === "pending"
-                                    ? callDate === today
-                                      ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                      : call?.formdata?.attendedBy?.callerId
+                                          ?.name}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                    {call.formdata?.status
+                                      ? Array.isArray(
+                                          call?.formdata?.completedBy
+                                        )
+                                        ? call?.formdata?.completedBy
+                                            ?.map(
+                                              (attendee) =>
+                                                attendee?.callerId?.name ||
+                                                attendee?.name
+                                            )
+                                            .join(", ")
+                                        : call?.formdata?.completedBy?.callerId
+                                            ?.name
+                                      : ""}
+                                  </td>
+                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                    {call.formdata?.status}
+                                  </td>
+                                </tr>
+                                <tr
+                                  className={`text-center border-t-0 border-black ${
+                                    call?.formdata?.status === "solved"
+                                      ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
+                                      : call?.formdata?.status === "pending"
+                                      ? callDate === today
+                                        ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                        : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                       : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                    : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                }`}
-                                style={{ height: "5px" }}
-                              >
-                                <td
-                                  colSpan="5"
-                                  className="py-1 px-8 text-sm text-black text-left"
+                                  }`}
+                                  style={{ height: "5px" }}
                                 >
-                                  <strong>Description:</strong>{" "}
-                                  {call?.formdata?.description || "N/A"}
-                                </td>
-                                <td
-                                  colSpan="4"
-                                  className="py-1 px-12 text-sm text-black text-left"
-                                >
-                                  <strong>Solution:</strong>{" "}
-                                  {call?.formdata?.solution || "N/A"}
-                                </td>
-                              </tr>
-                            </>
-                          )
-                        })}
+                                  <td
+                                    colSpan="5"
+                                    className="py-1 px-8 text-sm text-black text-left"
+                                  >
+                                    <strong>Description:</strong>{" "}
+                                    {call?.formdata?.description || "N/A"}
+                                  </td>
+                                  <td
+                                    colSpan="4"
+                                    className="py-1 px-12 text-sm text-black text-left"
+                                  >
+                                    <strong>Solution:</strong>{" "}
+                                    {call?.formdata?.solution || "N/A"}
+                                  </td>
+                                </tr>
+                              </>
+                            )
+                          })}
                       </tbody>
                     </table>
                   </div>
