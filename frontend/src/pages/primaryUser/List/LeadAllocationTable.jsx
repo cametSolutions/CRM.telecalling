@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react"
+import { PropagateLoader } from "react-spinners"
 import UseFetch from "../../../hooks/useFetch"
-import { useFetcher } from "react-router-dom"
-
+import { formatDate } from "../../../utils/dateUtils"
 const LeadAllocationTable = () => {
   const [status, setStatus] = useState("Pending")
-
+  const [loader, setloader] = useState(true)
   const [tableData, setTableData] = useState([])
-  const { data: leadPendinglist } = UseFetch(
+  const { data: leadPendinglist, loading } = UseFetch(
     status && `/lead/getallLead?Status=${status}`
   )
   console.log(leadPendinglist)
@@ -29,12 +29,12 @@ const LeadAllocationTable = () => {
     { id: 2, name: "Jane Smith", department: "Finance", status: "Approved" },
     { id: 3, name: "Alice Brown", department: "IT", status: "Pending" }
   ]
-
+  console.log(tableData)
   return (
     <div className="p-4">
       {/* Toggle Button */}
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-bold">{status}</h2>
+        <h2 className="text-lg font-bold">{status} Allocation List</h2>
         {/* <button
           onClick={toggleStatus}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
@@ -44,7 +44,7 @@ const LeadAllocationTable = () => {
       </div>
 
       {/* Responsive Table Container */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-lg text-center">
         <table className="min-w-full border border-gray-300">
           <thead className="bg-blue-500 text-white text-sm">
             <tr>
@@ -62,43 +62,57 @@ const LeadAllocationTable = () => {
             </tr>
           </thead>
           <tbody className="text-center divide-gray-200">
-            {tableData?.map((item) => (
-              <tr key={item.id} className="border-b hover:bg-gray-100">
-                <td className="px-4 py-2 border border-gray-300">
-                  {item.leadDate}
-                </td>
-                <td className="px-4 py-2 border border-gray-300">
-                  {item.leadId}
-                </td>
-                <td className="px-4 py-2 border border-gray-300">
-                  {item.customerName}
-                </td>
-                <td className="px-4 py-2 border border-gray-300">
-                  {item.department}
-                </td>
-                <td className="px-4 py-2 border border-gray-300">
-                  {item.department}
-                </td>
-                <td className="px-4 py-2 border border-gray-300">
-                  {item.department}
-                </td>
-                <td className="px-4 py-2 border border-gray-300">
-                  {item.department}
-                </td>
-                <td className="px-4 py-2 border border-gray-300">
-                  {item.department}
-                </td>
-                <td className="px-4 py-2 border border-gray-300">
-                  {item.department}
-                </td>
-                <td className="px-4 py-2 border border-gray-300">
-                  {item.department}
-                </td>
-                <td className="px-4 py-2 border border-gray-300">
-                  {item.department}
+            {tableData && tableData.length > 0 ? (
+              tableData.map((item) => (
+                <tr key={item.id} className="border-b hover:bg-gray-100">
+                  <td className="px-4 py-2 border border-gray-300">
+                    {formatDate(item.leadDate)}
+                  </td>
+                  <td className="px-4 py-2 border border-gray-300">
+                    {item?.leadId}
+                  </td>
+                  <td className="px-4 py-2 border border-gray-300">
+                    {item?.customerName?.customerName}
+                  </td>
+                  <td className="px-4 py-2 border border-gray-300">
+                    {item?.mobile}
+                  </td>
+                  <td className="px-4 py-2 border border-gray-300">
+                    {item.phone}
+                  </td>
+                  <td className="px-4 py-2 border border-gray-300">
+                    {item.email}
+                  </td>
+                  <td className="px-4 py-2 border border-gray-300">
+                    {item.department}
+                  </td>
+                  <td className="px-4 py-2 border border-gray-300">
+                    {item.netAmount}
+                  </td>
+                  <td className="px-4 py-2 border border-gray-300">
+                    {item.department}
+                  </td>
+                  <td className="px-4 py-2 border border-gray-300">
+                    {item.department}
+                  </td>
+                  <td className="px-4 py-2 border border-gray-300">
+                    {item.department}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="11" className="px-4 py-4 text-center bg-gray-100">
+                  {loading ? (
+                    <div className="flex justify-center items-center gap-2">
+                      <PropagateLoader color="#3b82f6" size={10} />
+                    </div>
+                  ) : (
+                    "No Allocation Pending"
+                  )}
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
