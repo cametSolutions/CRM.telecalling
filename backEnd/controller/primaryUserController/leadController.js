@@ -1,4 +1,5 @@
 import LeadMaster from "../../model/primaryUser/leadmasterSchema.js"
+import mongoose from "mongoose"
 import models from "../../model/auth/authSchema.js"
 const { Staff, Admin } = models
 import LeadId from "../../model/primaryUser/leadIdSchema.js"
@@ -100,11 +101,31 @@ export const GetallLead = async (req, res) => {
         allocatedTo: null
       })
         .populate({ path: "customerName", select: "customerName" })
-        .populate({ path: "leadBy", select: "name" })
-      if (pendingLeads) {
+        .lean()
+
+      const populatedLeads = await Promise.all(
+        pendingLeads.map(async (lead) => {
+          if (
+            !lead.assignedtoleadModel ||
+            !mongoose.models[lead.assignedtoleadModel]
+          ) {
+            console.error(`Model ${lead.assignedtoleadModel} is not registered`)
+            return lead // Return lead as-is if model is invalid
+          }
+
+          // Fetch the referenced document manually
+          const assignedModel = mongoose.model(lead.assignedtoleadModel)
+          const populatedLeadBy = await assignedModel
+            .findById(lead.leadBy)
+            .select("name")
+
+          return { ...lead, leadBy: populatedLeadBy } // Merge populated data
+        })
+      )
+      if (populatedLeads) {
         return res
           .status(200)
-          .json({ message: "pending leads found", data: pendingLeads })
+          .json({ message: "pending leads found", data: populatedLeads })
       }
     } else if (Status === "Approved") {
     }

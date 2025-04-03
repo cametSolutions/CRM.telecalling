@@ -81,16 +81,16 @@ const LeadAllocationTable = () => {
                     {item.phone}
                   </td>
                   <td className="px-4 py-2 border border-gray-300">
-                    {item.email}
+                    {item?.email}
                   </td>
                   <td className="px-4 py-2 border border-gray-300">
-                    {item.department}
+                    {item?.department}
                   </td>
                   <td className="px-4 py-2 border border-gray-300">
-                    {item.netAmount}
+                    {item?.netAmount}
                   </td>
                   <td className="px-4 py-2 border border-gray-300">
-                    {item.department}
+                    {item?.leadBy.name}
                   </td>
                   <td className="px-4 py-2 border border-gray-300">
                     {item.department}

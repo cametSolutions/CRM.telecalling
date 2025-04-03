@@ -1050,6 +1050,79 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             //   stats.attendancedates[onsiteDate].present = 0.5
             //   stats.attendancedates[onsiteDate].notMarked = 0.5
             // }
+            if (isLeave && leaveDetails.leaveType === "Full Day") {
+              if (leaveDetails.leaveCategory) {
+                switch (leaveDetails.leaveCategory) {
+                  case "casual Leave":
+                    stats.attendancedates[dayTime].casualLeave = 1
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+
+                    break
+                  case "other Leave":
+                    stats.attendancedates[dayTime].otherLeave = 1
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    break
+                  case "privileage Leave":
+                    stats.attendancedates[dayTime].privileageLeave = 1
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    break
+                  case "compensatory Leave":
+                    stats.attendancedates[dayTime].compensatoryLeave = 1
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    break
+                  default:
+                    stats.attendancedates[dayTime].otherLeave = 1 // Default case
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    break
+                }
+              } else {
+                stats.attendancedates[dayTime].otherLeave = 1
+                stats.attendancedates[dayTime].reason = leaveDetails.reason
+              }
+              stats.attendancedates[dayTime].notMarked = ""
+            } else if (isLeave && leaveDetails.leaveType === "Half Day") {
+              if (leaveDetails.leaveCategory) {
+                switch (leaveDetails.leaveCategory) {
+                  case "casual Leave":
+                    stats.attendancedates[dayTime].casualLeave = 0.5
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod
+                    break
+                  case "other Leave":
+                    stats.attendancedates[dayTime].otherLeave = 0.5
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod
+                    break
+                  case "privileage Leave":
+                    stats.attendancedates[dayTime].privileageLeave = 0.5
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod
+                    break
+                  case "compensatory Leave":
+                    stats.attendancedates[dayTime].compensatoryLeave = 0.5
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod
+                    break
+                  default:
+                    stats.attendancedates[dayTime].otherLeave = 0.5
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod // Default case
+                    break
+                }
+              } else {
+                stats.attendancedates[dayTime].otherLeave = 0.5
+               
+                stats.attendancedates[dayTime].reason = leaveDetails.reason
+                stats.attendancedates[dayTime].halfDayperiod =
+                  leaveDetails.halfDayPeriod
+              }
+              stats.attendancedates[dayTime].notMarked = 0.5
+            }
           } else if (punchIn <= morningLimit && punchOut >= earlyLeaveLimit) {
             stats.attendancedates[dayTime].present = 1
             stats.attendancedates[dayTime].inTime = att.inTime
@@ -1234,7 +1307,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                     break
                   case "privileage Leave":
                     stats.attendancedates[dayTime].privileageLeave = 0.5
-                    stats.attendancedates[dayTime].notMarked = ""
+
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
@@ -3376,6 +3449,79 @@ export const GetsomeAllsummary = async (
             arr.push(day)
 
             stats.attendancedates[dayTime].notMarked = 1
+            if (isLeave && leaveDetails.leaveType === "Full Day") {
+              if (leaveDetails.leaveCategory) {
+                switch (leaveDetails.leaveCategory) {
+                  case "casual Leave":
+                    stats.attendancedates[dayTime].casualLeave = 1
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+
+                    break
+                  case "other Leave":
+                    stats.attendancedates[dayTime].otherLeave = 1
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    break
+                  case "privileage Leave":
+                    stats.attendancedates[dayTime].privileageLeave = 1
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    break
+                  case "compensatory Leave":
+                    stats.attendancedates[dayTime].compensatoryLeave = 1
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    break
+                  default:
+                    stats.attendancedates[dayTime].otherLeave = 1 // Default case
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    break
+                }
+              } else {
+                stats.attendancedates[dayTime].otherLeave = 1
+                stats.attendancedates[dayTime].reason = leaveDetails.reason
+              }
+              stats.attendancedates[dayTime].notMarked = ""
+            } else if (isLeave && leaveDetails.leaveType === "Half Day") {
+              if (leaveDetails.leaveCategory) {
+                switch (leaveDetails.leaveCategory) {
+                  case "casual Leave":
+                    stats.attendancedates[dayTime].casualLeave = 0.5
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod
+                    break
+                  case "other Leave":
+                    stats.attendancedates[dayTime].otherLeave = 0.5
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod
+                    break
+                  case "privileage Leave":
+                    stats.attendancedates[dayTime].privileageLeave = 0.5
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod
+                    break
+                  case "compensatory Leave":
+                    stats.attendancedates[dayTime].compensatoryLeave = 0.5
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod
+                    break
+                  default:
+                    stats.attendancedates[dayTime].otherLeave = 0.5
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    stats.attendancedates[dayTime].halfDayperiod =
+                      leaveDetails.halfDayPeriod // Default case
+                    break
+                }
+              } else {
+                stats.attendancedates[dayTime].otherLeave = 0.5
+               
+                stats.attendancedates[dayTime].reason = leaveDetails.reason
+                stats.attendancedates[dayTime].halfDayperiod =
+                  leaveDetails.halfDayPeriod
+              }
+              stats.attendancedates[dayTime].notMarked = 0.5
+            }
           } else if (punchIn <= morningLimit && punchOut >= earlyLeaveLimit) {
             stats.attendancedates[dayTime].present = 1
             stats.attendancedates[dayTime].inTime = att.inTime

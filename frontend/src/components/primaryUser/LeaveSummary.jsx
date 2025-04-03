@@ -507,7 +507,7 @@ const leaveSummary = () => {
         <>
           <div className="max-h-[calc(100vh-200px)] overflow-y-auto px-5 ">
             {leavesummaryList &&
-              leavesummaryList.length &&
+              leavesummaryList.length>0 &&
               leavesummaryList?.map((attendee, index) => (
                 <div key={index}>
                   {selectedIndex === null || selectedIndex === index ? (
