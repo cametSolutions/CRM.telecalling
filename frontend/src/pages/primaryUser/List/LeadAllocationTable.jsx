@@ -4,12 +4,28 @@ import UseFetch from "../../../hooks/useFetch"
 import { formatDate } from "../../../utils/dateUtils"
 const LeadAllocationTable = () => {
   const [status, setStatus] = useState("Pending")
+  const [allStaffs, setallStaffs] = useState([])
   const [loader, setloader] = useState(true)
   const [tableData, setTableData] = useState([])
   const { data: leadPendinglist, loading } = UseFetch(
     status && `/lead/getallLead?Status=${status}`
   )
+  const { data: allusers } = UseFetch("/auth/getallUsers")
+  console.log(allusers)
   console.log(leadPendinglist)
+  useEffect(() => {
+    if (allusers && allusers.length > 0) {
+      const { allusers = [], allAdmins = [] } = data
+      console.log(allusers)
+
+      // Combine allusers and allAdmins
+      const combinedUsers = [...allusers, ...allAdmins]
+
+      // Set combined names to state
+      setallStaffs(combinedUsers)
+    }
+  }, [allusers])
+  console.log(allStaffs)
   useEffect(() => {
     if (leadPendinglist) {
       setTableData(leadPendinglist)
@@ -93,7 +109,16 @@ const LeadAllocationTable = () => {
                     {item?.leadBy.name}
                   </td>
                   <td className="px-4 py-2 border border-gray-300">
-                    {item.department}
+                    <select
+                      id="leadBy"
+                      className="mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
+                    >
+                      {allStaffs?.map((user) => (
+                        <option key={user._id} value={user._id}>
+                          {user.name}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                   <td className="px-4 py-2 border border-gray-300">
                     {item.department}

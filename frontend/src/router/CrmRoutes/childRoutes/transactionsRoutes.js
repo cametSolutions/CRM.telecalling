@@ -5,7 +5,7 @@ import LeadRegister from "../../../pages/primaryUser/register/LeadRegister"
 import LeadAllocationTable from "../../../pages/primaryUser/List/LeadAllocationTable"
 import { components } from "react-select"
 const transactionsRoutes = [
-  { path: "/admin/transaction/lead", component: LeadRegister },
+  { path: "/admin/transaction/lead", component: ComingSoon },
 
   { path: "/admin/transaction/call-registration", component: CallRegistration },
 
