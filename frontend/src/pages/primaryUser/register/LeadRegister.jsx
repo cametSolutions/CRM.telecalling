@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom"
 import LeadMaster from "../../common/LeadMaster"
 
 function LeadRegister() {
-  const user = localStorage.getItem("user")
+  const userData = localStorage.getItem("user")
+  const user = JSON.parse(userData)
 
   const navigate = useNavigate()
   const handleSubmit = async (leadData) => {

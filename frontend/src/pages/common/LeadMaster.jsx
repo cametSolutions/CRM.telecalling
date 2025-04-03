@@ -23,6 +23,7 @@ const LeadMaster = ({
     formState: { errors }
   } = useForm()
   const [productSelections, setProductSelections] = useState({})
+  const [editMode, setEditMode] = useState(false)
   const [licensewithoutProductSelection, setlicenseWithoutProductSelection] =
     useState({})
 
@@ -42,8 +43,9 @@ const LeadMaster = ({
 
   // const [dd, setd] = useState(false)
 
-  const [users, setUsers] = useState(null)
-  const [allStaffs, setallStaffs] = useState([])
+  const [loggeduser, setloggedUser] = useState(null)
+  const [allstaff, setallStaffs] = useState([])
+
   const [allcustomer, setallcustomer] = useState([])
   // State to toggle the table
   const [editState, seteditState] = useState(true)
@@ -53,11 +55,12 @@ const LeadMaster = ({
   const { data: productData, loading: productLoading } = UseFetch(
     "/product/getallProducts"
   )
-
+  console.log(allstaff)
   const { data: serviceData } = UseFetch("/product/getallServices")
+  const { data: allusers } = UseFetch("/auth/getallUsers")
   const { data, loading: usersLoading } = UseFetch("/auth/getallUsers")
   const { data: customerData, loading: customerLoading } = UseFetch(
-    users && users.role === "Admin"
+    loggeduser && loggeduser.role === "Admin"
       ? "customer/getallCustomer"
       : branches && branches.length > 0
       ? `/customer/getallCustomer?userbranch=${encodeURIComponent(branches)}`
@@ -77,11 +80,22 @@ const LeadMaster = ({
   //   customer.selected.some((selection) => selection.branchName === "CAMET")
   // )
   useEffect(() => {
+    if (allusers && allusers.length > 0) {
+      const { allusers = [], allAdmins = [] } = data
+
+      // Combine allusers and allAdmins
+      const combinedUsers = [...allusers, ...allAdmins]
+
+      // Set combined names to state
+      setallStaffs(combinedUsers)
+    }
+  }, [allusers])
+  useEffect(() => {
     const userData = localStorage.getItem("user")
     console.log("daaaaaaaaaaaaaaa", userData)
     if (userData) {
       const user = JSON.parse(userData)
-      setUsers(user)
+      setloggedUser(user)
       if (user.role === "Staff") {
         const branch = user.selected.map((branch) => branch.branch_id)
         const branches = JSON.stringify(branch)
@@ -100,15 +114,27 @@ const LeadMaster = ({
 
   useEffect(() => {
     if (customerData) {
+      console.log(customerData)
       setCustomerOptions(
         customerData.map((item) => ({
           value: item?._id,
           label: item?.customerName,
-          mobile: item?.mobile || ""
+          mobile: item?.mobile || "",
+          email: item?.email,
+          phone: item?.landline
         }))
       )
     }
   }, [customerData])
+  console.log(customerOptions)
+  useEffect(() => {
+    if (selectedCustomer) {
+      console.log(selectedCustomer)
+      setValue("mobile", selectedCustomer.mobile)
+      setValue("phone", selectedCustomer.phone)
+      setValue("email", selectedCustomer.email)
+    }
+  }, [selectedCustomer])
   useEffect(() => {
     if (data) {
       const { allusers = [], allAdmins = [] } = data
@@ -121,19 +147,19 @@ const LeadMaster = ({
     }
   }, [data])
   useEffect(() => {
-    if (productData && productData.length > 0 && users) {
-      if (users.role === "Staff") {
+    if (productData && productData.length > 0 && loggeduser) {
+      if (loggeduser.role === "Staff") {
         const filteredProducts = productData.filter((product) =>
           product.selected.some((selection) =>
             branches.includes(selection.branch_id)
           )
         )
         setFilteredProduct(filteredProducts)
-      } else if (users.role === "Admin") {
+      } else if (loggeduser.role === "Admin") {
         setFilteredProduct(productData)
       }
     }
-  }, [productData, users])
+  }, [productData, loggeduser])
   useEffect(() => {
     if (productLoading || usersLoading || customerLoading) {
       setProgress(50) // Mid-way loading
@@ -152,6 +178,9 @@ const LeadMaster = ({
       setSelectedLeadList(mergedproductsandlicense)
     }
   }, [selectedProducts, selectedLicense])
+  useEffect(() => {
+    setValue("netAmount", calculateTotalAmount())
+  }, [selectedleadlist])
   useEffect(() => {
     if (!selectedLicense && productData && productData.length > 0) {
       const initialProductListwithoutlicense = productData?.map((product) => ({
@@ -370,12 +399,12 @@ const LeadMaster = ({
       return updatedList
     })
   }
-  console.log(users)
   const onSubmit = async (data, event) => {
     event.preventDefault()
 
     try {
       if (process === "Registration") {
+        console.log(data)
         await handleleadData(data)
       } else if (process === "edit") {
         await handleEditedData(data, tableObject)
@@ -386,6 +415,10 @@ const LeadMaster = ({
       toast.error("Failed to add product!")
     }
   }
+  console.log(allstaff)
+  const a = allstaff.filter((i) => i.name === "Riyas")
+  console.log(a)
+  console.log(loggeduser)
   return (
     <div className="h-full overflow-y-auto container justify-center items-center  p-2 md:p-8 ">
       {/* Top Loading Bar */}
@@ -449,8 +482,11 @@ const LeadMaster = ({
                   } // Show only customer name
                   getOptionValue={(option) => option._id}
                   filterOption={customFilter} // Enable searching by name & mobile
+                  {...register("customerName")}
                   onChange={(selectedOption) => {
+                    console.log(selectedOption)
                     handleSelectedCustomer(selectedOption.label)
+                    setSelectedCustomer(selectedOption)
                     setValue("customerName", selectedOption.value)
                   }}
                   className="md:w-1/4 w-full"
@@ -764,12 +800,42 @@ const LeadMaster = ({
               >
                 LeadBy
               </label>
-              <input
+              <select
+                id="leadBy"
+                {...register("leadBy")}
+                className="mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300 cursor-not-allowed"
+              >
+                {editMode ? (
+                  <>
+                    {allstaff
+                      ?.filter((user) => user._id === loggeduser._id)
+                      .map((user) => (
+                        <option key={user._id} value={user._id}>
+                          {user.name}
+                        </option>
+                      ))}
+                  </>
+                ) : (
+                  <>
+                    {allstaff
+                      ?.filter((user) => user._id === loggeduser._id)
+                      .map((user) => (
+                        <option key={user._id} value={user._id}>
+                          {user.name}
+                        </option>
+                      ))}
+                  </>
+                )}
+              </select>
+
+              {/* <input
                 type="text"
+                id="leadBy"
+                {...register("leadBy")}
                 readOnly // Make it non-editable
-                value={users?.name || ""} // Auto-updates with total price
+                value={loggeduser?.name || ""} // Auto-updates with total price
                 className=" mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
-              />
+              /> */}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700">
@@ -777,8 +843,10 @@ const LeadMaster = ({
               </label>
               <input
                 type="number"
+                id="netAmount"
+                {...register("netAmount")}
                 readOnly // Make it non-editable
-                value={calculateTotalAmount()} // Auto-updates with total price
+                // value={calculateTotalAmount()} // Auto-updates with total price
                 className=" mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
                 placeholder="Net Amount"
               />

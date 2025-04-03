@@ -16,6 +16,7 @@ export const LeadRegister = async (req, res) => {
       remark,
       allocatedTo
     } = leadData
+    console.log("cstomername", customerName)
 
     const leadDate = new Date()
     const lastLead = await LeadId.findOne().sort({ leadId: -1 })
@@ -64,6 +65,26 @@ export const GetAllservices = async (req, res) => {
       .json({ message: "Services found", data: allservices })
   } catch (error) {
     console.log(error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const GetallLead = async (req, res) => {
+  try {
+    const { Status } = req.query
+    console.log(Status)
+    if (Status === "Pending") {
+      const pendingLeads = await LeadMaster.find({
+        allocatedTo: null
+      })
+      if (pendingLeads) {
+        return res
+          .status(200)
+          .json({ message: "pending leads found", data: pendingLeads })
+      }
+    } else if (Status === "Approved") {
+    }
+  } catch (error) {
+    console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })
   }
 }

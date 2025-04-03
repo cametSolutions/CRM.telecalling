@@ -19,6 +19,7 @@ export default function AdminHeader() {
   const [activeSubmenu, setActiveSubmenu] = useState(null)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [inventoryMenuOpen, setInventoryMenuOpen] = useState(false)
+  const [leadMenuOpen, setLeadMenuOpen] = useState(false)
   const [openInnerMenu, setOpenInnerMenu] = useState(null) // Inner submenu state
   const navigate = useNavigate()
   const menuContainerRef = useRef(null)
@@ -136,7 +137,16 @@ export default function AdminHeader() {
       label: "Department"
     }
   ]
-
+  const leads = [
+    {
+      to: "/admin/transaction/lead/leadAllocation",
+      label: "Lead Allocation"
+    },
+    {
+      to: "/admin/transaction/lead/leadFollowUp",
+      label: "Lead Follow Up"
+    }
+  ]
   const inventorys = [
     {
       to: "/admin/masters/inventory/brandRegistration",
@@ -155,7 +165,8 @@ export default function AdminHeader() {
   const transactions = [
     {
       to: "/admin/transaction/lead",
-      label: "Lead"
+      label: "Lead",
+      hasChildren: true
     },
     {
       to: "/admin/transaction/call-registration",
@@ -494,15 +505,25 @@ export default function AdminHeader() {
                         key={master.to}
                         className="relative mb-2"
                         onMouseEnter={() => {
-                          if (master.hasChildren) setInventoryMenuOpen(true)
+                          if (
+                            master.hasChildren &&
+                            master.label === "Inventory"
+                          ) {
+                            setInventoryMenuOpen(true)
+                          }
                         }}
                         onMouseLeave={() => {
-                          if (master.hasChildren) setInventoryMenuOpen(false)
+                          if (
+                            master.hasChildren &&
+                            master.label === "Inventory"
+                          ) {
+                            setInventoryMenuOpen(false)
+                          }
                         }}
                       >
                         <Link
                           to={master.to}
-                          className="flex justify-between px-4 py-1 text-gray-600 text-sm hover:bg-gray-100"
+                          className="flex justify-between px-4 py-1 text-gray-600 text-sm hover:bg-gray-100 items-center"
                         >
                           {master.label}
                           {master.hasChildren && <FaChevronRight />}
@@ -533,13 +554,52 @@ export default function AdminHeader() {
                 {link.label === "Transactions" && transactionMenuOpen && (
                   <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 shadow-lg block rounded-md z-50">
                     {transactions.map((transaction) => (
-                      <Link
+                      <div
                         key={transaction.to}
-                        to={transaction.to}
-                        className=" block  px-2 py-2 text-gray-600 text-sm hover:bg-gray-100"
+                        className="relative mb-2"
+                        onMouseEnter={() => {
+                          if (
+                            transaction.hasChildren &&
+                            transaction.label === "Lead"
+                          ) {
+                            setLeadMenuOpen(true)
+                          }
+                        }}
+                        onMouseLeave={() => {
+                          if (
+                            transaction.hasChildren &&
+                            transaction.label === "Lead"
+                          ) {
+                            setLeadMenuOpen(false)
+                          }
+                        }}
                       >
-                        {transaction.label}
-                      </Link>
+                        <Link
+                          to={transaction.to}
+                          className="flex justify-between px-4 py-1 text-gray-600 text-sm hover:bg-gray-100 items-center"
+                        >
+                          {transaction.label}
+                          {transaction.hasChildren && <FaChevronRight />}
+                        </Link>
+                        {/*Lead dropdown*/}
+                        {transaction.hasChildren && leadMenuOpen && (
+                          <div
+                            className="absolute top-0 left-full w-48 bg-white border border-gray-200 shadow-lg rounded-md"
+                            onMouseEnter={() => setLeadMenuOpen(true)}
+                            onMouseLeave={() => setLeadMenuOpen(false)}
+                          >
+                            {leads.map((lead) => (
+                              <Link
+                                key={lead.to}
+                                to={lead.to}
+                                className="block px-4 py-2 text-gray-600 text-sm hover:bg-gray-100"
+                              >
+                                {lead.label}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                 )}

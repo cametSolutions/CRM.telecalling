@@ -1,7 +1,8 @@
 import React from "react"
 
 const PopUp = ({ isOpen, onClose, message, handleWhatsapp, report }) => {
- 
+  console.log(isOpen)
+
   if (!isOpen) return null
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
@@ -9,8 +10,8 @@ const PopUp = ({ isOpen, onClose, message, handleWhatsapp, report }) => {
         <h2 className="text-lg font-semibold">Warning</h2>
         <p className="text-gray-600">{message}</p>
         <button
-          onClick={() => 
-            onClose()
+          onClick={
+            () => onClose()
             // handleWhatsapp(report)
           }
           className="mt-4 px-4 py-2 bg-red-500 text-white rounded-md"

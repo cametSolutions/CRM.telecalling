@@ -10,15 +10,28 @@ const leadSchema = new mongoose.Schema({
   location: { type: String },
   pincode: { type: String },
   trade: { type: String },
-  leadFor: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+  leadBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    refpath: "assignedtoleadModel"
+  },
+  assingedtoleadModel: {
+    type: String,
+    enum: ["Staff", "Admin"]
+
+  },
+  netAmount:{
+    type:Number
+  },
   remark: { type: String },
   allocatedTo: {
     type: mongoose.Schema.Types.ObjectId,
-    refpath: "assignedtoMode"
+    refpath: "assignedtoMode",
+    default: null // Setting default value to null
   },
   assignedtoModel: {
     type: String,
-    enum: ["Staff", "Admin"] // Only these two models are allowed
+    enum: ["Staff", "Admin"], // Only these two models are allowed
+    default: null // Setting default value to null
   }
 })
 
