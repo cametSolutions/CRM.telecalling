@@ -36,6 +36,7 @@ export default function CallRegistration() {
   const [loggeduserCurrentDateCalls, setloggeduserCurrentDateCalls] = useState(
     []
   )
+  const [showIncomingNumberToast, setshowinComingnumberToast] = useState(false)
   const [callreport, setcallReport] = useState({})
   const [customerData, setCustomerData] = useState([])
   const [submitLoading, setSubmitLoading] = useState(false)
@@ -87,7 +88,7 @@ export default function CallRegistration() {
     submitCallRegistration()
   }, [afterCallsubmitting]) // Dependency array ensures it runs when 'afterCallsubmitting' changes
   useEffect(() => {
-    if (callnotes && callnotes.length > 0) {
+    if (callnotes && callnotes?.length > 0) {
       const userData = localStorage.getItem("user")
       const user = JSON.parse(userData)
 
@@ -204,7 +205,7 @@ export default function CallRegistration() {
 
   useEffect(() => {
     // Set the default product if there's only one
-    if (productDetails.length === 1) {
+    if (productDetails?.length === 1) {
       setSelectedProducts([productDetails[0]])
     }
   }, [productDetails])
@@ -516,7 +517,7 @@ Problem:    \t${selectedText}
 
       url =
         branches &&
-        branches.length > 0 &&
+        branches?.length > 0 &&
         `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
           user.role
         }&userBranch=${encodeURIComponent(branches)}`
@@ -613,7 +614,7 @@ Problem:    \t${selectedText}
   }
 
   const onSubmit = async (data) => {
-    if (selectedProducts && selectedProducts.length === 0) {
+    if (selectedProducts && selectedProducts?.length === 0) {
       // alert("please select aprodut")
       toast.error("Please select a product", {
         position: "top-center",
@@ -627,7 +628,6 @@ Problem:    \t${selectedText}
     // let updatedData = { ...data }
     setFormData(data)
   }
-
   return (
     <div className="container  justify-center items-center p-8 h-auto">
       <div className="w-auto bg-white shadow-lg rounded  p-8 mx-auto h-auto">
@@ -644,7 +644,7 @@ Problem:    \t${selectedText}
         </div>
 
         <hr className="border-t-2 border-gray-300 mb-4"></hr>
-        <div className="w-2/4 ">
+        <div className={`w-2/4 ${afterCallsubmitting ? "" : "ml-5"}`}>
           <div className="relative">
             <label
               htmlFor="customerName"
@@ -672,9 +672,9 @@ Problem:    \t${selectedText}
         </div>
         {afterCallsubmitting &&
           loggeduserCurrentDateCalls &&
-          loggeduserCurrentDateCalls.length > 0 && (
+          loggeduserCurrentDateCalls?.length > 0 && (
             <>
-              {loggeduserCurrentDateCalls.length > 0 && (
+              {loggeduserCurrentDateCalls?.length > 0 && (
                 <>
                   <h1 className="text-xl inline-block border-b-2 border-black mt-3">
                     Your Today's Call list
@@ -847,7 +847,7 @@ Problem:    \t${selectedText}
             </>
           )}
 
-        {searching && customerData.length > 0 ? (
+        {searching && customerData?.length > 0 ? (
           <div className="ml-5 w-2/4 max-h-40 overflow-y-auto overflow-x-auto  mt-4 border border-gray-200 shadow-md rounded-lg">
             {/* Wrap the table in a div with border */}
             <table className="min-w-full bg-white">
@@ -983,7 +983,7 @@ Problem:    \t${selectedText}
                 </h3>
                 {/* <button onClick={fetchData}>update</button>c */}
               </div>
-              <div className="m-5 w-lg max-h-30 overflow-x-auto text-center overflow-y-auto">
+              <div className="m-5 w-lg max-h-30 overflow-x-auto text-center overflow-y-auto border border-gray-300 rounded-lg">
                 <table className=" m-w-full divide-y divide-gray-200 shadow">
                   <thead
                     className={`${
@@ -1054,7 +1054,7 @@ Problem:    \t${selectedText}
                       )}
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="divide-y divide-gray-300">
                     {productDetails?.map((product, index) => (
                       <tr key={index}>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
@@ -1169,8 +1169,13 @@ Problem:    \t${selectedText}
                   {/* Updated parent div with justify-between */}
                   <div className="grid grid-cols-3 gap-6 m-5">
                     <div>
-                      {" "}
-                      {/* Adjust width and padding for spacing */}
+                      {/* Toast Message */}
+                      {showIncomingNumberToast && (
+                        <div className=" bg-blue-500 text-white px-3 py-1 rounded-md text-sm">
+                          Please enter the customer's incoming number. This
+                          number will be sent to the customer's email
+                        </div>
+                      )}
                       <label
                         htmlFor="customerName"
                         className="block text-sm font-medium text-gray-700"
@@ -1181,7 +1186,9 @@ Problem:    \t${selectedText}
                         type="Number"
                         id="incomingNumber"
                         {...register("incomingNumber", {
-                          required: "Incoming number is required"
+                          required: "Incoming number is required",
+                          onChange: (e) =>
+                            setshowinComingnumberToast(!showIncomingNumberToast)
                         })}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
                         placeholder="Enter Incoming Number"
@@ -1360,7 +1367,7 @@ Problem:    \t${selectedText}
                     Go Home
                   </Link>
                 </div>
-                {callData.length > 0 && (
+                {callData?.length > 0 && (
                   <div className="relative mt-8 overflow-y-auto w-full max-h-60 text-center">
                     <table className=" w-full divide-y divide-gray-200 rounded-xl shadow-lg ">
                       <thead

@@ -1964,7 +1964,6 @@ const updateProcessedAttendees = async (processedAttendedBy, attendedId) => {
 
 export const loggeduserCallsCurrentDateCalls = async (req, res) => {
   try {
-    console.log("hhhhh")
     const { loggedUserId } = req.query
     const loggeduserObjectId = new mongoose.Types.ObjectId(loggedUserId)
     const today = new Date()
@@ -2107,12 +2106,13 @@ export const loggeduserCallsCurrentDateCalls = async (req, res) => {
       }
     ]
 
-    const calls = await CallRegistration.aggregate(pipeline)
-    console.log(calls)
+    const currentDateloggedusercalls = await CallRegistration.aggregate(
+      pipeline
+    )
 
-    console.log("loggeduser", calls)
-
-    return res.status(200).json({ message: "found", data: calls })
+    return res
+      .status(200)
+      .json({ message: "found", data: currentDateloggedusercalls })
   } catch (error) {
     console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })
