@@ -81,7 +81,7 @@ const LeadMaster = ({
   }, [allusers])
   useEffect(() => {
     if (loggeduser?._id) {
-      setValue("leadBy", loggeduser._id); // Manually set the value
+      setValue("leadBy", loggeduser._id) // Manually set the value
     }
   }, [loggeduser, setValue])
   useEffect(() => {
@@ -166,7 +166,7 @@ const LeadMaster = ({
       const mergedproductsandlicense = []
       mergedproductsandlicense.push({
         productName: selectedProducts.productName,
-        licensenumber: selectedLicense,
+        licenseNumber: selectedLicense,
         price: selectedProducts.productPrice
       })
       setSelectedLeadList(mergedproductsandlicense)
@@ -288,7 +288,7 @@ const LeadMaster = ({
       ?.filter((item) => item.customerName === name) // Filter customers by name
       ?.flatMap((item) =>
         item.selected.map((sel) => ({
-          licensenumber: sel.licensenumber || "N/A",
+          licenseNumber: sel.licensenumber || "N/A",
           productName: sel.productName || "Unknown"
         }))
       )
@@ -353,7 +353,7 @@ const LeadMaster = ({
         const selectedProducts = productSelections[selectedLicense]
           .filter((product) => product.selected)
           .map((product) => ({
-            licensenumber: selectedLicense,
+            licenseNumber: selectedLicense,
             productName: product.productName,
             productId: product._id,
             price: product.productPrice
@@ -398,8 +398,9 @@ const LeadMaster = ({
 
     try {
       if (process === "Registration") {
-        console.log(data)
-        await handleleadData(data)
+        // console.log(selectedleadlist)
+        // return
+        await handleleadData(data, selectedleadlist)
       } else if (process === "edit") {
         await handleEditedData(data, tableObject)
       }
@@ -610,11 +611,11 @@ const LeadMaster = ({
                   {/* List of available licenses */}
                   {customerTableData?.map((item, index) => (
                     <li
-                      key={item.licensenumber || index}
+                      key={item.licenseNumber || index}
                       className="p-2 hover:bg-gray-200 cursor-pointer"
-                      onClick={() => handleLicenseSelect(item.licensenumber)}
+                      onClick={() => handleLicenseSelect(item.licenseNumber)}
                     >
-                      {`${item.licensenumber} - ${item.productName}`}
+                      {`${item.licenseNumber} - ${item.productName}`}
                     </li>
                   ))}
                 </ul>
@@ -729,7 +730,7 @@ const LeadMaster = ({
                     {selectedleadlist.map((product, index) => (
                       <tr key={index} className="border-b hover:bg-gray-50">
                         <td className="p-2">
-                          {product.licensenumber || "Not Selected"}
+                          {product.licenseNumber || "Not Selected"}
                         </td>
                         <td className="p-2">{product.productName}</td>
                         {/* Editable Price Input */}
@@ -808,10 +809,7 @@ const LeadMaster = ({
                 </select>
               ) : (
                 <>
-                  <input
-                    type="hidden"
-                    {...register("leadBy")}
-                  />
+                  <input type="hidden" {...register("leadBy")} />
                   <p className="mt-1 w-full border rounded-md p-2 text-gray-600 cursor-not-allowed">
                     {loggeduser?.name}
                   </p>

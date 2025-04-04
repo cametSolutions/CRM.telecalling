@@ -349,8 +349,8 @@ export default function CallRegistration() {
         setCustomerData([])
         setSearching(false)
         socket.emit("updatedCalls")
-
-        setafterCallSubmitting(true)
+        sendWhatapp(calldata)
+        // setafterCallSubmitting(true)
       } else {
         toast.error(response.data.message)
       }
@@ -414,12 +414,13 @@ export default function CallRegistration() {
 
       if (response.status === 200) {
         toast.success(response.data.message)
-        setafterCallSubmitting(true)
+        // setafterCallSubmitting(true)
         setCustomerData([])
         setSearching(false)
         setSelectedCustomer(null)
         setSelectedProducts([])
         socket.emit("updatedCalls")
+        sendWhatapp(calldata)
       } else {
         toast.error(response.data.message)
       }
@@ -448,7 +449,7 @@ Problem:    \t${selectedText}
       return
     }
 
-    let whatsappWindow
+    // let whatsappWindow
     let whatsappUrl
     const phoneNumber = `+91${calldata.formdata.incomingNumber}`
     const textToShare = `${calldata.customerName} - ${phoneNumber}`
@@ -466,24 +467,27 @@ Problem:    \t${selectedText}
     //     textToShare
     //   )}`
     // }
+    // const isMobile = /iPhone|Android/i.test(navigator.userAgent)
+
     whatsappUrl = `https://web.whatsapp.com/send?text=${encodeURIComponent(
       textToShare
     )}`
+    const userConfirmed = window.confirm(
+      "Do you have WhatsApp Web open and logged in? Click OK to continue, or Cancel to abort."
+    )
 
-    // Open WhatsApp Web
-    // const newWindow = window.open(whatsappUrl, "_blank")
-
-    if (!whatsappWindow || whatsappWindow.closed) {
-      whatsappWindow = window.open(whatsappUrl, "_blank")
-    } else {
-      whatsappWindow.location.href = whatsappUrl
-      whatsappWindow.focus()
+    if (!userConfirmed) {
+      setafterCallSubmitting(true)
+      return
     }
-    // if (!newWindow) {
-    //   console.error(
-    //     "Failed to open WhatsApp Web. A popup blocker might be active."
-    //   )
-    // }
+
+    const whatsappWindow = window.open(whatsappUrl, "_blank")
+
+    if (!whatsappWindow) {
+      alert("whats app web is not connected please connect.")
+    } else {
+      setafterCallSubmitting(true)
+    }
   }
   const formatDateTime = (date) => {
     const year = date.getFullYear()
@@ -628,6 +632,8 @@ Problem:    \t${selectedText}
     // let updatedData = { ...data }
     setFormData(data)
   }
+  console.log(searching)
+  console.log(customerData)
   return (
     <div className="container  justify-center items-center p-8 h-auto">
       <div className="w-auto bg-white shadow-lg rounded  p-8 mx-auto h-auto">
@@ -1167,18 +1173,20 @@ Problem:    \t${selectedText}
 
                 <form onSubmit={handleSubmit(onSubmit)}>
                   {/* Updated parent div with justify-between */}
-                  <div className="grid grid-cols-3 gap-6 m-5">
-                    <div>
+
+                  <div className="grid grid-cols-3 gap-6 m-5 ">
+                    <div className="relative">
                       {/* Toast Message */}
                       {showIncomingNumberToast && (
-                        <div className=" bg-blue-500 text-white px-3 py-1 rounded-md text-sm">
+                        <div className="absolute -top-10 left-0 bg-blue-500 text-white px-3 py-1 rounded-md text-sm z-10 shadow-md ">
                           Please enter the customer's incoming number. This
                           number will be sent to the customer's email
                         </div>
                       )}
+
                       <label
                         htmlFor="customerName"
-                        className="block text-sm font-medium text-gray-700"
+                        className="block text-sm font-medium text-gray-700 mt-2"
                       >
                         Incoming Number
                       </label>
@@ -1187,8 +1195,7 @@ Problem:    \t${selectedText}
                         id="incomingNumber"
                         {...register("incomingNumber", {
                           required: "Incoming number is required",
-                          onChange: (e) =>
-                            setshowinComingnumberToast(!showIncomingNumberToast)
+                          onChange: (e) => setshowinComingnumberToast(true)
                         })}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
                         placeholder="Enter Incoming Number"
@@ -1249,28 +1256,7 @@ Problem:    \t${selectedText}
                         </span>
                       )}
                     </div>
-                    {/* <div>
-                      <label
-                        htmlFor="description"
-                        className="block text-sm font-medium text-gray-700"
-                      >
-                        Description
-                      </label>
-                      <ReactQuill
-                        id="description"
-                        theme="snow"
-                        // onChange={handleQuillChange}
-                        spellCheck={true} // Enables spell check
-                        lang="en" // Sets the language for spell check
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm sm:text-sm focus:border-gray-500 outline-none"
-                        placeholder="Enter a description..."
-                      />
-                      {errors.description && (
-                        <span className="mt-2 text-sm text-red-600">
-                          {errors.description.message}
-                        </span>
-                      )}
-                    </div> */}
+
                     <div>
                       <label
                         id="description"

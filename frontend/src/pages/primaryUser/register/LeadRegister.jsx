@@ -10,11 +10,13 @@ function LeadRegister() {
   const user = JSON.parse(userData)
 
   const navigate = useNavigate()
-  const handleSubmit = async (leadData) => {
+  const handleSubmit = async (leadData, selectedtableLeadData) => {
     try {
-      const response = await api.post("/lead/leadRegister", leadData, {
-        withCredentials: true
-      })
+      const response = await api.post(
+        "/lead/leadRegister",
+        {leadData,
+        selectedtableLeadData}
+      )
 
       toast.success(response && response.data && response.data.message)
       if (user.role === "Admin") {

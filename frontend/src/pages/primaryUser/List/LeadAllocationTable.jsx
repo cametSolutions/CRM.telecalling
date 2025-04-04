@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react"
 import { PropagateLoader } from "react-spinners"
-
+import { useNavigate } from "react-router-dom"
 import Select from "react-select"
 import UseFetch from "../../../hooks/useFetch"
 import { formatDate } from "../../../utils/dateUtils"
 const LeadAllocationTable = () => {
   const [status, setStatus] = useState("Pending")
-  const [customerOptions, setCustomerOptions] = useState([])
+  const [allocationOptions, setAllocationOptions] = useState([])
+  const [selectedAllocates, setSelectedAllocates] = useState({})
   const [allStaffs, setallStaffs] = useState([])
   const [loader, setloader] = useState(true)
   const [tableData, setTableData] = useState([])
@@ -28,7 +29,7 @@ const LeadAllocationTable = () => {
       // Set combined names to state
       // setallStaffs(combinedUsers)
 
-      setCustomerOptions(
+      setAllocationOptions(
         combinedUsers.map((item) => ({
           value: item?._id,
           label: item?.name
@@ -36,7 +37,7 @@ const LeadAllocationTable = () => {
       )
     }
   }, [data])
-
+  console.log(allocationOptions)
   console.log(allStaffs)
   useEffect(() => {
     if (leadPendinglist) {
@@ -78,55 +79,71 @@ const LeadAllocationTable = () => {
               <th className="px-4 py-2 text-center">Mobile Number</th>
               <th className="px-4 py-2 text-center">Phone Number</th>
               <th className="px-4 py-2 text-center">Email Id</th>
-              <th className="px-4 py-2 text-center">Product/Services</th>
+              <th className="px-2 py-2 text-center">Product/Services</th>
               <th className="px-4 py-2 text-center">Net Amount</th>
               <th className="px-4 py-2 text-center">Lead By</th>
               <th className="px-4 py-2 text-center">Allocated To</th>
               <th className="px-4 py-2 text-center">Action</th>
             </tr>
           </thead>
-          <tbody className="text-center divide-gray-200">
+          <tbody className="text-center divide-gray-200 bg-gray-200">
             {tableData && tableData.length > 0 ? (
               tableData.map((item) => (
                 <tr key={item.id} className="border-b hover:bg-gray-100">
-                  <td className="px-4 py-2 border border-gray-300">
+                  <td className="px-1 border border-gray-300">
                     {formatDate(item.leadDate)}
                   </td>
-                  <td className="px-4 py-2 border border-gray-300">
+                  <td className="px-4  border border-gray-300">
                     {item?.leadId}
                   </td>
-                  <td className="px-4 py-2 border border-gray-300">
+                  <td className="px-4  border border-gray-300">
                     {item?.customerName?.customerName}
                   </td>
-                  <td className="px-4 py-2 border border-gray-300">
+                  <td className="px-4  border border-gray-300">
                     {item?.mobile}
                   </td>
-                  <td className="px-4 py-2 border border-gray-300">
-                    {item.phone}
-                  </td>
-                  <td className="px-4 py-2 border border-gray-300">
+                  <td className="px-4  border border-gray-300">{item.phone}</td>
+                  <td className="px-4  border border-gray-300">
                     {item?.email}
                   </td>
-                  <td className="px-4 py-2 border border-gray-300">
-                    {item?.department}
+                  <td className="px-4  border border-gray-300">
+                    <button
+                      // onClick={}
+                      className="bg-blue-700 hover:bg-blue-800 text-white rounded-lg px-4 shadow-md"
+                    >
+                      View
+                    </button>
                   </td>
-                  <td className="px-4 py-2 border border-gray-300">
+                  <td className="px-4  border border-gray-300">
                     {item?.netAmount}
                   </td>
-                  <td className="px-4 py-2 border border-gray-300">
+                  <td className="px-4  border border-gray-300">
                     {item?.leadBy.name}
                   </td>
-                  <td className=" py-2 border border-gray-300">
+                  <td className="  border border-gray-300">
                     <Select
-                      options={customerOptions}
-                      value={sele}
+                      options={allocationOptions}
+                      value={selectedAllocates[item._id] || null}
                       onChange={(selectedOption) => {
                         console.log(selectedOption)
-                        se
-                        handleSelectedCustomer(item._id, selectedOption.value)
+                        setSelectedAllocates((prev) => ({
+                          ...prev,
+                          [item._id]: selectedOption
+                        }))
+                        // handleSelectedC(item._id, selectedOption.value)
                       }}
-                      className=" w-40"
+                      className="w-44 focus:outline-none"
                       styles={{
+                        control: (base, state) => ({
+                          ...base,
+                          boxShadow: "none", // removes blue glow
+                          borderColor: state.isFocused
+                            ? "#ccc"
+                            : base.borderColor, // optional: neutral border on focus
+                          "&:hover": {
+                            borderColor: "#ccc" // optional hover styling
+                          }
+                        }),
                         menu: (provided) => ({
                           ...provided,
                           maxHeight: "200px", // Set dropdown max height
@@ -142,7 +159,7 @@ const LeadAllocationTable = () => {
                       menuShouldScrollIntoView={false}
                     />
                   </td>
-                  <td className="px-4 py-2 border border-gray-300">
+                  <td className="px-4  border border-gray-300">
                     {item.department}
                   </td>
                 </tr>

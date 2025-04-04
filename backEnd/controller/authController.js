@@ -1286,6 +1286,45 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               stats.attendancedates[dayTime].notMarked = 0.5
             }
           } else if (
+            (punchIn == lateLimit &&
+              punchOut >= noonLimit &&
+              punchOut < minOutTime) ||
+            (punchIn <= noonLimit &&
+              punchOut == minOutTime &&
+              punchIn > lateLimit)
+          ) {
+            stats.attendancedates[dayTime].present = 0.5
+            stats.attendancedates[dayTime].notMarked = 0.5
+            if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+              stats.onsite++
+              stats.attendancedates[dayTime].present = 1
+              stats.attendancedates[dayTime].notMarked = ""
+            } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
+              if (
+                punchIn == lateLimit &&
+                punchOut >= noonLimit &&
+                onsiteDetails.halfDayPeriod === "Afternoon"
+              ) {
+                stats.onsite += 0.5
+                stats.attendancedates[dayTime].present = 1
+                stats.attendancedates[dayTime].notMarked = ""
+              } else if (
+                punchIn == lateLimit &&
+                punchOut >= noonLimit &&
+                onsiteDetails.halfDayPeriod === "Morning"
+              ) {
+                stats.onsite += 0.5
+              } else if (
+                punchIn <= noonLimit &&
+                punchOut >= minOutTime &&
+                onsiteDetails.halfDayPeriod === "Morning"
+              ) {
+                stats.onsite += 0.5
+                stats.attendancedates[dayTime].present = 1
+                stats.attendancedates[dayTime].notMarked = ""
+              }
+            }
+          } else if (
             (punchIn < lateLimit &&
               punchOut >= noonLimit &&
               punchOut < minOutTime) ||
@@ -1321,7 +1360,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                 punchOut >= earlyLeaveLimit &&
                 onsiteDetails.halfDayPeriod === "Afternoon"
               ) {
-                stats.onsite += 0.5
+                ats.onsite += 0.5
               } else if (
                 punchIn <= noonLimit &&
                 punchOut >= earlyLeaveLimit &&
@@ -1671,9 +1710,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         (Math.floor(combined / latecuttingCount) % 2) * 0.5
 
       staffAttendanceStats.push(stats)
-      if (userName === "RUKSANA KASIM") {
-        console.log(stats)
-      }
     }
     const listofHolidays = holidays.map((item) => ({
       date: item.holyDate.toISOString().split("T")[0],
@@ -3768,6 +3804,45 @@ export const GetsomeAllsummary = async (
             }
 
             fulldayarr.push(day)
+          } else if (
+            (punchIn == lateLimit &&
+              punchOut >= noonLimit &&
+              punchOut < minOutTime) ||
+            (punchIn <= noonLimit &&
+              punchOut == minOutTime &&
+              punchIn > lateLimit)
+          ) {
+            stats.attendancedates[dayTime].present = 0.5
+            stats.attendancedates[dayTime].notMarked = 0.5
+            if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+              stats.onsite++
+              stats.attendancedates[dayTime].present = 1
+              stats.attendancedates[dayTime].notMarked = ""
+            } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
+              if (
+                punchIn == lateLimit &&
+                punchOut >= noonLimit &&
+                onsiteDetails.halfDayPeriod === "Afternoon"
+              ) {
+                stats.onsite += 0.5
+                stats.attendancedates[dayTime].present = 1
+                stats.attendancedates[dayTime].notMarked = ""
+              } else if (
+                punchIn == lateLimit &&
+                punchOut >= noonLimit &&
+                onsiteDetails.halfDayPeriod === "Morning"
+              ) {
+                stats.onsite += 0.5
+              } else if (
+                punchIn <= noonLimit &&
+                punchOut >= minOutTime &&
+                onsiteDetails.halfDayPeriod === "Morning"
+              ) {
+                stats.onsite += 0.5
+                stats.attendancedates[dayTime].present = 1
+                stats.attendancedates[dayTime].notMarked = ""
+              }
+            }
           } else if (
             (punchIn < lateLimit &&
               punchOut >= noonLimit &&
