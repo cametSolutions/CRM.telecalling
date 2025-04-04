@@ -1671,6 +1671,9 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         (Math.floor(combined / latecuttingCount) % 2) * 0.5
 
       staffAttendanceStats.push(stats)
+      if (userName === "RUKSANA KASIM") {
+        console.log(stats)
+      }
     }
     const listofHolidays = holidays.map((item) => ({
       date: item.holyDate.toISOString().split("T")[0],
