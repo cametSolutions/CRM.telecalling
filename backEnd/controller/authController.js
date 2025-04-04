@@ -1360,7 +1360,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                 punchOut >= earlyLeaveLimit &&
                 onsiteDetails.halfDayPeriod === "Afternoon"
               ) {
-                ats.onsite += 0.5
+                stats.onsite += 0.5
               } else if (
                 punchIn <= noonLimit &&
                 punchOut >= earlyLeaveLimit &&
@@ -3967,7 +3967,6 @@ export const GetsomeAllsummary = async (
                 stats.attendancedates[dayTime].halfDayperiod =
                   leaveDetails?.halfDayPeriod
               }
-              // stats.absent += 0.5
               stats.attendancedates[dayTime].notMarked = ""
             }
           }

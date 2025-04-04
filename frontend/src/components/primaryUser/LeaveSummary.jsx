@@ -9,6 +9,7 @@ import UseFetch from "../../hooks/useFetch"
 import { toast } from "react-toastify"
 const leaveSummary = () => {
   const [searchTerm, setSearchTerm] = useState(null)
+  const [monthselected, setmonthSelected] = useState(null)
   const [selectedIndex, setSelectedIndex] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const currentYear = new Date().getFullYear()
@@ -43,12 +44,14 @@ const leaveSummary = () => {
       if (user?.role === "Admin") {
         setHoly(holy)
         setleaveSummary(newattende)
+        // setmonthSelected(selectedMonth)
       } else if (user?.role === "Staff") {
         setHoly(holy)
         const filteredUser = newattende.filter(
           (item) => item.userId === user._id || item.assignedto === user._id
         )
         setleaveSummary(filteredUser)
+        // setmonthSelected(selectedMonth)
       }
     }
   }, [newattende])
@@ -436,7 +439,7 @@ const leaveSummary = () => {
       FileSaver.saveAs(fileData, "Attendance_Report.xlsx")
     }
   }
-
+  console.log(selectedMonth)
   return (
     <div className="w-full">
       {loading && (
