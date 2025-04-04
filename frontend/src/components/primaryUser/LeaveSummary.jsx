@@ -37,7 +37,7 @@ const leaveSummary = () => {
     loading,
     refreshHook
   } = UseFetch(apiUrl)
- 
+
   useEffect(() => {
     if (newattende && newattende.length) {
       if (user?.role === "Admin") {
@@ -451,8 +451,61 @@ const leaveSummary = () => {
         <h1 className=" sm:text-md md:text-2xl font-bold mb-1">
           User Leave Summary
         </h1>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-end gap-2 md:gap-4 mb-3 md:mr-8 mx-5">
+          {/* Search Input */}
+          <div className="w-full md:w-auto">
+            <input
+              value={
+                selectedStaff !== null ? selectedStaff[0].name : searchTerm
+              }
+              onChange={(e) => {
+                if (selectedStaff !== null) {
+                  setSelectedIndex(null)
+                  setselectedStaff(null) // Clear selected staff
+                }
+                setSearchTerm(e.target.value)
+              }}
+              placeholder="Search..."
+              className="appearance-none border border-gray-400 rounded px-3 py-2 w-full md:w-auto bg-white text-sm placeholder-gray-400 text-gray-700 focus:outline-none"
+            />
+          </div>
 
-        <div className="flex justify-center md:justify-end md:gap-4 gap-2  mb-3 md:mr-8">
+          {/* Download Button */}
+          <button
+            className="bg-blue-600 rounded px-3 py-2 text-white text-sm"
+            onClick={() => handleDownload(newattende)}
+          >
+            Download to Excel
+          </button>
+
+          {/* Year Select */}
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            className="border p-2 rounded w-full md:w-auto"
+          >
+            {years.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+
+          {/* Month Select */}
+          <select
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(Number(e.target.value))}
+            className="border p-2 rounded w-full md:w-auto"
+          >
+            {months.map((month) => (
+              <option key={month.value} value={month.value}>
+                {month.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* <div className="flex justify-center md:justify-end md:gap-4 gap-2  mb-3 md:mr-8">
           <div>
             <input
               value={
@@ -498,7 +551,7 @@ const leaveSummary = () => {
               </option>
             ))}
           </select>
-        </div>
+        </div> */}
       </div>
       {/* Main Content */}
       {loading ? (
@@ -507,7 +560,7 @@ const leaveSummary = () => {
         <>
           <div className="max-h-[calc(100vh-200px)] overflow-y-auto px-5 ">
             {leavesummaryList &&
-              leavesummaryList.length>0 &&
+              leavesummaryList.length > 0 &&
               leavesummaryList?.map((attendee, index) => (
                 <div key={index}>
                   {selectedIndex === null || selectedIndex === index ? (

@@ -166,20 +166,20 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
-    const response = await fetch(
-      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
-      {
-        method: "GET",
-        credentials: "include" // This allows cookies to be sent with the request
-      }
-    )
     // const response = await fetch(
-    //   `http://localhost:9000/api/customer/getcallregister/${callId}`,
+    //   `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
     //   {
     //     method: "GET",
     //     credentials: "include" // This allows cookies to be sent with the request
     //   }
     // )
+    const response = await fetch(
+      `http://localhost:9000/api/customer/getcallregister/${callId}`,
+      {
+        method: "GET",
+        credentials: "include" // This allows cookies to be sent with the request
+      }
+    )
     const data = await response.json()
 
     return data
@@ -287,7 +287,9 @@ export default function CallRegistration() {
       }
 
       const updatedformData = { ...formData }
+      console.log(formData)
       const [selectedId, selectedText] = updatedformData.callnote.split("|")
+      console.log(selectedText)
       updatedformData.callnote = selectedId
 
       if (updatedformData.status === "pending") {
@@ -349,7 +351,7 @@ export default function CallRegistration() {
         setCustomerData([])
         setSearching(false)
         socket.emit("updatedCalls")
-        sendWhatapp(calldata)
+        sendWhatapp(calldata, selectedText)
         // setafterCallSubmitting(true)
       } else {
         toast.error(response.data.message)
@@ -420,7 +422,7 @@ export default function CallRegistration() {
         setSelectedCustomer(null)
         setSelectedProducts([])
         socket.emit("updatedCalls")
-        sendWhatapp(calldata)
+        sendWhatapp(calldata, selectedText)
       } else {
         toast.error(response.data.message)
       }
@@ -443,16 +445,17 @@ Call Status:\t${
 Problem:    \t${selectedText}
   `.trim()
   }
-  const sendWhatapp = (calldata) => {
+  const sendWhatapp = (calldata, callnote) => {
+    console.log(callnote)
     if (!calldata?.formdata?.incomingNumber) {
       console.error("Incoming number is missing in calldata.")
-      return
+      returnm
     }
 
     // let whatsappWindow
     let whatsappUrl
     const phoneNumber = `+91${calldata.formdata.incomingNumber}`
-    const textToShare = `${calldata.customerName} - ${phoneNumber}`
+    const textToShare = `${calldata.customerName} - ${phoneNumber}\nCallnote: ${callnote}`
 
     // if (calldata.formdata.status === "solved") {
     //   const message = formatTableToText(calldata, selectedText)
@@ -477,6 +480,7 @@ Problem:    \t${selectedText}
     )
 
     if (!userConfirmed) {
+      console.log(userConfirmed)
       setafterCallSubmitting(true)
       return
     }
@@ -484,8 +488,11 @@ Problem:    \t${selectedText}
     const whatsappWindow = window.open(whatsappUrl, "_blank")
 
     if (!whatsappWindow) {
+      console.log(whatsappWindow)
       alert("whats app web is not connected please connect.")
     } else {
+      console.log(whatsappWindow)
+      console.log(userConfirmed)
       setafterCallSubmitting(true)
     }
   }
