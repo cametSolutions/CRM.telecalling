@@ -1,20 +1,24 @@
 import { useState, useEffect } from "react"
 import { PropagateLoader } from "react-spinners"
+
+import Select from "react-select"
 import UseFetch from "../../../hooks/useFetch"
 import { formatDate } from "../../../utils/dateUtils"
 const LeadAllocationTable = () => {
   const [status, setStatus] = useState("Pending")
+  const [customerOptions, setCustomerOptions] = useState([])
   const [allStaffs, setallStaffs] = useState([])
   const [loader, setloader] = useState(true)
   const [tableData, setTableData] = useState([])
   const { data: leadPendinglist, loading } = UseFetch(
     status && `/lead/getallLead?Status=${status}`
   )
-  const { data: allusers } = UseFetch("/auth/getallUsers")
-  console.log(allusers)
+  const { data } = UseFetch("/auth/getallUsers")
+
   console.log(leadPendinglist)
   useEffect(() => {
-    if (allusers && allusers.length > 0) {
+    if (data) {
+      console.log("h")
       const { allusers = [], allAdmins = [] } = data
       console.log(allusers)
 
@@ -22,9 +26,17 @@ const LeadAllocationTable = () => {
       const combinedUsers = [...allusers, ...allAdmins]
 
       // Set combined names to state
-      setallStaffs(combinedUsers)
+      // setallStaffs(combinedUsers)
+
+      setCustomerOptions(
+        combinedUsers.map((item) => ({
+          value: item?._id,
+          label: item?.name
+        }))
+      )
     }
-  }, [allusers])
+  }, [data])
+
   console.log(allStaffs)
   useEffect(() => {
     if (leadPendinglist) {
@@ -39,13 +51,9 @@ const LeadAllocationTable = () => {
     )
   }
   ;("")
-  // Sample data
-  const data = [
-    { id: 1, name: "John Doe", department: "HR", status: "Pending" },
-    { id: 2, name: "Jane Smith", department: "Finance", status: "Approved" },
-    { id: 3, name: "Alice Brown", department: "IT", status: "Pending" }
-  ]
+
   console.log(tableData)
+
   return (
     <div className="p-4">
       {/* Toggle Button */}
@@ -108,17 +116,31 @@ const LeadAllocationTable = () => {
                   <td className="px-4 py-2 border border-gray-300">
                     {item?.leadBy.name}
                   </td>
-                  <td className="px-4 py-2 border border-gray-300">
-                    <select
-                      id="leadBy"
-                      className="mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
-                    >
-                      {allStaffs?.map((user) => (
-                        <option key={user._id} value={user._id}>
-                          {user.name}
-                        </option>
-                      ))}
-                    </select>
+                  <td className=" py-2 border border-gray-300">
+                    <Select
+                      options={customerOptions}
+                      value={sele}
+                      onChange={(selectedOption) => {
+                        console.log(selectedOption)
+                        se
+                        handleSelectedCustomer(item._id, selectedOption.value)
+                      }}
+                      className=" w-40"
+                      styles={{
+                        menu: (provided) => ({
+                          ...provided,
+                          maxHeight: "200px", // Set dropdown max height
+                          overflowY: "auto" // Enable scrolling
+                        }),
+                        menuList: (provided) => ({
+                          ...provided,
+                          maxHeight: "200px", // Ensures dropdown scrolls internally
+                          overflowY: "auto"
+                        })
+                      }}
+                      menuPortalTarget={document.body} // Prevents nested scrolling issues
+                      menuShouldScrollIntoView={false}
+                    />
                   </td>
                   <td className="px-4 py-2 border border-gray-300">
                     {item.department}

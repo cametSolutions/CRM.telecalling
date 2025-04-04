@@ -8,6 +8,7 @@ import { HiChevronLeft, HiChevronRight } from "react-icons/hi" // Impo
 import UseFetch from "../../hooks/useFetch"
 import api from "../../api/api"
 import debounce from "lodash.debounce"
+import { isPast } from "date-fns"
 
 function LeaveApplication() {
   const [events, setEvents] = useState([])
@@ -49,7 +50,6 @@ function LeaveApplication() {
     description: "",
     eventId: null
   })
-  console.log(formData)
   const [selectedAttendance, setselectedAttendance] = useState({
     attendanceDate: "",
     inTime: { hours: "12", minutes: "00", amPm: "AM" },
@@ -616,16 +616,8 @@ function LeaveApplication() {
   }
   const handleChange = (e) => handleInputChange(e)
   const handleDataChange = (e) => {
-    console.log("hh")
     const { name, value } = e.target
-    console.log(name, value)
-    if (value === "Half Day") {
-      console.log("h")
-      // setFormData((prev) => ({
-      //   ...prev,
-      //   [name]: value
-      // }))
-    }
+    
     setFormData((prev) => ({
       ...prev,
       [name]: value
@@ -931,7 +923,7 @@ function LeaveApplication() {
       // Handle other cases
     }
   }
-
+  
   const renderContent = () => {
     switch (selectedTab) {
       case "Leave":
@@ -1392,23 +1384,45 @@ function LeaveApplication() {
                   <option value="">Select Leave Type</option>
                   {/* If the selected leave date is in the past, only show "Other Leave" */}
                   {pastDate ? (
-                    <option value="other Leave">Other Leave</option>
-                  ) : (
                     <>
-                      {(BalancedcasualleaveCount > 0 || edit === true) && (
+                      <option value="other Leave">Other Leave</option>
+                      {formData.leaveCategory === "casual Leave" && (
                         <option value="casual Leave">Casual Leave</option>
                       )}
-                      {(BalanceprivilegeleaveCount > 0 || edit === true) && (
+                      {formData.leaveCategory === "privileage Leave" && (
                         <option value="privileage Leave">
-                          Privilege Leave
+                          Privileage Leave
                         </option>
                       )}
-                      {(BalancecompensatoryleaveCount > 0 || edit === true) && (
+                      {formData.leaveCategory === "compensatory Leave" && (
                         <option value="compensatory Leave">
                           Compensatory Leave
                         </option>
                       )}
-                      {(BalancesickleaveCount > 0 || edit === true) && (
+                      {formData.leaveCategory === "sick Leave" && (
+                        <option value="sick Leave">Sick Leave</option>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      {(BalancedcasualleaveCount > 0 ||
+                        formData.leaveCategory === "casual Leave") && (
+                        <option value="casual Leave">Casual Leave</option>
+                      )}
+                      {(BalanceprivilegeleaveCount > 0 ||
+                        formData.leaveCategory === "privileage Leave") && (
+                        <option value="privileage Leave">
+                          Privilege Leave
+                        </option>
+                      )}
+                      {(BalancecompensatoryleaveCount > 0 ||
+                        formData.leaveCategory === "compensatory Leave") && (
+                        <option value="compensatory Leave">
+                          Compensatory Leave
+                        </option>
+                      )}
+                      {(BalancesickleaveCount > 0 ||
+                        formData.leaveCategory === "sick Leave") && (
                         <option value="sick Leave">Sick Leave</option>
                       )}
                       <option value="other Leave">Other Leave</option>
