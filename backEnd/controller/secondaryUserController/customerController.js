@@ -2289,6 +2289,7 @@ export const GetCallRegister = async (req, res) => {
           path: "callregistration.product", // Populate the product field inside callregistration array
           model: "Product"
         })
+        .populate({ path: "callregistration.formdata.callnote" })
 
       const attendedByIds = new Set()
       const completedByIds = new Set()

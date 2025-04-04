@@ -143,14 +143,21 @@ export default function CallRegistration() {
 
           setSelectedCustomer(callData?.callDetails?.customerid)
           setName(callData?.callDetails?.customerid?.customerName)
-          setProductDetails(matchingProducts)
+          setProductDetails([
+            {
+              product_id: matchingProducts[0].product_id,
+              licensenumber: matchingProducts[0].licensenumber,
+              productName: matchingProducts[0].productName,
+              branchName: matchingProducts[0].branchName
+            }
+          ])
           const editData = {
             incomingNumber: matchingRegistration?.formdata?.incomingNumber,
             token: matchingRegistration?.timedata?.token,
             description: matchingRegistration?.formdata?.description,
             solution: matchingRegistration?.formdata?.solution,
             status: matchingRegistration?.formdata?.status,
-            callnote: matchingRegistration?.formdata?.callnote
+            callnote: `${matchingRegistration?.formdata?.callnote._id}|${matchingRegistration?.formdata?.callnote.callNotes}`
           }
 
           reset(editData)
@@ -269,12 +276,12 @@ export default function CallRegistration() {
 
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
-    const branchName = selectedProducts[0].branch_id?.branchName
 
     const endTime = new Date().toISOString()
     const durationInSeconds = timeStringToSeconds(time)
     // Save timer value in local storage
     if (!token) {
+      const branchName = selectedProducts[0].branch_id?.branchName
       const uniqueToken = generateUniqueNumericToken()
       setTokenData(uniqueToken)
 
@@ -287,9 +294,7 @@ export default function CallRegistration() {
       }
 
       const updatedformData = { ...formData }
-      console.log(formData)
       const [selectedId, selectedText] = updatedformData.callnote.split("|")
-      console.log(selectedText)
       updatedformData.callnote = selectedId
 
       if (updatedformData.status === "pending") {
@@ -357,6 +362,7 @@ export default function CallRegistration() {
         toast.error(response.data.message)
       }
     } else {
+      const branchName = selectedProducts[0].branchName
       const timeData = {
         startTime: startTime.toISOString(),
         endTime: endTime,
@@ -364,7 +370,10 @@ export default function CallRegistration() {
         time,
         token: token
       }
+
       const updatedformData = { ...formData }
+      const [selectedId, selectedText] = updatedformData.callnote.split("|")
+      updatedformData.callnote = selectedId
 
       if (updatedformData.status === "pending") {
         updatedformData.attendedBy = {
@@ -446,7 +455,6 @@ Problem:    \t${selectedText}
   `.trim()
   }
   const sendWhatapp = (calldata, callnote) => {
-    console.log(callnote)
     if (!calldata?.formdata?.incomingNumber) {
       console.error("Incoming number is missing in calldata.")
       returnm
@@ -480,7 +488,6 @@ Problem:    \t${selectedText}
     )
 
     if (!userConfirmed) {
-      console.log(userConfirmed)
       setafterCallSubmitting(true)
       return
     }
@@ -488,11 +495,8 @@ Problem:    \t${selectedText}
     const whatsappWindow = window.open(whatsappUrl, "_blank")
 
     if (!whatsappWindow) {
-      console.log(whatsappWindow)
       alert("whats app web is not connected please connect.")
     } else {
-      console.log(whatsappWindow)
-      console.log(userConfirmed)
       setafterCallSubmitting(true)
     }
   }
@@ -639,8 +643,7 @@ Problem:    \t${selectedText}
     // let updatedData = { ...data }
     setFormData(data)
   }
-  console.log(searching)
-  console.log(customerData)
+
   return (
     <div className="container  justify-center items-center p-8 h-auto">
       <div className="w-auto bg-white shadow-lg rounded  p-8 mx-auto h-auto">
@@ -1250,8 +1253,8 @@ Problem:    \t${selectedText}
                         {callnote.map((callnotes) => (
                           <option
                             key={callnotes._id}
-                            // value={`${callnotes._id}|${callnotes.callNotes}`}
-                            value={`${callnotes._id}`}
+                            value={`${callnotes._id}|${callnotes.callNotes}`}
+                            // value={`${callnotes._id}`}
                           >
                             {callnotes.callNotes}
                           </option>
