@@ -1042,14 +1042,14 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             arr.push(day)
 
             stats.attendancedates[dayTime].notMarked = 1
-            // if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
-            //   stats.attendancedates[onsiteDate].present = 1
-            //   stats.attendancedates[onsiteDate].notMarked = ""
-            //   stats.onsite++
-            // } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
-            //   stats.attendancedates[onsiteDate].present = 0.5
-            //   stats.attendancedates[onsiteDate].notMarked = 0.5
-            // }
+            if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+              stats.attendancedates[dayTime].present = 1
+              stats.attendancedates[dayTime].notMarked = ""
+              stats.onsite++
+            } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
+              stats.attendancedates[dayTime].present = 0.5
+              stats.attendancedates[dayTime].notMarked = 0.5
+            }
             if (isLeave && leaveDetails.leaveType === "Full Day") {
               if (leaveDetails.leaveCategory) {
                 switch (leaveDetails.leaveCategory) {
@@ -3561,6 +3561,15 @@ export const GetsomeAllsummary = async (
             arr.push(day)
 
             stats.attendancedates[dayTime].notMarked = 1
+           
+            if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+              stats.attendancedates[dayTime].present = 1
+              stats.attendancedates[dayTime].notMarked = ""
+              stats.onsite++
+            } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
+              stats.attendancedates[dayTime].present = 0.5
+              stats.attendancedates[dayTime].notMarked = 0.5
+            }
             if (isLeave && leaveDetails.leaveType === "Full Day") {
               if (leaveDetails.leaveCategory) {
                 switch (leaveDetails.leaveCategory) {
