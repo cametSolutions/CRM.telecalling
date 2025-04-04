@@ -6,7 +6,8 @@ import LeadId from "../../model/primaryUser/leadIdSchema.js"
 import Service from "../../model/primaryUser/servicesSchema.js"
 export const LeadRegister = async (req, res) => {
   try {
-    const leadData = req.body
+    const { leadData, selectedtableLeadData } = req.body
+   
     const {
       customerName,
       mobile,
@@ -64,7 +65,8 @@ export const LeadRegister = async (req, res) => {
       leadBy,
       assignedtoleadModel, // Now set dynamically
       netAmount: Number(netAmount),
-      allocatedTo
+      allocatedTo,
+      leadFor:selectedtableLeadData
     })
     await lead.save()
     const leadidonly = new LeadId({

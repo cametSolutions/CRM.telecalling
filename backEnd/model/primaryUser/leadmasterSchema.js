@@ -1,4 +1,4 @@
-import mongoose from "mongoose"
+import mongoose, { mongo } from "mongoose"
 
 const leadSchema = new mongoose.Schema({
   leadId: { type: String, required: true },
@@ -10,6 +10,12 @@ const leadSchema = new mongoose.Schema({
   location: { type: String },
   pincode: { type: String },
   trade: { type: String },
+  leadFor: [
+    {
+      productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+      licenseNumber: { type: Number }
+    }
+  ],
   leadBy: {
     type: mongoose.Schema.Types.ObjectId,
     refpath: "assignedtoleadModel"
