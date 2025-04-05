@@ -18,6 +18,9 @@ const LeadAllocationTable = () => {
     status && `/lead/getallLead?Status=${status}`
   )
   const { data } = UseFetch("/auth/getallUsers")
+  const navigate = useNavigate()
+  const userData = localStorage.getItem("user")
+  const user = JSON.parse(userData)
 
   console.log(leadPendinglist)
   useEffect(() => {
@@ -69,7 +72,15 @@ const LeadAllocationTable = () => {
   const handleSubmit = async (leadAllocationData) => {
     setsubmitLoading(true)
     console.log(leadAllocationData)
-    const response = await api.post("/lead/leadAllocation", leadAllocationData)
+    const response = await api.post(
+      "/lead/leadAllocation?allocationpending=true",
+      leadAllocationData
+    )
+
+    if (response.status >= 200 && response.status < 300) {
+      setpendingLeadTableData(response.data.data)
+      setsubmitLoading(false)
+    }
   }
   return (
     <div>
@@ -88,6 +99,16 @@ const LeadAllocationTable = () => {
        >
          Toggle Allocation
        </button> */}
+          <button
+            onClick={() =>
+              user.role === "Admin"
+                ? navigate("/admin/transaction/lead")
+                : navigate("/staff/transaction/lead")
+            }
+            className="bg-black text-white px-2 rounded-lg shadow-lg"
+          >
+            Go Lead Register
+          </button>
         </div>
 
         {/* Responsive Table Container */}

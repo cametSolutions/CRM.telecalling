@@ -12,17 +12,16 @@ function LeadRegister() {
   const navigate = useNavigate()
   const handleSubmit = async (leadData, selectedtableLeadData) => {
     try {
-      const response = await api.post(
-        "/lead/leadRegister",
-        {leadData,
-        selectedtableLeadData}
-      )
+      const response = await api.post("/lead/leadRegister", {
+        leadData,
+        selectedtableLeadData
+      })
 
       toast.success(response && response.data && response.data.message)
       if (user.role === "Admin") {
-        navigate("/admin/transaction/lead")
+        navigate("/admin/transaction/lead/leadAllocation")
       } else {
-        navigate("/staff/transaction/lead")
+        navigate("/staff/transaction/lead/leadAllocation")
       }
     } catch (error) {
       console.error("Error creating product:", error)
