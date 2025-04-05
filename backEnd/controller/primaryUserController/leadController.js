@@ -139,6 +139,12 @@ export const GetallLead = async (req, res) => {
 }
 export const UpadateOrLeadAllocationRegister = async (req, res) => {
   try {
+    const { allocationpending } = req.query
+    console.log(allocationpending)
+    console.log(typeof allocationpending)
+    if (allocationpending) {
+      console.log("h")
+    }
     const leadAllocationData = req.body
     // console.log("leadata", leadAllocationData)
     let allocatedToModel
@@ -161,8 +167,36 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       { allocatedTo: leadAllocationData.allocatedTo, allocatedToModel },
       { new: true }
     )
-    console.log(updatedLead)
-    return
+    if (allocationpending) {
+      const pendingLeads = await LeadMaster.find({
+        allocatedTo: null
+      })
+        .populate({ path: "customerName", select: "customerName" })
+        .lean()
+
+      const populatedLeads = await Promise.all(
+        pendingLeads.map(async (lead) => {
+          if (
+            !lead.assignedtoleadModel ||
+            !mongoose.models[lead.assignedtoleadModel]
+          ) {
+            console.error(`Model ${lead.assignedtoleadModel} is not registered`)
+            return lead // Return lead as-is if model is invalid
+          }
+
+          // Fetch the referenced document manually
+          const assignedModel = mongoose.model(lead.assignedtoleadModel)
+          const populatedLeadBy = await assignedModel
+            .findById(lead.leadBy)
+            .select("name")
+
+          return { ...lead, leadBy: populatedLeadBy } // Merge populated data
+        })
+      )
+      return res
+        .status(201)
+        .json({ message: "pending leads found", data: populatedLeads })
+    }
   } catch (error) {
     console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })

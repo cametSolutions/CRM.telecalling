@@ -174,20 +174,20 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
-    // const response = await fetch(
-    //   `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
-    //   {
-    //     method: "GET",
-    //     credentials: "include" // This allows cookies to be sent with the request
-    //   }
-    // )
     const response = await fetch(
-      `http://localhost:9000/api/customer/getcallregister/${callId}`,
+      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
       {
         method: "GET",
         credentials: "include" // This allows cookies to be sent with the request
       }
     )
+    // const response = await fetch(
+    //   `http://localhost:9000/api/customer/getcallregister/${callId}`,
+    //   {
+    //     method: "GET",
+    //     credentials: "include" // This allows cookies to be sent with the request
+    //   }
+    // )
     const data = await response.json()
 
     return data
@@ -288,8 +288,6 @@ export default function CallRegistration() {
     // Save timer value in local storage
     if (!token) {
       const branchName = product.branchName
-
-  
 
       const uniqueToken = generateUniqueNumericToken()
       setTokenData(uniqueToken)
@@ -497,6 +495,7 @@ Problem:    \t${selectedText}
     )
 
     if (!userConfirmed) {
+      console.log("userconfirmed", userConfirmed)
       setafterCallSubmitting(true)
       return
     }
@@ -504,8 +503,10 @@ Problem:    \t${selectedText}
     const whatsappWindow = window.open(whatsappUrl, "_blank")
 
     if (!whatsappWindow) {
+      console.log(whatsappUrl)
       alert("whats app web is not connected please connect.")
     } else {
+      console.log(whatsappUrl)
       setafterCallSubmitting(true)
     }
   }
