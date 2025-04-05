@@ -173,20 +173,20 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
-    // const response = await fetch(
-    //   `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
-    //   {
-    //     method: "GET",
-    //     credentials: "include" // This allows cookies to be sent with the request
-    //   }
-    // )
     const response = await fetch(
-      `http://localhost:9000/api/customer/getcallregister/${callId}`,
+      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
       {
         method: "GET",
         credentials: "include" // This allows cookies to be sent with the request
       }
     )
+    // const response = await fetch(
+    //   `http://localhost:9000/api/customer/getcallregister/${callId}`,
+    //   {
+    //     method: "GET",
+    //     credentials: "include" // This allows cookies to be sent with the request
+    //   }
+    // )
     const data = await response.json()
 
     return data

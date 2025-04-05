@@ -18,9 +18,9 @@ const leadSchema = new mongoose.Schema({
   ],
   leadBy: {
     type: mongoose.Schema.Types.ObjectId,
-    refpath: "assignedtoleadModel"
+    refpath: "assignedtoleadByModel"
   },
-  assignedtoleadModel: {
+  assignedtoleadByModel: {
     type: String,
     enum: ["Staff", "Admin"]
   },
@@ -30,10 +30,10 @@ const leadSchema = new mongoose.Schema({
   remark: { type: String },
   allocatedTo: {
     type: mongoose.Schema.Types.ObjectId,
-    refpath: "assignedtoMode",
+    refpath: " allocatedToModel",
     default: null // Setting default value to null
   },
-  assignedtoModel: {
+  allocatedToModel: {
     type: String,
     enum: ["Staff", "Admin"], // Only these two models are allowed
     default: null // Setting default value to null
