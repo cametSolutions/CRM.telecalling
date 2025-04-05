@@ -508,53 +508,7 @@ const leaveSummary = () => {
           </select>
         </div>
 
-        {/* <div className="flex justify-center md:justify-end md:gap-4 gap-2  mb-3 md:mr-8">
-          <div>
-            <input
-              value={
-                selectedStaff !== null ? selectedStaff[0].name : searchTerm
-              }
-              onChange={(e) => {
-                if (selectedStaff !== null) {
-                  setSelectedIndex(null)
-                  setselectedStaff(null) // Clear selected staff
-                }
-                setSearchTerm(e.target.value)
-              }}
-              placeholder="Search..."
-              className="appearance-none rounded-r rounded-l sm:rounded-lg-none border border-gray-400 border-b block pl-8 pr-6 py-2 w-auto bg-white text-sm placeholder-gray-400 text-gray-700 focus:bg-white focus:placeholder-gray-600 focus:text-gray-700 focus:outline-none"
-            />
-          </div>
-          <button
-            className="bg-blue-600 rounded px-1 py-0.5  text-white text-sm md:text-md"
-            onClick={() => handleDownload(newattende)}
-          >
-            Download to Excel
-          </button>
-          <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(Number(e.target.value))}
-            className="border p-2 rounded"
-          >
-            {years.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(Number(e.target.value))}
-            className="border p-2 rounded"
-          >
-            {months.map((month) => (
-              <option key={month.value} value={month.value}>
-                {month.name}
-              </option>
-            ))}
-          </select>
-        </div> */}
+        
       </div>
       {/* Main Content */}
       {loading ? (

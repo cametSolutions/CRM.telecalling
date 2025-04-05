@@ -4,10 +4,11 @@ import models from "../../model/auth/authSchema.js"
 const { Staff, Admin } = models
 import LeadId from "../../model/primaryUser/leadIdSchema.js"
 import Service from "../../model/primaryUser/servicesSchema.js"
+import leadmasterSchema from "../../model/primaryUser/leadmasterSchema.js"
 export const LeadRegister = async (req, res) => {
   try {
     const { leadData, selectedtableLeadData } = req.body
-   
+
     const {
       customerName,
       mobile,
@@ -34,19 +35,19 @@ export const LeadRegister = async (req, res) => {
       const lastId = parseInt(lastLead.leadId, 10) // Convert to number
       newLeadId = String(lastId + 1).padStart(5, "0") // Convert back to 5-digit string
     }
-    let assignedtoleadModel = null // Determine dynamically
+    let assignedtoleadByModel = null // Determine dynamically
     // Check if leadBy exists in Staff or Admin collection
     const isStaff = await Staff.findById(leadBy).lean()
     if (isStaff) {
-      assignedtoleadModel = "Staff"
+      assignedtoleadByModel = "Staff"
     } else {
       const isAdmin = await Admin.findById(leadBy).lean()
       if (isAdmin) {
-        assignedtoleadModel = "Admin"
+        assignedtoleadByModel = "Admin"
       }
     }
 
-    if (!assignedtoleadModel) {
+    if (!assignedtoleadByModel) {
       return res.status(400).json({ message: "Invalid leadBy reference" })
     }
 
@@ -63,15 +64,15 @@ export const LeadRegister = async (req, res) => {
       leadFor,
       remark,
       leadBy,
-      assignedtoleadModel, // Now set dynamically
+      assignedtoleadByModel, // Now set dynamically
       netAmount: Number(netAmount),
       allocatedTo,
-      leadFor:selectedtableLeadData
+      leadFor: selectedtableLeadData
     })
     await lead.save()
     const leadidonly = new LeadId({
       leadId: newLeadId,
-      assignedtoleadModel // Now set dynamically
+      assignedtoleadByModel // Now set dynamically
     })
     await leadidonly.save()
     res.status(201).json({
@@ -131,6 +132,37 @@ export const GetallLead = async (req, res) => {
       }
     } else if (Status === "Approved") {
     }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const UpadateOrLeadAllocationRegister = async (req, res) => {
+  try {
+    const leadAllocationData = req.body
+    // console.log("leadata", leadAllocationData)
+    let allocatedToModel
+    const isStaff = await Staff.find({ _id: leadAllocationData.allocatedTo })
+    if (isStaff) {
+      allocatedToModel = "Staff"
+    } else {
+      const isAdmin = await Admin.find({ _id: leadAllocationData.allocatdTo })
+      if (isAdmin) {
+        allocatedToModel = "Admin"
+      }
+    }
+    if (!allocatedToModel) {
+      return res.status(400).json({ message: "Invalid allocated reference" })
+    }
+    const updatedLead = await LeadMaster.findByIdAndUpdate(
+      {
+        _id: leadAllocationData._id
+      },
+      { allocatedTo: leadAllocationData.allocatedTo, allocatedToModel },
+      { new: true }
+    )
+    console.log(updatedLead)
+    return
   } catch (error) {
     console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })
