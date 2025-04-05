@@ -364,6 +364,7 @@ export default function CallRegistration() {
         setSearching(false)
         socket.emit("updatedCalls")
         sendWhatapp(calldata, selectedText)
+        setSearch("")
         // setafterCallSubmitting(true)
       } else {
         toast.error(response.data.message)
@@ -434,6 +435,7 @@ export default function CallRegistration() {
         toast.success(response.data.message)
         // setafterCallSubmitting(true)
         setCustomerData([])
+        setSearch("")
         setSearching(false)
         setSelectedCustomer(null)
         setSelectedProducts([])
@@ -462,9 +464,13 @@ Problem:    \t${selectedText}
   `.trim()
   }
   const sendWhatapp = (calldata, callnote) => {
-    if (!calldata?.formdata?.incomingNumber) {
+    if (
+      !calldata?.formdata?.incomingNumber ||
+      calldata?.formdata?.status === "solved"
+    ) {
+      setafterCallSubmitting(true)
       console.error("Incoming number is missing in calldata.")
-      returnm
+      return
     }
 
     // let whatsappWindow
@@ -653,7 +659,8 @@ Problem:    \t${selectedText}
     // let updatedData = { ...data }
     setFormData(data)
   }
-
+  console.log(name)
+  console.log(search)
   return (
     <div className="container  justify-center items-center p-8 h-auto">
       <div className="w-auto bg-white shadow-lg rounded  p-8 mx-auto h-auto">
