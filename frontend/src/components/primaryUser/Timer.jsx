@@ -4,12 +4,15 @@ import { formatTime } from "../../utils/timeUtils"
 
 // Adjust the import path as needed
 
-const Timer = ({ isRunning, startTime, onStop }) => {
+const Timer = ({
+  isRunning,
+  startTime,
+  onStop,productDetails,
+  selectedProducts
+}) => {
   const [time, setTime] = useState(0)
   const wasRunning = useRef(isRunning)
   useEffect(() => {
-   
-
     let interval = null
 
     if (isRunning) {
@@ -46,8 +49,11 @@ const Timer = ({ isRunning, startTime, onStop }) => {
 
   useEffect(() => {
     if (wasRunning.current && !isRunning && startTime !== null) {
+      const productToUse =
+        selectedProducts[0] ||
+        (productDetails?.length === 1 && productDetails[0])
       // Only call onStop when the timer transitions from running to stopped
-      onStop(time)
+      onStop(time, productToUse)
     }
     wasRunning.current = isRunning
   }, [isRunning, onStop, startTime])
