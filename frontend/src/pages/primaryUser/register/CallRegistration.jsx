@@ -143,6 +143,7 @@ export default function CallRegistration() {
 
           setSelectedCustomer(callData?.callDetails?.customerid)
           setName(callData?.callDetails?.customerid?.customerName)
+          console.log("hhhh")
           setProductDetails([
             {
               product_id: matchingProducts[0].product_id,
@@ -173,20 +174,20 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
-    const response = await fetch(
-      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
-      {
-        method: "GET",
-        credentials: "include" // This allows cookies to be sent with the request
-      }
-    )
     // const response = await fetch(
-    //   `http://localhost:9000/api/customer/getcallregister/${callId}`,
+    //   `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
     //   {
     //     method: "GET",
     //     credentials: "include" // This allows cookies to be sent with the request
     //   }
     // )
+    const response = await fetch(
+      `http://localhost:9000/api/customer/getcallregister/${callId}`,
+      {
+        method: "GET",
+        credentials: "include" // This allows cookies to be sent with the request
+      }
+    )
     const data = await response.json()
 
     return data
@@ -271,7 +272,12 @@ export default function CallRegistration() {
     return `${date} ${time}` // Example: "03/02/2025 02:48:57 PM"
   }
 
-  const stopTimer = async (time) => {
+  const stopTimer = async (time, product) => {
+    if (!product) {
+      toast.error("No product selected.")
+      return
+    }
+
     setSubmitLoading(true)
 
     const userData = localStorage.getItem("user")
@@ -281,7 +287,10 @@ export default function CallRegistration() {
     const durationInSeconds = timeStringToSeconds(time)
     // Save timer value in local storage
     if (!token) {
-      const branchName = selectedProducts[0].branch_id?.branchName
+      const branchName = product.branchName
+
+  
+
       const uniqueToken = generateUniqueNumericToken()
       setTokenData(uniqueToken)
 
@@ -362,7 +371,7 @@ export default function CallRegistration() {
         toast.error(response.data.message)
       }
     } else {
-      const branchName = selectedProducts[0].branchName
+      const branchName = product.branchName
       const timeData = {
         startTime: startTime.toISOString(),
         endTime: endTime,
@@ -1170,6 +1179,8 @@ Problem:    \t${selectedText}
                   <Timer
                     isRunning={isRunning}
                     startTime={startTime}
+                    productDetails={productDetails}
+                    selectedProducts={selectedProducts}
                     onStop={stopTimer}
                   />
                   <PopUp
