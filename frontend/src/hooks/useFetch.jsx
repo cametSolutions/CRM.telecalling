@@ -55,16 +55,18 @@ const UseFetch = (url) => {
     }
 
     const fetchData = async () => {
+      console.log("h")
       setLoading("loading...")
       setData(null)
       setError(null)
-
+ 
       try {
         const result = await fetchDataFromApi(url)
 
         if (result) {
           setData(result.data)
-          setfulldateHoliday(result.fulldateholiday)
+          console.log(result.data)
+          // setfulldateHoliday(result.fulldateholiday)
           setLoading(false)
         } else {
           setError("Expected data to be an array")

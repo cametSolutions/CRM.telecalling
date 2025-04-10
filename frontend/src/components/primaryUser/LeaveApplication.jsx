@@ -33,7 +33,10 @@ function LeaveApplication() {
   const [currentMonthData, setcurrentMonthData] = useState({})
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth())
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
-  const [message, setMessage] = useState("")
+  const [message, setMessage] = useState({
+    top: "",
+    bottom: ""
+  })
   const [showModal, setShowModal] = useState(false)
   const [pastDate, setPastDate] = useState(null)
   const [selectedTab, setSelectedTab] = useState("Leave")
@@ -56,7 +59,7 @@ function LeaveApplication() {
     outTime: { hours: "12", minutes: "00", amPm: "AM" }
   })
   const [isOnsite, setIsOnsite] = useState(false)
-
+  const [loader, setLoader] = useState(false)
   const [tableRows, setTableRows] = useState([])
   const [clickedDate, setclickedDate] = useState(null)
   const [currentmonthleaveData, setcurrentmonthLeaveData] = useState([])
@@ -83,23 +86,7 @@ function LeaveApplication() {
       setcurrentMonthData(MonthData[currentMonth])
     }
   }, [currentMonth, MonthData])
-  useEffect(() => {
-    if (compensatoryleaves && compensatoryleaves.length > 0) {
-      const compensatoryleavecount = compensatoryleaves.filter((item) => {
-        return (
-          item.year === currentYear &&
-          item.compensatoryLeave === true &&
-          item.compensatoryLeaveUsed === false
-        )
-      })
-
-      setBalancecompensatoryLeaveCount(compensatoryleavecount.length)
-      setLeaveBalance((prev) => ({
-        ...prev,
-        compensatory: compensatoryleavecount.length
-      }))
-    }
-  }, [compensatoryleaves])
+  
   useEffect(() => {
     const year = currentDate.getFullYear()
     const month = String(currentDate.getMonth() + 1).padStart(2, "0") // Convert to "01-12" format
@@ -161,9 +148,13 @@ function LeaveApplication() {
       setAllOnsite(allonsite)
     }
   }, [leaves, allonsite])
-
   useEffect(() => {
-    if (allleaves && allleaves.length > 0 && leavemasterleavecount) {
+    if (
+      allleaves &&
+      allleaves.length > 0 &&
+      leavemasterleavecount &&
+      compensatoryleaves >= 0
+    ) {
       const currentDate = new Date()
       const currentYear = currentDate.getFullYear()
       const currentmonth = currentDate.getMonth() + 1
@@ -206,6 +197,7 @@ function LeaveApplication() {
           ownedcasualCount = 0
           ownedprivilegeCount = 0 // Not eligible yet
         }
+       
       } else {
         ownedcasualCount = 0
         // If privilege starts in a future year, no leaves yet
@@ -255,21 +247,24 @@ function LeaveApplication() {
 
         return count
       }, 0)
+     
       const balancecasualcount = ownedcasualCount - usedCasualCount
       const balanceprivilege = ownedprivilegeCount - takenPrivilegeCount
 
       setBalanceprivilegeLeaveCount(Math.max(balanceprivilege, 0))
       setBalancecasualLeaveCount(Math.max(balancecasualcount, 0))
-
+      setBalancecompensatoryLeaveCount(compensatoryleaves)
       setLeaveBalance({
         ...leaveBalance,
         casual: Math.max(balancecasualcount, 0),
         privilege: Math.max(balanceprivilege, 0),
-        sick: BalancesickleaveCount
+        sick: BalancesickleaveCount,
+        compensatory: compensatoryleaves
       })
     } else if (
       (!allleaves && leavemasterleavecount) ||
-      (allleaves && allleaves.length === 0 && leavemasterleavecount)
+      (allleaves && allleaves.length === 0 && leavemasterleavecount) ||
+      compensatoryleaves >= 0
     ) {
       const currentDate = new Date()
       const currentYear = currentDate.getFullYear()
@@ -321,14 +316,22 @@ function LeaveApplication() {
 
       setBalanceprivilegeLeaveCount(ownedprivilegeCount)
       setBalancecasualLeaveCount(ownedcasualCount)
+      setBalancecompensatoryLeaveCount(compensatoryleaves)
       setLeaveBalance({
         ...leaveBalance,
         casual: ownedcasualCount,
         privilege: ownedprivilegeCount,
-        sick: BalancesickleaveCount
+        sick: BalancesickleaveCount,
+        compensatory: compensatoryleaves
       })
     }
-  }, [currentMonth, allleaves, leavemasterleavecount, formData])
+  }, [
+    currentMonth,
+    allleaves,
+    leavemasterleavecount,
+    formData,
+    compensatoryleaves
+  ])
 
   // Handle month change
   const handleMonthChange = (info) => {
@@ -427,7 +430,9 @@ function LeaveApplication() {
           ? {
               leaveType: data.leaveType,
               reason: data.reason,
-              leaveDate: data.leaveDate
+              leaveDate: data.leaveDate,
+              leaveCategory: data.leaveCategory,
+              prevCategory: formData.prevCategory
             }
           : {
               onsiteType: data.onsiteType,
@@ -462,9 +467,10 @@ function LeaveApplication() {
             description: ""
           })
           setSelectedTab("Leave")
-          toast.success("Leave deleted successfully")
-        } else if (response.status === 404) {
+          toast.success(response.data.message)
+        } else if (response.status === 201) {
           setAllleaves([])
+          setShowModal(false)
           setSelectedTab("Leave")
           setFormData({
             startDate: "",
@@ -479,7 +485,7 @@ function LeaveApplication() {
             description: ""
           })
           setSelectedTab("Leave")
-          toast.success("Leave deleted successfully")
+          toast.success(response.data.message)
         }
       } else if (isOnsite) {
         type = "onsite"
@@ -489,7 +495,9 @@ function LeaveApplication() {
         )
         const data = response.data.data
         if (response.status === 200) {
+          setMessage({ top: "", bottom: "" })
           setAllOnsite(data)
+          setTableRows([])
           setSelectedTab("Leave")
           setShowModal(false)
           setFormData({
@@ -505,9 +513,12 @@ function LeaveApplication() {
             description: ""
           })
           setSelectedTab("Leave")
-          toast.success("Onsite deleted successfully")
-        } else if (response.status === 404) {
+          toast.success(response.data.message)
+        } else if (response.status === 201) {
+          setShowModal(false)
+          setMessage({ top: "", bottom: "" })
           setAllOnsite([])
+          setTableRows([])
           setFormData({
             startDate: "",
 
@@ -521,14 +532,15 @@ function LeaveApplication() {
             description: ""
           })
           setSelectedTab("Leave")
-          toast.success("Onsite deleted successfully")
+          toast.success(response.data.message)
         }
       }
     } catch (error) {
-      setMessage(error.response.data.message)
+      setMessage((prev) => ({ ...prev, bottom: error.response.data.message }))
       console.log(error.response.data.message)
     }
   }
+
   const handleDateClick = (date) => {
     setclickedDate(date)
     const clickedDate = date
@@ -614,14 +626,60 @@ function LeaveApplication() {
   const goToToday = () => {
     setCurrentDate(new Date())
   }
+
   const handleChange = (e) => handleInputChange(e)
   const handleDataChange = (e) => {
     const { name, value } = e.target
-    
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value
-    }))
+    // Access current values for leave type & category
+    const selectedCategory =
+      name === "leaveCategory" ? value : formData.leaveCategory
+ 
+
+    // Define leave balances (you may already have these as props or state)
+    const balances = {
+      "casual Leave": BalancedcasualleaveCount,
+      "privileage Leave": BalanceprivilegeleaveCount,
+      "compensatory Leave": BalancecompensatoryleaveCount,
+      "sick Leave": BalancesickleaveCount,
+      "other Leave": 1
+    }
+
+    // Get selected balance
+    const selectedBalance = balances[selectedCategory] ?? 0
+   
+
+    // Check if switching to Full Day requires >= 1 leave
+    if (
+      name === "leaveType" &&
+      value === "Full Day" &&
+      selectedCategory &&
+      (edit && formData.prevCategory === selectedCategory
+        ? selectedBalance + 0.5 < 1
+        : selectedBalance < 1)
+    ) {
+      setMessage((prev) => ({
+        ...prev,
+        top: `You don't have enough ${selectedCategory} for a Full Day leave.`
+      }))
+      // setMessage(
+      //   `You don't have enough ${selectedCategory} for a Full Day leave.`
+      // )
+      return
+    }
+    if (value === "Half Day") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+        halfDayPeriod: "Morning"
+      }))
+    } else {
+      if (message) setMessage("")
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value
+      }))
+    }
+
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" })) // ✅ Clear error
     }
@@ -644,7 +702,10 @@ function LeaveApplication() {
   const handleSubmit = async (tab) => {
     // e.preventDefault()
     try {
+      setLoader(true)
       if (tab === "Leave" || tab === "New Leave") {
+       
+
         // Validation
         let newErrors = {}
         if (!formData.leaveType) newErrors.leaveType = "Shift is required"
@@ -661,7 +722,7 @@ function LeaveApplication() {
         const formStartDate = new Date(formData.leaveDate)
 
         // Find a leave matching the date (ignoring time) and adminverified or departmentverified is true
-        const existingLeave = allleaves?.find((leave) => {
+        const isApprovedLeave = allleaves?.find((leave) => {
           const leaveDate = new Date(leave.leaveDate) // Convert leave.leaveDate to Date object
           // Compare the year, month, and day only (ignoring time)
           const isSameDate =
@@ -673,9 +734,14 @@ function LeaveApplication() {
           return isSameDate && (leave.adminverified || leave.departmentverified)
         })
 
-        if (existingLeave) {
-          setMessage("This leave is already approved. Do not make any changes.")
+        if (isApprovedLeave) {
+          setMessage((prev) => ({
+            ...prev,
+            bottom: "This leave is already approved. Do not make any changes."
+          }))
         } else {
+          setMessage({ top: "", bottom: "" })
+
           //Assuming you have an API endpoint for creating leave requests
           // const response = await fetch(
           //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
@@ -706,6 +772,8 @@ function LeaveApplication() {
           if (!response.ok) {
             throw new Error("Failed to apply for leave")
           } else {
+            setLoader(false)
+            setEdit(false)
             toast.success("leave applied successfully")
             setSelectedTab("Leave")
             refreshHook()
@@ -765,16 +833,19 @@ function LeaveApplication() {
             "This onsite is already approved. Do not make any changes."
           )
         } else {
+         
+
           // const response = await api.post(
           //   `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
           //   { formData, tableRows }
           // )
           const response = await api.post(
-            `https://www.crm.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}`,
+            `https://www.crm.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
             { formData, tableRows }
           )
 
           if (response.status === 200) {
+            setLoader(false)
             toast.success("Onsite applied successfully")
             setSelectedTab("Leave")
             setFormData((prev) => ({
@@ -805,19 +876,8 @@ function LeaveApplication() {
           }
         }
       } else if (tab === "Attendance") {
-        // const response = await fetch(
-        //   `http://localhost:9000/api/auth/attendance?selectedid=${user._id}&attendanceId=${user.attendanceId}`,
-        //   {
-        //     method: "POST",
-        //     headers: {
-        //       "Content-Type": "application/json"
-        //     },
-        //     body: JSON.stringify(selectedAttendance),
-        //     credentials: "include"
-        //   }
-        // )
         const response = await fetch(
-          `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}`,
+          `http://localhost:9000/api/auth/attendance?selectedid=${user._id}&attendanceId=${user.attendanceId}`,
           {
             method: "POST",
             headers: {
@@ -827,6 +887,17 @@ function LeaveApplication() {
             credentials: "include"
           }
         )
+        // const response = await fetch(
+        //   `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}&attendanceId=${user.attendanceId}`,
+        //   {
+        //     method: "POST",
+        //     headers: {
+        //       "Content-Type": "application/json"
+        //     },
+        //     body: JSON.stringify(selectedAttendance),
+        //     credentials: "include"
+        //   }
+        // )
 
         await response.json()
 
@@ -851,6 +922,11 @@ function LeaveApplication() {
         }
       }
     } catch (error) {
+      setLoader(false)
+      setMessage((prev) => ({
+        ...prev,
+        bottom: error?.response?.data?.message
+      }))
       console.log("error:", error.message)
     }
   }
@@ -923,7 +999,6 @@ function LeaveApplication() {
       // Handle other cases
     }
   }
-  
   const renderContent = () => {
     switch (selectedTab) {
       case "Leave":
@@ -1034,6 +1109,7 @@ function LeaveApplication() {
                                 ? leave.halfDayPeriod
                                 : undefined,
                             leaveCategory: leave.leaveCategory,
+                            prevCategory: leave.leaveCategory,
                             reason: leave.reason
                           })
                         }}
@@ -1244,7 +1320,7 @@ function LeaveApplication() {
               <p className="text-red-500">{errors.description}</p>
             )}
             <div className="text-center text-red-700 ">
-              <p>{message}</p>
+              <p>{message.bottom}</p>
             </div>
           </div>
         )
@@ -1254,9 +1330,7 @@ function LeaveApplication() {
             <h2 className="text-xl font-semibold text-center">
               Leave Application
             </h2>
-            {/* <p className="mt-2 text-center text-gray-600">
-              Selected Date: {clickedDate}
-            </p> */}
+            <p className="mt-2 text-center text-red-600">{message.top}</p>
             <div className="mt-4">
               {/* Full Day / Half Day Selection */}
               <div className="flex gap-4">
@@ -1288,7 +1362,7 @@ function LeaveApplication() {
                     <select
                       name="halfDayPeriod"
                       className="border p-2 rounded w-auto"
-                      value={formData?.halfDayPeriod || "Morning"}
+                      value={formData?.halfDayPeriod}
                       // onChange={(e) => setLeaveOption(e.target.value)}
                       // onChange={(e) => {
                       //   setFormData((prev) => ({
@@ -1372,13 +1446,6 @@ function LeaveApplication() {
                   name="leaveCategory"
                   className="border p-2 rounded w-full min-w-full"
                   value={formData?.leaveCategory || ""}
-                  // onChange={(e) => setLeaveType(e.target.value)}
-                  // onChange={(e) => {
-                  //   setFormData((prev) => ({
-                  //     ...prev,
-                  //     leaveCategory: e.target.value // Replace newDate with the actual value you want to set
-                  //   }))
-                  // }}
                   onChange={handleDataChange}
                 >
                   <option value="">Select Leave Type</option>
@@ -1405,23 +1472,35 @@ function LeaveApplication() {
                     </>
                   ) : (
                     <>
-                      {(BalancedcasualleaveCount > 0 ||
+                      {((formData.leaveType === "Full Day" &&
+                        BalancedcasualleaveCount >= 1) ||
+                        (formData.leaveType === "Half Day" &&
+                          BalancedcasualleaveCount >= 0.5) ||
                         formData.leaveCategory === "casual Leave") && (
                         <option value="casual Leave">Casual Leave</option>
                       )}
-                      {(BalanceprivilegeleaveCount > 0 ||
+                      {((formData.leaveType === "Full Day" &&
+                        BalanceprivilegeleaveCount >= 1) ||
+                        (formData.leaveType === "Half Day" &&
+                          BalanceprivilegeleaveCount >= 0.5) ||
                         formData.leaveCategory === "privileage Leave") && (
                         <option value="privileage Leave">
                           Privilege Leave
                         </option>
                       )}
-                      {(BalancecompensatoryleaveCount > 0 ||
+                      {((formData.leaveType === "Full Day" &&
+                        BalancecompensatoryleaveCount >= 1) ||
+                        (formData.leaveType === "Half Day" &&
+                          BalancecompensatoryleaveCount >= 0.5) ||
                         formData.leaveCategory === "compensatory Leave") && (
                         <option value="compensatory Leave">
                           Compensatory Leave
                         </option>
                       )}
-                      {(BalancesickleaveCount > 0 ||
+                      {((formData.leaveType === "Full Day" &&
+                        BalancesickleaveCount >= 1) ||
+                        (formData.leaveType === "Half Day" &&
+                          BalancesickleaveCount >= 0.5) ||
                         formData.leaveCategory === "sick Leave") && (
                         <option value="sick Leave">Sick Leave</option>
                       )}
@@ -1447,7 +1526,7 @@ function LeaveApplication() {
               </div>
               {errors.reason && <p className="text-red-500">{errors.reason}</p>}
               <div className="text-center text-red-700">
-                <p>{message}</p>
+                <p>{message.bottom}</p>
               </div>
                         
             </div>
@@ -1555,7 +1634,7 @@ function LeaveApplication() {
       </div>
 
       {/* Modal Popup */}
-      {showModal && (
+      {showModal && leaveBalance && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center  z-50">
           <div className="bg-white p-3 rounded-lg shadow-lg  w-full  sm:w-auto mx-4 max-h-[90vh] overflow-y-auto flex flex-col">
             <div>
@@ -1597,6 +1676,7 @@ function LeaveApplication() {
                       className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600 ml-3"
                       onClick={() => {
                         setShowModal(false)
+                        setEdit(false)
                         setFormData({
                           description: "",
                           onsite: false,

@@ -19,10 +19,12 @@ const Modal = ({
 
   handleApply
 }) => {
+
   const [leaveOption, setLeaveOption] = useState({
     leaveType: formData.leaveType || "Full Day"
   })
   const [typeofMode, settypeofMode] = useState(null)
+  const [message, setMessage] = useState("")
   const [BalanceprivilegeleaveCount, setBalanceprivilegeLeaveCount] =
     useState(0)
   const [leaveBalance, setLeaveBalance] = useState({})
@@ -40,8 +42,9 @@ const Modal = ({
   const [selectedLeave, setselectedLeave] = useState({
     leaveDate: "",
     reason: "",
-    leaveType: "",
+    leaveType: "Full Day",
     leaveCategory: "",
+    prevCategory: "",
     halfDayPeriod: "",
     description: ""
   })
@@ -70,24 +73,7 @@ const Modal = ({
   )
   const { data: compensatoryleaves, refreshHook: refreshHookCompensatory } =
     UseFetch(staffId && `/auth/getallcompensatoryleave?userid=${staffId}`)
-  useEffect(() => {
-    if (compensatoryleaves && compensatoryleaves.length > 0) {
-      const leaveDate = new Date(formData?.leaveDate)
-      const leaveYear = leaveDate.getFullYear()
-      const compensatoryleavescount = compensatoryleaves.filter((item) => {
-        return (
-          item.year === leaveYear &&
-          item.compensatoryLeave === true &&
-          item.compensatoryLeaveUsed === false
-        )
-      })
-      setBalancecompensatoryLeaveCount(compensatoryleavescount.length)
-      setLeaveBalance((prev) => ({
-        ...prev,
-        compensatory: compensatoryleavescount.length
-      }))
-    }
-  }, [compensatoryleaves])
+ 
   useEffect(() => {
     if (leaves && leaves.length > 0) {
       setallLeaves(leaves)
@@ -103,13 +89,21 @@ const Modal = ({
       })
     } else if (formData && type === "Leave") {
       settypeofMode(type)
-      setselectedLeave({
-        leaveDate: formData?.leaveDate,
-        reason: formData?.reason,
-        leaveType: formData?.leaveType,
-        halfDayPeriod: formData?.halfDayPeriod,
-        leaveCategory: formData?.leaveCategory
-      })
+      if (formData.leaveType !== null) {
+        setselectedLeave({
+          leaveDate: formData?.leaveDate,
+          reason: formData?.reason,
+          leaveType: formData?.leaveType,
+          halfDayPeriod: formData?.halfDayPeriod,
+          leaveCategory: formData?.leaveCategory,
+          prevCategory: formData?.leaveCategory
+        })
+      } else {
+        setselectedLeave((prev) => ({
+          ...prev,
+          leaveDate: formData?.leaveDate
+        }))
+      }
     } else if (formData && type === "Onsite") {
       settypeofMode(type)
       setselectedOnsite({
@@ -121,7 +115,12 @@ const Modal = ({
     }
   }, [formData])
   useEffect(() => {
-    if (allleaves && allleaves.length > 0 && leavemasterleavecount) {
+    if (
+      allleaves &&
+      allleaves.length > 0 &&
+      leavemasterleavecount &&
+      compensatoryleaves >= 0
+    ) {
       const currentDate = new Date()
       const currentYear = currentDate.getFullYear()
       const currentmonth = currentDate.getMonth() + 1
@@ -212,15 +211,20 @@ const Modal = ({
       const balanceprivilege = ownedprivilegeCount - takenPrivilegeCount
       setBalanceprivilegeLeaveCount(Math.max(balanceprivilege, 0))
       setBalancecasualLeaveCount(Math.max(balancecasualcount, 0))
+      setBalancecompensatoryLeaveCount(compensatoryleaves)
+
+      
       setLeaveBalance({
         ...leaveBalance,
         casual: Math.max(balancecasualcount, 0),
         privilege: Math.max(balanceprivilege, 0),
-        sick: BalancesickleaveCount
+        sick: BalancesickleaveCount,
+        compensatory: compensatoryleaves
       })
     } else if (
       (!allleaves && leavemasterleavecount) ||
-      (allleaves && allleaves.length === 0 && leavemasterleavecount)
+      (allleaves && allleaves.length === 0 && leavemasterleavecount) ||
+      compensatoryleaves >=0
     ) {
       const currentDate = new Date()
       const currentYear = currentDate.getFullYear()
@@ -273,15 +277,22 @@ const Modal = ({
       }
       setBalanceprivilegeLeaveCount(ownedprivilegeCount)
       setBalancecasualLeaveCount(ownedcasualCount)
-
+      setBalancecompensatoryLeaveCount(compensatoryleaves)
       setLeaveBalance({
         ...leaveBalance,
         casual: ownedcasualCount,
         privilege: ownedprivilegeCount,
-        sick: BalancesickleaveCount
+        sick: BalancesickleaveCount,
+        compensatory: compensatoryleaves
       })
     }
-  }, [currentMonth, allleaves, leavemasterleavecount, formData])
+  }, [
+    currentMonth,
+    allleaves,
+    leavemasterleavecount,
+    formData,
+    compensatoryleaves
+  ])
   const handleTimeChange = (type, field, value) => {
     setselectedAttendance((prev) => {
       // Ensure the nested object exists for `type`
@@ -299,6 +310,61 @@ const Modal = ({
       }
     })
   }
+  const handleDataChange = (e) => {
+    const { name, value } = e.target
+    // Access current values for leave type & category
+    const selectedCategory =
+      name === "leaveCategory" ? value : selectedLeave.leaveCategory
+
+    // Define leave balances (you may already have these as props or state)
+    const balances = {
+      "casual Leave": BalancedcasualleaveCount,
+      "privileage Leave": BalanceprivilegeleaveCount,
+      "compensatory Leave": BalancecompensatoryleaveCount,
+      "sick Leave": BalancesickleaveCount,
+      "other Leave": 1
+    }
+
+    // Get selected balance
+    const selectedBalance = balances[selectedCategory] ?? 0
+
+    // Check if switching to Full Day requires >= 1 leave
+    if (
+      name === "leaveType" &&
+      value === "Full Day" &&
+      selectedCategory &&
+      (typeofMode === "Edit Leave" && formData.prevCategory === selectedCategory
+        ? selectedBalance + 0.5 < 1
+        : selectedBalance < 1)
+    ) {
+      setMessage(
+        `You don't have enough ${selectedCategory} for a Full Day leave.`
+      )
+      // setMessage(
+      //   `You don't have enough ${selectedCategory} for a Full Day leave.`
+      // )
+      return
+    }
+    if (value === "Half Day") {
+      setselectedLeave((prev) => ({
+        ...prev,
+        [name]: value,
+        halfDayPeriod: "Morning"
+      }))
+    } else {
+      if (message) setMessage("")
+
+      setselectedLeave((prev) => ({
+        ...prev,
+        [name]: value,
+        halfDayPeriod: ""
+      }))
+    }
+
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" })) // ✅ Clear error
+    }
+  }
   const Apply = async () => {
     if (type === "Leave") {
       // Validation
@@ -315,9 +381,10 @@ const Modal = ({
         newErrors.leaveCategory = "Leave Type is required"
       if (!selectedLeave.reason) newErrors.reason = "Reason is required"
       if (Object.keys(newErrors).length > 0) {
-        setErrors(newErrors)
+        newErrors
         return
       }
+      setMessage("")
       setIsApplying(true)
 
       handleApply(staffId, selectedLeave, setIsApplying, type)
@@ -330,50 +397,53 @@ const Modal = ({
       handleApply(staffId, selectedOnsite, setIsApplying, type)
     }
   }
-
+ 
   return (
-    isOpen && (
+    isOpen &&
+    leaveBalance && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center  ">
         <div className="bg-green-50 p-5 rounded-lg shadow-lg w-[350px] z-40 mt-16">
           <h2 className="text-xl font-semibold text-center">
             {typeofMode} Application
           </h2>
-          {/* <p className="mt-2 text-center text-gray-600">
-            Selected Date: {selectedDate}
-          </p> */}
-          {typeofMode === "Edit Leave" && (
+
+          {(typeofMode === "Edit Leave" ||
+            typeofMode === "Apply New Leave") && (
             <div className="bg-white rounded-lg shadow-lg w-[310px] z-40 border border-gray-300 overflow-hidden px-2">
               <div className="mt-4">
+                <p className="mt-2 text-center text-red-600">{message}</p>
                 <div className="flex gap-4">
                   <label>
                     <input
                       type="radio"
+                      name="leaveType"
                       value="Full Day"
                       checked={selectedLeave.leaveType === "Full Day"}
-                      // onChange={(e) => setLeaveOption(e.target.value)}
-                      onChange={(e) => {
-                        setselectedLeave((prev) => ({
-                          ...prev,
-                          leaveType: e.target.value,
-                          halfDayPeriod: "" // Replace `newDate` with the actual value you want to set
-                        }))
-                      }}
+                      onChange={handleDataChange}
+                      // onChange={(e) => {
+                      //   setselectedLeave((prev) => ({
+                      //     ...prev,
+                      //     leaveType: e.target.value,
+                      //     halfDayPeriod: "" // Replace `newDate` with the actual value you want to set
+                      //   }))
+                      // }}
                     />
                     Full Day
                   </label>
                   <label>
                     <input
                       type="radio"
+                      name="leaveType"
                       value="Half Day"
                       checked={selectedLeave.leaveType === "Half Day"}
-                      // onChange={(e) => setLeaveOption(e.target.value)}
-                      onChange={(e) => {
-                        setselectedLeave((prev) => ({
-                          ...prev,
-                          leaveType: e.target.value, // Replace `newDate` with the actual value you want to set
-                          halfDayPeriod: "Morning"
-                        }))
-                      }}
+                      onChange={handleDataChange}
+                      // onChange={(e) => {
+                      //   setselectedLeave((prev) => ({
+                      //     ...prev,
+                      //     leaveType: e.target.value, // Replace `newDate` with the actual value you want to set
+                      //     halfDayPeriod: "Morning"
+                      //   }))
+                      // }}
                     />
                     Half Day
                   </label>
@@ -383,15 +453,16 @@ const Modal = ({
                   {selectedLeave?.leaveType === "Half Day" && (
                     <>
                       <select
+                        name="halfDayPeriod"
                         className="border py-1  rounded w-auto"
                         value={selectedLeave?.halfDayPeriod || "Morning"}
-                        // onChange={(e) => setLeaveOption(e.target.value)}
-                        onChange={(e) => {
-                          setselectedLeave((prev) => ({
-                            ...prev,
-                            halfDayPeriod: e.target.value // Replace `newDate` with the actual value you want to set
-                          }))
-                        }}
+                        onChange={handleDataChange}
+                        // onChange={(e) => {
+                        //   setselectedLeave((prev) => ({
+                        //     ...prev,
+                        //     halfDayPeriod: e.target.value // Replace `newDate` with the actual value you want to set
+                        //   }))
+                        // }}
                       >
                         <option value="">Select Period</option>
                         <option value="Morning">Morning</option>
@@ -470,18 +541,50 @@ const Modal = ({
                 <div className="mt-1">
                   <label className="text-sm font-semibold">Leave Type</label>
                   <select
+                    name="leaveCategory"
                     className="border p-2 rounded w-full"
                     value={selectedLeave?.leaveCategory || ""}
-                    // onChange={(e) => setLeaveType(e.target.value)}
-                    onChange={(e) => {
-                      setselectedLeave((prev) => ({
-                        ...prev,
-                        leaveCategory: e.target.value // Replace `newDate` with the actual value you want to set
-                      }))
-                    }}
+                    onChange={handleDataChange}
+                    // onChange={(e) => {
+                    //   setselectedLeave((prev) => ({
+                    //     ...prev,
+                    //     leaveCategory: e.target.value // Replace `newDate` with the actual value you want to set
+                    //   }))
+                    // }}
                   >
                     <option value="">Select Leave Type</option>
-                    <option
+                    {((selectedLeave.leaveType === "Full Day" &&
+                      BalancedcasualleaveCount >= 1) ||
+                      (selectedLeave.leaveType === "Half Day" &&
+                        BalancedcasualleaveCount >= 0.5) ||
+                      selectedLeave.leaveCategory === "casual Leave") && (
+                      <option value="casual Leave">Casual Leave</option>
+                    )}
+                    {((selectedLeave.leaveType === "Full Day" &&
+                      BalanceprivilegeleaveCount >= 1) ||
+                      (selectedLeave.leaveType === "Half Day" &&
+                        BalanceprivilegeleaveCount >= 0.5) ||
+                      selectedLeave.leaveCategory === "privileage Leave") && (
+                      <option value="privileage Leave">Privilege Leave</option>
+                    )}
+                    {((selectedLeave.leaveType === "Full Day" &&
+                      BalancecompensatoryleaveCount >= 1) ||
+                      (selectedLeave.leaveType === "Half Day" &&
+                        BalancecompensatoryleaveCount >= 0.5) ||
+                      selectedLeave.leaveCategory === "compensatory Leave") && (
+                      <option value="compensatory Leave">
+                        Compensatory Leave
+                      </option>
+                    )}
+                    {((selectedLeave.leaveType === "Full Day" &&
+                      BalancesickleaveCount >= 1) ||
+                      (selectedLeave.leaveType === "Half Day" &&
+                        BalancesickleaveCount >= 0.5) ||
+                      selectedLeave.leaveCategory === "sick Leave") && (
+                      <option value="sick Leave">Sick Leave</option>
+                    )}
+
+                    {/* <option
                       value="casual Leave"
                       disabled={BalancedcasualleaveCount === 0}
                     >
@@ -504,8 +607,7 @@ const Modal = ({
                       disabled={BalancesickleaveCount === 0}
                     >
                       Sick Leave
-                    </option>
-
+                    </option> */}
                     <option value="other Leave">Other Leave</option>
                   </select>
                 </div>
@@ -516,17 +618,18 @@ const Modal = ({
                 <div className="mt-1">
                   <label className="text-sm font-semibold">Reason</label>
                   <textarea
+                    name="reason"
                     className="border p-2 rounded w-full"
                     rows="3"
                     placeholder="Enter reason"
                     value={selectedLeave?.reason || ""}
-                    // onChange={(e) => setLeaveDescription(e.target.value)}
-                    onChange={(e) => {
-                      setselectedLeave((prev) => ({
-                        ...prev,
-                        reason: e.target.value // Replace `newDate` with the actual value you want to set
-                      }))
-                    }}
+                    onChange={handleDataChange}
+                    // onChange={(e) => {
+                    //   setselectedLeave((prev) => ({
+                    //     ...prev,
+                    //     reason: e.target.value // Replace `newDate` with the actual value you want to set
+                    //   }))
+                    // }}
                   ></textarea>
                 </div>
                 {errors.reason && (
@@ -659,39 +762,6 @@ const Modal = ({
           {/* Attendance Application */}
           {typeofMode === "Attendance" && (
             <div className="mt-4">
-              {/* Full Day / Half Day Selection */}
-              {/* <div className="flex gap-4">
-                <label>
-                  <input
-                    type="radio"
-                    value="Full Day"
-                    checked={leaveOption === "Full Day"}
-                    onChange={(e) => setLeaveOption(e.target.value)}
-                  />
-                  Full Day
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    value="Half Day"
-                    checked={leaveOption === "Half Day"}
-                    onChange={(e) => setLeaveOption(e.target.value)}
-                  />
-                  Half Day
-                </label>
-                {leaveOption === "Half Day" && (
-                  <select
-                    className="border p-2 rounded w-auto"
-                    value={leaveType}
-                    onChange={(e) => setLeaveType(e.target.value)}
-                  >
-                    <option value="">Select Period</option>
-                    <option value="Morning">Morning</option>
-                    <option value="Afternoon">Afternoon</option>
-                  </select>
-                )}
-              </div> */}
-
               {/* Attendance Date */}
               <div className="mt-3">
                 <label className="text-sm font-semibold">Attendance Date</label>
@@ -810,9 +880,17 @@ const Modal = ({
           {typeofMode === "Leave" ? (
             <button
               className="mt-4 px-4 py-2 bg-blue-500 text-white rounded w-full flex items-center justify-center hover:bg-blue-600"
-              onClick={() => settypeofMode("Edit Leave")}
+              onClick={() =>
+                settypeofMode(
+                  formData?.leaveCategory !== null
+                    ? "Edit Leave"
+                    : "Apply New Leave"
+                )
+              }
             >
-              Edit Leave
+              {formData?.leaveCategory !== null
+                ? "Edit Leave"
+                : "Apply New Leave"}
             </button>
           ) : (
             <button
@@ -821,13 +899,13 @@ const Modal = ({
               disabled={isApplying}
             >
               {isApplying ? <FaSpinner className="animate-spin mr-2" /> : null}
-              {isApplying ? "Processing..." : "Apply"}
+              {isApplying ? "Processing" : typeofMode}
             </button>
           )}
 
           <button
             className="mt-2 px-4 py-2 bg-gray-500 text-white rounded w-full hover:bg-gray-600"
-            onClick={onClose}
+            onClick={() => onClose(setMessage)}
           >
             Close
           </button>

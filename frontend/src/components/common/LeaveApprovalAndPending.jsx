@@ -493,103 +493,111 @@ const LeaveApprovalAndPending = () => {
     }
   }
 
-  const toggleReject = async (id) => {
-    setLoader(true)
+  const toggleReject = async (id, category) => {
+    console.log(category)
+    try {
+      setLoader(true)
 
-    const states = {
-      pendingOnsite,
-      approvedOnsite,
-      pendingLeave,
-      approvedLeave
-    }
-
-    const trueState = Object.keys(states).find((key) => states[key] === true)
-
-    const checkOnsite =
-      pendingOnsite || approvedOnsite
-        ? true
-        : pendingLeave || approvedLeave
-        ? false
-        : false
-
-    if (checkOnsite) {
-      const onsiteReject = await api.put(
-        `/auth/rejectOnsite/?role=${user.role}&selectedId=${id}&userId=${user._id}&startdate=${dates.startDate}&enddate=${dates.endDate}&feild=${trueState}`
-      )
-
-      if (onsiteReject.status === 200) {
-        const list = onsiteReject.data.data
-
-        const initialToggles = {}
-        const initialSelectAll = {}
-
-        if (user?.role === "Admin") {
-          list.forEach((userOnsite) => {
-            // Check the `status` field for each leave and set the toggle accordingly
-            initialToggles[userOnsite._id] =
-              userOnsite.hrstatus === "HR/Onsite Approved" // Toggle on if approved
-            initialSelectAll[userOnsite._id] =
-              userOnsite.hrstatus === "HR/Onsite Approved"
-          })
-        } else {
-          list.forEach((userOnsite) => {
-            // Check the `status` field for each leave and set the toggle accordingly
-            initialToggles[userOnsite._id] =
-              userOnsite.departmentstatus === "Dept Approved" // Toggle on if approved
-            initialSelectAll[userOnsite.userId._id] =
-              userOnsite.departmentstatus === "Dept Approved"
-          })
-        }
-        setIsToggled(initialToggles)
-        setIsSelected(initialSelectAll)
-        setLeaveList(list)
-
-        setLeaveStatus((prevState) => ({
-          ...prevState,
-          [id]: !prevState[id] // Toggle the specific user's state
-        }))
-        toast.success(onsiteReject.data.message)
-        setLoader(false)
+      const states = {
+        pendingOnsite,
+        approvedOnsite,
+        pendingLeave,
+        approvedLeave
       }
-    } else if (!checkOnsite) {
-      const leaveReject = await api.put(
-        `/auth/rejectLeave/?role=${user.role}&selectedId=${id}&userId=${user._id}&startdate=${dates.startDate}&enddate=${dates.endDate}&feild=${trueState}`
-      )
 
-      if (leaveReject.status === 200) {
-        const list = leaveReject.data.data
+      const trueState = Object.keys(states).find((key) => states[key] === true)
 
-        const initialToggles = {}
-        const initialSelectAll = {}
+      const checkOnsite =
+        pendingOnsite || approvedOnsite
+          ? true
+          : pendingLeave || approvedLeave
+          ? false
+          : false
 
-        if (user?.role === "Admin") {
-          list.forEach((userLeave) => {
-            // Check the `status` field for each leave and set the toggle accordingly
-            initialToggles[userLeave._id] =
-              userLeave.hrstatus === "HR/Onsite Approved" // Toggle on if approved
-            initialSelectAll[userLeave._id] =
-              userLeave.hrstatus === "HR/Onsite Approved"
-          })
-        } else {
-          list.forEach((userLeave) => {
-            // Check the `status` field for each leave and set the toggle accordingly
-            initialToggles[userLeave._id] =
-              userLeave.departmentstatus === "Dept Approved" // Toggle on if approved
-            initialSelectAll[userLeave.userId._id] =
-              userLeave.departmentstatus === "Dept Approved"
-          })
+      if (checkOnsite) {
+        console.log("tttttttttttt")
+        const onsiteReject = await api.put(
+          `/auth/rejectOnsite/?role=${user.role}&selectedId=${id}&userId=${user._id}&startdate=${dates.startDate}&enddate=${dates.endDate}&feild=${trueState}`
+        )
+
+        if (onsiteReject.status === 200) {1
+          const list = onsiteReject.data.data
+
+          const initialToggles = {}
+          const initialSelectAll = {}
+
+          if (user?.role === "Admin") {
+            list.forEach((userOnsite) => {
+              // Check the `status` field for each leave and set the toggle accordingly
+              initialToggles[userOnsite._id] =
+                userOnsite.hrstatus === "HR/Onsite Approved" // Toggle on if approved
+              initialSelectAll[userOnsite._id] =
+                userOnsite.hrstatus === "HR/Onsite Approved"
+            })
+          } else {
+            list.forEach((userOnsite) => {
+              // Check the `status` field for each leave and set the toggle accordingly
+              initialToggles[userOnsite._id] =
+                userOnsite.departmentstatus === "Dept Approved" // Toggle on if approved
+              initialSelectAll[userOnsite.userId._id] =
+                userOnsite.departmentstatus === "Dept Approved"
+            })
+          }
+          setIsToggled(initialToggles)
+          setIsSelected(initialSelectAll)
+          setLeaveList(list)
+
+          setLeaveStatus((prevState) => ({
+            ...prevState,
+            [id]: !prevState[id] // Toggle the specific user's state
+          }))
+          toast.success(onsiteReject.data.message)
+          setLoader(false)
         }
-        setIsToggled(initialToggles)
-        setIsSelected(initialSelectAll)
-        setLeaveList(list)
+      } else if (!checkOnsite) {
+        const leaveReject = await api.put(
+          `/auth/rejectLeave/?role=${user.role}&selectedId=${id}&userId=${user._id}&startdate=${dates.startDate}&enddate=${dates.endDate}&feild=${trueState}&leaveCategory=${category}`
+        )
 
-        setLeaveStatus((prevState) => ({
-          ...prevState,
-          [id]: !prevState[id] // Toggle the specific user's state
-        }))
-        toast.success(leaveReject.data.message)
-        setLoader(false)
+        if (leaveReject.status === 200) {
+          const list = leaveReject.data.data
+
+          const initialToggles = {}
+          const initialSelectAll = {}
+
+          if (user?.role === "Admin") {
+            list.forEach((userLeave) => {
+              // Check the `status` field for each leave and set the toggle accordingly
+              initialToggles[userLeave._id] =
+                userLeave.hrstatus === "HR/Onsite Approved" // Toggle on if approved
+              initialSelectAll[userLeave._id] =
+                userLeave.hrstatus === "HR/Onsite Approved"
+            })
+          } else {
+            list.forEach((userLeave) => {
+              // Check the `status` field for each leave and set the toggle accordingly
+              initialToggles[userLeave._id] =
+                userLeave.departmentstatus === "Dept Approved" // Toggle on if approved
+              initialSelectAll[userLeave.userId._id] =
+                userLeave.departmentstatus === "Dept Approved"
+            })
+          }
+          setIsToggled(initialToggles)
+          setIsSelected(initialSelectAll)
+          setLeaveList(list)
+
+          setLeaveStatus((prevState) => ({
+            ...prevState,
+            [id]: !prevState[id] // Toggle the specific user's state
+          }))
+          toast.success(leaveReject.data.message)
+          setLoader(false)
+        }
       }
+    } catch (error) {
+      setLoader(false)
+      console.log("error:", error.message)
+      toast.error(error?.response?.data?.message)
     }
   }
 
@@ -763,6 +771,7 @@ const LeaveApprovalAndPending = () => {
       setPending(false)
     }
   }
+  console.log(leaveList)
   return (
     <div>
       {loader && (
@@ -1014,7 +1023,12 @@ const LeaveApprovalAndPending = () => {
                         </button>
                       </td>
                       <td className="border border-gray-300 py-1 relative px-1">
-                        <button onClick={() => toggleReject(user._id)}>
+                        {/* //pass collection id as user._id */}
+                        <button
+                          onClick={() =>
+                            toggleReject(user._id, user?.leaveCategory)
+                          }
+                        >
                           {leaveStatus[user._id] ? (
                             <FaCheckCircle className="text-green-500" />
                           ) : (

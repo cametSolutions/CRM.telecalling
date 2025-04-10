@@ -416,13 +416,6 @@ const LeadMaster = ({
   console.log(loggeduser)
   return (
     <div className="h-full overflow-y-auto container justify-center items-center  p-2 md:p-8 ">
-      {/* Top Loading Bar */}
-      {/* <LoadingBar
-        color="#f11946"
-        progress={progress}
-        onLoaderFinished={() => setProgress(0)}
-      /> */}
-
       <div
         className="shadow-lg rounded p-2 md:p-3 mx-auto"
         // style={{
@@ -437,7 +430,7 @@ const LeadMaster = ({
           Lead
         </h2>
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-1 sm:grid-cols-1 gap-0 md:gap-6 md:mx-5">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-0 md:gap-6 md:mx-5">
             {process === "edit" && (
               <div>
                 <label
@@ -484,7 +477,7 @@ const LeadMaster = ({
                     setSelectedCustomer(selectedOption)
                     setValue("customerName", selectedOption.value)
                   }}
-                  className="md:w-1/4 w-full"
+                  className="mt-1 w-full"
                   styles={{
                     menu: (provided) => ({
                       ...provided,

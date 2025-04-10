@@ -4,11 +4,13 @@ import {
   LeadRegister,
   GetAllservices,
   GetallLead,
-  UpadateOrLeadAllocationRegister
+  UpadateOrLeadAllocationRegister,
+  GetselectedLeadData
 } from "../../controller/primaryUserController/leadController.js"
 const router = express.Router()
 
 router.post("/leadRegister", authMiddleware, LeadRegister)
+router.get("/getSelectedLead", authMiddleware, GetselectedLeadData)
 router.post("/leadAllocation", authMiddleware, UpadateOrLeadAllocationRegister)
 router.get("/getallLead", authMiddleware, GetallLead)
 router.get("/getallServices", authMiddleware, GetAllservices)

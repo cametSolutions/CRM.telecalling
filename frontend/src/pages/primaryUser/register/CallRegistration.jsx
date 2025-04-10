@@ -60,16 +60,23 @@ export default function CallRegistration() {
   const [callnote, setCallnotes] = useState([])
   const debounceTimeoutRef = useRef(null)
   const location = useLocation()
-  const { calldetails, token } = location.state || {}
+  const { calldetails, token } = location?.state || {}
+
   const [tokenData, setTokenData] = useState(null)
   const { data: registeredCall, refreshHook } = UseFetch(
     selectedCustomer?._id &&
       `/customer/getcallregister?customerid=${selectedCustomer?._id || null}`
   )
+  const { data } = UseFetch(
+    user._id && `/customer/getloggeduserCurrentCalls?loggedUserId=${user._id}`
+  )
   const { data: callnotes } = UseFetch("/customer/getallcallNotes")
   const handleQuillChange = (value) => {
     setValue("description", value, { shouldValidate: true }) // Update React Hook Form's value
   }
+  useEffect(() => {
+    setloggeduserCurrentDateCalls(data)
+  }, [data])
   useEffect(() => {
     const submitCallRegistration = async () => {
       try {
@@ -136,14 +143,14 @@ export default function CallRegistration() {
           const productId = matchingRegistration
             ? matchingRegistration.product._id
             : null
+
           const matchingProducts =
             callData.callDetails.customerid.selected.filter(
               (product) => product.product_id === productId
             )
-
+          setSearch(callData?.callDetails?.customerid?.customerName)
           setSelectedCustomer(callData?.callDetails?.customerid)
-          setName(callData?.callDetails?.customerid?.customerName)
-          console.log("hhhh")
+
           setProductDetails([
             {
               product_id: matchingProducts[0].product_id,
@@ -659,8 +666,7 @@ Problem:    \t${selectedText}
     // let updatedData = { ...data }
     setFormData(data)
   }
-  console.log(name)
-  console.log(search)
+
   return (
     <div className="container  justify-center items-center p-8 h-auto">
       <div className="w-auto bg-white shadow-lg rounded  p-8 mx-auto h-auto">
@@ -677,7 +683,7 @@ Problem:    \t${selectedText}
         </div>
 
         <hr className="border-t-2 border-gray-300 mb-4"></hr>
-        <div className={`w-2/4 ${afterCallsubmitting ? "" : "ml-5"}`}>
+        <div className="w-2/4 ">
           <div className="relative">
             <label
               htmlFor="customerName"
@@ -689,7 +695,7 @@ Problem:    \t${selectedText}
               <input
                 type="text"
                 id="customerName"
-                value={calldetails ? name : search}
+                value={search}
                 // defaultValue={calldetails ? name : search}
                 onChange={handleInputChange}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 pr-10 sm:text-sm focus:border-gray-500 outline-none"
@@ -703,7 +709,7 @@ Problem:    \t${selectedText}
             </div>
           </div>
         </div>
-        {afterCallsubmitting &&
+        {!search &&
           loggeduserCurrentDateCalls &&
           loggeduserCurrentDateCalls?.length > 0 && (
             <>
@@ -758,7 +764,7 @@ Problem:    \t${selectedText}
                       <tbody className="divide-gray-500">
                         {loggeduserCurrentDateCalls
                           .flatMap((customer) =>
-                            customer.attendedCalls.map((call) => ({
+                            customer.callregistration.map((call) => ({
                               ...call,
                               customerName: customer.customerName
                             }))
@@ -827,12 +833,12 @@ Problem:    \t${selectedText}
                                     {call.formdata?.incomingNumber}
                                   </td>
                                   <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {call.attendedByDetails
+                                    {call.formdata?.attendedBy
                                       ?.map((attendee) => attendee.name)
                                       .join(", ") || ""}
                                   </td>
                                   <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {call.completedByDetails
+                                    {call.formdata?.completedBy
                                       ?.map((completer) => completer.name)
                                       .join(", ") || ""}
                                   </td>
@@ -881,7 +887,7 @@ Problem:    \t${selectedText}
           )}
 
         {searching && customerData?.length > 0 ? (
-          <div className="ml-5 w-2/4 max-h-40 overflow-y-auto overflow-x-auto  mt-4 border border-gray-200 shadow-md rounded-lg">
+          <div className=" w-2/4 max-h-40 overflow-y-auto overflow-x-auto  mt-4 border border-gray-200 shadow-md rounded-lg">
             {/* Wrap the table in a div with border */}
             <table className="min-w-full bg-white">
               <thead className="sticky top-0 z-30 bg-green-300 border-b border-green-300 shadow">
@@ -927,7 +933,7 @@ Problem:    \t${selectedText}
 
         {selectedCustomer && (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 m-5 bg-[#4888b9] shadow-md rounded p-5">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-3 bg-[#4888b9] shadow-md rounded p-5">
               <div className="">
                 <h4 className="text-md font-bold text-white">Customer Name</h4>
                 <p className="text-white">{selectedCustomer.customerName}</p>
@@ -1010,13 +1016,13 @@ Problem:    \t${selectedText}
               </div>
             </div>
             <div className="mt-6 w-lg ">
-              <div className="mb-2 ml-5">
+              <div className="mb-2 ">
                 <h3 className="text-lg font-medium text-gray-900">
                   Product Details List
                 </h3>
                 {/* <button onClick={fetchData}>update</button>c */}
               </div>
-              <div className="m-5 w-lg max-h-30 overflow-x-auto text-center overflow-y-auto border border-gray-300 rounded-lg">
+              <div className=" w-lg max-h-30 overflow-x-auto text-center overflow-y-auto border border-gray-300 rounded-lg">
                 <table className=" m-w-full divide-y divide-gray-200 shadow">
                   <thead
                     className={`${
@@ -1203,7 +1209,7 @@ Problem:    \t${selectedText}
                 <form onSubmit={handleSubmit(onSubmit)}>
                   {/* Updated parent div with justify-between */}
 
-                  <div className="grid grid-cols-3 gap-6 m-5 ">
+                  <div className="grid grid-cols-3 gap-6  ">
                     <div className="relative">
                       {/* Toast Message */}
                       {showIncomingNumberToast && (
@@ -1215,7 +1221,7 @@ Problem:    \t${selectedText}
 
                       <label
                         htmlFor="customerName"
-                        className="block text-sm font-medium text-gray-700 mt-2"
+                        className="block text-sm font-medium text-gray-700 "
                       >
                         Incoming Number
                       </label>

@@ -180,7 +180,7 @@ const adminSchema = new Schema(
       required: [true, "Role is required"],
       enum: ["Staff", "Admin"]
     },
-    isVerified: {
+    verified: {
       type: Boolean,
       default: false
     },
