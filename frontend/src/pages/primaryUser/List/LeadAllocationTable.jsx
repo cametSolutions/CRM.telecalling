@@ -8,12 +8,13 @@ import UseFetch from "../../../hooks/useFetch"
 import { formatDate } from "../../../utils/dateUtils"
 const LeadAllocationTable = () => {
   const [status, setStatus] = useState("Pending")
+  const [approvedToggleStatus, setapprovedToggleStatus] = useState(false)
   const [submitLoading, setsubmitLoading] = useState(false)
   const [allocationOptions, setAllocationOptions] = useState([])
   const [selectedAllocates, setSelectedAllocates] = useState({})
   const [allStaffs, setallStaffs] = useState([])
   const [loader, setloader] = useState(true)
-  const [pendingLeadtableData, setpendingLeadTableData] = useState([])
+  const [tableData, setTableData] = useState([])
   const { data: leadPendinglist, loading } = UseFetch(
     status && `/lead/getallLead?Status=${status}`
   )
@@ -47,17 +48,45 @@ const LeadAllocationTable = () => {
   console.log(allStaffs)
   useEffect(() => {
     if (leadPendinglist) {
-      setpendingLeadTableData(leadPendinglist)
+      setTableData(leadPendinglist)
     }
   }, [leadPendinglist])
-  const toggleStatus = () => {
-    setStatus(
-      status === "Pending Allocation"
-        ? "Approved Allocation"
-        : "Pending Allocation"
-    )
+  console.log(tableData)
+  const toggleStatus = async () => {
+    console.log(approvedToggleStatus)
+    if (approvedToggleStatus === false) {
+      setsubmitLoading(true)
+      const response = await api.get("/lead/getallLead?Status=Approved")
+      if (response.status >= 200 && response.status < 300) {
+        setTableData(response.data.data)
+        setapprovedToggleStatus(!approvedToggleStatus)
+        setsubmitLoading(false)
+        const initialSelected = {}
+
+        response.data.data.forEach((item) => {
+          if (item.allocatedTo?._id) {
+            const match = allocationOptions.find(
+              (opt) => opt.value === item.allocatedTo._id
+            )
+
+            if (match) {
+              initialSelected[item._id] = match
+            }
+          }
+        })
+
+        setSelectedAllocates(initialSelected)
+      }
+    } else {
+      const response = await api.get("/lead/getallLead?Status=Pending")
+      if (response.status >= 200 && response.status < 300) {
+        setTableData(response.data.data)
+        setapprovedToggleStatus(!approvedToggleStatus)
+        setsubmitLoading(false)
+      }
+    }
   }
-  ;("")
+
   const handleSelectedAllocates = (id, value) => {
     console.log(id)
     console.log(value)
@@ -68,7 +97,6 @@ const LeadAllocationTable = () => {
     )
   }
 
-  console.log(pendingLeadtableData)
   const handleSubmit = async (leadAllocationData) => {
     setsubmitLoading(true)
     console.log(leadAllocationData)
@@ -90,25 +118,35 @@ const LeadAllocationTable = () => {
           color="#4A90E2" // Change color as needed
         />
       )}
-      <div className="p-4">
+      <div className="p-8">
         <div className="flex justify-between items-center mb-4 ">
-          <h2 className="text-lg font-bold">{status} Allocation List</h2>
-          {/* <button
-         onClick={toggleStatus}
-         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-       >
-         Toggle Allocation
-       </button> */}
-          <button
-            onClick={() =>
-              user.role === "Admin"
-                ? navigate("/admin/transaction/lead")
-                : navigate("/staff/transaction/lead")
-            }
-            className="bg-black text-white px-2 rounded-lg shadow-lg"
-          >
-            Go Lead Register
-          </button>
+          <h2 className="text-lg font-bold">
+            {approvedToggleStatus ? "Approved" : "Pending"} Allocation List
+          </h2>
+          <div className="flex gap-6">
+            <button
+              onClick={toggleStatus}
+              className={`${
+                approvedToggleStatus ? "bg-green-500" : "bg-gray-300"
+              } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
+            >
+              <div
+                className={`${
+                  approvedToggleStatus ? "translate-x-5" : "translate-x-0"
+                } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+              ></div>
+            </button>
+            <button
+              onClick={() =>
+                user.role === "Admin"
+                  ? navigate("/admin/transaction/lead")
+                  : navigate("/staff/transaction/lead")
+              }
+              className="bg-black text-white px-2 rounded-lg shadow-lg"
+            >
+              Go Lead Register
+            </button>
+          </div>
         </div>
 
         {/* Responsive Table Container */}
@@ -130,8 +168,8 @@ const LeadAllocationTable = () => {
               </tr>
             </thead>
             <tbody className="text-center divide-gray-200 bg-gray-200">
-              {pendingLeadtableData && pendingLeadtableData.length > 0 ? (
-                pendingLeadtableData.map((item) => (
+              {tableData && tableData.length > 0 ? (
+                tableData.map((item) => (
                   <tr key={item.id} className="">
                     <td className="px-1 border border-gray-300">
                       {formatDate(item.leadDate)}
@@ -153,7 +191,21 @@ const LeadAllocationTable = () => {
                     </td>
                     <td className="px-4  border border-gray-300">
                       <button
-                        // onClick={}
+                        onClick={() =>
+                          user.role === "Admin"
+                            ? navigate("/admin/transaction/leadEdit", {
+                                state: {
+                                  leadId: item._id
+                                }
+                              })
+                            : navigate("/staff/transaction/leadEdit",
+                              {
+                                state: {
+                                  leadId: item._id
+                                }
+                              }
+                            )
+                        }
                         className="bg-blue-700 hover:bg-blue-800 text-white rounded-lg px-4 shadow-md"
                       >
                         View

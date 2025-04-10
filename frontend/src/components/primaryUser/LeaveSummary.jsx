@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, useCallback } from "react"
 import * as XLSX from "xlsx"
 import FileSaver from "file-saver"
+import ExcelJS from "exceljs"
+import { saveAs } from "file-saver"
 import BarLoader from "react-spinners/BarLoader"
 import ResponsiveTable from "./ResponsiveTable"
 import Modal from "./Modal"
@@ -8,13 +10,14 @@ import api from "../../api/api"
 import UseFetch from "../../hooks/useFetch"
 import { toast } from "react-toastify"
 const leaveSummary = () => {
-  const [searchTerm, setSearchTerm] = useState(null)
+  const [searchTerm, setSearchTerm] = useState("")
   const [monthselected, setmonthSelected] = useState(null)
-  const [selectedIndex, setSelectedIndex] = useState(null)
+  const [newattende, setnewattendee] = useState([])
+  const [selectedName, setSelectedName] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const currentYear = new Date().getFullYear()
   const currentMonth = new Date().getMonth() + 1 // JavaScript months are 0-based, so adding 1
-  const [selectedStaff, setselectedStaff] = useState(null)
+  const [selectedStaff, setselectedStaff] = useState("")
   const [selectedYear, setSelectedYear] = useState(currentYear)
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)
   const [onsiteTypes, setOnsiteTypes] = useState({})
@@ -24,6 +27,7 @@ const leaveSummary = () => {
   const [Loading, setLoading] = useState(null)
   const [type, setType] = useState("")
   const [holiday, setHoly] = useState(null)
+  const [currentmonthSundays, setCurrentmonthSundays] = useState(null)
 
   const [leavesummaryList, setleaveSummary] = useState([])
   const listRef = useRef(null)
@@ -33,49 +37,47 @@ const leaveSummary = () => {
   const apiUrl = `/auth/getsomeall?year=${selectedYear}&month=${selectedMonth}`
   // Use custom useFetch hook
   const {
-    data: newattende,
-    fulldateholiday: holy,
+    data,
+   
     loading,
     refreshHook
   } = UseFetch(apiUrl)
-
+ 
   useEffect(() => {
-    if (newattende && newattende.length) {
-      if (user?.role === "Admin") {
-        setHoly(holy)
-        setleaveSummary(newattende)
-        // setmonthSelected(selectedMonth)
-      } else if (user?.role === "Staff") {
-        setHoly(holy)
-        const filteredUser = newattende.filter(
-          (item) => item.userId === user._id || item.assignedto === user._id
-        )
-        setleaveSummary(filteredUser)
-        // setmonthSelected(selectedMonth)
+    if (data) {
+      const { staffAttendanceStats, listofHolidays, sundayFulldate } = data
+      setnewattendee(staffAttendanceStats)
+      setHoly(listofHolidays)
+      setCurrentmonthSundays(sundayFulldate)
+      if (searchTerm) {
+        if (user.role === "Admin") {
+          const filteredStaff = staffAttendanceStats.filter((staff) =>
+            staff.name.toLowerCase().startsWith(searchTerm.toLowerCase())
+          )
+          setleaveSummary(filteredStaff)
+        } else {
+          const filteredStaff = staffAttendanceStats.filter(
+            (staff) =>
+              (staff.userId === user._id || staff.assignedto === user._id) &&
+              staff.name.toLowerCase().startsWith(searchTerm.toLowerCase())
+          )
+          setleaveSummary(filteredStaff)
+        }
+      } else {
+        if (user?.role === "Admin") {
+          setleaveSummary(staffAttendanceStats)
+          // setmonthSelected(selectedMonth)
+        } else if (user?.role === "Staff") {
+          const filteredUser = staffAttendanceStats.filter(
+            (item) => item.userId === user._id || item.assignedto === user._id
+          )
+          setleaveSummary(filteredUser)
+          // setmonthSelected(selectedMonth)
+        }
       }
     }
-  }, [newattende])
-  useEffect(() => {
-    if (newattende && newattende.length > 0 && searchTerm) {
-      const filteredStaff = newattende.filter((staff) =>
-        staff.name.toLowerCase().startsWith(searchTerm.toLowerCase())
-      )
-      setleaveSummary(filteredStaff)
-    } else if (
-      leavesummaryList &&
-      leavesummaryList.length > 0 &&
-      searchTerm === ""
-    ) {
-      if (user?.role === "Admin") {
-        setleaveSummary(newattende)
-      } else if (user?.role === "Staff") {
-        const filteredUser = newattende.filter(
-          (item) => item.userId === user._id || item.assignedto === user._id
-        )
-        setleaveSummary(filteredUser)
-      }
-    }
-  }, [searchTerm])
+  }, [data, searchTerm])
+  
   // Restore scroll position after render
   useEffect(() => {
     const storedScrollPosition = sessionStorage.getItem("scrollPosition")
@@ -83,14 +85,8 @@ const leaveSummary = () => {
       listRef.current.scrollTop = parseInt(storedScrollPosition, 10)
       // sessionStorage.removeItem("scrollPosition") // Optional: Clear after restoring
     }
-  }, [selectedIndex]) // Restore when selectedIndex changes
+  }, [selectedName]) // Restore when selectedIndex changes
 
-  useEffect(() => {
-    const storedScrollPosition = sessionStorage.getItem("scrollPosition")
-    if (storedScrollPosition && listRef.current) {
-      listRef.current.scrollTop = parseInt(storedScrollPosition, 10)
-    }
-  }, [selectedIndex])
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i)
   const months = [
     { name: "January", value: 1 },
@@ -119,7 +115,7 @@ const leaveSummary = () => {
       [`${date}-${index}`]: newType
     }))
   }
-  const handleAttendance = (date, type, inTime, outTime) => {
+  const handleAttendance = useCallback((date, type, inTime, outTime) => {
     setModalOpen(true)
     setselectedDate(date)
     setType(type)
@@ -130,14 +126,20 @@ const leaveSummary = () => {
         outTime
       })
     }
-  }
-  const handleSelectAttendee = (index, attendee) => {
+  }, [])
+  const handleSelectAttendee = (attendee) => {
+
     if (listRef.current) {
       sessionStorage.setItem("scrollPosition", listRef.current.scrollTop)
     }
 
-    setSelectedIndex(selectedIndex === index ? null : index)
-    selectedUser(attendee.userId)
+    setSelectedName(selectedName === attendee.name ? null : attendee.name)
+    if (selectedName === attendee.name) {
+      setselectedStaff("")
+    } else {
+      selectedUser(attendee.userId)
+    }
+
     setEditIndex(null)
     setFormData(
       Object.fromEntries(Object.keys(formData).map((key) => [key, ""]))
@@ -166,6 +168,7 @@ const leaveSummary = () => {
         leaveDate: date,
         reason,
         leaveCategory: leaveDetails.field,
+        prevCategory: leaveDetails.field,
         leaveType:
           leaveDetails.value === 1
             ? "Full Day"
@@ -183,11 +186,13 @@ const leaveSummary = () => {
       table.scrollLeft = event.target.scrollLeft
     })
   }
-  const handleClose = () => {
+  const handleClose = (setMessage) => {
     setModalOpen(false)
+    setMessage("")
   }
-
+ 
   const handleApply = async (staffId, selected, setIsApplying, type) => {
+
     try {
       if (type === "Leave") {
         const matchedStaff = leavesummaryList.find(
@@ -267,179 +272,114 @@ const leaveSummary = () => {
   }
 
   const handleDownload = (data) => {
-    const headers = [
-      "Employ_Name",
-      "EMP_ID",
-      "Casual_Leave",
-      "Privileage_Leave",
-      "Comp_Leave",
-      "Other_Leave",
-      "Late_Cutting",
-      "Total Present"
+    // Using ExcelJS instead of XLSX for better styling control
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet("Attendance")
+
+    // Define column structure with widths
+    worksheet.columns = [
+      { header: "Employ_Name", key: "name", width: 25 },
+      { header: "EMP_ID", key: "staffId", width: 15 },
+      { header: "Casual_Leave", key: "casualLeave", width: 15 },
+      { header: "Privileage_Leave", key: "privLeave", width: 15 },
+      { header: "Comp_Leave", key: "compLeave", width: 15 },
+      { header: "Other_Leave", key: "otherLeave", width: 15 },
+      { header: "Late_Cutting", key: "lateCutting", width: 15 },
+      { header: "lateOrEarlyCount", key: "lateEarlyCount", width: 15 },
+      { header: "Total Present", key: "totalPresent", width: 15 }
     ]
 
-    // Convert JSON to array format
-    const worksheetData = [headers] // Add headers to the first row
+    // Style the header row
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFFF0000" } // Light grey background
+      }
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } } // Black bold text
+      cell.alignment = { horizontal: "center", vertical: "middle" }
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" }
+      }
+    })
+
+    // Process and add data
+    let dataToProcess = []
+
     if (user?.role === "Staff") {
-      const filteredUser = newattende.filter(
+      dataToProcess = newattende.filter(
         (item) => item.userId === user?._id || item?.assignedto === user._id
       )
-      filteredUser.forEach((user) => {
-        let casualLeave = 0,
-          privilegeLeave = 0,
-          compensatoryLeave = 0,
-          otherLeave = 0
-
-        Object.values(user.attendancedates).forEach((details) => {
-          casualLeave += details.casualLeave || 0
-          privilegeLeave += details.privileageLeave || 0
-          compensatoryLeave += details.compensatoryLeave || 0
-          otherLeave += details.otherLeave || 0
-        })
-
-        worksheetData.push([
-          user.name,
-          user.staffId,
-          casualLeave,
-          privilegeLeave,
-          compensatoryLeave,
-          otherLeave,
-          user.latecutting,
-          user.present
-        ])
-      })
-
-      // Create a worksheet
-      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData)
-      const workbook = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance")
-
-      // Apply styles to headers and other columns
-      const headerRange = XLSX.utils.decode_range(worksheet["!ref"])
-      for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
-        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C })
-        if (!worksheet[cellAddress]) continue
-        worksheet[cellAddress].s = {
-          font: { bold: true }, // Make headers bold
-          alignment: { horizontal: "center", vertical: "center" } // Center align all headers
-        }
-      }
-
-      // Apply center alignment except for "Employ_Name" column (first column)
-      for (let R = 1; R <= headerRange.e.r; ++R) {
-        for (let C = 1; C <= headerRange.e.c; ++C) {
-          const cellAddress = XLSX.utils.encode_cell({ r: R, c: C })
-          if (!worksheet[cellAddress]) continue
-          worksheet[cellAddress].s = {
-            alignment: { horizontal: "center", vertical: "center" } // Center align all columns except name
-          }
-        }
-      }
-
-      // Adjust column widths
-      worksheet["!cols"] = [
-        { wch: 25 }, // Employ_Name (wider)
-        { wch: 15 },
-        { wch: 15 }, // Casual_Leave
-        { wch: 15 }, // Privileage_Leave
-        { wch: 15 }, // Comp_Leave
-        { wch: 15 }, // Other_Leave
-        { wch: 15 }, // Late_Cutting
-        { wch: 15 } // Total Present
-      ]
-
-      // Convert to Excel file
-      const excelBuffer = XLSX.write(workbook, {
-        bookType: "xlsx",
-        type: "array"
-      })
-
-      // Save file
-      const fileData = new Blob([excelBuffer], {
-        type: "application/octet-stream"
-      })
-
-      FileSaver.saveAs(fileData, "Attendance_Report.xlsx")
     } else if (user?.role === "Admin") {
-      data.forEach((user) => {
-        let casualLeave = 0,
-          privilegeLeave = 0,
-          compensatoryLeave = 0,
-          otherLeave = 0
+      dataToProcess = data
+    }
 
-        Object.values(user.attendancedates).forEach((details) => {
-          casualLeave += details.casualLeave || 0
-          privilegeLeave += details.privileageLeave || 0
-          compensatoryLeave += details.compensatoryLeave || 0
-          otherLeave += details.otherLeave || 0
-        })
+    // Add data rows
+    dataToProcess.forEach((user) => {
+      let casualLeave = 0,
+        privilegeLeave = 0,
+        compensatoryLeave = 0,
+        otherLeave = 0
 
-        worksheetData.push([
-          user.name,
-          user.staffId,
-          casualLeave,
-          privilegeLeave,
-          compensatoryLeave,
-          otherLeave,
-          user.latecutting,
-          user.present
-        ])
+      Object.values(user.attendancedates).forEach((details) => {
+        casualLeave += details.casualLeave || 0
+        privilegeLeave += details.privileageLeave || 0
+        compensatoryLeave += details.compensatoryLeave || 0
+        otherLeave += details.otherLeave || 0
       })
 
-      // Create a worksheet
-      const worksheet = XLSX.utils.aoa_to_sheet(worksheetData)
-      const workbook = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance")
+      const totalEarlyOrLateCount = user.late + user.earlyGoing || 0
 
-      // Apply styles to headers and other columns
-      const headerRange = XLSX.utils.decode_range(worksheet["!ref"])
-      for (let C = headerRange.s.c; C <= headerRange.e.c; ++C) {
-        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C })
-        if (!worksheet[cellAddress]) continue
-        worksheet[cellAddress].s = {
-          font: { bold: true }, // Make headers bold
-          alignment: { horizontal: "center", vertical: "center" } // Center align all headers
+      const row = worksheet.addRow({
+        name: user.name,
+        staffId: user.staffId,
+        casualLeave: casualLeave,
+        privLeave: privilegeLeave,
+        compLeave: compensatoryLeave,
+        otherLeave: otherLeave,
+        lateCutting: user.latecutting,
+        lateEarlyCount: totalEarlyOrLateCount,
+        totalPresent: user.present
+      })
+
+      // Style data cells
+      row.eachCell((cell, colNumber) => {
+        // Center-align all cells except the name column (first column)
+        if (colNumber > 1) {
+          cell.alignment = { horizontal: "center", vertical: "middle" }
         }
-      }
 
-      // Apply center alignment except for "Employ_Name" column (first column)
-      for (let R = 1; R <= headerRange.e.r; ++R) {
-        for (let C = 1; C <= headerRange.e.c; ++C) {
-          const cellAddress = XLSX.utils.encode_cell({ r: R, c: C })
-          if (!worksheet[cellAddress]) continue
-          worksheet[cellAddress].s = {
-            alignment: { horizontal: "center", vertical: "center" } // Center align all columns except name
+        // Add borders to all cells
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" }
+        }
+
+        // Apply zebra striping for better readability
+        if (row.number % 2 === 0) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFFAFAFA" } // Very light grey for even rows
           }
         }
-      }
-
-      // Adjust column widths
-      worksheet["!cols"] = [
-        { wch: 25 }, // Employ_Name (wider)
-        { wch: 15 },
-        { wch: 15 }, // Casual_Leave
-        { wch: 15 }, // Privileage_Leave
-        { wch: 15 }, // Comp_Leave
-        { wch: 15 }, // Other_Leave
-        { wch: 15 }, // Late_Cutting
-        { wch: 15 } // Total Present
-      ]
-
-      // Convert to Excel file
-      const excelBuffer = XLSX.write(workbook, {
-        bookType: "xlsx",
-        type: "array"
       })
+    })
 
-      // Save file
-      const fileData = new Blob([excelBuffer], {
-        type: "application/octet-stream"
+    // Write to buffer and download
+    workbook.xlsx.writeBuffer().then((buffer) => {
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
       })
-
-      FileSaver.saveAs(fileData, "Attendance_Report.xlsx")
-    }
+      saveAs(blob, "Attendance_Report.xlsx")
+    })
   }
-  console.log(selectedMonth)
+ 
   return (
     <div className="w-full">
       {loading && (
@@ -458,13 +398,11 @@ const leaveSummary = () => {
           {/* Search Input */}
           <div className="w-full md:w-auto">
             <input
-              value={
-                selectedStaff !== null ? selectedStaff[0].name : searchTerm
-              }
+              value={selectedStaff !== "" ? selectedStaff[0]?.name : searchTerm}
               onChange={(e) => {
-                if (selectedStaff !== null) {
-                  setSelectedIndex(null)
-                  setselectedStaff(null) // Clear selected staff
+                if (selectedStaff !== "") {
+                  setSelectedName(null)
+                  setselectedStaff("") // Clear selected staff
                 }
                 setSearchTerm(e.target.value)
               }}
@@ -507,8 +445,6 @@ const leaveSummary = () => {
             ))}
           </select>
         </div>
-
-        
       </div>
       {/* Main Content */}
       {loading ? (
@@ -516,16 +452,15 @@ const leaveSummary = () => {
       ) : (
         <>
           <div className="max-h-[calc(100vh-200px)] overflow-y-auto px-5 ">
-            {leavesummaryList &&
-              leavesummaryList.length > 0 &&
+            {leavesummaryList && leavesummaryList.length > 0 ? (
               leavesummaryList?.map((attendee, index) => (
                 <div key={index}>
-                  {selectedIndex === null || selectedIndex === index ? (
+                  {selectedName === null || selectedName === attendee.name ? (
                     <>
                       <div
                         ref={listRef}
                         className={`${
-                          selectedIndex === index && !modalOpen
+                          selectedName === attendee.name && !modalOpen
                             ? "sticky top-0 z-20 bg-white"
                             : ""
                         }`}
@@ -534,11 +469,11 @@ const leaveSummary = () => {
                         <div
                           className={` md:py-2 md:mr-4 shadow-lg rounded-lg w-full border cursor-pointer
                       ${
-                        selectedIndex === index
+                        selectedName === attendee.name
                           ? "bg-gray-200"
                           : "bg-gray-200 mb-2"
                       }`}
-                          onClick={() => handleSelectAttendee(index, attendee)}
+                          onClick={() => handleSelectAttendee(attendee)}
                         >
                           <div className="md:flex w-full">
                             <div className=" text-sm md:text-md font-semibold text-gray-800 w-full  md:w-[225px] p-2">
@@ -586,27 +521,35 @@ const leaveSummary = () => {
                             </div>
                           </div>
                         </div>
-                        {selectedIndex === index && (
-                          <ResponsiveTable
-                            attendee={attendee}
-                            user={user}
-                            handleAttendance={handleAttendance}
-                            handleOnsite={handleOnsite}
-                            handleLeave={handleLeave}
-                            handleScroll={handleScroll}
-                            modalOpen={modalOpen}
-                            holiday={holiday}
-                          />
-                        )}
+                        {selectedName === attendee.name &&
+                          currentmonthSundays &&
+                          holiday && (
+                            <ResponsiveTable
+                              attendee={attendee}
+                              user={user}
+                              handleAttendance={handleAttendance}
+                              handleOnsite={handleOnsite}
+                              handleLeave={handleLeave}
+                              handleScroll={handleScroll}
+                              modalOpen={modalOpen}
+                              sundays={currentmonthSundays}
+                              holiday={holiday}
+                            />
+                          )}
                       </div>
                     </>
                   ) : null}
                 </div>
-              ))}
+              ))
+            ) : (
+              <div className="text-blue-500 text-center">
+                {loading ? "" : "Oops! No staff found."}
+              </div>
+            )}
           </div>
         </>
       )}
-      {modalOpen && (
+      {modalOpen  && (
         <Modal
           type={type}
           onClose={handleClose}

@@ -485,7 +485,7 @@ export const LeaveApply = async (req, res) => {
     leaveType,
     leaveCategory,
     reason,
-
+    prevCategory,
     halfDayPeriod
   } = formData
 
@@ -498,6 +498,83 @@ export const LeaveApply = async (req, res) => {
 
     if (existingDateLeave) {
       // If a leave exists, update the document with the current formData
+      if (
+        prevCategory &&
+        formData.leaveCategory &&
+        prevCategory === "compensatory Leave" &&
+        prevCategory !== formData.leaveCategory
+      ) {
+        let remainingToAdd =
+          existingDateLeave.leaveType === "Full Day" ? 1 : 0.5
+        const year = new Date(existingDateLeave.leaveDate).getFullYear()
+
+        const compensatoryLeaves = await CompensatoryLeave.find({
+          userId: existingDateLeave.userId,
+          year,
+          value: { $lt: 1 }
+        }).sort({ value: -1 })
+        for (const leave of compensatoryLeaves) {
+          const current = leave.value ?? 0
+          const spaceLeft = 1 - current
+
+          const addNow = Math.min(spaceLeft, remainingToAdd)
+          leave.value = current + addNow
+          leave.leaveUsed = leave.value < 1 ? true : false
+          await leave.save()
+
+          remainingToAdd -= addNow
+          if (remainingToAdd <= 0) break
+        }
+      } else if (
+        prevCategory &&
+        formData.leaveCategory &&
+        prevCategory === "compensatory Leave" &&
+        prevCategory === formData.leaveCategory
+      ) {
+        const existingValue =
+          existingDateLeave.leaveType === "Full Day" ? 1 : 0.5
+        const currentValue = leaveType === "Full Day" ? 1 : 0.5
+      
+        if (existingValue > currentValue) {
+          //change from full day to half day add value  on compensatory leave
+          const year = new Date(existingDateLeave.leaveDate).getFullYear()
+          let remainingToAdd = currentValue
+          const compensatoryLeaves = await CompensatoryLeave.find({
+            userId: selectedid,
+            year,
+            value: { $lt: 1 }
+          }).sort({ value: -1 })
+          for (const leave of compensatoryLeaves) {
+            const current = leave.value ?? 0
+            const spaceLeft = 1 - current
+
+            const addNow = Math.min(spaceLeft, remainingToAdd)
+            leave.value = current + addNow
+            leave.leaveUsed = leave.value < 1 ? true : false
+            await leave.save()
+
+            remainingToAdd -= addNow
+            if (remainingToAdd <= 0) break
+          }
+        } else if (existingValue < currentValue) {
+          //change from half day to  full day substract value on compensatory leave
+          const year = new Date(existingDateLeave.leaveDate).getFullYear()
+          const leaveValue = existingValue
+          const compensatoryLeave = await CompensatoryLeave.find({
+            userId: selectedid,
+            value: { $gt: 0 },
+            year
+          }).sort({ createdAt: 1 })
+          let remaining = leaveValue
+          for (const comp of compensatoryLeave) {
+            if (remaining <= 0) break
+            const deduct = Math.min(comp.value, remaining)
+            comp.value -= deduct
+            remaining -= deduct
+            await comp.save()
+          }
+        }
+      }
       const updatedLeave = await LeaveRequest.findByIdAndUpdate(
         existingDateLeave._id, // Use the existing leave's ID
         {
@@ -533,16 +610,21 @@ export const LeaveApply = async (req, res) => {
       await newleave.save()
       if (leaveCategory === "compensatory Leave") {
         const year = new Date(leaveDate).getFullYear()
-
-        const updatecompensatoryleave = await CompensatoryLeave.updateOne(
-          {
-            compensatoryLeave: true,
-            compensatoryLeaveUsed: false,
-            userId: selectedid,
-            year
-          },
-          { $set: { compensatoryLeaveUsed: true } }
-        )
+        const leaveValue = leaveType === "Full Day" ? 1 : 0.5
+        const compensatoryLeave = await CompensatoryLeave.find({
+          userId: selectedid,
+          value: { $gt: 0 },
+          year
+        }).sort({ createdAt: 1 })
+        let remaining = leaveValue
+        for (const comp of compensatoryLeave) {
+          if (remaining <= 0) break
+          const deduct = Math.min(comp.value, remaining)
+          comp.value -= deduct
+          remaining -= deduct
+          comp.leaveUsed = true
+          await comp.save()
+        }
       }
       const allleaves = await LeaveRequest.find({ userId: objectId })
 
@@ -636,6 +718,7 @@ export const OnsiteleaveApply = async (req, res) => {
     }
   } catch (error) {
     console.log("error:", error.message)
+    console.log("er", error)
     return res.status(500).json({ message: "Internal server error" })
   }
 }
@@ -669,6 +752,58 @@ export const OnsiteApply = async (req, res) => {
 
         return existingEntry ? { ...existingEntry, ...newEntry } : newEntry
       })
+      const formerLeaveType = existingOnsite.onsiteType
+      const currentLeaveType = onsiteType
+
+      if (formerLeaveType === "Full Day" && currentLeaveType === "Half Day") {
+        const year = new Date(onsiteDate).getFullYear()
+
+        const compensatoryLeave = await CompensatoryLeave.find({
+          userId: selectedid,
+          value: { $gt: 0 },
+          year
+        }).sort({ createdAt: 1 })
+        if (compensatoryLeave.length === 0) {
+          return res
+            .status(409)
+            .json({
+              message:"You can't edit this — a full-day compensatory leave has already been taken for this site"
+            })
+        }
+        let ValueReduced = 0.5
+        for (const comp of compensatoryLeave) {
+          if (ValueReduced <= 0) break
+          const deduct = Math.min(comp.value, ValueReduced)
+          comp.value -= deduct
+          comp.leaveUsed = comp.value === 0 ? true : comp.leaveUsed
+          ValueReduced -= deduct
+          await comp.save()
+        }
+      } else if (
+        formerLeaveType === "Half Day" &&
+        currentLeaveType === "Full Day"
+      ) {
+        let ValueAdded = 0.5
+        const year = new Date(onsiteDate).getFullYear()
+
+        const compensatoryLeaves = await CompensatoryLeave.find({
+          userId: selectedid,
+          year,
+          value: { $lt: 1 }
+        }).sort({ value: -1 })
+        for (const leave of compensatoryLeaves) {
+          const current = leave.value ?? 0
+          const spaceLeft = 1 - current
+
+          const addNow = Math.min(spaceLeft, ValueAdded)
+          leave.value = current + addNow
+          leave.leaveUsed = leave.value < 1
+          await leave.save()
+
+          ValueAdded -= addNow
+          if (ValueAdded <= 0) break
+        }
+      }
 
       // Update record
       const updatedOnsite = await Onsite.findOneAndUpdate(
@@ -686,6 +821,7 @@ export const OnsiteApply = async (req, res) => {
         { new: true }
       )
       if (updatedOnsite) {
+        ////replace with correct compensatory leave
         return res.status(200).json({ message: "Onsite updated" })
       }
     } else {
@@ -709,7 +845,8 @@ export const OnsiteApply = async (req, res) => {
         const compensatoryleaveapply = new CompensatoryLeave({
           year,
           userId: selectedid,
-          compensatoryLeave
+          onsiteId: successonsite._id,
+          value: onsiteType === "Full Day" ? 1 : 0.5
         })
         await compensatoryleaveapply.save()
       }
@@ -806,11 +943,17 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
     }
 
     const sundays = getSundays(year, month)
+    const sundayFulldate = createDates(sundays, month, year)
 
     const startDate = new Date(Date.UTC(year, month - 1, 1))
     const endDate = new Date(Date.UTC(year, month, 0))
 
     const users = await Staff.aggregate([
+      {
+        $match: {
+          isVerified: true
+        }
+      },
       {
         $project: {
           _id: 1,
@@ -1639,17 +1782,19 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               if (
                 attendance.otherLeave !== "" ||
                 attendance.privileageLeave !== "" ||
-                attendance.casualLeave !== ""
+                attendance.casualLeave !== "" ||
+                attendance.compensatoryLeave !== "" ||
+                attendance.notMarked !== ""
               ) {
                 return {
-                  status: true,
+                  status: false,
                   present: attendance.present,
                   otherLeave: attendance.otherLeave,
                   notMarked: attendance.notMarked
                 }
               } else {
                 return {
-                  status: false,
+                  status: true,
                   present: attendance.present,
                   notMarked: attendance.notMarked
                 }
@@ -1662,20 +1807,23 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           const previousDay = getPreviousDate(sunday)
           const nextDay = getNextDate(sunday)
 
-          const prevPresent = isPresent(previousDay)
-          const nextPresent = isPresent(nextDay)
+          const prevFullPresent = isPresent(previousDay)
+          const nextFullPresent = isPresent(nextDay)
 
-          if (prevPresent?.status && nextPresent?.status) {
-            stats.attendancedates[sunday].otherLeave = 1
+          if (prevFullPresent?.status || nextFullPresent?.status) {
+            stats.attendancedates[sunday].present = 1
             // stats.attendancedates[nextDay].otherLeave = 1
             stats.attendancedates[sunday].notMarked = ""
-          } else if (
-            (prevPresent?.notMarked < 1 || prevPresent?.notMarked === "") &&
-            (nextPresent?.notMarked < 1 || nextPresent?.notMarked === "")
-          ) {
-            stats.attendancedates[sunday].present = 1
-            stats.attendancedates[sunday].notMarked = ""
           }
+          //else if (
+          //   (prevFullPresent?.notMarked < 1 ||
+          //     prevFullPresent?.notMarked === "") &&
+          //   (nextFullPresent?.notMarked < 1 ||
+          //     nextFullPresent?.notMarked === "")
+          // ) {
+          //   stats.attendancedates[sunday].present = 1
+          //   stats.attendancedates[sunday].notMarked = ""
+          // }
         })
       })(c, stats, onsites)
 
@@ -1692,6 +1840,9 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             : stats.attendancedates[dates].privileageLeave &&
               !isNaN(stats.attendancedates[dates].privileageLeave)
             ? Number(stats.attendancedates[dates].privileageLeave)
+            : stats.attendancedates[dates].compensatoryLeave &&
+              !isNaN(stats.attendancedates[dates].compensatoryLeave)
+            ? Number(stats.attendancedates[dates].compensatoryLeave)
             : 0
 
         stats.notMarked +=
@@ -1710,16 +1861,17 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         (Math.floor(combined / latecuttingCount) % 2) * 0.5
 
       staffAttendanceStats.push(stats)
+     
     }
     const listofHolidays = holidays.map((item) => ({
       date: item.holyDate.toISOString().split("T")[0],
       holyname: item.customTextInput
     }))
-
     return res.status(200).json({
       message: "Attendence report found",
-      data: staffAttendanceStats,
-      fulldateholiday: listofHolidays || []
+      data: { staffAttendanceStats, listofHolidays, sundayFulldate }
+      // fulldateholiday: || [],
+      // currentMonthSundays:||"abhi"
     })
   } catch (error) {
     console.log("error", error)
@@ -1769,10 +1921,19 @@ export const GetAllAttendance = async (req, res) => {
 export const Getallcompensatoryleave = async (req, res) => {
   try {
     const { userid } = req.query
-    const compensatoryleave = await CompensatoryLeave.find({ userId: userid })
-    return res
-      .status(200)
-      .json({ message: "compensatoryleaves found", data: compensatoryleave })
+    const objectId = new mongoose.Types.ObjectId(userid)
+
+    // const compensatoryleave = await CompensatoryLeave.find({ userId: userid })
+    const result = await CompensatoryLeave.aggregate([
+      { $match: { userId: objectId } },
+      { $group: { _id: null, total: { $sum: "$value" } } }
+    ])
+
+    const totalCompensatoryLeave = result[0]?.total || 0
+    return res.status(200).json({
+      message: "compensatoryleaves found",
+      data: totalCompensatoryLeave
+    })
   } catch (error) {
     console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })
@@ -2594,7 +2755,18 @@ export const RejectOnsite = async (req, res) => {
       return res.status(400).json({ message: "User ID is required" })
     }
 
-    // const leaveRequest = await LeaveRequest.findOne({ _id: selectedObjectId })
+    const matchedonsiteRequest = await Onsite.findOne({
+      _id: selectedObjectId
+    })
+    const matchedCompensatoryLeave = await CompensatoryLeave.findOne({
+      onsiteId: matchedonsiteRequest
+    }).populate({ path: "userId", select: "name" })
+    if (matchedCompensatoryLeave.leaveUsed) {
+      return res.status(409).json({
+        message: `Cannot delete this onsite entry.${matchedCompensatoryLeave?.userId?.name}  earned a leave for  this site`
+      })
+    }
+
     const deletedOnsiteRequest = await Onsite.deleteOne({
       _id: selectedObjectId
     })
@@ -2662,6 +2834,8 @@ export const RejectOnsite = async (req, res) => {
 
 export const RejectLeave = async (req, res) => {
   try {
+    const leaveCategory = req?.query?.leaveCategory
+
     const role = req?.query?.role
     const selectedId = req?.query?.selectedId
     const userId = req?.query?.userId
@@ -2679,7 +2853,9 @@ export const RejectLeave = async (req, res) => {
       return res.status(400).json({ message: "User ID is required" })
     }
 
-    // const leaveRequest = await LeaveRequest.findOne({ _id: selectedObjectId })
+    const matchedleaveRequest = await LeaveRequest.findOne({
+      _id: selectedObjectId
+    })
     const deletedLeaveRequest = await LeaveRequest.deleteOne({
       _id: selectedObjectId
     })
@@ -2687,6 +2863,31 @@ export const RejectLeave = async (req, res) => {
     if (deletedLeaveRequest.deletedCount === 0) {
       return res.status(404).json({ message: "Leave request not found" })
     } else if (deletedLeaveRequest.deletedCount > 0) {
+      if (matchedleaveRequest && leaveCategory === "compensatory Leave") {
+        let remainingToAdd =
+          matchedleaveRequest.leaveType === "Full Day" ? 1 : 0.5
+
+        const year = new Date(matchedleaveRequest.leaveDate).getFullYear()
+
+        const compensatoryLeaves = await CompensatoryLeave.find({
+          userId: matchedleaveRequest.userId,
+          year,
+          value: { $lt: 1 }
+        }).sort({ value: -1 })
+        for (const leave of compensatoryLeaves) {
+          const current = leave.value ?? 0
+          const spaceLeft = 1 - current
+
+          const addNow = Math.min(spaceLeft, remainingToAdd)
+          leave.value = current + addNow
+          leave.leaveUsed = leave.value < 1 ? true : false
+
+          await leave.save()
+
+          remainingToAdd -= addNow
+          if (remainingToAdd <= 0) break
+        }
+      }
       const query = {
         leaveDate: {
           $gte: startDate, // Greater than or equal to startDate
@@ -3095,31 +3296,135 @@ export const EditLeave = async (req, res) => {
     const { userid, assignedto } = req.query
 
     const formData = req.body
-    const { leaveDate, ...updatedFeild } = formData
+    const {
+      leaveType,
+      halfDayPeriod,
+      leaveDate,
+      leaveCategory,
+      prevCategory,
+      reason
+    } = formData
+
+    const dateObj = new Date(leaveDate)
+    const year = dateObj.getFullYear() // "2025"
+    const month = dateObj.getMonth() + 1
     if (!userid && !assignedto && !formData) {
       return res
         .status(400)
         .json({ message: "id or something is missing while updating" })
     }
-    const dateObj = new Date(leaveDate)
+
     const userobjectId = new mongoose.Types.ObjectId(userid)
     const assignedtoObjectId = new mongoose.Types.ObjectId(assignedto)
+    const existingDateLeave = await LeaveRequest.findOne({
+      leaveDate,
+      userId: userobjectId
+    })
 
-    // Extract year and month (without leading zero)
-    const year = dateObj.getFullYear() // "2025"
-    const month = dateObj.getMonth() + 1
-    const result = await LeaveRequest.findOneAndUpdate(
-      { userId: userid, leaveDate: formData.leaveDate }, // Find criteria
-      { $set: updatedFeild }, // Update only selected fields
-      { new: true } // Return updated document
-    )
-    if (result) {
-      const fakeReq = { query: { year, month } }
+    if (existingDateLeave) {
+     
 
-      // Call GetsomeAll with fake req
-      const a = await GetsomeAllsummary(fakeReq, res)
-      if (a) {
-        return res.status(200).json({ message: "leave updated", data: a })
+      // If a leave exists, update the document with the current formData
+      if (
+        prevCategory &&
+        formData.leaveCategory &&
+        prevCategory === "compensatory Leave" &&
+        prevCategory !== formData.leaveCategory
+      ) {
+       let remainingToAdd =
+          existingDateLeave.leaveType === "Full Day" ? 1 : 0.5
+        const year = new Date(existingDateLeave.leaveDate).getFullYear()
+
+        const compensatoryLeaves = await CompensatoryLeave.find({
+          userId: existingDateLeave.userId,
+          year,
+          value: { $lt: 1 }
+        }).sort({ value: -1 })
+        for (const leave of compensatoryLeaves) {
+          const current = leave.value ?? 0
+          const spaceLeft = 1 - current
+
+          const addNow = Math.min(spaceLeft, remainingToAdd)
+          leave.value = current + addNow
+
+          await leave.save()
+
+          remainingToAdd -= addNow
+          if (remainingToAdd <= 0) break
+        }
+      } else if (
+        prevCategory &&
+        formData.leaveCategory &&
+        prevCategory === "compensatory Leave" &&
+        prevCategory === formData.leaveCategory
+      ) {
+        const existingValue =
+          existingDateLeave.leaveType === "Full Day" ? 1 : 0.5
+        const currentValue = leaveType === "Full Day" ? 1 : 0.5
+       
+        if (existingValue > currentValue) {
+          //change from full day to half day add value  on compensatory leave
+          const year = new Date(existingDateLeave.leaveDate).getFullYear()
+          let remainingToAdd = currentValue
+          const compensatoryLeaves = await CompensatoryLeave.find({
+            userId: existingDateLeave.userId,
+            year,
+            value: { $lt: 1 }
+          }).sort({ value: -1 })
+          for (const leave of compensatoryLeaves) {
+            const current = leave.value ?? 0
+            const spaceLeft = 1 - current
+
+            const addNow = Math.min(spaceLeft, remainingToAdd)
+            leave.value = current + addNow
+
+            await leave.save()
+
+            remainingToAdd -= addNow
+            if (remainingToAdd <= 0) break
+          }
+        } else if (existingValue < currentValue) {
+          //change from half day to  full day substract value on compensatory leave
+
+          const leaveValue = existingValue
+          const compensatoryLeave = await CompensatoryLeave.find({
+            userId: existingDateLeave.userId,
+            value: { $gt: 0 },
+            year
+          }).sort({ createdAt: 1 })
+          let remaining = leaveValue
+          for (const comp of compensatoryLeave) {
+            if (remaining <= 0) break
+            const deduct = Math.min(comp.value, remaining)
+            comp.value -= deduct
+            remaining -= deduct
+            await comp.save()
+          }
+        }
+      }
+
+      const updatedLeave = await LeaveRequest.findByIdAndUpdate(
+        existingDateLeave._id, // Use the existing leave's ID
+        {
+          leaveDate, // Update fields with formData
+          leaveType,
+          ...(leaveType === "Half Day" && { halfDayPeriod }),
+          leaveCategory,
+          reason,
+
+          userId: userobjectId,
+          assignedto: assignedtoObjectId
+        },
+        { new: true } // Return the updated document
+      )
+      if (updatedLeave) {
+        const fakeReq = { query: { year, month } }
+
+        // Call GetsomeAll with fake req
+        const a = await GetsomeAllsummary(fakeReq, res)
+        if (a) {
+          return res.status(200).json({ message: "leave updated", data: a })
+        }
       }
     } else {
       const leave = new LeaveRequest({
@@ -3149,6 +3454,8 @@ export const EditLeave = async (req, res) => {
         }
       }
     }
+
+   
   } catch (error) {
     console.log("error", error.message)
     return res.status(500).json({ message: "Internal server error" })
@@ -3561,7 +3868,7 @@ export const GetsomeAllsummary = async (
             arr.push(day)
 
             stats.attendancedates[dayTime].notMarked = 1
-           
+
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.attendancedates[dayTime].present = 1
               stats.attendancedates[dayTime].notMarked = ""
@@ -4154,7 +4461,6 @@ export const GetsomeAllsummary = async (
 
         return `${prevYear}-${prevMonth}-${prevDay}`
       }
-
       ;(function calculateAbsences(sundays, attendances, onsites) {
         const isPresent = (date) => {
           for (const dates in attendances.attendancedates) {
@@ -4164,17 +4470,19 @@ export const GetsomeAllsummary = async (
               if (
                 attendance.otherLeave !== "" ||
                 attendance.privileageLeave !== "" ||
-                attendance.casualLeave !== ""
+                attendance.casualLeave !== "" ||
+                attendance.compensatoryLeave !== "" ||
+                attendance.notMarked !== ""
               ) {
                 return {
-                  status: true,
+                  status: false,
                   present: attendance.present,
                   otherLeave: attendance.otherLeave,
                   notMarked: attendance.notMarked
                 }
               } else {
                 return {
-                  status: false,
+                  status: true,
                   present: attendance.present,
                   notMarked: attendance.notMarked
                 }
@@ -4187,19 +4495,23 @@ export const GetsomeAllsummary = async (
           const previousDay = getPreviousDate(sunday)
           const nextDay = getNextDate(sunday)
 
-          const prevPresent = isPresent(previousDay)
-          const nextPresent = isPresent(nextDay)
+          const prevFullPresent = isPresent(previousDay)
+          const nextFullPresent = isPresent(nextDay)
 
-          if (prevPresent?.status && nextPresent?.status) {
-            stats.attendancedates[sunday].otherLeave = 1
-            stats.attendancedates[sunday].notMarked = ""
-          } else if (
-            (prevPresent?.notMarked < 1 || prevPresent?.notMarked === "") &&
-            (nextPresent?.notMarked < 1 || nextPresent?.notMarked === "")
-          ) {
+          if (prevFullPresent?.status || nextFullPresent?.status) {
             stats.attendancedates[sunday].present = 1
+            // stats.attendancedates[nextDay].otherLeave = 1
             stats.attendancedates[sunday].notMarked = ""
           }
+          //else if (
+          //   (prevFullPresent?.notMarked < 1 ||
+          //     prevFullPresent?.notMarked === "") &&
+          //   (nextFullPresent?.notMarked < 1 ||
+          //     nextFullPresent?.notMarked === "")
+          // ) {
+          //   stats.attendancedates[sunday].present = 1
+          //   stats.attendancedates[sunday].notMarked = ""
+          // }
         })
       })(c, stats, onsites)
 
@@ -4276,6 +4588,8 @@ export const GetleavemasterLeavecount = async (req, res) => {
 export const DeleteEvent = async (req, res) => {
   try {
     const payload = req.body
+
+
     const { userid, type } = req.query // Extract userid from query parameters
     if (!userid) {
       return res.status(400).json({ error: "User ID is required" })
@@ -4291,7 +4605,9 @@ export const DeleteEvent = async (req, res) => {
       })
 
       if (!leaveRequest) {
-        return res.status(404).json({ message: "Leave request not found" })
+        return res
+          .status(404)
+          .json({ message: "Leave request not found in this Data" })
       }
 
       // Prevent deletion if approved
@@ -4303,6 +4619,7 @@ export const DeleteEvent = async (req, res) => {
           .status(400)
           .json({ message: "Cannot delete an approved leave request" })
       }
+
       const isDeleteLeave = await LeaveRequest.deleteOne({
         userId: objectId,
         leaveType: payload.leaveType,
@@ -4310,16 +4627,49 @@ export const DeleteEvent = async (req, res) => {
         leaveDate: payload.leaveDate
       })
       if (isDeleteLeave.deletedCount > 0) {
+        ////////
+        if (
+          payload.prevCategory &&
+          payload.leaveCategory &&
+          payload.prevCategory === "compensatory Leave" &&
+          payload.prevCategory === payload.leaveCategory
+        ) {
+          let remainingToAdd = leaveRequest.leaveType === "Full Day" ? 1 : 0.5
+
+          const year = new Date(leaveRequest.leaveDate).getFullYear()
+
+          const compensatoryLeaves = await CompensatoryLeave.find({
+            userId: leaveRequest.userId,
+            year,
+            value: { $lt: 1 }
+          }).sort({ value: -1 })
+          for (const leave of compensatoryLeaves) {
+            const current = leave.value ?? 0
+            const spaceLeft = 1 - current
+
+            const addNow = Math.min(spaceLeft, remainingToAdd)
+            leave.value = current + addNow
+            leave.leaveUsed = leave.value < 1 ? true : false
+
+            await leave.save()
+
+            remainingToAdd -= addNow
+            if (remainingToAdd <= 0) break
+          }
+        }
+        // const deleteCompensatoryd
         const leaves = await LeaveRequest.find({ userId: objectId })
         // Check if no records found
         if (leaves.length === 0) {
           return res
-            .status(404)
-            .json({ message: "No leave records found for this user", data: [] })
+            .status(201)
+            .json({ message: "Leave Deleted Successfully", data: [] })
         }
 
         // Send the leave records as a JSON response
-        res.status(200).json({ message: "leaves found", data: leaves })
+        res
+          .status(200)
+          .json({ message: "Leaves Deleted Successfully", data: leaves })
       }
     } else if (type === "onsite") {
       const onsiteRequest = await Onsite.findOne({
@@ -4342,6 +4692,22 @@ export const DeleteEvent = async (req, res) => {
           .status(400)
           .json({ message: "Cannot delete an approved onsite request" })
       }
+      const matchedOnsite = await Onsite.findOne({
+        userId: objectId,
+        onsiteType: payload.onsiteType,
+        description: payload.description,
+        onsiteDate: payload.onsiteDate
+      })
+      if (matchedOnsite) {
+        const matchedCompensatoryLeave = await CompensatoryLeave.findOne({
+          onsiteId: matchedOnsite._id
+        })
+        if (matchedCompensatoryLeave.leaveUsed) {
+          return res.status(409).json({
+            message: `Cannot delete this onsite entry. You earned a leave for this site`
+          })
+        }
+      }
       const isDeleteOnsite = await Onsite.deleteOne({
         userId: objectId,
         onsiteType: payload.onsiteType,
@@ -4349,17 +4715,27 @@ export const DeleteEvent = async (req, res) => {
         onsiteDate: payload.onsiteDate
       })
       if (isDeleteOnsite.deletedCount > 0) {
+        const findifcompensatoryleave = await CompensatoryLeave.findOne({
+          onsiteId: onsiteRequest._id
+        })
+        if (findifcompensatoryleave) {
+          await CompensatoryLeave.deleteOne({
+            _id: findifcompensatoryleave._id
+          })
+        }
         const onsites = await Onsite.find({ userId: objectId })
         // Check if no records found
         if (onsites.length === 0) {
-          return res.status(404).json({
-            message: "No onsite records found for this user",
+          return res.status(201).json({
+            message: "Onsite Deleted Successfully",
             data: []
           })
         }
 
         // Send the leave records as a JSON response
-        res.status(200).json({ message: "onsites found", data: onsites })
+        res
+          .status(200)
+          .json({ message: "Onsite Deleted Successfully", data: onsites })
       }
     }
   } catch (error) {

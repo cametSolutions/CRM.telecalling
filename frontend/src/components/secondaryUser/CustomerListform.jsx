@@ -25,6 +25,7 @@ const CustomerListform = () => {
 
   const [searchQuery, setSearchQuery] = useState(true)
   const [loading, setLoading] = useState(true)
+  const [tableHeight, setTableHeight] = useState("auto")
   const [displayedCustomers, setDisplayedCustomers] = useState([]) // Initially displayed customers
   const [loadMoreCount, setLoadMoreCount] = useState(10)
   const [allCustomers, setAllCustomers] = useState([]) // All customers list
@@ -34,6 +35,7 @@ const CustomerListform = () => {
   const [user, setUser] = useState(null)
   const [branch, setBranches] = useState([])
   const [userRole, setUserRole] = useState(null)
+  const headerRef = useRef(null)
   const {
     data: customerData,
 
@@ -45,6 +47,12 @@ const CustomerListform = () => {
         branch
       )}`
   )
+  useEffect(() => {
+    if (headerRef.current) {
+      const headerHeight = headerRef.current.getBoundingClientRect().height
+      setTableHeight(`calc(60vh - ${headerHeight}px)`) // Subtract header height from full viewport height
+    }
+  }, [])
   useEffect(() => {
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
@@ -101,14 +109,14 @@ const CustomerListform = () => {
       : address
   }
   return (
-    <div className=" mx-auto  overflow-y-hidden  ">
+    <div className=" m-2 overflow-y-hidden ">
       {/* {searchAfterData.length == 0 && (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
           color="#4A90E2" // Change color as needed
         />
       )} */}
-      <div className="w-auto shadow-lg rounded p-8 ">
+      <div className="w-auto shadow-lg rounded p-8  h-full">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-4">
           <h3 className="text-2xl text-black font-bold">Customer List</h3>
           {/* Search Bar for large screens */}
@@ -165,8 +173,8 @@ const CustomerListform = () => {
         </div>
 
         <div
-          // ref={tableContainerRef}
-          className="overflow-y-auto max-h-96" // Fixed height for scrolling
+          // style={{ height: tableHeight }} // Dynamically set table height
+          className="overflow-y-auto max-h-96 rounded-lg" // Fixed height for scrolling
         >
           <table className="min-w-full bg-white ">
             <thead className="bg-gray-200 sticky top-0 z-40">
@@ -208,7 +216,7 @@ const CustomerListform = () => {
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-200 border border-gray-200">
               {searchAfterData?.length > 0 ? (
                 searchAfterData?.map((customer, index) =>
                   customer.selected.map((item, itemIndex) => (

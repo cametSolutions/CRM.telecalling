@@ -837,7 +837,7 @@ const UserAdd = ({
             <div>
               <label className="block mb-1 font-semibold">Verified</label>
               <select
-                {...register("verified", { required: true })}
+                {...register("isVerified", { required: true })}
                 // value={User && User.verified}
                 className="w-full mt-1 block border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
               >

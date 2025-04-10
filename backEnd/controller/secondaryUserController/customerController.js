@@ -1967,46 +1967,46 @@ export const loggeduserCallsCurrentDateCalls = async (req, res) => {
     const { loggedUserId } = req.query
     const loggeduserObjectId = new mongoose.Types.ObjectId(loggedUserId)
     const today = new Date()
+
     const startOfDayStr = new Date(today.setHours(0, 0, 0, 0)).toISOString()
     const endOfDayStr = new Date(today.setHours(23, 59, 59, 999)).toISOString()
     // Build the initial match condition that always includes the user ID
 
     const pipeline = [
+      // Match customers who have calls attended by the logged user today
       {
-        $unwind: {
-          path: "$callregistration",
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $addFields: {
-          "callregistration.formdata.attendedBy": {
-            $cond: {
-              if: { $isArray: "$callregistration.formdata.attendedBy" },
-              then: {
-                $filter: {
-                  input: "$callregistration.formdata.attendedBy",
-                  as: "attended",
-                  cond: {
-                    $and: [
-                      { $eq: ["$$attended.callerId", loggeduserObjectId] },
-                      { $gte: ["$$attended.calldate", startOfDayStr] },
-                      { $lte: ["$$attended.calldate", endOfDayStr] }
-                    ]
-                  }
+        $match: {
+          callregistration: {
+            $elemMatch: {
+              "formdata.attendedBy": {
+                $elemMatch: {
+                  callerId: loggeduserObjectId,
+                  calldate: { $gte: startOfDayStr, $lte: endOfDayStr }
                 }
-              },
-              else: []
+              }
             }
           }
         }
       },
+      // Unwind the callregistration array to process each call
       {
-        $match: {
-          "callregistration.formdata.attendedBy": { $ne: [] }
+        $unwind: {
+          path: "$callregistration",
+          preserveNullAndEmptyArrays: false
         }
       },
-      // Lookup product details and fetch only productName
+      // Filter to keep only calls that were attended by the logged user today
+      {
+        $match: {
+          "callregistration.formdata.attendedBy": {
+            $elemMatch: {
+              callerId: loggeduserObjectId,
+              calldate: { $gte: startOfDayStr, $lte: endOfDayStr }
+            }
+          }
+        }
+      },
+      // Lookup product details
       {
         $lookup: {
           from: "products",
@@ -2026,85 +2026,244 @@ export const loggeduserCallsCurrentDateCalls = async (req, res) => {
           }
         }
       },
-      // Unwind attendedBy before lookup
-      {
-        $unwind: {
-          path: "$callregistration.formdata.attendedBy",
-          preserveNullAndEmptyArrays: true
-        }
-      },
+      // Lookup completedBy staff details
       {
         $lookup: {
           from: "staffs",
-          localField: "callregistration.formdata.attendedBy.callerId",
+          localField: "callregistration.formdata.completedBy.callerId",
           foreignField: "_id",
-          as: "callregistration.attendedByDetails"
+          as: "completedByDetails"
         }
       },
       {
         $addFields: {
-          "callregistration.attendedByDetails": {
+          "callregistration.formdata.completedBy.name": {
+            $arrayElemAt: ["$completedByDetails.name", 0]
+          }
+        }
+      },
+      // Lookup attendedBy staff details
+      {
+        $lookup: {
+          from: "staffs",
+          let: { attendedByArray: "$callregistration.formdata.attendedBy" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $in: ["$_id", "$$attendedByArray.callerId"]
+                }
+              }
+            },
+            { $project: { _id: 1, name: 1 } }
+          ],
+          as: "attendedByStaff"
+        }
+      },
+      // Add staff names to attendedBy entries
+      {
+        $addFields: {
+          "callregistration.formdata.attendedBy": {
             $map: {
-              input: "$callregistration.attendedByDetails",
+              input: "$callregistration.formdata.attendedBy",
               as: "attended",
-              in: { name: "$$attended.name" }
+              in: {
+                $mergeObjects: [
+                  "$$attended",
+                  {
+                    name: {
+                      $let: {
+                        vars: {
+                          staff: {
+                            $arrayElemAt: [
+                              {
+                                $filter: {
+                                  input: "$attendedByStaff",
+                                  as: "staff",
+                                  cond: {
+                                    $eq: ["$$staff._id", "$$attended.callerId"]
+                                  }
+                                }
+                              },
+                              0
+                            ]
+                          }
+                        },
+                        in: "$$staff.name"
+                      }
+                    }
+                  }
+                ]
+              }
             }
           }
         }
       },
+      // Group by customer ID to consolidate calls
       {
         $group: {
           _id: "$_id",
           customerid: { $first: "$customerid" },
           customerName: { $first: "$customerName" },
-          attendedCalls: { $push: "$callregistration" },
-          createdAt: { $first: "$createdAt" },
-          updatedAt: { $first: "$updatedAt" }
-        }
-      },
-      {
-        $unwind: {
-          path: "$attendedCalls",
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      // Lookup completedBy details per call
-      {
-        $unwind: {
-          path: "$attendedCalls.formdata.completedBy",
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $lookup: {
-          from: "staffs",
-          localField: "attendedCalls.formdata.completedBy.callerId",
-          foreignField: "_id",
-          as: "attendedCalls.completedByDetails"
-        }
-      },
-      {
-        $addFields: {
-          "attendedCalls.completedByDetails": {
-            $map: {
-              input: "$attendedCalls.completedByDetails",
-              as: "completed",
-              in: { name: "$$completed.name" }
-            }
-          }
-        }
-      },
-      {
-        $group: {
-          _id: "$_id",
-          customerid: { $first: "$customerid" },
-          customerName: { $first: "$customerName" },
-          attendedCalls: { $push: "$attendedCalls" },
+          callregistration: { $push: "$callregistration" },
           createdAt: { $first: "$createdAt" },
           updatedAt: { $first: "$updatedAt" }
         }
       }
     ]
+    // const pipeline = [
+    //   // First unwind callregistration
+    //   {
+    //     $unwind: {
+    //       path: "$callregistration",
+    //       preserveNullAndEmptyArrays: true
+    //     }
+    //   },
+    //   // Filter by date at the document level before unwinding attendedBy
+    //   {
+    //     $match: {
+    //       "callregistration.formdata.attendedBy": {
+    //         $elemMatch: {
+    //           callerId: loggeduserObjectId,
+    //           calldate: { $gte: startOfDayStr, $lte: endOfDayStr }
+    //         }
+    //       }
+    //     }
+    //   },
+    //   // Look up product details
+    //   {
+    //     $lookup: {
+    //       from: "products",
+    //       localField: "callregistration.product",
+    //       foreignField: "_id",
+    //       as: "callregistration.productDetails"
+    //     }
+    //   },
+    //   {
+    //     $addFields: {
+    //       "callregistration.productDetails": {
+    //         $map: {
+    //           input: "$callregistration.productDetails",
+    //           as: "product",
+    //           in: { productName: "$$product.productName" }
+    //         }
+    //       },
+    //       // Filter the attendedBy array to only include entries for today by the logged user
+    //       "callregistration.formdata.attendedBy": {
+    //         $filter: {
+    //           input: "$callregistration.formdata.attendedBy",
+    //           as: "attended",
+    //           cond: {
+    //             $and: [
+    //               { $eq: ["$$attended.callerId", loggeduserObjectId] },
+    //               { $gte: ["$$attended.calldate", startOfDayStr] },
+    //               { $lte: ["$$attended.calldate", endOfDayStr] }
+    //             ]
+    //           }
+    //         }
+    //       }
+    //     }
+    //   },
+    //   // Look up completed by staff details
+    //   {
+    //     $lookup: {
+    //       from: "staffs",
+    //       localField: "callregistration.formdata.completedBy.callerId",
+    //       foreignField: "_id",
+    //       as: "completedByDetails"
+    //     }
+    //   },
+    //   {
+    //     $addFields: {
+    //       "callregistration.formdata.completedBy.name": {
+    //         $arrayElemAt: ["$completedByDetails.name", 0]
+    //       }
+    //     }
+    //   },
+    //   // Look up attendedBy staff details (without unwinding)
+    //   {
+    //     $lookup: {
+    //       from: "staffs",
+    //       let: { attendedByArray: "$callregistration.formdata.attendedBy" },
+    //       pipeline: [
+    //         {
+    //           $match: {
+    //             $expr: {
+    //               $in: ["$_id", "$$attendedByArray.callerId"]
+    //             }
+    //           }
+    //         },
+    //         { $project: { _id: 1, name: 1 } }
+    //       ],
+    //       as: "attendedByStaff"
+    //     }
+    //   },
+    //   // Add staff names to the attendedBy entries
+    //   {
+    //     $addFields: {
+    //       "callregistration.formdata.attendedBy": {
+    //         $map: {
+    //           input: "$callregistration.formdata.attendedBy",
+    //           as: "attended",
+    //           in: {
+    //             $mergeObjects: [
+    //               "$$attended",
+    //               {
+    //                 name: {
+    //                   $let: {
+    //                     vars: {
+    //                       staff: {
+    //                         $arrayElemAt: [
+    //                           {
+    //                             $filter: {
+    //                               input: "$attendedByStaff",
+    //                               as: "staff",
+    //                               cond: {
+    //                                 $eq: ["$$staff._id", "$$attended.callerId"]
+    //                               }
+    //                             }
+    //                           },
+    //                           0
+    //                         ]
+    //                       }
+    //                     },
+    //                     in: "$$staff.name"
+    //                   }
+    //                 }
+    //               }
+    //             ]
+    //           }
+    //         }
+    //       }
+    //     }
+    //   },
+    //   // Group by call ID to prevent duplicates
+    //   {
+    //     $group: {
+    //       _id: {
+    //         callId: "$callregistration._id",
+    //         customerId: "$_id"
+    //       },
+    //       customerid: { $first: "$customerid" },
+    //       customerName: { $first: "$customerName" },
+    //       callData: { $first: "$callregistration" },
+    //       createdAt: { $first: "$createdAt" },
+    //       updatedAt: { $first: "$updatedAt" }
+    //     }
+    //   },
+    //   // Final project to shape the output
+    //   {
+    //     $project: {
+    //       _id: "$_id.customerId",
+    //       callId: "$_id.callId",
+    //       customerid: 1,
+    //       customerName: 1,
+    //       callData: 1,
+    //       createdAt: 1,
+    //       updatedAt: 1
+    //     }
+    //   }
+    // ]
 
     const currentDateloggedusercalls = await CallRegistration.aggregate(
       pipeline
