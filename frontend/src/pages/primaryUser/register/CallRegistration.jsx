@@ -1279,7 +1279,7 @@ Problem:    \t${selectedText}
                     report={callreport}
                     onClose={() => setIsModalOpen(false)}
                     handleWhatsapp={sendWhatapp}
-                    message="This customer already has a same call note with pending status!"
+                    message="This customer already has a same call note with pending status please cleared that !"
                   />
                 </div>
 
