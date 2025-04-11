@@ -364,8 +364,7 @@ const Modal = ({
       setErrors((prev) => ({ ...prev, [name]: "" })) // ✅ Clear error
     }
   }
-  console.log(selectedLeave)
-  console.log(isApplying)
+  
   const Apply = async () => {
     console.log(type)
     if (type === "Leave") {
