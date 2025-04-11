@@ -526,15 +526,14 @@ export const LeaveApply = async (req, res) => {
           if (remainingToAdd <= 0) break
         }
       } else if (
-        prevCategory &&
-        formData.leaveCategory &&
-        prevCategory === "compensatory Leave" &&
-        prevCategory === formData.leaveCategory
+        (prevCategory && formData.leaveCategory) ||
+        (prevCategory === "compensatory Leave" &&
+          prevCategory === formData.leaveCategory)
       ) {
         const existingValue =
           existingDateLeave.leaveType === "Full Day" ? 1 : 0.5
         const currentValue = leaveType === "Full Day" ? 1 : 0.5
-      
+
         if (existingValue > currentValue) {
           //change from full day to half day add value  on compensatory leave
           const year = new Date(existingDateLeave.leaveDate).getFullYear()
@@ -574,7 +573,30 @@ export const LeaveApply = async (req, res) => {
             await comp.save()
           }
         }
+      } else if (
+        prevCategory &&
+        formData.leaveCategory &&
+        formData.leaveCategory === "compensatory Leave" &&
+        formData.leaveCategory !== prevCategory
+      ) {
+        const year = new Date(existingDateLeave.leaveDate).getFullYear()
+        const leaveValue = leaveType === "Full Day" ? 1 : 0.5
+        const compensatoryLeave = await CompensatoryLeave.find({
+          userId: selectedid,
+          value: { $gt: 0 },
+          year
+        }).sort({ createdAt: 1 })
+        let remaining = leaveValue
+        for (const comp of compensatoryLeave) {
+          if (remaining <= 0) break
+          const deduct = Math.min(comp.value, remaining)
+          comp.value -= deduct
+          remaining -= deduct
+          comp.leaveUsed = true
+          await comp.save()
+        }
       }
+
       const updatedLeave = await LeaveRequest.findByIdAndUpdate(
         existingDateLeave._id, // Use the existing leave's ID
         {
@@ -764,11 +786,10 @@ export const OnsiteApply = async (req, res) => {
           year
         }).sort({ createdAt: 1 })
         if (compensatoryLeave.length === 0) {
-          return res
-            .status(409)
-            .json({
-              message:"You can't edit this — a full-day compensatory leave has already been taken for this site"
-            })
+          return res.status(409).json({
+            message:
+              "You can't edit this — a full-day compensatory leave has already been taken for this site"
+          })
         }
         let ValueReduced = 0.5
         for (const comp of compensatoryLeave) {
@@ -1861,7 +1882,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         (Math.floor(combined / latecuttingCount) % 2) * 0.5
 
       staffAttendanceStats.push(stats)
-     
     }
     const listofHolidays = holidays.map((item) => ({
       date: item.holyDate.toISOString().split("T")[0],
@@ -3322,8 +3342,6 @@ export const EditLeave = async (req, res) => {
     })
 
     if (existingDateLeave) {
-     
-
       // If a leave exists, update the document with the current formData
       if (
         prevCategory &&
@@ -3331,7 +3349,7 @@ export const EditLeave = async (req, res) => {
         prevCategory === "compensatory Leave" &&
         prevCategory !== formData.leaveCategory
       ) {
-       let remainingToAdd =
+        let remainingToAdd =
           existingDateLeave.leaveType === "Full Day" ? 1 : 0.5
         const year = new Date(existingDateLeave.leaveDate).getFullYear()
 
@@ -3361,7 +3379,7 @@ export const EditLeave = async (req, res) => {
         const existingValue =
           existingDateLeave.leaveType === "Full Day" ? 1 : 0.5
         const currentValue = leaveType === "Full Day" ? 1 : 0.5
-       
+
         if (existingValue > currentValue) {
           //change from full day to half day add value  on compensatory leave
           const year = new Date(existingDateLeave.leaveDate).getFullYear()
@@ -3400,6 +3418,28 @@ export const EditLeave = async (req, res) => {
             remaining -= deduct
             await comp.save()
           }
+        }
+      }else if (
+        prevCategory &&
+        formData.leaveCategory &&
+        formData.leaveCategory === "compensatory Leave" &&
+        formData.leaveCategory !== prevCategory
+      ) {
+        const year = new Date(existingDateLeave.leaveDate).getFullYear()
+        const leaveValue = leaveType === "Full Day" ? 1 : 0.5
+        const compensatoryLeave = await CompensatoryLeave.find({
+          userId: selectedid,
+          value: { $gt: 0 },
+          year
+        }).sort({ createdAt: 1 })
+        let remaining = leaveValue
+        for (const comp of compensatoryLeave) {
+          if (remaining <= 0) break
+          const deduct = Math.min(comp.value, remaining)
+          comp.value -= deduct
+          remaining -= deduct
+          comp.leaveUsed = true
+          await comp.save()
         }
       }
 
@@ -3454,8 +3494,6 @@ export const EditLeave = async (req, res) => {
         }
       }
     }
-
-   
   } catch (error) {
     console.log("error", error.message)
     return res.status(500).json({ message: "Internal server error" })
@@ -4588,7 +4626,6 @@ export const GetleavemasterLeavecount = async (req, res) => {
 export const DeleteEvent = async (req, res) => {
   try {
     const payload = req.body
-
 
     const { userid, type } = req.query // Extract userid from query parameters
     if (!userid) {
