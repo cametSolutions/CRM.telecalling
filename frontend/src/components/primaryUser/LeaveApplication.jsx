@@ -671,18 +671,17 @@ function LeaveApplication() {
         halfDayPeriod: "Morning"
       }))
     } else {
-      let halfDayType
-      if (selectedTab === "Onsite") {
-        halfDayType = "onsiteType"
-      } else {
-        console.log("h")
-        halfDayType = "leaveType"
-      }
+     
       if (message) setMessage("")
       setFormData((prev) => ({
         ...prev,
         [name]: value,
-        halfDayPeriod: formData.halfDayType === "Half Day" ? "Morning" : ""
+        halfDayPeriod:
+          selectedTab === "Onsite"
+            ? formData.onsiteType
+            : formData.leaveType === "Half Day"
+            ? "Morning"
+            : ""
       }))
     }
 
