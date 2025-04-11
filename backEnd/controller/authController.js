@@ -497,6 +497,15 @@ export const LeaveApply = async (req, res) => {
     })
 
     if (existingDateLeave) {
+      console.log("prev", prevCategory)
+      console.log("curerntcategory", formData.leaveCategory)
+      // console.log(
+      //   "check",
+      //   prevCategory &&
+      //     formData.leaveCategory &&
+      //     formData.leaveCategory === "compensatory Leave" &&
+      //     formData.leaveCategory !== prevCategory
+      // )
       // If a leave exists, update the document with the current formData
       if (
         prevCategory &&
@@ -504,6 +513,7 @@ export const LeaveApply = async (req, res) => {
         prevCategory === "compensatory Leave" &&
         prevCategory !== formData.leaveCategory
       ) {
+        console.log("here")
         let remainingToAdd =
           existingDateLeave.leaveType === "Full Day" ? 1 : 0.5
         const year = new Date(existingDateLeave.leaveDate).getFullYear()
@@ -526,10 +536,12 @@ export const LeaveApply = async (req, res) => {
           if (remainingToAdd <= 0) break
         }
       } else if (
-        (prevCategory && formData.leaveCategory) ||
-        (prevCategory === "compensatory Leave" &&
-          prevCategory === formData.leaveCategory)
+        prevCategory &&
+        formData.leaveCategory &&
+        prevCategory === "compensatory Leave" &&
+        prevCategory === formData.leaveCategory
       ) {
+        console.log("dine")
         const existingValue =
           existingDateLeave.leaveType === "Full Day" ? 1 : 0.5
         const currentValue = leaveType === "Full Day" ? 1 : 0.5
@@ -579,6 +591,7 @@ export const LeaveApply = async (req, res) => {
         formData.leaveCategory === "compensatory Leave" &&
         formData.leaveCategory !== prevCategory
       ) {
+        console.log("yyyyy")
         const year = new Date(existingDateLeave.leaveDate).getFullYear()
         const leaveValue = leaveType === "Full Day" ? 1 : 0.5
         const compensatoryLeave = await CompensatoryLeave.find({
@@ -587,6 +600,7 @@ export const LeaveApply = async (req, res) => {
           year
         }).sort({ createdAt: 1 })
         let remaining = leaveValue
+        console.log("value", leaveValue)
         for (const comp of compensatoryLeave) {
           if (remaining <= 0) break
           const deduct = Math.min(comp.value, remaining)
@@ -3419,7 +3433,7 @@ export const EditLeave = async (req, res) => {
             await comp.save()
           }
         }
-      }else if (
+      } else if (
         prevCategory &&
         formData.leaveCategory &&
         formData.leaveCategory === "compensatory Leave" &&
