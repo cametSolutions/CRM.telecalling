@@ -671,7 +671,6 @@ function LeaveApplication() {
         halfDayPeriod: "Morning"
       }))
     } else {
-     
       if (message) setMessage("")
       setFormData((prev) => ({
         ...prev,
@@ -886,7 +885,6 @@ function LeaveApplication() {
       console.log("error:", error.message)
     }
   }
-
   const selectedTabContent = (value) => {
     let existingEvent
     switch (true) {
