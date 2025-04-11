@@ -19,7 +19,6 @@ const Modal = ({
 
   handleApply
 }) => {
-
   const [leaveOption, setLeaveOption] = useState({
     leaveType: formData.leaveType || "Full Day"
   })
@@ -73,7 +72,7 @@ const Modal = ({
   )
   const { data: compensatoryleaves, refreshHook: refreshHookCompensatory } =
     UseFetch(staffId && `/auth/getallcompensatoryleave?userid=${staffId}`)
- 
+
   useEffect(() => {
     if (leaves && leaves.length > 0) {
       setallLeaves(leaves)
@@ -213,7 +212,6 @@ const Modal = ({
       setBalancecasualLeaveCount(Math.max(balancecasualcount, 0))
       setBalancecompensatoryLeaveCount(compensatoryleaves)
 
-      
       setLeaveBalance({
         ...leaveBalance,
         casual: Math.max(balancecasualcount, 0),
@@ -224,7 +222,7 @@ const Modal = ({
     } else if (
       (!allleaves && leavemasterleavecount) ||
       (allleaves && allleaves.length === 0 && leavemasterleavecount) ||
-      compensatoryleaves >=0
+      compensatoryleaves >= 0
     ) {
       const currentDate = new Date()
       const currentYear = currentDate.getFullYear()
@@ -346,6 +344,7 @@ const Modal = ({
       return
     }
     if (value === "Half Day") {
+      console.log(name)
       setselectedLeave((prev) => ({
         ...prev,
         [name]: value,
@@ -357,7 +356,7 @@ const Modal = ({
       setselectedLeave((prev) => ({
         ...prev,
         [name]: value,
-        halfDayPeriod: ""
+        halfDayPeriod: selectedLeave.leaveType === "Half Day" ? "Morning" : ""
       }))
     }
 
@@ -365,7 +364,10 @@ const Modal = ({
       setErrors((prev) => ({ ...prev, [name]: "" })) // ✅ Clear error
     }
   }
+  console.log(selectedLeave)
+  console.log(isApplying)
   const Apply = async () => {
+    console.log(type)
     if (type === "Leave") {
       // Validation
       let newErrors = {}
@@ -381,6 +383,7 @@ const Modal = ({
         newErrors.leaveCategory = "Leave Type is required"
       if (!selectedLeave.reason) newErrors.reason = "Reason is required"
       if (Object.keys(newErrors).length > 0) {
+        console.log(newErrors)
         newErrors
         return
       }
@@ -397,7 +400,7 @@ const Modal = ({
       handleApply(staffId, selectedOnsite, setIsApplying, type)
     }
   }
- 
+
   return (
     isOpen &&
     leaveBalance && (
