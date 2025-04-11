@@ -86,7 +86,7 @@ function LeaveApplication() {
       setcurrentMonthData(MonthData[currentMonth])
     }
   }, [currentMonth, MonthData])
-  
+
   useEffect(() => {
     const year = currentDate.getFullYear()
     const month = String(currentDate.getMonth() + 1).padStart(2, "0") // Convert to "01-12" format
@@ -197,7 +197,6 @@ function LeaveApplication() {
           ownedcasualCount = 0
           ownedprivilegeCount = 0 // Not eligible yet
         }
-       
       } else {
         ownedcasualCount = 0
         // If privilege starts in a future year, no leaves yet
@@ -247,7 +246,7 @@ function LeaveApplication() {
 
         return count
       }, 0)
-     
+
       const balancecasualcount = ownedcasualCount - usedCasualCount
       const balanceprivilege = ownedprivilegeCount - takenPrivilegeCount
 
@@ -629,11 +628,11 @@ function LeaveApplication() {
 
   const handleChange = (e) => handleInputChange(e)
   const handleDataChange = (e) => {
+    console.log(selectedTab)
     const { name, value } = e.target
     // Access current values for leave type & category
     const selectedCategory =
       name === "leaveCategory" ? value : formData.leaveCategory
- 
 
     // Define leave balances (you may already have these as props or state)
     const balances = {
@@ -646,7 +645,6 @@ function LeaveApplication() {
 
     // Get selected balance
     const selectedBalance = balances[selectedCategory] ?? 0
-   
 
     // Check if switching to Full Day requires >= 1 leave
     if (
@@ -673,10 +671,18 @@ function LeaveApplication() {
         halfDayPeriod: "Morning"
       }))
     } else {
+      console.log(selectedTab)
+      let halfDayType
+      if (selectedTab === "Onsite'") {
+        halfDayType = onsiteType
+      } else {
+        halfDayType = leaveType
+      }
       if (message) setMessage("")
       setFormData((prev) => ({
         ...prev,
-        [name]: value
+        [name]: value,
+        halfDayPeriod: formData.halfDayType === "Half Day" ? "Morning" : ""
       }))
     }
 
@@ -704,8 +710,6 @@ function LeaveApplication() {
     try {
       setLoader(true)
       if (tab === "Leave" || tab === "New Leave") {
-       
-
         // Validation
         let newErrors = {}
         if (!formData.leaveType) newErrors.leaveType = "Shift is required"
@@ -833,8 +837,6 @@ function LeaveApplication() {
             "This onsite is already approved. Do not make any changes."
           )
         } else {
-         
-
           // const response = await api.post(
           //   `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
           //   { formData, tableRows }
@@ -873,51 +875,6 @@ function LeaveApplication() {
             refreshHook()
             refreshHookOnsite()
             refreshHookCompensatory()
-          }
-        }
-      } else if (tab === "Attendance") {
-        const response = await fetch(
-          `http://localhost:9000/api/auth/attendance?selectedid=${user._id}&attendanceId=${user.attendanceId}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify(selectedAttendance),
-            credentials: "include"
-          }
-        )
-        // const response = await fetch(
-        //   `https://www.crm.camet.in/api/auth/attendance?selectedid=${user._id}&attendanceId=${user.attendanceId}`,
-        //   {
-        //     method: "POST",
-        //     headers: {
-        //       "Content-Type": "application/json"
-        //     },
-        //     body: JSON.stringify(selectedAttendance),
-        //     credentials: "include"
-        //   }
-        // )
-
-        await response.json()
-
-        if (!response.ok) {
-          throw new Error("Failed to apply for leave")
-        } else {
-          const response = await axios.get(
-            `/auth/getallAttendance?userid=${user._id}`
-          )
-          const data = response.data
-
-          if (response.status === 200) {
-            setShowModal(false)
-            // refreshHook()
-            refreshattendee()
-            setselectedAttendance({
-              attendanceDate: "",
-              inTime: { hours: "12", minutes: "00", amPm: "AM" },
-              outTime: { hours: "12", minutes: "00", amPm: "AM" }
-            })
           }
         }
       }
