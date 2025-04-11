@@ -671,12 +671,12 @@ function LeaveApplication() {
         halfDayPeriod: "Morning"
       }))
     } else {
-      console.log(selectedTab)
       let halfDayType
-      if (selectedTab === "Onsite'") {
-        halfDayType = onsiteType
+      if (selectedTab === "Onsite") {
+        halfDayType = "onsiteType"
       } else {
-        halfDayType = leaveType
+        console.log("h")
+        halfDayType = "leaveType"
       }
       if (message) setMessage("")
       setFormData((prev) => ({
