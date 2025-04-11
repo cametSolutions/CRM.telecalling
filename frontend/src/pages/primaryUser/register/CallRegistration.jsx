@@ -43,7 +43,7 @@ export default function CallRegistration() {
   const [loading, setloading] = useState(false)
   const [name, setName] = useState("")
   const [message, setMessage] = useState("")
-
+  const [callList, setCallList] = useState([])
   const [editform, setEditformdata] = useState({})
   const [productDetails, setProductDetails] = useState([])
   const [user, setUser] = useState(false)
@@ -109,6 +109,56 @@ export default function CallRegistration() {
       setCallnotes(callnotes)
     }
   }, [callnotes])
+  useEffect(() => {
+    if (user) {
+      const userId = user._id
+      socket.emit("updatedCalls", userId)
+      // Listen for initial data from the server
+      socket.on("updatedCalls", ({ calls, user }) => {
+        if (user.role === "Admin") {
+          setCallList(calls)
+        } else {
+          const userBranchName = new Set(
+            user?.selected?.map((branch) => branch.branchName)
+          )
+
+          const branchNamesArray = Array.from(userBranchName)
+
+          const filtered = calls.filter(
+            (call) =>
+              Array.isArray(call?.callregistration) && // Check if callregistration is an array
+              call.callregistration.some((registration) => {
+                const hasMatchingBranch =
+                  Array.isArray(registration?.branchName) && // Check if branchName is an array
+                  registration.branchName.some(
+                    (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
+                  )
+
+                // If user has only one branch, ensure it matches exactly and no extra branches
+                if (branchNamesArray.length === 1) {
+                  return (
+                    hasMatchingBranch &&
+                    registration.branchName.length === 1 &&
+                    registration.branchName[0] === branchNamesArray[0]
+                  )
+                }
+
+                // If user has more than one branch, just check for any match
+                return hasMatchingBranch
+              })
+          )
+
+          setCallList(filtered)
+        }
+      })
+
+      //Cleanup the socket connection when the component unmounts
+      return () => {
+        socket.off("updatedCalls")
+        // socket.disconnect()
+      }
+    }
+  }, [user])
   // Cleanup the timeout if the component unmounts
   useEffect(() => {
     return () => clearTimeout(debounceTimeoutRef.current)
@@ -650,21 +700,45 @@ Problem:    \t${selectedText}
 
     // Additional actions can be performed here (e.g., populate form fields)
   }
+  const hanldeCheckforsamecallnoteforsamecustomer = (data, id) => {
+    if (!calldetails && data.status === "pending") {
+      const callnoteId = data.callnote.split("|")[0]
+      const check = callList.some(
+        (item) =>
+          item.customerid === id &&
+          item.callregistration.some(
+            (call) =>
+              call.formdata?.callnote === callnoteId &&
+              call.formdata?.status === "pending"
+          )
+      )
+      return check
+    }
+  }
 
   const onSubmit = async (data) => {
-    if (selectedProducts && selectedProducts?.length === 0) {
-      // alert("please select aprodut")
-      toast.error("Please select a product", {
-        position: "top-center",
-        autoClose: 3000 // 3 seconds
-      })
-      return
-    } else {
-      setIsRunning(false)
-    }
+    const check = hanldeCheckforsamecallnoteforsamecustomer(
+      data,
+      selectedCustomer._id
+    )
 
-    // let updatedData = { ...data }
-    setFormData(data)
+    if (check) {
+      setIsModalOpen(true)
+      // setmes
+    } else {
+      if (selectedProducts && selectedProducts?.length === 0) {
+        // alert("please select aprodut")
+        toast.error("Please select a product", {
+          position: "top-center",
+          autoClose: 3000 // 3 seconds
+        })
+        return
+      } else {
+        setIsRunning(false)
+      }
+
+      setFormData(data)
+    }
   }
 
   return (
@@ -1190,19 +1264,22 @@ Problem:    \t${selectedText}
 
               <div className=" container mt-12 ">
                 <div className="flex container justify-center items-center">
-                  <Timer
-                    isRunning={isRunning}
-                    startTime={startTime}
-                    productDetails={productDetails}
-                    selectedProducts={selectedProducts}
-                    onStop={stopTimer}
-                  />
+                  {callList && callList.length > 0 && (
+                    <Timer
+                      isRunning={isRunning}
+                      startTime={startTime}
+                      productDetails={productDetails}
+                      selectedProducts={selectedProducts}
+                      onStop={stopTimer}
+                    />
+                  )}
+
                   <PopUp
                     isOpen={isModalOpen}
                     report={callreport}
                     onClose={() => setIsModalOpen(false)}
                     handleWhatsapp={sendWhatapp}
-                    message="Product Name is missing in the current call please inform the admin to add product!"
+                    message="This customer already has a same call note with pending status!"
                   />
                 </div>
 
@@ -1367,7 +1444,6 @@ Problem:    \t${selectedText}
                         type="submit"
                         className="px-4 py-2 font-medium text-white bg-gradient-to-r from-red-500 to-red-700 rounded-md shadow-md hover:shadow-lg focus:outline-none transition-shadow duration-200"
                       >
-                        {/* {submitLoading ? "Loading..." : "End call"} */}
                         {submitLoading ? (
                           <div className="flex items-center gap-2">
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

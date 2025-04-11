@@ -7,7 +7,8 @@ import { formatTime } from "../../utils/timeUtils"
 const Timer = ({
   isRunning,
   startTime,
-  onStop,productDetails,
+  onStop,
+  productDetails,
   selectedProducts
 }) => {
   const [time, setTime] = useState(0)
