@@ -66,6 +66,7 @@ export default function AdminHeader() {
   }
   const links = [
     { to: "/admin/home", label: "Home" },
+    // {to:"/admin/dashBoard", label: "Dashboard" },
     { label: "Masters" },
     { label: "Transactions" },
     { label: "Reports" },
