@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react"
 import { useLocation, Link } from "react-router-dom"
-
+import BarLoader from "react-spinners/BarLoader"
 import "react-quill/dist/quill.snow.css" // Import Quill styles
 import ClipLoader from "react-spinners/ClipLoader"
 import io from "socket.io-client"
@@ -36,6 +36,7 @@ export default function CallRegistration() {
   const [loggeduserCurrentDateCalls, setloggeduserCurrentDateCalls] = useState(
     []
   )
+  const [loader, setLoader] = useState(false)
   const [showIncomingNumberToast, setshowinComingnumberToast] = useState(false)
   const [callreport, setcallReport] = useState({})
   const [customerData, setCustomerData] = useState([])
@@ -179,7 +180,6 @@ export default function CallRegistration() {
       clearTimeout(handler) // Cleanup the timeout on unmount or before the next call
     }
   }, [search]) // Only re-run the effect if search changes
-
   useEffect(() => {
     if (calldetails) {
       // Fetch the call details using the ID
@@ -189,7 +189,7 @@ export default function CallRegistration() {
             callData.callDetails.callregistration.find(
               (registration) => registration.timedata.token === token
             )
-          // If a matching registration is found, extract the product details
+          // /// If a matching registration is found, extract the product details
           const productId = matchingRegistration
             ? matchingRegistration.product._id
             : null
@@ -200,15 +200,15 @@ export default function CallRegistration() {
             )
           setSearch(callData?.callDetails?.customerid?.customerName)
           setSelectedCustomer(callData?.callDetails?.customerid)
-
-          setProductDetails([
-            {
-              product_id: matchingProducts[0].product_id,
-              licensenumber: matchingProducts[0].licensenumber,
-              productName: matchingProducts[0].productName,
-              branchName: matchingProducts[0].branchName
-            }
-          ])
+          setProductDetails(matchingProducts)
+          // setProductDetails([
+          //   {
+          //     product_id: matchingpr.product._id,
+          //     licensenumber: matchingRegistration.license,
+          //     productName: matchingRegistration.product.productName,
+          //     branchName: matchingRegistration.product.selected[0].branchName
+          //   }
+          // ])
           const editData = {
             incomingNumber: matchingRegistration?.formdata?.incomingNumber,
             token: matchingRegistration?.timedata?.token,
@@ -217,7 +217,7 @@ export default function CallRegistration() {
             status: matchingRegistration?.formdata?.status,
             callnote: `${matchingRegistration?.formdata?.callnote._id}|${matchingRegistration?.formdata?.callnote.callNotes}`
           }
-
+          setLoader(false)
           reset(editData)
           setIsRunning(true)
 
@@ -231,20 +231,21 @@ export default function CallRegistration() {
   }, [calldetails])
 
   const fetchCallDetails = async (callId) => {
-    const response = await fetch(
-      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
-      {
-        method: "GET",
-        credentials: "include" // This allows cookies to be sent with the request
-      }
-    )
+    setLoader(true)
     // const response = await fetch(
-    //   `http://localhost:9000/api/customer/getcallregister/${callId}`,
+    //   `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
     //   {
     //     method: "GET",
     //     credentials: "include" // This allows cookies to be sent with the request
     //   }
     // )
+    const response = await fetch(
+      `http://localhost:9000/api/customer/getcallregister/${callId}`,
+      {
+        method: "GET",
+        credentials: "include" // This allows cookies to be sent with the request
+      }
+    )
     const data = await response.json()
 
     return data
@@ -742,908 +743,932 @@ Problem:    \t${selectedText}
   }
 
   return (
-    <div className="container  justify-center items-center p-8 h-auto">
-      <div className="w-auto bg-white shadow-lg rounded  p-8 mx-auto h-auto">
-        <div className="flex justify-between ">
-          <h2 className="text-2xl font-semibold mb-4">Call Registration</h2>
-          <div>
-            <Link
-              to={user?.role === "Admin" ? "/admin/home" : "/staff/home"}
-              className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 px-2 py-1 rounded-md shadow-lg cursor-pointer"
-            >
-              Go Home
-            </Link>
-          </div>
-        </div>
-
-        <hr className="border-t-2 border-gray-300 mb-4"></hr>
-        <div className="w-2/4 ">
-          <div className="relative">
-            <label
-              htmlFor="customerName"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Search Customer
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                id="customerName"
-                value={search}
-                // defaultValue={calldetails ? name : search}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 pr-10 sm:text-sm focus:border-gray-500 outline-none"
-                placeholder="Enter name or license..."
-              />
-              {loading && (
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                  <ClipLoader color="#36D7B7" loading={loading} size={20} />
-                </div>
-              )}
+    <div>
+      {loader && (
+        <BarLoader
+          cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
+          color="#4A90E2" // Change color as needed
+          // loader={true}
+        />
+      )}
+      <div className="container  justify-center items-center p-8 h-auto">
+        <div className="w-auto bg-white shadow-lg rounded  p-8 mx-auto h-auto">
+          <div className="flex justify-between ">
+            <h2 className="text-2xl font-semibold mb-4">Call Registration</h2>
+            <div>
+              <Link
+                to={user?.role === "Admin" ? "/admin/home" : "/staff/home"}
+                className="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 px-2 py-1 rounded-md shadow-lg cursor-pointer"
+              >
+                Go Home
+              </Link>
             </div>
           </div>
-        </div>
-        {!search &&
-          loggeduserCurrentDateCalls &&
-          loggeduserCurrentDateCalls?.length > 0 && (
-            <>
-              {loggeduserCurrentDateCalls?.length > 0 && (
-                <>
-                  <h1 className="text-xl inline-block border-b-2 border-black mt-3">
-                    Your Today's Call list
-                  </h1>
-                  <div className="mt-2 overflow-y-auto w-full max-h-[calc(100vh-300px)]  text-center relative rounded-lg">
-                    <table className="w-full divide-y divide-gray-200 rounded-xl shadow-lg">
-                      {/* Table Header */}
-                      <thead
-                        className={`${
-                          isModalOpen ? "" : "sticky top-0 z-50"
-                        } bg-purple-200  `}
-                      >
-                        <tr>
-                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            Customer Name
-                          </th>
-                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            Token No
-                          </th>
-                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            Product Name
-                          </th>
-                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            Start Date
-                          </th>
-                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            End Date
-                          </th>
-                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            Duration
-                          </th>
-                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            Incoming Number
-                          </th>
-                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            AttendedBy
-                          </th>
-                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            CompletedBy
-                          </th>
-                          <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            Status
-                          </th>
-                        </tr>
-                      </thead>
 
-                      {/* Sorting Calls: Pending Calls First, Then Latest Calls */}
-                      <tbody className="divide-gray-500">
-                        {loggeduserCurrentDateCalls
-                          .flatMap((customer) =>
-                            customer.callregistration.map((call) => ({
-                              ...call,
-                              customerName: customer.customerName
-                            }))
-                          )
-                          .sort((a, b) => {
-                            if (
-                              a.formdata?.status === "pending" &&
-                              b.formdata?.status !== "pending"
-                            )
-                              return -1
-                            if (
-                              b.formdata?.status === "pending" &&
-                              a.formdata?.status !== "pending"
-                            )
-                              return 1
-                            return (
-                              new Date(b.timedata?.startTime) -
-                              new Date(a.timedata?.startTime)
-                            )
-                          })
-                          .map((call, index) => {
-                            const today = new Date().toISOString().split("T")[0]
-                            const callDate = call.timedata?.startTime
-                              ? new Date(call.timedata?.startTime.split(" ")[0])
-                                  .toISOString()
-                                  .split("T")[0]
-                              : null
-
-                            return (
-                              <React.Fragment key={index}>
-                                {/* Main Call Row */}
-                                <tr
-                                  className={`border-0 ${
-                                    call.formdata?.status === "solved"
-                                      ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
-                                      : call.formdata?.status === "pending"
-                                      ? callDate === today
-                                        ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
-                                        : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                      : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                  }`}
-                                >
-                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {call.customerName}
-                                  </td>
-                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {call.timedata?.token}
-                                  </td>
-                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {call.productDetails[0]?.productName}
-                                  </td>
-                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {new Date(
-                                      call.timedata?.startTime
-                                    ).toLocaleString()}
-                                  </td>
-                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {new Date(
-                                      call.timedata?.endTime
-                                    ).toLocaleString()}
-                                  </td>
-                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {call.timedata?.time}
-                                  </td>
-                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {call.formdata?.incomingNumber}
-                                  </td>
-                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {call.formdata?.attendedBy
-                                      ?.map((attendee) => attendee.name)
-                                      .join(", ") || ""}
-                                  </td>
-                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {call.formdata?.completedBy
-                                      ?.map((completer) => completer.name)
-                                      .join(", ") || ""}
-                                  </td>
-                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {call.formdata?.status}
-                                  </td>
-                                </tr>
-
-                                {/* Description & Solution Row */}
-                                <tr
-                                  className={`text-center border-t-0 border-black ${
-                                    call.formdata?.status === "solved"
-                                      ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
-                                      : call.formdata?.status === "pending"
-                                      ? callDate === today
-                                        ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
-                                        : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                      : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                  }`}
-                                  style={{ height: "5px" }}
-                                >
-                                  <td
-                                    colSpan="5"
-                                    className="py-1 px-8 text-sm text-black text-left"
-                                  >
-                                    <strong>Description:</strong>{" "}
-                                    {call.formdata?.description || "N/A"}
-                                  </td>
-                                  <td
-                                    colSpan="5"
-                                    className="py-1 px-12 text-sm text-black text-left"
-                                  >
-                                    <strong>Solution:</strong>{" "}
-                                    {call.formdata?.solution || "N/A"}
-                                  </td>
-                                </tr>
-                              </React.Fragment>
-                            )
-                          })}
-                      </tbody>
-                    </table>
+          <hr className="border-t-2 border-gray-300 mb-4"></hr>
+          <div className="w-2/4 ">
+            <div className="relative">
+              <label
+                htmlFor="customerName"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Search Customer
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  id="customerName"
+                  value={search}
+                  // defaultValue={calldetails ? name : search}
+                  onChange={handleInputChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 pr-10 sm:text-sm focus:border-gray-500 outline-none"
+                  placeholder="Enter name or license..."
+                />
+                {loading && (
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <ClipLoader color="#36D7B7" loading={loading} size={20} />
                   </div>
-                </>
-              )}
-            </>
+                )}
+              </div>
+            </div>
+          </div>
+          {!search &&
+            loggeduserCurrentDateCalls &&
+            loggeduserCurrentDateCalls?.length > 0 && (
+              <>
+                {loggeduserCurrentDateCalls?.length > 0 && (
+                  <>
+                    <h1 className="text-xl inline-block border-b-2 border-black mt-3">
+                      Your Today's Call list
+                    </h1>
+                    <div className="mt-2 overflow-y-auto w-full max-h-[calc(100vh-300px)]  text-center relative rounded-lg">
+                      <table className="w-full divide-y divide-gray-200 rounded-xl shadow-lg">
+                        {/* Table Header */}
+                        <thead
+                          className={`${
+                            isModalOpen ? "" : "sticky top-0 z-50"
+                          } bg-purple-200  `}
+                        >
+                          <tr>
+                            <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                              Customer Name
+                            </th>
+                            <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                              Token No
+                            </th>
+                            <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                              Product Name
+                            </th>
+                            <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                              Start Date
+                            </th>
+                            <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                              End Date
+                            </th>
+                            <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                              Duration
+                            </th>
+                            <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                              Incoming Number
+                            </th>
+                            <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                              AttendedBy
+                            </th>
+                            <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                              CompletedBy
+                            </th>
+                            <th className="px-6 py-5 text-xs font-medium text-gray-800 uppercase tracking-wider">
+                              Status
+                            </th>
+                          </tr>
+                        </thead>
+
+                        {/* Sorting Calls: Pending Calls First, Then Latest Calls */}
+                        <tbody className="divide-gray-500">
+                          {loggeduserCurrentDateCalls
+                            .flatMap((customer) =>
+                              customer.callregistration.map((call) => ({
+                                ...call,
+                                customerName: customer.customerName
+                              }))
+                            )
+                            .sort((a, b) => {
+                              if (
+                                a.formdata?.status === "pending" &&
+                                b.formdata?.status !== "pending"
+                              )
+                                return -1
+                              if (
+                                b.formdata?.status === "pending" &&
+                                a.formdata?.status !== "pending"
+                              )
+                                return 1
+                              return (
+                                new Date(b.timedata?.startTime) -
+                                new Date(a.timedata?.startTime)
+                              )
+                            })
+                            .map((call, index) => {
+                              const today = new Date()
+                                .toISOString()
+                                .split("T")[0]
+                              const callDate = call.timedata?.startTime
+                                ? new Date(
+                                    call.timedata?.startTime.split(" ")[0]
+                                  )
+                                    .toISOString()
+                                    .split("T")[0]
+                                : null
+
+                              return (
+                                <React.Fragment key={index}>
+                                  {/* Main Call Row */}
+                                  <tr
+                                    className={`border-0 ${
+                                      call.formdata?.status === "solved"
+                                        ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
+                                        : call.formdata?.status === "pending"
+                                        ? callDate === today
+                                          ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                          : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
+                                        : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
+                                    }`}
+                                  >
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                      {call.customerName}
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                      {call.timedata?.token}
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                      {call.productDetails[0]?.productName}
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                      {new Date(
+                                        call.timedata?.startTime
+                                      ).toLocaleString()}
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                      {new Date(
+                                        call.timedata?.endTime
+                                      ).toLocaleString()}
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                      {call.timedata?.time}
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                      {call.formdata?.incomingNumber}
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                      {call.formdata?.attendedBy
+                                        ?.map((attendee) => attendee.name)
+                                        .join(", ") || ""}
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                      {call.formdata?.completedBy
+                                        ?.map((completer) => completer.name)
+                                        .join(", ") || ""}
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                      {call.formdata?.status}
+                                    </td>
+                                  </tr>
+
+                                  {/* Description & Solution Row */}
+                                  <tr
+                                    className={`text-center border-t-0 border-black ${
+                                      call.formdata?.status === "solved"
+                                        ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
+                                        : call.formdata?.status === "pending"
+                                        ? callDate === today
+                                          ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                          : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
+                                        : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
+                                    }`}
+                                    style={{ height: "5px" }}
+                                  >
+                                    <td
+                                      colSpan="5"
+                                      className="py-1 px-8 text-sm text-black text-left"
+                                    >
+                                      <strong>Description:</strong>{" "}
+                                      {call.formdata?.description || "N/A"}
+                                    </td>
+                                    <td
+                                      colSpan="5"
+                                      className="py-1 px-12 text-sm text-black text-left"
+                                    >
+                                      <strong>Solution:</strong>{" "}
+                                      {call.formdata?.solution || "N/A"}
+                                    </td>
+                                  </tr>
+                                </React.Fragment>
+                              )
+                            })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+
+          {searching && customerData?.length > 0 ? (
+            <div className=" w-2/4 max-h-40 overflow-y-auto overflow-x-auto  mt-4 border border-gray-200 shadow-md rounded-lg">
+              {/* Wrap the table in a div with border */}
+              <table className="min-w-full bg-white">
+                <thead className="sticky top-0 z-30 bg-green-300 border-b border-green-300 shadow">
+                  {/* Add a bottom border to the <thead> */}
+                  <tr>
+                    <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Customer Name
+                    </th>
+                    <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      License No
+                    </th>
+                    <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Mobile No
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {customerData?.map((customer, index) =>
+                    customer?.selected?.map((item, subIndex) => (
+                      <tr
+                        key={`${index}-${subIndex}`} // Ensure unique key for each row
+                        onClick={() => handleRowClick(customer)}
+                        className="cursor-pointer hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="px-4 py-3 text-center text-sm text-gray-700">
+                          {customer?.customerName}
+                        </td>
+                        <td className="px-4 py-3 text-center text-sm text-gray-700">
+                          {item?.licensenumber}
+                        </td>
+                        <td className="px-4 py-3 text-center text-sm text-gray-700">
+                          {customer?.mobile}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-red-500 ml-5">{message}</div>
           )}
 
-        {searching && customerData?.length > 0 ? (
-          <div className=" w-2/4 max-h-40 overflow-y-auto overflow-x-auto  mt-4 border border-gray-200 shadow-md rounded-lg">
-            {/* Wrap the table in a div with border */}
-            <table className="min-w-full bg-white">
-              <thead className="sticky top-0 z-30 bg-green-300 border-b border-green-300 shadow">
-                {/* Add a bottom border to the <thead> */}
-                <tr>
-                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+          {selectedCustomer && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-3 bg-[#4888b9] shadow-md rounded p-5">
+                <div className="">
+                  <h4 className="text-md font-bold text-white">
                     Customer Name
-                  </th>
-                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    License No
-                  </th>
-                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Mobile No
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {customerData?.map((customer, index) =>
-                  customer?.selected?.map((item, subIndex) => (
-                    <tr
-                      key={`${index}-${subIndex}`} // Ensure unique key for each row
-                      onClick={() => handleRowClick(customer)}
-                      className="cursor-pointer hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="px-4 py-3 text-center text-sm text-gray-700">
-                        {customer?.customerName}
-                      </td>
-                      <td className="px-4 py-3 text-center text-sm text-gray-700">
-                        {item?.licensenumber}
-                      </td>
-                      <td className="px-4 py-3 text-center text-sm text-gray-700">
-                        {customer?.mobile}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="text-red-500 ml-5">{message}</div>
-        )}
-
-        {selectedCustomer && (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-3 bg-[#4888b9] shadow-md rounded p-5">
-              <div className="">
-                <h4 className="text-md font-bold text-white">Customer Name</h4>
-                <p className="text-white">{selectedCustomer.customerName}</p>
-              </div>
-              <div className="">
-                <h4 className="text-md font-bold text-white">Email</h4>
-                <p className="text-white">{selectedCustomer.email}</p>
-              </div>
-              <div className="">
-                <h4 className="text-md font-bold text-white">Mobile</h4>
-                <p className="text-white">{selectedCustomer.mobile}</p>
-              </div>
-              <div className=" ">
-                <h4 className="text-md font-bold text-white">Address 1</h4>
-                <p className="text-white">{selectedCustomer.address1}</p>
-              </div>
-              <div className="">
-                <h4 className="text-md font-bold text-white">Address 2</h4>
-                <p className="text-white">{selectedCustomer.address2}</p>
-              </div>
-              <div className="">
-                <h4 className="text-md font-bold text-white">City</h4>
-                <p className="text-white">{selectedCustomer.city}</p>
-              </div>
-              <div className="">
-                <h4 className="text-md font-bold text-white">State</h4>
-                <p className="text-white">{selectedCustomer.state}</p>
-              </div>
-              <div className=" ">
-                <h4 className="text-md font-bold text-white">Country</h4>
-                <p className="text-white">{selectedCustomer.country}</p>
-              </div>
-              <div className="">
-                <h4 className="text-md font-bold text-white">Pincode</h4>
-                <p className="text-white">{selectedCustomer.pincode}</p>
-              </div>
-              <div className="">
-                <h4 className="text-md font-bold text-white">Landline</h4>
-                <p className="text-white">
-                  {selectedCustomer.landline || "N/A"}
-                </p>
-              </div>
-              <div className="">
-                <h4 className="text-md font-bold text-white">Partnership</h4>
-                <p className="text-white">
-                  {selectedCustomer?.partner?.partner || "N/A"}
-                </p>
-              </div>
-              <div className="">
-                <h4 className="text-md font-bold text-white">Industry</h4>
-                <p className="text-white">
-                  {selectedCustomer?.industry || "N/A"}
-                </p>
-              </div>
-              <div className="">
-                <h4 className="text-md font-bold text-white">Status</h4>
-                <p
-                  className={`bg-clip-text text-transparent ${
-                    selectedCustomer.selected.some(
+                  </h4>
+                  <p className="text-white">{selectedCustomer.customerName}</p>
+                </div>
+                <div className="">
+                  <h4 className="text-md font-bold text-white">Email</h4>
+                  <p className="text-white">{selectedCustomer.email}</p>
+                </div>
+                <div className="">
+                  <h4 className="text-md font-bold text-white">Mobile</h4>
+                  <p className="text-white">{selectedCustomer.mobile}</p>
+                </div>
+                <div className=" ">
+                  <h4 className="text-md font-bold text-white">Address 1</h4>
+                  <p className="text-white">{selectedCustomer.address1}</p>
+                </div>
+                <div className="">
+                  <h4 className="text-md font-bold text-white">Address 2</h4>
+                  <p className="text-white">{selectedCustomer.address2}</p>
+                </div>
+                <div className="">
+                  <h4 className="text-md font-bold text-white">City</h4>
+                  <p className="text-white">{selectedCustomer.city}</p>
+                </div>
+                <div className="">
+                  <h4 className="text-md font-bold text-white">State</h4>
+                  <p className="text-white">{selectedCustomer.state}</p>
+                </div>
+                <div className=" ">
+                  <h4 className="text-md font-bold text-white">Country</h4>
+                  <p className="text-white">{selectedCustomer.country}</p>
+                </div>
+                <div className="">
+                  <h4 className="text-md font-bold text-white">Pincode</h4>
+                  <p className="text-white">{selectedCustomer.pincode}</p>
+                </div>
+                <div className="">
+                  <h4 className="text-md font-bold text-white">Landline</h4>
+                  <p className="text-white">
+                    {selectedCustomer.landline || "N/A"}
+                  </p>
+                </div>
+                <div className="">
+                  <h4 className="text-md font-bold text-white">Partnership</h4>
+                  <p className="text-white">
+                    {selectedCustomer?.partner?.partner || "N/A"}
+                  </p>
+                </div>
+                <div className="">
+                  <h4 className="text-md font-bold text-white">Industry</h4>
+                  <p className="text-white">
+                    {selectedCustomer?.industry || "N/A"}
+                  </p>
+                </div>
+                <div className="">
+                  <h4 className="text-md font-bold text-white">Status</h4>
+                  <p
+                    className={`bg-clip-text text-transparent ${
+                      selectedCustomer.selected.some(
+                        (item) => item.isActive === "Running"
+                      )
+                        ? "bg-gradient-to-r from-lime-400 via-green-500 to-emerald-600"
+                        : "bg-gradient-to-r from-red-400 via-red-500 to-orange-600"
+                    } text-lg font-bold `}
+                  >
+                    {selectedCustomer.selected.some(
                       (item) => item.isActive === "Running"
                     )
-                      ? "bg-gradient-to-r from-lime-400 via-green-500 to-emerald-600"
-                      : "bg-gradient-to-r from-red-400 via-red-500 to-orange-600"
-                  } text-lg font-bold `}
-                >
-                  {selectedCustomer.selected.some(
-                    (item) => item.isActive === "Running"
-                  )
-                    ? "Active"
-                    : "Inactive"}
-                </p>
+                      ? "Active"
+                      : "Inactive"}
+                  </p>
+                </div>
+                <div className="">
+                  <h4 className="text-md font-bold text-white">
+                    Reason of Status
+                  </h4>
+                  <p className="text-white">
+                    {selectedCustomer.reasonofStatus || "N/A"}
+                  </p>
+                </div>
               </div>
-              <div className="">
-                <h4 className="text-md font-bold text-white">
-                  Reason of Status
-                </h4>
-                <p className="text-white">
-                  {selectedCustomer.reasonofStatus || "N/A"}
-                </p>
-              </div>
-            </div>
-            <div className="mt-6 w-lg ">
-              <div className="mb-2 ">
-                <h3 className="text-lg font-medium text-gray-900">
-                  Product Details List
-                </h3>
-                {/* <button onClick={fetchData}>update</button>c */}
-              </div>
-              <div className=" w-lg max-h-30 overflow-x-auto text-center overflow-y-auto border border-gray-300 rounded-lg">
-                <table className=" m-w-full divide-y divide-gray-200 shadow">
-                  <thead
-                    className={`${
-                      isModalOpen ? "" : "sticky top-0 z-30"
-                    } bg-green-300`}
-                  >
-                    <tr>
-                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        select
-                      </th>
-                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Product Name
-                      </th>
-                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Installed Date
-                      </th>
-                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        License No
-                      </th>
-                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        License expiry
-                      </th>
-                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        License Remaing
-                      </th>
+              <div className="mt-6 w-lg ">
+                <div className="mb-2 ">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Product Details List
+                  </h3>
+                  {/* <button onClick={fetchData}>update</button>c */}
+                </div>
+                <div className=" w-lg max-h-30 overflow-x-auto text-center overflow-y-auto border border-gray-300 rounded-lg">
+                  <table className=" m-w-full divide-y divide-gray-200 shadow">
+                    <thead
+                      className={`${
+                        isModalOpen ? "" : "sticky top-0 z-30"
+                      } bg-green-300`}
+                    >
+                      <tr>
+                        <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          select
+                        </th>
+                        <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Product Name
+                        </th>
+                        <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Installed Date
+                        </th>
+                        <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          License No
+                        </th>
+                        <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          License expiry
+                        </th>
+                        <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          License Remaing
+                        </th>
 
-                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Amc startDate <br /> (D-M-Y)
-                      </th>
-                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Amc endDate <br /> (D-M-Y)
-                      </th>
-                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Amc Remaining
-                      </th>
+                        <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Amc startDate <br /> (D-M-Y)
+                        </th>
+                        <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Amc endDate <br /> (D-M-Y)
+                        </th>
+                        <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Amc Remaining
+                        </th>
 
-                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Tvu expiry
-                      </th>
-                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Tvu Remaining
-                      </th>
-                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        No.of Users
-                      </th>
-                      <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Version
-                      </th>
+                        <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Tvu expiry
+                        </th>
+                        <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Tvu Remaining
+                        </th>
+                        <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          No.of Users
+                        </th>
+                        <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Version
+                        </th>
 
-                      {user.role === "Admin" && (
-                        <>
-                          <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Company Name
-                          </th>
-                          <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Branch Name
-                          </th>
-                          <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Product Amount
-                          </th>
-                          <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Tvu Amount
-                          </th>
-                          <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Amc Amount
-                          </th>
-                        </>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-300">
-                    {productDetails?.map((product, index) => (
-                      <tr key={index}>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          <input
-                            className="form-checkbox h-4 w-4 text-blue-600 hover:bg-blue-200 focus:ring-blue-500 cursor-pointer"
-                            // checked={
-                            //   selectedProducts?.productName ===
-                            //   product?.productName
-                            // }
-                            checked={selectedProducts.some(
-                              (p) => p.productName === product?.productName
-                            )}
-                            type="checkbox"
-                            onChange={(e) => handleCheckboxChange(e, product)}
-                          />
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {product?.productName}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(product?.customerAddDate)}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {product?.licensenumber}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(product?.licenseExpiryDate)}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {product?.licenseExpiryDate
-                            ? calculateRemainingDays(product?.licenseExpiryDate)
-                            : ""}
-                        </td>
-
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(product?.amcstartDate)}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(product?.amcendDate)}
-                        </td>
-
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          <span
-                            style={{
-                              color:
-                                calculateRemainingDays(product?.amcendDate) ===
-                                "Expired"
-                                  ? "red"
-                                  : "N/A"
-                                  ? "black"
-                                  : "black"
-                            }}
-                          >
-                            {calculateRemainingDays(product?.amcendDate)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {product?.tvuexpiryDate}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {calculateRemainingDays(product?.tvuexpiryDate)}
-                        </td>
-
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {product?.noofusers}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                          {product?.version}
-                        </td>
                         {user.role === "Admin" && (
                           <>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                              {product?.companyName}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                              {product?.branchName}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                              {product?.productAmount}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                              {product?.tvuAmount}
-                            </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                              {product?.amcAmount}
-                            </td>
+                            <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Company Name
+                            </th>
+                            <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Branch Name
+                            </th>
+                            <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Product Amount
+                            </th>
+                            <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Tvu Amount
+                            </th>
+                            <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Amc Amount
+                            </th>
                           </>
                         )}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-300">
+                      {productDetails?.map((product, index) => (
+                        <tr key={index}>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            <input
+                              className="form-checkbox h-4 w-4 text-blue-600 hover:bg-blue-200 focus:ring-blue-500 cursor-pointer"
+                              // checked={
+                              //   selectedProducts?.productName ===
+                              //   product?.productName
+                              // }
+                              checked={selectedProducts.some(
+                                (p) => p.productName === product?.productName
+                              )}
+                              type="checkbox"
+                              onChange={(e) => handleCheckboxChange(e, product)}
+                            />
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {product?.productName}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(product?.customerAddDate)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {product?.licensenumber}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(product?.licenseExpiryDate)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {product?.licenseExpiryDate
+                              ? calculateRemainingDays(
+                                  product?.licenseExpiryDate
+                                )
+                              : ""}
+                          </td>
 
-              <div className=" container mt-12 ">
-                <div className="flex container justify-center items-center">
-                  {callList && callList.length > 0 && (
-                    <Timer
-                      isRunning={isRunning}
-                      startTime={startTime}
-                      productDetails={productDetails}
-                      selectedProducts={selectedProducts}
-                      onStop={stopTimer}
-                    />
-                  )}
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(product?.amcstartDate)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(product?.amcendDate)}
+                          </td>
 
-                  <PopUp
-                    isOpen={isModalOpen}
-                    report={callreport}
-                    onClose={() => setIsModalOpen(false)}
-                    handleWhatsapp={sendWhatapp}
-                    message="This customer already has a same call note with pending status please cleared that !"
-                  />
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            <span
+                              style={{
+                                color:
+                                  calculateRemainingDays(
+                                    product?.amcendDate
+                                  ) === "Expired"
+                                    ? "red"
+                                    : "N/A"
+                                    ? "black"
+                                    : "black"
+                              }}
+                            >
+                              {calculateRemainingDays(product?.amcendDate)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {product?.tvuexpiryDate}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {calculateRemainingDays(product?.tvuexpiryDate)}
+                          </td>
+
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {product?.noofusers}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                            {product?.version}
+                          </td>
+                          {user.role === "Admin" && (
+                            <>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {product?.companyName}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {product?.branchName}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {product?.productAmount}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {product?.tvuAmount}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {product?.amcAmount}
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
 
-                <form onSubmit={handleSubmit(onSubmit)}>
-                  {/* Updated parent div with justify-between */}
-
-                  <div className="grid grid-cols-3 gap-6  ">
-                    <div className="relative">
-                      {/* Toast Message */}
-                      {showIncomingNumberToast && (
-                        <div className="absolute -top-10 left-0 bg-blue-500 text-white px-3 py-1 rounded-md text-sm z-10 shadow-md ">
-                          Please enter the customer's incoming number. This
-                          number will be sent to the customer's email
-                        </div>
-                      )}
-
-                      <label
-                        htmlFor="customerName"
-                        className="block text-sm font-medium text-gray-700 "
-                      >
-                        Incoming Number
-                      </label>
-                      <input
-                        type="Number"
-                        id="incomingNumber"
-                        {...register("incomingNumber", {
-                          required: "Incoming number is required",
-                          onChange: (e) => setshowinComingnumberToast(true)
-                        })}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
-                        placeholder="Enter Incoming Number"
+                <div className=" container mt-12 ">
+                  <div className="flex container justify-center items-center">
+                    {callList && callList.length > 0 && (
+                      <Timer
+                        isRunning={isRunning}
+                        startTime={startTime}
+                        productDetails={productDetails}
+                        selectedProducts={selectedProducts}
+                        onStop={stopTimer}
                       />
-                      {errors.incomingNumber && (
-                        <span className="mt-2 text-sm text-red-600">
-                          {errors.incomingNumber.message}
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      {/* Adjust width and padding for spacing */}
-                      <label
-                        htmlFor="token"
-                        className="block text-sm font-medium text-gray-700"
-                      >
-                        Token
-                      </label>
-                      <input
-                        type="text"
-                        id="token"
-                        {...register("token", {})}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
-                      />
-                    </div>
-                    <div>
-                      {/* Adjust width and padding for spacing */}
-                      <label
-                        htmlFor="callnote"
-                        className="block text-sm font-medium text-gray-700"
-                      >
-                        Call Notes
-                      </label>
+                    )}
 
-                      <select
-                        {...register("callnote", {
-                          required: "please select a callnote"
-                        })}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
-                        defaultValue="" // Default placeholder
-                      >
-                        <option value="" disabled>
-                          Select Callnote
-                        </option>
-                        {callnote.map((callnotes) => (
-                          <option
-                            key={callnotes._id}
-                            value={`${callnotes._id}|${callnotes.callNotes}`}
-                            // value={`${callnotes._id}`}
-                          >
-                            {callnotes.callNotes}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.callnote && (
-                        <span className="mt-2 text-sm text-red-600">
-                          {errors.callnote.message}
-                        </span>
-                      )}
-                    </div>
-
-                    <div>
-                      <label
-                        id="description"
-                        className="block text-sm font-medium text-gray-700"
-                      >
-                        Description
-                      </label>
-                      <textarea
-                        id="description"
-                        rows="1"
-                        {...register("description", {
-                          maxLength: {
-                            value: 500,
-                            message: "Description cannot exceed 500 characters"
-                          }
-                        })}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
-                        placeholder="Enter a description..."
-                      />
-                      {errors.description && (
-                        <span className="mt-2 text-sm text-red-600">
-                          {errors.description.message}
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      <label
-                        id="solution"
-                        className="block text-sm font-medium text-gray-700"
-                      >
-                        Solution
-                      </label>
-                      <textarea
-                        id="solution"
-                        rows="1"
-                        {...register("solution", {
-                          maxLength: {
-                            value: 500,
-                            message: "Solution cannot exceed 500 characters"
-                          }
-                        })}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
-                        placeholder="Enter a solution..."
-                      />
-                      {errors.solution && (
-                        <span className="mt-2 text-sm text-red-600">
-                          {errors.solution.message}
-                        </span>
-                      )}
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="status"
-                        className="block text-sm font-medium text-gray-700"
-                      >
-                        Status
-                      </label>
-                      <select
-                        {...register("status", { required: true })}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
-                      >
-                        <option value="pending" selected>
-                          Pending
-                        </option>
-                        <option value="solved">Solved</option>
-                      </select>
-                    </div>
+                    <PopUp
+                      isOpen={isModalOpen}
+                      report={callreport}
+                      onClose={() => setIsModalOpen(false)}
+                      handleWhatsapp={sendWhatapp}
+                      message="This customer already has a same call note with pending status please cleared that !"
+                    />
                   </div>
 
-                  {selectedCustomer && (
-                    <div className=" flex justify-center items-center">
-                      <button
-                        type="submit"
-                        className="px-4 py-2 font-medium text-white bg-gradient-to-r from-red-500 to-red-700 rounded-md shadow-md hover:shadow-lg focus:outline-none transition-shadow duration-200"
-                      >
-                        {submitLoading ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            <span>Loading...</span>
+                  <form onSubmit={handleSubmit(onSubmit)}>
+                    {/* Updated parent div with justify-between */}
+
+                    <div className="grid grid-cols-3 gap-6  ">
+                      <div className="relative">
+                        {/* Toast Message */}
+                        {showIncomingNumberToast && (
+                          <div className="absolute -top-10 left-0 bg-blue-500 text-white px-3 py-1 rounded-md text-sm z-10 shadow-md ">
+                            Please enter the customer's incoming number. This
+                            number will be sent to the customer's email
                           </div>
-                        ) : (
-                          <span>End call</span>
                         )}
-                      </button>
+
+                        <label
+                          htmlFor="customerName"
+                          className="block text-sm font-medium text-gray-700 "
+                        >
+                          Incoming Number
+                        </label>
+                        <input
+                          type="Number"
+                          id="incomingNumber"
+                          {...register("incomingNumber", {
+                            required: "Incoming number is required",
+                            onChange: (e) => setshowinComingnumberToast(true)
+                          })}
+                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
+                          placeholder="Enter Incoming Number"
+                        />
+                        {errors.incomingNumber && (
+                          <span className="mt-2 text-sm text-red-600">
+                            {errors.incomingNumber.message}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        {/* Adjust width and padding for spacing */}
+                        <label
+                          htmlFor="token"
+                          className="block text-sm font-medium text-gray-700"
+                        >
+                          Token
+                        </label>
+                        <input
+                          type="text"
+                          id="token"
+                          {...register("token", {})}
+                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
+                        />
+                      </div>
+                      <div>
+                        {/* Adjust width and padding for spacing */}
+                        <label
+                          htmlFor="callnote"
+                          className="block text-sm font-medium text-gray-700"
+                        >
+                          Call Notes
+                        </label>
+
+                        <select
+                          {...register("callnote", {
+                            required: "please select a callnote"
+                          })}
+                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
+                          defaultValue="" // Default placeholder
+                        >
+                          <option value="" disabled>
+                            Select Callnote
+                          </option>
+                          {callnote.map((callnotes) => (
+                            <option
+                              key={callnotes._id}
+                              value={`${callnotes._id}|${callnotes.callNotes}`}
+                              // value={`${callnotes._id}`}
+                            >
+                              {callnotes.callNotes}
+                            </option>
+                          ))}
+                        </select>
+                        {errors.callnote && (
+                          <span className="mt-2 text-sm text-red-600">
+                            {errors.callnote.message}
+                          </span>
+                        )}
+                      </div>
+
+                      <div>
+                        <label
+                          id="description"
+                          className="block text-sm font-medium text-gray-700"
+                        >
+                          Description
+                        </label>
+                        <textarea
+                          id="description"
+                          rows="1"
+                          {...register("description", {
+                            maxLength: {
+                              value: 500,
+                              message:
+                                "Description cannot exceed 500 characters"
+                            }
+                          })}
+                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                          placeholder="Enter a description..."
+                        />
+                        {errors.description && (
+                          <span className="mt-2 text-sm text-red-600">
+                            {errors.description.message}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <label
+                          id="solution"
+                          className="block text-sm font-medium text-gray-700"
+                        >
+                          Solution
+                        </label>
+                        <textarea
+                          id="solution"
+                          rows="1"
+                          {...register("solution", {
+                            maxLength: {
+                              value: 500,
+                              message: "Solution cannot exceed 500 characters"
+                            }
+                          })}
+                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                          placeholder="Enter a solution..."
+                        />
+                        {errors.solution && (
+                          <span className="mt-2 text-sm text-red-600">
+                            {errors.solution.message}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="status"
+                          className="block text-sm font-medium text-gray-700"
+                        >
+                          Status
+                        </label>
+                        <select
+                          {...register("status", { required: true })}
+                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
+                        >
+                          <option value="pending" selected>
+                            Pending
+                          </option>
+                          <option value="solved">Solved</option>
+                        </select>
+                      </div>
                     </div>
-                  )}
-                </form>
-                <div className="flex justify-end">
-                  <Link
-                    to={user?.role === "Admin" ? "/admin/home" : "/staff/home"}
-                    className="text-blue-600"
-                  >
-                    Go Home
-                  </Link>
-                </div>
-                {callData?.length > 0 && (
-                  <div className="relative mt-8 overflow-y-auto w-full max-h-60 text-center">
-                    <table className=" w-full divide-y divide-gray-200 rounded-xl shadow-lg ">
-                      <thead
-                        className={`${
-                          isModalOpen ? "" : " sticky top-0 z-30"
-                        } bg-purple-200`}
-                      >
-                        <tr className="">
-                          <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            Token No
-                          </th>
-                          <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            Product Name
-                          </th>
-                          <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            Start Date
-                          </th>
-                          <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            End Date
-                          </th>
-                          <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            Duration
-                          </th>
-                          <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            Incoming Number
-                          </th>
 
-                          <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            AttendedBy
-                          </th>
-                          <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            CompletedBy
-                          </th>
-                          <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
-                            Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className=" divide-gray-500 border-gray-200">
-                        {callData
-                          ?.sort((a, b) => {
-                            // Prioritize pending calls over solved calls
-                            if (
-                              a.formdata?.status === "pending" &&
-                              b.formdata?.status !== "pending"
-                            ) {
-                              return -1
-                            }
-                            if (
-                              a.formdata?.status !== "pending" &&
-                              b.formdata?.status === "pending"
-                            ) {
-                              return 1
-                            }
+                    {selectedCustomer && (
+                      <div className=" flex justify-center items-center mt-4">
+                        <button
+                          type="submit"
+                          className="px-4 py-2 font-medium text-white bg-gradient-to-r from-red-500 to-red-700 rounded-md shadow-md hover:shadow-lg focus:outline-none transition-shadow duration-200"
+                        >
+                          {submitLoading ? (
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              <span>Loading...</span>
+                            </div>
+                          ) : (
+                            <span>End call</span>
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </form>
+                  <div className="flex justify-end">
+                    <Link
+                      to={
+                        user?.role === "Admin" ? "/admin/home" : "/staff/home"
+                      }
+                      className="text-blue-600"
+                    >
+                      Go Home
+                    </Link>
+                  </div>
+                  {callData?.length > 0 && (
+                    <div className="relative mt-8 overflow-y-auto w-full max-h-60 text-center">
+                      <table className=" w-full divide-y divide-gray-200 rounded-xl shadow-lg ">
+                        <thead
+                          className={`${
+                            isModalOpen ? "" : " sticky top-0 z-30"
+                          } bg-purple-200`}
+                        >
+                          <tr className="">
+                            <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
+                              Token No
+                            </th>
+                            <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
+                              Product Name
+                            </th>
+                            <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
+                              Start Date
+                            </th>
+                            <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
+                              End Date
+                            </th>
+                            <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
+                              Duration
+                            </th>
+                            <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
+                              Incoming Number
+                            </th>
 
-                            // If statuses are the same, sort by startTime (latest first)
-                            const timeA = new Date(
-                              a.timedata?.startTime || 0
-                            ).getTime()
-                            const timeB = new Date(
-                              b.timedata?.startTime || 0
-                            ).getTime()
+                            <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
+                              AttendedBy
+                            </th>
+                            <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
+                              CompletedBy
+                            </th>
+                            <th className="px-6 py-5  text-xs font-medium text-gray-800 uppercase tracking-wider">
+                              Status
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className=" divide-gray-500 border-gray-200">
+                          {callData
+                            ?.sort((a, b) => {
+                              // Prioritize pending calls over solved calls
+                              if (
+                                a.formdata?.status === "pending" &&
+                                b.formdata?.status !== "pending"
+                              ) {
+                                return -1
+                              }
+                              if (
+                                a.formdata?.status !== "pending" &&
+                                b.formdata?.status === "pending"
+                              ) {
+                                return 1
+                              }
 
-                            return timeB - timeA // Sort in descending order (latest first)
-                          })
-                          .map((call, index) => {
-                            const today = new Date().toISOString().split("T")[0]
-                            const startTimeRaw = call?.timedata?.startTime
-                            const callDate = startTimeRaw
-                              ? new Date(startTimeRaw.split(" ")[0])
-                                  .toISOString()
-                                  .split("T")[0]
-                              : null
+                              // If statuses are the same, sort by startTime (latest first)
+                              const timeA = new Date(
+                                a.timedata?.startTime || 0
+                              ).getTime()
+                              const timeB = new Date(
+                                b.timedata?.startTime || 0
+                              ).getTime()
 
-                            return (
-                              <>
-                                <tr
-                                  key={index}
-                                  className={`border-0 ${
-                                    call.formdata?.status === "solved"
-                                      ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
-                                      : call?.formdata?.status === "pending"
-                                      ? callDate === today
-                                        ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                              return timeB - timeA // Sort in descending order (latest first)
+                            })
+                            .map((call, index) => {
+                              const today = new Date()
+                                .toISOString()
+                                .split("T")[0]
+                              const startTimeRaw = call?.timedata?.startTime
+                              const callDate = startTimeRaw
+                                ? new Date(startTimeRaw.split(" ")[0])
+                                    .toISOString()
+                                    .split("T")[0]
+                                : null
+
+                              return (
+                                <>
+                                  <tr
+                                    key={index}
+                                    className={`border-0 ${
+                                      call.formdata?.status === "solved"
+                                        ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
+                                        : call?.formdata?.status === "pending"
+                                        ? callDate === today
+                                          ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                          : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                         : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                      : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                  }`}
-                                >
-                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {call.timedata?.token}
-                                  </td>
-                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {call.product?.productName}
-                                  </td>
-                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {setDateandTime(call.timedata?.startTime)}
-                                  </td>
-                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {call.formdata?.status === "solved"
-                                      ? setDateandTime(call.timedata?.endTime)
-                                      : ""}
-                                  </td>
-                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {formatDuration(call?.timedata?.duration) ||
-                                      "N/A"}
-                                  </td>
-                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {call.formdata?.incomingNumber}
-                                  </td>
-                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {Array.isArray(call?.formdata?.attendedBy)
-                                      ? call?.formdata?.attendedBy
-                                          ?.map(
-                                            (attendee) =>
-                                              attendee?.callerId?.name ||
-                                              attendee?.name
-                                          )
-                                          .join(", ")
-                                      : call?.formdata?.attendedBy?.callerId
-                                          ?.name}
-                                  </td>
-                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {call.formdata?.status
-                                      ? Array.isArray(
-                                          call?.formdata?.completedBy
-                                        )
-                                        ? call?.formdata?.completedBy
+                                    }`}
+                                  >
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                      {call.timedata?.token}
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                      {call.product?.productName}
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                      {setDateandTime(call.timedata?.startTime)}
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                      {call.formdata?.status === "solved"
+                                        ? setDateandTime(call.timedata?.endTime)
+                                        : ""}
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                      {formatDuration(
+                                        call?.timedata?.duration
+                                      ) || "N/A"}
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                      {call.formdata?.incomingNumber}
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                      {Array.isArray(call?.formdata?.attendedBy)
+                                        ? call?.formdata?.attendedBy
                                             ?.map(
                                               (attendee) =>
                                                 attendee?.callerId?.name ||
                                                 attendee?.name
                                             )
                                             .join(", ")
-                                        : call?.formdata?.completedBy?.callerId
-                                            ?.name
-                                      : ""}
-                                  </td>
-                                  <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
-                                    {call.formdata?.status}
-                                  </td>
-                                </tr>
-                                <tr
-                                  className={`text-center border-t-0 border-black ${
-                                    call?.formdata?.status === "solved"
-                                      ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
-                                      : call?.formdata?.status === "pending"
-                                      ? callDate === today
-                                        ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                        : call?.formdata?.attendedBy?.callerId
+                                            ?.name}
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                      {call.formdata?.status
+                                        ? Array.isArray(
+                                            call?.formdata?.completedBy
+                                          )
+                                          ? call?.formdata?.completedBy
+                                              ?.map(
+                                                (attendee) =>
+                                                  attendee?.callerId?.name ||
+                                                  attendee?.name
+                                              )
+                                              .join(", ")
+                                          : call?.formdata?.completedBy
+                                              ?.callerId?.name
+                                        : ""}
+                                    </td>
+                                    <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
+                                      {call.formdata?.status}
+                                    </td>
+                                  </tr>
+                                  <tr
+                                    className={`text-center border-t-0 border-black ${
+                                      call?.formdata?.status === "solved"
+                                        ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
+                                        : call?.formdata?.status === "pending"
+                                        ? callDate === today
+                                          ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                          : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                         : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                      : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                  }`}
-                                  style={{ height: "5px" }}
-                                >
-                                  <td
-                                    colSpan="5"
-                                    className="py-1 px-8 text-sm text-black text-left"
+                                    }`}
+                                    style={{ height: "5px" }}
                                   >
-                                    <strong>Description:</strong>{" "}
-                                    {call?.formdata?.description || "N/A"}
-                                  </td>
-                                  <td
-                                    colSpan="4"
-                                    className="py-1 px-12 text-sm text-black text-left"
-                                  >
-                                    <strong>Solution:</strong>{" "}
-                                    {call?.formdata?.solution || "N/A"}
-                                  </td>
-                                </tr>
-                              </>
-                            )
-                          })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
+                                    <td
+                                      colSpan="5"
+                                      className="py-1 px-8 text-sm text-black text-left"
+                                    >
+                                      <strong>Description:</strong>{" "}
+                                      {call?.formdata?.description || "N/A"}
+                                    </td>
+                                    <td
+                                      colSpan="4"
+                                      className="py-1 px-12 text-sm text-black text-left"
+                                    >
+                                      <strong>Solution:</strong>{" "}
+                                      {call?.formdata?.solution || "N/A"}
+                                    </td>
+                                  </tr>
+                                </>
+                              )
+                            })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   )

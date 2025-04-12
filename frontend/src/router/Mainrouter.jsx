@@ -8,6 +8,7 @@ import mastersRoutes from "./CrmRoutes/childRoutes/mastersRoutes.js"
 import reportsRoutes from "./CrmRoutes/childRoutes/reportsRoutes.js"
 import tasksRoutes from "./CrmRoutes/childRoutes/tasksRoutes.js"
 import transactionsRoutes from "./CrmRoutes/childRoutes/transactionsRoutes.js"
+import dashBoardRoutes from "./CrmRoutes/dashBoardRoute.js"
 // import ProductList from "../components/common/ProductList.jsx"
 import stafftransactionsRoutes from "./staffRoutes/stafftransactionRoutes.js"
 import CallregistrationList from "../pages/secondaryUser/List/CallregistrationList.jsx"
@@ -17,7 +18,6 @@ import staffreportsRoutes from "./staffRoutes/staffreportRoutes.js"
 import UsersLeaveApplicationSummary from "../components/primaryUser/UsersLeaveApplicationSummary.jsx"
 
 const Mainrouter = ({ headerHeight }) => {
-  
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
   useEffect(() => {
@@ -35,7 +35,8 @@ const Mainrouter = ({ headerHeight }) => {
     ...staffmastersRoutes,
     ...stafftransactionsRoutes,
     ...stafftasksRoutes,
-    ...staffreportsRoutes
+    ...staffreportsRoutes,
+    ...dashBoardRoutes
   ]
   return (
     <div
