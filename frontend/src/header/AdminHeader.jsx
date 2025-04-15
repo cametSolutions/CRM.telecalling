@@ -65,8 +65,8 @@ export default function AdminHeader() {
     navigate("/")
   }
   const links = [
-    { to: "/admin/home", label: "Home" },
-    // {to:"/admin/dashBoard", label: "Dashboard" },
+{to:"/admin/home",label:"Home"},
+    // { to: "/admin/dashBoard", label: "Dashboard" },
     { label: "Masters" },
     { label: "Transactions" },
     { label: "Reports" },
@@ -226,7 +226,7 @@ export default function AdminHeader() {
   ]
   return (
     <>
-      <header className=" bg-white sticky top-0 z-40 h-20 flex  shadow-md items-center">
+      <header className=" bg-white sticky top-0 z-40 h-16 lg:h-20 flex  shadow-md items-center">
         {/* Mobile menu button */}
         <div className="md:hidden flex justify-between py-2 px-4">
           <button
@@ -454,7 +454,7 @@ export default function AdminHeader() {
               CRM
             </text>
           </svg>
-          <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-green-600">
+          <span className="text-xl sm:text-2xl md:text-3xl  font-bold text-green-600">
             MANAGEMENT
           </span>
         </div>

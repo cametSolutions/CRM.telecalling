@@ -1999,6 +1999,112 @@ export const GetallOnsite = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+export const GetallUsersLeave = async (req, res) => {
+  try {
+    const { today, loggeduser } = req.query
+  
+    let leavelist
+    if (today === "true" && loggeduser === "Admin") {
+      console.log("h")
+      const today = new Date()
+      today.setHours(0, 0, 0, 0) // 00:00:00 of today
+
+      const tomorrow = new Date(today)
+      tomorrow.setDate(today.getDate() + 1) // 00:00:00 of next day
+
+      leavelist = await LeaveRequest.find({
+        leaveDate: {
+          $gte: today,
+          $lt: tomorrow
+        }
+      })
+        .populate("userId", "name") // Populates userId with the name field only
+        .lean() // Converts to plain JavaScript objects (instead of Mongoose docs)
+      const namesOnly = leavelist.map((item) => item.userId?.name)
+
+      if (namesOnly && namesOnly.length > 0) {
+        console.log(leavelist)
+        return res
+          .status(200)
+          .json({ message: "leaves found", data: namesOnly })
+      } else {
+        console.log(leavelist)
+        return res
+          .status(200)
+          .json({ message: "no leaves found for today", data: namesOnly })
+      }
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const GetallCurrentMonthbirthDay = async (req, res) => {
+  try {
+    const { loggeduser } = req.query
+    let currentmonthBirthDays
+    const currentMonth = new Date().toISOString().slice(5, 7) // "04"
+
+    if (loggeduser === "Admin") {
+      const staffbirthdays = await Staff.find({
+        dateofbirth: { $regex: `^\\d{4}-${currentMonth}` }
+      }) // Matches "YYYY-04"})
+      const adminbirthdays = await Admin.find({
+        dateofbirth: { $regex: `^\\d{4}-${currentMonth}` }
+      })
+      currentmonthBirthDays = [...staffbirthdays, ...adminbirthdays].map(
+        (item) => item.name
+      )
+      if (currentmonthBirthDays && currentmonthBirthDays.length > 0) {
+        return res.status(200).json({
+          message: "current month birthdays found",
+          data: currentmonthBirthDays
+        })
+      } else {
+        return res.status(200).json({
+          message: "no birthdays found for current month",
+          data: currentmonthBirthDays
+        })
+      }
+    } else {
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const GetallusersOnsite = async (req, res) => {
+  try {
+    const { loggeduser, today } = req.query
+
+    console.log("logged", loggeduser)
+    let todayOnsites
+    if (loggeduser === "Admin" && today === "true") {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0) // 00:00:00 of today
+
+      const tomorrow = new Date(today)
+      tomorrow.setDate(today.getDate() + 1) // 00:00:00 of next day
+
+      todayOnsites = await Onsite.find({
+        onsiteDate: {
+          $gte: today,
+          $lt: tomorrow
+        }
+      })
+      if (todayOnsites && todayOnsites.length > 0) {
+        return res
+          .status(200)
+          .json({ message: "todays onsites found", data: todayOnsites })
+      } else {
+        return res
+          .status(200)
+          .json({ message: "no onsites found for today", data: todayOnsites })
+      }
+    } else if (loggeduser === "Staff") {
+    }
+  } catch (error) {}
+}
 export const GetallLeave = async (req, res) => {
   const { userid } = req.query // Extract userid from query parameters
 

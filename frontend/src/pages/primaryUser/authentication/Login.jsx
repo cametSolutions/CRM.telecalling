@@ -42,7 +42,7 @@ const Login = () => {
         setTimeout(() => {
           if (User.role === "Admin") {
             setLoading(false)
-            navigate("/admin/home")
+            navigate("/admin/dashBoard")
           } else if (User.role === "Staff") {
             setLoading(false)
             navigate("/staff/home")

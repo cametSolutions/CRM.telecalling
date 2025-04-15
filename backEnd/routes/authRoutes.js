@@ -36,7 +36,10 @@ import {
   DeleteEvent,
   RejectOnsite,
   cancelLeaveOrOnsiteApproval,
-  Getallcompensatoryleave
+  Getallcompensatoryleave,
+  GetallUsersLeave,
+  GetallCurrentMonthbirthDay,
+  GetallusersOnsite
 } from "../controller/authController.js"
 const router = express.Router()
 
@@ -55,6 +58,13 @@ router.delete("/userDelete", authMiddleware, DeleteUser)
 router.get("/getallUsers", authMiddleware, GetallUsers)
 router.post("/leave", authMiddleware, LeaveApply)
 router.get("/getallLeave", authMiddleware, GetallLeave)
+router.get("/getallUsersLeave", authMiddleware, GetallUsersLeave)
+router.get("/getallUsersOnsite", authMiddleware, GetallusersOnsite)
+router.get(
+  "/getallcurrentmonthBirthdays",
+  authMiddleware,
+  GetallCurrentMonthbirthDay
+)
 router.get("/getallAttendance", authMiddleware, GetAllAttendance)
 router.get("/getallOnsite", authMiddleware, GetallOnsite)
 router.get("/getallcompensatoryleave", authMiddleware, Getallcompensatoryleave)

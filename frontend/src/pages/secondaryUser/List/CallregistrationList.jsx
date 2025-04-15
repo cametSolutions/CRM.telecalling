@@ -61,7 +61,7 @@ const CallregistrationList = () => {
       const today = new Date().toISOString().split("T")[0]
       setToday(today)
       const stats = getCallStats(callList, users.name)
-    
+
       setUserCallstatus(stats)
       setFilteredCalls(callList)
       filterCallData(callList)
@@ -220,8 +220,6 @@ const CallregistrationList = () => {
                 lastAttended.callerId.name !==
                   formdata.completedBy[formdata.completedBy.length - 1].name
               ) {
-               
-                
                 collegeSolvedCalls++ // College solved call count
               }
             }
@@ -235,7 +233,6 @@ const CallregistrationList = () => {
             }
           }
         }
-      
       })
     })
 
@@ -318,7 +315,7 @@ const CallregistrationList = () => {
     }
   }
   return (
-    <div className="container mx-auto  p-5 ">
+    <div className="container bg-gray-200 mx-auto p-2  md:p-5 ">
       <div className="w-auto  bg-white shadow-lg rounded p-4 pt-1 h-full ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
           {/* Search Bar for large screens */}
@@ -480,7 +477,7 @@ const CallregistrationList = () => {
             }}
           />
         </div>
-        <div className="overflow-y-auto overflow-x-auto max-h-60 sm:max-h-80 md:max-h-[380px] lg:max-h-[398px] shadow-md rounded-lg mt-2 ">
+        <div className="overflow-y-auto overflow-x-auto max-h-96 sm:max-h-80 md:max-h-[380px] lg:max-h-[398px] shadow-md rounded-lg mt-2 ">
           <table className="divide-y divide-gray-200 w-full">
             <thead className="bg-purple-300 sticky top-0 z-40  ">
               <tr>
