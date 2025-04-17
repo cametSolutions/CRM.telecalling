@@ -380,6 +380,7 @@ const UserAdd = ({
       profileUrl: url
     }))
   }
+  console.log(imageData)
 
   const documentImage = (url) => {
     setImageData((prevData) => ({
@@ -410,8 +411,15 @@ const UserAdd = ({
       handleUserData(formattedData, imageData, tableData)
     } else if (process === "Edit") {
       console.log("daa", data)
+      console.log(imageData)
 
-      handleEditedData(data, User?._id, tableData, userlevelPermission)
+      handleEditedData(
+        data,
+        User?._id,
+        tableData,
+        userlevelPermission,
+        imageData
+      )
     }
   }
   return (

@@ -63,7 +63,7 @@ const UserListform = () => {
   }
 
   return (
-    <div className="container  mx-auto  p-8 bg-gray-100">
+    <div className="container  mx-auto  p-8">
       <div className="w-full  bg-white shadow-lg rounded p-10  ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
           <h3 className="text-2xl text-black font-bold">Users List</h3>

@@ -6,6 +6,7 @@ import bodyParser from "body-parser"
 import cookieParser from "cookie-parser"
 import departmentRoutes from "./routes/primaryUserRoutes/masterRoutes/departmentRoutes.js"
 import companyRoutes from "./routes/primaryUserRoutes/companyRoutes.js"
+import dashBoardRoutes from "./routes/primaryUserRoutes/dashBoardRoutes.js"
 import branchRoutes from "./routes/primaryUserRoutes/branchRoutes.js"
 import leadRoutes from "./routes/primaryUserRoutes/leadRoutes.js"
 import inventoryRoutes from "./routes/primaryUserRoutes/inventoryRoutes.js"
@@ -337,6 +338,7 @@ app.use("/api/inventory", inventoryRoutes)
 app.use("/api/product", productRoutes)
 app.use("/api/customer", secondaryUserRoutes)
 app.use("/api/master", departmentRoutes)
+app.use("/api/dashboard", dashBoardRoutes)
 
 // Error handling middleware
 app.use((err, req, res, next) => {

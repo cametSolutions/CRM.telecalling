@@ -45,7 +45,7 @@ const Login = () => {
             navigate("/admin/dashBoard")
           } else if (User.role === "Staff") {
             setLoading(false)
-            navigate("/staff/home")
+            navigate("/staff/dashBoard")
           }
         }, 1000)
       }

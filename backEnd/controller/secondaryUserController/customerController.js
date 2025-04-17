@@ -1328,7 +1328,7 @@ export const customerCallRegistration = async (req, res) => {
           }
           // Update the fields with the new data
 
-          callToUpdate.timedata.startTime = calldata.timedata.startTime
+          callToUpdate.timedata.startTime =  callToUpdate.timedata.startTime
           callToUpdate.timedata.endTime = calldata.timedata.endTime
           // Convert the total duration back to "HH:MM:SS" format
           callToUpdate.timedata.duration += calldata.timedata.duration
