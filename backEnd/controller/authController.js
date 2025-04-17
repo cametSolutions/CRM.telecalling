@@ -985,7 +985,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
     const sundays = getSundays(year, month)
     const sundayFulldate = createDates(sundays, month, year)
-
     const startDate = new Date(Date.UTC(year, month - 1, 1))
     const endDate = new Date(Date.UTC(year, month, 0))
 
@@ -1080,6 +1079,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
     const holiday = Array.isArray(holidays)
       ? holidays.map((date) => date.holyDate.getDate())
       : []
+
     for (const user of users) {
       const userId = user._id
       const attendanceId = user.attendanceId
@@ -1100,9 +1100,9 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         LeaveRequest.find({
           userId,
           leaveDate: { $gte: startDate, $lte: endDate }
-        }),
-        Holymaster.find({ holyDate: { $gte: startDate, $lte: endDate } })
+        })
       ])
+
       const attendances =
         results[0].status === "fulfilled" ? results[0].value || [] : []
       const onsites =
@@ -1777,10 +1777,11 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
       const uniqueDates = [...new Set([...sundays, ...holiday])]
 
-      const c = createDates(uniqueDates, month, year)
+      const allholidays = createDates(uniqueDates, month, year)
 
       function getNextDate(dateString) {
         // Parse the date string (YYYY-MM-DD)
+
         const [year, month, day] = dateString.split("-").map(Number)
 
         // Create a date object
@@ -1814,7 +1815,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         return `${prevYear}-${prevMonth}-${prevDay}`
       }
 
-      ;(function calculateAbsences(sundays, attendances, onsites) {
+      ;(function calculateAbsences(allholidayfulldate, attendances, onsites) {
         const isPresent = (date) => {
           for (const dates in attendances.attendancedates) {
             if (date === dates) {
@@ -1843,18 +1844,50 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             }
           }
         }
+        // Sort dates first to ensure they are in order
+        const sortedHolidays = allholidayfulldate.sort()
 
-        sundays.forEach((sunday) => {
-          const previousDay = getPreviousDate(sunday)
-          const nextDay = getNextDate(sunday)
+        // Find groups of consecutive holidays
+        let groups = []
+        let tempGroup = []
+
+        for (let i = 0; i < sortedHolidays.length; i++) {
+          const currDate = new Date(sortedHolidays[i])
+          const prevDate = i > 0 ? new Date(sortedHolidays[i - 1]) : null
+
+          if (
+            prevDate &&
+            currDate - prevDate === 24 * 60 * 60 * 1000 // 1 day gap
+          ) {
+            if (!tempGroup.length) tempGroup.push(prevDate)
+            tempGroup.push(currDate)
+            groups.push(tempGroup)
+            tempGroup = []
+          } else {
+            tempGroup.push(currDate)
+            groups.push(tempGroup)
+            tempGroup = []
+          }
+        }
+
+        groups.forEach((group) => {
+          const first = group[0]
+          const stringfirst = first.toISOString().split("T")[0]
+          const last = group[group.length - 1]
+          const stringlast = last.toISOString().split("T")[0]
+
+          const previousDay = getPreviousDate(stringfirst)
+          const nextDay = getNextDate(stringlast)
 
           const prevFullPresent = isPresent(previousDay)
           const nextFullPresent = isPresent(nextDay)
 
           if (prevFullPresent?.status || nextFullPresent?.status) {
-            stats.attendancedates[sunday].present = 1
+            stats.attendancedates[stringfirst].present = 1
+            stats.attendancedates[stringlast].present = 1
+            stats.attendancedates[stringlast].notMarked = ""
             // stats.attendancedates[nextDay].otherLeave = 1
-            stats.attendancedates[sunday].notMarked = ""
+            stats.attendancedates[stringfirst].notMarked = ""
           }
           //else if (
           //   (prevFullPresent?.notMarked < 1 ||
@@ -1866,7 +1899,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           //   stats.attendancedates[sunday].notMarked = ""
           // }
         })
-      })(c, stats, onsites)
+      })(allholidays, stats, onsites)
 
       for (const dates in stats.attendancedates) {
         stats.present += stats.attendancedates[dates].present
@@ -4588,7 +4621,7 @@ export const GetsomeAllsummary = async (
 
       const uniqueDates = [...new Set([...sundays, ...holiday])]
 
-      const c = createDates(uniqueDates, month, year)
+      const allholidays = createDates(uniqueDates, month, year)
       function getNextDate(dateString) {
         // Parse the date string (YYYY-MM-DD)
         const [year, month, day] = dateString.split("-").map(Number)
@@ -4623,7 +4656,7 @@ export const GetsomeAllsummary = async (
 
         return `${prevYear}-${prevMonth}-${prevDay}`
       }
-      ;(function calculateAbsences(sundays, attendances, onsites) {
+      ;(function calculateAbsences(allholidayfulldate, attendances, onsites) {
         const isPresent = (date) => {
           for (const dates in attendances.attendancedates) {
             if (date === dates) {
@@ -4652,18 +4685,49 @@ export const GetsomeAllsummary = async (
             }
           }
         }
+        // Sort dates first to ensure they are in order
+        const sortedHolidays = allholidayfulldate.sort()
 
-        sundays.forEach((sunday) => {
-          const previousDay = getPreviousDate(sunday)
-          const nextDay = getNextDate(sunday)
+        // Find groups of consecutive holidays
+        let groups = []
+        let tempGroup = []
+
+        for (let i = 0; i < sortedHolidays.length; i++) {
+          const currDate = new Date(sortedHolidays[i])
+          const prevDate = i > 0 ? new Date(sortedHolidays[i - 1]) : null
+
+          if (
+            prevDate &&
+            currDate - prevDate === 24 * 60 * 60 * 1000 // 1 day gap
+          ) {
+            if (!tempGroup.length) tempGroup.push(prevDate)
+            tempGroup.push(currDate)
+            groups.push(tempGroup)
+            tempGroup = []
+          } else {
+            tempGroup.push(currDate)
+            groups.push(tempGroup)
+            tempGroup = []
+          }
+        }
+
+        groups.forEach((sunday) => {
+          const first = group[0]
+          const stringfirst = first.toISOString().split("T")[0]
+          const last = group[group.length - 1]
+          const stringlast = last.toISOString().split("T")[0]
+          const previousDay = getPreviousDate(stringfirst)
+          const nextDay = getNextDate(stringlast)
 
           const prevFullPresent = isPresent(previousDay)
           const nextFullPresent = isPresent(nextDay)
 
           if (prevFullPresent?.status || nextFullPresent?.status) {
-            stats.attendancedates[sunday].present = 1
+            stats.attendancedates[stringfirst].present = 1
+            stats.attendancedates[stringlast].present = 1
+            stats.attendancedates[stringfirst].notMarked = ""
             // stats.attendancedates[nextDay].otherLeave = 1
-            stats.attendancedates[sunday].notMarked = ""
+            stats.attendancedates[stringlast].notMarked = ""
           }
           //else if (
           //   (prevFullPresent?.notMarked < 1 ||
@@ -4675,7 +4739,7 @@ export const GetsomeAllsummary = async (
           //   stats.attendancedates[sunday].notMarked = ""
           // }
         })
-      })(c, stats, onsites)
+      })(allholidays, stats, onsites)
 
       for (const dates in stats.attendancedates) {
         stats.present += stats.attendancedates[dates].present
