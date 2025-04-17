@@ -68,10 +68,7 @@ const LeaveApprovalAndPending = () => {
 
           const list = response.data.data
           setallleaveReques(list) // Assuming API returns data in response.data
-          // const pendingleaveRequest = list.filter(
-          //   (item) =>
-          //     item.departmentverified === false && item.adminverified === false
-          // )
+          
 
           if (Array.isArray(list) && list.length > 0) {
             const filteredList =
@@ -93,25 +90,25 @@ const LeaveApprovalAndPending = () => {
           const initialToggles = {}
           const initialReject = {}
           const initialSelectAll = {}
-          if (user.role === "Admin") {
+          if (user?.role === "Admin") {
             list.forEach((userLeave) => {
               // Check the `status` field for each leave and set the toggle accordingly
-              initialToggles[userLeave._id] =
-                userLeave.hrstatus === "HR/Onsite Approved" // Toggle on if approved
-              initialReject[userLeave._id] =
-                userLeave.hrstatus === "HR Rejected"
-              initialSelectAll[userLeave.userId._id] =
-                userLeave.hrstatus === "HR/Onsite Approved"
+              initialToggles[userLeave?._id] =
+                userLeave?.hrstatus === "HR/Onsite Approved" // Toggle on if approved
+              initialReject[userLeave?._id] =
+                userLeave?.hrstatus === "HR Rejected"
+              initialSelectAll[userLeave?.userId?._id] =
+                userLeave?.hrstatus === "HR/Onsite Approved"
             })
           } else {
             list.forEach((userLeave) => {
               // Check the `status` field for each leave and set the toggle accordingly
-              initialToggles[userLeave._id] =
-                userLeave.departmentstatus === "Dept Approved" // Toggle on if approved
+              initialToggles[userLeave?._id] =
+                userLeave?.departmentstatus === "Dept Approved" // Toggle on if approved
               initialReject[userLeave._id] =
-                userLeave.departmentstatus === "Dept Rejected"
-              initialSelectAll[userLeave.userId._id] =
-                userLeave.departmentstatus === "Dept Approved"
+                userLeave?.departmentstatus === "Dept Rejected"
+              initialSelectAll[userLeave?.userId?._id] =
+                userLeave?.departmentstatus === "Dept Approved"
             })
           }
           setLoader(false)
@@ -164,14 +161,14 @@ const LeaveApprovalAndPending = () => {
           const initialSelectAll = {}
           if (user.role === "Admin") {
             list.forEach((userLeave) => {
-              const userId = userLeave.userId._id
+              const userId = userLeave?.userId?._id
               // Check the `status` field for each leave and set the toggle accordingly
-              initialToggles[userLeave._id] =
-                userLeave.hrstatus === "HR/Onsite Approved" // Toggle on if approved
-              initialReject[userLeave._id] =
-                userLeave.hrstatus === "HR Rejected"
+              initialToggles[userLeave?._id] =
+                userLeave?.hrstatus === "HR/Onsite Approved" // Toggle on if approved
+              initialReject[userLeave?._id] =
+                userLeave?.hrstatus === "HR Rejected"
               const userLeaves = list.filter(
-                (leave) => leave.userId._id === userId
+                (leave) => leave?.userId?._id === userId
               )
 
               // Check if all are approved
@@ -179,27 +176,25 @@ const LeaveApprovalAndPending = () => {
                 (leave) => leave.hrstatus === "HR/Onsite Approved"
               )
 
-              // initialSelectAll[userLeave.userId._id] =
-              //   userLeave.hrstatus === "HR/Onsite Approved"
+             
             })
           } else {
             list.forEach((userLeave) => {
               const userId = userLeave.userId._id
               // Check the `status` field for each leave and set the toggle accordingly
-              initialToggles[userLeave._id] =
-                userLeave.departmentstatus === "Dept Approved" // Toggle on if approved
-              initialReject[userLeave._id] =
-                userLeave.departmentstatus === "Dept Rejected"
+              initialToggles[userLeave?._id] =
+                userLeave?.departmentstatus === "Dept Approved" // Toggle on if approved
+              initialReject[userLeave?._id] =
+                userLeave?.departmentstatus === "Dept Rejected"
               const userLeaves = list.filter(
-                (leave) => leave.userId._id === userId
+                (leave) => leave?.userId?._id === userId
               )
 
               // Check if all are approved
               initialSelectAll[userId] = userLeaves.every(
                 (leave) => leave.hrstatus === "Dept Approved"
               )
-              // initialSelectAll[userLeave.userId._id] =
-              //   userLeave.departmentstatus === "Dept Approved"
+             
             })
           }
           setLoader(false)
@@ -262,13 +257,12 @@ const LeaveApprovalAndPending = () => {
         list.forEach((userLeave) => {
           const userId = userLeave.userId._id
           // Check the `status` field for each leave and set the toggle accordingly
-          initialToggles[userLeave._id] =
-            userLeave.hrstatus === "HR/Onsite Approved" // Toggle on if approved
-          initialReject[userLeave._id] = userLeave.hrstatus === "HR Rejected"
-          // initialSelectAll[userLeave.userId._id] =
-          //   userLeave.hrstatus === "HR/Onsite Approved"
+          initialToggles[userLeave?._id] =
+            userLeave?.hrstatus === "HR/Onsite Approved" // Toggle on if approved
+          initialReject[userLeave?._id] = userLeave.hrstatus === "HR Rejected"
+         
 
-          const userLeaves = list.filter((leave) => leave.userId._id === userId)
+          const userLeaves = list.filter((leave) => leave?.userId?._id === userId)
 
           // Check if all are approved
           initialSelectAll[userId] = userLeaves.every(
@@ -277,20 +271,19 @@ const LeaveApprovalAndPending = () => {
         })
       } else {
         list.forEach((userLeave) => {
-          const userId = userLeave.userId._id
+          const userId = userLeave?.userId?._id
           // Check the `status` field for each leave and set the toggle accordingly
-          initialToggles[userLeave._id] =
-            userLeave.departmentstatus === "Dept Approved" // Toggle on if approved
-          initialReject[userLeave._id] =
-            userLeave.departmentstatus === "Dept Rejected"
+          initialToggles[userLeave?._id] =
+            userLeave?.departmentstatus === "Dept Approved" // Toggle on if approved
+          initialReject[userLeave?._id] =
+            userLeave?.departmentstatus === "Dept Rejected"
           const userLeaves = list.filter((leave) => leave.userId._id === userId)
 
           // Check if all are approved
           initialSelectAll[userId] = userLeaves.every(
             (leave) => leave.hrstatus === "Dept Approved"
           )
-          // initialSelectAll[userLeave.userId._id] =
-          //   userLeave.departmentstatus === "Dept Approved"
+         
         })
       }
 
@@ -341,21 +334,21 @@ const LeaveApprovalAndPending = () => {
       if (user?.role === "Admin") {
         list.forEach((userLeave) => {
           // Check the `status` field for each leave and set the toggle accordingly
-          initialToggles[userLeave._id] =
-            userLeave.hrstatus === "HR/Onsite Approved" // Toggle on if approved
-          initialReject[userLeave._id] = userLeave.hrstatus === "HR Rejected"
-          initialSelectAll[userLeave.userId._id] =
-            userLeave.hrstatus === "HR/Onsite Approved"
+          initialToggles[userLeave?._id] =
+            userLeave?.hrstatus === "HR/Onsite Approved" // Toggle on if approved
+          initialReject[userLeave?._id] = userLeave.hrstatus === "HR Rejected"
+          initialSelectAll[userLeave?.userId?._id] =
+            userLeave?.hrstatus === "HR/Onsite Approved"
         })
       } else {
         list.forEach((userLeave) => {
           // Check the `status` field for each leave and set the toggle accordingly
-          initialToggles[userLeave._id] =
-            userLeave.departmentstatus === "Dept Approved" // Toggle on if approved
-          initialReject[userLeave._id] =
-            userLeave.departmentstatus === "Dept Rejected"
-          initialSelectAll[userLeave.userId._id] =
-            userLeave.departmentstatus === "Dept Approved"
+          initialToggles[userLeave?._id] =
+            userLeave?.departmentstatus === "Dept Approved" // Toggle on if approved
+          initialReject[userLeave?._id] =
+            userLeave?.departmentstatus === "Dept Rejected"
+          initialSelectAll[userLeave?.userId?._id] =
+            userLeave?.departmentstatus === "Dept Approved"
         })
       }
 
@@ -460,30 +453,7 @@ const LeaveApprovalAndPending = () => {
               ...prevState,
               [userId]: !prevState[userId] // Toggle the specific user's state
             }))
-            // const initialReject = {}
-
-            // if (user?.role === "Admin") {
-            //   successApprove.forEach((userLeave) => {
-            //     // Check the `status` field for each leave and set the toggle accordingly
-            //     initialReject[userLeave._id] = userLeave.hrstatus === "HR Rejected" // Toggle on if approved
-            //   })
-            // } else {
-            //   successApprove.forEach((userLeave) => {
-            //     // Check the `status` field for each leave and set the toggle accordingly
-            //     initialReject[userLeave._id] =
-            //       userLeave.departmentstatus === "Dept Rejected" // Toggle on if approved
-            //   })
-            // }
-            // setLeaveStatus(initialReject)
-
-            // // Check if isSelected is not empty and has the userId as true
-            // if (Object.keys(isSelected).length > 0 && isSelected[userId]) {
-            //   setIsSelected((prevState) => ({
-            //     ...prevState,
-            //     [userId]: !prevState[userId] // Toggle the specific user's state
-            //   }))
-            // }
-            // setLeaveList(successApprove)
+            
             setLoader(false)
           }
         }
@@ -529,18 +499,18 @@ const LeaveApprovalAndPending = () => {
           if (user?.role === "Admin") {
             list.forEach((userOnsite) => {
               // Check the `status` field for each leave and set the toggle accordingly
-              initialToggles[userOnsite._id] =
-                userOnsite.hrstatus === "HR/Onsite Approved" // Toggle on if approved
+              initialToggles[userOnsite?._id] =
+                userOnsite?.hrstatus === "HR/Onsite Approved" // Toggle on if approved
               initialSelectAll[userOnsite._id] =
                 userOnsite.hrstatus === "HR/Onsite Approved"
             })
           } else {
             list.forEach((userOnsite) => {
               // Check the `status` field for each leave and set the toggle accordingly
-              initialToggles[userOnsite._id] =
-                userOnsite.departmentstatus === "Dept Approved" // Toggle on if approved
+              initialToggles[userOnsite?._id] =
+                userOnsite?.departmentstatus === "Dept Approved" // Toggle on if approved
               initialSelectAll[userOnsite.userId._id] =
-                userOnsite.departmentstatus === "Dept Approved"
+                userOnsite?.departmentstatus === "Dept Approved"
             })
           }
           setIsToggled(initialToggles)
@@ -568,18 +538,18 @@ const LeaveApprovalAndPending = () => {
           if (user?.role === "Admin") {
             list.forEach((userLeave) => {
               // Check the `status` field for each leave and set the toggle accordingly
-              initialToggles[userLeave._id] =
-                userLeave.hrstatus === "HR/Onsite Approved" // Toggle on if approved
-              initialSelectAll[userLeave._id] =
-                userLeave.hrstatus === "HR/Onsite Approved"
+              initialToggles[userLeave?._id] =
+                userLeave?.hrstatus === "HR/Onsite Approved" // Toggle on if approved
+              initialSelectAll[userLeave?._id] =
+                userLeave?.hrstatus === "HR/Onsite Approved"
             })
           } else {
             list.forEach((userLeave) => {
               // Check the `status` field for each leave and set the toggle accordingly
-              initialToggles[userLeave._id] =
-                userLeave.departmentstatus === "Dept Approved" // Toggle on if approved
-              initialSelectAll[userLeave.userId._id] =
-                userLeave.departmentstatus === "Dept Approved"
+              initialToggles[userLeave?._id] =
+                userLeave?.departmentstatus === "Dept Approved" // Toggle on if approved
+              initialSelectAll[userLeave?.userId?._id] =
+                userLeave?.departmentstatus === "Dept Approved"
             })
           }
           setIsToggled(initialToggles)
@@ -746,11 +716,8 @@ const LeaveApprovalAndPending = () => {
         setapprovedOnsite(false)
         setApprovedLeave(false)
       }
-      // setpendingOnsite(false)
-      // setapprovedOnsite(false)
-      // setApprovedLeave(false)
+      
       setLoader(true)
-      // setPendingLeave(true)
       setPending(true)
     } else if (option === "approved") {
       if (onsite) {
@@ -765,13 +732,11 @@ const LeaveApprovalAndPending = () => {
         setPendingLeave(false)
       }
       setLoader(true)
-      // setpendingOnsite(false)
-      // setPendingLeave(false)
+     
 
       setPending(false)
     }
   }
-  console.log(leaveList)
   return (
     <div>
       {loader && (
@@ -992,17 +957,17 @@ const LeaveApprovalAndPending = () => {
                         <div className="flex justify-center  ">
                           <button
                             onClick={() =>
-                              singleApprovalOrCancel(user._id, user.userId._id)
+                              singleApprovalOrCancel(user?._id, user?.userId?._id)
                             }
                             className={` ${
-                              isToggled[user._id]
+                              isToggled[user?._id]
                                 ? "bg-green-500"
                                 : "bg-gray-300"
                             } w-12 h-6 flex items-center rounded-full  transition-colors duration-300`}
                           >
                             <div
                               className={`${
-                                isToggled[user._id]
+                                isToggled[user?._id]
                                   ? "translate-x-6"
                                   : "translate-x-0"
                               } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
@@ -1012,9 +977,9 @@ const LeaveApprovalAndPending = () => {
                       </td>
                       <td className="border border-gray-300 py-1 px-1">
                         <button
-                          onClick={() => approveAll(user._id, user.userId._id)}
+                          onClick={() => approveAll(user?._id, user?.userId?._id)}
                           className={` px-4 py-0 rounded text-white transition-colors duration-300 ${
-                            isSelected[user.userId._id]
+                            isSelected[user?.userId?._id]
                               ? "bg-green-500"
                               : "bg-orange-500"
                           }`}
@@ -1026,10 +991,10 @@ const LeaveApprovalAndPending = () => {
                         {/* //pass collection id as user._id */}
                         <button
                           onClick={() =>
-                            toggleReject(user._id, user?.leaveCategory)
+                            toggleReject(user?._id, user?.leaveCategory)
                           }
                         >
-                          {leaveStatus[user._id] ? (
+                          {leaveStatus[user?._id] ? (
                             <FaCheckCircle className="text-green-500" />
                           ) : (
                             <FaTimesCircle className="text-red-500" />

@@ -388,6 +388,7 @@ function LeaveApplication() {
           event.onsiteData
         )
       })
+     
       // If a matching event is found and it has onsite data
       if (existingEvent && existingEvent.length > 0) {
         const matchedOnsiteData = existingEvent[0]?.onsiteData
@@ -702,7 +703,7 @@ function LeaveApplication() {
       }
     })
   }
-
+  console.log(tableRows)
   const handleSubmit = async (tab) => {
     // e.preventDefault()
     try {
