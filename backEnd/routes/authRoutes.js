@@ -39,7 +39,8 @@ import {
   Getallcompensatoryleave,
   GetallUsersLeave,
   GetallCurrentMonthbirthDay,
-  GetallusersOnsite
+  GetallusersOnsite,
+  GetAllstaffs
 } from "../controller/authController.js"
 const router = express.Router()
 
@@ -52,10 +53,12 @@ router.get(
   authMiddleware,
   GetleavemasterLeavecount
 )
+
 router.post("/deleteEvent", authMiddleware, DeleteEvent)
 router.post("/userRegistration", authMiddleware, StaffRegister)
 router.delete("/userDelete", authMiddleware, DeleteUser)
 router.get("/getallUsers", authMiddleware, GetallUsers)
+router.get("/getallStaffs", authMiddleware, GetAllstaffs)
 router.post("/leave", authMiddleware, LeaveApply)
 router.get("/getallLeave", authMiddleware, GetallLeave)
 router.get("/getallUsersLeave", authMiddleware, GetallUsersLeave)

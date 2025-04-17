@@ -1,5 +1,8 @@
 import models from "../model/auth/authSchema.js"
 import Leavemaster from "../model/secondaryUser/leavemasterSchema.js"
+import QuarterlyAchiever from "../model/primaryUser/quarterlyAchieversSchema.js"
+import YearlyAchiever from "../model/primaryUser/yearylyAchieversSchema.js"
+import { checkAcheivementlist } from "../helper/achievementCheck.js"
 import mongoose from "mongoose"
 import Branch from "../model/primaryUser/branchSchema.js"
 import Attendance from "../model/primaryUser/attendanceSchema.js"
@@ -230,8 +233,9 @@ export const StaffRegister = async (req, res) => {
 }
 
 export const UpdateUserandAdmin = async (req, res) => {
-  const { userId, userData, tabledata, userlevelPermission } = req.body
-
+  const { userId, userData, tabledata, userlevelPermission, imageData } =
+    req.body
+  const { profileUrl, documentUrl } = imageData
   const { role } = userData
 
   const { selected, permissionLevel, ...filteredUserData } = userData
@@ -260,6 +264,9 @@ export const UpdateUserandAdmin = async (req, res) => {
         updateQuery.$set.password = hashedPassword
       } else {
         delete updateQuery.$set.password
+      }
+      if (profileUrl.length > 0) {
+        updateQuery.$set.profileUrl = profileUrl
       }
       // Perform the update with findByIdAndUpdate
       const updateStaff = await Staff.findByIdAndUpdate(
@@ -368,7 +375,21 @@ export const UpdateUserPermission = async (req, res) => {
     console.log("Error:", error.message)
   }
 }
-
+export const GetAllstaffs = async (req, res) => {
+  try {
+    const allstaffs = await Staff.find({ role: "Staff" }).select("name")
+    if (allstaffs && allstaffs.length > 0) {
+      return res.status(200).json({ message: "staffs found", data: allstaffs })
+    } else {
+      return res
+        .status(200)
+        .json({ message: "no staffs found", data: allstaffs })
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const GetallUsers = async (req, res) => {
   try {
     const allusers = await Staff.find()
@@ -497,23 +518,12 @@ export const LeaveApply = async (req, res) => {
     })
 
     if (existingDateLeave) {
-      console.log("prev", prevCategory)
-      console.log("curerntcategory", formData.leaveCategory)
-      // console.log(
-      //   "check",
-      //   prevCategory &&
-      //     formData.leaveCategory &&
-      //     formData.leaveCategory === "compensatory Leave" &&
-      //     formData.leaveCategory !== prevCategory
-      // )
-      // If a leave exists, update the document with the current formData
       if (
         prevCategory &&
         formData.leaveCategory &&
         prevCategory === "compensatory Leave" &&
         prevCategory !== formData.leaveCategory
       ) {
-        console.log("here")
         let remainingToAdd =
           existingDateLeave.leaveType === "Full Day" ? 1 : 0.5
         const year = new Date(existingDateLeave.leaveDate).getFullYear()
@@ -541,7 +551,6 @@ export const LeaveApply = async (req, res) => {
         prevCategory === "compensatory Leave" &&
         prevCategory === formData.leaveCategory
       ) {
-        console.log("dine")
         const existingValue =
           existingDateLeave.leaveType === "Full Day" ? 1 : 0.5
         const currentValue = leaveType === "Full Day" ? 1 : 0.5
@@ -591,7 +600,6 @@ export const LeaveApply = async (req, res) => {
         formData.leaveCategory === "compensatory Leave" &&
         formData.leaveCategory !== prevCategory
       ) {
-        console.log("yyyyy")
         const year = new Date(existingDateLeave.leaveDate).getFullYear()
         const leaveValue = leaveType === "Full Day" ? 1 : 0.5
         const compensatoryLeave = await CompensatoryLeave.find({
@@ -600,7 +608,6 @@ export const LeaveApply = async (req, res) => {
           year
         }).sort({ createdAt: 1 })
         let remaining = leaveValue
-        console.log("value", leaveValue)
         for (const comp of compensatoryLeave) {
           if (remaining <= 0) break
           const deduct = Math.min(comp.value, remaining)
@@ -754,7 +761,6 @@ export const OnsiteleaveApply = async (req, res) => {
     }
   } catch (error) {
     console.log("error:", error.message)
-    console.log("er", error)
     return res.status(500).json({ message: "Internal server error" })
   }
 }
@@ -2001,11 +2007,10 @@ export const GetallOnsite = async (req, res) => {
 }
 export const GetallUsersLeave = async (req, res) => {
   try {
-    const { today, loggeduser } = req.query
-  
+    const { today } = req.query
+
     let leavelist
-    if (today === "true" && loggeduser === "Admin") {
-      console.log("h")
+    if (today === "true") {
       const today = new Date()
       today.setHours(0, 0, 0, 0) // 00:00:00 of today
 
@@ -2023,12 +2028,10 @@ export const GetallUsersLeave = async (req, res) => {
       const namesOnly = leavelist.map((item) => item.userId?.name)
 
       if (namesOnly && namesOnly.length > 0) {
-        console.log(leavelist)
         return res
           .status(200)
           .json({ message: "leaves found", data: namesOnly })
       } else {
-        console.log(leavelist)
         return res
           .status(200)
           .json({ message: "no leaves found for today", data: namesOnly })
@@ -2041,32 +2044,33 @@ export const GetallUsersLeave = async (req, res) => {
 }
 export const GetallCurrentMonthbirthDay = async (req, res) => {
   try {
-    const { loggeduser } = req.query
-    let currentmonthBirthDays
     const currentMonth = new Date().toISOString().slice(5, 7) // "04"
 
-    if (loggeduser === "Admin") {
-      const staffbirthdays = await Staff.find({
-        dateofbirth: { $regex: `^\\d{4}-${currentMonth}` }
-      }) // Matches "YYYY-04"})
-      const adminbirthdays = await Admin.find({
-        dateofbirth: { $regex: `^\\d{4}-${currentMonth}` }
+    const staffbirthdays = await Staff.find({
+      dateofbirth: { $regex: `^\\d{4}-${currentMonth}` }
+    }) // Matches "YYYY-04"})
+    const adminbirthdays = await Admin.find({
+      dateofbirth: { $regex: `^\\d{4}-${currentMonth}` }
+    })
+
+    const currentmonthBirthDays = [...staffbirthdays, ...adminbirthdays].map(
+      (item) => ({
+        name: item.name,
+        dateofbirth: item.dateofbirth,
+        profileUrl: item.profileUrl
       })
-      currentmonthBirthDays = [...staffbirthdays, ...adminbirthdays].map(
-        (item) => item.name
-      )
-      if (currentmonthBirthDays && currentmonthBirthDays.length > 0) {
-        return res.status(200).json({
-          message: "current month birthdays found",
-          data: currentmonthBirthDays
-        })
-      } else {
-        return res.status(200).json({
-          message: "no birthdays found for current month",
-          data: currentmonthBirthDays
-        })
-      }
+    )
+
+    if (currentmonthBirthDays && currentmonthBirthDays.length > 0) {
+      return res.status(200).json({
+        message: "current month birthdays found",
+        data: currentmonthBirthDays
+      })
     } else {
+      return res.status(200).json({
+        message: "no birthdays found for current month",
+        data: currentmonthBirthDays
+      })
     }
   } catch (error) {
     console.log("error:", error.message)
@@ -2075,18 +2079,16 @@ export const GetallCurrentMonthbirthDay = async (req, res) => {
 }
 export const GetallusersOnsite = async (req, res) => {
   try {
-    const { loggeduser, today } = req.query
+    const { today } = req.query
 
-    console.log("logged", loggeduser)
-    let todayOnsites
-    if (loggeduser === "Admin" && today === "true") {
+    if (today === "true") {
       const today = new Date()
       today.setHours(0, 0, 0, 0) // 00:00:00 of today
 
       const tomorrow = new Date(today)
       tomorrow.setDate(today.getDate() + 1) // 00:00:00 of next day
 
-      todayOnsites = await Onsite.find({
+      const todayOnsites = await Onsite.find({
         onsiteDate: {
           $gte: today,
           $lt: tomorrow
@@ -2101,9 +2103,11 @@ export const GetallusersOnsite = async (req, res) => {
           .status(200)
           .json({ message: "no onsites found for today", data: todayOnsites })
       }
-    } else if (loggeduser === "Staff") {
     }
-  } catch (error) {}
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
 }
 export const GetallLeave = async (req, res) => {
   const { userid } = req.query // Extract userid from query parameters

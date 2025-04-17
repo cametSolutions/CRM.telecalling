@@ -59,7 +59,7 @@ const UseFetch = (url) => {
       setLoading("loading...")
       setData(null)
       setError(null)
- 
+
       try {
         const result = await fetchDataFromApi(url)
 

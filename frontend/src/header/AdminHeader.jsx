@@ -60,13 +60,14 @@ export default function AdminHeader() {
     localStorage.removeItem("authToken")
     localStorage.removeItem("user")
     localStorage.removeItem("timer")
+    localStorage.removeItem("wish")
     toast.success("Logout successfully")
     // Redirect to login page
     navigate("/")
   }
   const links = [
-{to:"/admin/home",label:"Home"},
-    // { to: "/admin/dashBoard", label: "Dashboard" },
+    // {to:"/admin/home",label:"Home"},
+    { to: "/admin/dashBoard", label: "Dashboard" },
     { label: "Masters" },
     { label: "Transactions" },
     { label: "Reports" },

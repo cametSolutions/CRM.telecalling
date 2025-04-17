@@ -3,7 +3,9 @@ import CallregistrationList from "../../pages/secondaryUser/List/Callregistratio
 
 const dashBoardRoutes = [
   { path: "/admin/dashBoard", component: PrimaryUserDashBoard },
-{path:"/admin/support&department",component:CallregistrationList}
+  { path: "/admin/support&department", component: CallregistrationList },
+  { path: "/staff/dashBoard", component: PrimaryUserDashBoard },
+  { path: "/staff/support&department", component: CallregistrationList }
 ]
 
 export default dashBoardRoutes

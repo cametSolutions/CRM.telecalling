@@ -63,13 +63,13 @@ export default function StaffHeader() {
     localStorage.removeItem("authToken")
     localStorage.removeItem("user")
     localStorage.removeItem("timer")
-
+    localStorage.removeItem("wish")
     // Redirect to login page
     toast.success("Logout successfully")
     navigate("/")
   }
   const links = [
-    { to: "/staff/home", label: "Home" },
+    { to: "/staff/dashBoard", label: "Dashboard" },
     { label: "Masters" },
     { label: "Transactions" },
     { label: "Reports" },
@@ -371,8 +371,7 @@ export default function StaffHeader() {
                               master.control) ||
                             (master.label === "Leave Summary" &&
                               master.control) ||
-                            (
-                              master.label === "Leave Approval Pending" &&
+                            (master.label === "Leave Approval Pending" &&
                               master.control)
                         )
                         .map((master, masterIndex) => (
