@@ -157,7 +157,19 @@ const CallregistrationList = () => {
   }, 300)
 
   const handleChange = (e) => handleSearch(e.target.value)
+  const setDateandTime = (dateString) => {
+    const dateObj = new Date(dateString)
 
+    const date = dateObj.toLocaleDateString("en-GB") // Format: DD/MM/YYYY
+    const time = dateObj.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true // ✅ Enables 12-hour format with AM/PM
+    })
+
+    return `${date} ${time}` // Example: "03/02/2025 02:48:57 PM"
+  }
   const getTodaysSolved = (calls) => {
     const today = new Date().toISOString().split("T")[0]
     let todaysSolvedCount = 0
@@ -591,14 +603,8 @@ const CallregistrationList = () => {
                               {item?.license}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {new Date(
-                                item?.timedata?.startTime
-                              ).toLocaleDateString("en-GB", {
-                                timeZone: "UTC",
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric"
-                              })}
+                             
+                              {setDateandTime(item?.timedata?.startTime)}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]"></td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
@@ -772,25 +778,13 @@ const CallregistrationList = () => {
                             </td>
 
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {new Date(
-                                item?.timedata?.startTime
-                              ).toLocaleDateString("en-GB", {
-                                timeZone: "UTC",
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric"
-                              })}
+                             
+                              {setDateandTime(item?.timedata?.startTime)}
                             </td>
 
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {new Date(
-                                item?.timedata?.endTime
-                              ).toLocaleDateString("en-GB", {
-                                timeZone: "UTC",
-                                day: "2-digit",
-                                month: "2-digit",
-                                year: "numeric"
-                              })}
+                             
+                              {setDateandTime(item?.timedata?.endTime)}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {item?.formdata?.incomingNumber}
@@ -799,15 +793,7 @@ const CallregistrationList = () => {
                               {item?.formdata?.status}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {/* {Array.isArray(item?.formdata?.attendedBy)
-                                ? item.formdata.attendedBy
-                                    ?.map(
-                                      (attendee) =>
-                                        attendee?.callerId?.name ||
-                                        attendee?.name
-                                    )
-                                    .join(", ")
-                                : item?.formdata?.attendedBy?.callerId?.name} */}
+                             
                               {Array.isArray(item?.formdata?.attendedBy)
                                 ? item.formdata.attendedBy.length > 0
                                   ? item.formdata.attendedBy[
@@ -823,15 +809,7 @@ const CallregistrationList = () => {
                                 : item?.formdata?.attendedBy?.callerId?.name}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {/* {Array.isArray(item?.formdata?.completedBy)
-                                ? item.formdata.completedBy
-                                    ?.map(
-                                      (attendee) =>
-                                        attendee?.callerId?.name ||
-                                        attendee?.name
-                                    )
-                                    .join(", ")
-                                : item?.formdata?.completedBy.callerId?.name} */}
+                             
                               {Array.isArray(item?.formdata?.completedBy)
                                 ? item.formdata.completedBy.length > 0
                                   ? item.formdata.completedBy[
