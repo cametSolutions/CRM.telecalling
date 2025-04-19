@@ -437,6 +437,7 @@ function LeaveApplication() {
   }
   const handledelete = async (data) => {
     try {
+      setLoader(true)
       const payload = {
         ...(data.leaveType
           ? {
@@ -463,6 +464,7 @@ function LeaveApplication() {
         )
 
         if (response.status === 200) {
+          setLoader(false)
           const data = response?.data?.data
           setAllleaves(data)
           setShowModal(false)
@@ -481,6 +483,8 @@ function LeaveApplication() {
           setSelectedTab("Leave")
           toast.success(response.data.message)
         } else if (response.status === 201) {
+          setLoader(false)
+
           setAllleaves([])
           setShowModal(false)
           setSelectedTab("Leave")
@@ -507,6 +511,7 @@ function LeaveApplication() {
         )
         const data = response.data.data
         if (response.status === 200) {
+          setLoader(false)
           setMessage({ top: "", bottom: "" })
           setAllOnsite(data)
           setTableRows([])
@@ -527,6 +532,7 @@ function LeaveApplication() {
           setSelectedTab("Leave")
           toast.success(response.data.message)
         } else if (response.status === 201) {
+          setLoader(false)
           setShowModal(false)
           setMessage({ top: "", bottom: "" })
           setAllOnsite([])
@@ -548,6 +554,7 @@ function LeaveApplication() {
         }
       }
     } catch (error) {
+      setLoader(false)
       setMessage((prev) => ({ ...prev, bottom: error.response.data.message }))
       console.log(error.response.data.message)
     }
