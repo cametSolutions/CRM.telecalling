@@ -3,13 +3,12 @@ import axios from "axios"
 import { toast } from "react-toastify"
 import dayjs from "dayjs"
 import { FaArrowRight } from "react-icons/fa"
-
+import BarLoader from "react-spinners/BarLoader"
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi" // Impo
 import UseFetch from "../../hooks/useFetch"
 import api from "../../api/api"
 import debounce from "lodash.debounce"
 import { isPast } from "date-fns"
-import { useFetcher } from "react-router-dom"
 
 function LeaveApplication() {
   const [events, setEvents] = useState([])
@@ -718,8 +717,26 @@ function LeaveApplication() {
   const handleSubmit = async (tab) => {
     // e.preventDefault()
     try {
+      if (tab === "New Leave" || tab === "Edit Leave") {
+        const dayOfWeek = new Date(formData.leaveDate).getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+        const isSunday = dayOfWeek === 0
+
+        const isHoliday = monthlyHoly?.some((holiday) => {
+          const formattedHolyDate = holiday.holyDate.split("T")[0] // Extract YYYY-MM-DD
+          return formattedHolyDate === formData.leaveDate
+        })
+
+        if (isSunday || isHoliday) {
+          setMessage((prev) => ({
+            ...prev,
+            bottom: "It's a holiday—you can't request leave."
+          }))
+          return
+        }
+      }
+
       setLoader(true)
-      if (tab === "Leave" || tab === "New Leave") {
+      if (tab === "Leave" || tab === "New Leave" || tab === "Edit Leave") {
         // Validation
         let newErrors = {}
         if (!formData.leaveType) newErrors.leaveType = "Shift is required"
@@ -1603,7 +1620,7 @@ function LeaveApplication() {
                 ></textarea>
               </div>
               {errors.reason && <p className="text-red-500">{errors.reason}</p>}
-              <div className="text-center text-red-700">
+              <div className="text-center text-red-700 py-3">
                 <p>{message.bottom}</p>
               </div>
                         
@@ -1714,8 +1731,15 @@ function LeaveApplication() {
       {/* Modal Popup */}
       {showModal && leaveBalance && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center  z-50">
-          <div className="bg-white p-3 rounded-lg shadow-lg  w-full  sm:w-auto mx-4 max-h-[90vh] overflow-y-auto flex flex-col">
-            <div>
+          <div className="bg-white  rounded-lg shadow-lg  w-full  sm:w-auto mx-4 max-h-[90vh] overflow-y-auto flex flex-col">
+            {loader && (
+              <BarLoader
+                cssOverride={{ width: "100%", height: "6px" }} // Tailwind's `h-4` corresponds to `16px`
+                color="#4A90E2" // Change color as needed
+                // loader={true}
+              />
+            )}
+            <div className="p-3">
               {/* Tab Navigation */}
               <div className="flex justify-center space-x-4">
                 {tabs?.map((tab) => (
