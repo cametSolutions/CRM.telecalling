@@ -464,7 +464,6 @@ const LeaveApprovalAndPending = () => {
   }
 
   const toggleReject = async (id, category) => {
-    console.log(category)
     try {
       setLoader(true)
 
@@ -485,7 +484,6 @@ const LeaveApprovalAndPending = () => {
           : false
 
       if (checkOnsite) {
-        console.log("tttttttttttt")
         const onsiteReject = await api.put(
           `/auth/rejectOnsite/?role=${user.role}&selectedId=${id}&userId=${user._id}&startdate=${dates.startDate}&enddate=${dates.endDate}&feild=${trueState}`
         )

@@ -16,10 +16,11 @@ const Layout = () => {
   const staffHeader = location.pathname.startsWith("/staff")
   useEffect(() => {
     if (headerRef.current) {
+      
       setHeaderHeight(headerRef.current.offsetHeight)
     }
   }, [location.pathname]) // Update height on route change
-
+ 
   return (
     <div className="h-screen flex flex-col ">
       <div ref={headerRef} className="sticky top-0 z-50">

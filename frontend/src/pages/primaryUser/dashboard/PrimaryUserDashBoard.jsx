@@ -181,7 +181,7 @@ export default function PrimaryUserDashBoard() {
   }
 
   return (
-    <div className="h-auto bg-gray-100 shadow-lg rounded-lg">
+    <div className="h-auto bg-gray-200 shadow-lg rounded-lg">
       {showBirthdayPopup && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
           <div
