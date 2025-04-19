@@ -9,6 +9,7 @@ import UseFetch from "../../hooks/useFetch"
 import api from "../../api/api"
 import debounce from "lodash.debounce"
 import { isPast } from "date-fns"
+import { useFetcher } from "react-router-dom"
 
 function LeaveApplication() {
   const [events, setEvents] = useState([])
@@ -63,6 +64,7 @@ function LeaveApplication() {
   const [tableRows, setTableRows] = useState([])
   const [clickedDate, setclickedDate] = useState(null)
   const [currentmonthleaveData, setcurrentmonthLeaveData] = useState([])
+  const [currentmonthonsiteData, setcurrentmonthOnsiteData] = useState([])
   const userData = localStorage.getItem("user")
   const tabs = ["Leave", "Onsite"]
   const user = JSON.parse(userData)
@@ -101,6 +103,17 @@ function LeaveApplication() {
     })
     setcurrentmonthLeaveData(filteredcurrentmonthlyLeaves)
   }, [allleaves, currentDate, currentMonth])
+  useEffect(() => {
+    if (allonsite && allonsite.length > 0) {
+      const filteredcurrentmonthlyOnsites = allonsite?.filter((onsites) => {
+        ///onsitedate is iso format like "2025-03-03T12:00:00Z" so here slice 0 takes the first part and get the first 7 means 2025-03 because current month includes year also 2025-03
+        const onsiteMonth = onsites.onsiteDate.split("T")[0].slice(0, 7)
+        //here currentMonth have year and month no date
+        return onsiteMonth === currentMonth
+      })
+      setcurrentmonthOnsiteData(filteredcurrentmonthlyOnsites)
+    }
+  }, [allonsite, currentMonth])
   useEffect(() => {
     const days = []
 
@@ -388,7 +401,7 @@ function LeaveApplication() {
           event.onsiteData
         )
       })
-     
+
       // If a matching event is found and it has onsite data
       if (existingEvent && existingEvent.length > 0) {
         const matchedOnsiteData = existingEvent[0]?.onsiteData
@@ -629,7 +642,6 @@ function LeaveApplication() {
 
   const handleChange = (e) => handleInputChange(e)
   const handleDataChange = (e) => {
-    console.log(selectedTab)
     const { name, value } = e.target
     // Access current values for leave type & category
     const selectedCategory =
@@ -703,7 +715,6 @@ function LeaveApplication() {
       }
     })
   }
-  console.log(tableRows)
   const handleSubmit = async (tab) => {
     // e.preventDefault()
     try {
@@ -958,7 +969,7 @@ function LeaveApplication() {
     switch (selectedTab) {
       case "Leave":
         return (
-          <div className="bg-white rounded-lg shadow-lg max-w-[380px]  min-w-[300px] z-40 border border-gray-300 overflow-hidden">
+          <div className=" rounded-lg shadow-lg max-w-[380px]  min-w-[300px] z-40 border border-gray-300 overflow-hidden">
             {/* Header */}
             {/* <div className="bg-gray-100 px-6 py-2 text-lg font-bold text-gray-700 border-b">
               {user?.name?.toUpperCase()}
@@ -1000,10 +1011,13 @@ function LeaveApplication() {
             <div className="border-t border-gray-300"></div>
 
             {/* Upcoming Leaves */}
-            <div className="p-2">
-              <h2 className="text-gray-600 font-semibold text-sm mb-2">
-                Upcoming Leaves
-              </h2>
+            <div className="p-2 text-center">
+              {currentmonthleaveData?.length > 0 && (
+                <h2 className="text-gray-600 font-semibold text-sm mb-2">
+                  Upcoming Leaves
+                </h2>
+              )}
+
               <div className="space-y-3 max-h-36 overflow-y-auto">
                 {currentmonthleaveData?.length > 0 ? (
                   currentmonthleaveData.map((leave, index) => (
@@ -1053,7 +1067,7 @@ function LeaveApplication() {
                       <FaArrowRight
                         className="text-gray-500 cursor-pointer transition-transform duration-200 ease-in-out hover:scale-125"
                         onClick={() => {
-                          setSelectedTab("New Leave")
+                          setSelectedTab("Edit Leave")
                           setEdit(true)
 
                           setFormData({
@@ -1081,6 +1095,114 @@ function LeaveApplication() {
           </div>
         )
       case "Onsite":
+        return (
+          <div className="p-2  text-center border border-gray-300 rounded-lg min-w-[320px] max-w-[380px] ">
+            {currentmonthonsiteData?.length > 0 && (
+              <h2 className="text-gray-600 font-semibold text-sm mb-2">
+                Upcoming Onsite
+              </h2>
+            )}
+
+            <div className="space-y-3 md:max-h-96 h-fit min-h-36 overflow-y-auto">
+              {currentmonthonsiteData?.length > 0 ? (
+                [...currentmonthonsiteData]
+                  .sort(
+                    (a, b) => new Date(a.onsiteDate) - new Date(b.onsiteDate)
+                  )
+                  .map((onsite, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between bg-gray-50 border border-gray-300 p-3 rounded-lg shadow-sm hover:cursor-pointer"
+                    >
+                      {/* Date */}
+                      <div className="text-gray-700 font-semibold w-24 text-sm">
+                        {onsite.onsiteDate
+                          .split("T")[0]
+                          .split("-")
+                          .reverse()
+                          .join("-")}
+                      </div>
+
+                      {/* Full/Half Day & Category */}
+                      <div className="flex flex-col text-gray-600">
+                        <span className="text-sm">{onsite?.onsiteType}</span>
+                        {/* <span className="text-sm font-semibold">
+                          {leave?.leaveCategory}
+                        </span> */}
+                      </div>
+
+                      {/* Status: Oval Badge */}
+                      <div
+                        className={`px-3 py-1 text-sm rounded-full text-white ${
+                          onsite.departmentstatus === "Dept Approved" ||
+                          onsite.hrstatus === "HR/Onsite Approved"
+                            ? "bg-green-500"
+                            : onsite.departmentstatus === "Not Approved" &&
+                              onsite.hrstatus === "Not Approved"
+                            ? "bg-yellow-500"
+                            : "bg-red-500"
+                        }`}
+                      >
+                        {onsite.departmentstatus === "Dept Approved" ||
+                        onsite.hrstatus === "HR/Onsite Approved"
+                          ? "Approved"
+                          : onsite.departmentstatus === "Not Approved" &&
+                            onsite.hrstatus === "Not Approved"
+                          ? "Pending"
+                          : ""}
+                      </div>
+
+                      {/* Forward Arrow */}
+                      <FaArrowRight
+                        className="text-gray-500 cursor-pointer transition-transform duration-200 ease-in-out hover:scale-125"
+                        onClick={() => {
+                          setSelectedTab("Edit Onsite")
+                          setEdit(true)
+
+                          setFormData({
+                            onsiteDate: onsite.onsiteDate
+                              .toString()
+                              .split("T")[0],
+                            onsiteType: onsite.onsiteType,
+                            halfDayPeriod:
+                              onsite.onsiteType === "Half Day"
+                                ? onsite.halfDayPeriod
+                                : undefined,
+
+                            description: onsite.description
+                          })
+                          if (
+                            onsite.onsiteData &&
+                            onsite.onsiteData.length > 0
+                          ) {
+                            const matchedOnsiteData = onsite.onsiteData[0]
+                              ?.flat()
+                              ?.map((status) => ({
+                                siteName: status.siteName,
+                                place: status.place,
+                                Start: status.Start,
+                                End: status.End,
+                                km: status.km,
+                                kmExpense: status.kmExpense,
+                                foodExpense: status.foodExpense
+                              }))
+                            // Now set the table rows with the matched onsite data and an empty row for new input
+                            setTableRows(matchedOnsiteData)
+                          }
+                        }}
+                      />
+                    </div>
+                  ))
+              ) : (
+                <p className="text-gray-500 text-sm italic text-center">
+                  "No Upcoming Onsites"
+                </p>
+              )}
+            </div>
+          </div>
+        )
+      case "New Onsite":
+      case "Edit Onsite":
         return (
           <div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
@@ -1280,6 +1402,7 @@ function LeaveApplication() {
           </div>
         )
       case "New Leave":
+      case "Edit Leave":
         return (
           <div className="bg-white rounded-lg shadow-lg max-w-[380px] min-w-[300px] z-40 border border-gray-100 px-5">
             <h2 className="text-xl font-semibold text-center">
@@ -1623,9 +1746,18 @@ function LeaveApplication() {
                   <div className=" flex justify-center mt-3 mb-3">
                     <button
                       className="bg-blue-800 rounded-lg px-4 py-1 text-white hover:bg-blue-700"
-                      onClick={() => setSelectedTab("New Leave")}
+                      onClick={() => {
+                        setSelectedTab("New Leave")
+                        setFormData((prev) => ({
+                          ...prev,
+                          leaveType: "Full Day",
+                          leaveCategory: "",
+                          halfDayPeriod: "",
+                          reason: ""
+                        }))
+                      }}
                     >
-                      Apply New Leave
+                      Apply New Leaves
                     </button>
                     <button
                       className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600 ml-3"
@@ -1653,13 +1785,19 @@ function LeaveApplication() {
                       Close
                     </button>
                   </div>
-                ) : (
+                ) : selectedTab === "Edit Onsite" ||
+                  selectedTab === "Edit Leave" ||
+                  selectedTab === "New Leave" ||
+                  selectedTab === "New Onsite" ? (
                   <div className="col-span-2 gap-4 flex justify-center mt-4 mb-3">
                     <button
                       className="bg-gradient-to-b from-blue-400 to-blue-500 px-3 py-1 hover:from-blue-400 hover:to-blue-600 text-white rounded"
                       onClick={() => handleSubmit(selectedTab)}
                     >
-                      Submit
+                      {selectedTab === "Edit Onsite" ||
+                      selectedTab === "Edit Leave"
+                        ? "Update"
+                        : "Submit"}
                     </button>
                     <button
                       className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
@@ -1685,6 +1823,43 @@ function LeaveApplication() {
                       onClick={() => handledelete(formData)}
                     >
                       Delete
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <button
+                      onClick={() => {
+                        setSelectedTab("New Onsite")
+                        setFormData((prev) => ({
+                          ...prev,
+                          onsiteType: "Full Day",
+                          halfDayPeriod: "",
+                          description: ""
+                        }))
+                        setTableRows([])
+                      }}
+                      className="py-2 m-2 bg-blue-800 shadow-lg text-white rounded-lg px-2 hover:bg-blue-900"
+                    >
+                      Apply New Onsite
+                    </button>
+                    <button
+                      className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
+                      onClick={() => {
+                        setShowModal(false)
+                        setFormData({
+                          description: "",
+                          onsite: false,
+                          halfDayPeriod: "",
+                          leaveType: "Full Day"
+                        })
+
+                        setSelectedTab("Leave")
+                        setTableRows([])
+                        setMessage("")
+                        setErrors("")
+                      }}
+                    >
+                      Close
                     </button>
                   </div>
                 )}
