@@ -1103,7 +1103,7 @@ function LeaveApplication() {
               </h2>
             )}
 
-            <div className="space-y-3 md:max-h-96 max-h-max min-h-36 overflow-y-auto">
+            <div className="space-y-3 max-h-96  min-h-36 overflow-y-auto">
               {currentmonthonsiteData?.length > 0 ? (
                 [...currentmonthonsiteData]
                   .sort(
