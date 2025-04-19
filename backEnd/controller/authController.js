@@ -879,7 +879,6 @@ export const OnsiteApply = async (req, res) => {
         onsitedata.onsiteData.push(tableRows)
       }
       const successonsite = await onsitedata.save()
-
       if (compensatoryLeave) {
         const year = new Date(onsiteDate).getFullYear()
 

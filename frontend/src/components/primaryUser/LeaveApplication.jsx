@@ -103,16 +103,23 @@ function LeaveApplication() {
     setcurrentmonthLeaveData(filteredcurrentmonthlyLeaves)
   }, [allleaves, currentDate, currentMonth])
   useEffect(() => {
-    if (allonsite && allonsite.length > 0) {
-      const filteredcurrentmonthlyOnsites = allonsite?.filter((onsites) => {
+    if ((leaves && leaves.length > 0) || (allonsite && allonsite.length) > 0) {
+      setAllleaves(leaves)
+      setAllOnsite(allonsite)
+    }
+  }, [leaves, allonsite])
+  useEffect(() => {
+    if (allOnsites && allOnsites.length > 0) {
+      const filteredcurrentmonthlyOnsites = allOnsites?.filter((onsites) => {
         ///onsitedate is iso format like "2025-03-03T12:00:00Z" so here slice 0 takes the first part and get the first 7 means 2025-03 because current month includes year also 2025-03
         const onsiteMonth = onsites.onsiteDate.split("T")[0].slice(0, 7)
+      
         //here currentMonth have year and month no date
         return onsiteMonth === currentMonth
       })
       setcurrentmonthOnsiteData(filteredcurrentmonthlyOnsites)
     }
-  }, [allonsite, currentMonth])
+  }, [allOnsites, currentMonth])
   useEffect(() => {
     const days = []
 
@@ -154,12 +161,7 @@ function LeaveApplication() {
 
     setPastDate(isPastDate)
   }, [formData])
-  useEffect(() => {
-    if ((leaves && leaves.length > 0) || (allonsite && allonsite.length) > 0) {
-      setAllleaves(leaves)
-      setAllOnsite(allonsite)
-    }
-  }, [leaves, allonsite])
+
   useEffect(() => {
     if (
       allleaves &&
@@ -462,10 +464,11 @@ function LeaveApplication() {
           `/auth/deleteEvent?type=${type}&userid=${user._id}`,
           payload
         )
+        const data = response?.data?.data
 
         if (response.status === 200) {
           setLoader(false)
-          const data = response?.data?.data
+
           setAllleaves(data)
           setShowModal(false)
           setFormData({
@@ -484,7 +487,7 @@ function LeaveApplication() {
           toast.success(response.data.message)
         } else if (response.status === 201) {
           setLoader(false)
-
+          setAllleaves(data)
           setAllleaves([])
           setShowModal(false)
           setSelectedTab("Leave")
@@ -514,6 +517,7 @@ function LeaveApplication() {
           setLoader(false)
           setMessage({ top: "", bottom: "" })
           setAllOnsite(data)
+
           setTableRows([])
           setSelectedTab("Leave")
           setShowModal(false)
@@ -533,6 +537,7 @@ function LeaveApplication() {
           toast.success(response.data.message)
         } else if (response.status === 201) {
           setLoader(false)
+          setAllOnsite(data)
           setShowModal(false)
           setMessage({ top: "", bottom: "" })
           setAllOnsite([])
@@ -834,7 +839,7 @@ function LeaveApplication() {
             setErrors("")
           }
         }
-      } else if (tab === "Onsite") {
+      } else if (tab === "New Onsite" || tab === "Edit Onsite") {
         // Validation
         let newErrors = {}
         if (!formData.onsiteType) newErrors.onsiteType = "Shift is required"
