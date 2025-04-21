@@ -113,7 +113,7 @@ function LeaveApplication() {
       const filteredcurrentmonthlyOnsites = allOnsites?.filter((onsites) => {
         ///onsitedate is iso format like "2025-03-03T12:00:00Z" so here slice 0 takes the first part and get the first 7 means 2025-03 because current month includes year also 2025-03
         const onsiteMonth = onsites.onsiteDate.split("T")[0].slice(0, 7)
-      
+
         //here currentMonth have year and month no date
         return onsiteMonth === currentMonth
       })
@@ -699,12 +699,12 @@ function LeaveApplication() {
       setFormData((prev) => ({
         ...prev,
         [name]: value,
-        halfDayPeriod:
-          selectedTab === "Onsite"
-            ? formData.onsiteType
-            : formData.leaveType === "Half Day"
-            ? "Morning"
-            : ""
+        // halfDayPeriod:
+        //   selectedTab === "Onsite"
+        //     ? formData.onsiteType
+        //     : formData.leaveType === "Half Day"
+        //     ? "Morning"
+        //     : ""
       }))
     }
 
