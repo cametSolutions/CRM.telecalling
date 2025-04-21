@@ -74,9 +74,7 @@ const ResponsiveTable = ({
                 const isHolidayAbsent = holiday.some((holy) => {
                   if (holy.date !== date) return false
                   const matchedItem = attendee.attendancedates[holy.date]
-                  console.log(matchedItem)
                   if (!matchedItem) return false
-                  console.log(matchedItem)
 
                   const notMarkedEmpty = matchedItem.notMarked === ""
                   const hasLeave =
@@ -85,7 +83,6 @@ const ResponsiveTable = ({
                     matchedItem.otherLeave !== "" ||
                     matchedItem.privileageLeave !== ""
                   const notMarkedOne = matchedItem.notMarked === 1
-                  console.log(notMarkedOne)
 
                   return (notMarkedEmpty && hasLeave) || notMarkedOne
                 })
@@ -110,8 +107,7 @@ const ResponsiveTable = ({
 
                 const holidayName =
                   holiday.find((h) => h.date === date)?.holyname || null
-                console.log(isSundayAbsent)
-                console.log(isHolidayAbsent)
+               
                 const highlightClass =
                   isSundayAbsent || isHolidayAbsent
                     ? "bg-red-500"

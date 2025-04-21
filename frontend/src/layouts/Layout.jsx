@@ -34,15 +34,7 @@ const Layout = () => {
         <Mainrouter headerHeight={headerHeight} />
       </main>
     </div>
-    // <>
-    //   {adminHeader ? <AdminHeader /> : ""}
-    //   {staffHeader ? <StaffHeader /> : ""}
-
-    //   <main>
-    //     <Mainrouter />
-    //   </main>
-
-    // </>
+    
   )
 }
 

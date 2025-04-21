@@ -21,11 +21,9 @@ const ExcelUploaderProduct = () => {
       setFile(selectedFile) // Save the selected file in state
     }
   }
-  console.log("nowwwwwwwwwww")
-  console.log("Socket connected:", socket?.connected)
+
   const handleUpload = () => {
     if (!file) {
-      console.log("No file selected.")
       return
     } else {
       setLoading(true) // Set loading state to true
@@ -41,35 +39,7 @@ const ExcelUploaderProduct = () => {
     }
   }
 
-  //   const handleUpload = () => {
-  //     if (!file) {
-  //       console.log("No file selected.")
-  //       return
-  //     }
-
-  //     const fileExtension = file.name.split(".").pop().toLowerCase()
-  //     const fileType = fileExtension === "xls" ? "xls" : "xlsx"
-
-  //     const reader = new FileReader()
-  //     reader.onload = (event) => {
-  //     //   const fileData = event.target.result
-  //       const arrayBuffer = event.target.result;
-  //       const fileData = Buffer.from(arrayBuffer).toString("base64");
-
-  //       console.log("Emitting event to backend...")
-  //       console.log("File Type:", fileType)
-  //       console.log("File Data:", fileData)
-  //       console.log("Socket connected:", socket?.connected)
-  //       if (socket && socket.connected) {
-  //         setLoading(true)
-  //         socket.emit("startConversionproduct", { fileData, fileType })
-  //         console.log("Event emitted successfully!")
-  //       } else {
-  //         console.error("Socket not connected!")
-  //       }
-  //     }
-  //     reader.readAsArrayBuffer(file)
-  //   }
+  
 
   // Listen for progress updates
   useEffect(() => {

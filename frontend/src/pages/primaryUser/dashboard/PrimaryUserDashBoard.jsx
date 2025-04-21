@@ -8,13 +8,14 @@ import {
 import { FiChevronDown, FiX } from "react-icons/fi"
 import { FaSpinner, FaUserCircle } from "react-icons/fa"
 import { toast } from "react-toastify"
-import { Link } from "react-router-dom"
+import { Link, useFetcher } from "react-router-dom"
 import UseFetch from "../../../hooks/useFetch"
 import api from "../../../api/api"
-import { use } from "react"
 export default function PrimaryUserDashBoard() {
   const [leaveList, setTodayLeaveList] = useState([])
-  const [loader, setLoader] = useState(false)
+  const [announcement, setAnnouncementText] = useState("")
+  const [achieverLoader, setachieverLoader] = useState(false)
+  const [announcementLoader, setannouncementLoader] = useState(false)
   const [birthdayAlreadyShown, setbirthdayshown] = useState(false)
   const [selectedQuarterlyStaffs, setSelectedQuarterlyStaffs] = useState([])
   const [quarterlyTitle, setQuarterlyTitle] = useState("")
@@ -35,6 +36,9 @@ export default function PrimaryUserDashBoard() {
   const { data: staffs } = UseFetch("/auth/getallStaffs")
   const { data: acheivementlist, refreshHook } = UseFetch(
     "/dashboard/getcurrentquarterlyAchiever"
+  )
+  const { data: announcementlist } = UseFetch(
+    "/dashboard/getcurrentAnnouncement"
   )
 
   useEffect(() => {
@@ -75,10 +79,13 @@ export default function PrimaryUserDashBoard() {
 
   useEffect(() => {
     if (staffs) {
-      // Set combined names to state
+
       setallStaffs(staffs)
     }
   }, [staffs])
+  useEffect(() => {
+    setAnnouncementText(announcementlist?.[0]?.announcement)
+  }, [announcementlist])
 
   useEffect(() => {
     if (
@@ -158,19 +165,37 @@ export default function PrimaryUserDashBoard() {
     }
   ]
   const handleSubmit = async (e) => {
-    setLoader(true)
+    setachieverLoader(true)
 
     e.preventDefault()
-
-    const response = await api.post("/dashboard/updateAcheivements", {
-      selectedQuarterlyStaffs,
-      selectedYearlyStaffs,
-      quarterlyTitle
-    })
-    if (response.status === 200) {
-      setLoader(false)
+    try {
+      const response = await api.post("/dashboard/updateAcheivements", {
+        selectedQuarterlyStaffs,
+        selectedYearlyStaffs,
+        quarterlyTitle
+      })
+      if (response.status === 200) {
+        setachieverLoader(false)
+        toast.success(response.data.message)
+        refreshHook()
+      }
+    } catch (error) {
+      console.log("error:", error.message)
+    }
+  }
+  const handleAnnouncementSubmit = async (e) => {
+    setannouncementLoader(true)
+    e.preventDefault()
+    try {
+      const response = await api.post("/dashboard/updateAnnouncement", {
+        announcement
+      })
+      setannouncementLoader(false)
+      setAnnouncementText(response.data.data.announcement)
       toast.success(response.data.message)
-      refreshHook()
+    } catch (error) {
+      setannouncementLoader(false)
+      console.log("error:", error.message)
     }
   }
   const closeBirthdayPopup = () => {
@@ -181,7 +206,7 @@ export default function PrimaryUserDashBoard() {
   }
 
   return (
-    <div className="h-auto bg-gray-200 shadow-lg rounded-lg">
+    <div className="h-full shadow-lg rounded-lg bg-[#bfdbf7]">
       {showBirthdayPopup && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
           <div
@@ -273,7 +298,7 @@ export default function PrimaryUserDashBoard() {
       )}
 
       {/* Navigation Cards */}
-      <div className="flex flex-col md:flex-row md:justify-evenly md:gap-4 space-y-3 md:space-y-0 p-4 bg-white border-b">
+      <div className="flex flex-col md:flex-row md:justify-evenly md:gap-4 space-y-3 md:space-y-0 p-4  border-b shadow-lg bg-[#023e7d]">
         {cards.map((item, index) => {
           const Icon = item.icon
           return (
@@ -400,47 +425,19 @@ export default function PrimaryUserDashBoard() {
         </div>
 
         {/* RIGHT SIDE */}
-        <div className="flex flex-col gap-6 lg:w-1/2">
+        <div className="flex flex-col gap-6 lg:w-1/2 ">
           <div className="flex flex-col lg:flex-row gap-6 h-full">
             {/* Target & Achievements */}
             <div className="p-4 rounded-lg flex-1 shadow-md bg-white border-l-4 border-green-500">
               <h2 className="font-bold text-lg mb-3 text-green-700">
                 Target & Achievements
               </h2>
-
-              {/* <div className="mt-4">
-                <div className="mb-2">
-                  <div className="flex justify-between mb-1">
-                    <span className="font-medium">Target:</span>
-                    <span className="font-bold">$1M</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div
-                      className="bg-green-600 h-2.5 rounded-full"
-                      style={{ width: "100%" }}
-                    ></div>
-                  </div>
-                </div>
-
-                <div className="mb-2">
-                  <div className="flex justify-between mb-1">
-                    <span className="font-medium">Achieved:</span>
-                    <span className="font-bold">$850k (85%)</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div
-                      className="bg-blue-600 h-2.5 rounded-full"
-                      style={{ width: "85%" }}
-                    ></div>
-                  </div>
-                </div>
-              </div> */}
             </div>
 
             {/* Achievers & Announcements */}
-            <div className="p-4 rounded-lg shadow-md flex-1 flex flex-col gap-4 group relative bg-white border-l-4 border-purple-500">
+            <div className="p-4 rounded-lg shadow-md flex-1 flex flex-col gap-4 group  border-l-4 border-purple-500 relative min-h-[500px] md:min-h-fit bg-white ">
               {/* Admin Popup */}
-              <div className="absolute top-2 right-2 w-72 bg-white border border-gray-300 rounded shadow-lg p-4 text-sm hidden group-hover:flex flex-col gap-3 z-10">
+              <div className="md:absolute md:left-1/2 md:top-1/3 md:-translate-x-1/2 md:-translate-y-1/2 md:inset-auto sm:w-[90%] border bg-white border-gray-300 rounded shadow-lg p-4 text-sm hidden group-hover:block z-40 m-4 md:m-0 overflow-y-auto max-h-[90vh] md:max-h-96">
                 <h3 className="font-bold text-center text-purple-700">
                   Update Achievers
                 </h3>
@@ -450,14 +447,14 @@ export default function PrimaryUserDashBoard() {
                   placeholder="Enter Title"
                   value={quarterlyTitle || ""}
                   onChange={(e) => setQuarterlyTitle(e.target.value)}
-                  className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-purple-500 mb-2"
                 />
 
                 {/* Quarterly Achievers Dropdown */}
                 <div className="relative">
                   <div
                     onClick={() => setShowQuarterly(!showQuarterly)}
-                    className="border rounded px-3 py-2 bg-white cursor-pointer flex items-center justify-between hover:bg-purple-50"
+                    className="border rounded px-3 py-2 bg-white cursor-pointer flex items-center justify-between hover:bg-purple-50 mb-2"
                   >
                     Select Quarterly Achiever
                     <FiChevronDown
@@ -495,7 +492,7 @@ export default function PrimaryUserDashBoard() {
                 <div className="relative">
                   <div
                     onClick={() => setShowYearly(!showYearly)}
-                    className="border rounded px-3 py-2 bg-white cursor-pointer flex items-center justify-between hover:bg-purple-50"
+                    className="border rounded px-3 py-2 bg-white cursor-pointer flex items-center justify-between hover:bg-purple-50 mb-2"
                   >
                     Select Yearly Achiever
                     <FiChevronDown
@@ -524,21 +521,25 @@ export default function PrimaryUserDashBoard() {
                     </div>
                   )}
                 </div>
-
-                <button
-                  onClick={handleSubmit}
-                  className="bg-purple-600 text-white px-3 py-2 rounded hover:bg-purple-700 transition-colors flex items-center justify-center"
-                >
-                  {loader ? (
-                    <FaSpinner className="animate-spin h-5 w-5  text-white " />
-                  ) : (
-                    "Submit"
-                  )}
-                </button>
+                <div className="flex justify-center">
+                  <button
+                    onClick={handleSubmit}
+                    className="bg-purple-600 text-white px-3 py-2 rounded hover:bg-purple-700 transition-colors flex items-center justify-center"
+                  >
+                    {achieverLoader ? (
+                      <span className="flex items-center gap-2">
+                        Processing{" "}
+                        <FaSpinner className="animate-spin h-5 w-5 text-white" />
+                      </span>
+                    ) : (
+                      "Submit"
+                    )}
+                  </button>
+                </div>
               </div>
 
               {/* Quarterly Achievers Display */}
-              <div className="rounded flex-1 w-full max-w-full overflow-hidden">
+              <div className="rounded flex-1 w-full max-w-full overflow-hidden ">
                 <h3 className="font-bold text-lg mb-1 text-purple-700">
                   Quarterly Achiever
                 </h3>
@@ -606,22 +607,88 @@ export default function PrimaryUserDashBoard() {
               </div>
 
               {/* Announcements */}
-              <div className="rounded flex-1 mt-4">
+              <div className="rounded flex-1 mt-4 group relative">
                 <h3 className="font-bold text-lg mb-3 text-purple-700">
-                  Announcements
+                  Announcement
                 </h3>
-                {/* <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
-                  <ul className="space-y-2">
-                    <li className="flex items-start">
-                      <span className="inline-block w-2 h-2 bg-purple-500 rounded-full mt-2 mr-2"></span>
-                      <span>System update scheduled for tonight at 10 PM</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="inline-block w-2 h-2 bg-purple-500 rounded-full mt-2 mr-2"></span>
-                      <span>Holiday on Friday - National Holiday</span>
-                    </li>
-                  </ul>
+
+                {/* Hoverable hidden input area */}
+                <div className="md:absolute md:right-0 md:top-8 md:inset-auto md:w-full border border-gray-300 rounded shadow-lg p-4 text-sm hidden group-hover:block z-40 m-4 md:m-0 overflow-y-auto max-h-[90vh] md:max-h-fit bg-white ">
+                  <h4 className="text-purple-700 font-bold text-center">
+                    Update Announcement
+                  </h4>
+
+                  <textarea
+                    placeholder="Enter announcement..."
+                    value={announcement || ""}
+                    onChange={(e) => setAnnouncementText(e.target.value)}
+                    className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    rows={3}
+                  />
+                  <div className="flex justify-center">
+                    <button
+                      onClick={handleAnnouncementSubmit}
+                      className="bg-purple-600 text-white px-3 py-2 rounded hover:bg-purple-700 transition-colors flex items-center justify-center"
+                    >
+                      {announcementLoader ? (
+                        <span className="flex items-center gap-2">
+                          Processing{" "}
+                          <FaSpinner className="animate-spin h-5 w-5 text-white" />
+                        </span>
+                      ) : (
+                        "Submit Announcement"
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Preview or placeholder text */}
+                {/* <div className="bg-purple-50 p-3 rounded-lg border border-purple-100 text-gray-500 italic">
+                  {announcement ?? "No announcement Yet"}
                 </div> */}
+
+                {announcement ? (
+                  <div className="relative bg-yellow-100 p-5 rounded-lg shadow-lg border border-yellow-300 transform rotate-1 mx-auto max-w-xs md:max-w-lg">
+                    {/* Push Pin or Thumbtack Icon */}
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                      <div className="w-4 h-4 bg-red-600 rounded-full shadow-md ring-2 ring-white"></div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="transform -rotate-1">
+                      <div className="text-yellow-900 font-semibold text-center whitespace-pre-wrap italic">
+                        {announcement ?? "No announcement yet."}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // <div className="bg-white p-3 rounded shadow-sm border border-amber-100 transform rotate-1 mx-auto max-w-xs md:max-w-full">
+                  //   <div className="transform -rotate-1">
+                  //     {" "}
+                  //     {/* Counter-rotate the text to make it straight */}
+                  //     <div className="text-amber-900 text-center whitespace-pre-wrap">
+                  //       {announcement}
+                  //     </div>
+                  //   </div>
+                  // </div>
+                  <div className="flex flex-col items-center justify-center py-6 text-amber-700">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-10 w-10 mb-2 opacity-50"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"
+                      />
+                    </svg>
+                    <p className="italic text-center">No announcements yet</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

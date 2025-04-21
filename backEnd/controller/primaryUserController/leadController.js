@@ -23,7 +23,6 @@ export const LeadRegister = async (req, res) => {
       allocatedTo,
       leadBy
     } = leadData
-    console.log("cstomername", customerName)
 
     const leadDate = new Date()
     const lastLead = await LeadId.findOne().sort({ leadId: -1 })
@@ -98,7 +97,6 @@ export const GetAllservices = async (req, res) => {
 export const GetallLead = async (req, res) => {
   try {
     const { Status } = req.query
-    console.log(Status)
     if (Status === "Pending") {
       const pendingLeads = await LeadMaster.find({
         allocatedTo: null
@@ -188,7 +186,6 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
     const { allocationpending } = req.query
 
     const leadAllocationData = req.body
-    // console.log("leadata", leadAllocationData)
     let allocatedToModel
     const isStaff = await Staff.find({ _id: leadAllocationData.allocatedTo })
     if (isStaff) {
@@ -249,7 +246,6 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
 export const GetselectedLeadData = async (req, res) => {
   try {
     const { leadId } = req.query
-    console.log("id", leadId)
     if (!leadId) {
       return res.status(400).json({ message: "No leadid reference exists" })
     }
@@ -290,7 +286,6 @@ export const GetselectedLeadData = async (req, res) => {
         } // Merge populated data
       })
     )
-    console.log("s", selectedLead)
   } catch (error) {
     console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })

@@ -29,7 +29,6 @@ export const ServicesRegistration = () => {
     const defaultCompany = companyData?.find(
       (company) => company.selectedCompany
     )
-    console.log("default", defaultCompany)
     if (defaultCompany) {
       setSelectedCompany(defaultCompany._id)
     }
