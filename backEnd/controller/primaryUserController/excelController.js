@@ -336,7 +336,6 @@ export const ExceltoJsonProduct = async (socket, fileData) => {
             (license) =>
               license.licensenumber === item["CUSTOMER ID"] || item["Wallet Id"]
           )
-          // console.log("licen", matchingLicense)
 
           if (matchingLicense) {
             const existingCustomer = await Customer.findOne({
@@ -350,27 +349,19 @@ export const ExceltoJsonProduct = async (socket, fileData) => {
                 const selectedItem = existingCustomer.selected[i]
 
                 if (selectedItem.licensenumber === item["Wallet Id"]) {
-                  // console.log("exit undoooooo")
                   const walletProduct = productList.find(
                     (p) => p.productName.toUpperCase().trim() === "WALLET"
                   )
-                  console.log("eeeeee", walletProduct)
                   if (walletProduct) {
-                    // console.log("walletpro", walletProduct)
                     selectedItem.product_id = walletProduct._id
-                    console.log("walte", selectedItem.product_id)
                   }
                 } else if (selectedItem.licensenumber === item["CUSTOMER ID"]) {
-                  console.log("exist undooooooo")
                   const mainProduct = productList.find((p) => {
-                    console.log(item["Type"])
                       p.productName.toUpperCase().trim() ===
                       item["Type"]?.toUpperCase()
                   })
                   if (mainProduct) {
-                    console.log("mainpro", mainProduct)
                     selectedItem.product_id = mainProduct._id
-                    console.log("sle", selectedItem.product_id)
                   }
                 }
               }
@@ -387,7 +378,6 @@ export const ExceltoJsonProduct = async (socket, fileData) => {
               failedData.push(item)
             }
           } else {
-            // console.log("nomathcing")
             failedData.push(item)
           }
         } catch (error) {

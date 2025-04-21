@@ -360,7 +360,6 @@ const UserAdd = ({
     const selectedPermissions = getValues("permissionLevel") || []
 
     if (checked) {
-      console.log("checked", checked)
       setUserLevelPermissions((prev) => ({
         ...prev,
         [value]: checked
@@ -373,14 +372,12 @@ const UserAdd = ({
       )
     }
   }
-  console.log(userlevelPermission)
   const profileImage = (url) => {
     setImageData((prevData) => ({
       ...prevData,
       profileUrl: url
     }))
   }
-  console.log(imageData)
 
   const documentImage = (url) => {
     setImageData((prevData) => ({
@@ -410,8 +407,7 @@ const UserAdd = ({
 
       handleUserData(formattedData, imageData, tableData)
     } else if (process === "Edit") {
-      console.log("daa", data)
-      console.log(imageData)
+     
 
       handleEditedData(
         data,

@@ -200,15 +200,21 @@ export default function CallRegistration() {
             )
           setSearch(callData?.callDetails?.customerid?.customerName)
           setSelectedCustomer(callData?.callDetails?.customerid)
-          setProductDetails(matchingProducts)
-          // setProductDetails([
-          //   {
-          //     product_id: matchingpr.product._id,
-          //     licensenumber: matchingRegistration.license,
-          //     productName: matchingRegistration.product.productName,
-          //     branchName: matchingRegistration.product.selected[0].branchName
-          //   }
-          // ])
+          if (matchingProducts.length === 0) {
+            // setProductDetails(matchingProducts)
+            setProductDetails([
+              {
+                product_id: matchingRegistration.product._id,
+                licensenumber: matchingRegistration.license,
+                productName: matchingRegistration.product.productName,
+                branchName: matchingRegistration.product.selected[0].branchName,
+                note: "The product has been upgraded or changed after your previous call and no longer exists for this customer."
+              }
+            ])
+          } else {
+            setProductDetails(matchingProducts)
+          }
+
           const editData = {
             incomingNumber: matchingRegistration?.formdata?.incomingNumber,
             token: matchingRegistration?.timedata?.token,
@@ -1126,11 +1132,12 @@ Problem:    \t${selectedText}
                           Product Name
                         </th>
                         <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Installed Date
-                        </th>
-                        <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                           License No
                         </th>
+                        <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Installed Date
+                        </th>
+
                         <th className="px-4 py-3  text-xs font-medium text-gray-500 uppercase tracking-wider">
                           License expiry
                         </th>
@@ -1203,75 +1210,88 @@ Problem:    \t${selectedText}
                             {product?.productName}
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                            {formatDate(product?.customerAddDate)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                             {product?.licensenumber}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                            {formatDate(product?.licenseExpiryDate)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                            {product?.licenseExpiryDate
-                              ? calculateRemainingDays(
-                                  product?.licenseExpiryDate
-                                )
-                              : ""}
-                          </td>
 
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                            {formatDate(product?.amcstartDate)}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                            {formatDate(product?.amcendDate)}
-                          </td>
-
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                            <span
-                              style={{
-                                color:
-                                  calculateRemainingDays(
-                                    product?.amcendDate
-                                  ) === "Expired"
-                                    ? "red"
-                                    : "N/A"
-                                    ? "black"
-                                    : "black"
-                              }}
+                          {product?.note ? (
+                            <td
+                              colSpan={8}
+                              className="py-2 px-4 text-sm text-red-600"
                             >
-                              {calculateRemainingDays(product?.amcendDate)}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                            {product?.tvuexpiryDate}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                            {calculateRemainingDays(product?.tvuexpiryDate)}
-                          </td>
-
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                            {product?.noofusers}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                            {product?.version}
-                          </td>
-                          {user.role === "Admin" && (
+                              {product.note}
+                            </td>
+                          ) : (
                             <>
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                                {product?.companyName}
+                                {formatDate(product?.customerAddDate)}
+                              </td>
+
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {formatDate(product?.licenseExpiryDate)}
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                                {product?.branchName}
+                                {product?.licenseExpiryDate
+                                  ? calculateRemainingDays(
+                                      product?.licenseExpiryDate
+                                    )
+                                  : ""}
+                              </td>
+
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {formatDate(product?.amcstartDate)}
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                                {product?.productAmount}
+                                {formatDate(product?.amcendDate)}
+                              </td>
+
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                <span
+                                  style={{
+                                    color:
+                                      calculateRemainingDays(
+                                        product?.amcendDate
+                                      ) === "Expired"
+                                        ? "red"
+                                        : "N/A"
+                                        ? "black"
+                                        : "black"
+                                  }}
+                                >
+                                  {calculateRemainingDays(product?.amcendDate)}
+                                </span>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                                {product?.tvuAmount}
+                                {product?.tvuexpiryDate}
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                                {product?.amcAmount}
+                                {calculateRemainingDays(product?.tvuexpiryDate)}
                               </td>
+
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {product?.noofusers}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                {product?.version}
+                              </td>
+                              {user.role === "Admin" && (
+                                <>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                    {product?.companyName}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                    {product?.branchName}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                    {product?.productAmount}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                    {product?.tvuAmount}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                    {product?.amcAmount}
+                                  </td>
+                                </>
+                              )}
                             </>
                           )}
                         </tr>

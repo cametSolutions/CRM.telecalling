@@ -16,7 +16,6 @@ const excelDateToFormatNumber = (value) => {
     // const formattedDate = `${year}-${month}-${day}`
     // return formattedDate // Return the formatted date
   } else {
-    console.log("hiiiiiiiii")
   }
 }
 const convertTo12HourTime = (time24) => {

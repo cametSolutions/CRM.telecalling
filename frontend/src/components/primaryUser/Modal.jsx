@@ -338,13 +338,10 @@ const Modal = ({
       setMessage(
         `You don't have enough ${selectedCategory} for a Full Day leave.`
       )
-      // setMessage(
-      //   `You don't have enough ${selectedCategory} for a Full Day leave.`
-      // )
+     
       return
     }
     if (value === "Half Day") {
-      console.log(name)
       setselectedLeave((prev) => ({
         ...prev,
         [name]: value,
@@ -356,7 +353,6 @@ const Modal = ({
       setselectedLeave((prev) => ({
         ...prev,
         [name]: value,
-        halfDayPeriod: selectedLeave.leaveType === "Half Day" ? "Morning" : ""
       }))
     }
 
@@ -366,7 +362,6 @@ const Modal = ({
   }
   
   const Apply = async () => {
-    console.log(type)
     if (type === "Leave") {
       // Validation
       let newErrors = {}

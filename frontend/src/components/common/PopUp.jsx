@@ -1,7 +1,6 @@
 import React from "react"
 
 const PopUp = ({ isOpen, onClose, message }) => {
-  console.log(isOpen)
 
   if (!isOpen) return null
   return (
