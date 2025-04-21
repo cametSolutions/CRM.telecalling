@@ -79,7 +79,6 @@ export default function PrimaryUserDashBoard() {
 
   useEffect(() => {
     if (staffs) {
-
       setallStaffs(staffs)
     }
   }, [staffs])
@@ -206,7 +205,7 @@ export default function PrimaryUserDashBoard() {
   }
 
   return (
-    <div className="h-full shadow-lg rounded-lg bg-[#bfdbf7]">
+    <div className="h-auto md:h-full shadow-lg rounded-lg bg-[#bfdbf7]">
       {showBirthdayPopup && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
           <div
@@ -298,7 +297,7 @@ export default function PrimaryUserDashBoard() {
       )}
 
       {/* Navigation Cards */}
-      <div className="flex flex-col md:flex-row md:justify-evenly md:gap-4 space-y-3 md:space-y-0 p-4  border-b shadow-lg bg-[#023e7d]">
+      <div className="flex flex-col md:flex-row md:justify-evenly md:gap-4 space-y-2 md:space-y-0 p-4  border-b shadow-lg md:py-3 bg-[#023e7d]">
         {cards.map((item, index) => {
           const Icon = item.icon
           return (
@@ -318,13 +317,13 @@ export default function PrimaryUserDashBoard() {
 
       {/* Main Content */}
       <div
-        className="flex flex-col lg:flex-row gap-6 p-4 mx-2 my-4"
+        className="flex flex-col lg:flex-row md:gap-6 gap-3 p-2 md:p-4  "
         style={{ minHeight: "calc(100vh - 200px)" }}
       >
         {/* LEFT SIDE */}
-        <div className="lg:w-1/2 flex flex-col gap-6">
+        <div className="lg:w-1/2 flex flex-col md:gap-6 gap-3">
           {/* Top Row - Leave and Birthday */}
-          <div className="flex gap-6 min-h-60">
+          <div className="flex md:gap-6 gap-3 min-h-60">
             {/* Leave List */}
             <div className="p-4 rounded-lg w-1/2 shadow-md bg-white border-l-4 border-orange-500">
               <h2 className="font-bold text-lg mb-3 text-orange-700">
@@ -425,8 +424,8 @@ export default function PrimaryUserDashBoard() {
         </div>
 
         {/* RIGHT SIDE */}
-        <div className="flex flex-col gap-6 lg:w-1/2 ">
-          <div className="flex flex-col lg:flex-row gap-6 h-full">
+        <div className="flex flex-col  lg:w-1/2 ">
+          <div className="flex flex-col lg:flex-row md:gap-6 gap-3 h-full">
             {/* Target & Achievements */}
             <div className="p-4 rounded-lg flex-1 shadow-md bg-white border-l-4 border-green-500">
               <h2 className="font-bold text-lg mb-3 text-green-700">
@@ -437,7 +436,7 @@ export default function PrimaryUserDashBoard() {
             {/* Achievers & Announcements */}
             <div className="p-4 rounded-lg shadow-md flex-1 flex flex-col gap-4 group  border-l-4 border-purple-500 relative min-h-[500px] md:min-h-fit bg-white ">
               {/* Admin Popup */}
-              <div className="md:absolute md:left-1/2 md:top-1/3 md:-translate-x-1/2 md:-translate-y-1/2 md:inset-auto sm:w-[90%] border bg-white border-gray-300 rounded shadow-lg p-4 text-sm hidden group-hover:block z-40 m-4 md:m-0 overflow-y-auto max-h-[90vh] md:max-h-96">
+              <div className="md:absolute md:left-1/2 md:top-1/3 md:-translate-x-1/2 md:-translate-y-1/2 md:inset-auto sm:w-[90%] border bg-white border-gray-300 rounded shadow-lg p-4 text-sm hidden group-hover:block z-40 m-4 md:m-0  max-h-[90vh] md:max-h-96">
                 <h3 className="font-bold text-center text-purple-700">
                   Update Achievers
                 </h3>
@@ -465,7 +464,7 @@ export default function PrimaryUserDashBoard() {
                   </div>
 
                   {showQuarterly && (
-                    <div className="absolute z-10 mt-1 border rounded shadow-lg p-2 w-full text-left bg-white max-h-52 overflow-y-auto">
+                    <div className="absolute z-10 mt-1 border rounded shadow-lg p-2 w-full text-left bg-white max-h-52 ">
                       {allStaffs?.map((staff) => (
                         <label
                           key={staff._id}
@@ -503,7 +502,7 @@ export default function PrimaryUserDashBoard() {
                   </div>
 
                   {showYearly && (
-                    <div className="absolute z-10 mt-1 border rounded shadow-lg p-2 w-full text-left bg-white max-h-52 overflow-y-auto">
+                    <div className="absolute z-10 mt-1 border rounded shadow-lg p-2 w-full text-left bg-white max-h-52 ">
                       {allStaffs?.map((staff) => (
                         <label
                           key={staff._id}
@@ -613,7 +612,7 @@ export default function PrimaryUserDashBoard() {
                 </h3>
 
                 {/* Hoverable hidden input area */}
-                <div className="md:absolute md:right-0 md:top-8 md:inset-auto md:w-full border border-gray-300 rounded shadow-lg p-4 text-sm hidden group-hover:block z-40 m-4 md:m-0 overflow-y-auto max-h-[90vh] md:max-h-fit bg-white ">
+                <div className="md:absolute md:right-0 md:top-8 md:inset-auto md:w-full border border-gray-300 rounded shadow-lg p-4 text-sm hidden group-hover:block z-40 m-4 md:m-0 max-h-[90vh] md:max-h-fit bg-white ">
                   <h4 className="text-purple-700 font-bold text-center">
                     Update Announcement
                   </h4>
@@ -662,15 +661,6 @@ export default function PrimaryUserDashBoard() {
                     </div>
                   </div>
                 ) : (
-                  // <div className="bg-white p-3 rounded shadow-sm border border-amber-100 transform rotate-1 mx-auto max-w-xs md:max-w-full">
-                  //   <div className="transform -rotate-1">
-                  //     {" "}
-                  //     {/* Counter-rotate the text to make it straight */}
-                  //     <div className="text-amber-900 text-center whitespace-pre-wrap">
-                  //       {announcement}
-                  //     </div>
-                  //   </div>
-                  // </div>
                   <div className="flex flex-col items-center justify-center py-6 text-amber-700">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -686,7 +676,7 @@ export default function PrimaryUserDashBoard() {
                         d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"
                       />
                     </svg>
-                    <p className="italic text-center">No announcements yet</p>
+                    <p className="italic text-center">No announcement yet</p>
                   </div>
                 )}
               </div>
