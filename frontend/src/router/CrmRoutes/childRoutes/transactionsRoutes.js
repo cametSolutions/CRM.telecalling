@@ -6,15 +6,15 @@ import LeadAllocationTable from "../../../pages/primaryUser/List/LeadAllocationT
 import LeadEdit from "../../../pages/primaryUser/edit/LeadEdit"
 import { components } from "react-select"
 const transactionsRoutes = [
-  { path: "/admin/transaction/lead", component: LeadRegister },
-  { path: "/admin/transaction/leadEdit", component: LeadEdit },
+  { path: "/admin/transaction/lead", component: ComingSoon },
+  { path: "/admin/transaction/leadEdit", component: ComingSoon },
 
   { path: "/admin/transaction/call-registration", component: CallRegistration },
 
   { path: "/admin/transaction/leave-application", component: LeaveApplication },
   {
     path: "/admin/transaction/lead/leadAllocation",
-    component: LeadAllocationTable
+    component: ComingSoon
   }
 ]
 
