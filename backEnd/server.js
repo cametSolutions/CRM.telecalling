@@ -58,7 +58,7 @@ io.on("connection", (socket) => {
       const todayStart =
         new Date().toISOString().split("T")[0] + "T00:00:00.000Z"
       const todayEnd = new Date().toISOString().split("T")[0] + "T23:59:59.999Z"
-
+     
       const pendingcalls = await CallRegistration.aggregate([
         {
           $set: {
@@ -83,31 +83,154 @@ io.on("connection", (socket) => {
           }
         }
       ])
-
       const todayscalls = await CallRegistration.aggregate([
+        // Filter the callregistration array to keep only entries with today's attendance
         {
-          $match: {
-            "callregistration.formdata.attendedBy": {
-              $elemMatch: {
-                calldate: { $gte: todayStart, $lt: todayEnd }
+          $addFields: {
+            callregistration: {
+              $filter: {
+                input: "$callregistration",
+                as: "call",
+                cond: {
+                  $anyElementTrue: {
+                    $map: {
+                      input: {
+                        $cond: {
+                          if: {
+                            $isArray: {
+                              $ifNull: ["$$call.formdata.attendedBy", []]
+                            }
+                          },
+                          then: { $ifNull: ["$$call.formdata.attendedBy", []] },
+                          else: []
+                        }
+                      },
+                      as: "attendance",
+                      in: {
+                        $and: [
+                          { $ifNull: ["$$attendance.calldate", false] },
+                          {
+                            $gte: [
+                              {
+                                $ifNull: ["$$attendance.calldate", new Date(0)]
+                              },
+                              todayStart
+                            ]
+                          },
+                          {
+                            $lt: [
+                              {
+                                $ifNull: ["$$attendance.calldate", new Date(0)]
+                              },
+                              todayEnd
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  }
+                }
               }
             }
           }
         },
+
+        // Remove documents where the callregistration array is now empty
+        {
+          $match: {
+            "callregistration.0": { $exists: true }
+          }
+        },
+
+        // For each call in the filtered array, filter the attendedBy array to keep only today's records
+        {
+          $addFields: {
+            callregistration: {
+              $map: {
+                input: "$callregistration",
+                as: "call",
+                in: {
+                  $mergeObjects: [
+                    "$$call",
+                    {
+                      formdata: {
+                        $mergeObjects: [
+                          "$$call.formdata",
+                          {
+                            attendedBy: {
+                              $cond: {
+                                if: {
+                                  $isArray: {
+                                    $ifNull: ["$$call.formdata.attendedBy", []]
+                                  }
+                                },
+                                then: {
+                                  $filter: {
+                                    input: "$$call.formdata.attendedBy",
+                                    as: "attendance",
+                                    cond: {
+                                      $and: [
+                                        {
+                                          $ifNull: [
+                                            "$$attendance.calldate",
+                                            false
+                                          ]
+                                        },
+                                        {
+                                          $gte: [
+                                            {
+                                              $ifNull: [
+                                                "$$attendance.calldate",
+                                                new Date(0)
+                                              ]
+                                            },
+                                            todayStart
+                                          ]
+                                        },
+                                        {
+                                          $lt: [
+                                            {
+                                              $ifNull: [
+                                                "$$attendance.calldate",
+                                                new Date(0)
+                                              ]
+                                            },
+                                            todayEnd
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                else: "$$call.formdata.attendedBy" // Keep original if not an array
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+
+        // Lookup product details
         {
           $lookup: {
-            from: "products", // Replace with your actual product collection name
-            localField: "callregistration.product", // The field in CallRegistration that references products
-            foreignField: "_id", // The field in the Product collection that matches the reference
+            from: "products",
+            localField: "callregistration.product",
+            foreignField: "_id",
             as: "productDetails"
           }
         }
       ])
+
       const uniqueCalls = new Map()
       ;[...pendingcalls, ...todayscalls].forEach((call) => {
         uniqueCalls.set(call._id.toString(), call) // Ensures only one instance per _id
       })
-
       const calls = Array.from(uniqueCalls.values())
 
       // Extract unique IDs for attendedBy and completedBy
@@ -270,7 +393,7 @@ io.on("connection", (socket) => {
           user = await Admin.findOne({ _id: objectId })
         }
       }
-
+     
       io.emit("updatedCalls", { calls, user })
     } catch (error) {
       console.error("Error fetching call data:", error)

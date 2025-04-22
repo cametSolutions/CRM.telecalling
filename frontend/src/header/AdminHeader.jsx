@@ -501,7 +501,7 @@ export default function AdminHeader() {
 
                 {/* Masters dropdown */}
                 {link.label === "Masters" && masterMenuOpen && (
-                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md z-50">
+                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md sz-50">
                     {masters.map((master) => (
                       <div
                         key={master.to}

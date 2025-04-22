@@ -205,7 +205,7 @@ export default function PrimaryUserDashBoard() {
   }
 
   return (
-    <div className="h-auto md:h-full shadow-lg rounded-lg bg-[#bfdbf7]">
+    <div className="h-auto  shadow-lg rounded-lg bg-[#bfdbf7]">
       {showBirthdayPopup && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
           <div
@@ -297,7 +297,7 @@ export default function PrimaryUserDashBoard() {
       )}
 
       {/* Navigation Cards */}
-      <div className="flex flex-col md:flex-row md:justify-evenly md:gap-4 space-y-2 md:space-y-0 p-4  border-b shadow-lg md:py-3 bg-[#023e7d]">
+      <div className="flex flex-col sticky top-0 z-40 md:flex-row md:justify-evenly md:gap-4 space-y-2 md:space-y-0 p-4  border-b shadow-lg md:py-3 bg-[#023e7d]">
         {cards.map((item, index) => {
           const Icon = item.icon
           return (
@@ -436,109 +436,113 @@ export default function PrimaryUserDashBoard() {
             {/* Achievers & Announcements */}
             <div className="p-4 rounded-lg shadow-md flex-1 flex flex-col gap-4 group  border-l-4 border-purple-500 relative min-h-[500px] md:min-h-fit bg-white ">
               {/* Admin Popup */}
-              <div className="md:absolute md:left-1/2 md:top-1/3 md:-translate-x-1/2 md:-translate-y-1/2 md:inset-auto sm:w-[90%] border bg-white border-gray-300 rounded shadow-lg p-4 text-sm hidden group-hover:block z-40 m-4 md:m-0  max-h-[90vh] md:max-h-96">
-                <h3 className="font-bold text-center text-purple-700">
-                  Update Achievers
-                </h3>
+              {user?.role === "Admin" && (
+                <div className="md:absolute md:left-1/2 md:top-1/4 md:-translate-x-1/2 md:-translate-y-1/2 md:inset-auto sm:w-[90%] border bg-white border-gray-300 rounded shadow-lg p-4 text-sm hidden group-hover:block z-40 m-4 md:m-0  max-h-[90vh] md:max-h-96">
+                  <h3 className="font-bold text-center text-purple-700">
+                    Update Achievers
+                  </h3>
 
-                <input
-                  type="text"
-                  placeholder="Enter Title"
-                  value={quarterlyTitle || ""}
-                  onChange={(e) => setQuarterlyTitle(e.target.value)}
-                  className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-purple-500 mb-2"
-                />
+                  <input
+                    type="text"
+                    placeholder="Enter Title"
+                    value={quarterlyTitle || ""}
+                    onChange={(e) => setQuarterlyTitle(e.target.value)}
+                    className="border p-2 rounded w-full focus:outline-none focus:ring-2 focus:ring-purple-500 mb-2"
+                  />
 
-                {/* Quarterly Achievers Dropdown */}
-                <div className="relative">
-                  <div
-                    onClick={() => setShowQuarterly(!showQuarterly)}
-                    className="border rounded px-3 py-2 bg-white cursor-pointer flex items-center justify-between hover:bg-purple-50 mb-2"
-                  >
-                    Select Quarterly Achiever
-                    <FiChevronDown
-                      className={`transition-transform duration-200 ${
-                        showQuarterly ? "rotate-180" : ""
-                      }`}
-                    />
-                  </div>
-
-                  {showQuarterly && (
-                    <div className="absolute z-10 mt-1 border rounded shadow-lg p-2 w-full text-left bg-white max-h-52 ">
-                      {allStaffs?.map((staff) => (
-                        <label
-                          key={staff._id}
-                          className="block py-1 px-2 hover:bg-purple-50 rounded"
-                        >
-                          <input
-                            type="checkbox"
-                            className="mr-2 accent-purple-600"
-                            checked={
-                              selectedQuarterlyStaffs[staff._id] || false
-                            }
-                            onChange={() =>
-                              handleQuarterlyStaffToggle(staff._id)
-                            }
-                          />
-                          {staff.name.toUpperCase()}
-                        </label>
-                      ))}
+                  {/* Quarterly Achievers Dropdown */}
+                  <div className="relative">
+                    <div
+                      onClick={() => setShowQuarterly(!showQuarterly)}
+                      className="border rounded px-3 py-2 bg-white cursor-pointer flex items-center justify-between hover:bg-purple-50 mb-2"
+                    >
+                      Select Quarterly Achiever
+                      <FiChevronDown
+                        className={`transition-transform duration-200 ${
+                          showQuarterly ? "rotate-180" : ""
+                        }`}
+                      />
                     </div>
-                  )}
-                </div>
 
-                {/* Yearly Achievers Dropdown */}
-                <div className="relative">
-                  <div
-                    onClick={() => setShowYearly(!showYearly)}
-                    className="border rounded px-3 py-2 bg-white cursor-pointer flex items-center justify-between hover:bg-purple-50 mb-2"
-                  >
-                    Select Yearly Achiever
-                    <FiChevronDown
-                      className={`transition-transform duration-200 ${
-                        showYearly ? "rotate-180" : ""
-                      }`}
-                    />
-                  </div>
-
-                  {showYearly && (
-                    <div className="absolute z-10 mt-1 border rounded shadow-lg p-2 w-full text-left bg-white max-h-52 ">
-                      {allStaffs?.map((staff) => (
-                        <label
-                          key={staff._id}
-                          className="block py-1 px-2 hover:bg-purple-50 rounded"
-                        >
-                          <input
-                            type="checkbox"
-                            className="mr-2 accent-purple-600"
-                            checked={selectedYearlyStaffs[staff._id] || false}
-                            onChange={() => handleYearlyStaffToggle(staff._id)}
-                          />
-                          {staff.name.toUpperCase()}
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="flex justify-center">
-                  <button
-                    onClick={handleSubmit}
-                    className="bg-purple-600 text-white px-3 py-2 rounded hover:bg-purple-700 transition-colors flex items-center justify-center"
-                  >
-                    {achieverLoader ? (
-                      <span className="flex items-center gap-2">
-                        Processing{" "}
-                        <FaSpinner className="animate-spin h-5 w-5 text-white" />
-                      </span>
-                    ) : (
-                      "Submit"
+                    {showQuarterly && (
+                      <div className="absolute z-40 mt-1 border rounded shadow-lg p-2 w-full text-left bg-white max-h-52 overflow-y-auto ">
+                        {allStaffs?.map((staff) => (
+                          <label
+                            key={staff._id}
+                            className="block py-1 px-2 hover:bg-purple-50 rounded"
+                          >
+                            <input
+                              type="checkbox"
+                              className="mr-2 accent-purple-600"
+                              checked={
+                                selectedQuarterlyStaffs[staff._id] || false
+                              }
+                              onChange={() =>
+                                handleQuarterlyStaffToggle(staff._id)
+                              }
+                            />
+                            {staff.name.toUpperCase()}
+                          </label>
+                        ))}
+                      </div>
                     )}
-                  </button>
+                  </div>
+
+                  {/* Yearly Achievers Dropdown */}
+                  <div className="relative">
+                    <div
+                      onClick={() => setShowYearly(!showYearly)}
+                      className="border rounded px-3 py-2 bg-white cursor-pointer flex items-center justify-between hover:bg-purple-50 mb-2"
+                    >
+                      Select Yearly Achiever
+                      <FiChevronDown
+                        className={`transition-transform duration-200 ${
+                          showYearly ? "rotate-180" : ""
+                        }`}
+                      />
+                    </div>
+
+                    {showYearly && (
+                      <div className="absolute z-30 mt-1 border rounded shadow-lg p-2 w-full text-left bg-white max-h-52 overflow-y-auto ">
+                        {allStaffs?.map((staff) => (
+                          <label
+                            key={staff._id}
+                            className="block py-1 px-2 hover:bg-purple-50 rounded"
+                          >
+                            <input
+                              type="checkbox"
+                              className="mr-2 accent-purple-600"
+                              checked={selectedYearlyStaffs[staff._id] || false}
+                              onChange={() =>
+                                handleYearlyStaffToggle(staff._id)
+                              }
+                            />
+                            {staff.name.toUpperCase()}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex justify-center">
+                    <button
+                      onClick={handleSubmit}
+                      className="bg-purple-600 text-white px-3 py-2 rounded hover:bg-purple-700 transition-colors flex items-center justify-center"
+                    >
+                      {achieverLoader ? (
+                        <span className="flex items-center gap-2">
+                          Processing{" "}
+                          <FaSpinner className="animate-spin h-5 w-5 text-white" />
+                        </span>
+                      ) : (
+                        "Submit"
+                      )}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Quarterly Achievers Display */}
-              <div className="rounded flex-1 w-full max-w-full overflow-hidden ">
+              <div className="rounded flex-1 w-full max-w-full overflow-hidden min-h-52">
                 <h3 className="font-bold text-lg mb-1 text-purple-700">
                   Quarterly Achiever
                 </h3>
@@ -606,45 +610,40 @@ export default function PrimaryUserDashBoard() {
               </div>
 
               {/* Announcements */}
-              <div className="rounded flex-1 mt-4 group relative">
+              <div className="rounded flex-1 mt-4 group relative ">
                 <h3 className="font-bold text-lg mb-3 text-purple-700">
                   Announcement
                 </h3>
+                {user?.role === "Admin" && (
+                  <div className="md:absolute  md:inset-auto md:w-full border border-gray-300 rounded shadow-lg p-4 text-sm hidden group-hover:block z-20 m-4 md:m-0 max-h-[90vh] md:max-h-fit bg-white ">
+                    <h4 className="text-purple-700 font-bold text-center">
+                      Update Announcement
+                    </h4>
 
-                {/* Hoverable hidden input area */}
-                <div className="md:absolute md:right-0 md:top-8 md:inset-auto md:w-full border border-gray-300 rounded shadow-lg p-4 text-sm hidden group-hover:block z-40 m-4 md:m-0 max-h-[90vh] md:max-h-fit bg-white ">
-                  <h4 className="text-purple-700 font-bold text-center">
-                    Update Announcement
-                  </h4>
-
-                  <textarea
-                    placeholder="Enter announcement..."
-                    value={announcement || ""}
-                    onChange={(e) => setAnnouncementText(e.target.value)}
-                    className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    rows={3}
-                  />
-                  <div className="flex justify-center">
-                    <button
-                      onClick={handleAnnouncementSubmit}
-                      className="bg-purple-600 text-white px-3 py-2 rounded hover:bg-purple-700 transition-colors flex items-center justify-center"
-                    >
-                      {announcementLoader ? (
-                        <span className="flex items-center gap-2">
-                          Processing{" "}
-                          <FaSpinner className="animate-spin h-5 w-5 text-white" />
-                        </span>
-                      ) : (
-                        "Submit Announcement"
-                      )}
-                    </button>
+                    <textarea
+                      placeholder="Enter announcement..."
+                      value={announcement || ""}
+                      onChange={(e) => setAnnouncementText(e.target.value)}
+                      className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      rows={5}
+                    />
+                    <div className="flex justify-center">
+                      <button
+                        onClick={handleAnnouncementSubmit}
+                        className="bg-purple-600 text-white px-3 py-2 rounded hover:bg-purple-700 transition-colors flex items-center justify-center"
+                      >
+                        {announcementLoader ? (
+                          <span className="flex items-center gap-2">
+                            Processing{" "}
+                            <FaSpinner className="animate-spin h-5 w-5 text-white" />
+                          </span>
+                        ) : (
+                          "Submit Announcement"
+                        )}
+                      </button>
+                    </div>
                   </div>
-                </div>
-
-                {/* Preview or placeholder text */}
-                {/* <div className="bg-purple-50 p-3 rounded-lg border border-purple-100 text-gray-500 italic">
-                  {announcement ?? "No announcement Yet"}
-                </div> */}
+                )}
 
                 {announcement ? (
                   <div className="relative bg-yellow-100 p-5 rounded-lg shadow-lg border border-yellow-300 transform rotate-1 mx-auto max-w-xs md:max-w-lg">
