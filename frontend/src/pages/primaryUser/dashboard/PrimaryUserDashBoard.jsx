@@ -203,7 +203,8 @@ export default function PrimaryUserDashBoard() {
     const wish = true
     localStorage.setItem("wish", JSON.stringify(wish))
   }
-
+  console.log(birthdayPerson)
+  console.log(birthdays)
   return (
     <div className="h-auto  shadow-lg rounded-lg bg-[#bfdbf7]">
       {showBirthdayPopup && (
@@ -352,17 +353,25 @@ export default function PrimaryUserDashBoard() {
                 Birthdays
               </h2>
               {birthdays && birthdays.length > 0 ? (
-                birthdays.map((item, index) => (
-                  <div
-                    key={index}
-                    className="text-left py-1 border-b border-gray-100"
-                  >
-                    <span className="font-medium text-gray-700">
-                      {index + 1}.
-                    </span>{" "}
-                    {item?.name}
-                  </div>
-                ))
+                birthdays.map((item, index) => {
+                  const isToday = birthdayPerson?.some(
+                    (person) => person?.name === item?.name
+                  )
+                  return (
+                    <div
+                      key={index}
+                      className={`text-left py-1 border-b border-gray-100 ${
+                        isToday ? "bg-yellow-100 font-semibold" : ""
+                      }`}
+                    >
+                      <span className="font-medium text-gray-700">
+                        {index + 1}.
+                      </span>{" "}
+                      {item?.name}
+                      {isToday && <span className="ml-2">🎂</span>}
+                    </div>
+                  )
+                })
               ) : (
                 <div className="text-gray-500 italic">No birthdays today</div>
               )}

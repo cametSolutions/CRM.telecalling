@@ -68,7 +68,6 @@ const LeaveApprovalAndPending = () => {
 
           const list = response.data.data
           setallleaveReques(list) // Assuming API returns data in response.data
-          
 
           if (Array.isArray(list) && list.length > 0) {
             const filteredList =
@@ -130,6 +129,7 @@ const LeaveApprovalAndPending = () => {
               `/auth/approvedOnsiteList?onsite=true&startdate=${dates.startDate}&enddate=${dates.endDate}&role=${user?.role}&userid=${user?._id}`
             )
           } else if (approvedLeave && !approvedOnsite) {
+            console.log("hh")
             response = await api.get(
               `/auth/approvedLeaveList?onsite=false&startdate=${dates.startDate}&enddate=${dates.endDate}&userid=${user?._id}&role=${user?.role}`
             )
@@ -148,10 +148,10 @@ const LeaveApprovalAndPending = () => {
                   })
 
             setLeaveList(filteredList)
-            setLoading(false)
+            setLoader(false)
             // Update state only if the list has items
           } else {
-            setLoading(false)
+            setLoader(false)
             setLeaveList([])
           }
 
@@ -175,8 +175,6 @@ const LeaveApprovalAndPending = () => {
               initialSelectAll[userId] = userLeaves.every(
                 (leave) => leave.hrstatus === "HR/Onsite Approved"
               )
-
-             
             })
           } else {
             list.forEach((userLeave) => {
@@ -194,7 +192,6 @@ const LeaveApprovalAndPending = () => {
               initialSelectAll[userId] = userLeaves.every(
                 (leave) => leave.hrstatus === "Dept Approved"
               )
-             
             })
           }
           setLoader(false)
@@ -260,9 +257,10 @@ const LeaveApprovalAndPending = () => {
           initialToggles[userLeave?._id] =
             userLeave?.hrstatus === "HR/Onsite Approved" // Toggle on if approved
           initialReject[userLeave?._id] = userLeave.hrstatus === "HR Rejected"
-         
 
-          const userLeaves = list.filter((leave) => leave?.userId?._id === userId)
+          const userLeaves = list.filter(
+            (leave) => leave?.userId?._id === userId
+          )
 
           // Check if all are approved
           initialSelectAll[userId] = userLeaves.every(
@@ -283,7 +281,6 @@ const LeaveApprovalAndPending = () => {
           initialSelectAll[userId] = userLeaves.every(
             (leave) => leave.hrstatus === "Dept Approved"
           )
-         
         })
       }
 
@@ -453,7 +450,7 @@ const LeaveApprovalAndPending = () => {
               ...prevState,
               [userId]: !prevState[userId] // Toggle the specific user's state
             }))
-            
+
             setLoader(false)
           }
         }
@@ -488,7 +485,8 @@ const LeaveApprovalAndPending = () => {
           `/auth/rejectOnsite/?role=${user.role}&selectedId=${id}&userId=${user._id}&startdate=${dates.startDate}&enddate=${dates.endDate}&feild=${trueState}`
         )
 
-        if (onsiteReject.status === 200) {1
+        if (onsiteReject.status === 200) {
+          1
           const list = onsiteReject.data.data
 
           const initialToggles = {}
@@ -714,7 +712,7 @@ const LeaveApprovalAndPending = () => {
         setapprovedOnsite(false)
         setApprovedLeave(false)
       }
-      
+
       setLoader(true)
       setPending(true)
     } else if (option === "approved") {
@@ -730,7 +728,6 @@ const LeaveApprovalAndPending = () => {
         setPendingLeave(false)
       }
       setLoader(true)
-     
 
       setPending(false)
     }
@@ -955,7 +952,10 @@ const LeaveApprovalAndPending = () => {
                         <div className="flex justify-center  ">
                           <button
                             onClick={() =>
-                              singleApprovalOrCancel(user?._id, user?.userId?._id)
+                              singleApprovalOrCancel(
+                                user?._id,
+                                user?.userId?._id
+                              )
                             }
                             className={` ${
                               isToggled[user?._id]
@@ -975,7 +975,9 @@ const LeaveApprovalAndPending = () => {
                       </td>
                       <td className="border border-gray-300 py-1 px-1">
                         <button
-                          onClick={() => approveAll(user?._id, user?.userId?._id)}
+                          onClick={() =>
+                            approveAll(user?._id, user?.userId?._id)
+                          }
                           className={` px-4 py-0 rounded text-white transition-colors duration-300 ${
                             isSelected[user?.userId?._id]
                               ? "bg-green-500"
