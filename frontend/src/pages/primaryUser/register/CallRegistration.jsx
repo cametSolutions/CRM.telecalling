@@ -116,7 +116,7 @@ export default function CallRegistration() {
       socket.emit("updatedCalls", userId)
       // Listen for initial data from the server
       socket.on("updatedCalls", ({ calls, user }) => {
-        if (user.role === "Admin") {
+        if (user?.role === "Admin") {
           setCallList(calls)
         } else {
           const userBranchName = new Set(
@@ -189,6 +189,7 @@ export default function CallRegistration() {
             callData.callDetails.callregistration.find(
               (registration) => registration.timedata.token === token
             )
+          console.log(matchingRegistration)
           // /// If a matching registration is found, extract the product details
           const productId = matchingRegistration
             ? matchingRegistration.product._id

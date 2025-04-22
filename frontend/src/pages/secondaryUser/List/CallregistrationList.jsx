@@ -7,8 +7,8 @@ import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles" // Import the Tile component
 import { useNavigate } from "react-router-dom"
 
-const socket = io("https://www.crm.camet.in")
-// const socket = io("http://localhost:9000") // Adjust the URL to your backend
+// const socket = io("https://www.crm.camet.in")
+const socket = io("http://localhost:9000") // Adjust the URL to your backend
 
 const CallregistrationList = () => {
   const navigate = useNavigate()
@@ -125,7 +125,7 @@ const CallregistrationList = () => {
       call.callregistration.some((registration) => {
         const isTodaySolved =
           registration.formdata?.status === "solved" &&
-          registration.timedata?.startTime?.split("T")[0] === today
+          registration.timedata?.endTime?.split("T")[0] === today
         const isPending = registration.formdata?.status === "pending"
         return isTodaySolved || isPending
       })
@@ -199,7 +199,7 @@ const CallregistrationList = () => {
     calls.forEach((call) => {
       call.callregistration.forEach((registration) => {
         const { formdata, timedata } = registration
-        const callDate = timedata.startTime.split("T")[0]
+        const callDate = timedata.endTime.split("T")[0]
         if (callDate === today) {
           const lastAttended = formdata.attendedBy.length
             ? formdata.attendedBy[formdata.attendedBy.length - 1]
@@ -264,7 +264,7 @@ const CallregistrationList = () => {
 
     calls.forEach((customer) => {
       customer.callregistration.forEach((call) => {
-        const callDate = call.timedata.startTime.split("T")[0] // Get the call date in 'YYYY-MM-DD' format
+        const callDate = call.timedata.endTime.split("T")[0] // Get the call date in 'YYYY-MM-DD' format
         if (callDate === today) {
           todaysCallsCount++
         }
@@ -550,10 +550,10 @@ const CallregistrationList = () => {
                     .filter((item) => item?.formdata?.status === "pending")
                     .sort((a, b) => {
                       const today = new Date().toISOString().split("T")[0]
-                      const aDate = new Date(a?.timedata?.startTime)
+                      const aDate = new Date(a?.timedata?.endTime)
                         .toISOString()
                         .split("T")[0]
-                      const bDate = new Date(b?.timedata?.startTime)
+                      const bDate = new Date(b?.timedata?.endTime)
                         .toISOString()
                         .split("T")[0]
 
@@ -563,13 +563,13 @@ const CallregistrationList = () => {
 
                       // For both calls not on today, order by descending date
                       return (
-                        new Date(b?.timedata?.startTime) -
-                        new Date(a?.timedata?.startTime)
+                        new Date(b?.timedata?.endTime) -
+                        new Date(a?.timedata?.endTime)
                       )
                     })
                     .map((item) => {
                       const today = new Date().toISOString().split("T")[0]
-                      const startTimeRaw = item?.timedata?.startTime
+                      const startTimeRaw = item?.timedata?.endTime
                       const callDate = startTimeRaw
                         ? new Date(startTimeRaw.split(" ")[0])
                             .toISOString()
@@ -603,7 +603,6 @@ const CallregistrationList = () => {
                               {item?.license}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                             
                               {setDateandTime(item?.timedata?.startTime)}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]"></td>
@@ -628,9 +627,7 @@ const CallregistrationList = () => {
                                   : null
                                 : item?.formdata?.attendedBy?.callerId?.name}
                             </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {/* {item?.formdata?.completedBy} */}
-                            </td>
+                            <td className="px-2 py-2 text-sm w-12 text-[#010101]"></td>
                             <td className="px-2 py-2 text-xl w-12 text-blue-800">
                               {item?.formdata?.status !== "solved" ? (
                                 <FaPhone
@@ -729,7 +726,7 @@ const CallregistrationList = () => {
                       const isSolved = item?.formdata?.status === "solved"
 
                       // Check if 'startTime' date matches today's date
-                      const startTimeRaw = item?.timedata?.startTime
+                      const startTimeRaw = item?.timedata?.endTime
                       const callDate = startTimeRaw
                         ? new Date(startTimeRaw.split(" ")[0])
                             .toISOString()
@@ -778,12 +775,10 @@ const CallregistrationList = () => {
                             </td>
 
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                             
                               {setDateandTime(item?.timedata?.startTime)}
                             </td>
 
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                             
                               {setDateandTime(item?.timedata?.endTime)}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
@@ -793,7 +788,6 @@ const CallregistrationList = () => {
                               {item?.formdata?.status}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                             
                               {Array.isArray(item?.formdata?.attendedBy)
                                 ? item.formdata.attendedBy.length > 0
                                   ? item.formdata.attendedBy[
@@ -809,7 +803,6 @@ const CallregistrationList = () => {
                                 : item?.formdata?.attendedBy?.callerId?.name}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                             
                               {Array.isArray(item?.formdata?.completedBy)
                                 ? item.formdata.completedBy.length > 0
                                   ? item.formdata.completedBy[

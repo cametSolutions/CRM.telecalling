@@ -1328,7 +1328,7 @@ export const customerCallRegistration = async (req, res) => {
           }
           // Update the fields with the new data
 
-          callToUpdate.timedata.startTime =  callToUpdate.timedata.startTime
+          callToUpdate.timedata.startTime = callToUpdate.timedata.startTime
           callToUpdate.timedata.endTime = calldata.timedata.endTime
           // Convert the total duration back to "HH:MM:SS" format
           callToUpdate.timedata.duration += calldata.timedata.duration
@@ -2442,6 +2442,7 @@ export const GetCallRegister = async (req, res) => {
         return res.status(404).json({ message: "No registered Calls" })
       }
     } else if (callId) {
+      console.log("iiiiiii")
       const callDetails = await CallRegistration.findById(callId)
         .populate("customerid")
         .populate({
@@ -2596,7 +2597,6 @@ export const GetCallRegister = async (req, res) => {
             : { callerId: entry?.formdata?.completedBy } // Keep the original if no name found
         }
       })
-
       if (!callDetails) {
         return res.status(404).json({ message: "Calls not found" })
       } else {
