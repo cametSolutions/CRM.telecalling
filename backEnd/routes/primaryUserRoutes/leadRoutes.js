@@ -5,7 +5,8 @@ import {
   GetAllservices,
   GetallLead,
   UpadateOrLeadAllocationRegister,
-  GetselectedLeadData
+  GetselectedLeadData,
+
 } from "../../controller/primaryUserController/leadController.js"
 const router = express.Router()
 

@@ -2,11 +2,12 @@ import { useState, useEffect } from "react"
 import { PropagateLoader } from "react-spinners"
 import { useNavigate } from "react-router-dom"
 import BarLoader from "react-spinners/BarLoader"
+import { FaHistory } from "react-icons/fa"
 import api from "../../../api/api"
 import Select from "react-select"
 import UseFetch from "../../../hooks/useFetch"
 import { formatDate } from "../../../utils/dateUtils"
-const LeadAllocationTable = () => {
+const LeadFollowUp = () => {
   const [status, setStatus] = useState("Pending")
   const [pedingleadTableData, setpendingLeadTableData] = useState([])
   const [showFullName, setShowFullName] = useState(false)
@@ -133,11 +134,9 @@ const LeadAllocationTable = () => {
         />
       )}
       <div className="h-full md:p-6 p-3 bg-blue-50">
-        <div className="md:px-8 px-3 py-3 shadow-xl h-full border border-gray-100 rounded-xl bg-gray-50 ">
+        <div className="md:px-8 px-3 md:py-3  shadow-xl h-full border border-gray-100 rounded-xl bg-gray-50 ">
           <div className="flex justify-between items-center mb-4 ">
-            <h2 className="text-lg font-bold">
-              {approvedToggleStatus ? "Approved" : "Pending"} Allocation List
-            </h2>
+            <h2 className="text-lg font-bold">Lead Follow Up</h2>
             <div className="flex gap-6 items-center">
               <button
                 onClick={toggleStatus}
@@ -167,31 +166,43 @@ const LeadAllocationTable = () => {
           {/* Responsive Table Container */}
           <div className="overflow-x-auto rounded-lg text-center ">
             <table className="min-w-full border border-gray-300">
-              <thead className="bg-blue-500 text-white text-sm whitespace-nowrap">
+              <thead className="bg-blue-500 text-white text-sm ">
                 <tr>
                   <th className="px-4 py-2 text-center">Lead Date</th>
+                  <th className=" py-2 text-center min-w-[100px]">
+                    No Of Follow Up
+                  </th>
                   <th className="px-4 py-2 text-center">Lead ID</th>
                   <th className="px-4 py-2 text-center">Customer Name</th>
                   <th className="px-4 py-2 text-center">Mobile Number</th>
                   <th className="px-4 py-2 text-center">Phone Number</th>
-                  <th className="px-4 py-2 text-center">Email Id</th>
-                  <th className="px-2 py-2 text-center">Product/Services</th>
-                  <th className="px-4 py-2 text-center">Net Amount</th>
+                  <th className="px-2 py-2 text-center">Email Id</th>
+                  <th className="px-4 py-2 text-center">
+                    Product
+                    <br />
+                    Services
+                  </th>
                   <th className="px-4 py-2 text-center">Lead By</th>
-                  <th className="px-4 py-2 text-center">Allocated To</th>
-                  <th className="px-4 py-2 text-center">Action</th>
+                  <th className="px-4 py-2 text-center">Net Amount</th>
+                  <th className="px-4 py-2 text-center min-w-[150px]">
+                    Next Follow Up Date
+                  </th>
+                  <th className="px-4 py-2 text-center">Remark</th>
+                  <th className="px-1 py-2 text-center">History</th>
+                  <th className="px-1 py-2 text-center">Remark</th>
                 </tr>
               </thead>
               <tbody className="text-center divide-gray-200 bg-gray-200 whitespace-nowrap">
                 {tableData && tableData.length > 0 ? (
                   tableData.map((item) => (
                     <tr key={item.id} className="">
-                      <td className="px-1 border border-gray-300">
+                      <td className="px-1 py-1.5 border border-gray-300">
                         {formatDate(item.leadDate)}
                       </td>
+                      <td className="px-2  border border-gray-300">1</td>
                       <td className="px-4  border border-gray-300">
                         {item?.leadId}
-                      </td>{" "}
+                      </td>
                       <td
                         className="px-4 border border-gray-300 cursor-pointer"
                         onClick={() => setShowFullName(!showFullName)}
@@ -243,12 +254,15 @@ const LeadAllocationTable = () => {
                         </button>
                       </td>
                       <td className="px-4  border border-gray-300">
-                        {item?.netAmount}
-                      </td>
-                      <td className="px-4  border border-gray-300">
                         {item?.leadBy.name}
                       </td>
-                      <td className="  border border-gray-300">
+                      <td className="px-4  border border-gray-300">
+                        {item?.netAmount}
+                      </td>
+                      <td className="px-1 border border-gray-300">
+                        {formatDate(item.leadDate)}
+                      </td>
+                      {/* <td className="  border border-gray-300">
                         <Select
                           options={allocationOptions}
                           value={selectedAllocates[item._id] || null}
@@ -285,6 +299,23 @@ const LeadAllocationTable = () => {
                           menuPortalTarget={document.body} // Prevents nested scrolling issues
                           menuShouldScrollIntoView={false}
                         />
+                      </td> */}
+                      <td className="px-4  border border-gray-300">
+                        <button
+                          onClick={() => handleSubmit(item)}
+                          className="bg-gray-700 hover:bg-gray-800 text-white rounded-lg px-4 shadow-lg"
+                        >
+                          {approvedToggleStatus ? "UPDATE" : "SUBMIT"}
+                        </button>
+                      </td>
+                      <td className="px-4  border border-gray-300">
+                        <FaHistory className="text-xl text-green-500" />
+                        {/* <button
+                          onClick={() => handleSubmit(item)}
+                          className="bg-gray-700 hover:bg-gray-800 text-white rounded-lg px-4 shadow-lg"
+                        >
+                          {approvedToggleStatus ? "UPDATE" : "SUBMIT"}
+                        </button> */}
                       </td>
                       <td className="px-4  border border-gray-300">
                         <button
@@ -299,7 +330,7 @@ const LeadAllocationTable = () => {
                 ) : (
                   <tr>
                     <td
-                      colSpan="11"
+                      colSpan="14"
                       className="px-4 py-4 text-center bg-gray-100"
                     >
                       {loading ? (
@@ -307,7 +338,7 @@ const LeadAllocationTable = () => {
                           <PropagateLoader color="#3b82f6" size={10} />
                         </div>
                       ) : (
-                        "No Allocation Pending"
+                        "No Lead Follow Up"
                       )}
                     </td>
                   </tr>
@@ -321,4 +352,4 @@ const LeadAllocationTable = () => {
   )
 }
 
-export default LeadAllocationTable
+export default LeadFollowUp
