@@ -181,11 +181,13 @@ export const GetallLead = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+
 export const UpadateOrLeadAllocationRegister = async (req, res) => {
   try {
     const { allocationpending } = req.query
 
     const leadAllocationData = req.body
+    console.log("data", leadAllocationData)
     let allocatedToModel
     const isStaff = await Staff.find({ _id: leadAllocationData.allocatedTo })
     if (isStaff) {
@@ -237,6 +239,37 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       return res
         .status(201)
         .json({ message: "pending leads found", data: populatedLeads })
+    } else {
+      const allocatedLeads = await LeadMaster.find({
+        allocatedTo: { $ne: null }
+      })
+        .populate({ path: "customerName", select: "customerName" })
+        .lean()
+
+      const populatedLeads = await Promise.all(
+        allocatedLeads.map(async (lead) => {
+          if (
+            !lead.assignedtoleadByModel ||
+            !mongoose.models[lead.assignedtoleadByModel]
+          ) {
+            console.error(
+              `Model ${lead.assignedtoleadByModel} is not registered`
+            )
+            return lead // Return lead as-is if model is invalid
+          }
+
+          // Fetch the referenced document manually
+          const assignedModel = mongoose.model(lead.assignedtoleadByModel)
+          const populatedLeadBy = await assignedModel
+            .findById(lead.leadBy)
+            .select("name")
+
+          return { ...lead, leadBy: populatedLeadBy } // Merge populated data
+        })
+      )
+      return res
+        .status(201)
+        .json({ message: "updated allocation", data: populatedLeads })
     }
   } catch (error) {
     console.log("error:", error.message)
@@ -261,9 +294,7 @@ export const GetselectedLeadData = async (req, res) => {
           !lead.allocatedToModel ||
           !mongoose.models[lead.allocatedToModel]
         ) {
-          console.error(
-            `Model ${lead.assignedtoleadByModel} is not registered`
-          )
+          console.error(`Model ${lead.assignedtoleadByModel} is not registered`)
           console.error(`Model ${lead.allocatedToModel} is not registered`)
 
           return lead // Return lead as-is if model is invalid

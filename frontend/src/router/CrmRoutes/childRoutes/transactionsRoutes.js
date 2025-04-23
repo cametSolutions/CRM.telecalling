@@ -4,10 +4,11 @@ import CallRegistration from "../../../pages/primaryUser/register/CallRegistrati
 import LeadRegister from "../../../pages/primaryUser/register/LeadRegister"
 import LeadAllocationTable from "../../../pages/primaryUser/List/LeadAllocationTable"
 import LeadEdit from "../../../pages/primaryUser/edit/LeadEdit"
+import LeadFollowUp from "../../../pages/primaryUser/List/LeadFollowUp"
 import { components } from "react-select"
 const transactionsRoutes = [
   { path: "/admin/transaction/lead", component: ComingSoon },
-  { path: "/admin/transaction/leadEdit", component: ComingSoon },
+  { path: "/admin/transaction/leadEdit", component: LeadEdit },
 
   { path: "/admin/transaction/call-registration", component: CallRegistration },
 
@@ -15,7 +16,8 @@ const transactionsRoutes = [
   {
     path: "/admin/transaction/lead/leadAllocation",
     component: ComingSoon
-  }
+  },
+  { path: "/admin/transaction/lead/leadFollowUp", component: ComingSoon }
 ]
 
 export default transactionsRoutes

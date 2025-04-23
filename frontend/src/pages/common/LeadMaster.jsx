@@ -5,9 +5,6 @@ import { saveAs } from "file-saver"
 import Select, { useStateManager } from "react-select"
 import { useForm } from "react-hook-form"
 import UseFetch from "../../hooks/useFetch"
-import * as XLSX from "xlsx" // Import XLSX for creating the Excel file
-// import { toast } from "react-toastify"
-import { FaTrash, FaEdit } from "react-icons/fa" // Import icons
 
 const LeadMaster = ({
   process,
@@ -19,7 +16,7 @@ const LeadMaster = ({
     register,
     handleSubmit,
     setValue,
-    watch,
+
     formState: { errors }
   } = useForm()
   const [productSelections, setProductSelections] = useState({})
@@ -416,14 +413,15 @@ const LeadMaster = ({
   console.log(loggeduser)
   return (
     <div className="h-full overflow-y-auto container justify-center items-center  p-2 md:p-8 ">
+
       <div
         className="shadow-lg rounded p-2 md:p-3 mx-auto"
-        // style={{
-        //   opacity: productLoading || usersLoading || customerLoading ? 0.2 : 1,
-        //   pointerEvents:
-        //     productLoading || usersLoading || customerLoading ? "none" : "auto",
-        //   transition: "opacity 0.3s ease-in-out"
-        // }}
+        style={{
+          opacity: productLoading || usersLoading || customerLoading ? 0.2 : 1,
+          pointerEvents:
+            productLoading || usersLoading || customerLoading ? "none" : "auto",
+          transition: "opacity 0.3s ease-in-out"
+        }}
       >
         {/* <button onClick={handleDownloadFailedData}>click</button> */}
         <h2 className="text-md md:text-2xl font-semibold md:px-5 mb-2 md:mb-1">

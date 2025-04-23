@@ -1303,15 +1303,13 @@ Problem:    \t${selectedText}
 
                 <div className=" container mt-12 ">
                   <div className="flex container justify-center items-center">
-                    {callList && callList.length > 0 && (
-                      <Timer
-                        isRunning={isRunning}
-                        startTime={startTime}
-                        productDetails={productDetails}
-                        selectedProducts={selectedProducts}
-                        onStop={stopTimer}
-                      />
-                    )}
+                    <Timer
+                      isRunning={isRunning}
+                      startTime={startTime}
+                      productDetails={productDetails}
+                      selectedProducts={selectedProducts}
+                      onStop={stopTimer}
+                    />
 
                     <PopUp
                       isOpen={isModalOpen}
