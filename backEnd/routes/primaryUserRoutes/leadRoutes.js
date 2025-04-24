@@ -6,11 +6,12 @@ import {
   GetallLead,
   UpadateOrLeadAllocationRegister,
   GetselectedLeadData,
-
+  UpdateLeadfollowUpDate
 } from "../../controller/primaryUserController/leadController.js"
 const router = express.Router()
 
 router.post("/leadRegister", authMiddleware, LeadRegister)
+router.put("/followupDateUpdate", authMiddleware, UpdateLeadfollowUpDate)
 router.get("/getSelectedLead", authMiddleware, GetselectedLeadData)
 router.post("/leadAllocation", authMiddleware, UpadateOrLeadAllocationRegister)
 router.get("/getallLead", authMiddleware, GetallLead)

@@ -43,7 +43,6 @@ const LeadAllocationTable = () => {
   }, [data])
   useEffect(() => {
     if (leadPendinglist) {
-      console.log(leadPendinglist)
       setTableData(leadPendinglist)
     }
   }, [leadPendinglist])
@@ -84,19 +83,15 @@ const LeadAllocationTable = () => {
   }
 
   const handleSelectedAllocates = (item, value) => {
-    console.log(item)
-    console.log(value)
-    console.log(tableData)
+   
     setTableData((prevLeads) =>
       prevLeads.map((lead) =>
         lead._id === item._id ? { ...lead, allocatedTo: value } : lead
       )
     )
   }
-  console.log(pedingleadTableData)
 
   const handleSubmit = async (leadAllocationData) => {
-    console.log(leadAllocationData)
 
     try {
       setsubmitLoading(true)

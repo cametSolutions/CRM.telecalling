@@ -6,6 +6,7 @@ import api from "../../../api/api"
 import { toast } from "react-toastify"
 import { useNavigate } from "react-router-dom"
 function LeadEdit() {
+  const [fetcheddata, setfetchedData] = useState([])
   const navigate = useNavigate()
   const location = useLocation()
   const { leadId } = location.state || {}
@@ -14,11 +15,11 @@ function LeadEdit() {
     if (leadId) {
       const fetchselectedLeadData = async () => {
         console.log("h")
-        const response = await api.get(
-          `/lead/getSelectedLead?leadId=${leadId}`
-        )
+        const response = await api.get(`/lead/getSelectedLead?leadId=${leadId}`)
+        console.log(response.data.data)
 
         if (response.status >= 200 && response.status < 300) {
+          setfetchedData(response.data.data)
         }
       }
       fetchselectedLeadData()
@@ -45,7 +46,7 @@ function LeadEdit() {
       <LeadMaster
         process="edit"
         handleEditData={handleSubmit}
-        // branchdata={branch}
+        Data={fetcheddata}
       />
     </div>
   )

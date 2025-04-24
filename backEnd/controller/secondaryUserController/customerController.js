@@ -694,7 +694,10 @@ export const GetAllCustomer = async (req, res) => {
             "selected.licensenumber": 1,
             "selected.branchName": 1,
             "selected.productName": 1,
-            "selected.procuct_id": 1
+            "selected.procuct_id": 1,
+            mobile: 1,
+            landline: 1,
+            email: 1
           }
         }
       ])
@@ -708,16 +711,18 @@ export const GetAllCustomer = async (req, res) => {
       const objectIds = parsedBranch?.map(
         (id) => new mongoose.Types.ObjectId(id)
       )
-
+     
+      // console.log("custom", customers)
       const filteredCustomers = customers.filter((customer) =>
         customer.selected.some(
           (selection) =>
             objectIds.some((objId) => objId.equals(selection.branch_id)) // Correct ObjectId comparison
         )
       )
+     
       return res
         .status(200)
-        .json({ message: "customers found", data: filteredCustomers })
+        .json({ message: "customers found", data: customers })
     }
   } catch (error) {
     console.log(error)
@@ -2442,7 +2447,6 @@ export const GetCallRegister = async (req, res) => {
         return res.status(404).json({ message: "No registered Calls" })
       }
     } else if (callId) {
-      console.log("iiiiiii")
       const callDetails = await CallRegistration.findById(callId)
         .populate("customerid")
         .populate({

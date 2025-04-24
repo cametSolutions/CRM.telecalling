@@ -6,12 +6,7 @@ import Select, { useStateManager } from "react-select"
 import { useForm } from "react-hook-form"
 import UseFetch from "../../hooks/useFetch"
 
-const LeadMaster = ({
-  process,
-
-  handleleadData,
-  handleEditedData
-}) => {
+const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
   const {
     register,
     handleSubmit,
@@ -52,7 +47,7 @@ const LeadMaster = ({
   const { data: productData, loading: productLoading } = UseFetch(
     "/product/getallProducts"
   )
-  console.log(allstaff)
+  // console.log(Data)
   const { data: serviceData } = UseFetch("/product/getallServices")
   const { data: allusers } = UseFetch("/auth/getallUsers")
   const { data, loading: usersLoading } = UseFetch("/auth/getallUsers")
@@ -63,8 +58,7 @@ const LeadMaster = ({
       ? `/customer/getallCustomer?userbranch=${encodeURIComponent(branches)}`
       : null
   )
-  console.log(customerData)
-
+  
   useEffect(() => {
     if (allusers && allusers.length > 0) {
       const { allusers = [], allAdmins = [] } = data
@@ -81,9 +75,16 @@ const LeadMaster = ({
       setValue("leadBy", loggeduser._id) // Manually set the value
     }
   }, [loggeduser, setValue])
+  // useEffect(() => {
+  //   if (Data) {
+  //     console.log(Data)
+  //     console.log("hh")
+  //     setValue("leadId", Data?.leadId)
+  //     setValue("customerName", Data?.customerName?._id)
+  //   }
+  // })
   useEffect(() => {
     const userData = localStorage.getItem("user")
-    console.log("daaaaaaaaaaaaaaa", userData)
     if (userData) {
       const user = JSON.parse(userData)
       setloggedUser(user)
@@ -105,7 +106,6 @@ const LeadMaster = ({
 
   useEffect(() => {
     if (customerData) {
-      console.log(customerData)
       setCustomerOptions(
         customerData.map((item) => ({
           value: item?._id,
@@ -117,10 +117,8 @@ const LeadMaster = ({
       )
     }
   }, [customerData])
-  console.log(customerOptions)
   useEffect(() => {
     if (selectedCustomer) {
-      console.log(selectedCustomer)
       setValue("mobile", selectedCustomer.mobile)
       setValue("phone", selectedCustomer.phone)
       setValue("email", selectedCustomer.email)
@@ -407,13 +405,9 @@ const LeadMaster = ({
       toast.error("Failed to add product!")
     }
   }
-  console.log(allstaff)
-  const a = allstaff.filter((i) => i.name === "Riyas")
-  console.log(a)
-  console.log(loggeduser)
+
   return (
     <div className="h-full overflow-y-auto container justify-center items-center  p-2 md:p-8 ">
-
       <div
         className="shadow-lg rounded p-2 md:p-3 mx-auto"
         style={{
@@ -470,7 +464,6 @@ const LeadMaster = ({
                   filterOption={customFilter} // Enable searching by name & mobile
                   {...register("customerName")}
                   onChange={(selectedOption) => {
-                    console.log(selectedOption)
                     handleSelectedCustomer(selectedOption.label)
                     setSelectedCustomer(selectedOption)
                     setValue("customerName", selectedOption.value)
