@@ -55,7 +55,6 @@ const UseFetch = (url) => {
     }
 
     const fetchData = async () => {
-      console.log("h")
       setLoading("loading...")
       setData(null)
       setError(null)
@@ -65,8 +64,6 @@ const UseFetch = (url) => {
 
         if (result) {
           setData(result.data)
-          console.log(result.data)
-          // setfulldateHoliday(result.fulldateholiday)
           setLoading(false)
         } else {
           setError("Expected data to be an array")

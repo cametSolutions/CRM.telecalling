@@ -12,7 +12,7 @@ import { FaUserCircle } from "react-icons/fa" // Import the icon
 export default function StaffHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [user, setUser] = useState(null)
-
+  const [leadMenuOpen, setLeadMenuOpen] = useState(false)
   const [transactionMenuOpen, setTransactionMenuOpen] = useState(false)
   const [masterMenuOpen, setMasterMenuOpen] = useState(false)
   const [reportsMenuOpen, setReportsMenuOpen] = useState(false)
@@ -147,6 +147,16 @@ export default function StaffHeader() {
       control: user?.permissions?.[0]?.Department ?? false
     }
   ]
+  const leads = [
+    // {
+    //   to: "/staff/transaction/lead/leadAllocation",
+    //   label: "Lead Allocation"
+    // },
+    {
+      to: "/staff/transaction/lead/leadFollowUp",
+      label: "Lead Follow Up"
+    }
+  ]
   const inventorys = [
     {
       to: "/staff/masters/inventory/brandRegistration",
@@ -191,7 +201,8 @@ export default function StaffHeader() {
     {
       to: "/staff/transaction/lead",
       label: "Lead",
-      control: user?.permissions?.[0]?.Lead ?? false
+      control: user?.permissions?.[0]?.Lead ?? false,
+      hasChildren: true
     },
     {
       to: "/staff/transaction/call-registration",
@@ -586,7 +597,7 @@ export default function StaffHeader() {
                 transactionMenuOpen &&
                 transactions.some((transaction) => transaction.control) && (
                   <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 shadow-lg block rounded-md z-50">
-                    {transactions.map(
+                    {/* {transactions.map(
                       (transaction) =>
                         transaction.control && (
                           <Link
@@ -597,7 +608,55 @@ export default function StaffHeader() {
                             {transaction.label}
                           </Link>
                         )
-                    )}
+                    )} */}
+                    {transactions.map((transaction) => (
+                      <div
+                        key={transaction.to}
+                        className="relative mb-2"
+                        onMouseEnter={() => {
+                          if (
+                            transaction.hasChildren &&
+                            transaction.label === "Lead"
+                          ) {
+                            setLeadMenuOpen(true)
+                          }
+                        }}
+                        onMouseLeave={() => {
+                          if (
+                            transaction.hasChildren &&
+                            transaction.label === "Lead"
+                          ) {
+                            setLeadMenuOpen(false)
+                          }
+                        }}
+                      >
+                        <Link
+                          to={transaction.to}
+                          className="flex justify-between px-4 py-1 text-gray-600 text-sm hover:bg-gray-100 items-center"
+                        >
+                          {transaction.label}
+                          {transaction.hasChildren && <FaChevronRight />}
+                        </Link>
+                        {/*Lead dropdown*/}
+                        {transaction.hasChildren && leadMenuOpen && (
+                          <div
+                            className="absolute top-0 left-full w-48 bg-white border border-gray-200 shadow-lg rounded-md"
+                            onMouseEnter={() => setLeadMenuOpen(true)}
+                            onMouseLeave={() => setLeadMenuOpen(false)}
+                          >
+                            {leads.map((lead) => (
+                              <Link
+                                key={lead.to}
+                                to={lead.to}
+                                className="block px-4 py-2 text-gray-600 text-sm hover:bg-gray-100"
+                              >
+                                {lead.label}
+                              </Link>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
 

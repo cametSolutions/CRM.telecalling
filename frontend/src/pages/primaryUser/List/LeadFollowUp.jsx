@@ -1,31 +1,56 @@
 import { useState, useEffect } from "react"
 import { PropagateLoader } from "react-spinners"
+import { MdOutlineEventAvailable } from "react-icons/md"
 import { useNavigate } from "react-router-dom"
 import BarLoader from "react-spinners/BarLoader"
+import { FaSpinner } from "react-icons/fa"
 import { FaHistory } from "react-icons/fa"
 import api from "../../../api/api"
+import { toast } from "react-toastify"
 import Select from "react-select"
 import UseFetch from "../../../hooks/useFetch"
 import { formatDate } from "../../../utils/dateUtils"
+import useDebounce from "../../../hooks/useDebounce"
 const LeadFollowUp = () => {
   const [status, setStatus] = useState("Pending")
+  const [selectedLeadId, setSelectedLeadId] = useState(null)
+  const [historyList, setHistoryList] = useState([])
+  const [user, setUser] = useState(null)
   const [pedingleadTableData, setpendingLeadTableData] = useState([])
+  const [followupDateLoader, setfollowupDateLoader] = useState(false)
+  const [input, setInput] = useState("")
+  const [showFullRemarks, setShowFullRemarks] = useState("")
+  const [errors, setErrors] = useState({})
+  const [historyModal, setHistoryModal] = useState(false)
+  const [debouncedValue, setDebouncedValue] = useState("")
+  const [followupDateModal, setfollowupDateModal] = useState(false)
   const [showFullName, setShowFullName] = useState(false)
   const [showFullEmail, setShowFullEmail] = useState(false)
   const [approvedToggleStatus, setapprovedToggleStatus] = useState(false)
   const [submitLoading, setsubmitLoading] = useState(false)
   const [allocationOptions, setAllocationOptions] = useState([])
+  const [followUpDate, setFollowUpDate] = useState("")
   const [selectedAllocates, setSelectedAllocates] = useState({})
   const [allStaffs, setallStaffs] = useState([])
   const [loader, setloader] = useState(true)
   const [tableData, setTableData] = useState([])
-  const { data: leadPendinglist, loading } = UseFetch(
-    status && `/lead/getallLead?Status=${status}`
+  const [formData, setFormData] = useState({
+    followUpDate: "",
+    nextfollowUpDate: "",
+
+    Remarks: ""
+  })
+
+  const { data: loggedusersallocatedleads, loading } = UseFetch(
+    status && "/lead/getallLead?Status=Approved"
   )
+  console.log(loggedusersallocatedleads)
   const { data } = UseFetch("/auth/getallUsers")
   const navigate = useNavigate()
-  const userData = localStorage.getItem("user")
-  const user = JSON.parse(userData)
+  useEffect(() => {
+    const userData = localStorage.getItem("user")
+    if (userData) setUser(JSON.parse(userData))
+  }, [])
 
   useEffect(() => {
     if (data) {
@@ -43,11 +68,28 @@ const LeadFollowUp = () => {
     }
   }, [data])
   useEffect(() => {
-    if (leadPendinglist) {
-      console.log(leadPendinglist)
-      setTableData(leadPendinglist)
+    const handler = setTimeout(() => {
+      setDebouncedValue(input) // this is your debounced result
+    }, 2000) // 500ms debounce delay
+
+    return () => {
+      clearTimeout(handler) // cleanup
     }
-  }, [leadPendinglist])
+  }, [input])
+  useEffect(() => {
+    if (loggedusersallocatedleads && user) {
+      console.log(loggedusersallocatedleads)
+      console.log(user)
+      if (user?.role === "Admin") {
+        setTableData(loggedusersallocatedleads)
+      } else {
+        const filteredLeads = loggedusersallocatedleads.filter(
+          (item) => item?.allocatedTo?._id === user._id
+        )
+        setTableData(filteredLeads)
+      }
+    }
+  }, [loggedusersallocatedleads])
   const toggleStatus = async () => {
     setShowFullEmail(false)
     setShowFullName(false)
@@ -125,6 +167,64 @@ const LeadFollowUp = () => {
       console.log("error:", error.message)
     }
   }
+  const handleDataChange = (e) => {
+    const { name, value } = e.target
+    console.log()
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
+    }))
+    if (errors[name]) {
+      console.log("hhh")
+      setErrors((prev) => ({ ...prev, [name]: "" })) // ✅ Clear error
+    }
+  }
+  const handleHistory = (history, id) => {
+    console.log(history)
+    setHistoryModal(!historyModal)
+    setHistoryList(history)
+    setSelectedLeadId(id)
+  }
+  console.log(selectedLeadId)
+  const handleFollowUpDateSubmit = async () => {
+    try {
+      let newErrors = {}
+      if (!formData.followUpDate)
+        newErrors.followUpDate = "Follow Up Date is required"
+      if (!formData.nextfollowUpDate)
+        newErrors.nextfollowUpDate = "Next Follow Up Date Is Required"
+      if (!formData.Remarks)
+        if (!formData.Remarks) newErrors.Remarks = "Remarks is Required"
+
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors)
+        return
+      }
+      setfollowupDateLoader(!followupDateLoader)
+      console.log(selectedLeadId)
+
+      const response = await api.put(
+        `/lead/followupDateUpdate?selectedleaddocId=${selectedLeadId}`,
+        formData
+      )
+      toast.success(response.data.message)
+      console.log(false)
+      setfollowupDateLoader(false)
+      setfollowupDateModal(false)
+      setFormData({
+        followUpDate: "",
+        nextfollowUpDate: "",
+
+        Remarks: ""
+      })
+    } catch (error) {
+      console.log("error:", error.message)
+    }
+  }
+  console.log(followupDateLoader)
+  console.log(followUpDate)
+  console.log(input)
+  console.log(errors)
   return (
     <div className="h-full ">
       {submitLoading && (
@@ -138,7 +238,7 @@ const LeadFollowUp = () => {
           <div className="flex justify-between items-center mb-4 ">
             <h2 className="text-lg font-bold">Lead Follow Up</h2>
             <div className="flex gap-6 items-center">
-              <button
+              {/* <button
                 onClick={toggleStatus}
                 className={`${
                   approvedToggleStatus ? "bg-green-500" : "bg-gray-300"
@@ -149,7 +249,7 @@ const LeadFollowUp = () => {
                     approvedToggleStatus ? "translate-x-5" : "translate-x-0"
                   } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
                 ></div>
-              </button>
+              </button> */}
               <button
                 onClick={() =>
                   user.role === "Admin"
@@ -184,12 +284,13 @@ const LeadFollowUp = () => {
                   </th>
                   <th className="px-4 py-2 text-center">Lead By</th>
                   <th className="px-4 py-2 text-center">Net Amount</th>
-                  <th className="px-4 py-2 text-center min-w-[150px]">
-                    Next Follow Up Date
+                  <th className="px-1 py-2 text-center min-w-[100px]">
+                    Next Follow
+                    <br /> Up Date
                   </th>
                   <th className="px-4 py-2 text-center">Remark</th>
                   <th className="px-1 py-2 text-center">History</th>
-                  <th className="px-1 py-2 text-center">Remark</th>
+                  <th className="px-1 py-2 text-center">Select Date</th>
                 </tr>
               </thead>
               <tbody className="text-center divide-gray-200 bg-gray-200 whitespace-nowrap">
@@ -235,19 +336,19 @@ const LeadFollowUp = () => {
                       </td>
                       <td className="px-4  border border-gray-300">
                         <button
-                          onClick={() =>
-                            user.role === "Admin"
-                              ? navigate("/admin/transaction/leadEdit", {
-                                  state: {
-                                    leadId: item._id
-                                  }
-                                })
-                              : navigate("/staff/transaction/leadEdit", {
-                                  state: {
-                                    leadId: item._id
-                                  }
-                                })
-                          }
+                          // onClick={() =>
+                          //   user.role === "Admin"
+                          //     ? navigate("/admin/transaction/lead/leadEdit", {
+                          //         state: {
+                          //           leadId: item._id
+                          //         }
+                          //       })
+                          //     : navigate("/staff/transaction/lead/leadEdit", {
+                          //         state: {
+                          //           leadId: item._id
+                          //         }
+                          //       })
+                          // }
                           className="bg-blue-700 hover:bg-blue-800 text-white rounded-lg px-4 shadow-md"
                         >
                           View
@@ -262,67 +363,43 @@ const LeadFollowUp = () => {
                       <td className="px-1 border border-gray-300">
                         {formatDate(item.leadDate)}
                       </td>
-                      {/* <td className="  border border-gray-300">
-                        <Select
-                          options={allocationOptions}
-                          value={selectedAllocates[item._id] || null}
-                          onChange={(selectedOption) => {
-                            setSelectedAllocates((prev) => ({
-                              ...prev,
-                              [item._id]: selectedOption
-                            }))
-                            handleSelectedAllocates(item, selectedOption.value)
-                          }}
-                          className="w-44 focus:outline-none"
-                          styles={{
-                            control: (base, state) => ({
-                              ...base,
-                              boxShadow: "none", // removes blue glow
-                              borderColor: state.isFocused
-                                ? "#ccc"
-                                : base.borderColor, // optional: neutral border on focus
-                              "&:hover": {
-                                borderColor: "#ccc" // optional hover styling
-                              }
-                            }),
-                            menu: (provided) => ({
-                              ...provided,
-                              maxHeight: "200px", // Set dropdown max height
-                              overflowY: "auto" // Enable scrolling
-                            }),
-                            menuList: (provided) => ({
-                              ...provided,
-                              maxHeight: "200px", // Ensures dropdown scrolls internally
-                              overflowY: "auto"
-                            })
-                          }}
-                          menuPortalTarget={document.body} // Prevents nested scrolling issues
-                          menuShouldScrollIntoView={false}
-                        />
-                      </td> */}
+
+                      <td
+                        className="px-2 border border-gray-300 text-blue-800 hover:cursor-pointer"
+                        onClick={() => setShowFullRemarks(!showFullRemarks)}
+                      >
+                        <div
+                          className={`truncate overflow-hidden ${
+                            !showFullRemarks ? "max-w-[150px]" : ""
+                          }`}
+                        >
+                          {item?.followUpDatesandRemarks?.length > 0 &&
+                            item.followUpDatesandRemarks[
+                              item.followUpDatesandRemarks.length - 1
+                            ]?.Remarks}
+                        </div>
+                      </td>
                       <td className="px-4  border border-gray-300">
                         <button
-                          onClick={() => handleSubmit(item)}
-                          className="bg-gray-700 hover:bg-gray-800 text-white rounded-lg px-4 shadow-lg"
+                          onClick={() =>
+                            handleHistory(
+                              item?.followUpDatesandRemarks,
+                              item.leadId
+                            )
+                          }
                         >
-                          {approvedToggleStatus ? "UPDATE" : "SUBMIT"}
+                          <FaHistory className="text-xl text-green-500" />
                         </button>
                       </td>
                       <td className="px-4  border border-gray-300">
-                        <FaHistory className="text-xl text-green-500" />
-                        {/* <button
-                          onClick={() => handleSubmit(item)}
-                          className="bg-gray-700 hover:bg-gray-800 text-white rounded-lg px-4 shadow-lg"
-                        >
-                          {approvedToggleStatus ? "UPDATE" : "SUBMIT"}
-                        </button> */}
-                      </td>
-                      <td className="px-4  border border-gray-300">
                         <button
-                          onClick={() => handleSubmit(item)}
-                          className="bg-gray-700 hover:bg-gray-800 text-white rounded-lg px-4 shadow-lg"
+                          onClick={() => {
+                            setfollowupDateModal(!followupDateModal)
+                            setSelectedLeadId(item?._id)
+                          }}
+                          className=" px-4 "
                         >
-                          {approvedToggleStatus ? "UPDATE" : "SUBMIT"}
+                          <MdOutlineEventAvailable className="text-green-600 text-xl" />
                         </button>
                       </td>
                     </tr>
@@ -345,6 +422,148 @@ const LeadFollowUp = () => {
                 )}
               </tbody>
             </table>
+            {historyModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 ">
+                <div className="bg-gray-100   text-center w-full  md:w-1/2 p-5 rounded-lg">
+                  <h1 className=" font-bold">
+                    {`Follow Up History of LEAD ID
+                  -${selectedLeadId}`}
+                  </h1>
+                  <div className="overflow-x-auto overflow-y-auto  md:max-h-64 lg:max-h-96 shadow-xl">
+                    <table className="w-full text-sm border-collapse">
+                      <thead className="text-center sticky top-0 z-10">
+                        <tr className="bg-indigo-100">
+                          <th className="border border-indigo-200 p-2 min-w-[100px] ">
+                            Date
+                          </th>
+                          <th className="border border-indigo-200 p-2 w-fit min-w-[200px]">
+                            Remark
+                          </th>
+                          <th className="border border-indigo-200 p-2 min-w-[100px] ">
+                            Next Follow Up Date
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {historyList && historyList.length > 0 ? (
+                          historyList.map((item, index) => (
+                            <tr
+                              key={index}
+                              className={
+                                index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                              }
+                            >
+                              <td className="border border-gray-200 p-2">
+                                {item?.followUpDate || "N/A"}
+                              </td>
+                              <td className="border border-gray-200 p-2">
+                                {item?.Remarks || "N/A"}
+                              </td>
+                              <td className="border border-gray-200 p-2">
+                                {item?.nextfollowUpDate}
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td
+                              colSpan={3}
+                              className="text-center bg-white p-3 text-gray-500 italic"
+                            >
+                              No onsites scheduled for today
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setHistoryModal(!historyModal)
+                      setSelectedLeadId(null)
+                    }}
+                    className="bg-gray-500 hover:bg-gray-600 rounded-lg px-3 py-1 mt-3 text-white "
+                  >
+                    CLOSE
+                  </button>
+                </div>
+              </div>
+            )}
+            {followupDateModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 ">
+                <div className="bg-gray-100   text-center w-full  md:w-96 p-5 rounded-lg">
+                  <div className=" rounded-lg grid grid-cols-1 gap-3 p-3 shadow-xl bg-white">
+                    <div>
+                      <label className="block text-left font-semibold text-gray-500">
+                        Select Follow Up Date
+                      </label>
+                      <input
+                        type="date"
+                        name="followUpDate"
+                        value={formData?.followUpDate || ""}
+                        className="rounded-md w-full py-1 px-2 border border-gray-200 focus:outline-none"
+                        onChange={handleDataChange}
+                      ></input>
+                      {errors.followUpDate && (
+                        <p className="text-red-500">{errors.followUpDate}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-left font-semibold text-gray-500">
+                        Select Next Follow Up Date
+                      </label>
+                      <input
+                        type="date"
+                        name="nextfollowUpDate"
+                        value={formData?.nextfollowUpDate || ""}
+                        className="rounded-md w-full py-1 px-2 border border-gray-200 focus:outline-none"
+                        onChange={handleDataChange}
+                      ></input>
+                      {errors.nextfollowUpDate && (
+                        <p className="text-red-500">
+                          {errors.nextfollowUpDate}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-left">Remarks</label>
+                      <textarea
+                        rows={4}
+                        name="Remarks"
+                        className="rounded-lg w-full border border-gray-200 focus:outline-none"
+                        value={formData?.Remarks || ""}
+                        onChange={handleDataChange}
+                      ></textarea>
+                      {errors.Remarks && (
+                        <p className="text-red-500">{errors.Remarks}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex justify-center gap-3 mt-3">
+                    <button
+                      onClick={() => setfollowupDateModal(!followupDateModal)}
+                      className="bg-gray-600 rounded-lg px-4 py-1 shadow-xl text-white "
+                    >
+                      {" "}
+                      CLOSE
+                    </button>
+                    <button
+                      onClick={handleFollowUpDateSubmit}
+                      className="bg-blue-800 rounded-lg px-4 py-2  text-white shadow-xl"
+                    >
+                      {followupDateLoader ? (
+                        <div className="flex items-center">
+                          Processing
+                          <FaSpinner className="animate-spin h-5 w-5  text-white ml-2" />
+                        </div>
+                      ) : (
+                        <div>SUBMIT</div>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

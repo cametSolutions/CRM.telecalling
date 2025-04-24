@@ -189,7 +189,6 @@ export default function CallRegistration() {
             callData.callDetails.callregistration.find(
               (registration) => registration.timedata.token === token
             )
-          console.log(matchingRegistration)
           // /// If a matching registration is found, extract the product details
           const productId = matchingRegistration
             ? matchingRegistration.product._id

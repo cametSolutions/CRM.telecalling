@@ -33,6 +33,7 @@ const leadSchema = new mongoose.Schema({
     refpath: " allocatedToModel",
     default: null // Setting default value to null
   },
+  followUpDatesandRemarks: [],
   allocatedToModel: {
     type: String,
     enum: ["Staff", "Admin"], // Only these two models are allowed

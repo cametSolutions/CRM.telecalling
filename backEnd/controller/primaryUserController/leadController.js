@@ -4,7 +4,6 @@ import models from "../../model/auth/authSchema.js"
 const { Staff, Admin } = models
 import LeadId from "../../model/primaryUser/leadIdSchema.js"
 import Service from "../../model/primaryUser/servicesSchema.js"
-import leadmasterSchema from "../../model/primaryUser/leadmasterSchema.js"
 export const LeadRegister = async (req, res) => {
   try {
     const { leadData, selectedtableLeadData } = req.body
@@ -181,13 +180,30 @@ export const GetallLead = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+export const UpdateLeadfollowUpDate = async (req, res) => {
+  try {
+    const formData = req.body
+    const { selectedleaddocId } = req.query
+
+    const updatefollowUpDate = await LeadMaster.findOneAndUpdate(
+      { _id: selectedleaddocId },
+      { $push: { followUpDatesandRemarks: formData } },
+      { upsert: true }
+    )
+    if (updatefollowUpDate) {
+      return res.status(200).json({ message: "Update followupDate" })
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 
 export const UpadateOrLeadAllocationRegister = async (req, res) => {
   try {
     const { allocationpending } = req.query
 
     const leadAllocationData = req.body
-    console.log("data", leadAllocationData)
     let allocatedToModel
     const isStaff = await Staff.find({ _id: leadAllocationData.allocatedTo })
     if (isStaff) {
@@ -286,37 +302,80 @@ export const GetselectedLeadData = async (req, res) => {
       path: "customerName",
       select: "customerName"
     })
-    const populatedApprovedLeads = await Promise.all(
-      selectedLead.map(async (lead) => {
-        if (
-          !lead.assignedtoleadByModel ||
-          !mongoose.models[lead.assignedtoleadByModel] ||
-          !lead.allocatedToModel ||
-          !mongoose.models[lead.allocatedToModel]
-        ) {
-          console.error(`Model ${lead.assignedtoleadByModel} is not registered`)
-          console.error(`Model ${lead.allocatedToModel} is not registered`)
 
-          return lead // Return lead as-is if model is invalid
-        }
+    if (
+      !selectedLead.assignedtoleadByModel ||
+      !mongoose.models[selectedLead.assignedtoleadByModel] ||
+      !selectedLead.allocatedToModel ||
+      !mongoose.models[selectedLead.allocatedToModel]
+    ) {
+      console.error(
+        `Model ${selectedLead.assignedtoleadByModel} is not registered`
+      )
+      console.error(`Model ${selectedLead.allocatedToModel} is not registered`)
+      return selectedLead
+    }
 
-        // Fetch the referenced document manually
-        const assignedModel = mongoose.model(lead.assignedtoleadByModel)
-        const allocatedModel = mongoose.model(lead.allocatedToModel)
-        const populatedLeadBy = await assignedModel
-          .findById(lead.leadBy)
-          .select("name")
-        const populatedAllocates = await allocatedModel
-          .findById(lead.allocatedTo)
-          .select("name")
+    // Fetch the referenced document manually
+    const assignedModel = mongoose.model(selectedLead.assignedtoleadByModel)
+    const allocatedModel = mongoose.model(selectedLead.allocatedToModel)
 
-        return {
-          ...lead,
-          leadBy: populatedLeadBy,
-          allocatedTo: populatedAllocates
-        } // Merge populated data
-      })
-    )
+    const populatedLeadBy = await assignedModel
+      .findById(selectedLead.leadBy)
+      .select("name")
+
+    const populatedAllocates = await allocatedModel
+      .findById(selectedLead.allocatedTo)
+      .select("name")
+
+    const populatedApprovedLead = {
+      ...selectedLead.toObject(), // convert Mongoose doc to plain object
+      leadBy: populatedLeadBy,
+      allocatedTo: populatedAllocates
+    }
+
+    if (populatedApprovedLead) {
+      return res
+        .status(200)
+        .json({ message: "matched lead found", data: populatedApprovedLead })
+    }
+
+    // const selectedLead = await LeadMaster.findById({ _id: leadId }).populate({
+    //   path: "customerName",
+    //   select: "customerName"
+    // })
+    // console.log("selectedlead", selectedLead)
+    // const populatedApprovedLeads = await Promise.all(
+    //   selectedLead.map(async (lead) => {
+    //     if (
+    //       !lead.assignedtoleadByModel ||
+    //       !mongoose.models[lead.assignedtoleadByModel] ||
+    //       !lead.allocatedToModel ||
+    //       !mongoose.models[lead.allocatedToModel]
+    //     ) {
+    //       console.error(`Model ${lead.assignedtoleadByModel} is not registered`)
+    //       console.error(`Model ${lead.allocatedToModel} is not registered`)
+
+    //       return lead // Return lead as-is if model is invalid
+    //     }
+
+    //     // Fetch the referenced document manually
+    //     const assignedModel = mongoose.model(lead.assignedtoleadByModel)
+    //     const allocatedModel = mongoose.model(lead.allocatedToModel)
+    //     const populatedLeadBy = await assignedModel
+    //       .findById(lead.leadBy)
+    //       .select("name")
+    //     const populatedAllocates = await allocatedModel
+    //       .findById(lead.allocatedTo)
+    //       .select("name")
+
+    //     return {
+    //       ...lead,
+    //       leadBy: populatedLeadBy,
+    //       allocatedTo: populatedAllocates
+    //     } // Merge populated data
+    //   })
+    // )
   } catch (error) {
     console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })

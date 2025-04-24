@@ -412,7 +412,7 @@ export default function PrimaryUserDashBoard() {
                           {item?.customer || "N/A"}
                         </td>
                         <td className="border border-gray-200 p-2">
-                          {item?.place || "Mumbai"}
+                          {item?.place}
                         </td>
                       </tr>
                     ))
