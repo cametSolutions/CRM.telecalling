@@ -58,7 +58,7 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
       ? `/customer/getallCustomer?userbranch=${encodeURIComponent(branches)}`
       : null
   )
-  
+
   useEffect(() => {
     if (allusers && allusers.length > 0) {
       const { allusers = [], allAdmins = [] } = data
@@ -298,9 +298,9 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
     )
   }
 
-  const handleDelete = (name) => {
-    const filteredLeadlist = selectedProducts.filter(
-      (item) => item.productName !== name
+  const handleDeleteProduct = (num) => {
+    const filteredLeadlist = selectedleadlist.filter(
+      (item, index) => index == !num
     )
     setSelectedProducts(filteredLeadlist)
   }
@@ -707,7 +707,7 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
                       <th className="p-2 text-left">License Number</th>
                       <th className="p-2 text-left">Product Name</th>
                       <th className="p-2 text-left">Price</th>
-                      <th className="p-2 text-center">Actions</th>
+                      {/* <th className="p-2 text-center">Actions</th> */}
                     </tr>
                   </thead>
                   <tbody>
@@ -728,10 +728,10 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
                             className="w-full border rounded-md px-2 py-1 text-sm"
                           />
                         </td>
-                        <td className="p-2 items-center text-center space-x-2">
+                        {/* <td className="p-2 items-center text-center space-x-2">
                           <button
                             type="button"
-                            onClick={() => handleDeleteProduct(product)}
+                            onClick={() => handleDeleteProduct(index)}
                             className="text-red-500 hover:text-red-700"
                             title="Delete Product"
                           >
@@ -747,7 +747,7 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
                               <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
                             </svg>
                           </button>
-                        </td>
+                        </td> */}
                       </tr>
                     ))}
                   </tbody>
