@@ -672,6 +672,7 @@ export const GetAllCustomer = async (req, res) => {
             customerName: 1,
             "selected.licensenumber": 1,
             "selected.branchName": 1,
+            "selected.branch_id": 1,
             "selected.productName": 1,
             "selected.procuct_id": 1,
             mobile: 1,
@@ -692,9 +693,10 @@ export const GetAllCustomer = async (req, res) => {
             _id: 0, // Exclude _id
             customerName: 1,
             "selected.licensenumber": 1,
+            "selected.branch_id": 1,
             "selected.branchName": 1,
             "selected.productName": 1,
-            "selected.procuct_id": 1,
+            "selected.product_id": 1,
             mobile: 1,
             landline: 1,
             email: 1
@@ -711,18 +713,17 @@ export const GetAllCustomer = async (req, res) => {
       const objectIds = parsedBranch?.map(
         (id) => new mongoose.Types.ObjectId(id)
       )
-     
-      // console.log("custom", customers)
+
       const filteredCustomers = customers.filter((customer) =>
         customer.selected.some(
           (selection) =>
             objectIds.some((objId) => objId.equals(selection.branch_id)) // Correct ObjectId comparison
         )
       )
-     
+
       return res
         .status(200)
-        .json({ message: "customers found", data: customers })
+        .json({ message: "customers found", data: filteredCustomers })
     }
   } catch (error) {
     console.log(error)

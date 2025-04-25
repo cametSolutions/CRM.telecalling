@@ -5,6 +5,7 @@ import { saveAs } from "file-saver"
 import Select, { useStateManager } from "react-select"
 import { useForm } from "react-hook-form"
 import UseFetch from "../../hooks/useFetch"
+import licenseSchema from "../../../../backEnd/model/secondaryUser/licenseSchema"
 
 const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
   const {
@@ -31,9 +32,6 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
   const [isLicenseOpen, setIslicenseOpen] = useState(false)
   const [branches, setBranches] = useState([])
   const [customerTableData, setcustomerTableData] = useState([])
-  //State for added products
-
-  // const [dd, setd] = useState(false)
 
   const [loggeduser, setloggedUser] = useState(null)
   const [allstaff, setallStaffs] = useState([])
@@ -58,7 +56,6 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
       ? `/customer/getallCustomer?userbranch=${encodeURIComponent(branches)}`
       : null
   )
-
   useEffect(() => {
     if (allusers && allusers.length > 0) {
       const { allusers = [], allAdmins = [] } = data
@@ -254,9 +251,18 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
       saveAs(blob, "customer_without_product.xlsx")
     }
   }
-
+ 
   const handleProductSelect = (productId) => {
     if (selectedLicense) {
+      
+      if (
+        selectedleadlist.some(
+          (item) =>
+            item.productId === productId &&
+            item.licenseNumber === selectedLicense
+        )
+      )
+        return
       const updatedProductList = productSelections[selectedLicense].map(
         (product) =>
           product._id === productId
@@ -268,8 +274,17 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
         [selectedLicense]: updatedProductList
       }))
     } else {
+      if (
+        selectedleadlist
+          .filter((items) => !items.licenseNumber)
+          .some((item) => item.productId === productId)
+      )
+        return
+     
       const updatedProductList = licensewithoutProductSelection.map((product) =>
-        product._id === productId ? { ...product, selected: true } : product
+        product._id === productId
+          ? { ...product, selected: !product.selected }
+          : product
       )
       setlicenseWithoutProductSelection(updatedProductList)
     }
@@ -297,12 +312,36 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
       )
     )
   }
+  const handleDeletetableData = (item, indexNum) => {
 
-  const handleDeleteProduct = (num) => {
+    if (item.licenseNumber) {
+    
+      const updatedProductList = productSelections[item.licenseNumber].map(
+        (product) =>
+          product._id === item.productId
+            ? { ...product, selected: !product.selected }
+            : product
+      )
+
+      setProductSelections((prev) => ({
+        ...prev,
+        [item.licenseNumber]: updatedProductList
+      }))
+    } else {
+      
+      const updatedProductList = licensewithoutProductSelection.map((product) =>
+        product._id === item.productId
+          ? { ...product, selected: !product.selected }
+          : product
+      )
+      setlicenseWithoutProductSelection(updatedProductList)
+    }
+
+    // return
     const filteredLeadlist = selectedleadlist.filter(
-      (item, index) => index == !num
+      (item, index) => index !== indexNum
     )
-    setSelectedProducts(filteredLeadlist)
+    setSelectedLeadList(filteredLeadlist)
   }
   const handleBranchChange = (e) => {
     const branchId = e.target.value
@@ -340,6 +379,7 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
       return total + (Number(product.price) || 0) // Ensure price is a number and handle null values
     }, 0)
   }
+  
   const handleAddProducts = () => {
     setSelectedLeadList((prev) => {
       let updatedList = [...prev]
@@ -353,13 +393,13 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
             productId: product._id,
             price: product.productPrice
           }))
-
+       
         // Filter out products that are already added for the selected license
         const newProducts = selectedProducts.filter(
           (product) =>
             !updatedList.some(
               (p) =>
-                p.licensenumber === selectedLicense &&
+                p.licenseNumber === selectedLicense &&
                 p.productId === product.productId
             )
         )
@@ -378,7 +418,7 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
         const newProducts = selectedProducts.filter(
           (product) =>
             !updatedList.some(
-              (p) => !p.licensenumber && p.productId === product.productId
+              (p) => !p.licenseNumber && p.productId === product.productId
             )
         )
 
@@ -405,7 +445,6 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
       toast.error("Failed to add product!")
     }
   }
-
   return (
     <div className="h-full overflow-y-auto container justify-center items-center  p-2 md:p-8 ">
       <div
@@ -487,7 +526,7 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
                 <button
                   type="button" // Prevents form submission
                   onClick={() => setModalOpen(true)}
-                  className="bg-blue-500 hover:bg-blue-600 py-1 px-3 rounded-md text-white "
+                  className="bg-blue-500 hover:bg-blue-600  px-3 rounded-md text-white "
                 >
                   ADD
                 </button>
@@ -643,7 +682,7 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
                   // }
                   className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded "
                 >
-                  Add
+                  Adddddddd
                 </button>
               </div>
 
@@ -707,7 +746,7 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
                       <th className="p-2 text-left">License Number</th>
                       <th className="p-2 text-left">Product Name</th>
                       <th className="p-2 text-left">Price</th>
-                      {/* <th className="p-2 text-center">Actions</th> */}
+                      <th className="p-2 text-center">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -728,10 +767,12 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
                             className="w-full border rounded-md px-2 py-1 text-sm"
                           />
                         </td>
-                        {/* <td className="p-2 items-center text-center space-x-2">
+                        <td className="p-2 items-center text-center space-x-2">
                           <button
                             type="button"
-                            onClick={() => handleDeleteProduct(index)}
+                            onClick={() =>
+                              handleDeletetableData(product, index)
+                            }
                             className="text-red-500 hover:text-red-700"
                             title="Delete Product"
                           >
@@ -747,7 +788,7 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
                               <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
                             </svg>
                           </button>
-                        </td> */}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
