@@ -251,10 +251,9 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
       saveAs(blob, "customer_without_product.xlsx")
     }
   }
- 
+
   const handleProductSelect = (productId) => {
     if (selectedLicense) {
-      
       if (
         selectedleadlist.some(
           (item) =>
@@ -280,7 +279,7 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
           .some((item) => item.productId === productId)
       )
         return
-     
+
       const updatedProductList = licensewithoutProductSelection.map((product) =>
         product._id === productId
           ? { ...product, selected: !product.selected }
@@ -313,9 +312,7 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
     )
   }
   const handleDeletetableData = (item, indexNum) => {
-
     if (item.licenseNumber) {
-    
       const updatedProductList = productSelections[item.licenseNumber].map(
         (product) =>
           product._id === item.productId
@@ -328,7 +325,6 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
         [item.licenseNumber]: updatedProductList
       }))
     } else {
-      
       const updatedProductList = licensewithoutProductSelection.map((product) =>
         product._id === item.productId
           ? { ...product, selected: !product.selected }
@@ -379,7 +375,7 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
       return total + (Number(product.price) || 0) // Ensure price is a number and handle null values
     }, 0)
   }
-  
+
   const handleAddProducts = () => {
     setSelectedLeadList((prev) => {
       let updatedList = [...prev]
@@ -393,7 +389,7 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
             productId: product._id,
             price: product.productPrice
           }))
-       
+
         // Filter out products that are already added for the selected license
         const newProducts = selectedProducts.filter(
           (product) =>
@@ -682,7 +678,7 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditedData }) => {
                   // }
                   className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded "
                 >
-                  Adddddddd
+                  ADD
                 </button>
               </div>
 
