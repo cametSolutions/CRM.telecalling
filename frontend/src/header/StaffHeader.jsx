@@ -148,10 +148,10 @@ export default function StaffHeader() {
     }
   ]
   const leads = [
-    {
-      to: "/staff/transaction/lead/leadAllocation",
-      label: "Lead Allocation"
-    },
+    // {
+    //   to: "/staff/transaction/lead/leadAllocation",
+    //   label: "Lead Allocation"
+    // },
     {
       to: "/staff/transaction/lead/leadFollowUp",
       label: "Lead Follow Up"
