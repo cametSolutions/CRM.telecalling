@@ -192,11 +192,32 @@ export const GetallLead = async (req, res) => {
           const populatedAllocates = await allocatedModel
             .findById(lead.allocatedTo)
             .select("name")
+          // 👇 Now handle followUpDatesandRemarks population
+          const populatedFollowUps = await Promise.all(
+            (lead.followUpDatesandRemarks || []).map(async (followUp) => {
+              if (
+                followUp.followedId &&
+                followUp.followedByModel &&
+                mongoose.models[followUp.followedByModel]
+              ) {
+                const FollowedModel = mongoose.model(followUp.followedByModel)
+                const populatedFollowed = await FollowedModel.findById(
+                  followUp.followedId
+                ).select("name") // Or whatever field you want
+                return {
+                  ...followUp,
+                  followedId: populatedFollowed // Replace followedId with populated document
+                }
+              }
+              return followUp // No changes if no followedId or model
+            })
+          )
 
           return {
             ...lead,
             leadBy: populatedLeadBy,
-            allocatedTo: populatedAllocates
+            allocatedTo: populatedAllocates,
+            followUpDatesandRemarks: populatedFollowUps
           } // Merge populated data
         })
       )
@@ -215,13 +236,13 @@ export const GetallLead = async (req, res) => {
 export const UpdateLeadfollowUpDate = async (req, res) => {
   try {
     const formData = req.body
-    const { selectedleaddocId } = req.query
+    const { selectedleaddocId, loggeduserid } = req.query
     let followedByModel
-    const isStaff = await Staff.find({ _id: selectedleaddocId })
+    const isStaff = await Staff.find({ _id: loggeduserid })
     if (isStaff) {
       followedByModel = "Staff"
     } else {
-      const isAdmin = await Admin.find({ _id: selectedleaddocId })
+      const isAdmin = await Admin.find({ _id: loggeduserid })
       if (isAdmin) {
         followedByModel = "Admin"
       }
@@ -229,10 +250,21 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
     if (!followedByModel) {
       return res.status(400).json({ message: "Invalid followedid reference" })
     }
-
+   
+  
     const updatefollowUpDate = await LeadMaster.findOneAndUpdate(
       { _id: selectedleaddocId },
-      { $push: { followUpDatesandRemarks: formData } },
+      {
+        $push: {
+          followUpDatesandRemarks: {
+            nextfollowUpDate:formData.nextfollowUpDate,
+            followUpDate: formData.followUpDate,
+            Remarks: formData.Remarks,
+            followedId: loggeduserid,
+            followedByModel
+          }
+        }
+      },
       { upsert: true }
     )
     if (updatefollowUpDate) {
@@ -374,7 +406,7 @@ export const GetselectedLeadData = async (req, res) => {
           return { ...item, productorServiceId: populatedProductorService }
         })
       )
-     
+
       const mergedleads = { ...selectedLead, leadFor: populatedLeads }
       return res
         .status(200)

@@ -17,7 +17,7 @@ const leadSchema = new mongoose.Schema({
         refpath: "productorServicemodel",
         default: null
       },
-productorServicemodel:{type:String,enum:["Product","Service"]},
+      productorServicemodel: { type: String, enum: ["Product", "Service"] },
       licenseNumber: { type: Number },
       price: { type: Number }
     }
@@ -49,10 +49,11 @@ productorServicemodel:{type:String,enum:["Product","Service"]},
         type: mongoose.Schema.Types.ObjectId,
         refpath: "followedByModel",
         default: null
-      }
+      },
+  followedByModel: { type: String, enum: ["Staff", "Admin"] },
     }
   ],
-  followedByModel: { type: String, enum: ["Staff", "Admin"], defalult: null },
+
   allocatedToModel: {
     type: String,
     enum: ["Staff", "Admin"], // Only these two models are allowed
