@@ -48,7 +48,7 @@ function LeadEdit() {
     } catch (error) {
       setLoader(false)
       toast.error("Something went wrong")
-      console.error("Error updating branch:", error)
+      console.error("error:", error)
     }
   }
   return (
@@ -62,6 +62,8 @@ function LeadEdit() {
       <LeadMaster
         process="edit"
         handleEditData={handleSubmit}
+        editloadingState={loader}
+        seteditLoadingState={setLoader}
         Data={fetcheddata}
       />
     </div>
