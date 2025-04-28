@@ -133,7 +133,6 @@ const LeadFollowUp = () => {
   }
 
   const handleSelectedAllocates = (item, value) => {
-   
     setTableData((prevLeads) =>
       prevLeads.map((lead) =>
         lead._id === item._id ? { ...lead, allocatedTo: value } : lead
@@ -142,7 +141,6 @@ const LeadFollowUp = () => {
   }
 
   const handleSubmit = async (leadAllocationData) => {
-
     try {
       setsubmitLoading(true)
       if (approvedToggleStatus) {
@@ -199,10 +197,10 @@ const LeadFollowUp = () => {
         return
       }
       setfollowupDateLoader(!followupDateLoader)
-    
+   
 
       const response = await api.put(
-        `/lead/followupDateUpdate?selectedleaddocId=${selectedLeadId}`,
+        `/lead/followupDateUpdate?selectedleaddocId=${selectedLeadId}&loggeduserid=${user._id}`,
         formData
       )
       toast.success(response.data.message)
@@ -218,7 +216,7 @@ const LeadFollowUp = () => {
       console.log("error:", error.message)
     }
   }
- 
+
   return (
     <div className="h-full ">
       {submitLoading && (
@@ -427,6 +425,12 @@ const LeadFollowUp = () => {
                     <table className="w-full text-sm border-collapse">
                       <thead className="text-center sticky top-0 z-10">
                         <tr className="bg-indigo-100">
+                          {user?.role === "Admin" && (
+                            <th className="border border-indigo-200 p-2 min-w-[100px] ">
+                              FollowedBy
+                            </th>
+                          )}
+
                           <th className="border border-indigo-200 p-2 min-w-[100px] ">
                             Date
                           </th>
@@ -447,6 +451,12 @@ const LeadFollowUp = () => {
                                 index % 2 === 0 ? "bg-gray-50" : "bg-white"
                               }
                             >
+                              {user?.role === "Admin" && (
+                                <td className="border border-gray-200 p-2">
+                                  {item?.followedId?.name}
+                                </td>
+                              )}
+
                               <td className="border border-gray-200 p-2">
                                 {item?.followUpDate?.toString().split("T")[0] ||
                                   "N/A"}
