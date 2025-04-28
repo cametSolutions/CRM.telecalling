@@ -55,7 +55,7 @@ const UseFetch = (url) => {
     }
 
     const fetchData = async () => {
-      setLoading("loading...")
+      setLoading(true)
       setData(null)
       setError(null)
 

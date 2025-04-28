@@ -1,8 +1,8 @@
 import Product from "../../model/primaryUser/productSchema.js"
+import Service from "../../model/primaryUser/servicesSchema.js"
 import mongoose from "mongoose"
 export const ProductRegistration = async (req, res) => {
   const { productData, tableData } = req.body
- 
 
   // Check if user already exists
 
@@ -326,5 +326,91 @@ export const DeleteHsn = async (req, res) => {
       message: "Error deleting Hsn",
       error: error.message
     })
+  }
+}
+export const ServicesRegistration = async (req, res) => {
+  try {
+    const formdata = req.body
+    const { serviceName, price, company, branch } = formdata
+
+    const existingItem = await Service.findOne({
+      serviceName
+    })
+    if (existingItem) {
+      return res
+        .status(400)
+        .json({ message: "This service is already registered" })
+    }
+
+    // Create and save call notes
+    const collection = new Service({
+      serviceName,
+      price,
+      company,
+      branch
+    })
+
+    await collection.save()
+
+    res.status(200).json({
+      status: true,
+      message: "Service created successfully"
+    })
+  } catch (error) {
+    console.log("error:", error.message)
+  }
+}
+export const UpdateServices = async (req, res) => {
+  const { id } = req.query
+
+  const objectId = new mongoose.Types.ObjectId(id)
+  const formData = req.body
+  if (!id) {
+    return res.status(400).json({ message: "Invalid id" })
+  }
+
+  try {
+    const updatedService = await Service.findByIdAndUpdate(objectId, formData, {
+      new: true
+    })
+
+    if (!updatedService) {
+      return res.status(404).json({ message: "service not found" })
+    }
+
+    res.status(200).json({ data: updatedService })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({ message: "Internal Server Error" })
+  }
+}
+export const GetallServices = async (req, res) => {
+  try {
+    const services = await Service.find({})
+    if (services) {
+      return res.status(200).json({ message: "Services found", data: services })
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const DeleteService = async (req, res) => {
+  const { id } = req.query
+
+  const objectId = new mongoose.Types.ObjectId(id)
+
+  try {
+    // Perform the deletion
+    const result = await Service.findByIdAndDelete(objectId)
+
+    if (result) {
+      return res.status(200).json({ message: " deleted successfully" })
+    } else {
+      return res.status(404).json({ message: "partner not found" })
+    }
+  } catch (error) {
+    console.error(error)
+    return res.status(500).json({ message: "Server error" })
   }
 }

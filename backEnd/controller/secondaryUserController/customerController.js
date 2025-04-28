@@ -670,6 +670,7 @@ export const GetAllCustomer = async (req, res) => {
           $project: {
             _id: 1, // Exclude _id
             customerName: 1,
+            address1: 1,
             "selected.licensenumber": 1,
             "selected.branchName": 1,
             "selected.branch_id": 1,
@@ -690,8 +691,9 @@ export const GetAllCustomer = async (req, res) => {
         },
         {
           $project: {
-            _id: 0, // Exclude _id
+            _id: 1, // Exclude _id
             customerName: 1,
+            address1: 1,
             "selected.licensenumber": 1,
             "selected.branch_id": 1,
             "selected.branchName": 1,

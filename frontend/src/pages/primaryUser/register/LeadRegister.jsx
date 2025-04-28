@@ -11,6 +11,7 @@ function LeadRegister() {
 
   const navigate = useNavigate()
   const handleSubmit = async (leadData, selectedtableLeadData) => {
+
     try {
       const response = await api.post("/lead/leadRegister", {
         leadData,

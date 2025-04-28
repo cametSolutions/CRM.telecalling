@@ -37,6 +37,7 @@ const LeadFollowUp = () => {
   const [formData, setFormData] = useState({
     followUpDate: "",
     nextfollowUpDate: "",
+    followedId: "",
 
     Remarks: ""
   })
@@ -44,13 +45,20 @@ const LeadFollowUp = () => {
   const { data: loggedusersallocatedleads, loading } = UseFetch(
     status && "/lead/getallLead?Status=Approved"
   )
-  console.log(loggedusersallocatedleads)
   const { data } = UseFetch("/auth/getallUsers")
   const navigate = useNavigate()
   useEffect(() => {
     const userData = localStorage.getItem("user")
     if (userData) setUser(JSON.parse(userData))
   }, [])
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        followedId: user?._id
+      }))
+    }
+  }, [user])
 
   useEffect(() => {
     if (data) {
@@ -78,8 +86,6 @@ const LeadFollowUp = () => {
   }, [input])
   useEffect(() => {
     if (loggedusersallocatedleads && user) {
-      console.log(loggedusersallocatedleads)
-      console.log(user)
       if (user?.role === "Admin") {
         setTableData(loggedusersallocatedleads)
       } else {
@@ -127,19 +133,15 @@ const LeadFollowUp = () => {
   }
 
   const handleSelectedAllocates = (item, value) => {
-    console.log(item)
-    console.log(value)
-    console.log(tableData)
+   
     setTableData((prevLeads) =>
       prevLeads.map((lead) =>
         lead._id === item._id ? { ...lead, allocatedTo: value } : lead
       )
     )
   }
-  console.log(pedingleadTableData)
 
   const handleSubmit = async (leadAllocationData) => {
-    console.log(leadAllocationData)
 
     try {
       setsubmitLoading(true)
@@ -169,23 +171,19 @@ const LeadFollowUp = () => {
   }
   const handleDataChange = (e) => {
     const { name, value } = e.target
-    console.log()
     setFormData((prev) => ({
       ...prev,
       [name]: value
     }))
     if (errors[name]) {
-      console.log("hhh")
       setErrors((prev) => ({ ...prev, [name]: "" })) // ✅ Clear error
     }
   }
   const handleHistory = (history, id) => {
-    console.log(history)
     setHistoryModal(!historyModal)
     setHistoryList(history)
     setSelectedLeadId(id)
   }
-  console.log(selectedLeadId)
   const handleFollowUpDateSubmit = async () => {
     try {
       let newErrors = {}
@@ -201,14 +199,13 @@ const LeadFollowUp = () => {
         return
       }
       setfollowupDateLoader(!followupDateLoader)
-      console.log(selectedLeadId)
+    
 
       const response = await api.put(
         `/lead/followupDateUpdate?selectedleaddocId=${selectedLeadId}`,
         formData
       )
       toast.success(response.data.message)
-      console.log(false)
       setfollowupDateLoader(false)
       setfollowupDateModal(false)
       setFormData({
@@ -221,10 +218,7 @@ const LeadFollowUp = () => {
       console.log("error:", error.message)
     }
   }
-  console.log(followupDateLoader)
-  console.log(followUpDate)
-  console.log(input)
-  console.log(errors)
+ 
   return (
     <div className="h-full ">
       {submitLoading && (
@@ -336,19 +330,19 @@ const LeadFollowUp = () => {
                       </td>
                       <td className="px-4  border border-gray-300">
                         <button
-                          // onClick={() =>
-                          //   user.role === "Admin"
-                          //     ? navigate("/admin/transaction/lead/leadEdit", {
-                          //         state: {
-                          //           leadId: item._id
-                          //         }
-                          //       })
-                          //     : navigate("/staff/transaction/lead/leadEdit", {
-                          //         state: {
-                          //           leadId: item._id
-                          //         }
-                          //       })
-                          // }
+                          onClick={() =>
+                            user.role === "Admin"
+                              ? navigate("/admin/transaction/lead/leadEdit", {
+                                  state: {
+                                    leadId: item._id
+                                  }
+                                })
+                              : navigate("/staff/transaction/lead/leadEdit", {
+                                  state: {
+                                    leadId: item._id
+                                  }
+                                })
+                          }
                           className="bg-blue-700 hover:bg-blue-800 text-white rounded-lg px-4 shadow-md"
                         >
                           View
@@ -454,13 +448,18 @@ const LeadFollowUp = () => {
                               }
                             >
                               <td className="border border-gray-200 p-2">
-                                {item?.followUpDate || "N/A"}
+                                {item?.followUpDate?.toString().split("T")[0] ||
+                                  "N/A"}
                               </td>
                               <td className="border border-gray-200 p-2">
                                 {item?.Remarks || "N/A"}
                               </td>
                               <td className="border border-gray-200 p-2">
-                                {item?.nextfollowUpDate}
+                                {
+                                  item?.nextfollowUpDate
+                                    ?.toString()
+                                    .split("T")[0]
+                                }
                               </td>
                             </tr>
                           ))
