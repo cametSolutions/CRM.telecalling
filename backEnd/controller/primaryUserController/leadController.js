@@ -93,21 +93,10 @@ export const LeadRegister = async (req, res) => {
 export const UpdateLeadRegister = async (req, res) => {
   try {
     const { data, leadData } = req.body
-    // console.log("leadddddddddddd", leadData)
-    // return
+
     const { docID } = req.query
     const objectId = new mongoose.Types.ObjectId(docID)
-    // productorServiceId: {
-    //         type: mongoose.Schema.Types.ObjectId,
-    //         refpath: "productorServicemodel",
-    //         default: null
-    //       },
-    //       productorServicemodel: { type: String, enum: ["Product", "Service"] },
-    //       licenseNumber: { type: Number },
-    //       price: { type: Number }
-    //     if (!docID) {
-    //       return res.status(400).json({ message: "Lead Id is required" })
-    //     }
+
     const mappedleadData = leadData.map((item) => {
       return {
         licenseNumber: item.licenseNumber,
@@ -416,9 +405,7 @@ export const GetselectedLeadData = async (req, res) => {
           const populatedProductorService = await productorserviceModel
             .findById(item.productorServiceId)
             .lean() // Use lean() to get plain JavaScript objects
-          // Convert the item to a plain object and then replace the ID with the populated object
-          // const plainItem = item.toObject ? item.toObject() : { ...item._doc }
-          // console.log("IT", plainItem)
+
           return { ...item, productorServiceId: populatedProductorService }
         })
       )
