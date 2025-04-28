@@ -1,22 +1,24 @@
 import React, { useEffect, useState } from "react"
 import { useLocation } from "react-router-dom"
-
+import BarLoader from "react-spinners/BarLoader"
 import LeadMaster from "../../common/LeadMaster"
 import api from "../../../api/api"
 import { toast } from "react-toastify"
 import { useNavigate } from "react-router-dom"
 function LeadEdit() {
   const [fetcheddata, setfetchedData] = useState([])
+  const [loader, setLoader] = useState(false)
   const navigate = useNavigate()
+
   const location = useLocation()
   const { leadId } = location.state || {}
-  console.log(leadId)
+  const userData = localStorage.getItem("user")
+  const user = JSON.parse(userData)
+
   useEffect(() => {
     if (leadId) {
       const fetchselectedLeadData = async () => {
-        console.log("h")
         const response = await api.get(`/lead/getSelectedLead?leadId=${leadId}`)
-        console.log(response.data.data)
 
         if (response.status >= 200 && response.status < 300) {
           setfetchedData(response.data.data)
@@ -26,23 +28,37 @@ function LeadEdit() {
     }
   }, [])
 
-  const handleSubmit = async (branchData, branchId) => {
+  const handleSubmit = async (data, leadData, objectId) => {
     try {
-      const response = await api.post(
-        "/branch/branchEdit",
-        { branchData, branchId },
+      setLoader(true)
+      const response = await api.put(
+        `/lead/leadRegisterUpdate?docID=${objectId}`,
         {
-          withCredentials: true
+          data,
+          leadData
         }
       )
-      toast.success("Branch updated successfully:")
-      navigate("/admin/masters/branch")
+      if (response.status === 200) {
+        toast.success(response.data.message)
+        setLoader(false)
+      }
+      user?.role === "Admin"
+        ? navigate("/admin/transaction/lead/leadAllocation")
+        : navigate("/staff/transaction/lead/leadFollowUp")
     } catch (error) {
+      setLoader(false)
+      toast.error("Something went wrong")
       console.error("Error updating branch:", error)
     }
   }
   return (
     <div>
+      {loader && (
+        <BarLoader
+          cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
+          color="#4A90E2" // Change color as needed
+        />
+      )}
       <LeadMaster
         process="edit"
         handleEditData={handleSubmit}

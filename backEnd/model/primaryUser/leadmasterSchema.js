@@ -12,10 +12,17 @@ const leadSchema = new mongoose.Schema({
   trade: { type: String },
   leadFor: [
     {
-      productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
-      licenseNumber: { type: Number }
+      productorServiceId: {
+        type: mongoose.Schema.Types.ObjectId,
+        refpath: "productorServicemodel",
+        default: null
+      },
+productorServicemodel:{type:String,enum:["Product","Service"]},
+      licenseNumber: { type: Number },
+      price: { type: Number }
     }
   ],
+
   leadBy: {
     type: mongoose.Schema.Types.ObjectId,
     refpath: "assignedtoleadByModel"
@@ -33,7 +40,19 @@ const leadSchema = new mongoose.Schema({
     refpath: " allocatedToModel",
     default: null // Setting default value to null
   },
-  followUpDatesandRemarks: [],
+  followUpDatesandRemarks: [
+    {
+      followUpDate: { type: Date },
+      nextfollowUpDate: { type: Date },
+      Remarks: { type: String },
+      followedId: {
+        type: mongoose.Schema.Types.ObjectId,
+        refpath: "followedByModel",
+        default: null
+      }
+    }
+  ],
+  followedByModel: { type: String, enum: ["Staff", "Admin"], defalult: null },
   allocatedToModel: {
     type: String,
     enum: ["Staff", "Admin"], // Only these two models are allowed

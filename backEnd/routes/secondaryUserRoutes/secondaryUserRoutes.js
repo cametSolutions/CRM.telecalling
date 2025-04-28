@@ -74,7 +74,6 @@ router.post(
   authMiddleware,
   getallExpiredCustomerCalls
 )
-// router.get("/getallcalls", authMiddleware, GetallCalls)
-// router.post("/updatedbranch", authMiddleware, updateBranchNames)
+
 
 export default router

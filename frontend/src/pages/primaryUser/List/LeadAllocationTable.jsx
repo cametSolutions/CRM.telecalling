@@ -83,7 +83,6 @@ const LeadAllocationTable = () => {
   }
 
   const handleSelectedAllocates = (item, value) => {
-   
     setTableData((prevLeads) =>
       prevLeads.map((lead) =>
         lead._id === item._id ? { ...lead, allocatedTo: value } : lead
@@ -92,7 +91,6 @@ const LeadAllocationTable = () => {
   }
 
   const handleSubmit = async (leadAllocationData) => {
-
     try {
       setsubmitLoading(true)
       if (approvedToggleStatus) {
@@ -116,7 +114,7 @@ const LeadAllocationTable = () => {
         }
       }
     } catch (error) {
-      console.log("error:", error.message)
+      sg("error:", error.message)
     }
   }
   return (
@@ -221,12 +219,12 @@ const LeadAllocationTable = () => {
                         <button
                           onClick={() =>
                             user.role === "Admin"
-                              ? navigate("/admin/transaction/leadEdit", {
+                              ? navigate("/admin/transaction/lead/leadEdit", {
                                   state: {
                                     leadId: item._id
                                   }
                                 })
-                              : navigate("/staff/transaction/leadEdit", {
+                              : navigate("/staff/transaction/lead/leadEdit", {
                                   state: {
                                     leadId: item._id
                                   }

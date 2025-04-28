@@ -53,7 +53,7 @@ export const ServicesRegistration = () => {
   )
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/customer/serviceDelete?id=${id}`)
+      await api.delete(`/product/serviceDelete?id=${id}`)
 
       // Remove the deleted item from the items array
       setItems((prevItems) => prevItems.filter((item) => item._id !== id))
@@ -76,14 +76,14 @@ export const ServicesRegistration = () => {
       if (editId) {
         // Update the existing item
 
-        await api.put(`/customer/serviceEdit?id=${editId}`, formData)
+        await api.put(`/product/serviceEdit?id=${editId}`, formData)
 
         toast.success("Service updated successfully")
         seteditState(true)
       } else {
         // Create a new item
 
-        await api.post("/customer/servicesRegistration", formData)
+        await api.post("/product/servicesRegistration", formData)
 
         toast.success("Service created successfully")
       }
