@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState } from "react"
 
 import api from "../../../api/api"
 import { toast } from "react-toastify"
@@ -6,18 +6,18 @@ import { useNavigate } from "react-router-dom"
 import LeadMaster from "../../common/LeadMaster"
 
 function LeadRegister() {
+  const [loader, setLoader] = useState(false)
   const userData = localStorage.getItem("user")
   const user = JSON.parse(userData)
 
   const navigate = useNavigate()
   const handleSubmit = async (leadData, selectedtableLeadData) => {
-
     try {
       const response = await api.post("/lead/leadRegister", {
         leadData,
         selectedtableLeadData
       })
-
+      setLoader(false)
       toast.success(response && response.data && response.data.message)
       if (user.role === "Admin") {
         navigate("/admin/transaction/lead/leadAllocation")
@@ -39,7 +39,12 @@ function LeadRegister() {
   }
   return (
     <div className="h-full ">
-      <LeadMaster process="Registration" handleleadData={handleSubmit} />
+      <LeadMaster
+        process="Registration"
+        handleleadData={handleSubmit}
+        loadingState={loader}
+        setLoadingState={setLoader}
+      />
     </div>
   )
 }

@@ -5,7 +5,16 @@ import Select, { useStateManager } from "react-select"
 import { useForm } from "react-hook-form"
 import UseFetch from "../../hooks/useFetch"
 
-const LeadMaster = ({ process, Data, handleleadData, handleEditData }) => {
+const LeadMaster = ({
+  process,
+  Data,
+  handleleadData,
+  handleEditData,
+  loadingState,
+  setLoadingState,
+  editloadingState,
+  seteditLoadingState
+}) => {
   const {
     register,
     handleSubmit,
@@ -115,7 +124,6 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditData }) => {
       setValue("leadBy", loggeduser._id) // Manually set the value
     }
   }, [loggeduser, setValue])
-
   useEffect(() => {
     if (Data && Data.length > 0) {
       setValue("leadId", Data[0]?.leadId)
@@ -129,12 +137,13 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditData }) => {
           item?.productorServiceId?.productName ||
           item?.productorServiceId?.serviceName,
         productorServiceId: item?.productorServiceId?._id,
+        itemType: item?.productorServicemodel,
         price: item?.price
       }))
       setSelectedLeadList(leadData)
 
       const productListwithoutlicenseOnEdit = leadList?.map((product) => {
-        const match = Data[0].leadFor.find((lead) => {
+        const match = Data[0].leadFor?.find((lead) => {
           return (
             lead.productorServiceId._id === product._id &&
             !Object.prototype.hasOwnProperty.call(lead, "licenseNumber")
@@ -163,7 +172,7 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditData }) => {
               if (lead.productorServiceId._id === product._id) {
                 groupedByLicenseNumber[lead.licenseNumber][
                   existingIndex
-                ].selected = product._id === lead.productId._id
+                ].selected = product._id === lead.productorServiceId._id
               }
             } else {
               // If not exists, push new product with correct selected
@@ -226,20 +235,7 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditData }) => {
       setallStaffs(combinedUsers)
     }
   }, [data])
-  // useEffect(() => {
-  //   if (productData && productData.length > 0 && loggeduser) {
-  //     if (loggeduser.role === "Staff") {
-  //       const filteredProducts = productData.filter((product) =>
-  //         product.selected.some((selection) =>
-  //           branches.includes(selection.branch_id)
-  //         )
-  //       )
-  //       setFilteredProduct(filteredProducts)
-  //     } else if (loggeduser.role === "Admin") {
-  //       setFilteredProduct(productData)
-  //     }
-  //   }
-  // }, [productData, loggeduser])
+
   useEffect(() => {
     if (productLoading || usersLoading || customerLoading) {
       setProgress(50) // Mid-way loading
@@ -247,17 +243,7 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditData }) => {
       setProgress(100) // Complete when all are loaded
     }
   }, [productLoading, usersLoading, customerLoading])
-  // useEffect(() => {
-  //   if (selectedProducts && selectedLicense) {
-  //     const mergedproductsandlicense = []
-  //     mergedproductsandlicense.push({
-  //       productName: selectedProducts.productName,
-  //       licenseNumber: selectedLicense,
-  //       price: selectedProducts.productPrice
-  //     })
-  //     setSelectedLeadList(mergedproductsandlicense)
-  //   }
-  // }, [selectedProducts, selectedLicense])
+
   useEffect(() => {
     setValue("netAmount", calculateTotalAmount())
   }, [selectedleadlist])
@@ -451,13 +437,15 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditData }) => {
       return updatedList
     })
   }
-
   const onSubmit = async (data, event) => {
     event.preventDefault()
     try {
       if (process === "Registration") {
+        setLoadingState(true)
+
         await handleleadData(data, selectedleadlist)
       } else if (process === "edit") {
+        seteditLoadingState(true)
         await handleEditData(data, selectedleadlist, Data[0]?._id)
       }
       // Refetch the product data
@@ -468,14 +456,16 @@ const LeadMaster = ({ process, Data, handleleadData, handleEditData }) => {
   }
   return (
     <div>
-      {productLoading ||
+      {(loadingState ||
+        editloadingState ||
+        productLoading ||
         usersLoading ||
-        (customerLoading && (
-          <BarLoader
-            cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
-            color="#4A90E2" // Change color as needed
-          />
-        ))}
+        customerLoading) && (
+        <BarLoader
+          cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
+          color="#4A90E2" // Change color as needed
+        />
+      )}
       <div className="h-full overflow-y-auto container justify-center items-center  p-2 md:p-8 ">
         <div
           className="shadow-lg rounded p-2 md:p-3 mx-auto"

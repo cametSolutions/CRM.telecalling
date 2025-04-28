@@ -23,8 +23,6 @@ export const LeadRegister = async (req, res) => {
       leadBy
     } = leadData
 
-    // return
-
     const leadDate = new Date()
     const lastLead = await LeadId.findOne().sort({ leadId: -1 })
 
@@ -79,6 +77,7 @@ export const LeadRegister = async (req, res) => {
     await lead.save()
     const leadidonly = new LeadId({
       leadId: newLeadId,
+      leadBy,
       assignedtoleadByModel // Now set dynamically
     })
     await leadidonly.save()
@@ -94,15 +93,33 @@ export const LeadRegister = async (req, res) => {
 export const UpdateLeadRegister = async (req, res) => {
   try {
     const { data, leadData } = req.body
+    // console.log("leadddddddddddd", leadData)
+    // return
     const { docID } = req.query
     const objectId = new mongoose.Types.ObjectId(docID)
+    // productorServiceId: {
+    //         type: mongoose.Schema.Types.ObjectId,
+    //         refpath: "productorServicemodel",
+    //         default: null
+    //       },
+    //       productorServicemodel: { type: String, enum: ["Product", "Service"] },
+    //       licenseNumber: { type: Number },
+    //       price: { type: Number }
+    //     if (!docID) {
+    //       return res.status(400).json({ message: "Lead Id is required" })
+    //     }
+    const mappedleadData = leadData.map((item) => {
+      return {
+        licenseNumber: item.licenseNumber,
+        productorServiceId: item.productorServiceId,
+        productorServicemodel: item.itemType,
+        price: item.price
+      }
+    })
 
-    if (!docID) {
-      return res.status(400).json({ message: "Lead Id is required" })
-    }
     const updatedLead = await LeadMaster.findByIdAndUpdate(objectId, {
       ...data,
-      leadFor: leadData
+      leadFor: mappedleadData
     })
     if (!updatedLead) {
       return res.status(404).json({ message: "Lead not found" })
@@ -250,14 +267,13 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
     if (!followedByModel) {
       return res.status(400).json({ message: "Invalid followedid reference" })
     }
-   
-  
+
     const updatefollowUpDate = await LeadMaster.findOneAndUpdate(
       { _id: selectedleaddocId },
       {
         $push: {
           followUpDatesandRemarks: {
-            nextfollowUpDate:formData.nextfollowUpDate,
+            nextfollowUpDate: formData.nextfollowUpDate,
             followUpDate: formData.followUpDate,
             Remarks: formData.Remarks,
             followedId: loggeduserid,
@@ -423,21 +439,34 @@ export const GetselectedLeadData = async (req, res) => {
       const populatedAllocates = await allocatedModel
         .findById(selectedLead.allocatedTo)
         .select("name")
+      const populatedLeadFor = await Promise.all(
+        selectedLead.leadFor.map(async (item) => {
+          const productorserviceModel = mongoose.model(
+            item.productorServicemodel
+          )
+          const populatedProductorService = await productorserviceModel
+            .findById(item.productorServiceId)
+            .lean() // Use lean() to get plain JavaScript objects
+
+          return { ...item, productorServiceId: populatedProductorService }
+        })
+      )
 
       const populatedApprovedLead = {
-        ...selectedLead.toObject(), // convert Mongoose doc to plain object
+        ...selectedLead, // convert Mongoose doc to plain object
+        leadFor: populatedLeadFor,
         leadBy: populatedLeadBy,
         allocatedTo: populatedAllocates
       }
-
       if (populatedApprovedLead) {
-        return res
-          .status(200)
-          .json({ message: "matched lead found", data: populatedApprovedLead })
+        return res.status(200).json({
+          message: "matched lead found",
+          data: [populatedApprovedLead]
+        })
       }
     }
   } catch (error) {
-    console.log("error:", error.message)
+    console.log("error:", error)
     return res.status(500).json({ message: "Internal server error" })
   }
 }

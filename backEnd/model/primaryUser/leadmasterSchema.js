@@ -50,7 +50,7 @@ const leadSchema = new mongoose.Schema({
         refpath: "followedByModel",
         default: null
       },
-  followedByModel: { type: String, enum: ["Staff", "Admin"] },
+      followedByModel: { type: String, enum: ["Staff", "Admin"] }
     }
   ],
 
@@ -59,6 +59,6 @@ const leadSchema = new mongoose.Schema({
     enum: ["Staff", "Admin"], // Only these two models are allowed
     default: null // Setting default value to null
   }
-})
+}, { timestamps: true })
 
 export default mongoose.model("LeadMaster", leadSchema)
