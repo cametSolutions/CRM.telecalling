@@ -10,6 +10,7 @@ const leadSchema = new mongoose.Schema({
   location: { type: String },
   pincode: { type: String },
   trade: { type: String },
+leadConfirmed:{type: Boolean,default:false},
   leadFor: [
     {
       productorServiceId: {

@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useRef, useMemo } from "react"
-import LoadingBar from "react-top-loading-bar"
+// import LoadingBar from "react-top-loading-bar"
 import { Country, State } from "country-state-city"
 import BarLoader from "react-spinners/BarLoader"
-import Select, { useStateManager } from "react-select"
+import Select from "react-select"
 import { useForm } from "react-hook-form"
+import PopUp from "../../components/common/PopUp"
 import { toast } from "react-toastify"
 import UseFetch from "../../hooks/useFetch"
 import api from "../../api/api"
@@ -16,7 +17,9 @@ const LeadMaster = ({
   loadingState,
   setLoadingState,
   editloadingState,
-  seteditLoadingState
+  seteditLoadingState,
+  showmessage,
+  showpopupMessage
 }) => {
   const {
     register: registerMain,
@@ -24,6 +27,7 @@ const LeadMaster = ({
     setValue: setValueMain,
     getValues: getValuesMain,
     watch: watchMain,
+    clearErrors: clearMainerrors,
     formState: { errors: errorsMain }
   } = useForm()
   // For modal form
@@ -41,6 +45,7 @@ const LeadMaster = ({
     {}
   )
   const [leadList, setLeadList] = useState([])
+  const [ispopupModalOpen, setIspopupModalOpen] = useState(false)
   const [modalloader, setModalLoader] = useState(false)
   const [partner, setPartner] = useState([])
   const [editMode, setEditMode] = useState(false)
@@ -63,7 +68,7 @@ const LeadMaster = ({
   const [validateError, setValidateError] = useState({})
   const [loggeduser, setloggedUser] = useState(null)
   const [allstaff, setallStaffs] = useState([])
-
+ 
   const [allcustomer, setallcustomer] = useState([])
   // State to toggle the table
   const [editState, seteditState] = useState(true)
@@ -88,6 +93,7 @@ const LeadMaster = ({
       ? `/customer/getallCustomer?userbranch=${encodeURIComponent(branches)}`
       : null
   )
+
   useEffect(() => {
     const userData = localStorage.getItem("user")
     if (userData) {
@@ -101,7 +107,11 @@ const LeadMaster = ({
       }
     }
   }, [])
-
+  useEffect(() => {
+    if (showmessage) {
+      setIspopupModalOpen(true)
+    }
+  }, [showmessage])
   useEffect(() => {
     if (
       loggeduser &&
@@ -579,6 +589,17 @@ const LeadMaster = ({
           <h2 className="text-md md:text-2xl font-semibold md:px-5 mb-2 md:mb-1">
             {Data && Data.length > 0 ? "Lead Edit" : "Lead"}
           </h2>
+          {showmessage && (
+            <PopUp
+              isOpen={ispopupModalOpen}
+              onClose={() => {
+                setIspopupModalOpen(false)
+                showpopupMessage("")
+              }}
+              message={showmessage}
+            />
+          )}
+
           <form onSubmit={handleSubmitMain(onSubmit)}>
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-0 md:gap-6 md:mx-5">
               {process === "edit" && (
@@ -662,7 +683,10 @@ const LeadMaster = ({
 
                   <button
                     type="button" // Prevents form submission
-                    onClick={() => setModalOpen(true)}
+                    onClick={() => {
+                      setModalOpen(true)
+                      clearMainerrors()
+                    }}
                     className="bg-blue-500 hover:bg-blue-600  px-3 rounded-md text-white "
                   >
                     ADD
@@ -1061,24 +1085,10 @@ const LeadMaster = ({
                       </label>
                       <input
                         type="email"
-                        {...registerModal("email", {
-                          required: "Email is required",
-                          pattern: {
-                            value: /\S+@\S+\.\S+/,
-                            message: "Invalid email address"
-                          },
-
-                          onBlur: (e) =>
-                            setValueModal("email", e.target.value.trim())
-                        })}
+                        {...registerModal("email")}
                         className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
                         placeholder="Email"
                       />
-                      {errorsModal.email && (
-                        <p className="text-red-500 text-sm">
-                          {errorsModal.email.message}
-                        </p>
-                      )}
                     </div>
 
                     {/* Mobile */}
@@ -1291,10 +1301,8 @@ const LeadMaster = ({
                       </label>
                       <select
                         id="industry"
-                        {...registerModal("industry", {
-                          required: "industry is Required"
-                        })}
-                        className="w-full border border-gray-400 rounded-md p-2 focus:ring focus:outline-none"
+                        {...registerModal("industry")}
+                        className="w-full border border-gray-400 rounded-md p-2  focus:outline-none"
                       >
                         <option value="">Select Industry</option>
                         {Industries.map((industry, index) => (

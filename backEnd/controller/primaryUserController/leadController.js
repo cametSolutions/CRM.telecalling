@@ -23,6 +23,16 @@ export const LeadRegister = async (req, res) => {
       leadBy
     } = leadData
 
+    const checkedHavePendingLeads = await LeadMaster.findOne({
+      customerName,
+      leadConfirmed: false
+    })
+    if (checkedHavePendingLeads) {
+      return res.status(201).json({
+        message:"This customer already has pending leads. Please follow up and confirm them."
+      })
+    }
+
     const leadDate = new Date()
     const lastLead = await LeadId.findOne().sort({ leadId: -1 })
 
@@ -81,7 +91,7 @@ export const LeadRegister = async (req, res) => {
       assignedtoleadByModel // Now set dynamically
     })
     await leadidonly.save()
-    res.status(201).json({
+    res.status(200).json({
       success: true,
       message: "Lead created successfully"
     })
