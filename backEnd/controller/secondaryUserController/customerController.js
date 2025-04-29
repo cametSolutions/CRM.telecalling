@@ -1259,6 +1259,8 @@ export const customerCallRegistration = async (req, res) => {
     const { customerid, customer, branchName = {}, username } = req.query // Get customerid from query
 
     const calldata = req.body // Assuming calldata is sent in the body
+    const emailsend = calldata.formdata.emailSend
+
     // Convert attendedBy.callerId to ObjectId
     const addTimes = (time1, time2) => {
       const parseTime = (time) => {
@@ -1391,7 +1393,8 @@ export const customerCallRegistration = async (req, res) => {
                     calldata,
                     customer,
                     branchName,
-                    username
+                    username,
+                    emailsend
                   )
 
                   if (emailResponse) {
@@ -1487,7 +1490,8 @@ export const customerCallRegistration = async (req, res) => {
                         calldata,
                         customer,
                         branchName,
-                        username
+                        username,
+                        emailsend
                       )
                       if (emailResponse) {
                         return res.status(200).json({
@@ -1528,7 +1532,8 @@ export const customerCallRegistration = async (req, res) => {
                       calldata,
                       customer,
                       branchName,
-                      username
+                      username,
+                      emailsend
                     )
 
                     if (emailResponse) {
@@ -1621,7 +1626,8 @@ export const customerCallRegistration = async (req, res) => {
                           calldata,
                           customer,
                           branchName,
-                          username
+                          username,
+                          emailsend
                         )
                         if (emailResponse) {
                           return res.status(200).json({
@@ -1674,9 +1680,9 @@ export const customerCallRegistration = async (req, res) => {
                   calldata,
                   customer,
                   branchName,
-                  username
+                  username,
+                  emailsend
                 )
-
                 if (emailResponse) {
                   return res.status(200).json({
                     success: true,
@@ -1701,7 +1707,8 @@ export const customerCallRegistration = async (req, res) => {
                   calldata,
                   customer,
                   branchName,
-                  username
+                  username,
+                  emailsend
                 )
                 if (emailResponse) {
                   return res.status(200).json({
@@ -1733,7 +1740,8 @@ export const customerCallRegistration = async (req, res) => {
                   const emailResponse = await sendEmail(
                     calldata,
                     customer,
-                    branchName
+                    branchName,
+                    emailsend
                   )
                   if (emailResponse) {
                     return res.status(200).json({
@@ -1760,7 +1768,8 @@ export const customerCallRegistration = async (req, res) => {
                     calldata,
                     customer,
                     branchName,
-                    username
+                    username,
+                    emailsend
                   )
 
                   if (emailResponse) {
@@ -1812,7 +1821,8 @@ export const customerCallRegistration = async (req, res) => {
                 calldata,
                 customer,
                 branchName,
-                username
+                username,
+                emailsend
               )
 
               if (emailResponse) {
@@ -1839,7 +1849,8 @@ export const customerCallRegistration = async (req, res) => {
                 calldata,
                 customer,
                 branchName,
-                username
+                username,
+                emailsend
               )
               if (emailResponse) {
                 return res.status(200).json({
@@ -1871,7 +1882,8 @@ export const customerCallRegistration = async (req, res) => {
                   calldata,
                   customer,
                   branchName,
-                  username
+                  username,
+                  emailsend
                 )
                 if (emailResponse) {
                   return res.status(200).json({
@@ -1897,7 +1909,8 @@ export const customerCallRegistration = async (req, res) => {
                   calldata,
                   customer,
                   branchName,
-                  username
+                  username,
+                  emailsend
                 )
                 if (emailResponse) {
                   return res.status(200).json({
@@ -2119,159 +2132,7 @@ export const loggeduserCallsCurrentDateCalls = async (req, res) => {
         }
       }
     ]
-    // const pipeline = [
-    //   // First unwind callregistration
-    //   {
-    //     $unwind: {
-    //       path: "$callregistration",
-    //       preserveNullAndEmptyArrays: true
-    //     }
-    //   },
-    //   // Filter by date at the document level before unwinding attendedBy
-    //   {
-    //     $match: {
-    //       "callregistration.formdata.attendedBy": {
-    //         $elemMatch: {
-    //           callerId: loggeduserObjectId,
-    //           calldate: { $gte: startOfDayStr, $lte: endOfDayStr }
-    //         }
-    //       }
-    //     }
-    //   },
-    //   // Look up product details
-    //   {
-    //     $lookup: {
-    //       from: "products",
-    //       localField: "callregistration.product",
-    //       foreignField: "_id",
-    //       as: "callregistration.productDetails"
-    //     }
-    //   },
-    //   {
-    //     $addFields: {
-    //       "callregistration.productDetails": {
-    //         $map: {
-    //           input: "$callregistration.productDetails",
-    //           as: "product",
-    //           in: { productName: "$$product.productName" }
-    //         }
-    //       },
-    //       // Filter the attendedBy array to only include entries for today by the logged user
-    //       "callregistration.formdata.attendedBy": {
-    //         $filter: {
-    //           input: "$callregistration.formdata.attendedBy",
-    //           as: "attended",
-    //           cond: {
-    //             $and: [
-    //               { $eq: ["$$attended.callerId", loggeduserObjectId] },
-    //               { $gte: ["$$attended.calldate", startOfDayStr] },
-    //               { $lte: ["$$attended.calldate", endOfDayStr] }
-    //             ]
-    //           }
-    //         }
-    //       }
-    //     }
-    //   },
-    //   // Look up completed by staff details
-    //   {
-    //     $lookup: {
-    //       from: "staffs",
-    //       localField: "callregistration.formdata.completedBy.callerId",
-    //       foreignField: "_id",
-    //       as: "completedByDetails"
-    //     }
-    //   },
-    //   {
-    //     $addFields: {
-    //       "callregistration.formdata.completedBy.name": {
-    //         $arrayElemAt: ["$completedByDetails.name", 0]
-    //       }
-    //     }
-    //   },
-    //   // Look up attendedBy staff details (without unwinding)
-    //   {
-    //     $lookup: {
-    //       from: "staffs",
-    //       let: { attendedByArray: "$callregistration.formdata.attendedBy" },
-    //       pipeline: [
-    //         {
-    //           $match: {
-    //             $expr: {
-    //               $in: ["$_id", "$$attendedByArray.callerId"]
-    //             }
-    //           }
-    //         },
-    //         { $project: { _id: 1, name: 1 } }
-    //       ],
-    //       as: "attendedByStaff"
-    //     }
-    //   },
-    //   // Add staff names to the attendedBy entries
-    //   {
-    //     $addFields: {
-    //       "callregistration.formdata.attendedBy": {
-    //         $map: {
-    //           input: "$callregistration.formdata.attendedBy",
-    //           as: "attended",
-    //           in: {
-    //             $mergeObjects: [
-    //               "$$attended",
-    //               {
-    //                 name: {
-    //                   $let: {
-    //                     vars: {
-    //                       staff: {
-    //                         $arrayElemAt: [
-    //                           {
-    //                             $filter: {
-    //                               input: "$attendedByStaff",
-    //                               as: "staff",
-    //                               cond: {
-    //                                 $eq: ["$$staff._id", "$$attended.callerId"]
-    //                               }
-    //                             }
-    //                           },
-    //                           0
-    //                         ]
-    //                       }
-    //                     },
-    //                     in: "$$staff.name"
-    //                   }
-    //                 }
-    //               }
-    //             ]
-    //           }
-    //         }
-    //       }
-    //     }
-    //   },
-    //   // Group by call ID to prevent duplicates
-    //   {
-    //     $group: {
-    //       _id: {
-    //         callId: "$callregistration._id",
-    //         customerId: "$_id"
-    //       },
-    //       customerid: { $first: "$customerid" },
-    //       customerName: { $first: "$customerName" },
-    //       callData: { $first: "$callregistration" },
-    //       createdAt: { $first: "$createdAt" },
-    //       updatedAt: { $first: "$updatedAt" }
-    //     }
-    //   },
-    //   // Final project to shape the output
-    //   {
-    //     $project: {
-    //       _id: "$_id.customerId",
-    //       callId: "$_id.callId",
-    //       customerid: 1,
-    //       customerName: 1,
-    //       callData: 1,
-    //       createdAt: 1,
-    //       updatedAt: 1
-    //     }
-    //   }
-    // ]
+   
 
     const currentDateloggedusercalls = await CallRegistration.aggregate(
       pipeline
