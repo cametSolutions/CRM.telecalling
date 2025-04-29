@@ -407,8 +407,6 @@ const UserAdd = ({
 
       handleUserData(formattedData, imageData, tableData)
     } else if (process === "Edit") {
-     
-
       handleEditedData(
         data,
         User?._id,
@@ -571,11 +569,25 @@ const UserAdd = ({
                 options={countryOptions}
                 value={selectedCountry}
                 // value={User && User.assignedto._id}
+                {...register("country")}
                 onChange={(option) => {
                   setSelectedCountry(option)
                   setValue("country", option.value)
-                  // setSelectedState(null) // Reset state when country changes
                 }}
+                styles={{
+                  menu: (provided) => ({
+                    ...provided,
+                    maxHeight: "200px", // Set dropdown max height
+                    overflowY: "auto" // Enable scrolling
+                  }),
+                  menuList: (provided) => ({
+                    ...provided,
+                    maxHeight: "200px", // Ensures dropdown scrolls internally
+                    overflowY: "auto"
+                  })
+                }}
+                menuPortalTarget={document.body} // Prevents nested scrolling issues
+                menuShouldScrollIntoView={false}
               />
               {errors.country && (
                 <p className="text-red-500 text-xs mt-1">Country is required</p>

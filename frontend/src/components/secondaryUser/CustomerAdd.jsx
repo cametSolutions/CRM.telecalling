@@ -1623,12 +1623,7 @@ const CustomerAdd = ({
 
             {/* Submit Button */}
             <div className="mt-6">
-              {/* <button
-                type="submit"
-                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-              >
-                {process === "Registration" ? "Save" : "Update "}
-              </button> */}
+            
               <button
                 type="submit"
                 className={`flex items-center justify-center bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 ${
