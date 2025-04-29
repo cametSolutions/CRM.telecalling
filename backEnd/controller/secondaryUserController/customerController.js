@@ -510,7 +510,7 @@ export const ServicesRegistration = async (req, res) => {
 }
 
 export const CustomerRegister = async (req, res) => {
-  const { customerData, tabledata = {} } = req.body
+  const { customerData, tabledata = [] } = req.body
 
   const {
     customerName,
@@ -563,9 +563,9 @@ export const CustomerRegister = async (req, res) => {
       contactPerson,
       selected: tabledata
     })
-
     const customerdata = await customer.save()
     if (tabledata && tabledata.length > 0) {
+      console.log("table", tabledata)
       for (const item of customerdata.selected) {
         const license = new License({
           products: item.product_id,
@@ -2132,7 +2132,6 @@ export const loggeduserCallsCurrentDateCalls = async (req, res) => {
         }
       }
     ]
-   
 
     const currentDateloggedusercalls = await CallRegistration.aggregate(
       pipeline

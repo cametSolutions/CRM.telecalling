@@ -1,9 +1,12 @@
-import React, { useEffect, useState, useRef } from "react"
+import React, { useEffect, useState, useRef, useMemo } from "react"
 import LoadingBar from "react-top-loading-bar"
+import { Country, State } from "country-state-city"
 import BarLoader from "react-spinners/BarLoader"
 import Select, { useStateManager } from "react-select"
 import { useForm } from "react-hook-form"
+import { toast } from "react-toastify"
 import UseFetch from "../../hooks/useFetch"
+import api from "../../api/api"
 
 const LeadMaster = ({
   process,
@@ -16,20 +19,35 @@ const LeadMaster = ({
   seteditLoadingState
 }) => {
   const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors }
+    register: registerMain,
+    handleSubmit: handleSubmitMain,
+    setValue: setValueMain,
+    getValues: getValuesMain,
+    watch: watchMain,
+    formState: { errors: errorsMain }
+  } = useForm()
+  // For modal form
+  const {
+    register: registerModal,
+    handleSubmit: handleSubmitModal,
+    setValue: setValueModal,
+    getValues: getValuesModal,
+    watch: watchModal,
+    clearErrors: clearmodalErros,
+    formState: { errors: errorsModal },
+    reset: resetModal
   } = useForm()
   const [productOrserviceSelections, setProductorServiceSelections] = useState(
     {}
   )
   const [leadList, setLeadList] = useState([])
+  const [modalloader, setModalLoader] = useState(false)
+  const [partner, setPartner] = useState([])
   const [editMode, setEditMode] = useState(false)
+  const [selectedCountry, setSelectedCountry] = useState(null)
   const [licensewithoutProductSelection, setlicenseWithoutProductSelection] =
     useState({})
-
+  const [selectedState, setSelectedState] = useState(null)
   const [selectedProducts, setSelectedProducts] = useState(null)
   const [selectedleadlist, setSelectedLeadList] = useState([])
   const [selectedCustomer, setSelectedCustomer] = useState(null)
@@ -42,7 +60,7 @@ const LeadMaster = ({
   const [isLicenseOpen, setIslicenseOpen] = useState(false)
   const [branches, setBranches] = useState([])
   const [customerTableData, setcustomerTableData] = useState([])
-
+  const [validateError, setValidateError] = useState({})
   const [loggeduser, setloggedUser] = useState(null)
   const [allstaff, setallStaffs] = useState([])
 
@@ -55,10 +73,15 @@ const LeadMaster = ({
   const { data: productData, loading: productLoading } = UseFetch(
     "/product/getallProducts"
   )
+  const { data: partners } = UseFetch("/customer/getallpartners")
   const { data: serviceData } = UseFetch("/product/getallServices")
   const { data: allusers } = UseFetch("/auth/getallUsers")
   const { data, loading: usersLoading } = UseFetch("/auth/getallUsers")
-  const { data: customerData, loading: customerLoading } = UseFetch(
+  const {
+    data: customerData,
+    loading: customerLoading,
+    refreshHook
+  } = UseFetch(
     loggeduser && loggeduser.role === "Admin"
       ? "customer/getallCustomer"
       : branches && branches.length > 0
@@ -85,8 +108,10 @@ const LeadMaster = ({
       productData &&
       productData.length &&
       serviceData &&
-      serviceData.length
+      serviceData.length &&
+      partners
     ) {
+      setPartner(partners)
       if (loggeduser?.role === "Admin") {
         const combinedlead = [...productData, ...serviceData]
         setLeadList(combinedlead)
@@ -107,7 +132,7 @@ const LeadMaster = ({
         // const filteredproduct = productData.map((item)=>item.selected.includes(loggeduser.selecte)     }
       }
     }
-  }, [loggeduser, branches, productData, serviceData])
+  }, [loggeduser, branches, productData, serviceData, partners])
   useEffect(() => {
     if (allusers && allusers.length > 0) {
       const { allusers = [], allAdmins = [] } = data
@@ -121,16 +146,16 @@ const LeadMaster = ({
   }, [allusers])
   useEffect(() => {
     if (loggeduser?._id) {
-      setValue("leadBy", loggeduser._id) // Manually set the value
+      setValueMain("leadBy", loggeduser._id) // Manually set the value
     }
-  }, [loggeduser, setValue])
+  }, [loggeduser, setValueMain])
   useEffect(() => {
     if (Data && Data.length > 0) {
-      setValue("leadId", Data[0]?.leadId)
-      setValue("customerName", Data[0]?.customerName?._id)
-      setValue("mobile", Data[0]?.customerName?.mobile)
-      setValue("mobile", Data[0]?.customerName?.phone)
-      setValue("email", Data[0]?.customerName?.email)
+      setValueMain("leadId", Data[0]?.leadId)
+      setValueMain("customerName", Data[0]?.customerName?._id)
+      setValueMain("mobile", Data[0]?.customerName?.mobile)
+      setValueMain("mobile", Data[0]?.customerName?.phone)
+      setValueMain("email", Data[0]?.customerName?.email)
       const leadData = Data[0]?.leadFor.map((item) => ({
         licenseNumber: item?.licenseNumber,
         productorServiceName:
@@ -219,9 +244,9 @@ const LeadMaster = ({
   }, [customerData])
   useEffect(() => {
     if (selectedCustomer) {
-      setValue("mobile", selectedCustomer.mobile)
-      setValue("phone", selectedCustomer.phone)
-      setValue("email", selectedCustomer.email)
+      setValueMain("mobile", selectedCustomer.mobile)
+      setValueMain("phone", selectedCustomer.phone)
+      setValueMain("email", selectedCustomer.email)
     }
   }, [selectedCustomer])
   useEffect(() => {
@@ -245,7 +270,7 @@ const LeadMaster = ({
   }, [productLoading, usersLoading, customerLoading])
 
   useEffect(() => {
-    setValue("netAmount", calculateTotalAmount())
+    setValueMain("netAmount", calculateTotalAmount())
   }, [selectedleadlist])
   useEffect(() => {
     if (!selectedLicense && leadList && leadList.length > 0 && !Data) {
@@ -257,7 +282,49 @@ const LeadMaster = ({
       setlicenseWithoutProductSelection(initialProductListwithoutlicense)
     }
   }, [leadList])
+  const countryOptions = useMemo(
+    () =>
+      Country.getAllCountries().map((country) => ({
+        label: country.name,
+        value: country.isoCode
+      })),
+    []
+  )
+  const stateOptions = selectedCountry
+    ? State.getStatesOfCountry(selectedCountry.value).map((state) => ({
+        label: state.name,
+        value: state.isoCode
+      }))
+    : []
+  const defaultCountry = useMemo(
+    () => countryOptions.find((country) => country.value === "IN"),
+    [countryOptions]
+  )
+  const defaultState = useMemo(
+    () => stateOptions.find((state) => state.value === "KL"),
+    [stateOptions]
+  )
+  useEffect(() => {
+    if (defaultCountry) {
+      setSelectedCountry(defaultCountry)
+      setValueModal("country", defaultCountry.value)
+    }
+  }, [defaultCountry])
+  useEffect(() => {
+    const currentState = getValuesModal("state")
+    if (defaultState && !currentState) {
+      setSelectedState(defaultState)
+      setValueModal("state", defaultState.value)
+    }
+  }, [defaultState, getValuesModal, setValueModal])
 
+  const Industries = [
+    "Whole sailor/Distributors",
+    "Retailer",
+    "Manufacturer",
+    "Service",
+    "Works Contact"
+  ]
   const handleLicenseSelect = (license) => {
     // Ensure all products are initialized for this license if not already
     if (!productOrserviceSelections[license]) {
@@ -386,6 +453,9 @@ const LeadMaster = ({
   }
 
   const handleAddProducts = () => {
+    if (validateError.emptyleadData) {
+      setValidateError({ emptyleadData: "" })
+    }
     setSelectedLeadList((prev) => {
       let updatedList = [...prev]
 
@@ -438,9 +508,15 @@ const LeadMaster = ({
     })
   }
   const onSubmit = async (data, event) => {
-    event.preventDefault()
     try {
       if (process === "Registration") {
+        if (selectedleadlist.length === 0) {
+          setValidateError((prev) => ({
+            ...prev,
+            emptyleadData: "No Lead genarated do it"
+          }))
+          return
+        }
         setLoadingState(true)
 
         await handleleadData(data, selectedleadlist)
@@ -454,9 +530,29 @@ const LeadMaster = ({
       toast.error("Failed to add product!")
     }
   }
+  const onmodalsubmit = async (data, event) => {
+    try {
+      setModalLoader(true)
+      const response = await api.post("/customer/customerRegistration", {
+        customerData: data
+      })
+      if (response.status === 200) {
+        refreshHook()
+        setModalLoader(false)
+        resetModal()
+        toast.success(response.data.message)
+      }
+    } catch (error) {
+      console.log(error)
+      toast.error("something went wrong")
+      setModalLoader(false)
+    }
+  }
+
   return (
     <div>
-      {(loadingState ||
+      {(modalloader ||
+        loadingState ||
         editloadingState ||
         productLoading ||
         usersLoading ||
@@ -483,7 +579,7 @@ const LeadMaster = ({
           <h2 className="text-md md:text-2xl font-semibold md:px-5 mb-2 md:mb-1">
             {Data && Data.length > 0 ? "Lead Edit" : "Lead"}
           </h2>
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form onSubmit={handleSubmitMain(onSubmit)}>
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-0 md:gap-6 md:mx-5">
               {process === "edit" && (
                 <div>
@@ -496,7 +592,7 @@ const LeadMaster = ({
                   <input
                     id="leadId"
                     type="text"
-                    {...register("leadId")}
+                    {...registerMain("leadId")}
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
                     placeholder="Lead Id..."
                   />
@@ -521,18 +617,31 @@ const LeadMaster = ({
                     options={customerOptions}
                     // value={selectedCustomer?.value}
                     value={customerOptions.find(
-                      (option) => option.value === watch("customerName")
+                      (option) => option.value === watchMain("customerName")
                     )}
                     getOptionLabel={(option) =>
                       `${option.label}-(${option.mobile})`
                     } // Show only customer name
                     getOptionValue={(option) => option._id}
                     filterOption={customFilter} // Enable searching by name & mobile
-                    {...register("customerName")}
+                    {...registerMain("customerName", {
+                      required: "Customer is Required"
+                    })}
+                    onBlur={() => {
+                      const selected = customerOptions.find(
+                        (option) => option.value === watchMain("customerName")
+                      )
+                      if (selected) {
+                        setValueMain("customerName", selected.value)
+                      }
+                    }}
                     onChange={(selectedOption) => {
                       handleSelectedCustomer(selectedOption)
                       setSelectedCustomer(selectedOption)
-                      setValue("customerName", selectedOption.value)
+                      // setValueMain("customerName", selectedOption.value)
+                      setValueMain("customerName", selectedOption.value, {
+                        shouldValidate: true
+                      })
                     }}
                     className="mt-1 w-full"
                     styles={{
@@ -550,6 +659,7 @@ const LeadMaster = ({
                     menuPortalTarget={document.body} // Prevents nested scrolling issues
                     menuShouldScrollIntoView={false}
                   />
+
                   <button
                     type="button" // Prevents form submission
                     onClick={() => setModalOpen(true)}
@@ -558,6 +668,11 @@ const LeadMaster = ({
                     ADD
                   </button>
                 </div>
+                {errorsMain.customerName && (
+                  <p className="text-red-500 text-sm">
+                    {errorsMain.customerName.message}
+                  </p>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-4 gap-0 md:gap-6 md:mx-5 md:mt-2">
@@ -572,7 +687,7 @@ const LeadMaster = ({
                 </label>
                 <input
                   id="mobile"
-                  {...register("mobile")}
+                  {...registerMain("mobile")}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
                   placeholder="Mobile..."
                 ></input>
@@ -586,7 +701,7 @@ const LeadMaster = ({
                 </label>
                 <input
                   id="phone"
-                  {...register("phone")}
+                  {...registerMain("phone")}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
                   placeholder="Landline..."
                 ></input>
@@ -600,7 +715,7 @@ const LeadMaster = ({
                 </label>
                 <input
                   id="email"
-                  {...register("email")}
+                  {...registerMain("email")}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
                   placeholder="Email..."
                 ></input>
@@ -615,7 +730,7 @@ const LeadMaster = ({
                 </label>
                 <input
                   id="trade"
-                  {...register("trade")}
+                  {...registerMain("trade")}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
                   placeholder="Trade..."
                 ></input>
@@ -839,7 +954,7 @@ const LeadMaster = ({
                 </label>
                 <textarea
                   id="description"
-                  {...register("remark")}
+                  {...registerMain("remark")}
                   className="block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500  min-h-[100px]"
                   placeholder="Remarks..."
                 ></textarea>
@@ -857,7 +972,7 @@ const LeadMaster = ({
                 {editMode ? (
                   <select
                     id="leadBy"
-                    {...register("leadBy")}
+                    {...registerMain("leadBy")}
                     className="mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
                   >
                     {allstaff?.map((user) => (
@@ -868,7 +983,7 @@ const LeadMaster = ({
                   </select>
                 ) : (
                   <>
-                    <input type="hidden" {...register("leadBy")} />
+                    <input type="hidden" {...registerMain("leadBy")} />
                     <p className="mt-1 w-full border rounded-md p-2 text-gray-600 cursor-not-allowed">
                       {loggeduser?.name}
                     </p>
@@ -882,7 +997,7 @@ const LeadMaster = ({
                 <input
                   type="number"
                   id="netAmount"
-                  {...register("netAmount")}
+                  {...registerMain("netAmount")}
                   readOnly // Make it non-editable
                   // value={calculateTotalAmount()} // Auto-updates with total price
                   className=" mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
@@ -891,24 +1006,31 @@ const LeadMaster = ({
               </div>
 
               <div className="h-full flex items-end mt-2 md:mt-0">
-                <button
-                  type="submit"
-                  className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-                >
-                  {process === "Registration" ? "SUBMIT" : "UPDATE"}
-                </button>
+                <div>
+                  {validateError.emptyleadData && (
+                    <p className="text-red-500 text-sm">
+                      {validateError.emptyleadData}
+                    </p>
+                  )}
+                  <button
+                    type="submit"
+                    className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                  >
+                    {process === "Registration" ? "SUBMIT" : "UPDATE"}
+                  </button>
+                </div>
               </div>
             </div>
           </form>
           {modalOpen && (
             <div className="fixed top-16 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center px-4">
-              <div className="bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full max-h-[80vh] z-50 overflow-auto">
+              <div className="bg-white px-6 pt-2 pb-4 rounded-lg shadow-lg max-w-2xl w-full max-h-[80vh] z-50 overflow-auto">
                 <h2 className="text-lg font-semibold mb-4 text-center">
                   Add New Customer
                 </h2>
 
-                <form>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <form onSubmit={handleSubmitModal(onmodalsubmit)}>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     {/* Customer Name */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
@@ -916,9 +1038,20 @@ const LeadMaster = ({
                       </label>
                       <input
                         type="text"
-                        className="w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
+                        {...registerModal("customerName", {
+                          required: "CustomerName is Required"
+                        })}
+                        onBlur={(e) =>
+                          setValueModal("customerName", e.target.value.trim())
+                        }
+                        className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
                         placeholder="Customer Name"
                       />
+                      {errorsModal.customerName && (
+                        <p className="text-red-500 text-sm">
+                          {errorsModal.customerName.message}
+                        </p>
+                      )}
                     </div>
 
                     {/* Email */}
@@ -928,9 +1061,24 @@ const LeadMaster = ({
                       </label>
                       <input
                         type="email"
-                        className="w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
+                        {...registerModal("email", {
+                          required: "Email is required",
+                          pattern: {
+                            value: /\S+@\S+\.\S+/,
+                            message: "Invalid email address"
+                          },
+
+                          onBlur: (e) =>
+                            setValueModal("email", e.target.value.trim())
+                        })}
+                        className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
                         placeholder="Email"
                       />
+                      {errorsModal.email && (
+                        <p className="text-red-500 text-sm">
+                          {errorsModal.email.message}
+                        </p>
+                      )}
                     </div>
 
                     {/* Mobile */}
@@ -940,19 +1088,34 @@ const LeadMaster = ({
                       </label>
                       <input
                         type="tel"
-                        className="w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
+                        {...registerModal("mobile", {
+                          required: "Mobile is Required"
+                        })}
+                        onBlur={(e) =>
+                          setValueModal("mobile", e.target.value.trim())
+                        }
+                        className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
                         placeholder="Mobile"
                       />
+                      {errorsModal.mobile && (
+                        <p className="text-red-500 text-sm">
+                          {errorsModal.mobile.message}
+                        </p>
+                      )}
                     </div>
 
                     {/* Phone */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
-                        Phone
+                        Landline
                       </label>
                       <input
                         type="tel"
-                        className="w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
+                        {...registerModal("landline")}
+                        onBlur={(e) =>
+                          setValueModal("landline", e.target.value.trim())
+                        }
+                        className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
                         placeholder="Phone"
                       />
                     </div>
@@ -963,9 +1126,20 @@ const LeadMaster = ({
                         Address
                       </label>
                       <textarea
-                        className="w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
+                        {...registerModal("address1", {
+                          required: "Address is Required"
+                        })}
+                        onBlur={(e) =>
+                          setValueModal("address1", e.target.value.trim())
+                        }
+                        className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
                         placeholder="Address"
-                      ></textarea>
+                      />
+                      {errorsModal.address1 && (
+                        <p className="text-red-500 text-sm">
+                          {errorsModal.address1.message}
+                        </p>
+                      )}
                     </div>
 
                     {/* Country */}
@@ -973,11 +1147,43 @@ const LeadMaster = ({
                       <label className="block text-sm font-medium text-gray-700">
                         Country
                       </label>
-                      <select className="w-full border rounded-md p-2 focus:ring focus:ring-blue-300">
-                        <option value="">Select Country</option>
-                        <option value="India">India</option>
-                        <option value="USA">USA</option>
-                      </select>
+                      <Select
+                        options={countryOptions}
+                        value={selectedCountry}
+                        // value={User && User.assignedto._id}
+                        getOptionLabel={(option) => option.label} // Add this
+                        getOptionValue={(option) => option.value} // Add this
+                        {...registerModal("country")}
+                        onChange={(option) => {
+                          setSelectedCountry(option)
+                          setValueModal("country", option.value)
+                          // setSelectedState(null) // Reset state when country changes
+                        }}
+                        className="border focus:outline-none"
+                        styles={{
+                          control: (provided, state) => ({
+                            ...provided,
+                            border: "1px solid #d1d5db", // Tailwind's border-gray-300
+                            boxShadow: "none",
+                            outline: "none",
+                            "&:hover": {
+                              borderColor: "#9ca3af" // Tailwind's border-gray-400
+                            }
+                          }),
+                          menu: (provided) => ({
+                            ...provided,
+                            maxHeight: "200px", // Set dropdown max height
+                            overflowY: "auto" // Enable scrolling
+                          }),
+                          menuList: (provided) => ({
+                            ...provided,
+                            maxHeight: "200px", // Ensures dropdown scrolls internally
+                            overflowY: "auto"
+                          })
+                        }}
+                        menuPortalTarget={document.body} // Prevents nested scrolling issues
+                        menuShouldScrollIntoView={false}
+                      />
                     </div>
 
                     {/* State */}
@@ -985,11 +1191,42 @@ const LeadMaster = ({
                       <label className="block text-sm font-medium text-gray-700">
                         State
                       </label>
-                      <select className="w-full border rounded-md p-2 focus:ring focus:ring-blue-300">
-                        <option value="">Select State</option>
-                        <option value="Maharashtra">Maharashtra</option>
-                        <option value="California">California</option>
-                      </select>
+
+                      <Select
+                        options={stateOptions}
+                        value={selectedState}
+                        getOptionLabel={(option) => option.label} // Add this
+                        getOptionValue={(option) => option.value} // Add this
+                        {...registerModal("state")}
+                        onChange={(option) => {
+                          setSelectedState(option)
+                          setValueModal("state", option.value)
+                        }}
+                        styles={{
+                          control: (provided, state) => ({
+                            ...provided,
+                            border: "1px solid #d1d5db", // Tailwind's border-gray-300
+                            boxShadow: "none",
+                            outline: "none",
+                            "&:hover": {
+                              borderColor: "#9ca3af" // Tailwind's border-gray-400
+                            }
+                          }),
+                          menu: (provided) => ({
+                            ...provided,
+                            maxHeight: "200px", // Set dropdown max height
+                            overflowY: "auto" // Enable scrolling
+                          }),
+                          menuList: (provided) => ({
+                            ...provided,
+                            maxHeight: "200px", // Ensures dropdown scrolls internally
+                            overflowY: "auto"
+                          })
+                        }}
+                        menuPortalTarget={document.body} // Prevents nested scrolling issues
+                        menuShouldScrollIntoView={false}
+                        isDisabled={!selectedCountry}
+                      />
                     </div>
 
                     {/* City */}
@@ -999,7 +1236,11 @@ const LeadMaster = ({
                       </label>
                       <input
                         type="text"
-                        className="w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
+                        {...registerModal("city")}
+                        onBlur={(e) =>
+                          setValueModal("city", e.target.value.trim())
+                        }
+                        className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
                         placeholder="City"
                       />
                     </div>
@@ -1011,7 +1252,11 @@ const LeadMaster = ({
                       </label>
                       <input
                         type="text"
-                        className="w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
+                        {...registerModal("pincode")}
+                        onBlur={(e) =>
+                          setValueModal("pincode", e.target.value.trim())
+                        }
+                        className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
                         placeholder="Pincode"
                       />
                     </div>
@@ -1023,20 +1268,40 @@ const LeadMaster = ({
                       </label>
                       <input
                         type="text"
-                        className="w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
+                        {...registerModal("contactPerson", {
+                          required: "Contact person is Required"
+                        })}
+                        onBlur={(e) =>
+                          setValueModal("contactPerson", e.target.value.trim())
+                        }
+                        className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
                         placeholder="Contact Person"
                       />
+                      {errorsModal.contactPerson && (
+                        <p className="text-red-500 text-sm">
+                          {errorsModal.contactPerson.message}
+                        </p>
+                      )}
                     </div>
 
                     {/* Types of Industry Dropdown */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
-                        Types of Industry
+                        Type's of Industry
                       </label>
-                      <select className="w-full border rounded-md p-2 focus:ring focus:ring-blue-300">
+                      <select
+                        id="industry"
+                        {...registerModal("industry", {
+                          required: "industry is Required"
+                        })}
+                        className="w-full border border-gray-400 rounded-md p-2 focus:ring focus:outline-none"
+                      >
                         <option value="">Select Industry</option>
-                        <option value="Agriculture">Agriculture</option>
-                        <option value="IT">IT</option>
+                        {Industries.map((industry, index) => (
+                          <option key={index} value={industry}>
+                            {industry}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
@@ -1045,12 +1310,18 @@ const LeadMaster = ({
                       <label className="block text-sm font-medium text-gray-700">
                         Partnership Type
                       </label>
-                      <select className="w-full border rounded-md p-2 focus:ring focus:ring-blue-300">
-                        <option value="">Select Partnership Type</option>
-                        <option value="Sole Proprietorship">
-                          Sole Proprietorship
-                        </option>
-                        <option value="Partnership">Partnership</option>
+
+                      <select
+                        id="partner"
+                        {...registerModal("partner")}
+                        className="mt-1 block w-full border border-gray-400 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                      >
+                        <option value="">Select Partner</option>
+                        {partner?.map((partnr, index) => (
+                          <option key={index} value={partnr._id}>
+                            {partnr.partner}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -1059,7 +1330,10 @@ const LeadMaster = ({
                   <div className="mt-6 flex justify-center space-x-3">
                     <button
                       type="button"
-                      onClick={() => setModalOpen(false)}
+                      onClick={() => {
+                        setModalOpen(false)
+                        clearmodalErros()
+                      }}
                       className="bg-gray-400 text-white py-2 px-4 rounded-md hover:bg-gray-500"
                     >
                       Cancel
