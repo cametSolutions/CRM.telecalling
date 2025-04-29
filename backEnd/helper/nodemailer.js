@@ -3,7 +3,17 @@ import mongoose from "mongoose"
 import Callnote from "../model/secondaryUser/callNotesSchema.js"
 import Branch from "../model/primaryUser/branchSchema.js"
 // Function to send email using Nodemailer
-export const sendEmail = async (calldata, name, branchName, username) => {
+export const sendEmail = async (
+  calldata,
+  name,
+  branchName,
+  username,
+  emailsend
+) => {
+  if (emailsend === "false") {
+  
+    return false
+  }
   const problem = new mongoose.Types.ObjectId(calldata.formdata.callnote)
 
   const customerproblem = await Callnote.find(problem)

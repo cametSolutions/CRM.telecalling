@@ -341,6 +341,7 @@ export default function CallRegistration() {
       toast.error("No product selected.")
       return
     }
+    console.log(formData)
 
     setSubmitLoading(true)
 
@@ -405,6 +406,7 @@ export default function CallRegistration() {
         productName: selectedProducts[0]?.productName
       }
       setcallReport(calldata)
+      console.log(calldata)
 
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
@@ -1493,7 +1495,23 @@ Problem:    \t${selectedText}
                       </div>
                     )}
                   </form>
-                  <div className="flex justify-end">
+                  <div className="flex justify-between">
+                    <div className="font-semibold text-gray-700 flex-1">
+                      <label
+                        htmlFor="status"
+                        className="block text-sm font-medium text-gray-700"
+                      >
+                        Email Send
+                      </label>
+                      <select
+                        {...register("emailSend", { required: true })}
+                        className="w-20 mt-1 block border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
+                      >
+                        <option value={true}>True</option>
+                        <option value={false}>False</option>
+                      </select>
+                    </div>
+
                     <Link
                       to={
                         user?.role === "Admin" ? "/admin/home" : "/staff/home"
