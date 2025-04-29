@@ -7,6 +7,7 @@ import LeadMaster from "../../common/LeadMaster"
 
 function LeadRegister() {
   const [loader, setLoader] = useState(false)
+  const [popupMessage, setpopUpMessage] = useState("")
   const userData = localStorage.getItem("user")
   const user = JSON.parse(userData)
 
@@ -17,13 +18,17 @@ function LeadRegister() {
         leadData,
         selectedtableLeadData
       })
-      setLoader(false)
-      toast.success(response && response.data && response.data.message)
-      if (user.role === "Admin") {
-        navigate("/admin/transaction/lead/leadAllocation")
-      } else {
-        navigate("/staff/transaction/lead/leadAllocation")
+      if (response.status === 200) {
+        toast.success(response && response.data && response.data.message)
+        if (user.role === "Admin") {
+          navigate("/admin/transaction/lead/leadAllocation")
+        } else {
+          navigate("/staff/transaction/lead/leadAllocation")
+        }
+      } else if (response.status === 201) {
+        setpopUpMessage(response.data.message)
       }
+      setLoader(false)
     } catch (error) {
       console.error("Error creating product:", error)
       if (
@@ -44,6 +49,8 @@ function LeadRegister() {
         handleleadData={handleSubmit}
         loadingState={loader}
         setLoadingState={setLoader}
+        showmessage={popupMessage}
+        showpopupMessage={setpopUpMessage}
       />
     </div>
   )

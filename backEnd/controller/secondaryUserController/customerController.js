@@ -661,11 +661,11 @@ export const GetAllCustomer = async (req, res) => {
     }
     if (!userbranch) {
       allcustomers = await Customer.aggregate([
-        {
-          $match: {
-            "selected.productName": { $exists: true } // Customers where productName is missing in "selected"
-          }
-        },
+        // {
+        //   $match: {
+        //     "selected.productName": { $exists: true } // Customers where productName is missing in "selected"
+        //   }
+        // },
         {
           $project: {
             _id: 1, // Exclude _id
@@ -684,11 +684,11 @@ export const GetAllCustomer = async (req, res) => {
       ])
     } else {
       customers = await Customer.aggregate([
-        {
-          $match: {
-            "selected.productName": { $exists: true } // Customers where productName is missing in "selected"
-          }
-        },
+        // {
+        //   $match: {
+        //     "selected.productName": { $exists: true } // Customers where productName is missing in "selected"
+        //   }
+        // },
         {
           $project: {
             _id: 1, // Exclude _id
@@ -716,11 +716,16 @@ export const GetAllCustomer = async (req, res) => {
         (id) => new mongoose.Types.ObjectId(id)
       )
 
-      const filteredCustomers = customers.filter((customer) =>
-        customer.selected.some(
-          (selection) =>
-            objectIds.some((objId) => objId.equals(selection.branch_id)) // Correct ObjectId comparison
-        )
+      const filteredCustomers = customers.filter(
+        (customer) =>
+         
+          //Include customers where `selected` is undefined or empty
+          !Array.isArray(customer.selected) ||
+          customer.selected.length === 0 ||
+          // Or those with at least one matching branch_id
+          customer.selected.some((selection) =>
+            objectIds.some((objId) => objId.equals(selection.branch_id))
+          )
       )
 
       return res
