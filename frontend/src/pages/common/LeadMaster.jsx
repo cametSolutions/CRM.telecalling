@@ -68,7 +68,7 @@ const LeadMaster = ({
   const [validateError, setValidateError] = useState({})
   const [loggeduser, setloggedUser] = useState(null)
   const [allstaff, setallStaffs] = useState([])
- 
+
   const [allcustomer, setallcustomer] = useState([])
   // State to toggle the table
   const [editState, seteditState] = useState(true)
@@ -617,9 +617,9 @@ const LeadMaster = ({
                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
                     placeholder="Lead Id..."
                   />
-                  {errors.leadId && (
+                  {errorsMain.leadId && (
                     <span className="mt-2 text-sm text-red-600">
-                      {errors.leadId.message}
+                      {errorsMain.leadId.message}
                     </span>
                   )}
                 </div>

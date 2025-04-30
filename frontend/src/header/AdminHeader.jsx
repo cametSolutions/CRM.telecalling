@@ -392,9 +392,10 @@ export default function AdminHeader() {
 
                               {/* Inner Submenu */}
                               {openInnerMenu === masterIndex &&
-                                master.hasChildren && (
+                                master.hasChildren &&
+                                master.label === "Lead" && (
                                   <div className="ml-4 mt-2 border-l-4 border-blue-400 bg-gray-50 p-2 submenu-container">
-                                    {inventorys.map((child) => (
+                                    {leads.map((child) => (
                                       <Link
                                         key={child.to}
                                         to={child.to}
