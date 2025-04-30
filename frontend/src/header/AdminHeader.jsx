@@ -370,27 +370,37 @@ export default function AdminHeader() {
                           )
                           .map((master, masterIndex) => (
                             <div key={master.to} className="relative py-2">
-                              <div
-                                className="flex justify-between px-4 text-gray-600 text-sm hover:bg-gray-100 cursor-pointer"
-                                onClick={() => {
-                                  if (master.hasChildren) {
-                                    toggleInnerMenu(masterIndex)
-                                  } else {
+                              <div className="flex justify-between items-center px-4 text-gray-600 text-sm hover:bg-gray-100">
+                                {/* Label Click - Always navigate to the main page */}
+                                <span
+                                  className="cursor-pointer flex-1"
+                                  onClick={() => {
                                     setMobileMenuOpen(false)
                                     navigate(master.to)
-                                  }
-                                }}
-                              >
-                                <span>{master.label}</span>
-                                {master.hasChildren &&
-                                  (openInnerMenu === masterIndex ? (
-                                    <FaChevronDown className="w-3 h-3 text-gray-500" />
-                                  ) : (
-                                    <FaChevronRight className="w-3 h-3 text-gray-500" />
-                                  ))}
+                                  }}
+                                >
+                                  {master.label}
+                                </span>
+
+                                {/* Chevron Click - Only toggles submenu */}
+                                {master.hasChildren && (
+                                  <span
+                                    onClick={(e) => {
+                                      e.stopPropagation() // Prevent label's click event
+                                      toggleInnerMenu(masterIndex)
+                                    }}
+                                    className="ml-2 cursor-pointer"
+                                  >
+                                    {openInnerMenu === masterIndex ? (
+                                      <FaChevronDown className="w-3 h-3 text-gray-500" />
+                                    ) : (
+                                      <FaChevronRight className="w-3 h-3 text-gray-500" />
+                                    )}
+                                  </span>
+                                )}
                               </div>
 
-                              {/* Inner Submenu */}
+                              {/* Submenu: Only for 'Lead' */}
                               {openInnerMenu === masterIndex &&
                                 master.hasChildren &&
                                 master.label === "Lead" && (

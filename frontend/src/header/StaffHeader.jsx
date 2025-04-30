@@ -382,6 +382,7 @@ export default function StaffHeader() {
                           (master) =>
                             (master.label === "Leave Application" &&
                               master.control) ||
+                            (master.label === "Lead" && master.control) ||
                             (master.label === "Leave Summary" &&
                               master.control) ||
                             (master.label === "Leave Approval Pending" &&
@@ -389,31 +390,42 @@ export default function StaffHeader() {
                         )
                         .map((master, masterIndex) => (
                           <div key={master.to} className="relative py-2">
-                            <div
-                              className="flex justify-between px-4 text-gray-600 text-sm hover:bg-gray-100 cursor-pointer"
-                              onClick={() => {
-                                if (master.hasChildren) {
-                                  toggleInnerMenu(masterIndex)
-                                } else {
+                            <div className="flex justify-between items-center px-4 text-gray-600 text-sm hover:bg-gray-100">
+                              {/* Label Click - Always navigate to the main page */}
+                              <span
+                                className="cursor-pointer flex-1"
+                                onClick={() => {
                                   setMobileMenuOpen(false)
                                   navigate(master.to)
-                                }
-                              }}
-                            >
-                              <span>{master.label}</span>
-                              {master.hasChildren &&
-                                (openInnerMenu === masterIndex ? (
-                                  <FaChevronDown className="w-3 h-3 text-gray-500" />
-                                ) : (
-                                  <FaChevronRight className="w-3 h-3 text-gray-500" />
-                                ))}
+                                }}
+                              >
+                                {master.label}
+                              </span>
+
+                              {/* Chevron Click - Only toggles submenu */}
+                              {master.hasChildren && (
+                                <span
+                                  onClick={(e) => {
+                                    e.stopPropagation() // Prevent label's click event
+                                    toggleInnerMenu(masterIndex)
+                                  }}
+                                  className="ml-2 cursor-pointer"
+                                >
+                                  {openInnerMenu === masterIndex ? (
+                                    <FaChevronDown className="w-3 h-3 text-gray-500" />
+                                  ) : (
+                                    <FaChevronRight className="w-3 h-3 text-gray-500" />
+                                  )}
+                                </span>
+                              )}
                             </div>
 
-                            {/* Inner Submenu */}
+                            {/* Submenu: Only for 'Lead' */}
                             {openInnerMenu === masterIndex &&
-                              master.hasChildren && (
+                              master.hasChildren &&
+                              master.label === "Lead" && (
                                 <div className="ml-4 mt-2 border-l-4 border-blue-400 bg-gray-50 p-2 submenu-container">
-                                  {inventorys.map((child) => (
+                                  {leads.map((child) => (
                                     <Link
                                       key={child.to}
                                       to={child.to}
@@ -426,7 +438,46 @@ export default function StaffHeader() {
                               )}
                           </div>
                         ))
-                    : null}
+                    : // .map((master, masterIndex) => (
+                      //   <div key={master.to} className="relative py-2">
+                      //     <div
+                      //       className="flex justify-between px-4 text-gray-600 text-sm hover:bg-gray-100 cursor-pointer"
+                      //       onClick={() => {
+                      //         if (master.hasChildren) {
+                      //           toggleInnerMenu(masterIndex)
+                      //         } else {
+                      //           setMobileMenuOpen(false)
+                      //           navigate(master.to)
+                      //         }
+                      //       }}
+                      //     >
+                      //       <span>{master.label}</span>
+                      //       {master.hasChildren &&
+                      //         (openInnerMenu === masterIndex ? (
+                      //           <FaChevronDown className="w-3 h-3 text-gray-500" />
+                      //         ) : (
+                      //           <FaChevronRight className="w-3 h-3 text-gray-500" />
+                      //         ))}
+                      //     </div>
+
+                      //     {/* Inner Submenu */}
+                      //     {openInnerMenu === masterIndex &&
+                      //       master.hasChildren && (
+                      //         <div className="ml-4 mt-2 border-l-4 border-blue-400 bg-gray-50 p-2 submenu-container">
+                      //           {inventorys.map((child) => (
+                      //             <Link
+                      //               key={child.to}
+                      //               to={child.to}
+                      //               className="block px-4 py-1 text-gray-600 text-sm hover:bg-gray-200"
+                      //             >
+                      //               {child.label}
+                      //             </Link>
+                      //           ))}
+                      //         </div>
+                      //       )}
+                      //   </div>
+                      // ))
+                      null}
                 </div>
               )}
             </div>
