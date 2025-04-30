@@ -27,6 +27,7 @@ const LeadMaster = ({
     setValue: setValueMain,
     getValues: getValuesMain,
     watch: watchMain,
+
     clearErrors: clearMainerrors,
     formState: { errors: errorsMain }
   } = useForm()
@@ -37,6 +38,7 @@ const LeadMaster = ({
     setValue: setValueModal,
     getValues: getValuesModal,
     watch: watchModal,
+    setError,
     clearErrors: clearmodalErros,
     formState: { errors: errorsModal },
     reset: resetModal
@@ -93,7 +95,6 @@ const LeadMaster = ({
       ? `/customer/getallCustomer?userbranch=${encodeURIComponent(branches)}`
       : null
   )
-
   useEffect(() => {
     const userData = localStorage.getItem("user")
     if (userData) {
@@ -540,8 +541,29 @@ const LeadMaster = ({
       toast.error("Failed to add product!")
     }
   }
+  const normalizeMobile = (number) => {
+    if (!number) return ""
+    return number.replace(/\D/g, "").slice(-10) // Keep only last 10 digits
+  }
+
+  const isMobileExists = (inputMobile, existingCustomers) => {
+    const normalizedInput = normalizeMobile(inputMobile)
+
+    return existingCustomers.some((customer) => {
+      const normalizedStored = normalizeMobile(customer.mobile)
+      return normalizedStored === normalizedInput
+    })
+  }
   const onmodalsubmit = async (data, event) => {
     try {
+      const checkexistingNumber = isMobileExists(data.mobile, allcustomer)
+      if (checkexistingNumber) {
+        setError("mobile", {
+          type: "manual",
+          message: "This mobile number is already used"
+        })
+        return
+      }
       setModalLoader(true)
       const response = await api.post("/customer/customerRegistration", {
         customerData: data
@@ -558,7 +580,6 @@ const LeadMaster = ({
       setModalLoader(false)
     }
   }
-
   return (
     <div>
       {(modalloader ||
@@ -1098,7 +1119,16 @@ const LeadMaster = ({
                       <input
                         type="tel"
                         {...registerModal("mobile", {
-                          required: "Mobile is Required"
+                          required: "Mobile is Required",
+                          validate: (value) => {
+                            const cleaned = value
+                              .replace(/^\+?91/, "")
+                              .replace(/\D/g, "") // remove +91 or 91 and non-digits
+                            if (cleaned.length !== 10) {
+                              return "Mobile number must be exactly 10 digits after removing country code"
+                            }
+                            return true
+                          }
                         })}
                         onBlur={(e) =>
                           setValueModal("mobile", e.target.value.trim())
@@ -1340,6 +1370,7 @@ const LeadMaster = ({
                       onClick={() => {
                         setModalOpen(false)
                         clearmodalErros()
+                        resetModal()
                       }}
                       className="bg-gray-400 text-white py-2 px-4 rounded-md hover:bg-gray-500"
                     >

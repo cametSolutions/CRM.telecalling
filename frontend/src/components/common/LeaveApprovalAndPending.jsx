@@ -30,9 +30,12 @@ const LeaveApprovalAndPending = () => {
     const user = JSON.parse(userData)
     setUser(user)
   }, [])
+  console.log(headerRef)
   useEffect(() => {
     if (headerRef.current) {
+      console.log("Hhh")
       const headerHeight = headerRef.current.getBoundingClientRect().height
+      console.log(headerHeight)
       setTableHeight(`calc(80vh - ${headerHeight}px)`) // Subtract header height from full viewport height
     }
   }, [])

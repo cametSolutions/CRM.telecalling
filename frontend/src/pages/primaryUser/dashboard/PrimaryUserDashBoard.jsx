@@ -1,4 +1,4 @@
-import React, { useDebugValue, useEffect, useState } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import {
   MdSupportAgent,
   MdAdminPanelSettings,
@@ -28,6 +28,8 @@ export default function PrimaryUserDashBoard() {
   const [user, setUser] = useState(null)
   const [showBirthdayPopup, setShowBirthdayPopup] = useState(false)
   const [birthdayPerson, setBirthdayPerson] = useState(null)
+  const [dashboardHeight, setDashboardHeight] = useState("auto")
+  const headerRef = useRef(null)
   const { data: todayleavelist } = UseFetch("/auth/getallUsersLeave?today=true")
   const { data: currrentMonthBirthDays } = UseFetch(
     "/auth/getallcurrentmonthBirthdays"
@@ -40,7 +42,15 @@ export default function PrimaryUserDashBoard() {
   const { data: announcementlist } = UseFetch(
     "/dashboard/getcurrentAnnouncement"
   )
-
+  useEffect(() => {
+    if (headerRef.current) {
+      console.log("Hhh")
+      const headerHeight = headerRef.current.getBoundingClientRect().height
+      console.log(headerHeight)
+      setDashboardHeight(`calc(100vh - ${headerHeight}px)`) // Subtract header height from full viewport height
+    }
+  }, [])
+  console.log(dashboardHeight)
   useEffect(() => {
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
@@ -203,10 +213,9 @@ export default function PrimaryUserDashBoard() {
     const wish = true
     localStorage.setItem("wish", JSON.stringify(wish))
   }
-  console.log(birthdayPerson)
-  console.log(birthdays)
+
   return (
-    <div className="h-auto  shadow-lg rounded-lg bg-[#bfdbf7]">
+    <div className="min-h-full  shadow-lg rounded-lg bg-[#bfdbf7]">
       {showBirthdayPopup && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
           <div
