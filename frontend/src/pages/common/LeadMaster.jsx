@@ -761,7 +761,7 @@ const LeadMaster = ({
               </div>
             </div>
             <div className="md:flex md:gap-6 md:mx-5 md:mt-2">
-              <div className="md:w-72">
+              <div className="md:w-72 w-full relative">
                 <label className="block text-sm font-medium text-gray-700">
                   Select License
                 </label>
@@ -788,7 +788,7 @@ const LeadMaster = ({
 
                 {/* Dropdown List */}
                 {isLicenseOpen && (
-                  <div className=" md:w-72 mt-1 bg-white border rounded-md shadow-lg z-30  max-h-60 absolute overflow-y-auto ">
+                  <div className=" md:w-72 w-full mt-1 bg-white border rounded-md shadow-lg z-30  max-h-60 absolute overflow-y-auto ">
                     <ul className="">
                       {/* Option to unselect license */}
                       <li
@@ -814,7 +814,7 @@ const LeadMaster = ({
                   </div>
                 )}
               </div>
-              <div className="relative" ref={dropdownRef}>
+              <div className="relative">
                 <label
                   htmlFor="leadFor"
                   className="block text-sm font-medium text-gray-700"
@@ -852,10 +852,9 @@ const LeadMaster = ({
                     ADD
                   </button>
                 </div>
-
                 {/* Product List (Visible when isOpen is true) */}
                 {isleadForOpen && (
-                  <div className="absolute z-30 left-0 mt-2 md:w-80 border bg-white shadow-lg rounded-md p-2 max-h-40 overflow-y-auto">
+                  <div className="absolute w-full z-30 left-0 mt-2 md:w-80 border bg-white shadow-lg rounded-md p-2 max-h-40 overflow-y-auto">
                     {selectedLicense &&
                       leadList?.map((item) => {
                         const currentProductState = productOrserviceSelections[
