@@ -316,7 +316,7 @@ export default function AdminHeader() {
           <div className="text-gray-500 mt-3 px-4">Menu</div>
 
           {/* Menu - Scrollable */}
-          <div className="flex-grow  block leading-10 text-black">
+          <div className="flex flex-grow flex-col overflow-y-auto leading-10 text-black">
             {desiredMobileMenu.map((link, index) => (
               <div key={index} className={`relative menu-item-${index}`}>
                 <div
