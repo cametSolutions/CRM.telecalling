@@ -197,7 +197,6 @@ const LeadFollowUp = () => {
         return
       }
       setfollowupDateLoader(!followupDateLoader)
-   
 
       const response = await api.put(
         `/lead/followupDateUpdate?selectedleaddocId=${selectedLeadId}&loggeduserid=${user._id}`,
@@ -216,7 +215,6 @@ const LeadFollowUp = () => {
       console.log("error:", error.message)
     }
   }
-
   return (
     <div className="h-full ">
       {submitLoading && (
@@ -261,8 +259,9 @@ const LeadFollowUp = () => {
               <thead className="bg-blue-500 text-white text-sm ">
                 <tr>
                   <th className="px-4 py-2 text-center">Lead Date</th>
-                  <th className=" py-2 text-center min-w-[100px]">
-                    No Of Follow Up
+                  <th className="px-1 py-2 text-center min-w-[80px]">
+                    No Of <br />
+                    Follow Up
                   </th>
                   <th className="px-4 py-2 text-center">Lead ID</th>
                   <th className="px-4 py-2 text-center">Customer Name</th>
@@ -275,6 +274,7 @@ const LeadFollowUp = () => {
                     Services
                   </th>
                   <th className="px-4 py-2 text-center">Lead By</th>
+                  <th className="px-4 py-2 text-center">Lead Allocated To</th>
                   <th className="px-4 py-2 text-center">Net Amount</th>
                   <th className="px-1 py-2 text-center min-w-[100px]">
                     Next Follow
@@ -292,7 +292,9 @@ const LeadFollowUp = () => {
                       <td className="px-1 py-1.5 border border-gray-300">
                         {formatDate(item.leadDate)}
                       </td>
-                      <td className="px-2  border border-gray-300">1</td>
+                      <td className="px-1  border border-gray-300">
+                        {item?.followUpDatesandRemarks?.length}
+                      </td>
                       <td className="px-4  border border-gray-300">
                         {item?.leadId}
                       </td>
@@ -347,7 +349,10 @@ const LeadFollowUp = () => {
                         </button>
                       </td>
                       <td className="px-4  border border-gray-300">
-                        {item?.leadBy.name}
+                        {item?.leadBy?.name}
+                      </td>
+                      <td className="px-1  border border-gray-300">
+                        {item?.allocatedTo?.name}
                       </td>
                       <td className="px-4  border border-gray-300">
                         {item?.netAmount}
@@ -399,7 +404,7 @@ const LeadFollowUp = () => {
                 ) : (
                   <tr>
                     <td
-                      colSpan="14"
+                      colSpan="15"
                       className="px-4 py-4 text-center bg-gray-100"
                     >
                       {loading ? (
@@ -476,10 +481,10 @@ const LeadFollowUp = () => {
                         ) : (
                           <tr>
                             <td
-                              colSpan={3}
+                              colSpan={4}
                               className="text-center bg-white p-3 text-gray-500 italic"
                             >
-                              No onsites scheduled for today
+                              No followUp s
                             </td>
                           </tr>
                         )}

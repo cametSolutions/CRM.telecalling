@@ -19,6 +19,8 @@ const UserPermissionList = ({ user, closeModal, Loader }) => {
     Category: false,
     HSN: false,
     Lead: false,
+    LeadAllocation: false,
+    LeadFollowUp: false,
     CallRegistration: false,
     LeaveApplication: false,
     SignUpCustomer: false,
@@ -102,6 +104,7 @@ const UserPermissionList = ({ user, closeModal, Loader }) => {
   const handleSubmit = async () => {
     try {
       setLoading(true)
+
       const response = await api.post(
         `/auth/userPermissionUpdate?Userid=${user._id}`,
         userPermissions,

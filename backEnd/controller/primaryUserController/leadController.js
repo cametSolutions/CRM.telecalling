@@ -6,7 +6,7 @@ import LeadId from "../../model/primaryUser/leadIdSchema.js"
 import Service from "../../model/primaryUser/servicesSchema.js"
 export const LeadRegister = async (req, res) => {
   try {
-    const { leadData, selectedtableLeadData } = req.body
+    const { leadData, selectedtableLeadData, assignedto } = req.body
 
     const {
       customerName,
@@ -29,7 +29,8 @@ export const LeadRegister = async (req, res) => {
     })
     if (checkedHavePendingLeads) {
       return res.status(201).json({
-        message:"This customer already has pending leads. Please follow up and confirm them."
+        message:
+          "This customer already has pending leads. Please follow up and confirm them."
       })
     }
 
@@ -43,9 +44,20 @@ export const LeadRegister = async (req, res) => {
       const lastId = parseInt(lastLead.leadId, 10) // Convert to number
       newLeadId = String(lastId + 1).padStart(5, "0") // Convert back to 5-digit string
     }
+    let assignedModel = null
     let assignedtoleadByModel = null // Determine dynamically
     // Check if leadBy exists in Staff or Admin collection
+    const isStaffAssigned = await Staff.findById(assignedto).lean()
     const isStaff = await Staff.findById(leadBy).lean()
+    if (isStaffAssigned) {
+      assignedModel = "Staff"
+    } else {
+      const isAdmin = await Admin.findById(assignedto).lean()
+      if (isAdmin) {
+        assignedModel = "Admin"
+      }
+    }
+
     if (isStaff) {
       assignedtoleadByModel = "Staff"
     } else {
@@ -72,6 +84,8 @@ export const LeadRegister = async (req, res) => {
       leadFor,
       remark,
       leadBy,
+      assignedto,
+      assignedModel,
       assignedtoleadByModel, // Now set dynamically
       netAmount: Number(netAmount),
       allocatedTo

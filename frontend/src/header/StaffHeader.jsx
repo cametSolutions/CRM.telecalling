@@ -148,13 +148,15 @@ export default function StaffHeader() {
     }
   ]
   const leads = [
-    // {
-    //   to: "/staff/transaction/lead/leadAllocation",
-    //   label: "Lead Allocation"
-    // },
+    {
+      to: "/staff/transaction/lead/leadAllocation",
+      label: "Lead Allocation",
+      control: user?.permissions?.[0]?.LeadAllocation ?? false
+    },
     {
       to: "/staff/transaction/lead/leadFollowUp",
-      label: "Lead Follow Up"
+      label: "Lead Follow Up",
+      control: user?.permissions?.[0]?.LeadFollowUp ?? false
     }
   ]
   const inventorys = [
@@ -644,15 +646,18 @@ export default function StaffHeader() {
                             onMouseEnter={() => setLeadMenuOpen(true)}
                             onMouseLeave={() => setLeadMenuOpen(false)}
                           >
-                            {leads.map((lead) => (
-                              <Link
-                                key={lead.to}
-                                to={lead.to}
-                                className="block px-4 py-2 text-gray-600 text-sm hover:bg-gray-100"
-                              >
-                                {lead.label}
-                              </Link>
-                            ))}
+                            {leads.map(
+                              (lead) =>
+                                lead.control && (
+                                  <Link
+                                    key={lead.to}
+                                    to={lead.to}
+                                    className="block px-4 py-2 text-gray-600 text-sm hover:bg-gray-100"
+                                  >
+                                    {lead.label}
+                                  </Link>
+                                )
+                            )}
                           </div>
                         )}
                       </div>

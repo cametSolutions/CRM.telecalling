@@ -1,5 +1,4 @@
 import React, { useState } from "react"
-
 import api from "../../../api/api"
 import { toast } from "react-toastify"
 import { useNavigate } from "react-router-dom"
@@ -10,11 +9,11 @@ function LeadRegister() {
   const [popupMessage, setpopUpMessage] = useState("")
   const userData = localStorage.getItem("user")
   const user = JSON.parse(userData)
-
   const navigate = useNavigate()
   const handleSubmit = async (leadData, selectedtableLeadData) => {
     try {
       const response = await api.post("/lead/leadRegister", {
+        assignedto: user?.assignedto,
         leadData,
         selectedtableLeadData
       })
@@ -23,7 +22,7 @@ function LeadRegister() {
         if (user.role === "Admin") {
           navigate("/admin/transaction/lead/leadAllocation")
         } else {
-          navigate("/staff/transaction/lead/leadAllocation")
+          navigate("/staff/transaction/lead/leadFollowUp")
         }
       } else if (response.status === 201) {
         setpopUpMessage(response.data.message)
