@@ -2,6 +2,7 @@ import models from "../model/auth/authSchema.js"
 import Leavemaster from "../model/secondaryUser/leavemasterSchema.js"
 import QuarterlyAchiever from "../model/primaryUser/quarterlyAchieversSchema.js"
 import YearlyAchiever from "../model/primaryUser/yearylyAchieversSchema.js"
+import LeadMaster from "../model/primaryUser/leadmasterSchema.js"
 import { checkAcheivementlist } from "../helper/achievementCheck.js"
 import mongoose from "mongoose"
 import Branch from "../model/primaryUser/branchSchema.js"
@@ -238,14 +239,28 @@ export const UpdateUserandAdmin = async (req, res) => {
   const { profileUrl, documentUrl } = imageData
   const { role } = userData
 
-  const { selected, permissionLevel, ...filteredUserData } = userData
+  const { assignedto, selected, permissionLevel, ...filteredUserData } =
+    userData
 
   const { password } = filteredUserData
+  const assignedtoId = assignedto // Assuming assignedto is coming from userDat
+  let assignedtoModel
+  // Check if assignedto corresponds to a Staff
+  const isStaff = await Staff.exists({ _id: assignedtoId })
 
+  // Check if assignedto corresponds to an Admin
+  const isAdmin = await Admin.exists({ _id: assignedtoId })
+  if (isStaff) {
+    assignedtoModel = "Staff"
+  } else if (isAdmin) {
+    assignedtoModel = "Admin"
+  }
   try {
     if (role === "Staff") {
       const updateQuery = {
         $set: {
+          assignedtoModel,
+          assignedto,
           ...userData, // Other fields to update
           permissionLevel: [userlevelPermission] // Wrap in an array as per schema
         }
@@ -342,6 +357,80 @@ export const Login = async (req, res) => {
   } catch (error) {
     console.error("Login error:", error.message)
     res.status(500).json({ message: "Server error" })
+  }
+}
+export const Getadminpanelcount = async (req, res) => {
+  try {
+    const leaveStats = await LeaveRequest.aggregate([
+      { $group: { _id: "$userId", totalLeaves: { $sum: 1 } } },
+      { $sort: { totalLeaves: -1 } }
+    ])
+    const onsiteStats = await Onsite.aggregate([
+      { $group: { _id: "$userId", totalOnsite: { $sum: 1 } } },
+      { $sort: { totalOnsite: -1 } }
+    ])
+    const leadStats = await LeadMaster.aggregate([
+      { $group: { _id: "$leadBy", totalLead: { $sum: 1 } } }
+    ])
+    console.log("LEAD", leadStats)
+    const highestLeave = leaveStats[0]
+    const lowestLeave = leaveStats[leaveStats.length - 1]
+    const highestOnsite = onsiteStats[0]
+    const lowestOnsite = onsiteStats[onsiteStats.length - 1]
+    const highestLead = leadStats[0]
+    const lowestLead = leadStats[leadStats.length - 1]
+    // Fetch the staff names using their _id
+    const [
+      highestLeaveStaff,
+      lowestLeaveStaff,
+      highestOnsiteStaff,
+      lowestOnsiteStaff,
+      highestLeadStaff
+    ] = await Promise.all([
+      Staff.findById(highestLeave._id).select("name"),
+      Staff.findById(lowestLeave._id).select("name"),
+      Staff.findById(highestOnsite._id).select("name"),
+      Staff.findById(lowestOnsite._id).select("name"),
+      Staff.findById(highestLead._id).select("name")
+    ])
+
+    // Construct final output
+    const result = {
+      highestLeave: {
+        name: highestLeaveStaff?.name || "",
+        count: highestLeave.totalLeaves,
+        title: "Most Leave "
+      },
+      lowestLeave: {
+        name: lowestLeaveStaff?.name || "",
+        count: lowestLeave.totalLeaves,
+        title: "Least Leave "
+      },
+      highestOnsite: {
+        name: highestOnsiteStaff?.name || "",
+        count: highestOnsite.totalOnsite,
+        title: "Most Onsite"
+      },
+      lowestOnsite: {
+        name: lowestOnsiteStaff?.name || "",
+        count: lowestOnsite.totalOnsite,
+        title: "Least Onsite"
+      },
+      highestLead: {
+        name: highestLeadStaff?.name || "",
+        count: highestLead?.totalLead,
+        title: "Most Lead"
+      }
+    }
+    console.log(result)
+    return res.status(201).json({
+      message: "found counts",
+      data: result
+    })
+    // console.log("leaveeeeeeeeeeeee", onsiteStats)
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({ message: "Internal server error" })
   }
 }
 export const UpdateUserPermission = async (req, res) => {

@@ -40,7 +40,8 @@ import {
   GetallUsersLeave,
   GetallCurrentMonthbirthDay,
   GetallusersOnsite,
-  GetAllstaffs
+  GetAllstaffs,
+  Getadminpanelcount
 } from "../controller/authController.js"
 const router = express.Router()
 
@@ -53,7 +54,7 @@ router.get(
   authMiddleware,
   GetleavemasterLeavecount
 )
-
+router.get("/adminpanelleavecount", authMiddleware, Getadminpanelcount)
 router.post("/deleteEvent", authMiddleware, DeleteEvent)
 router.post("/userRegistration", authMiddleware, StaffRegister)
 router.delete("/userDelete", authMiddleware, DeleteUser)
