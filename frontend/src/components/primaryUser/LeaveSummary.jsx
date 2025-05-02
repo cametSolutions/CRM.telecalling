@@ -38,11 +38,11 @@ const leaveSummary = () => {
   // Use custom useFetch hook
   const {
     data,
-   
+
     loading,
     refreshHook
   } = UseFetch(apiUrl)
- 
+
   useEffect(() => {
     if (data) {
       const { staffAttendanceStats, listofHolidays, sundayFulldate } = data
@@ -77,7 +77,7 @@ const leaveSummary = () => {
       }
     }
   }, [data, searchTerm])
-  
+
   // Restore scroll position after render
   useEffect(() => {
     const storedScrollPosition = sessionStorage.getItem("scrollPosition")
@@ -128,7 +128,6 @@ const leaveSummary = () => {
     }
   }, [])
   const handleSelectAttendee = (attendee) => {
-
     if (listRef.current) {
       sessionStorage.setItem("scrollPosition", listRef.current.scrollTop)
     }
@@ -190,9 +189,8 @@ const leaveSummary = () => {
     setModalOpen(false)
     setMessage("")
   }
- 
-  const handleApply = async (staffId, selected, setIsApplying, type) => {
 
+  const handleApply = async (staffId, selected, setIsApplying, type) => {
     try {
       if (type === "Leave") {
         const matchedStaff = leavesummaryList.find(
@@ -379,7 +377,7 @@ const leaveSummary = () => {
       saveAs(blob, "Attendance_Report.xlsx")
     })
   }
- 
+
   return (
     <div className="w-full">
       {loading && (
@@ -549,7 +547,7 @@ const leaveSummary = () => {
           </div>
         </>
       )}
-      {modalOpen  && (
+      {modalOpen && (
         <Modal
           type={type}
           onClose={handleClose}

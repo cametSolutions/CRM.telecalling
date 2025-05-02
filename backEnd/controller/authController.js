@@ -372,7 +372,285 @@ export const Getadminpanelcount = async (req, res) => {
     const leadStats = await LeadMaster.aggregate([
       { $group: { _id: "$leadBy", totalLead: { $sum: 1 } } }
     ])
-    console.log("LEAD", leadStats)
+    const re = await CallRegistration.aggregate([
+      { $unwind: "$callregistration" },
+      {
+        $project: {
+          type: { $type: "$callregistration.formdata.attendedBy" },
+          attendedBy: "$callregistration.formdata.attendedBy"
+        }
+      },
+      {
+        $group: {
+          _id: "$type",
+          examples: { $addToSet: "$attendedBy" },
+          count: { $sum: 1 }
+        }
+      }
+    ])
+    // const re = await CallRegistration.aggregate([
+    //   { $unwind: "$callregistration" },
+    //   {
+    //     $match: {
+    //       "callregistration.formdata.attendedBy": {
+    //         $not: { $elemMatch: { callerId: { $exists: true } } }
+    //       }
+    //     }
+    //   },
+    //   {
+    //     $project: {
+    //       type: { $type: "$callregistration.formdata.attendedBy" },
+    //       attendedBy: "$callregistration.formdata.attendedBy"
+    //     }
+    //   },
+    //   {
+    //     $limit: 748 // Or however many you want to inspect
+    //   }
+    // ])
+    // const re = await CallRegistration.aggregate([
+    //   { $unwind: "$callregistration" },
+    //   {
+    //     $match: {
+    //       $expr: {
+    //         $and: [
+    //           {
+    //             $eq: [
+    //               { $type: "$callregistration.formdata.attendedBy" },
+    //               "array"
+    //             ]
+    //           },
+    //           {
+    //             $gt: [
+    //               {
+    //                 $size: {
+    //                   $filter: {
+    //                     input: "$callregistration.formdata.attendedBy",
+    //                     as: "item",
+    //                     cond: { $ne: [{ $type: "$$item" }, "string"] }
+    //                   }
+    //                 }
+    //               },
+    //               0
+    //             ]
+    //           }
+    //         ]
+    //       }
+    //     }
+    //   },
+    //   {
+    //     $project: {
+    //       attendedBy: "$callregistration.formdata.attendedBy",
+    //       nonStringItems: {
+    //         $filter: {
+    //           input: "$callregistration.formdata.attendedBy",
+    //           as: "item",
+    //           cond: { $ne: [{ $type: "$$item" }, "string"] }
+    //         }
+    //       }
+    //     }
+    //   },
+    //   { $limit: 747 }
+    // ])
+    // const re = await CallRegistration.aggregate([
+    //   { $unwind: "$callregistration" },
+    //   {
+    //     $match: {
+    //       $expr: {
+    //         $and: [
+    //           {
+    //             $eq: [
+    //               { $type: "$callregistration.formdata.attendedBy" },
+    //               "array"
+    //             ]
+    //           },
+    //           {
+    //             $gt: [
+    //               {
+    //                 $size: {
+    //                   $filter: {
+    //                     input: "$callregistration.formdata.attendedBy",
+    //                     as: "item",
+    //                     cond: {
+    //                       $or: [
+    //                         { $ne: [{ $type: "$$item" }, "string"] }, // non-string
+    //                         {
+    //                           $and: [
+    //                             { $eq: [{ $type: "$$item" }, "object"] },
+    //                             {
+    //                               $not: { $ifNull: ["$$item.callerId", false] }
+    //                             } // missing callerId
+    //                           ]
+    //                         }
+    //                       ]
+    //                     }
+    //                   }
+    //                 }
+    //               },
+    //               0
+    //             ]
+    //           }
+    //         ]
+    //       }
+    //     }
+    //   },
+    //   {
+    //     $project: {
+    //       attendedBy: "$callregistration.formdata.attendedBy",
+    //       nonCompliantItems: {
+    //         $filter: {
+    //           input: "$callregistration.formdata.attendedBy",
+    //           as: "item",
+    //           cond: {
+    //             $or: [
+    //               { $ne: [{ $type: "$$item" }, "string"] },
+    //               {
+    //                 $and: [
+    //                   { $eq: [{ $type: "$$item" }, "object"] },
+    //                   { $not: { $ifNull: ["$$item.callerId", false] } }
+    //                 ]
+    //               }
+    //             ]
+    //           }
+    //         }
+    //       }
+    //     }
+    //   },
+    //   { $limit: 747 }
+    // ])
+    // const re = await CallRegistration.aggregate([
+    //   // Unwind the callregistration array to work with individual documents
+    //   { $unwind: "$callregistration" },
+
+    //   // Match documents where attendedBy is an array and contains invalid entries
+    //   {
+    //     $match: {
+    //       "callregistration.formdata.attendedBy": { $type: "array" },
+    //       $expr: {
+    //         $gt: [
+    //           {
+    //             $size: {
+    //               $filter: {
+    //                 input: "$callregistration.formdata.attendedBy",
+    //                 as: "item",
+    //                 cond: {
+    //                   $or: [
+    //                     // Case 1: Not a string and not an object
+    //                     {
+    //                       $and: [
+    //                         { $ne: [{ $type: "$$item" }, "string"] },
+    //                         { $ne: [{ $type: "$$item" }, "object"] }
+    //                       ]
+    //                     },
+    //                     // Case 2: Is an object but missing callerId
+    //                     {
+    //                       $and: [
+    //                         { $eq: [{ $type: "$$item" }, "object"] },
+    //                         { $not: { $ifNull: ["$$item.callerId", false] } }
+    //                       ]
+    //                     }
+    //                   ]
+    //                 }
+    //               }
+    //             }
+    //           },
+    //           0
+    //         ]
+    //       }
+    //     }
+    //   },
+
+    //   // Project the relevant fields for output
+    //   {
+    //     $project: {
+    //       attendedBy: "$callregistration.formdata.attendedBy",
+    //       invalidEntries: {
+    //         $filter: {
+    //           input: "$callregistration.formdata.attendedBy",
+    //           as: "item",
+    //           cond: {
+    //             $or: [
+    //               // Case 1: Not a string and not an object
+    //               {
+    //                 $and: [
+    //                   { $ne: [{ $type: "$$item" }, "string"] },
+    //                   { $ne: [{ $type: "$$item" }, "object"] }
+    //                 ]
+    //               },
+    //               // Case 2: Is an object but missing callerId
+    //               {
+    //                 $and: [
+    //                   { $eq: [{ $type: "$$item" }, "object"] },
+    //                   { $not: { $ifNull: ["$$item.callerId", false] } }
+    //                 ]
+    //               }
+    //             ]
+    //           }
+    //         }
+    //       }
+    //     }
+    //   },
+
+    //   // Limit results if needed
+    //   { $limit: 747 }
+    // ])
+    console.log(re)
+
+    // console.log(re)
+
+    // console.log("RESULT", re)
+
+    // console.log("RESULT", re.length)
+    console.dir(re, { depth: null })
+    // const solvedCallStats = await CallRegistration.aggregate([
+    //   { $unwind: "$callregistration" },
+    //   {
+    //     $match: {
+    //       "callregistration.status": "solved",
+    //       "callregistration.attendedBy": { $exists: true }
+    //     }
+    //   },
+    //   {
+    //     $project: {
+    //       attended: {
+    //         $cond: [
+    //           { $isArray: "$callregistration.attendedBy" },
+    //           {
+    //             $map: {
+    //               input: "$callregistration.attendedBy",
+    //               as: "item",
+    //               in: {
+    //                 $cond: [
+    //                   { $isObject: "$$item" },
+    //                   "$$item.userName",
+    //                   "$$item"
+    //                 ]
+    //               }
+    //             }
+    //           },
+    //           [
+    //             {
+    //               $cond: [
+    //                 { $isObject: "$callregistration.attendedBy" },
+    //                 "$callregistration.attendedBy.userName",
+    //                 "$callregistration.attendedBy"
+    //               ]
+    //             }
+    //           ]
+    //         ]
+    //       }
+    //     }
+    //   },
+    //   { $unwind: "$attended" },
+    //   {
+    //     $group: {
+    //       _id: "$attended",
+    //       totalSolvedCalls: { $sum: 1 }
+    //     }
+    //   },
+    //   { $sort: { totalSolvedCalls: -1 } }
+    // ])
+    // console.log(solvedCallStats)
+    // console.log("LEAD", leadStats)
     const highestLeave = leaveStats[0]
     const lowestLeave = leaveStats[leaveStats.length - 1]
     const highestOnsite = onsiteStats[0]
@@ -385,13 +663,15 @@ export const Getadminpanelcount = async (req, res) => {
       lowestLeaveStaff,
       highestOnsiteStaff,
       lowestOnsiteStaff,
-      highestLeadStaff
+      highestLeadStaff,
+      lowestLeadStaff
     ] = await Promise.all([
-      Staff.findById(highestLeave._id).select("name"),
-      Staff.findById(lowestLeave._id).select("name"),
-      Staff.findById(highestOnsite._id).select("name"),
-      Staff.findById(lowestOnsite._id).select("name"),
-      Staff.findById(highestLead._id).select("name")
+      highestLeave ? Staff.findById(highestLeave._id).select("name") : null,
+      lowestLeave ? Staff.findById(lowestLeave._id).select("name") : null,
+      highestOnsite ? Staff.findById(highestOnsite._id).select("name") : null,
+      lowestOnsite ? Staff.findById(lowestOnsite._id).select("name") : null,
+      highestLead ? Staff.findById(highestLead._id).select("name") : null,
+      lowestLead ? Staff.findById(lowestLead._id).select("name") : null
     ])
 
     // Construct final output
@@ -420,9 +700,14 @@ export const Getadminpanelcount = async (req, res) => {
         name: highestLeadStaff?.name || "",
         count: highestLead?.totalLead,
         title: "Most Lead"
+      },
+      lowestLead: {
+        name: lowestLeadStaff?.name || "",
+        title: "Least Lead",
+        count: lowestLead?.totalLead
       }
     }
-    console.log(result)
+    // console.log(result)
     return res.status(201).json({
       message: "found counts",
       data: result
@@ -4119,22 +4404,7 @@ export const GetsomeAllsummary = async (
                   (l.departmentverified === true || l.adminverified === true)
               )
             : null
-          // const leaveRecord = Array.isArray(leaves)
-          //   ? leaves.find((l) => {
-          //       const leaveDate =
-          //         String(l.leaveDate.getDate()).padStart(2, "0") +
-          //         "-" +
-          //         String(l.leaveDate.getMonth() + 1).padStart(2, "0") +
-          //         "-" +
-          //         l.leaveDate.getFullYear()
 
-          //       return (
-          //         leaveDate === dayTime &&
-          //         l.onsite === false &&
-          //         (l.departmentverified === true || l.adminverified === true)
-          //       )
-          //     })
-          //   : null
           const leaveDetails = leaveRecord
             ? {
                 leaveType: leaveRecord.leaveType,
@@ -4800,7 +5070,7 @@ export const GetsomeAllsummary = async (
           }
         }
 
-        groups.forEach((sunday) => {
+        groups.forEach((group) => {
           const first = group[0]
           const stringfirst = first.toISOString().split("T")[0]
           const last = group[group.length - 1]
