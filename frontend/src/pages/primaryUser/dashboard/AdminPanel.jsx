@@ -13,7 +13,7 @@ export default function AdminPanel() {
   }, [data])
   console.log(stats)
   const renderStatList = (title1, title2) => (
-    <div className="px-1 py-3 bg-gradient-to-r from-blu-900 via--100 to-blue-500 rounded shadow-md text-left text-sm border border-gray-200 ">
+    <div className="md:px-3 py-3 bg-gradient-to-r from-blu-900 via--100 to-blue-500 rounded shadow-md text-left text-sm border border-gray-200 ">
       <div className="">
         <p className="font-bold mb-1">
           {title1?.title} - {title1?.name ? title1?.name : "N/A"} -
@@ -31,21 +31,22 @@ export default function AdminPanel() {
   return (
     <div className="md:p-6 h-full overflow-y-auto bg-blue-50">
       <div className="rounded-lg shadow-xl h-full bg-white">
-        <h1 className="text-2xl font-semibold text-center mb-1">Admin Panel</h1>
-        <div className="text-right pr-3 mb-2">
+        <h1 className="text-2xl font-semibold text-center mb-1 mt-1">
+          Admin Panel
+        </h1>
+        <div className="text-right pr-6 mb-2">
           <select className="border border-gray-200 rounded-md shadow-lg focus:outline-none px-2 py-1">
             <option value="monthly">Monthly</option>
             <option value="quarterly">Quarterly</option>
             <option value="yearly">Yearly</option>
           </select>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 lg:px-3 md:px-2">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4  px-6 ">
           {renderStatList(stats?.highestLeave, stats?.lowestLeave)}
           {renderStatList(stats?.highestOnsite, stats?.lowestOnsite)}
-          {renderStatList(stats?.highestleave, stats?.lowestleave)}
-          {renderStatList(stats?.highestleave, stats?.lowestleave)}
-          {renderStatList(stats?.highestLead, stats?.highestLead)}
 
+          {renderStatList(stats?.highestLead, stats?.lowestLead)}
+          {renderStatList(stats?.highestLead, stats?.lowestLead)}
           {/* {renderStatList("Least Leave Taken", "sreeraj")}
           {renderStatList("Most Onsite  Taken", "midhun")} */}
         </div>
