@@ -443,7 +443,6 @@ const UserAdd = ({
               <label className="block mb-1 font-semibold">Name</label>
               <input
                 type="text"
-                // value={User && User.name}
                 {...register("name", { required: "Name is required" })}
                 autoComplete="new-name"
                 placeholder="Enter a name"
@@ -458,7 +457,6 @@ const UserAdd = ({
               <label className="block mb-1 font-semibold">Email</label>
               <input
                 type="email"
-                // value={User && User.email}
                 {...register("email", {
                   required: "Email is required",
                   pattern: {
@@ -478,7 +476,6 @@ const UserAdd = ({
               <label className="block mb-1 font-semibold">Mobile</label>
               <input
                 type="tel"
-                // value={User && User.mobile}
                 {...register("mobile", {
                   pattern: {
                     value: /^[0-9]{10}$/,
@@ -499,7 +496,6 @@ const UserAdd = ({
               <input
                 type="date"
                 {...register("dateofbirth")}
-                // value={User && User.dateofbirth}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
               />
               {errors.dateofbirth && (
@@ -513,7 +509,6 @@ const UserAdd = ({
               <label className="block mb-1 font-semibold">Blood Group</label>
               <select
                 {...register("bloodgroup")}
-                // value={User && User.bloodgroup}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
               >
                 <option value="">Select a blood group</option>
@@ -537,7 +532,6 @@ const UserAdd = ({
               <label className="block mb-1 font-semibold">Gender</label>
               <select
                 {...register("gender", { required: "Gender is required" })}
-                // value={User && User.gender}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
               >
                 <option value="">Select a gender</option>
@@ -554,7 +548,6 @@ const UserAdd = ({
               <input
                 type="text"
                 {...register("address")}
-                // value={User && User.address}
                 placeholder="Enter an address"
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
               />
@@ -568,7 +561,6 @@ const UserAdd = ({
               <Select
                 options={countryOptions}
                 value={selectedCountry}
-                // value={User && User.assignedto._id}
                 {...register("country")}
                 onChange={(option) => {
                   setSelectedCountry(option)
@@ -615,7 +607,6 @@ const UserAdd = ({
               <input
                 type="number"
                 {...register("pincode")}
-                // value={User && User.pincode}
                 placeholder="Enter a pincode"
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
               />
@@ -629,7 +620,6 @@ const UserAdd = ({
               <input
                 type="date"
                 {...register("joiningdate")}
-                // value={User && User.joiningdate}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-2 py-1 sm:text-md focus:border-gray-500 outline-none"
               />
               {errors.joiningdate && (
@@ -646,7 +636,6 @@ const UserAdd = ({
               <input
                 type="text"
                 {...register("designation")}
-                // value={User && User.designation}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
               />
               {errors.designation && (
@@ -663,7 +652,6 @@ const UserAdd = ({
               <select
                 id="department"
                 {...register("department")}
-                // value={User && User.department?._id}
                 onChange={(e) => setSelectedDepartment(e.target.value)}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
               >
@@ -726,7 +714,7 @@ const UserAdd = ({
               </select>
             </div>
 
-            <div>
+            {/* <div>
               <label className="block mb-1 font-semibold">
                 Permission Level
               </label>
@@ -779,7 +767,7 @@ const UserAdd = ({
                   })}
                 </div>
               )}
-            </div>
+            </div> */}
 
             <div>
               <label className="block mb-1 font-semibold">
@@ -788,7 +776,6 @@ const UserAdd = ({
               <input
                 type="date"
                 {...register("privilegeleavestartsfrom")}
-                // value={User && User.joiningdate}
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm px-2 py-1 sm:text-md focus:border-gray-500 outline-none"
               />
               {errors.privilegeleavestartsfrom && (
@@ -836,7 +823,6 @@ const UserAdd = ({
               </label>
 
               <select
-                // value={User && User.assignedto._id}
                 {...register("assignedto")}
                 className="w-full mt-1 block border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none max-h-40 overflow-y-auto"
               >
@@ -854,7 +840,6 @@ const UserAdd = ({
               <label className="block mb-1 font-semibold">Verified</label>
               <select
                 {...register("isVerified", { required: true })}
-                // value={User && User.verified}
                 className="w-full mt-1 block border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
               >
                 <option value={true}>True</option>
@@ -869,7 +854,6 @@ const UserAdd = ({
               <input
                 type="Number"
                 {...register("attendanceId")}
-                // value={User && User.address}
                 placeholder="Enter an address"
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
               />
