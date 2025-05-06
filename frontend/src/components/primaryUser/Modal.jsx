@@ -72,7 +72,6 @@ const Modal = ({
   )
   const { data: compensatoryleaves, refreshHook: refreshHookCompensatory } =
     UseFetch(staffId && `/auth/getallcompensatoryleave?userid=${staffId}`)
-
   useEffect(() => {
     if (leaves && leaves.length > 0) {
       setallLeaves(leaves)
@@ -125,9 +124,12 @@ const Modal = ({
       const currentmonth = currentDate.getMonth() + 1
       const leaveDate = new Date(formData?.leaveDate)
       const leaveYear = leaveDate.getFullYear()
-      const startDate = new Date(privilegeleavestartsfrom)
-      const startYear = startDate.getFullYear()
-      const startmonth = startDate.getMonth() + 1 // 1-based month
+      const privileagestartDate = new Date(privilegeleavestartsfrom)
+      const privileagestartYear = privileagestartDate.getFullYear()
+      const privileagestartmonth = privileagestartDate.getMonth() + 1 // 1-based month
+      const casualstartDate = new Date(casualleavestartsfrom)
+      const casualstartYear = casualstartDate.getFullYear()
+      const casualstartmonth = casualstartDate.getMonth() + 1 // 1-based month
       const totalprivilegeLeave = leavemasterleavecount?.totalprivilegeLeave
       const privilegePerMonth = totalprivilegeLeave / 12
       const totalcasualLeave = leavemasterleavecount?.totalcasualleave
@@ -135,38 +137,57 @@ const Modal = ({
 
       let ownedprivilegeCount = 0
       let ownedcasualCount = 0
-      if (startYear < currentYear && privilegeleavestartsfrom !== null) {
-        let privilegeCount
+      if (casualstartYear < currentYear && casualleavestartsfrom !== null) {
         let casualCount
 
-        if (startYear < leaveYear && leaveYear < currentYear) {
+        if (casualstartYear < leaveYear && leaveYear < currentYear) {
           casualCount = casualPerMonth
-          privilegeCount = 12 * privilegePerMonth
-        } else if (startYear < leaveYear) {
+        } else if (casualstartYear < leaveYear) {
           casualCount = casualPerMonth
-          privilegeCount = currentmonth * privilegePerMonth
-        } else if (startYear === leaveYear) {
+        } else if (casualstartYear === leaveYear) {
           casualCount = casualPerMonth
-          const monthsRemainingInStartYear = 12 - startmonth + 1 // Calculate remaining months including startMonth
-          privilegeCount = monthsRemainingInStartYear * privilegePerMonth
         }
         ownedcasualCount = casualCount
-        ownedprivilegeCount = privilegeCount
       } else if (
-        startYear === currentYear &&
-        privilegeleavestartsfrom !== null
+        casualstartYear === currentYear &&
+        casualleavestartsfrom !== null
       ) {
         // If privilege started this year, give leaves from start month to current month
-        if (currentmonth >= startmonth) {
+        if (currentmonth >= casualstartmonth) {
           ownedcasualCount = casualPerMonth
-          ownedprivilegeCount =
-            (currentmonth - startmonth + 1) * privilegePerMonth
         } else {
           ownedcasualCount = 0
-          ownedprivilegeCount = 0 // Not eligible yet
         }
       } else {
         ownedcasualCount = 0
+      }
+      if (
+        privileagestartYear < currentYear &&
+        privilegeleavestartsfrom !== null
+      ) {
+        let privilegeCount
+        let casualCount
+        if (privileagestartYear < leaveYear && leaveYear < currentYear) {
+          privilegeCount = 12 * privilegePerMonth
+        } else if (privileagestartYear < leaveYear) {
+          privilegeCount = currentmonth * privilegePerMonth
+        } else if (privileagestartYear === leaveYear) {
+          const monthsRemainingInStartYear = 12 - startmonth + 1 // Calculate remaining months including startMonth
+          privilegeCount = monthsRemainingInStartYear * privilegePerMonth
+        }
+        ownedprivilegeCount = privilegeCount
+      } else if (
+        privileagestartYear === currentYear &&
+        privilegeleavestartsfrom !== null
+      ) {
+        // If privilege started this year, give leaves from start month to current month
+        if (currentmonth >= privileagestartmonth) {
+          ownedprivilegeCount =
+            (currentmonth - privileagestartmonth + 1) * privilegePerMonth
+        } else {
+          ownedprivilegeCount = 0 // Not eligible yet
+        }
+      } else {
         // If privilege starts in a future year, no leaves yet
         ownedprivilegeCount = 0
       }
@@ -222,56 +243,78 @@ const Modal = ({
     } else if (
       (!allleaves && leavemasterleavecount) ||
       (allleaves && allleaves.length === 0 && leavemasterleavecount) ||
-      compensatoryleaves >= 0
+      (compensatoryleaves >= 0 && leavemasterleavecount)
     ) {
       const currentDate = new Date()
       const currentYear = currentDate.getFullYear()
       const currentmonth = currentDate.getMonth() + 1
       const leaveDate = new Date(formData.leaveDate)
       const leaveYear = leaveDate.getFullYear()
-      const startDate = new Date(privilegeleavestartsfrom)
-      const startYear = startDate.getFullYear()
-      const startmonth = startDate.getMonth() + 1 // 1-based month
+      const privileagestartDate = new Date(privilegeleavestartsfrom)
+      const privileagestartYear = privileagestartDate.getFullYear()
+      const privilileagestartmonth = privileagestartDate.getMonth() + 1 // 1-based month
+      const casualstartDate = new Date(casualleavestartsfrom)
+      const casualstartYear = casualstartDate.getFullYear()
+      const casualstartmonth = casualstartDate.getMonth() + 1 // 1-based month
 
       const totalprivilegeLeave = leavemasterleavecount?.totalprivilegeLeave
       const privilegePerMonth = totalprivilegeLeave / 12
       const totalcasualLeave = leavemasterleavecount?.totalcasualleave
       const casualPerMonth = totalcasualLeave / 12
+
       let ownedprivilegeCount = 0
       let ownedcasualCount = 0
-      if (startYear < currentYear && privilegeleavestartsfrom !== null) {
-        let privilegeCount
+      if (casualstartYear < currentYear && casualleavestartsfrom !== null) {
         let casualCount
-        if (startYear < leaveYear && leaveYear < currentYear) {
+        if (casualstartYear < leaveYear && leaveYear < currentYear) {
           casualCount = casualPerMonth
+        } else if (casualstartYear < leaveYear) {
+          casualCount = casualPerMonth
+        } else if (casualstartYear === leaveYear) {
+          casualCount = casualPerMonth
+        }
+        ownedcasualCount = casualCount
+      } else if (
+        casualstartYear === currentYear &&
+        casualleavestartsfrom !== null
+      ) {
+        // If privilege started this year, give leaves from start month to current month
+        if (currentmonth >= casualstartmonth) {
+          ownedcasualCount = casualPerMonth
+        } else {
+          ownedcasualCount = 0
+        }
+      } else {
+        ownedcasualCount = 0
+      }
+      if (
+        privileagestartYear < currentYear &&
+        privilegeleavestartsfrom !== null
+      ) {
+        let privilegeCount
+        if (privileagestartYear < leaveYear && leaveYear < currentYear) {
           privilegeCount = 12 * privilegePerMonth
-        } else if (startYear < leaveYear) {
-          casualCount = casualPerMonth
+        } else if (privileagestartYear < leaveYear) {
           privilegeCount = currentmonth * privilegePerMonth
-        } else if (startYear === leaveYear) {
-          casualCount = casualPerMonth
+        } else if (privileagestartYear === leaveYear) {
           const monthsRemainingInStartYear = 12 - startmonth + 1 // Calculate remaining months including startMonth
           privilegeCount = monthsRemainingInStartYear * privilegePerMonth
         }
-        ownedcasualCount = casualCount
         ownedprivilegeCount = privilegeCount
       } else if (
-        startYear === currentYear &&
+        privileagestartYear === currentYear &&
         privilegeleavestartsfrom !== null
       ) {
         // If privilege started this year, give leaves from start month to current month
-        if (currentmonth >= startmonth) {
-          ownedcasualCount = casualPerMonth
+        if (currentmonth >= privilileagestartmonth) {
           ownedprivilegeCount =
-            (currentmonth - startmonth + 1) * privilegePerMonth
+            (currentmonth - privilileagestartmonth + 1) * privilegePerMonth
         } else {
-          ownedcasualCount = 0
           ownedprivilegeCount = 0 // Not eligible yet
         }
       } else {
         // If privilege starts in a future year, no leaves yet
         ownedprivilegeCount = 0
-        ownedcasualCount = 0
       }
       setBalanceprivilegeLeaveCount(ownedprivilegeCount)
       setBalancecasualLeaveCount(ownedcasualCount)
@@ -338,7 +381,7 @@ const Modal = ({
       setMessage(
         `You don't have enough ${selectedCategory} for a Full Day leave.`
       )
-     
+
       return
     }
     if (value === "Half Day") {
@@ -352,7 +395,7 @@ const Modal = ({
 
       setselectedLeave((prev) => ({
         ...prev,
-        [name]: value,
+        [name]: value
       }))
     }
 
@@ -360,7 +403,7 @@ const Modal = ({
       setErrors((prev) => ({ ...prev, [name]: "" })) // ✅ Clear error
     }
   }
-  
+
   const Apply = async () => {
     if (type === "Leave") {
       // Validation

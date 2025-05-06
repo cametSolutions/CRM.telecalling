@@ -44,13 +44,10 @@ export default function PrimaryUserDashBoard() {
   )
   useEffect(() => {
     if (headerRef.current) {
-      console.log("Hhh")
       const headerHeight = headerRef.current.getBoundingClientRect().height
-      console.log(headerHeight)
       setDashboardHeight(`calc(100vh - ${headerHeight}px)`) // Subtract header height from full viewport height
     }
   }, [])
-  console.log(dashboardHeight)
   useEffect(() => {
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
@@ -169,7 +166,7 @@ export default function PrimaryUserDashBoard() {
     },
     {
       label: "admin",
-      to: "",
+      to: "/admin/adminpanel",
       icon: MdAdminPanelSettings
     }
   ]

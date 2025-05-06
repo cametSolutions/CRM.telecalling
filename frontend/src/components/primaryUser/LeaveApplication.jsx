@@ -174,45 +174,61 @@ function LeaveApplication() {
       const currentmonth = currentDate.getMonth() + 1
       const leaveDate = new Date(formData?.leaveDate)
       const leaveYear = leaveDate.getFullYear()
-      const startDate = new Date(user?.privilegeleavestartsfrom)
-      const startYear = startDate.getFullYear()
-      const startmonth = startDate.getMonth() + 1 // 1-based month
+      const privileageDate = new Date(user?.privilegeleavestartsfrom)
+      const privileagestartYear = privileageDate.getFullYear()
+      const privileagestartmonth = privileageDate.getMonth() + 1 // 1-based month
+      const casualstartDate = new Date(user?.privilegeleavestartsfrom)
+      const casualstartYear = casualstartDate.getFullYear()
+      const casualstartmonth = casualstartDate.getMonth() + 1 // 1-based month
       const totalprivilegeLeave = leavemasterleavecount?.totalprivilegeLeave
       const privilegePerMonth = totalprivilegeLeave / 12
       const totalcasualLeave = leavemasterleavecount?.totalcasualleave
       const casualPerMonth = totalcasualLeave / 12
       let ownedprivilegeCount = 0
       let ownedcasualCount = 0
-
-      if (startYear < currentYear) {
-        let privilegeCount
+      if (casualstartYear < currentYear) {
         let casualCount
 
-        if (startYear < leaveYear && leaveYear < currentYear) {
+        if (casualstartYear < leaveYear && leaveYear < currentYear) {
           casualCount = casualPerMonth
-          privilegeCount = 12 * privilegePerMonth
-        } else if (startYear < leaveYear) {
+        } else if (casualstartYear < leaveYear) {
           casualCount = casualPerMonth
-          privilegeCount = currentmonth * privilegePerMonth
-        } else if (startYear === leaveYear) {
+        } else if (casualstartYear === leaveYear) {
           casualCount = casualPerMonth
-          const monthsRemainingInStartYear = 12 - startmonth + 1 // Calculate remaining months including startMonth
-          privilegeCount = monthsRemainingInStartYear * privilegePerMonth
         }
         ownedcasualCount = casualCount
-        ownedprivilegeCount = privilegeCount
-      } else if (startYear === currentYear) {
+      } else if (casualstartYear === currentYear) {
         // If privilege started this year, give leaves from start month to current month
-        if (currentmonth >= startmonth) {
+        if (currentmonth >= casualstartmonth) {
           ownedcasualCount = casualPerMonth
-          ownedprivilegeCount =
-            (currentmonth - startmonth + 1) * privilegePerMonth
         } else {
           ownedcasualCount = 0
-          ownedprivilegeCount = 0 // Not eligible yet
         }
       } else {
         ownedcasualCount = 0
+      }
+
+      if (privileagestartYear < currentYear) {
+        let privilegeCount
+
+        if (privileagestartYear < leaveYear && leaveYear < currentYear) {
+          privilegeCount = 12 * privilegePerMonth
+        } else if (privileagestartYear < leaveYear) {
+          privilegeCount = currentmonth * privilegePerMonth
+        } else if (privileagestartYear === leaveYear) {
+          const monthsRemainingInStartYear = 12 - privileagestartmonth + 1 // Calculate remaining months including startMonth
+          privilegeCount = monthsRemainingInStartYear * privilegePerMonth
+        }
+        ownedprivilegeCount = privilegeCount
+      } else if (privileagestartYear === currentYear) {
+        // If privilege started this year, give leaves from start month to current month
+        if (currentmonth >= privileagestartmonth) {
+          ownedprivilegeCount =
+            (currentmonth - privileagestartmonth + 1) * privilegePerMonth
+        } else {
+          ownedprivilegeCount = 0 // Not eligible yet
+        }
+      } else {
         // If privilege starts in a future year, no leaves yet
         ownedprivilegeCount = 0
       }
@@ -284,9 +300,12 @@ function LeaveApplication() {
       const currentmonth = currentDate.getMonth() + 1
       const leaveDate = new Date(formData.leaveDate)
       const leaveYear = leaveDate.getFullYear()
-      const startDate = new Date(user?.privilegeleavestartsfrom)
-      const startYear = startDate.getFullYear()
-      const startmonth = startDate.getMonth() + 1 // 1-based month
+      const privileagestartDate = new Date(user?.privilegeleavestartsfrom)
+      const privileagestartYear = privileagestartDate.getFullYear()
+      const privileagestartmonth = privileagestartDate.getMonth() + 1 // 1-based month
+      const casualstartDate = new Date(user?.privilegeleavestartsfrom)
+      const casualstartYear = casualstartDate.getFullYear()
+      const casualstartmonth = casualstartDate.getMonth() + 1 // 1-based month
       const totalprivilegeLeave =
         leavemasterleavecount?.totalprivilegeLeave || 0
       const privilegePerMonth = totalprivilegeLeave / 12 // 1 or 2 per month
@@ -295,34 +314,46 @@ function LeaveApplication() {
 
       let ownedprivilegeCount = 0
       let ownedcasualCount = 0
-      if (startYear < currentYear) {
-        let privilegeCount
+      if (casualstartYear < currentYear) {
         let casualCount
-        if (startYear < leaveYear && leaveYear < currentYear) {
+        if (casualstartYear < leaveYear && leaveYear < currentYear) {
           casualCount = casualPerMonth
-          privilegeCount = 12 * privilegePerMonth
-        } else if (startYear < leaveYear) {
+        } else if (casualstartYear < leaveYear) {
           casualCount = casualPerMonth
-          privilegeCount = currentmonth * privilegePerMonth
-        } else if (startYear === leaveYear) {
+        } else if (casualstartYear === leaveYear) {
           casualCount = casualPerMonth
-          const monthsRemainingInStartYear = 12 - startmonth + 1 // Calculate remaining months including startMonth
-          privilegeCount = monthsRemainingInStartYear * privilegePerMonth
         }
         ownedcasualCount = casualCount
-        ownedprivilegeCount = privilegeCount
-      } else if (startYear === currentYear) {
+      } else if (casualstartYear === currentYear) {
         // If privilege started this year, give leaves from start month to current month
-        if (currentmonth >= startmonth) {
+        if (currentmonth >= casualstartmonth) {
           ownedcasualCount = casualPerMonth
-          ownedprivilegeCount =
-            (currentmonth - startmonth + 1) * privilegePerMonth
         } else {
           ownedcasualCount = 0
-          ownedprivilegeCount = 0 // Not eligible yet
         }
       } else {
         ownedcasualCount = 0
+      }
+      if (privileagestartYear < currentYear) {
+        let privilegeCount
+        if (privileagestartYear < leaveYear && leaveYear < currentYear) {
+          privilegeCount = 12 * privilegePerMonth
+        } else if (privileagestartYear < leaveYear) {
+          privilegeCount = currentmonth * privilegePerMonth
+        } else if (privileagestartYear === leaveYear) {
+          const monthsRemainingInStartYear = 12 - privileagestartmonth + 1 // Calculate remaining months including startMonth
+          privilegeCount = monthsRemainingInStartYear * privilegePerMonth
+        }
+        ownedprivilegeCount = privilegeCount
+      } else if (privileagestartYear === currentYear) {
+        // If privilege started this year, give leaves from start month to current month
+        if (currentmonth >= privileagestartmonth) {
+          ownedprivilegeCount =
+            (currentmonth - privileagestartmonth + 1) * privilegePerMonth
+        } else {
+          ownedprivilegeCount = 0 // Not eligible yet
+        }
+      } else {
         // If privilege starts in a future year, no leaves yet
         ownedprivilegeCount = 0
       }
@@ -654,6 +685,20 @@ function LeaveApplication() {
   const handleChange = (e) => handleInputChange(e)
   const handleDataChange = (e) => {
     const { name, value } = e.target
+    if (name === "onsiteDate") {
+    
+
+      const dayOfWeek = new Date(value).getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+      const isSunday = dayOfWeek === 0
+
+      const isHoliday = monthlyHoly?.some((holiday) => {
+        const formattedHolyDate = holiday.holyDate.split("T")[0] // Extract YYYY-MM-DD
+        return formattedHolyDate === value
+      })
+      if (isHoliday || isSunday) {
+        setcompensatoryLeave(true)
+      }
+    }
     // Access current values for leave type & category
     const selectedCategory =
       name === "leaveCategory" ? value : formData.leaveCategory
@@ -698,7 +743,7 @@ function LeaveApplication() {
       if (message) setMessage("")
       setFormData((prev) => ({
         ...prev,
-        [name]: value,
+        [name]: value
         // halfDayPeriod:
         //   selectedTab === "Onsite"
         //     ? formData.onsiteType
@@ -1303,7 +1348,7 @@ function LeaveApplication() {
                   <tbody>
                     {tableRows?.map((row, index) => (
                       <tr key={index}>
-                        <td className="border p-1.5 w-60">
+                        <td className="border p-1.5 ">
                           <input
                             type="text"
                             value={row.siteName}
@@ -1315,7 +1360,7 @@ function LeaveApplication() {
                             className="border p-1 rounded w-full"
                           />
                         </td>
-                        <td className="border p-1.5 w-60">
+                        <td className="border p-1.5 ">
                           <input
                             type="text"
                             value={row.place}
@@ -1324,7 +1369,7 @@ function LeaveApplication() {
                               updatedRows[index].place = e.target.value
                               setTableRows(updatedRows)
                             }}
-                            className="border p-1 rounded w-full"
+                            className="border p-1 rounded "
                           />
                         </td>
                         <td className="border p-1.5">
@@ -1339,7 +1384,7 @@ function LeaveApplication() {
                             className="border p-1 rounded w-full"
                           />
                         </td>
-                        <td className="border p-1.5 W-20">
+                        <td className="border p-1.5">
                           <input
                             type="number"
                             value={row.End}
@@ -1375,7 +1420,7 @@ function LeaveApplication() {
                             className="border p-1 rounded w-full"
                           />
                         </td>
-                        <td className="border p-1.5 w-28">
+                        <td className="border p-1.5 ">
                           <input
                             type="number"
                             value={row.foodExpense}
@@ -1498,32 +1543,9 @@ function LeaveApplication() {
                       name="leaveDate"
                       type="date"
                       value={formData?.leaveDate}
-                      // onChange={(e) => {
-                      //   setFormData((prev) => ({
-                      //     ...prev,
-                      //     leaveDate: e.target.value // Replace newDate with the actual value you want to set
-                      //   }))
-                      // }}
                       onChange={handleDataChange}
                       className="border p-2 rounded"
                     />
-
-                    {/* <label className="text-sm font-semibold mt-2">
-                    Leave End Date
-                  </label>
-                  <input
-                    name="leaveenddate"
-                    type="date"
-                    value={formData?.endDate}
-                    // onChange={(e) => setLeaveEnd(e.target.value)}
-                    onChange={(e) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        endDate: e.target.value // Replace newDate with the actual value you want to set
-                      }))
-                    }}
-                    className="border p-2 rounded"
-                  /> */}
                   </div>
                   {errors.leaveDate && (
                     <p className="text-red-500">{errors.leaveDate}</p>
@@ -1743,7 +1765,11 @@ function LeaveApplication() {
       {/* Modal Popup */}
       {showModal && leaveBalance && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center  z-50">
-          <div className="bg-white  rounded-lg shadow-lg  w-full  sm:w-auto mx-4 max-h-[90vh] overflow-y-auto flex flex-col">
+          <div
+            className={` bg-white rounded-lg shadow-lg  sm:w-auto mx-4 max-h-[90vh] overflow-y-auto flex flex-col  ${
+              selectedTab === "New Onsite" ? "md:w-3/4" : ""
+            }`}
+          >
             {loader && (
               <BarLoader
                 cssOverride={{ width: "100%", height: "6px" }} // Tailwind's `h-4` corresponds to `16px`
@@ -1751,9 +1777,9 @@ function LeaveApplication() {
                 // loader={true}
               />
             )}
-            <div className="p-3">
+            <div className="p-3 w-full  ">
               {/* Tab Navigation */}
-              <div className="flex justify-center space-x-4">
+              <div className="flex justify-center space-x-4 ">
                 {tabs?.map((tab) => (
                   <span
                     key={tab}
