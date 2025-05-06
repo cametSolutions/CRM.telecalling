@@ -20,6 +20,8 @@ export default function AdminPanel() {
       selected &&
       `/auth/adminpanelleavecount?quarter=${quarter}&month=${month}&year=${selectedYear}`
   )
+  console.log(selected)
+  console.log(selectedYear)
   const months = [
     "January",
     "February",
@@ -34,7 +36,7 @@ export default function AdminPanel() {
     "November",
     "December"
   ]
- 
+
   const options = Array.from({ length: 20 }, (_, i) => {
     const year = 2024 + i
     return { value: year, label: year.toString() }
@@ -52,21 +54,27 @@ export default function AdminPanel() {
       const yearselected = options.find((item) => item.value === fullyear)
       const currentMonth = new Date().getMonth()
 
-      const currentmonth = monthOptions.find((item) => item.value === currentMonth)
+      const currentmonth = monthOptions.find(
+        (item) => item.value === currentMonth
+      )
       setMonth(currentmonth.value)
       setselectedYear(yearselected.value)
       setselected("monthly")
-
     }
   }, [])
   const handleYearlyToogle = () => {
     if (!isYearlyToggled) {
       setIsYearlyToggled(!isYearlyToggled)
+      setselected("yearly")
+      setIsToggled(false)
       setMonth(null)
       setQuarter(null)
     } else {
       setIsYearlyToggled(!isYearlyToggled)
+      setselected("monthly")
+      setIsToggled(false)
       setQuarter(null)
+
       const currentMonth = new Date().getMonth()
 
       const c = monthOptions.find((item) => item.value === currentMonth)
@@ -117,7 +125,7 @@ export default function AdminPanel() {
       </div>
     </div>
   )
- 
+
   return (
     <div className="h-full overflow-y-auto bg-white">
       {loading && (
