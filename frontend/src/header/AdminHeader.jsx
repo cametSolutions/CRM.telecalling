@@ -163,7 +163,7 @@ export default function AdminHeader() {
       label: "HSN"
     }
   ]
-
+  console.log(user)
   const transactions = [
     {
       to: "/admin/transaction/lead",
@@ -227,7 +227,7 @@ export default function AdminHeader() {
   ]
   return (
     <>
-      <header className=" bg-white sticky top-0 z-40 h-16 lg:h-20 flex  shadow-md items-center">
+      <header className=" bg-gray-3s00 md:bg-white sticky top-0 z-40 h-16 lg:h-20 flex  shadow-md items-center">
         {/* Mobile menu button */}
         <div className="md:hidden flex justify-between py-2 px-4">
           <button

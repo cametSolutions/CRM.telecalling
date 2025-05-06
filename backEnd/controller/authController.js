@@ -2,6 +2,7 @@ import models from "../model/auth/authSchema.js"
 import Leavemaster from "../model/secondaryUser/leavemasterSchema.js"
 import QuarterlyAchiever from "../model/primaryUser/quarterlyAchieversSchema.js"
 import YearlyAchiever from "../model/primaryUser/yearylyAchieversSchema.js"
+import { getStaffSolvedCallCounts } from "../helper/staffHighestandlowestsolvedcallscount.js"
 import LeadMaster from "../model/primaryUser/leadmasterSchema.js"
 import { checkAcheivementlist } from "../helper/achievementCheck.js"
 import mongoose from "mongoose"
@@ -361,296 +362,80 @@ export const Login = async (req, res) => {
 }
 export const Getadminpanelcount = async (req, res) => {
   try {
+    const { quarter, month, year } = req.query
+
+    let startDate
+    let endDate
+    let timeFrame
+    if (year && month === "null" && quarter === "null") {
+      timeFrame = "yearly"
+      const now = new Date();
+      const month = now.getMonth(); // 0-based (0 = Jan)
+      const date = now.getDate();
+
+      // Construct new date with query year and today's month/day
+
+      startDate = new Date(year, 0, 1)
+      endDate = new Date(year, month, date);
+      startDate.setHours(0, 0, 0, 0)
+      endDate.setHours(23, 59, 59, 999)
+    } else if (year && month && quarter === "null") {
+      timeFrame = "monthly"
+      const now = new Date();
+
+      const date = now.getDate();
+      const numericYear = Number(year) || now.getFullYear(); // fallback if year is missing
+
+      startDate = new Date(numericYear, month, 1); // First day of current month
+      endDate = new Date(numericYear, month, date); // Current day of current month
+      startDate.setHours(0, 0, 0, 0)
+      endDate.setHours(23, 59, 59, 999)
+    } else if (year && month === "null" && quarter) {
+      timeFrame = "quarterly"
+      const numericYear = Number(year) || new Date().getFullYear();
+      const quarterNum = Number(quarter);
+
+      // Define start and end months for the quarter
+      const quarterStartMonth = (quarterNum - 1) * 3; // 0-based (0 = Jan)
+      const quarterEndMonth = quarterStartMonth + 2;
+
+      // First day of the quarter
+      startDate = new Date(numericYear, quarterStartMonth, 1);
+      startDate.setHours(0, 0, 0, 0);
+
+      // Last day of the quarter (set to last day of the quarterEndMonth)
+      endDate = new Date(numericYear, quarterEndMonth + 1, 0); // day 0 of next month = last day of current
+      endDate.setHours(23, 59, 59, 999);
+    }
+
     const leaveStats = await LeaveRequest.aggregate([
+      {
+        $match: {
+          leaveDate: { $gte: startDate, $lte: endDate }
+        }
+      },
       { $group: { _id: "$userId", totalLeaves: { $sum: 1 } } },
       { $sort: { totalLeaves: -1 } }
     ])
     const onsiteStats = await Onsite.aggregate([
+      {
+        $match: {
+          onsiteDate: { $gte: startDate, $lte: endDate }
+        }
+      },
       { $group: { _id: "$userId", totalOnsite: { $sum: 1 } } },
       { $sort: { totalOnsite: -1 } }
     ])
     const leadStats = await LeadMaster.aggregate([
-      { $group: { _id: "$leadBy", totalLead: { $sum: 1 } } }
-    ])
-    const re = await CallRegistration.aggregate([
-      { $unwind: "$callregistration" },
       {
-        $project: {
-          type: { $type: "$callregistration.formdata.attendedBy" },
-          attendedBy: "$callregistration.formdata.attendedBy"
+        $match: {
+          leadDate: { $gte: startDate, $lte: endDate }
         }
       },
-      {
-        $group: {
-          _id: "$type",
-          examples: { $addToSet: "$attendedBy" },
-          count: { $sum: 1 }
-        }
-      }
+      { $group: { _id: "$leadBy", totalLead: { $sum: 1 } } }
     ])
-    // const re = await CallRegistration.aggregate([
-    //   { $unwind: "$callregistration" },
-    //   {
-    //     $match: {
-    //       "callregistration.formdata.attendedBy": {
-    //         $not: { $elemMatch: { callerId: { $exists: true } } }
-    //       }
-    //     }
-    //   },
-    //   {
-    //     $project: {
-    //       type: { $type: "$callregistration.formdata.attendedBy" },
-    //       attendedBy: "$callregistration.formdata.attendedBy"
-    //     }
-    //   },
-    //   {
-    //     $limit: 748 // Or however many you want to inspect
-    //   }
-    // ])
-    // const re = await CallRegistration.aggregate([
-    //   { $unwind: "$callregistration" },
-    //   {
-    //     $match: {
-    //       $expr: {
-    //         $and: [
-    //           {
-    //             $eq: [
-    //               { $type: "$callregistration.formdata.attendedBy" },
-    //               "array"
-    //             ]
-    //           },
-    //           {
-    //             $gt: [
-    //               {
-    //                 $size: {
-    //                   $filter: {
-    //                     input: "$callregistration.formdata.attendedBy",
-    //                     as: "item",
-    //                     cond: { $ne: [{ $type: "$$item" }, "string"] }
-    //                   }
-    //                 }
-    //               },
-    //               0
-    //             ]
-    //           }
-    //         ]
-    //       }
-    //     }
-    //   },
-    //   {
-    //     $project: {
-    //       attendedBy: "$callregistration.formdata.attendedBy",
-    //       nonStringItems: {
-    //         $filter: {
-    //           input: "$callregistration.formdata.attendedBy",
-    //           as: "item",
-    //           cond: { $ne: [{ $type: "$$item" }, "string"] }
-    //         }
-    //       }
-    //     }
-    //   },
-    //   { $limit: 747 }
-    // ])
-    // const re = await CallRegistration.aggregate([
-    //   { $unwind: "$callregistration" },
-    //   {
-    //     $match: {
-    //       $expr: {
-    //         $and: [
-    //           {
-    //             $eq: [
-    //               { $type: "$callregistration.formdata.attendedBy" },
-    //               "array"
-    //             ]
-    //           },
-    //           {
-    //             $gt: [
-    //               {
-    //                 $size: {
-    //                   $filter: {
-    //                     input: "$callregistration.formdata.attendedBy",
-    //                     as: "item",
-    //                     cond: {
-    //                       $or: [
-    //                         { $ne: [{ $type: "$$item" }, "string"] }, // non-string
-    //                         {
-    //                           $and: [
-    //                             { $eq: [{ $type: "$$item" }, "object"] },
-    //                             {
-    //                               $not: { $ifNull: ["$$item.callerId", false] }
-    //                             } // missing callerId
-    //                           ]
-    //                         }
-    //                       ]
-    //                     }
-    //                   }
-    //                 }
-    //               },
-    //               0
-    //             ]
-    //           }
-    //         ]
-    //       }
-    //     }
-    //   },
-    //   {
-    //     $project: {
-    //       attendedBy: "$callregistration.formdata.attendedBy",
-    //       nonCompliantItems: {
-    //         $filter: {
-    //           input: "$callregistration.formdata.attendedBy",
-    //           as: "item",
-    //           cond: {
-    //             $or: [
-    //               { $ne: [{ $type: "$$item" }, "string"] },
-    //               {
-    //                 $and: [
-    //                   { $eq: [{ $type: "$$item" }, "object"] },
-    //                   { $not: { $ifNull: ["$$item.callerId", false] } }
-    //                 ]
-    //               }
-    //             ]
-    //           }
-    //         }
-    //       }
-    //     }
-    //   },
-    //   { $limit: 747 }
-    // ])
-    // const re = await CallRegistration.aggregate([
-    //   // Unwind the callregistration array to work with individual documents
-    //   { $unwind: "$callregistration" },
 
-    //   // Match documents where attendedBy is an array and contains invalid entries
-    //   {
-    //     $match: {
-    //       "callregistration.formdata.attendedBy": { $type: "array" },
-    //       $expr: {
-    //         $gt: [
-    //           {
-    //             $size: {
-    //               $filter: {
-    //                 input: "$callregistration.formdata.attendedBy",
-    //                 as: "item",
-    //                 cond: {
-    //                   $or: [
-    //                     // Case 1: Not a string and not an object
-    //                     {
-    //                       $and: [
-    //                         { $ne: [{ $type: "$$item" }, "string"] },
-    //                         { $ne: [{ $type: "$$item" }, "object"] }
-    //                       ]
-    //                     },
-    //                     // Case 2: Is an object but missing callerId
-    //                     {
-    //                       $and: [
-    //                         { $eq: [{ $type: "$$item" }, "object"] },
-    //                         { $not: { $ifNull: ["$$item.callerId", false] } }
-    //                       ]
-    //                     }
-    //                   ]
-    //                 }
-    //               }
-    //             }
-    //           },
-    //           0
-    //         ]
-    //       }
-    //     }
-    //   },
-
-    //   // Project the relevant fields for output
-    //   {
-    //     $project: {
-    //       attendedBy: "$callregistration.formdata.attendedBy",
-    //       invalidEntries: {
-    //         $filter: {
-    //           input: "$callregistration.formdata.attendedBy",
-    //           as: "item",
-    //           cond: {
-    //             $or: [
-    //               // Case 1: Not a string and not an object
-    //               {
-    //                 $and: [
-    //                   { $ne: [{ $type: "$$item" }, "string"] },
-    //                   { $ne: [{ $type: "$$item" }, "object"] }
-    //                 ]
-    //               },
-    //               // Case 2: Is an object but missing callerId
-    //               {
-    //                 $and: [
-    //                   { $eq: [{ $type: "$$item" }, "object"] },
-    //                   { $not: { $ifNull: ["$$item.callerId", false] } }
-    //                 ]
-    //               }
-    //             ]
-    //           }
-    //         }
-    //       }
-    //     }
-    //   },
-
-    //   // Limit results if needed
-    //   { $limit: 747 }
-    // ])
-    console.log(re)
-
-    // console.log(re)
-
-    // console.log("RESULT", re)
-
-    // console.log("RESULT", re.length)
-    console.dir(re, { depth: null })
-    // const solvedCallStats = await CallRegistration.aggregate([
-    //   { $unwind: "$callregistration" },
-    //   {
-    //     $match: {
-    //       "callregistration.status": "solved",
-    //       "callregistration.attendedBy": { $exists: true }
-    //     }
-    //   },
-    //   {
-    //     $project: {
-    //       attended: {
-    //         $cond: [
-    //           { $isArray: "$callregistration.attendedBy" },
-    //           {
-    //             $map: {
-    //               input: "$callregistration.attendedBy",
-    //               as: "item",
-    //               in: {
-    //                 $cond: [
-    //                   { $isObject: "$$item" },
-    //                   "$$item.userName",
-    //                   "$$item"
-    //                 ]
-    //               }
-    //             }
-    //           },
-    //           [
-    //             {
-    //               $cond: [
-    //                 { $isObject: "$callregistration.attendedBy" },
-    //                 "$callregistration.attendedBy.userName",
-    //                 "$callregistration.attendedBy"
-    //               ]
-    //             }
-    //           ]
-    //         ]
-    //       }
-    //     }
-    //   },
-    //   { $unwind: "$attended" },
-    //   {
-    //     $group: {
-    //       _id: "$attended",
-    //       totalSolvedCalls: { $sum: 1 }
-    //     }
-    //   },
-    //   { $sort: { totalSolvedCalls: -1 } }
-    // ])
-    // console.log(solvedCallStats)
-    // console.log("LEAD", leadStats)
+    const callstatus = await getYearlyStaffPerformance(year, timeFrame, month, quarter)
     const highestLeave = leaveStats[0]
     const lowestLeave = leaveStats[leaveStats.length - 1]
     const highestOnsite = onsiteStats[0]
@@ -678,22 +463,22 @@ export const Getadminpanelcount = async (req, res) => {
     const result = {
       highestLeave: {
         name: highestLeaveStaff?.name || "",
-        count: highestLeave.totalLeaves,
+        count: highestLeave?.totalLeaves,
         title: "Most Leave "
       },
       lowestLeave: {
         name: lowestLeaveStaff?.name || "",
-        count: lowestLeave.totalLeaves,
+        count: lowestLeave?.totalLeaves,
         title: "Least Leave "
       },
       highestOnsite: {
         name: highestOnsiteStaff?.name || "",
-        count: highestOnsite.totalOnsite,
+        count: highestOnsite?.totalOnsite,
         title: "Most Onsite"
       },
       lowestOnsite: {
         name: lowestOnsiteStaff?.name || "",
-        count: lowestOnsite.totalOnsite,
+        count: lowestOnsite?.totalOnsite,
         title: "Least Onsite"
       },
       highestLead: {
@@ -705,18 +490,35 @@ export const Getadminpanelcount = async (req, res) => {
         name: lowestLeadStaff?.name || "",
         title: "Least Lead",
         count: lowestLead?.totalLead
+      },
+      highestCall: {
+        name: callstatus.topCallStaff.staffInfo.name,
+        title: "Higest Call",
+        count: callstatus?.topCallStaff?.solvedCount
+      },
+      lowestCall: {
+        name: callstatus.leastCallStaff.staffInfo.name,
+        title: "Lowest Call",
+        count: callstatus?.leastCallStaff?.solvedCount
       }
     }
-    // console.log(result)
     return res.status(201).json({
       message: "found counts",
       data: result
     })
-    // console.log("leaveeeeeeeeeeeee", onsiteStats)
   } catch (error) {
     console.log(error)
     return res.status(500).json({ message: "Internal server error" })
   }
+}
+export const getYearlyStaffPerformance = async (year, frame, month, quarter) => {
+  return await getStaffSolvedCallCounts({
+    timeFrame: frame,
+    year: year,
+    month,
+    quarter,
+    limit: 15
+  })
 }
 export const UpdateUserPermission = async (req, res) => {
   try {
@@ -1295,7 +1097,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       const dates = {}
       const daysInMonth = new Date(year, month, 0).getDate()
 
-      for (let day = 1; day <= daysInMonth; day++) {
+      for (let day = 1;day <= daysInMonth;day++) {
         let date = new Date(year, month - 1, day)
 
         let dateKey =
@@ -1549,21 +1351,21 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
           const onsiteRecord = Array.isArray(onsites)
             ? onsites.find(
-                (o) =>
-                  o.onsiteDate.toISOString().split("T")[0] === dayTime &&
-                  (o.departmentverified === true || o.adminverified === true)
-              )
+              (o) =>
+                o.onsiteDate.toISOString().split("T")[0] === dayTime &&
+                (o.departmentverified === true || o.adminverified === true)
+            )
             : null
 
           const onsiteDetails = onsiteRecord
             ? {
-                onsiteData: onsiteRecord.onsiteData,
-                onsiteType: onsiteRecord.onsiteType,
-                halfDayPeriod:
-                  onsiteRecord.onsiteType === "Half Day"
-                    ? onsiteRecord.halfDayPeriod
-                    : null
-              }
+              onsiteData: onsiteRecord.onsiteData,
+              onsiteType: onsiteRecord.onsiteType,
+              halfDayPeriod:
+                onsiteRecord.onsiteType === "Half Day"
+                  ? onsiteRecord.halfDayPeriod
+                  : null
+            }
             : null
 
           const isLeave =
@@ -1576,23 +1378,23 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             )
           const leaveRecord = Array.isArray(leaves)
             ? leaves.find(
-                (l) =>
-                  l.leaveDate.toISOString().split("T")[0] === dayTime &&
-                  l.onsite === false &&
-                  (l.departmentverified === true || l.adminverified === true)
-              )
+              (l) =>
+                l.leaveDate.toISOString().split("T")[0] === dayTime &&
+                l.onsite === false &&
+                (l.departmentverified === true || l.adminverified === true)
+            )
             : null
 
           const leaveDetails = leaveRecord
             ? {
-                leaveType: leaveRecord.leaveType,
-                halfDayPeriod:
-                  leaveRecord.leaveType === "Half Day"
-                    ? leaveRecord.halfDayPeriod
-                    : null,
-                leaveCategory: leaveRecord?.leaveCategory || null,
-                reason: leaveRecord?.reason || null
-              }
+              leaveType: leaveRecord.leaveType,
+              halfDayPeriod:
+                leaveRecord.leaveType === "Half Day"
+                  ? leaveRecord.halfDayPeriod
+                  : null,
+              leaveCategory: leaveRecord?.leaveCategory || null,
+              reason: leaveRecord?.reason || null
+            }
             : null
 
           if (!punchIn || !punchOut) {
@@ -2188,7 +1990,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         return `${prevYear}-${prevMonth}-${prevDay}`
       }
 
-      ;(function calculateAbsences(allholidayfulldate, attendances, onsites) {
+      ; (function calculateAbsences(allholidayfulldate, attendances, onsites) {
         const isPresent = (date) => {
           for (const dates in attendances.attendancedates) {
             if (date === dates) {
@@ -2224,7 +2026,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         let groups = []
         let tempGroup = []
 
-        for (let i = 0; i < sortedHolidays.length; i++) {
+        for (let i = 0;i < sortedHolidays.length;i++) {
           const currDate = new Date(sortedHolidays[i])
           const prevDate = i > 0 ? new Date(sortedHolidays[i - 1]) : null
 
@@ -2279,18 +2081,18 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
         stats.absent +=
           stats.attendancedates[dates].otherLeave &&
-          !isNaN(stats.attendancedates[dates].otherLeave)
+            !isNaN(stats.attendancedates[dates].otherLeave)
             ? Number(stats.attendancedates[dates].otherLeave)
             : stats.attendancedates[dates].casualLeave &&
               !isNaN(stats.attendancedates[dates].casualLeave)
-            ? Number(stats.attendancedates[dates].casualLeave)
-            : stats.attendancedates[dates].privileageLeave &&
-              !isNaN(stats.attendancedates[dates].privileageLeave)
-            ? Number(stats.attendancedates[dates].privileageLeave)
-            : stats.attendancedates[dates].compensatoryLeave &&
-              !isNaN(stats.attendancedates[dates].compensatoryLeave)
-            ? Number(stats.attendancedates[dates].compensatoryLeave)
-            : 0
+              ? Number(stats.attendancedates[dates].casualLeave)
+              : stats.attendancedates[dates].privileageLeave &&
+                !isNaN(stats.attendancedates[dates].privileageLeave)
+                ? Number(stats.attendancedates[dates].privileageLeave)
+                : stats.attendancedates[dates].compensatoryLeave &&
+                  !isNaN(stats.attendancedates[dates].compensatoryLeave)
+                  ? Number(stats.attendancedates[dates].compensatoryLeave)
+                  : 0
 
         stats.notMarked +=
           stats.attendancedates[dates].notMarked !== ""
@@ -2828,13 +2630,13 @@ export const cancelLeaveOrOnsiteApproval = async (req, res) => {
     const updateFields =
       role === "Admin"
         ? {
-            hrstatus: "Not Approved",
-            adminverified: false
-          }
+          hrstatus: "Not Approved",
+          adminverified: false
+        }
         : {
-            departmentstatus: "Not Approved",
-            departmentverified: false
-          }
+          departmentstatus: "Not Approved",
+          departmentverified: false
+        }
     let result
     if (isSingle && onsite === "true") {
       if (!selectedObjectId) {
@@ -2977,15 +2779,15 @@ export const ApproveLeave = async (req, res) => {
     const updateFields =
       role === "Admin"
         ? {
-            hrstatus: "HR/Onsite Approved",
-            adminverified: true,
-            ...(onsite === "true" && { onsitestatus: "Approved" })
-          }
+          hrstatus: "HR/Onsite Approved",
+          adminverified: true,
+          ...(onsite === "true" && { onsitestatus: "Approved" })
+        }
         : {
-            departmentstatus: "Dept Approved",
-            departmentverified: true,
-            ...(onsite === "true" && { onsitestatus: "Approved" })
-          }
+          departmentstatus: "Dept Approved",
+          departmentverified: true,
+          ...(onsite === "true" && { onsitestatus: "Approved" })
+        }
 
     let result
     if (isSelectAll) {
@@ -3158,15 +2960,15 @@ export const ApproveOnsite = async (req, res) => {
     const updateFields =
       role === "Admin"
         ? {
-            hrstatus: "HR/Onsite Approved",
-            adminverified: true,
-            ...(onsite === "true" && { onsitestatus: "Approved" })
-          }
+          hrstatus: "HR/Onsite Approved",
+          adminverified: true,
+          ...(onsite === "true" && { onsitestatus: "Approved" })
+        }
         : {
-            departmentstatus: "Dept Approved",
-            departmentverified: true,
-            ...(onsite === "true" && { onsitestatus: "Approved" })
-          }
+          departmentstatus: "Dept Approved",
+          departmentverified: true,
+          ...(onsite === "true" && { onsitestatus: "Approved" })
+        }
 
     let result
 
@@ -3593,9 +3395,9 @@ export const GetStaffCallList = async (req, res) => {
                       attendee?.callerId?.toString() ===
                       calls?.formdata?.completedBy[0].callerId
                   ) ===
-                    calls.formdata.attendedBy.lastIndexOf((attendee) =>
-                      attendee?.callerId?.toString()
-                    )
+                  calls.formdata.attendedBy.lastIndexOf((attendee) =>
+                    attendee?.callerId?.toString()
+                  )
 
                 return {
                   callDate: call.calldate, // Ensure `calldate` exists
@@ -3609,8 +3411,8 @@ export const GetStaffCallList = async (req, res) => {
                       ? 0
                       : !isColleagueSolved &&
                         calls.formdata.status === "pending"
-                      ? 0
-                      : 1, // Default value if neither condition is met
+                        ? 0
+                        : 1, // Default value if neither condition is met
 
                   solvedCalls: isColleagueSolved ? 1 : 0,
                   datecalls: 1,
@@ -4128,7 +3930,7 @@ export const GetsomeAllsummary = async (
       const dates = {}
       const daysInMonth = new Date(year, month, 0).getDate()
 
-      for (let day = 1; day <= daysInMonth; day++) {
+      for (let day = 1;day <= daysInMonth;day++) {
         let date = new Date(year, month - 1, day)
 
         let dateKey =
@@ -4371,21 +4173,21 @@ export const GetsomeAllsummary = async (
 
           const onsiteRecord = Array.isArray(onsites)
             ? onsites.find(
-                (o) =>
-                  o.onsiteDate.toISOString().split("T")[0] === dayTime &&
-                  (o.departmentverified === true || o.adminverified === true)
-              )
+              (o) =>
+                o.onsiteDate.toISOString().split("T")[0] === dayTime &&
+                (o.departmentverified === true || o.adminverified === true)
+            )
             : null
 
           const onsiteDetails = onsiteRecord
             ? {
-                onsiteData: onsiteRecord.onsiteData,
-                onsiteType: onsiteRecord.onsiteType,
-                halfDayPeriod:
-                  onsiteRecord.onsiteType === "Half Day"
-                    ? onsiteRecord.halfDayPeriod
-                    : null
-              }
+              onsiteData: onsiteRecord.onsiteData,
+              onsiteType: onsiteRecord.onsiteType,
+              halfDayPeriod:
+                onsiteRecord.onsiteType === "Half Day"
+                  ? onsiteRecord.halfDayPeriod
+                  : null
+            }
             : null
 
           const isLeave =
@@ -4398,22 +4200,22 @@ export const GetsomeAllsummary = async (
             )
           const leaveRecord = Array.isArray(leaves)
             ? leaves.find(
-                (l) =>
-                  l.leaveDate.toISOString().split("T")[0] === dayTime &&
-                  l.onsite === false &&
-                  (l.departmentverified === true || l.adminverified === true)
-              )
+              (l) =>
+                l.leaveDate.toISOString().split("T")[0] === dayTime &&
+                l.onsite === false &&
+                (l.departmentverified === true || l.adminverified === true)
+            )
             : null
 
           const leaveDetails = leaveRecord
             ? {
-                leaveType: leaveRecord.leaveType,
-                halfDayPeriod:
-                  leaveRecord.leaveType === "Half Day"
-                    ? leaveRecord.halfDayPeriod
-                    : null,
-                leaveCategory: leaveRecord?.leaveCategory || null
-              }
+              leaveType: leaveRecord.leaveType,
+              halfDayPeriod:
+                leaveRecord.leaveType === "Half Day"
+                  ? leaveRecord.halfDayPeriod
+                  : null,
+              leaveCategory: leaveRecord?.leaveCategory || null
+            }
             : null
 
           // const leaveType = leaveRecord ? leaveRecord.leaveType : null
@@ -5015,7 +4817,7 @@ export const GetsomeAllsummary = async (
 
         return `${prevYear}-${prevMonth}-${prevDay}`
       }
-      ;(function calculateAbsences(allholidayfulldate, attendances, onsites) {
+      ; (function calculateAbsences(allholidayfulldate, attendances, onsites) {
         const isPresent = (date) => {
           for (const dates in attendances.attendancedates) {
             if (date === dates) {
@@ -5051,7 +4853,7 @@ export const GetsomeAllsummary = async (
         let groups = []
         let tempGroup = []
 
-        for (let i = 0; i < sortedHolidays.length; i++) {
+        for (let i = 0;i < sortedHolidays.length;i++) {
           const currDate = new Date(sortedHolidays[i])
           const prevDate = i > 0 ? new Date(sortedHolidays[i - 1]) : null
 
@@ -5105,18 +4907,18 @@ export const GetsomeAllsummary = async (
 
         stats.absent +=
           stats.attendancedates[dates].otherLeave &&
-          !isNaN(stats.attendancedates[dates].otherLeave)
+            !isNaN(stats.attendancedates[dates].otherLeave)
             ? Number(stats.attendancedates[dates].otherLeave)
             : stats.attendancedates[dates].casualLeave &&
               !isNaN(stats.attendancedates[dates].casualLeave)
-            ? Number(stats.attendancedates[dates].casualLeave)
-            : stats.attendancedates[dates].privileageLeave &&
-              !isNaN(stats.attendancedates[dates].privileageLeave)
-            ? Number(stats.attendancedates[dates].privileageLeave)
-            : stats.attendancedates[dates].compensatoryLeave &&
-              !isNaN(stats.attendancedates[dates].compensatoryLeave)
-            ? Number(stats.attendancedates[dates].compensatoryLeave)
-            : 0
+              ? Number(stats.attendancedates[dates].casualLeave)
+              : stats.attendancedates[dates].privileageLeave &&
+                !isNaN(stats.attendancedates[dates].privileageLeave)
+                ? Number(stats.attendancedates[dates].privileageLeave)
+                : stats.attendancedates[dates].compensatoryLeave &&
+                  !isNaN(stats.attendancedates[dates].compensatoryLeave)
+                  ? Number(stats.attendancedates[dates].compensatoryLeave)
+                  : 0
 
         stats.notMarked +=
           stats.attendancedates[dates].notMarked !== ""
@@ -5152,7 +4954,7 @@ export const GetsomeAllsummary = async (
 export const Check = async (req, res) => {
   try {
     const result = await LeaveRequest.find({ onsite: true })
-  } catch (error) {}
+  } catch (error) { }
 }
 export const GetleavemasterLeavecount = async (req, res) => {
   try {

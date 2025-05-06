@@ -241,7 +241,7 @@ export default function StaffHeader() {
     }
   ]
   return (
-    <header className="sticky top-0 z-50 flex bg-white shadow-md py-4 items-center">
+    <header className="sticky top-0 z-50 flex bg-gray-300 md:bg-white shadow-md py-4 items-center">
       {/* Mobile menu button */}
       <div className="md:hidden flex justify-between py-2 px-4">
         <button
