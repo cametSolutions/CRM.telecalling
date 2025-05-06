@@ -2224,6 +2224,7 @@ export const GetallUsersLeave = async (req, res) => {
 
       const tomorrow = new Date(today)
       tomorrow.setDate(today.getDate() + 1) // 00:00:00 of next day
+console.log("tomrrr",tomorrow)
 
       leavelist = await LeaveRequest.find({
         leaveDate: {
@@ -2234,7 +2235,7 @@ export const GetallUsersLeave = async (req, res) => {
         .populate("userId", "name") // Populates userId with the name field only
         .lean() // Converts to plain JavaScript objects (instead of Mongoose docs)
       const namesOnly = leavelist.map((item) => item.userId?.name)
-
+console.log(namesOnly)
       if (namesOnly && namesOnly.length > 0) {
         return res
           .status(200)

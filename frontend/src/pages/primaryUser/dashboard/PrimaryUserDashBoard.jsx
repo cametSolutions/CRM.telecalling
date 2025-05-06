@@ -31,6 +31,7 @@ export default function PrimaryUserDashBoard() {
   const [dashboardHeight, setDashboardHeight] = useState("auto")
   const headerRef = useRef(null)
   const { data: todayleavelist } = UseFetch("/auth/getallUsersLeave?today=true")
+console.log(todayleavelist)
   const { data: currrentMonthBirthDays } = UseFetch(
     "/auth/getallcurrentmonthBirthdays"
   )
