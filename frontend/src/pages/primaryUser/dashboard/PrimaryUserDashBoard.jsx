@@ -166,7 +166,7 @@ export default function PrimaryUserDashBoard() {
     },
     {
       label: "admin",
-      to: "/admin/adminpanel",
+      to: user?.role==="Admin"?"/admin/adminpanel":"",
       icon: MdAdminPanelSettings
     }
   ]
