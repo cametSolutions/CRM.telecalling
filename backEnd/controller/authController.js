@@ -820,6 +820,7 @@ export const LeaveApply = async (req, res) => {
           .json({ message: "leave updated", data: updatedLeave })
       }
     } else {
+console.log("hhh")
       const checkexistingLeave = await LeaveRequest.find({
 
         leaveDate,
@@ -847,6 +848,8 @@ export const LeaveApply = async (req, res) => {
         assignedto: assignedTo
       })
       await newleave.save()
+console.log(
+"mmmm")
       if (leaveCategory === "compensatory Leave") {
         const year = new Date(leaveDate).getFullYear()
         const leaveValue = leaveType === "Full Day" ? 1 : 0.5
