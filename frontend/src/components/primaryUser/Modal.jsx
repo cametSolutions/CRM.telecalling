@@ -19,6 +19,7 @@ const Modal = ({
 
   handleApply
 }) => {
+  console.log(formData)
   const [leaveOption, setLeaveOption] = useState({
     leaveType: formData.leaveType || "Full Day"
   })
@@ -89,6 +90,7 @@ const Modal = ({
       settypeofMode(type)
       if (formData.leaveType !== null) {
         setselectedLeave({
+          leaveId: formData?.leaveId,
           leaveDate: formData?.leaveDate,
           reason: formData?.reason,
           leaveType: formData?.leaveType,

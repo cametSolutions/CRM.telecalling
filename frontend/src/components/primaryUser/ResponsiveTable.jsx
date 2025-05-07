@@ -11,6 +11,7 @@ const ResponsiveTable = ({
   sundays,
   holiday
 }) => {
+  console.log(attendee)
   return (
     <div className="relative">
       <div
@@ -107,7 +108,7 @@ const ResponsiveTable = ({
 
                 const holidayName =
                   holiday.find((h) => h.date === date)?.holyname || null
-               
+
                 const highlightClass =
                   isSundayAbsent || isHolidayAbsent
                     ? "bg-red-500"
@@ -174,7 +175,8 @@ const ResponsiveTable = ({
                                     details?.otherLeave
                                 },
                                 details?.halfDayperiod,
-                                details?.reason
+                                details?.reason,
+                                details?.leaveId
                               )
                             }
                           }}
@@ -206,7 +208,8 @@ const ResponsiveTable = ({
                                     details?.otherLeave
                                 },
                                 details?.halfDayperiod,
-                                details?.reason
+                                details?.reason,
+                                details?.leaveId
                               )
                             }
                           }}
@@ -238,7 +241,8 @@ const ResponsiveTable = ({
                                     details?.otherLeave
                                 },
                                 details?.halfDayperiod,
-                                details?.reason
+                                details?.reason,
+                                details?.leaveId
                               )
                             }
                           }}
@@ -270,7 +274,8 @@ const ResponsiveTable = ({
                                     details?.otherLeave
                                 },
                                 details?.halfDayperiod,
-                                details?.reason
+                                details?.reason,
+                                details?.leaveId
                               )
                             }
                           }}
@@ -319,7 +324,8 @@ const ResponsiveTable = ({
                                     details?.otherLeave
                                 },
                                 details?.halfDayperiod,
-                                details?.reason
+                                details?.reason,
+                                details?.leaveId
                               )
                             }
                           }}
@@ -350,7 +356,8 @@ const ResponsiveTable = ({
                                     details?.otherLeave
                                 },
                                 details?.halfDayperiod,
-                                details?.reason
+                                details?.reason,
+                                details?.leaveId
                               )
                             }
                           }}
@@ -381,7 +388,8 @@ const ResponsiveTable = ({
                                     details?.otherLeave
                                 },
                                 details?.halfDayperiod,
-                                details?.reason
+                                details?.reason,
+                                details?.leaveId
                               )
                             }
                           }}
@@ -412,7 +420,8 @@ const ResponsiveTable = ({
                                     details?.otherLeave
                                 },
                                 details?.halfDayperiod,
-                                details?.reason
+                                details?.reason,
+                                details?.leaveId
                               )
                             }
                           }}

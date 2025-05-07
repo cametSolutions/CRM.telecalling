@@ -42,7 +42,10 @@ const leaveSummary = () => {
     loading,
     refreshHook
   } = UseFetch(apiUrl)
-
+  const a = newattende.filter((item) => {
+    return { name: item.name }
+  })
+  console.log(a)
   useEffect(() => {
     if (data) {
       const { staffAttendanceStats, listofHolidays, sundayFulldate } = data
@@ -158,12 +161,15 @@ const leaveSummary = () => {
       })
     }
   }
-  const handleLeave = (date, type, leaveDetails, halfDayperiod, reason) => {
+  const handleLeave = (date, type, leaveDetails, halfDayperiod, reason, Id) => {
+    console.log(Id)
     setModalOpen(true)
     setselectedDate(date)
     setType(type)
     if (type === "Leave") {
+      console.log("hh")
       setFormData({
+        leaveId: Id,
         leaveDate: date,
         reason,
         leaveCategory: leaveDetails.field,
@@ -191,6 +197,7 @@ const leaveSummary = () => {
   }
 
   const handleApply = async (staffId, selected, setIsApplying, type) => {
+    console.log(selected)
     try {
       if (type === "Leave") {
         const matchedStaff = leavesummaryList.find(

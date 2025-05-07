@@ -70,6 +70,7 @@ function LeaveApplication() {
   const { data: leaves, refreshHook } = UseFetch(
     user && `/auth/getallLeave?userid=${user._id}`
   )
+  console.log(allleaves)
   const { data: compensatoryleaves, refreshHook: refreshHookCompensatory } =
     UseFetch(user && `/auth/getallcompensatoryleave?userid=${user._id}`)
   const { data: monthlyHoly } = UseFetch(
@@ -640,7 +641,7 @@ function LeaveApplication() {
 
     setShowModal(true)
   }
-
+  console.log(formData)
   const handleInputChange = debounce((e) => {
     const { name, value } = e.target
 
@@ -681,13 +682,15 @@ function LeaveApplication() {
   const goToToday = () => {
     setCurrentDate(new Date())
   }
-
+  console.log(message)
   const handleChange = (e) => handleInputChange(e)
   const handleDataChange = (e) => {
+    setMessage((prev) => ({
+      top: "",
+      bottom: ""
+    }))
     const { name, value } = e.target
     if (name === "onsiteDate") {
-    
-
       const dayOfWeek = new Date(value).getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
       const isSunday = dayOfWeek === 0
 
@@ -862,26 +865,33 @@ function LeaveApplication() {
           } else {
             setLoader(false)
             setEdit(false)
-            toast.success("leave applied successfully")
-            setSelectedTab("Leave")
-            refreshHook()
-            refreshHookCompensatory()
+            if (response.status === 200) {
+              setSelectedTab("Leave")
+              refreshHook()
+              refreshHookCompensatory()
 
-            setShowModal(false)
+              setFormData({
+                leaveDate: "",
 
-            setFormData({
-              leaveDate: "",
+                leaveType: "Full Day",
+                onsiteType: "Full Day",
 
-              leaveType: "Full Day",
-              onsiteType: "Full Day",
-
-              halfDayPeriod: "Morning",
-              onsite: false,
-              leaveCategory: "",
-              reason: "",
-              description: ""
-            })
-            setErrors("")
+                halfDayPeriod: "Morning",
+                onsite: false,
+                leaveCategory: "",
+                reason: "",
+                description: ""
+              })
+              setErrors("")
+              setShowModal(false)
+              toast.success(responseData.message)
+            } else if (response.status === 201) {
+              console.log("H")
+              setMessage((prev) => ({
+                ...prev,
+                bottom: responseData.message
+              }))
+            }
           }
         }
       } else if (tab === "New Onsite" || tab === "Edit Onsite") {
@@ -1145,6 +1155,7 @@ function LeaveApplication() {
                           setEdit(true)
 
                           setFormData({
+                            leaveId: leave._id,
                             leaveDate: leave.leaveDate.toString().split("T")[0],
                             leaveType: leave.leaveType,
                             halfDayPeriod:
@@ -1714,7 +1725,7 @@ function LeaveApplication() {
               </div>
             </div>
 
-            <div className="flex">
+            <div className="flex flex-col">
               {currentmonthleaveData?.length > 0
                 ? currentmonthleaveData
                     .filter(
@@ -1726,7 +1737,7 @@ function LeaveApplication() {
                     .map((leave, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between hover:cursor-pointer"
+                        className="flex  items-center justify-between hover:cursor-pointer  mb-1"
                       >
                         <div className="flex flex-col text-gray-600">
                           <span className="text-sm">{leave?.leaveType}</span>
@@ -1736,7 +1747,7 @@ function LeaveApplication() {
                         </div>
 
                         <div
-                          className={`px-3 py-1 text-sm rounded-full text-white ${
+                          className={`px-3 ml-2 py-1 text-sm rounded-full text-white ${
                             leave.departmentstatus === "Dept Approved" ||
                             leave.hrstatus === "HR/Onsite Approved"
                               ? "bg-green-500"
