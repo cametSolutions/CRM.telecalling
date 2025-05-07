@@ -11,7 +11,7 @@ import UseFetch from "../../hooks/useFetch"
 import { toast } from "react-toastify"
 const leaveSummary = () => {
   const [searchTerm, setSearchTerm] = useState("")
-  const [monthselected, setmonthSelected] = useState(null)
+  const [warningMessage, setWarningMessage] = useState("")
   const [newattende, setnewattendee] = useState([])
   const [selectedName, setSelectedName] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
@@ -42,7 +42,7 @@ const leaveSummary = () => {
     loading,
     refreshHook
   } = UseFetch(apiUrl)
- 
+
   useEffect(() => {
     if (data) {
       const { staffAttendanceStats, listofHolidays, sundayFulldate } = data
@@ -158,25 +158,41 @@ const leaveSummary = () => {
       })
     }
   }
-  const handleLeave = (date, type, leaveDetails, halfDayperiod, reason, Id) => {
+  const handleLeave = (
+    date,
+    type,
+    leaveDetails,
+    halfDayperiod,
+    reason,
+    leaveData,
+    leavetype
+  ) => {
+    
+    // Find the matching leave entry
+    const matchingLeave = Object.values(leaveData).find(
+      (entry) => entry.leaveCategory === leavetype
+    )
+
     setModalOpen(true)
     setselectedDate(date)
     setType(type)
-    if (type === "Leave") {
+
+    if (type === "Leave" && matchingLeave) {
       setFormData({
-        leaveId: Id,
-        leaveDate: date,
-        reason,
-        leaveCategory: leaveDetails.field,
-        prevCategory: leaveDetails.field,
-        leaveType:
-          leaveDetails.value === 1
-            ? "Full Day"
-            : leaveDetails.value === 0.5
-            ? "Half Day"
-            : null,
-        halfDayPeriod: halfDayperiod ? halfDayperiod : null
+        leaveId: matchingLeave._id,
+        leaveDate: matchingLeave.leaveDate,
+        reason: matchingLeave.reason,
+        leaveCategory: matchingLeave.leaveCategory,
+        prevCategory: matchingLeave.leaveCategory,
+        leaveType: matchingLeave.leaveType,
+
+        halfDayPeriod: matchingLeave.halfDayPeriod
+          ? matchingLeave.halfDayPeriod
+          : null
       })
+    } else {
+
+      setFormData({ leaveDate: date, leaveType: "Full Day" })
     }
   }
 
@@ -202,14 +218,19 @@ const leaveSummary = () => {
           `/auth/editLeave?userid=${staffId}&assignedto=${assignedTo}`,
           selected
         )
-        const data = response.data.data.data
-        const holy = response.data.data.fulldateholiday
+       
+
+        const data = response?.data?.data?.data
+        const holy = response?.data?.data?.fulldateholiday
         if (response.status === 200) {
           toast.success("leave edited sucessfully")
           setleaveSummary(data)
           setHoly(holy)
           setIsApplying(false)
           handleClose()
+        } else if (response.status === 201) {
+          setWarningMessage(response.data.message)
+          setIsApplying(false)
         } else {
           toast.error("error in updating")
         }
@@ -562,6 +583,8 @@ const leaveSummary = () => {
           sickleavestartsfrom={selectedStaff[0]?.sickleavestartsfrom}
           privilegeleavestartsfrom={selectedStaff[0]?.privilegeleavestartsfrom}
           handleApply={handleApply}
+          errorMessage={warningMessage}
+          setErrorMessage={setWarningMessage}
         />
       )}
     </div>

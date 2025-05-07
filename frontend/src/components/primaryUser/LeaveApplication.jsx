@@ -772,8 +772,7 @@ function LeaveApplication() {
     })
   }
   const handleSubmit = async (tab) => {
-    console.log(tab)
-    // e.preventDefault()
+
     try {
       if (tab === "New Leave" || tab === "Edit Leave") {
         const dayOfWeek = new Date(formData.leaveDate).getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
@@ -834,7 +833,6 @@ function LeaveApplication() {
             bottom: "This leave is already approved. Do not make any changes."
           }))
         } else {
-          console.log("nnn")
           setMessage({ top: "", bottom: "" })
 
           //Assuming you have an API endpoint for creating leave requests
@@ -934,10 +932,12 @@ function LeaveApplication() {
             "This onsite is already approved. Do not make any changes."
           )
         } else {
+          setLoader(true)
           // const response = await api.post(
-          // //   `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
-          // //   { formData, tableRows }
+          //   `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
+          //   { formData, tableRows }
           // )
+
           const response = await api.post(
             `https://www.crm.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
             { formData, tableRows }

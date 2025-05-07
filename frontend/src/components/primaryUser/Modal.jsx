@@ -16,6 +16,8 @@ const Modal = ({
   privilegeleavestartsfrom,
   sickleavestartsfrom,
   casualleavestartsfrom,
+  errorMessage,
+  setErrorMessage,
 
   handleApply
 }) => {
@@ -354,6 +356,10 @@ const Modal = ({
   }
   const handleDataChange = (e) => {
     const { name, value } = e.target
+    if (name === "leaveType" && errorMessage) {
+      setErrorMessage("")
+      
+    }
     // Access current values for leave type & category
     const selectedCategory =
       name === "leaveCategory" ? value : selectedLeave.leaveCategory
@@ -437,13 +443,13 @@ const Modal = ({
       handleApply(staffId, selectedOnsite, setIsApplying, type)
     }
   }
-
+ 
   return (
     isOpen &&
-    leaveBalance && (
+    Object.keys(leaveBalance).length > 0 && (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center  ">
         <div className="bg-green-50 p-5 rounded-lg shadow-lg w-[350px] z-40 mt-16">
-          <h2 className="text-xl font-semibold text-center">
+          <h2 className="text-xl font-semibold text-center mb-2">
             {typeofMode} Application
           </h2>
 
@@ -523,7 +529,13 @@ const Modal = ({
                       </label>
                       <input
                         type="date"
-                        value={selectedLeave?.leaveDate}
+                        value={
+                          selectedLeave?.leaveDate
+                            ? new Date(selectedLeave.leaveDate)
+                                .toISOString()
+                                .split("T")[0]
+                            : ""
+                        }
                         onChange={(e) => {
                           setselectedLeave((prev) => ({
                             ...prev,
@@ -532,22 +544,6 @@ const Modal = ({
                         }}
                         className="border p-2 rounded"
                       />
-
-                      {/* <label className="text-sm font-semibold mt-2">
-                    Leave End Date
-                  </label>
-                  <input
-                    type="date"
-                    value={selectedLeave?.leaveDate}
-                    // onChange={(e) => setLeaveEnd(e.target.value)}
-                    onChange={(e) => {
-                      setselectedLeave((prev) => ({
-                        ...prev,
-                        leaveDate: e.target.value // Replace `newDate` with the actual value you want to set
-                      }))
-                    }}
-                    className="border p-2 rounded"
-                  /> */}
                     </div>
                     {errors.leaveDate && (
                       <p className="text-red-500">{errors.leaveDate}</p>
@@ -561,7 +557,13 @@ const Modal = ({
                       </label>
                       <input
                         type="date"
-                        value={selectedLeave?.leaveDate}
+                        value={
+                          selectedLeave?.leaveDate
+                            ? new Date(selectedLeave.leaveDate)
+                                .toISOString()
+                                .split("T")[0]
+                            : ""
+                        }
                         // onChange={(e) => setLeaveStart(e.target.value)}
                         onChange={(e) => {
                           setselectedLeave((prev) => ({
@@ -672,9 +674,14 @@ const Modal = ({
                     // }}
                   ></textarea>
                 </div>
-                {errors.reason && (
-                  <p className="text-red-500">{errors.reason}</p>
-                )}
+                <div className="text-center mb-1">
+                  {errors.reason && (
+                    <p className="text-red-500">{errors.reason}</p>
+                  )}
+                  {errorMessage && (
+                    <p className="text-red-500">{errorMessage}</p>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -682,11 +689,6 @@ const Modal = ({
           {/* Leave Balance */}
           {typeofMode === "Leave" && (
             <div className="bg-white rounded-lg shadow-lg w-[310px] z-40 border border-gray-300 overflow-hidden">
-              {/* Header */}
-              {/* <div className="bg-gray-100 px-6 py-2 text-lg font-bold text-gray-700 border-b">
-              {user?.name?.toUpperCase()}
-            </div> */}
-
               {/* Leave Balance Section */}
               <div>
                 <div className="bg-gray-200 py-2 text-center">{staffName}</div>
@@ -922,15 +924,11 @@ const Modal = ({
               className="mt-4 px-4 py-2 bg-blue-500 text-white rounded w-full flex items-center justify-center hover:bg-blue-600"
               onClick={() =>
                 settypeofMode(
-                  formData?.leaveCategory !== null
-                    ? "Edit Leave"
-                    : "Apply New Leave"
+                  formData?.leaveCategory ? "Edit Leave" : "Apply New Leave"
                 )
               }
             >
-              {formData?.leaveCategory !== null
-                ? "Edit Leave"
-                : "Apply New Leave"}
+              {formData?.leaveCategory ? "Edit Leave" : "Apply New Leave"}
             </button>
           ) : (
             <button
@@ -945,7 +943,10 @@ const Modal = ({
 
           <button
             className="mt-2 px-4 py-2 bg-gray-500 text-white rounded w-full hover:bg-gray-600"
-            onClick={() => onClose(setMessage)}
+            onClick={() => {
+              onClose(setMessage)
+              setErrorMessage("")
+            }}
           >
             Close
           </button>

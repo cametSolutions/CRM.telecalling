@@ -688,18 +688,24 @@ export const LeaveApply = async (req, res) => {
   } = formData
 
   try {
-    let existingDateLeave
-    if (leaveId) {
-      existingDateLeave = await LeaveRequest.findOne({
-        _id: leaveId,
-        leaveDate,
-        userId: objectId
-      })
-    }
 
 
-    if (existingDateLeave) {
+    const existingDateLeave = await LeaveRequest.findOne({
 
+      leaveDate,
+      userId: objectId
+    })
+    const filteredLeave = existingDateLeave.filter((leave) => leave._id.equals(leaveId))
+
+
+    if (filteredLeave && filteredLeave.length) {
+      if (existingDateLeave.some((item) => item.leaveType === "Half Day") && leaveType === "Full Day") {
+        if (existingDateLeave.length > 1) {
+          return res.status(201).json({ message: "Cannot change to Full Day leave as there is already a Half Day leaves for this date!!" })
+        }
+
+
+      }
       if (
         prevCategory &&
         formData.leaveCategory &&
@@ -707,11 +713,11 @@ export const LeaveApply = async (req, res) => {
         prevCategory !== formData.leaveCategory
       ) {
         let remainingToAdd =
-          existingDateLeave.leaveType === "Full Day" ? 1 : 0.5
-        const year = new Date(existingDateLeave.leaveDate).getFullYear()
+          filteredLeave[0].leaveType === "Full Day" ? 1 : 0.5
+        const year = new Date(filteredLeave[0].leaveDate).getFullYear()
 
         const compensatoryLeaves = await CompensatoryLeave.find({
-          userId: existingDateLeave.userId,
+          userId: filteredLeave[0].userId,
           year,
           value: { $lt: 1 }
         }).sort({ value: -1 })
@@ -734,7 +740,7 @@ export const LeaveApply = async (req, res) => {
         prevCategory === formData.leaveCategory
       ) {
         const existingValue =
-          existingDateLeave.leaveType === "Full Day" ? 1 : 0.5
+          filteredLeave[0].leaveType === "Full Day" ? 1 : 0.5
         const currentValue = leaveType === "Full Day" ? 1 : 0.5
 
         if (existingValue > currentValue) {
@@ -742,7 +748,7 @@ export const LeaveApply = async (req, res) => {
           const year = new Date(existingDateLeave.leaveDate).getFullYear()
           let remainingToAdd = currentValue
           const compensatoryLeaves = await CompensatoryLeave.find({
-            userId: selectedid,
+            userId: filteredLeave[0].userId,
             year,
             value: { $lt: 1 }
           }).sort({ value: -1 })
@@ -760,10 +766,10 @@ export const LeaveApply = async (req, res) => {
           }
         } else if (existingValue < currentValue) {
           //change from half day to  full day substract value on compensatory leave
-          const year = new Date(existingDateLeave.leaveDate).getFullYear()
+          const year = new Date(filteredLeave[0].leaveDate).getFullYear()
           const leaveValue = existingValue
           const compensatoryLeave = await CompensatoryLeave.find({
-            userId: selectedid,
+            userId: filteredLeave[0].userId,
             value: { $gt: 0 },
             year
           }).sort({ createdAt: 1 })
@@ -785,7 +791,7 @@ export const LeaveApply = async (req, res) => {
         const year = new Date(existingDateLeave.leaveDate).getFullYear()
         const leaveValue = leaveType === "Full Day" ? 1 : 0.5
         const compensatoryLeave = await CompensatoryLeave.find({
-          userId: selectedid,
+          userId: filteredLeave[0].userId,
           value: { $gt: 0 },
           year
         }).sort({ createdAt: 1 })
@@ -801,7 +807,7 @@ export const LeaveApply = async (req, res) => {
       }
 
       const updatedLeave = await LeaveRequest.findByIdAndUpdate(
-        existingDateLeave._id, // Use the existing leave's ID
+        filteredLeave[0]._id, // Use the existing leave's ID
         {
           leaveDate, // Update fields with formData
           leaveType,
@@ -820,7 +826,6 @@ export const LeaveApply = async (req, res) => {
           .json({ message: "leave updated", data: updatedLeave })
       }
     } else {
-console.log("hhh")
       const checkexistingLeave = await LeaveRequest.find({
 
         leaveDate,
@@ -848,13 +853,12 @@ console.log("hhh")
         assignedto: assignedTo
       })
       await newleave.save()
-console.log(
-"mmmm")
+
       if (leaveCategory === "compensatory Leave") {
         const year = new Date(leaveDate).getFullYear()
         const leaveValue = leaveType === "Full Day" ? 1 : 0.5
         const compensatoryLeave = await CompensatoryLeave.find({
-          userId: selectedid,
+          userId: objectId,
           value: { $gt: 0 },
           year
         }).sort({ createdAt: 1 })
@@ -1145,7 +1149,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           privileageLeave: "",
           compensatoryLeave: "",
           otherLeave: "",
-          leaveId: ""
+          leaveDetails: {}
         } // Initialize empty object for each date
       }
 
@@ -1411,7 +1415,8 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
           const leaveDetails = leaveRecord
             ? {
-              leaveId: leaveRecord._id,
+              _id: leaveRecord._id,
+              leaveDate: leaveRecord.leaveDate,
               leaveType: leaveRecord.leaveType,
               halfDayPeriod:
                 leaveRecord.leaveType === "Half Day"
@@ -1440,34 +1445,36 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                   case "casual Leave":
                     stats.attendancedates[dayTime].casualLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
 
                     break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
+
                     break
                   case "privileage Leave":
                     stats.attendancedates[dayTime].privileageLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
+
                     break
                   case "compensatory Leave":
                     stats.attendancedates[dayTime].compensatoryLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   default:
                     stats.attendancedates[dayTime].otherLeave = 1 // Default case
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                 }
               } else {
                 stats.attendancedates[dayTime].otherLeave = 1
                 stats.attendancedates[dayTime].reason = leaveDetails.reason
-                stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
               }
               stats.attendancedates[dayTime].notMarked = ""
             } else if (isLeave && leaveDetails.leaveType === "Half Day") {
@@ -1478,35 +1485,36 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
+
                     break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "privileage Leave":
                     stats.attendancedates[dayTime].privileageLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "compensatory Leave":
                     stats.attendancedates[dayTime].compensatoryLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   default:
                     stats.attendancedates[dayTime].otherLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod // Default case
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                 }
               } else {
@@ -1515,7 +1523,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                 stats.attendancedates[dayTime].reason = leaveDetails.reason
                 stats.attendancedates[dayTime].halfDayperiod =
                   leaveDetails.halfDayPeriod
-                stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
               }
               stats.attendancedates[dayTime].notMarked = 0.5
             }
@@ -1614,32 +1622,38 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                   case "casual Leave":
                     stats.attendancedates[dayTime].casualLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
                     break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
                     break
                   case "privileage Leave":
                     stats.attendancedates[dayTime].privileageLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
                     break
                   case "compensatory Leave":
                     stats.attendancedates[dayTime].compensatoryLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
                     break
                   default:
                     stats.attendancedates[dayTime].otherLeave = 1 // Default case
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
                     break
                 }
               } else {
                 stats.attendancedates[dayTime].otherLeave = 1
                 stats.attendancedates[dayTime].reason = leaveDetails.reason
+                stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                 stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
               }
               stats.attendancedates[dayTime].notMarked = ""
@@ -1651,14 +1665,14 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "privileage Leave":
                     stats.attendancedates[dayTime].privileageLeave = 0.5
@@ -1666,21 +1680,21 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "compensatory Leave":
                     stats.attendancedates[dayTime].compensatoryLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   default:
                     stats.attendancedates[dayTime].otherLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod // Default case
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                 }
               } else {
@@ -1688,7 +1702,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                 stats.attendancedates[dayTime].reason = leaveDetails.reason
                 stats.attendancedates[dayTime].halfDayperiod =
                   leaveDetails.halfDayPeriod
-                stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
               }
               stats.attendancedates[dayTime].notMarked = 0.5
             }
@@ -1785,33 +1799,34 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                   case "casual Leave":
                     stats.attendancedates[dayTime].casualLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
-                    break
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
+                    stats.attendancedates[dayTime].leaveId = leaveDetails.
+                      break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "privileage Leave":
                     stats.attendancedates[dayTime].privileageLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "compensatory Leave":
                     stats.attendancedates[dayTime].compensatoryLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   default:
                     stats.attendancedates[dayTime].otherLeave = 1 // Default case
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                 }
               } else {
                 stats.attendancedates[dayTime].otherLeave = 1
                 stats.attendancedates[dayTime].reason = leaveDetails.reason
-                stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
               }
               stats.attendancedates[dayTime].notMarked = ""
             } else if (isLeave && leaveDetails.leaveType === "Half Day") {
@@ -1822,14 +1837,14 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "privileage Leave":
                     stats.attendancedates[dayTime].privileageLeave = 0.5
@@ -1837,21 +1852,21 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "compensatory Leave":
                     stats.attendancedates[dayTime].compensatoryLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   default:
                     stats.attendancedates[dayTime].otherLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod // Default case
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                 }
               } else {
@@ -1859,7 +1874,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                 stats.attendancedates[dayTime].reason = leaveDetails.reason
                 stats.attendancedates[dayTime].halfDayperiod =
                   leaveDetails.halfDayPeriod
-                stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
               }
               stats.attendancedates[dayTime].notMarked = ""
             }
@@ -1935,33 +1950,40 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                   case "casual Leave":
                     stats.attendancedates[leaveDate].casualLeave = 1
                     stats.attendancedates[leaveDate].reason = leave.reason
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
+                    // stats.attendancedates[leaveDate].leaveId.leadId = leave._id
                     break
                   case "other Leave":
                     stats.attendancedates[leaveDate].otherLeave = 1
                     stats.attendancedates[leaveDate].reason = leave.reason
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    // stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
+                    // stats.attendancedates[leaveDate].leaveId.leadId = leave._id
                     break
                   case "privileage Leave":
                     stats.attendancedates[leaveDate].privileageLeave = 1
                     stats.attendancedates[leaveDate].reason = leave.reason
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    // stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
+                    // stats.attendancedates[leaveDate].leaveId.leadId = leave._id
                     break
                   case "compensatory Leave":
                     stats.attendancedates[leaveDate].compensatoryLeave = 1
                     stats.attendancedates[leaveDate].reason = leave.reason
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    // stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
+                    // stats.attendancedates[leaveDate].leaveId.leadId = leave._id
                     break
                   default:
                     stats.attendancedates[leaveDate].otherLeave = 1 // Default case
                     stats.attendancedates[leaveDate].reason = leave.reason
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
                     break
                 }
               } else {
                 stats.attendancedates[leaveDate].otherLeave = 1
                 stats.attendancedates[leaveDate].reason = leave.reason
-                stats.attendancedates[leaveDate].leaveId = leave._id
+                stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
               }
 
               stats.attendancedates[leaveDate].notMarked = ""
@@ -1978,35 +2000,35 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                     stats.attendancedates[leaveDate].reason = leave.reason
                     stats.attendancedates[leaveDate].halfDayperiod =
                       leave.halfDayPeriod
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
                     break
                   case "other Leave":
                     stats.attendancedates[leaveDate].otherLeave = (stats.attendancedates[leaveDate].otherLeave || 0) + 0.5
                     stats.attendancedates[leaveDate].reason = leave.reason
                     stats.attendancedates[leaveDate].halfDayperiod =
                       leave.halfDayPeriod
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
                     break
                   case "privileage Leave":
                     stats.attendancedates[leaveDate].privileageLeave = (stats.attendancedates[leaveDate].privileageLeave || 0) + 0.5
                     stats.attendancedates[leaveDate].reason = leave.reason
                     stats.attendancedates[leaveDate].halfDayperiod =
                       leave.halfDayPeriod
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
                     break
                   case "compensatory Leave":
                     stats.attendancedates[leaveDate].compensatoryLeave = (stats.attendancedates[leaveDate].compensatoryLeave || 0) + 0.5
                     stats.attendancedates[leaveDate].reason = leave.reason
                     stats.attendancedates[leaveDate].halfDayperiod =
                       leave.halfDayPeriod
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
                     break
                   default:
                     stats.attendancedates[leaveDate].otherLeave = (stats.attendancedates[leaveDate].otherLeave || 0) + 0.5
                     stats.attendancedates[leaveDate].reason = leave.reason
                     stats.attendancedates[leaveDate].halfDayperiod =
                       leave.halfDayPeriod // Default case
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
                     break
                 }
               } else {
@@ -2014,7 +2036,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                 stats.attendancedates[leaveDate].reason = leave.reason
                 stats.attendancedates[leaveDate].halfDayperiod =
                   leave.halfDayPeriod
-                stats.attendancedates[leaveDate].leaveId = leave._id
+                stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
               }
               const totalLeave =
                 (stats.attendancedates[leaveDate].casualLeave || 0) +
@@ -3771,17 +3793,25 @@ export const EditLeave = async (req, res) => {
 
     const userobjectId = new mongoose.Types.ObjectId(userid)
     const assignedtoObjectId = new mongoose.Types.ObjectId(assignedto)
-    let existingDateLeave
-    if (leaveId) {
-      existingDateLeave = await LeaveRequest.findOne({
-        _id: leaveId,
-        leaveDate,
-        userId: userobjectId
-      })
-    }
 
 
-    if (existingDateLeave) {
+    const existingDateLeave = await LeaveRequest.find({
+      leaveDate,
+      userId: userobjectId
+    })
+
+    const filteredLeave = existingDateLeave.filter((leave) => leave._id.equals(leaveId))
+
+    if (filteredLeave && filteredLeave.length) {
+
+
+      if (existingDateLeave.some((item) => item.leaveType === "Half Day") && leaveType === "Full Day") {
+        if (existingDateLeave.length > 1) {
+          return res.status(201).json({ message: "Cannot change to Full Day leave as there is already a Half Day leaves for this date!!" })
+        }
+
+
+      }
       // If a leave exists, update the document with the current formData
       if (
         prevCategory &&
@@ -3790,11 +3820,13 @@ export const EditLeave = async (req, res) => {
         prevCategory !== formData.leaveCategory
       ) {
         let remainingToAdd =
-          existingDateLeave.leaveType === "Full Day" ? 1 : 0.5
-        const year = new Date(existingDateLeave.leaveDate).getFullYear()
+          filteredLeave[0].leaveType === "Full Day" ? 1 : 0.5
+
+
+        const year = new Date(filteredLeave[0].leaveDate).getFullYear()
 
         const compensatoryLeaves = await CompensatoryLeave.find({
-          userId: existingDateLeave.userId,
+          userId: filteredLeave[0].userId,
           year,
           value: { $lt: 1 }
         }).sort({ value: -1 })
@@ -3817,15 +3849,15 @@ export const EditLeave = async (req, res) => {
         prevCategory === formData.leaveCategory
       ) {
         const existingValue =
-          existingDateLeave.leaveType === "Full Day" ? 1 : 0.5
+          filteredLeave[0].leaveType === "Full Day" ? 1 : 0.5
         const currentValue = leaveType === "Full Day" ? 1 : 0.5
 
         if (existingValue > currentValue) {
           //change from full day to half day add value  on compensatory leave
-          const year = new Date(existingDateLeave.leaveDate).getFullYear()
+          const year = new Date(filteredLeave[0].leaveDate).getFullYear()
           let remainingToAdd = currentValue
           const compensatoryLeaves = await CompensatoryLeave.find({
-            userId: existingDateLeave.userId,
+            userId: filteredLeave[0].userId,
             year,
             value: { $lt: 1 }
           }).sort({ value: -1 })
@@ -3846,7 +3878,7 @@ export const EditLeave = async (req, res) => {
 
           const leaveValue = existingValue
           const compensatoryLeave = await CompensatoryLeave.find({
-            userId: existingDateLeave.userId,
+            userId: filteredLeave[0].userId,
             value: { $gt: 0 },
             year
           }).sort({ createdAt: 1 })
@@ -3865,7 +3897,7 @@ export const EditLeave = async (req, res) => {
         formData.leaveCategory === "compensatory Leave" &&
         formData.leaveCategory !== prevCategory
       ) {
-        const year = new Date(existingDateLeave.leaveDate).getFullYear()
+        const year = new Date(filteredLeave[0].leaveDate).getFullYear()
         const leaveValue = leaveType === "Full Day" ? 1 : 0.5
         const compensatoryLeave = await CompensatoryLeave.find({
           userId: userobjectId,
@@ -3884,7 +3916,7 @@ export const EditLeave = async (req, res) => {
       }
 
       const updatedLeave = await LeaveRequest.findByIdAndUpdate(
-        existingDateLeave._id, // Use the existing leave's ID
+        filteredLeave[0]._id, // Use the existing leave's ID
         {
           leaveDate, // Update fields with formData
           leaveType,
@@ -3916,6 +3948,13 @@ export const EditLeave = async (req, res) => {
       if (checkexistingLeave) {
         if (checkexistingLeave.some((item) => item.leaveType === "Full Day")) {
           return res.status(201).json({ message: "A full-day leave already exists on this date. You cannot apply for a new one." })
+        } else if (checkexistingLeave.some((item) => item.leaveType === "Half Day")) {
+
+          if (checkexistingLeave.length > 1 || leaveType === "Full Day") {
+            return res.status(201).json({ message: `Already have half day leave cant make another ${leaveType} too!.` })
+          }
+
+
         } else if (checkexistingLeave.some((item) => item.leaveType === "Half Day") && leaveType === "Full Day") {
           return res.status(201).json({ message: "A Half-day leave already exists on this date. You cannot apply a full day for a new one." })
         }
@@ -4092,7 +4131,7 @@ export const GetsomeAllsummary = async (
           privileageLeave: "",
           compensatoryLeave: "",
           otherLeave: "",
-          leaveId: ""
+          leaveDetails: {}
         } // Initialize empty object for each date
       }
 
@@ -4349,13 +4388,15 @@ export const GetsomeAllsummary = async (
 
           const leaveDetails = leaveRecord
             ? {
-              leaveId: leaveRecord._id,
-              leaveType: leaveRecord.leaveType,
+              _id: leaveRecord?._id,
+              leaveDate: leaveRecord?.leaveDate,
+              leaveType: leaveRecord?.leaveType,
               halfDayPeriod:
                 leaveRecord.leaveType === "Half Day"
                   ? leaveRecord.halfDayPeriod
                   : null,
-              leaveCategory: leaveRecord?.leaveCategory || null
+              leaveCategory: leaveRecord?.leaveCategory || null,
+              reason: leaveRecord?.reason || ""
             }
             : null
 
@@ -4380,33 +4421,33 @@ export const GetsomeAllsummary = async (
                   case "casual Leave":
                     stats.attendancedates[dayTime].casualLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "privileage Leave":
                     stats.attendancedates[dayTime].privileageLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "compensatory Leave":
                     stats.attendancedates[dayTime].compensatoryLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   default:
                     stats.attendancedates[dayTime].otherLeave = 1 // Default case
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                 }
               } else {
                 stats.attendancedates[dayTime].otherLeave = 1
                 stats.attendancedates[dayTime].reason = leaveDetails.reason
-                stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
               }
               stats.attendancedates[dayTime].notMarked = ""
             } else if (isLeave && leaveDetails.leaveType === "Half Day") {
@@ -4417,35 +4458,35 @@ export const GetsomeAllsummary = async (
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "privileage Leave":
                     stats.attendancedates[dayTime].privileageLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "compensatory Leave":
                     stats.attendancedates[dayTime].compensatoryLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   default:
                     stats.attendancedates[dayTime].otherLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod // Default case
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                 }
               } else {
@@ -4454,7 +4495,7 @@ export const GetsomeAllsummary = async (
                 stats.attendancedates[dayTime].reason = leaveDetails.reason
                 stats.attendancedates[dayTime].halfDayperiod =
                   leaveDetails.halfDayPeriod
-                stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
               }
               stats.attendancedates[dayTime].notMarked = 0.5
             }
@@ -4561,33 +4602,33 @@ export const GetsomeAllsummary = async (
                   case "casual Leave":
                     stats.attendancedates[dayTime].casualLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "privileage Leave":
                     stats.attendancedates[dayTime].privileageLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "compensatory Leave":
                     stats.attendancedates[dayTime].compensatoryLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   default:
                     stats.attendancedates[dayTime].otherLeave = 1 // Default case
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                 }
               } else {
                 stats.attendancedates[dayTime].otherLeave = 1
                 stats.attendancedates[dayTime].reason = leaveDetails.reason
-                stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
               }
               stats.attendancedates[dayTime].notMarked = ""
             } else if (isLeave && leaveDetails.leaveType === "Half Day") {
@@ -4598,35 +4639,35 @@ export const GetsomeAllsummary = async (
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails?.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails?.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "privileage Leave":
                     stats.attendancedates[dayTime].privileageLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails?.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "compensatory Leave":
                     stats.attendancedates[dayTime].compensatoryLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails?.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   default:
                     stats.attendancedates[dayTime].otherLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails?.halfDayPeriod // Default case
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                 }
               } else {
@@ -4634,7 +4675,7 @@ export const GetsomeAllsummary = async (
                 stats.attendancedates[dayTime].reason = leaveDetails.reason
                 stats.attendancedates[dayTime].halfDayperiod =
                   leaveDetails?.halfDayPeriod
-                stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
               }
               stats.attendancedates[dayTime].notMarked = 0.5
             }
@@ -4736,35 +4777,34 @@ export const GetsomeAllsummary = async (
                 switch (leaveDetails.leaveCategory) {
                   case "casual Leave":
                     stats.attendancedates[dayTime].casualLeave = 1
-                    stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].reason = leaveDetails?.reason
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 1
-                    stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].reason = leaveDetails?.reason
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "privileage Leave":
                     stats.attendancedates[dayTime].privileageLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "compensatory Leave":
                     stats.attendancedates[dayTime].compensatoryLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   default:
                     stats.attendancedates[dayTime].otherLeave = 1 // Default case
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                 }
-                // stats.attendancedates[dayTime].leaveDetails.leaveCategory = 1
               } else {
                 stats.attendancedates[dayTime].otherLeave = 1
                 stats.attendancedates[dayTime].reason = leaveDetails.reason
-                stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
               }
               // stats.absent++
               stats.attendancedates[dayTime].notMarked = ""
@@ -4776,35 +4816,35 @@ export const GetsomeAllsummary = async (
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails?.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails?.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "privileage Leave":
                     stats.attendancedates[dayTime].privileageLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails?.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "compensatory Leave":
                     stats.attendancedates[dayTime].compensatoryLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails?.halfDayPeriod
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   default:
                     stats.attendancedates[dayTime].otherLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails?.halfDayPeriod // Default case
-                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                    stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                 }
                 // stats.attendancedates[dayTime].leaveDetails.leaveCategory = 0.5
@@ -4813,7 +4853,7 @@ export const GetsomeAllsummary = async (
                 stats.attendancedates[dayTime].reason = leaveDetails.reason
                 stats.attendancedates[dayTime].halfDayperiod =
                   leaveDetails?.halfDayPeriod
-                stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
+                stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
               }
               stats.attendancedates[dayTime].notMarked = ""
             }
@@ -4884,33 +4924,33 @@ export const GetsomeAllsummary = async (
                   case "casual Leave":
                     stats.attendancedates[leaveDate].casualLeave = 1
                     stats.attendancedates[leaveDate].reason = leave?.reason
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
                     break
                   case "other Leave":
                     stats.attendancedates[leaveDate].otherLeave = 1
                     stats.attendancedates[leaveDate].reason = leave?.reason
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
                     break
                   case "privileage Leave":
                     stats.attendancedates[leaveDate].privileageLeave = 1
                     stats.attendancedates[leaveDate].reason = leave?.reason
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
                     break
                   case "compensatory Leave":
                     stats.attendancedates[leaveDate].compensatoryLeave = 1
                     stats.attendancedates[leaveDate].reason = leave?.reason
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
                     break
                   default:
                     stats.attendancedates[leaveDate].otherLeave = 1 // Default case
                     stats.attendancedates[leaveDate].reason = leave?.reason
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
                     break
                 }
               } else {
                 stats.attendancedates[leaveDate].otherLeave = 1
                 stats.attendancedates[leaveDate].reason = leave?.reason
-                stats.attendancedates[leaveDate].leaveId = leave._id
+                stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
               }
               // stats.absent++
 
@@ -4928,35 +4968,35 @@ export const GetsomeAllsummary = async (
                     stats.attendancedates[leaveDate].reason = leave.reason
                     stats.attendancedates[leaveDate].halfDayperiod =
                       leave.halfDayPeriod
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
                     break
                   case "other Leave":
                     stats.attendancedates[leaveDate].otherLeave = (stats.attendancedates[leaveDate].otherLeave || 0) + 0.5
                     stats.attendancedates[leaveDate].reason = leave.reason
                     stats.attendancedates[leaveDate].halfDayperiod =
                       leave.halfDayPeriod
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
                     break
                   case "privileage Leave":
                     stats.attendancedates[leaveDate].privileageLeave = (stats.attendancedates[leaveDate].privileageLeave || 0) + 0.5
                     stats.attendancedates[leaveDate].reason = leave.reason
                     stats.attendancedates[leaveDate].halfDayperiod =
                       leave.halfDayPeriod
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
                     break
                   case "compensatory Leave":
                     stats.attendancedates[leaveDate].compensatoryLeave = (stats.attendancedates[leaveDate].compensatoryLeave || 0) + 0.5
                     stats.attendancedates[leaveDate].reason = leave.reason
                     stats.attendancedates[leaveDate].halfDayperiod =
                       leave.halfDayPeriod
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
                     break
                   default:
                     stats.attendancedates[leaveDate].otherLeave = (stats.attendancedates[leaveDate].otherLeave || 0) + 0.5
                     stats.attendancedates[leaveDate].reason = leave.reason
                     stats.attendancedates[leaveDate].halfDayperiod =
                       leave.halfDayPeriod // Default case
-                    stats.attendancedates[leaveDate].leaveId = leave._id
+                    stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
                     break
                 }
                 // stats.attendancedates[leaveDate].leaveCategory = 0.5
@@ -4964,7 +5004,7 @@ export const GetsomeAllsummary = async (
                 stats.attendancedates[leaveDate].otherLeave = 0.5
                 stats.attendancedates[leaveDate].halfDayperiod =
                   leave.halfDayPeriod
-                stats.attendancedates[leaveDate].leaveId = leave._id
+                stats.attendancedates[leaveDate].leaveDetails[leave._id] = leave
               }
               const totalLeave =
                 (stats.attendancedates[leaveDate].casualLeave || 0) +
@@ -4974,8 +5014,7 @@ export const GetsomeAllsummary = async (
 
               stats.attendancedates[leaveDate].notMarked = totalLeave > 0.5 ? "" : totalLeave === 0.5 ? 0.5 : totalLeave === 0 ? "" : ""
 
-              // stats.notMarked += 0.5
-              // stats.attendancedates[leaveDate].notMarked = 0.5
+
             }
           }
         })
@@ -5102,28 +5141,49 @@ export const GetsomeAllsummary = async (
         })
       })(allholidays, stats, onsites)
 
-      for (const dates in stats.attendancedates) {
-        stats.present += stats.attendancedates[dates].present
+      // for (const dates in stats.attendancedates) {
+      //   stats.present += stats.attendancedates[dates].present
 
-        stats.absent +=
-          stats.attendancedates[dates].otherLeave &&
-            !isNaN(stats.attendancedates[dates].otherLeave)
-            ? Number(stats.attendancedates[dates].otherLeave)
-            : stats.attendancedates[dates].casualLeave &&
-              !isNaN(stats.attendancedates[dates].casualLeave)
-              ? Number(stats.attendancedates[dates].casualLeave)
-              : stats.attendancedates[dates].privileageLeave &&
-                !isNaN(stats.attendancedates[dates].privileageLeave)
-                ? Number(stats.attendancedates[dates].privileageLeave)
-                : stats.attendancedates[dates].compensatoryLeave &&
-                  !isNaN(stats.attendancedates[dates].compensatoryLeave)
-                  ? Number(stats.attendancedates[dates].compensatoryLeave)
-                  : 0
+      //   stats.absent +=
+      //     stats.attendancedates[dates].otherLeave &&
+      //       !isNaN(stats.attendancedates[dates].otherLeave)
+      //       ? Number(stats.attendancedates[dates].otherLeave)
+      //       : stats.attendancedates[dates].casualLeave &&
+      //         !isNaN(stats.attendancedates[dates].casualLeave)
+      //         ? Number(stats.attendancedates[dates].casualLeave)
+      //         : stats.attendancedates[dates].privileageLeave &&
+      //           !isNaN(stats.attendancedates[dates].privileageLeave)
+      //           ? Number(stats.attendancedates[dates].privileageLeave)
+      //           : stats.attendancedates[dates].compensatoryLeave &&
+      //             !isNaN(stats.attendancedates[dates].compensatoryLeave)
+      //             ? Number(stats.attendancedates[dates].compensatoryLeave)
+      //             : 0
 
-        stats.notMarked +=
-          stats.attendancedates[dates].notMarked !== ""
-            ? Number(stats.attendancedates[dates].notMarked)
-            : 0
+      //   stats.notMarked +=
+      //     stats.attendancedates[dates].notMarked !== ""
+      //       ? Number(stats.attendancedates[dates].notMarked)
+      //       : 0
+      // }
+      for (const date in stats.attendancedates) {
+        const day = stats.attendancedates[date]
+
+        stats.present += day.present || 0
+
+        // Sum all leave types
+        const leaveTypes = [
+          "casualLeave",
+          "otherLeave",
+          "privileageLeave",
+          "compensatoryLeave"
+        ]
+
+        leaveTypes.forEach((type) => {
+          if (!isNaN(day[type])) {
+            stats.absent += Number(day[type])
+          }
+        })
+
+        stats.notMarked += day.notMarked !== "" ? Number(day.notMarked) : 0
       }
       const combined = stats.earlyGoing + stats.late
 
