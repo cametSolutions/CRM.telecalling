@@ -565,7 +565,6 @@ export const CustomerRegister = async (req, res) => {
     })
     const customerdata = await customer.save()
     if (tabledata && tabledata.length > 0) {
-      console.log("table", tabledata)
       for (const item of customerdata.selected) {
         const license = new License({
           products: item.product_id,

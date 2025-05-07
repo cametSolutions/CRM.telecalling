@@ -42,7 +42,7 @@ const leaveSummary = () => {
     loading,
     refreshHook
   } = UseFetch(apiUrl)
-
+ 
   useEffect(() => {
     if (data) {
       const { staffAttendanceStats, listofHolidays, sundayFulldate } = data
@@ -158,12 +158,13 @@ const leaveSummary = () => {
       })
     }
   }
-  const handleLeave = (date, type, leaveDetails, halfDayperiod, reason) => {
+  const handleLeave = (date, type, leaveDetails, halfDayperiod, reason, Id) => {
     setModalOpen(true)
     setselectedDate(date)
     setType(type)
     if (type === "Leave") {
       setFormData({
+        leaveId: Id,
         leaveDate: date,
         reason,
         leaveCategory: leaveDetails.field,

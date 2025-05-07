@@ -640,7 +640,6 @@ function LeaveApplication() {
 
     setShowModal(true)
   }
-
   const handleInputChange = debounce((e) => {
     const { name, value } = e.target
 
@@ -681,13 +680,14 @@ function LeaveApplication() {
   const goToToday = () => {
     setCurrentDate(new Date())
   }
-
   const handleChange = (e) => handleInputChange(e)
   const handleDataChange = (e) => {
+    setMessage((prev) => ({
+      top: "",
+      bottom: ""
+    }))
     const { name, value } = e.target
     if (name === "onsiteDate") {
-    
-
       const dayOfWeek = new Date(value).getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
       const isSunday = dayOfWeek === 0
 
@@ -792,7 +792,6 @@ function LeaveApplication() {
         }
       }
 
-      setLoader(true)
       if (tab === "Leave" || tab === "New Leave" || tab === "Edit Leave") {
         // Validation
         let newErrors = {}
@@ -807,20 +806,24 @@ function LeaveApplication() {
           setErrors(newErrors)
           return
         }
-        const formStartDate = new Date(formData.leaveDate)
-
-        // Find a leave matching the date (ignoring time) and adminverified or departmentverified is true
-        const isApprovedLeave = allleaves?.find((leave) => {
-          const leaveDate = new Date(leave.leaveDate) // Convert leave.leaveDate to Date object
-          // Compare the year, month, and day only (ignoring time)
-          const isSameDate =
-            leaveDate.getFullYear() === formStartDate.getFullYear() &&
-            leaveDate.getMonth() === formStartDate.getMonth() &&
-            leaveDate.getDate() === formStartDate.getDate()
-
-          // Check if adminverified or departmentverified is true
-          return isSameDate && (leave.adminverified || leave.departmentverified)
-        })
+       
+        if (formData.leaveId) {
+          isApprovedLeave = allleaves?.find((leave) => {
+            const matchedid = leave._id === formData.leaveId
+            // const leaveDate = new Date(leave.leaveDate) // Convert leave.leaveDate to Date object
+            // Compare the year, month, and day only (ignoring time)
+            //           const isSameDate =
+            //             leaveDate.getFullYear() === formStartDate.getFullYear() &&
+            //             leaveDate.getMonth() === formStartDate.getMonth() &&
+            //             leaveDate.getDate() === formStartDate.getDate()
+            //           const isSametype = leave.leaveType === formleaveType
+            // const isSameHalftype=leave.halfDayPeriod===formhalfdayPeriod
+            // Check if adminverified or departmentverified is true
+            return (
+              matchedid && (leave.adminverified || leave.departmentverified)
+            )
+          })
+        }
 
         if (isApprovedLeave) {
           setMessage((prev) => ({
@@ -829,7 +832,7 @@ function LeaveApplication() {
           }))
         } else {
           setMessage({ top: "", bottom: "" })
-
+          
           //Assuming you have an API endpoint for creating leave requests
           // const response = await fetch(
           //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
@@ -862,26 +865,32 @@ function LeaveApplication() {
           } else {
             setLoader(false)
             setEdit(false)
-            toast.success("leave applied successfully")
-            setSelectedTab("Leave")
-            refreshHook()
-            refreshHookCompensatory()
+            if (response.status === 200) {
+              setSelectedTab("Leave")
+              refreshHook()
+              refreshHookCompensatory()
 
-            setShowModal(false)
+              setFormData({
+                leaveDate: "",
 
-            setFormData({
-              leaveDate: "",
+                leaveType: "Full Day",
+                onsiteType: "Full Day",
 
-              leaveType: "Full Day",
-              onsiteType: "Full Day",
-
-              halfDayPeriod: "Morning",
-              onsite: false,
-              leaveCategory: "",
-              reason: "",
-              description: ""
-            })
-            setErrors("")
+                halfDayPeriod: "Morning",
+                onsite: false,
+                leaveCategory: "",
+                reason: "",
+                description: ""
+              })
+              setErrors("")
+              setShowModal(false)
+              toast.success(responseData.message)
+            } else if (response.status === 201) {
+              setMessage((prev) => ({
+                ...prev,
+                bottom: responseData.message
+              }))
+            }
           }
         }
       } else if (tab === "New Onsite" || tab === "Edit Onsite") {
@@ -921,9 +930,9 @@ function LeaveApplication() {
             "This onsite is already approved. Do not make any changes."
           )
         } else {
-          // const response = await api.post(
-          //   `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
-          //   { formData, tableRows }
+          // // const response = await api.post(
+          // //   `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
+          // //   { formData, tableRows }
           // )
           const response = await api.post(
             `https://www.crm.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
@@ -1139,12 +1148,13 @@ function LeaveApplication() {
 
                       {/* Forward Arrow */}
                       <FaArrowRight
-                        className="text-gray-500 cursor-pointer transition-transform duration-200 ease-in-out hover:scale-125"
+                        className=" ml-2 text-gray-500 cursor-pointer transition-transform duration-200 ease-in-out hover:scale-125"
                         onClick={() => {
                           setSelectedTab("Edit Leave")
                           setEdit(true)
 
                           setFormData({
+                            leaveId: leave._id,
                             leaveDate: leave.leaveDate.toString().split("T")[0],
                             leaveType: leave.leaveType,
                             halfDayPeriod:
@@ -1714,7 +1724,7 @@ function LeaveApplication() {
               </div>
             </div>
 
-            <div className="flex">
+            <div className="flex flex-col">
               {currentmonthleaveData?.length > 0
                 ? currentmonthleaveData
                     .filter(
@@ -1726,7 +1736,7 @@ function LeaveApplication() {
                     .map((leave, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between hover:cursor-pointer"
+                        className="flex  items-center justify-between hover:cursor-pointer  mb-1"
                       >
                         <div className="flex flex-col text-gray-600">
                           <span className="text-sm">{leave?.leaveType}</span>
@@ -1736,7 +1746,7 @@ function LeaveApplication() {
                         </div>
 
                         <div
-                          className={`px-3 py-1 text-sm rounded-full text-white ${
+                          className={`px-3 ml-2 py-1 text-sm rounded-full text-white ${
                             leave.departmentstatus === "Dept Approved" ||
                             leave.hrstatus === "HR/Onsite Approved"
                               ? "bg-green-500"

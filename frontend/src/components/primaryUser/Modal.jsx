@@ -89,6 +89,7 @@ const Modal = ({
       settypeofMode(type)
       if (formData.leaveType !== null) {
         setselectedLeave({
+          leaveId: formData?.leaveId,
           leaveDate: formData?.leaveDate,
           reason: formData?.reason,
           leaveType: formData?.leaveType,
@@ -420,8 +421,7 @@ const Modal = ({
         newErrors.leaveCategory = "Leave Type is required"
       if (!selectedLeave.reason) newErrors.reason = "Reason is required"
       if (Object.keys(newErrors).length > 0) {
-        console.log(newErrors)
-        newErrors
+        setErrors(newErrors)
         return
       }
       setMessage("")
