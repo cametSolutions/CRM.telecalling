@@ -772,6 +772,7 @@ function LeaveApplication() {
     })
   }
   const handleSubmit = async (tab) => {
+    console.log(tab)
     // e.preventDefault()
     try {
       if (tab === "New Leave" || tab === "Edit Leave") {
@@ -793,6 +794,7 @@ function LeaveApplication() {
       }
 
       if (tab === "Leave" || tab === "New Leave" || tab === "Edit Leave") {
+        console.log("GG")
         // Validation
         let newErrors = {}
         if (!formData.leaveType) newErrors.leaveType = "Shift is required"
@@ -803,10 +805,11 @@ function LeaveApplication() {
           newErrors.leaveCategory = "Leave Type is required"
         if (!formData.reason) newErrors.reason = "Reason is required"
         if (Object.keys(newErrors).length > 0) {
+          console.log(newErrors)
           setErrors(newErrors)
           return
         }
-       
+        let isApprovedLeave
         if (formData.leaveId) {
           isApprovedLeave = allleaves?.find((leave) => {
             const matchedid = leave._id === formData.leaveId
@@ -831,8 +834,9 @@ function LeaveApplication() {
             bottom: "This leave is already approved. Do not make any changes."
           }))
         } else {
+          console.log("nnn")
           setMessage({ top: "", bottom: "" })
-          
+
           //Assuming you have an API endpoint for creating leave requests
           // const response = await fetch(
           //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
@@ -930,7 +934,7 @@ function LeaveApplication() {
             "This onsite is already approved. Do not make any changes."
           )
         } else {
-          // // const response = await api.post(
+          // const response = await api.post(
           // //   `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
           // //   { formData, tableRows }
           // )
