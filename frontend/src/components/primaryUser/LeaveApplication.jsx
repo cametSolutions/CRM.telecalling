@@ -70,7 +70,6 @@ function LeaveApplication() {
   const { data: leaves, refreshHook } = UseFetch(
     user && `/auth/getallLeave?userid=${user._id}`
   )
-  console.log(allleaves)
   const { data: compensatoryleaves, refreshHook: refreshHookCompensatory } =
     UseFetch(user && `/auth/getallcompensatoryleave?userid=${user._id}`)
   const { data: monthlyHoly } = UseFetch(
@@ -641,7 +640,6 @@ function LeaveApplication() {
 
     setShowModal(true)
   }
-  console.log(formData)
   const handleInputChange = debounce((e) => {
     const { name, value } = e.target
 
@@ -682,7 +680,6 @@ function LeaveApplication() {
   const goToToday = () => {
     setCurrentDate(new Date())
   }
-  console.log(message)
   const handleChange = (e) => handleInputChange(e)
   const handleDataChange = (e) => {
     setMessage((prev) => ({
@@ -795,7 +792,6 @@ function LeaveApplication() {
         }
       }
 
-      setLoader(true)
       if (tab === "Leave" || tab === "New Leave" || tab === "Edit Leave") {
         // Validation
         let newErrors = {}
@@ -810,20 +806,24 @@ function LeaveApplication() {
           setErrors(newErrors)
           return
         }
-        const formStartDate = new Date(formData.leaveDate)
-
-        // Find a leave matching the date (ignoring time) and adminverified or departmentverified is true
-        const isApprovedLeave = allleaves?.find((leave) => {
-          const leaveDate = new Date(leave.leaveDate) // Convert leave.leaveDate to Date object
-          // Compare the year, month, and day only (ignoring time)
-          const isSameDate =
-            leaveDate.getFullYear() === formStartDate.getFullYear() &&
-            leaveDate.getMonth() === formStartDate.getMonth() &&
-            leaveDate.getDate() === formStartDate.getDate()
-
-          // Check if adminverified or departmentverified is true
-          return isSameDate && (leave.adminverified || leave.departmentverified)
-        })
+       
+        if (formData.leaveId) {
+          isApprovedLeave = allleaves?.find((leave) => {
+            const matchedid = leave._id === formData.leaveId
+            // const leaveDate = new Date(leave.leaveDate) // Convert leave.leaveDate to Date object
+            // Compare the year, month, and day only (ignoring time)
+            //           const isSameDate =
+            //             leaveDate.getFullYear() === formStartDate.getFullYear() &&
+            //             leaveDate.getMonth() === formStartDate.getMonth() &&
+            //             leaveDate.getDate() === formStartDate.getDate()
+            //           const isSametype = leave.leaveType === formleaveType
+            // const isSameHalftype=leave.halfDayPeriod===formhalfdayPeriod
+            // Check if adminverified or departmentverified is true
+            return (
+              matchedid && (leave.adminverified || leave.departmentverified)
+            )
+          })
+        }
 
         if (isApprovedLeave) {
           setMessage((prev) => ({
@@ -832,7 +832,7 @@ function LeaveApplication() {
           }))
         } else {
           setMessage({ top: "", bottom: "" })
-
+          
           //Assuming you have an API endpoint for creating leave requests
           // const response = await fetch(
           //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
@@ -886,7 +886,6 @@ function LeaveApplication() {
               setShowModal(false)
               toast.success(responseData.message)
             } else if (response.status === 201) {
-              console.log("H")
               setMessage((prev) => ({
                 ...prev,
                 bottom: responseData.message
@@ -931,9 +930,9 @@ function LeaveApplication() {
             "This onsite is already approved. Do not make any changes."
           )
         } else {
-          // const response = await api.post(
-          //   `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
-          //   { formData, tableRows }
+          // // const response = await api.post(
+          // //   `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
+          // //   { formData, tableRows }
           // )
           const response = await api.post(
             `https://www.crm.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
@@ -1149,7 +1148,7 @@ function LeaveApplication() {
 
                       {/* Forward Arrow */}
                       <FaArrowRight
-                        className="text-gray-500 cursor-pointer transition-transform duration-200 ease-in-out hover:scale-125"
+                        className=" ml-2 text-gray-500 cursor-pointer transition-transform duration-200 ease-in-out hover:scale-125"
                         onClick={() => {
                           setSelectedTab("Edit Leave")
                           setEdit(true)

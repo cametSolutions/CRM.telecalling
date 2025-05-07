@@ -19,7 +19,6 @@ const Modal = ({
 
   handleApply
 }) => {
-  console.log(formData)
   const [leaveOption, setLeaveOption] = useState({
     leaveType: formData.leaveType || "Full Day"
   })
@@ -422,8 +421,7 @@ const Modal = ({
         newErrors.leaveCategory = "Leave Type is required"
       if (!selectedLeave.reason) newErrors.reason = "Reason is required"
       if (Object.keys(newErrors).length > 0) {
-        console.log(newErrors)
-        newErrors
+        setErrors(newErrors)
         return
       }
       setMessage("")

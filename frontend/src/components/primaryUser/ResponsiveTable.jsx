@@ -11,7 +11,6 @@ const ResponsiveTable = ({
   sundays,
   holiday
 }) => {
-  console.log(attendee)
   return (
     <div className="relative">
       <div
