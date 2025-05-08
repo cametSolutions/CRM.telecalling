@@ -79,9 +79,7 @@ const LeadMaster = ({
 
   // Create a ref for the dropdown container
   const dropdownRef = useRef(null)
-  const { data: ownedleadList } = UseFetch(
-    loggeduser && `/lead/ownregisteredLead?userId=${loggeduser?._id}`
-  )
+ 
   const { data: productData, loading: productLoading } = UseFetch(
     "/product/getallProducts"
   )
@@ -623,12 +621,25 @@ const LeadMaster = ({
             <h2 className="text-md md:text-2xl font-semibold md:px-5 mb-2 md:mb-1">
               {Data && Data.length > 0 ? "Lead Edit" : "Lead"}
             </h2>
-            <button
-              onClick={handleNavigate}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-lg shadow-xl"
-            >
-              Own Lead
-            </button>
+            {Data && Data.length > 0 ? (
+              <button
+                onClick={() =>
+                  loggeduser.role === "Admin"
+                    ? navigate("/admin/transaction/lead")
+                    : navigate("/staff/transaction/lead")
+                }
+                className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-lg shadow-xl"
+              >
+                Go Lead
+              </button>
+            ) : (
+              <button
+                onClick={handleNavigate}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-lg shadow-xl"
+              >
+                Own Lead
+              </button>
+            )}
           </div>
 
           {showmessage && (
