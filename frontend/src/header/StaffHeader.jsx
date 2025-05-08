@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useLocation, useRef } from "react"
 import { Link, NavLink, useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
+import { FiLogOut } from "react-icons/fi"
 import {
   FaSearch,
   FaTimes,
@@ -59,6 +60,7 @@ export default function StaffHeader() {
   }
 
   const logout = () => {
+    console.log("h")
     // Clear the authentication token from local storage
     localStorage.removeItem("authToken")
     localStorage.removeItem("user")
@@ -67,6 +69,7 @@ export default function StaffHeader() {
     // Redirect to login page
     toast.success("Logout successfully")
     navigate("/")
+    console.log("H")
   }
   const links = [
     { to: "/staff/dashBoard", label: "Dashboard" },
@@ -650,69 +653,60 @@ export default function StaffHeader() {
                 transactionMenuOpen &&
                 transactions.some((transaction) => transaction.control) && (
                   <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 shadow-lg block rounded-md z-50">
-                    {/* {transactions.map(
+                    {transactions.map(
                       (transaction) =>
                         transaction.control && (
-                          <Link
-                            key={transaction.to}
-                            to={transaction.to}
-                            className=" block  px-2 py-2 text-gray-600 text-sm hover:bg-gray-100"
-                          >
-                            {transaction.label}
-                          </Link>
-                        )
-                    )} */}
-                    {transactions.map((transaction) => (
-                      <div
-                        key={transaction.to}
-                        className="relative mb-2"
-                        onMouseEnter={() => {
-                          if (
-                            transaction.hasChildren &&
-                            transaction.label === "Lead"
-                          ) {
-                            setLeadMenuOpen(true)
-                          }
-                        }}
-                        onMouseLeave={() => {
-                          if (
-                            transaction.hasChildren &&
-                            transaction.label === "Lead"
-                          ) {
-                            setLeadMenuOpen(false)
-                          }
-                        }}
-                      >
-                        <Link
-                          to={transaction.to}
-                          className="flex justify-between px-4 py-1 text-gray-600 text-sm hover:bg-gray-100 items-center"
-                        >
-                          {transaction.label}
-                          {transaction.hasChildren && <FaChevronRight />}
-                        </Link>
-                        {/*Lead dropdown*/}
-                        {transaction.hasChildren && leadMenuOpen && (
                           <div
-                            className="absolute top-0 left-full w-48 bg-white border border-gray-200 shadow-lg rounded-md"
-                            onMouseEnter={() => setLeadMenuOpen(true)}
-                            onMouseLeave={() => setLeadMenuOpen(false)}
+                            key={transaction.to}
+                            className="relative mb-2"
+                            onMouseEnter={() => {
+                              if (
+                                transaction.hasChildren &&
+                                transaction.label === "Lead"
+                              ) {
+                                setLeadMenuOpen(true)
+                              }
+                            }}
+                            onMouseLeave={() => {
+                              if (
+                                transaction.hasChildren &&
+                                transaction.label === "Lead"
+                              ) {
+                                setLeadMenuOpen(false)
+                              }
+                            }}
                           >
-                            {leads.map(
-                              (lead) =>
-                                lead.control && (
-                                  <Link
-                                    key={lead.to}
-                                    to={lead.to}
-                                    className="block px-4 py-2 text-gray-600 text-sm hover:bg-gray-100"
-                                  >
-                                    {lead.label}
-                                  </Link>
-                                )
+                            <Link
+                              to={transaction.to}
+                              className="flex justify-between px-4 py-1 text-gray-600 text-sm hover:bg-gray-100 items-center"
+                            >
+                              {transaction.label}
+                              {transaction.hasChildren && <FaChevronRight />}
+                            </Link>
+                            {/*Lead dropdown*/}
+                            {transaction.hasChildren && leadMenuOpen && (
+                              <div
+                                className="absolute top-0 left-full w-48 bg-white border border-gray-200 shadow-lg rounded-md"
+                                onMouseEnter={() => setLeadMenuOpen(true)}
+                                onMouseLeave={() => setLeadMenuOpen(false)}
+                              >
+                                {leads.map(
+                                  (lead) =>
+                                    lead.control && (
+                                      <Link
+                                        key={lead.to}
+                                        to={lead.to}
+                                        className="block px-4 py-2 text-gray-600 text-sm hover:bg-gray-100"
+                                      >
+                                        {lead.label}
+                                      </Link>
+                                    )
+                                )}
+                              </div>
                             )}
                           </div>
-                        )}
-                      </div>
-                    ))}
+                        )
+                    )}
                   </div>
                 )}
 
@@ -781,20 +775,13 @@ export default function StaffHeader() {
           >
             {user?.name || "Profile"}
           </span>
-          {profileMenuOpen && (
-            <div
-              onMouseEnter={() => setProfileMenuOpen(true)}
-              onMouseLeave={() => setProfileMenuOpen(false)}
-              className="absolute bg-white border rounded top-full mt-0  w-40 shadow-lg"
-            >
-              <button
-                onClick={logout}
-                className="block px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 w-full text-left"
-              >
-                Logout
-              </button>
-            </div>
-          )}
+          <div
+            onClick={logout}
+            className="flex  items-center gap-1 p-2  rounded hover:cursor-pointer hover:scale-110 hover:shadow-lg transform transition-transform duration-300"
+          >
+            <FiLogOut className="text-blue-800" size={20} />
+            <span className="text-blue-800 text-semibold">Logout</span>
+          </div>
         </div>
       </div>
     </header>

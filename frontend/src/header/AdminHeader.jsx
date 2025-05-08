@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react"
 import { Link, NavLink, useNavigate } from "react-router-dom"
+import { FiLogOut } from "react-icons/fi"
 import {
   FaSearch,
   FaTimes,
@@ -671,20 +672,13 @@ export default function AdminHeader() {
             >
               {user?.name || "Profile"}
             </span>
-            {profileMenuOpen && (
-              <div
-                onMouseEnter={() => setProfileMenuOpen(true)}
-                onMouseLeave={() => setProfileMenuOpen(false)}
-                className="absolute bg-white border rounded top-full mt-0  w-40 shadow-lg"
-              >
-                <button
-                  onClick={logout}
-                  className="block px-4 py-2 text-gray-600 text-sm hover:bg-gray-100 w-full text-left"
-                >
-                  Logout
-                </button>
-              </div>
-            )}
+            <div
+              onClick={logout}
+              className="flex  items-center gap-1 p-2  rounded hover:cursor-pointer hover:scale-110 hover:shadow-lg transform transition-transform duration-300"
+            >
+              <FiLogOut className="text-blue-800" size={20} />
+              <span className="text-blue-800">Logout</span>
+            </div>
           </div>
         </div>
       </header>
