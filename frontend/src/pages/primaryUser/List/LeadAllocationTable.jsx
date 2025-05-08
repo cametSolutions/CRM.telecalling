@@ -18,13 +18,15 @@ const LeadAllocationTable = () => {
   const [allStaffs, setallStaffs] = useState([])
   const [loader, setloader] = useState(true)
   const [tableData, setTableData] = useState([])
+  const userData = localStorage.getItem("user")
+  const user = JSON.parse(userData)
   const { data: leadPendinglist, loading } = UseFetch(
-    status && `/lead/getallLead?Status=${status}`
+    status &&
+      user &&
+      `/lead/getallLead?Status=${status}&assignedto=${user._id}&role=${user.role}`
   )
   const { data } = UseFetch("/auth/getallUsers")
   const navigate = useNavigate()
-  const userData = localStorage.getItem("user")
-  const user = JSON.parse(userData)
 
   useEffect(() => {
     if (data) {
@@ -32,13 +34,25 @@ const LeadAllocationTable = () => {
 
       // Combine allusers and allAdmins
       const combinedUsers = [...allusers, ...allAdmins]
-
-      setAllocationOptions(
-        combinedUsers.map((item) => ({
-          value: item?._id,
-          label: item?.name
-        }))
-      )
+      if (user.role === "Staff") {
+       
+        const filteredAssignedusers = allusers.filter(
+          (staff) => staff.assignedto._id === user._id
+        )
+        setAllocationOptions(
+          filteredAssignedusers.map((item) => ({
+            value: item?._id,
+            label: item?.name
+          }))
+        )
+      } else {
+        setAllocationOptions(
+          combinedUsers.map((item) => ({
+            value: item?._id,
+            label: item?.name
+          }))
+        )
+      }
     }
   }, [data])
   useEffect(() => {
@@ -51,7 +65,7 @@ const LeadAllocationTable = () => {
     setShowFullName(false)
     if (approvedToggleStatus === false) {
       setsubmitLoading(true)
-      const response = await api.get("/lead/getallLead?Status=Approved")
+      const response = await api.get(`/lead/getallLead?Status=Approved&assignedto=${user._id}&role=${user.role}`)
       if (response.status >= 200 && response.status < 300) {
         setTableData(response.data.data)
         setapprovedToggleStatus(!approvedToggleStatus)
@@ -73,7 +87,7 @@ const LeadAllocationTable = () => {
         setSelectedAllocates(initialSelected)
       }
     } else {
-      const response = await api.get("/lead/getallLead?Status=Pending")
+      const response = await api.get(`/lead/getallLead?Status=Pending&assignedto=${user._id}&role=${user.role}`)
       if (response.status >= 200 && response.status < 300) {
         setTableData(response.data.data)
         setapprovedToggleStatus(!approvedToggleStatus)

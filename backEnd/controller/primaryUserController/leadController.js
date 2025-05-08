@@ -156,11 +156,19 @@ export const GetAllservices = async (req, res) => {
 }
 export const GetallLead = async (req, res) => {
   try {
-    const { Status } = req.query
+    const { Status, assignedto, role } = req.query
+    const objectId = new mongoose.Types.ObjectId(assignedto)
     if (Status === "Pending") {
-      const pendingLeads = await LeadMaster.find({
-        allocatedTo: null
-      })
+      // const pendingLeads = await LeadMaster.find({
+      //   allocatedTo: null,assignedto:objectId
+      // })
+      const query = { allocatedTo: null };
+
+      if (role === "Staff") {
+        query.assignedto = objectId;
+      }
+
+      const pendingLeads = await LeadMaster.find(query)
         .populate({ path: "customerName", select: "customerName" })
         .lean()
 
@@ -191,9 +199,14 @@ export const GetallLead = async (req, res) => {
           .json({ message: "pending leads found", data: populatedPendingLeads })
       }
     } else if (Status === "Approved") {
-      const approvedAllocatedLeads = await LeadMaster.find({
-        allocatedTo: { $ne: null }
-      })
+      
+      const query = { allocatedTo: { $ne: null } };
+
+      if (role === "Staff") {
+        query.assignedto = objectId;
+      }
+
+      const approvedAllocatedLeads = await LeadMaster.find(query)
         .populate({ path: "customerName", select: "customerName" })
         .lean()
       const populatedApprovedLeads = await Promise.all(
@@ -485,7 +498,6 @@ export const GetownLeadList = async (req, res) => {
 
   try {
     const { userId } = req.query
-    console.log("id", userId)
     const objectId = new mongoose.Types.ObjectId(userId)
     // const matchedLead=await LeadMaster.find({leadBy:objectId,allocatedTo:null})
     const matchedLead = await LeadMaster.find({
@@ -493,8 +505,7 @@ export const GetownLeadList = async (req, res) => {
         { leadBy: objectId, allocatedTo: objectId },
         { leadBy: objectId, allocatedTo: null }
       ]
-    }).populate({path:"customerName",select:"customerName"})
-console.log(matchedLead)
+    }).populate({ path: "customerName", select: "customerName" })
     return res.status(200).json({ message: "lead found", data: matchedLead })
 
   } catch (error) {
