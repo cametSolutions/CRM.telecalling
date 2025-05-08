@@ -481,3 +481,24 @@ export const GetselectedLeadData = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+export const GetownLeadList = async (req, res) => {
+
+  try {
+    const { userId } = req.query
+    console.log("id", userId)
+    const objectId = new mongoose.Types.ObjectId(userId)
+    // const matchedLead=await LeadMaster.find({leadBy:objectId,allocatedTo:null})
+    const matchedLead = await LeadMaster.find({
+      $or: [
+        { leadBy: objectId, allocatedTo: objectId },
+        { leadBy: objectId, allocatedTo: null }
+      ]
+    }).populate({path:"customerName",select:"customerName"})
+console.log(matchedLead)
+    return res.status(200).json({ message: "lead found", data: matchedLead })
+
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
