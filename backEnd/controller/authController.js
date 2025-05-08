@@ -2357,14 +2357,15 @@ export const GetallUsersLeave = async (req, res) => {
         .populate("userId", "name") // Populates userId with the name field only
         .lean() // Converts to plain JavaScript objects (instead of Mongoose docs)
       const namesOnly = leavelist.map((item) => item.userId?.name)
-      if (namesOnly && namesOnly.length > 0) {
+      const uniqueNames = [...new Set(namesOnly)]
+      if (uniqueNames && uniqueNames.length > 0) {
         return res
           .status(200)
-          .json({ message: "leaves found", data: namesOnly })
+          .json({ message: "leaves found", data: uniqueNames })
       } else {
         return res
           .status(200)
-          .json({ message: "no leaves found for today", data: namesOnly })
+          .json({ message: "no leaves found for today", data: uniqueNames })
       }
     }
   } catch (error) {
