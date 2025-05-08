@@ -9,6 +9,7 @@ const useSearch = ({ fullData }) => {
     }
   })
 
+
   // Memoize filtered data to avoid unnecessary recalculations
   const searchData = useMemo(() => {
     if (typeof SecUser === "string" && SecUser.trim() !== "") {

@@ -60,7 +60,6 @@ export default function StaffHeader() {
   }
 
   const logout = () => {
-    console.log("h")
     // Clear the authentication token from local storage
     localStorage.removeItem("authToken")
     localStorage.removeItem("user")
@@ -69,7 +68,6 @@ export default function StaffHeader() {
     // Redirect to login page
     toast.success("Logout successfully")
     navigate("/")
-    console.log("H")
   }
   const links = [
     { to: "/staff/dashBoard", label: "Dashboard" },
