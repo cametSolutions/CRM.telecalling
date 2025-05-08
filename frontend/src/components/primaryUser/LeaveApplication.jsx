@@ -933,15 +933,15 @@ function LeaveApplication() {
           )
         } else {
           setLoader(true)
-          const response = await api.post(
-            `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
-            { formData, tableRows }
-          )
-
           // const response = await api.post(
-          //   `https://www.crm.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
+          //   `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
           //   { formData, tableRows }
           // )
+
+          const response = await api.post(
+            `https://www.crm.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
+            { formData, tableRows }
+          )
 
           if (response.status === 200) {
             setLoader(false)

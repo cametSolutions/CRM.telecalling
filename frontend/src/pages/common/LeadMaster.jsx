@@ -8,6 +8,8 @@ import PopUp from "../../components/common/PopUp"
 import { toast } from "react-toastify"
 import UseFetch from "../../hooks/useFetch"
 import api from "../../api/api"
+import { useNavigate } from "react-router-dom"
+import OwnLeadList from "./OwnLeadList"
 
 const LeadMaster = ({
   process,
@@ -77,6 +79,9 @@ const LeadMaster = ({
 
   // Create a ref for the dropdown container
   const dropdownRef = useRef(null)
+  const { data: ownedleadList } = UseFetch(
+    loggeduser && `/lead/ownregisteredLead?userId=${loggeduser?._id}`
+  )
   const { data: productData, loading: productLoading } = UseFetch(
     "/product/getallProducts"
   )
@@ -95,6 +100,7 @@ const LeadMaster = ({
       ? `/customer/getallCustomer?userbranch=${encodeURIComponent(branches)}`
       : null
   )
+  const navigate = useNavigate()
   useEffect(() => {
     const userData = localStorage.getItem("user")
     if (userData) {
@@ -293,6 +299,13 @@ const LeadMaster = ({
       setlicenseWithoutProductSelection(initialProductListwithoutlicense)
     }
   }, [leadList])
+  const handleNavigate = () => {
+    navigate(
+      loggeduser.role === "Admin"
+        ? "/admin/transaction/lead/ownedLeadlist"
+        : "/staff/transaction/lead/ownedLeadlist"
+    )
+  }
   const countryOptions = useMemo(
     () =>
       Country.getAllCountries().map((country) => ({
@@ -606,10 +619,18 @@ const LeadMaster = ({
             transition: "opacity 0.3s ease-in-out"
           }}
         >
-          {/* <button onClick={handleDownloadFailedData}>click</button> */}
-          <h2 className="text-md md:text-2xl font-semibold md:px-5 mb-2 md:mb-1">
-            {Data && Data.length > 0 ? "Lead Edit" : "Lead"}
-          </h2>
+          <div className="flex justify-between">
+            <h2 className="text-md md:text-2xl font-semibold md:px-5 mb-2 md:mb-1">
+              {Data && Data.length > 0 ? "Lead Edit" : "Lead"}
+            </h2>
+            <button
+              onClick={handleNavigate}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-lg shadow-xl"
+            >
+              Own Lead
+            </button>
+          </div>
+
           {showmessage && (
             <PopUp
               isOpen={ispopupModalOpen}

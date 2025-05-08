@@ -4,12 +4,14 @@ import { toast } from "react-toastify"
 import { useNavigate } from "react-router-dom"
 import LeadMaster from "../../common/LeadMaster"
 
+
 function LeadRegister() {
   const [loader, setLoader] = useState(false)
   const [popupMessage, setpopUpMessage] = useState("")
   const userData = localStorage.getItem("user")
   const user = JSON.parse(userData)
   const navigate = useNavigate()
+
   const handleSubmit = async (leadData, selectedtableLeadData) => {
     try {
       const response = await api.post("/lead/leadRegister", {

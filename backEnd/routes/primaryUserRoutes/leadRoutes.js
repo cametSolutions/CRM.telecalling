@@ -7,7 +7,8 @@ import {
   UpadateOrLeadAllocationRegister,
   GetselectedLeadData,
   UpdateLeadfollowUpDate,
-  UpdateLeadRegister
+  UpdateLeadRegister,
+GetownLeadList
 } from "../../controller/primaryUserController/leadController.js"
 const router = express.Router()
 
@@ -18,5 +19,6 @@ router.get("/getSelectedLead", authMiddleware, GetselectedLeadData)
 router.post("/leadAllocation", authMiddleware, UpadateOrLeadAllocationRegister)
 router.get("/getallLead", authMiddleware, GetallLead)
 router.get("/getallServices", authMiddleware, GetAllservices)
+router.get("/ownregisteredLead",authMiddleware,GetownLeadList)
 
 export default router
