@@ -5349,7 +5349,7 @@ export const DeleteEvent = async (req, res) => {
         const matchedCompensatoryLeave = await CompensatoryLeave.findOne({
           onsiteId: matchedOnsite._id
         })
-        if (matchedCompensatoryLeave.leaveUsed) {
+        if (matchedCompensatoryLeave?.leaveUsed) {
           return res.status(409).json({
             message: `Cannot delete this onsite entry. You earned a leave for this site`
           })
