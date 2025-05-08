@@ -690,12 +690,12 @@ export const LeaveApply = async (req, res) => {
   try {
 
 
-    const existingDateLeave = await LeaveRequest.findOne({
+    const existingDateLeave = await LeaveRequest.find({
 
       leaveDate,
       userId: objectId
     })
-    const filteredLeave = existingDateLeave.filter((leave) => leave._id.equals(leaveId))
+    const filteredLeave = existingDateLeave?.filter((leave) => leave._id.equals(leaveId))
 
 
     if (filteredLeave && filteredLeave.length) {
@@ -3800,7 +3800,7 @@ export const EditLeave = async (req, res) => {
       userId: userobjectId
     })
 
-    const filteredLeave = existingDateLeave.filter((leave) => leave._id.equals(leaveId))
+    const filteredLeave = existingDateLeave?.filter((leave) => leave._id.equals(leaveId))
 
     if (filteredLeave && filteredLeave.length) {
 
