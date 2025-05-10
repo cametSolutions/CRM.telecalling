@@ -28,11 +28,12 @@ import {
   ServicesRegistration,
   DeleteService,
   UpdateServices,
-  loggeduserCallsCurrentDateCalls
+  loggeduserCallsCurrentDateCalls,
+GetscrollCustomer
 } from "../../controller/secondaryUserController/customerController.js"
 
 const router = express.Router()
-
+router.get("/getcust",authMiddleware,GetscrollCustomer)
 router.post("/customerRegistration", authMiddleware, CustomerRegister)
 router.delete("/callnoteDelete", authMiddleware, DeleteCallnotes)
 router.post("/callnotesRegistration", authMiddleware, CallnoteRegistration)
