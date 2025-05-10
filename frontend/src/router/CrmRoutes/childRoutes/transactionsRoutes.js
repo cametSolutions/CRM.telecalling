@@ -8,8 +8,8 @@ import LeadFollowUp from "../../../pages/primaryUser/List/LeadFollowUp"
 import OwnLeadList from "../../../pages/common/OwnLeadList"
 import { components } from "react-select"
 const transactionsRoutes = [
-  { path: "/admin/transaction/lead", component: LeadRegister },
-  { path: "/admin/transaction/lead/leadEdit", component: LeadEdit },
+  { path: "/admin/transaction/lead", component: ComingSoon },
+  { path: "/admin/transaction/lead/leadEdit", component: ComingSoon },
 
   { path: "/admin/transaction/call-registration", component: CallRegistration },
   { path: "/admin/transaction/lead/ownedLeadlist", component: OwnLeadList },
@@ -17,9 +17,9 @@ const transactionsRoutes = [
   { path: "/admin/transaction/leave-application", component: LeaveApplication },
   {
     path: "/admin/transaction/lead/leadAllocation",
-    component: LeadAllocationTable
+    component: ComingSoon
   },
-  { path: "/admin/transaction/lead/leadFollowUp", component: LeadFollowUp }
+  { path: "/admin/transaction/lead/leadFollowUp", component: ComingSoon }
 ]
 
 export default transactionsRoutes

@@ -154,28 +154,35 @@ const ResponsiveTable = ({
                         <td
                           onClick={() => {
                             if (user?.role === "Admin") {
+                              // handleLeave(
+                              //   date,
+                              //   "Leave",
+                              //   {
+                              //     field: details?.casualLeave
+                              //       ? "casual Leave"
+                              //       : details?.compensatoryLeave
+                              //       ? "compensatory Leave"
+                              //       : details?.privileageLeave
+                              //       ? "privileage Leave"
+                              //       : details?.otherLeave
+                              //       ? "other Leave"
+                              //       : null,
+                              //     value:
+                              //       details?.casualLeave ||
+                              //       details?.compensatoryLeave ||
+                              //       details?.privileageLeave ||
+                              //       details?.otherLeave
+                              //   },
+                              //   details?.halfDayperiod,
+                              //   details?.reason,
+                              //   details?.leaveId
+                              // )
                               handleLeave(
                                 date,
                                 "Leave",
-                                {
-                                  field: details?.casualLeave
-                                    ? "casual Leave"
-                                    : details?.compensatoryLeave
-                                    ? "compensatory Leave"
-                                    : details?.privileageLeave
-                                    ? "privileage Leave"
-                                    : details?.otherLeave
-                                    ? "other Leave"
-                                    : null,
-                                  value:
-                                    details?.casualLeave ||
-                                    details?.compensatoryLeave ||
-                                    details?.privileageLeave ||
-                                    details?.otherLeave
-                                },
-                                details?.halfDayperiod,
-                                details?.reason,
-                                details?.leaveId
+
+                                details?.leaveDetails,
+                                "casual Leave"
                               )
                             }
                           }}
@@ -187,28 +194,35 @@ const ResponsiveTable = ({
                         <td
                           onClick={() => {
                             if (user?.role === "Admin") {
+                              // handleLeave(
+                              //   date,
+                              //   "Leave",
+                              //   {
+                              //     field: details?.casualLeave
+                              //       ? "casual Leave"
+                              //       : details?.compensatoryLeave
+                              //       ? "compensatory Leave"
+                              //       : details?.privileageLeave
+                              //       ? "privileage Leave"
+                              //       : details?.otherLeave
+                              //       ? "other Leave"
+                              //       : null,
+                              //     value:
+                              //       details?.casualLeave ||
+                              //       details?.compensatoryLeave ||
+                              //       details?.privileageLeave ||
+                              //       details?.otherLeave
+                              //   },
+                              //   details?.halfDayperiod,
+                              //   details?.reason,
+                              //   details?.leaveId
+                              // )
                               handleLeave(
                                 date,
                                 "Leave",
-                                {
-                                  field: details?.casualLeave
-                                    ? "casual Leave"
-                                    : details?.compensatoryLeave
-                                    ? "compensatory Leave"
-                                    : details?.privileageLeave
-                                    ? "privileage Leave"
-                                    : details?.otherLeave
-                                    ? "other Leave"
-                                    : null,
-                                  value:
-                                    details?.casualLeave ||
-                                    details?.compensatoryLeave ||
-                                    details?.privileageLeave ||
-                                    details?.otherLeave
-                                },
-                                details?.halfDayperiod,
-                                details?.reason,
-                                details?.leaveId
+
+                                details?.leaveDetails,
+                                "privileage Leave"
                               )
                             }
                           }}
@@ -220,28 +234,35 @@ const ResponsiveTable = ({
                         <td
                           onClick={() => {
                             if (user?.role === "Admin") {
+                              // handleLeave(
+                              //   date,
+                              //   "Leave",
+                              //   {
+                              //     field: details?.casualLeave
+                              //       ? "casual Leave"
+                              //       : details?.compensatoryLeave
+                              //       ? "compensatory Leave"
+                              //       : details?.privileageLeave
+                              //       ? "privileage Leave"
+                              //       : details?.otherLeave
+                              //       ? "other Leave"
+                              //       : null,
+                              //     value:
+                              //       details?.casualLeave ||
+                              //       details?.compensatoryLeave ||
+                              //       details?.privileageLeave ||
+                              //       details?.otherLeave
+                              //   },
+                              //   details?.halfDayperiod,
+                              //   details?.reason,
+                              //   details?.leaveId
+                              // )
                               handleLeave(
                                 date,
                                 "Leave",
-                                {
-                                  field: details?.casualLeave
-                                    ? "casual Leave"
-                                    : details?.compensatoryLeave
-                                    ? "compensatory Leave"
-                                    : details?.privileageLeave
-                                    ? "privileage Leave"
-                                    : details?.otherLeave
-                                    ? "other Leave"
-                                    : null,
-                                  value:
-                                    details?.casualLeave ||
-                                    details?.compensatoryLeave ||
-                                    details?.privileageLeave ||
-                                    details?.otherLeave
-                                },
-                                details?.halfDayperiod,
-                                details?.reason,
-                                details?.leaveId
+
+                                details?.leaveDetails,
+                                "compensatory Leave"
                               )
                             }
                           }}
@@ -253,28 +274,35 @@ const ResponsiveTable = ({
                         <td
                           onClick={() => {
                             if (user?.role === "Admin") {
+                              // handleLeave(
+                              //   date,
+                              //   "Leave",
+                              //   {
+                              //     field: details?.casualLeave
+                              //       ? "casual Leave"
+                              //       : details?.compensatoryLeave
+                              //       ? "compensatory Leave"
+                              //       : details?.privileageLeave
+                              //       ? "privileage Leave"
+                              //       : details?.otherLeave
+                              //       ? "other Leave"
+                              //       : null,
+                              //     value:
+                              //       details?.casualLeave ||
+                              //       details?.compensatoryLeave ||
+                              //       details?.privileageLeave ||
+                              //       details?.otherLeave
+                              //   },
+                              //   details?.halfDayperiod,
+                              //   details?.reason,
+                              //   details?.leaveId
+                              // )
                               handleLeave(
                                 date,
                                 "Leave",
-                                {
-                                  field: details?.casualLeave
-                                    ? "casual Leave"
-                                    : details?.compensatoryLeave
-                                    ? "compensatory Leave"
-                                    : details?.privileageLeave
-                                    ? "privileage Leave"
-                                    : details?.otherLeave
-                                    ? "other Leave"
-                                    : null,
-                                  value:
-                                    details?.casualLeave ||
-                                    details?.compensatoryLeave ||
-                                    details?.privileageLeave ||
-                                    details?.otherLeave
-                                },
-                                details?.halfDayperiod,
-                                details?.reason,
-                                details?.leaveId
+
+                                details?.leaveDetails,
+                                "other Leave"
                               )
                             }
                           }}
@@ -325,25 +353,7 @@ const ResponsiveTable = ({
                               handleLeave(
                                 date,
                                 "Leave",
-                                leaves,
-                                // {
-                                //   field: details?.casualLeave
-                                //     ? "casual Leave"
-                                //     : details?.compensatoryLeave
-                                //     ? "compensatory Leave"
-                                //     : details?.privileageLeave
-                                //     ? "privileage Leave"
-                                //     : details?.otherLeave
-                                //     ? "other Leave"
-                                //     : null,
-                                //   value:
-                                //     details?.casualLeave ||
-                                //     details?.compensatoryLeave ||
-                                //     details?.privileageLeave ||
-                                //     details?.otherLeave
-                                // },
-                                details?.halfDayperiod,
-                                details?.reason,
+
                                 details?.leaveDetails,
                                 "casual Leave"
                               )
@@ -359,24 +369,7 @@ const ResponsiveTable = ({
                               handleLeave(
                                 date,
                                 "Leave",
-                                {
-                                  field: details?.casualLeave
-                                    ? "casual Leave"
-                                    : details?.compensatoryLeave
-                                    ? "compensatory Leave"
-                                    : details?.privileageLeave
-                                    ? "privileage Leave"
-                                    : details?.otherLeave
-                                    ? "other Leave"
-                                    : null,
-                                  value:
-                                    details?.casualLeave ||
-                                    details?.compensatoryLeave ||
-                                    details?.privileageLeave ||
-                                    details?.otherLeave
-                                },
-                                details?.halfDayperiod,
-                                details?.reason,
+
                                 details?.leaveDetails,
                                 "privileage Leave"
                               )
@@ -392,24 +385,7 @@ const ResponsiveTable = ({
                               handleLeave(
                                 date,
                                 "Leave",
-                                {
-                                  field: details?.casualLeave
-                                    ? "casual Leave"
-                                    : details?.compensatoryLeave
-                                    ? "compensatory Leave"
-                                    : details?.privileageLeave
-                                    ? "privileage Leave"
-                                    : details?.otherLeave
-                                    ? "other Leave"
-                                    : null,
-                                  value:
-                                    details?.casualLeave ||
-                                    details?.compensatoryLeave ||
-                                    details?.privileageLeave ||
-                                    details?.otherLeave
-                                },
-                                details?.halfDayperiod,
-                                details?.reason,
+
                                 details?.leaveDetails,
                                 "compensatory Leave"
                               )
@@ -425,24 +401,7 @@ const ResponsiveTable = ({
                               handleLeave(
                                 date,
                                 "Leave",
-                                {
-                                  field: details?.casualLeave
-                                    ? "casual Leave"
-                                    : details?.compensatoryLeave
-                                    ? "compensatory Leave"
-                                    : details?.privileageLeave
-                                    ? "privileage Leave"
-                                    : details?.otherLeave
-                                    ? "other Leave"
-                                    : null,
-                                  value:
-                                    details?.casualLeave ||
-                                    details?.compensatoryLeave ||
-                                    details?.privileageLeave ||
-                                    details?.otherLeave
-                                },
-                                details?.halfDayperiod,
-                                details?.reason,
+
                                 details?.leaveDetails,
                                 "other Leave"
                               )

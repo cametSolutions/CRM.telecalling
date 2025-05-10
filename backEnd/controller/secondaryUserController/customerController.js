@@ -35,7 +35,7 @@ export const GetscrollCustomer = async (req, res) => {
         ].filter(Boolean), // removes undefined if any
       };
     }
-  
+
     const customers = await Customer.aggregate([{ $match: searchQuery },
     { $skip: skip },
     { $limit: pageSize },
@@ -827,6 +827,7 @@ export const GetCustomer = async (req, res) => {
   const search = req.query?.search
   const role = req.query?.role
   const userBranch = req.query?.userBranch
+
   const pendingCustomerList = req.query?.pendingCustomerList
   let objectIds
   let parsedBranch
