@@ -161,13 +161,10 @@ const leaveSummary = () => {
   const handleLeave = (
     date,
     type,
-    leaveDetails,
-    halfDayperiod,
-    reason,
+
     leaveData,
     leavetype
   ) => {
-    
     // Find the matching leave entry
     const matchingLeave = Object.values(leaveData).find(
       (entry) => entry.leaveCategory === leavetype
@@ -191,7 +188,6 @@ const leaveSummary = () => {
           : null
       })
     } else {
-
       setFormData({ leaveDate: date, leaveType: "Full Day" })
     }
   }
@@ -218,7 +214,6 @@ const leaveSummary = () => {
           `/auth/editLeave?userid=${staffId}&assignedto=${assignedTo}`,
           selected
         )
-       
 
         const data = response?.data?.data?.data
         const holy = response?.data?.data?.fulldateholiday

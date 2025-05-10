@@ -9,7 +9,6 @@ import { toast } from "react-toastify"
 import UseFetch from "../../hooks/useFetch"
 import api from "../../api/api"
 import { useNavigate } from "react-router-dom"
-import OwnLeadList from "./OwnLeadList"
 
 const LeadMaster = ({
   process,
@@ -72,6 +71,7 @@ const LeadMaster = ({
   const [validateError, setValidateError] = useState({})
   const [loggeduser, setloggedUser] = useState(null)
   const [allstaff, setallStaffs] = useState([])
+  const [selectedBranch, setSelectedBranch] = useState(null)
 
   const [allcustomer, setallcustomer] = useState([])
   // State to toggle the table
@@ -79,24 +79,22 @@ const LeadMaster = ({
 
   // Create a ref for the dropdown container
   const dropdownRef = useRef(null)
- 
+
   const { data: productData, loading: productLoading } = UseFetch(
     "/product/getallProducts"
   )
+  const { data: companybranches } = UseFetch("/branch/getBranch")
   const { data: partners } = UseFetch("/customer/getallpartners")
   const { data: serviceData } = UseFetch("/product/getallServices")
-  const { data: allusers } = UseFetch("/auth/getallUsers")
-  const { data, loading: usersLoading } = UseFetch("/auth/getallUsers")
+  const { data: alluser, loading: usersLoading } = UseFetch("/auth/getallUsers")
   const {
     data: customerData,
     loading: customerLoading,
     refreshHook
   } = UseFetch(
-    loggeduser && loggeduser.role === "Admin"
-      ? "customer/getallCustomer"
-      : branches && branches.length > 0
-      ? `/customer/getallCustomer?userbranch=${encodeURIComponent(branches)}`
-      : null
+    loggeduser&&selectedBranch&&
+       `/customer/getallCustomer?branchSelected=${encodeURIComponent(selectedBranch)}`
+      
   )
   const navigate = useNavigate()
   useEffect(() => {
@@ -149,16 +147,16 @@ const LeadMaster = ({
     }
   }, [loggeduser, branches, productData, serviceData, partners])
   useEffect(() => {
-    if (allusers && allusers.length > 0) {
-      const { allusers = [], allAdmins = [] } = data
-
-      // Combine allusers and allAdmins
-      const combinedUsers = [...allusers, ...allAdmins]
-
-      // Set combined names to state
-      setallStaffs(combinedUsers)
+    if (companybranches?.length > 0) {
+      const defaultBranch = companybranches[0]._id
+      if (defaultBranch) {
+        console.log(defaultBranch)
+        setSelectedBranch(defaultBranch)
+        setValueMain("branch", defaultBranch)
+      }
     }
-  }, [allusers])
+  }, [companybranches])
+
   useEffect(() => {
     if (loggeduser?._id) {
       setValueMain("leadBy", loggeduser._id) // Manually set the value
@@ -265,8 +263,8 @@ const LeadMaster = ({
     }
   }, [selectedCustomer])
   useEffect(() => {
-    if (data) {
-      const { allusers = [], allAdmins = [] } = data
+    if (alluser) {
+      const { allusers = [], allAdmins = [] } = alluser
 
       // Combine allusers and allAdmins
       const combinedUsers = [...allusers, ...allAdmins]
@@ -274,7 +272,7 @@ const LeadMaster = ({
       // Set combined names to state
       setallStaffs(combinedUsers)
     }
-  }, [data])
+  }, [alluser])
 
   useEffect(() => {
     if (productLoading || usersLoading || customerLoading) {
@@ -606,7 +604,7 @@ const LeadMaster = ({
       )}
       <div className="h-full overflow-y-auto container justify-center items-center  p-2 md:p-8 ">
         <div
-          className="shadow-lg rounded p-2 md:p-3 mx-auto"
+          className="shadow-lg rounded p-2 md:p-8 mx-auto"
           style={{
             opacity:
               productLoading || usersLoading || customerLoading ? 0.2 : 1,
@@ -618,7 +616,7 @@ const LeadMaster = ({
           }}
         >
           <div className="flex justify-between">
-            <h2 className="text-md md:text-2xl font-semibold md:px-5 mb-2 md:mb-1">
+            <h2 className="text-md md:text-2xl font-semibold  mb-2 md:mb-1">
               {Data && Data.length > 0 ? "Lead Edit" : "Lead"}
             </h2>
             {Data && Data.length > 0 ? (
@@ -653,448 +651,479 @@ const LeadMaster = ({
             />
           )}
 
-          <form onSubmit={handleSubmitMain(onSubmit)}>
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-0 md:gap-6 md:mx-5">
-              {process === "edit" && (
+          <form onSubmit={handleSubmitMain(onSubmit)} className="py-5">
+            <div className="md:flex items-start">
+              <div className="md:w-1/2  flex flex-col-1 md:grid md:grid-cols-2 gap-2 md:gap-4 md:mx-5">
                 <div>
                   <label
-                    htmlFor="leadId"
+                    htmlFor="branch"
                     className="block text-sm font-medium text-gray-700"
                   >
-                    Lead Id
+                    Branch
                   </label>
-                  <input
-                    id="leadId"
-                    type="text"
-                    {...registerMain("leadId")}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
-                    placeholder="Lead Id..."
-                  />
-                  {errorsMain.leadId && (
-                    <span className="mt-2 text-sm text-red-600">
-                      {errorsMain.leadId.message}
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {/* Customer Select Dropdown */}
-              <div>
-                <label
-                  htmlFor="customerName"
-                  className="block text-sm  font-medium text-gray-700"
-                >
-                  Customer Name
-                </label>
-                <div className="flex w-full text-sm ">
-                  <Select
-                    options={customerOptions}
-                    // value={selectedCustomer?.value}
-                    value={customerOptions.find(
-                      (option) => option.value === watchMain("customerName")
-                    )}
-                    getOptionLabel={(option) =>
-                      `${option.label}-(${option.mobile})`
-                    } // Show only customer name
-                    getOptionValue={(option) => option._id}
-                    filterOption={customFilter} // Enable searching by name & mobile
-                    {...registerMain("customerName", {
-                      required: "Customer is Required"
-                    })}
-                    onBlur={() => {
-                      const selected = customerOptions.find(
-                        (option) => option.value === watchMain("customerName")
-                      )
-                      if (selected) {
-                        setValueMain("customerName", selected.value)
-                      }
-                    }}
-                    onChange={(selectedOption) => {
-                      handleSelectedCustomer(selectedOption)
-                      setSelectedCustomer(selectedOption)
-                      // setValueMain("customerName", selectedOption.value)
-                      setValueMain("customerName", selectedOption.value, {
-                        shouldValidate: true
-                      })
-                    }}
-                    className="mt-1 w-full"
-                    styles={{
-                      menu: (provided) => ({
-                        ...provided,
-                        maxHeight: "200px", // Set dropdown max height
-                        overflowY: "auto" // Enable scrolling
-                      }),
-                      menuList: (provided) => ({
-                        ...provided,
-                        maxHeight: "200px", // Ensures dropdown scrolls internally
-                        overflowY: "auto"
-                      })
-                    }}
-                    menuPortalTarget={document.body} // Prevents nested scrolling issues
-                    menuShouldScrollIntoView={false}
-                  />
-
-                  <button
-                    type="button" // Prevents form submission
-                    onClick={() => {
-                      setModalOpen(true)
-                      clearMainerrors()
-                    }}
-                    className="bg-blue-500 hover:bg-blue-600  px-3 rounded-md text-white "
-                  >
-                    ADD
-                  </button>
-                </div>
-                {errorsMain.customerName && (
-                  <p className="text-red-500 text-sm">
-                    {errorsMain.customerName.message}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-0 md:gap-6 md:mx-5 md:mt-2">
-              {/* Other Input Fields */}
-
-              <div>
-                <label
-                  htmlFor="mobile"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Mobile
-                </label>
-                <input
-                  id="mobile"
-                  {...registerMain("mobile")}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
-                  placeholder="Mobile..."
-                ></input>
-              </div>
-              <div>
-                <label
-                  htmlFor="phone"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Phone
-                </label>
-                <input
-                  id="phone"
-                  {...registerMain("phone")}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
-                  placeholder="Landline..."
-                ></input>
-              </div>
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Email
-                </label>
-                <input
-                  id="email"
-                  {...registerMain("email")}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
-                  placeholder="Email..."
-                ></input>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="trade"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Trade
-                </label>
-                <input
-                  id="trade"
-                  {...registerMain("trade")}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
-                  placeholder="Trade..."
-                ></input>
-              </div>
-            </div>
-            <div className="md:flex md:gap-6 md:mx-5 md:mt-2">
-              <div className="md:w-72 w-full relative">
-                <label className="block text-sm font-medium text-gray-700">
-                  Select License
-                </label>
-                {/* Button to open dropdown and show selected value */}
-                <button
-                  type="button"
-                  onClick={() => setIslicenseOpen(!isLicenseOpen)}
-                  className="border px-2 md:py-1.5 py-2 md:w-72 w-full bg-white text-left rounded flex justify-between items-center"
-                >
-                  {selectedLicense ?? "Select License"}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 transition-transform duration-200"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
-
-                {/* Dropdown List */}
-                {isLicenseOpen && (
-                  <div className=" md:w-72 w-full mt-1 bg-white border rounded-md shadow-lg z-30  max-h-60 absolute overflow-y-auto ">
-                    <ul className="">
-                      {/* Option to unselect license */}
-                      <li
-                        className="p-2 hover:bg-gray-200 cursor-pointer font-semibold text-red-500"
-                        onClick={() => handleLicenseSelect(null)}
-                      >
-                        No License
-                      </li>
-
-                      {/* List of available licenses */}
-                      {customerTableData?.map((item, index) => (
-                        <li
-                          key={item.licenseNumber || index}
-                          className="p-2 hover:bg-gray-200 cursor-pointer"
-                          onClick={() =>
-                            handleLicenseSelect(item.licenseNumber)
-                          }
-                        >
-                          {`${item.licenseNumber} - ${item.productName}`}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-              <div className="relative">
-                <label
-                  htmlFor="leadFor"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Lead for
-                </label>
-
-                <div className="flex items-center space-x-2">
-                  {/* Toggle Dropdown Button */}
-                  <button
-                    type="button"
-                    onClick={handleToggleDropdown}
-                    className="border px-2 md:py-1.5  py-2 md:w-80 w-full bg-white text-left rounded flex justify-between items-center"
-                  >
-                    Select a product/services
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 transition-transform duration-200"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleAddProducts}
-                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded "
-                  >
-                    ADD
-                  </button>
-                </div>
-                {/* Product List (Visible when isOpen is true) */}
-                {isleadForOpen && (
-                  <div className="absolute w-full z-30 left-0 mt-2 md:w-80 border bg-white shadow-lg rounded-md p-2 max-h-40 overflow-y-auto">
-                    {selectedLicense &&
-                      leadList?.map((item) => {
-                        const currentProductState = productOrserviceSelections[
-                          selectedLicense
-                        ]?.find((p) => p._id === item._id) || {
-                          selected: false
-                        }
-
-                        return (
-                          <label
-                            key={item._id}
-                            className="flex items-center space-x-2 mb-1"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={currentProductState.selected}
-                              onChange={() =>
-                                handleProductORserviceSelect(item._id)
-                              }
-                              className="form-checkbox"
-                            />
-                            <span>{item.productName || item.serviceName}</span>
-                          </label>
-                        )
-                      })}
-                    {!selectedLicense &&
-                      leadList?.map((item) => {
-                        const currentProductState =
-                          licensewithoutProductSelection?.find(
-                            (p) => p._id === item._id
-                          ) || { selected: false }
-                        return (
-                          <label
-                            key={item._id}
-                            className="flex items-center space-x-2 mb-1"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={currentProductState.selected}
-                              onChange={() =>
-                                handleProductORserviceSelect(item._id)
-                              }
-                              className="form-checkbox"
-                            />
-                            <span>{item.productName || item.serviceName}</span>
-                          </label>
-                        )
-                      })}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:mx-5 md:mt-2 md:gap-6 ">
-              {selectedleadlist && selectedleadlist.length > 0 && (
-                <div className=" bg-white border rounded-md  max-h-[200px] overflow-y-auto overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead className="text-font-semibold">
-                      <tr className="bg-gray-100 border-b sticky top-0">
-                        <th className="p-2 font-semibold">License Number</th>
-                        <th className="p-2">
-                          Product/
-                          <br />
-                          Service
-                        </th>
-                        <th className="p-2 ">Price</th>
-                        <th className="p-2 ">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedleadlist.map((item, index) => (
-                        <tr key={index} className="border-b hover:bg-gray-50">
-                          <td className="p-2">
-                            {item.licenseNumber || "Not Selected"}
-                          </td>
-                          <td className="p-2">{item.productorServiceName}</td>
-                          {/* Editable Price Input */}
-                          <td className="p-2">
-                            <input
-                              type="number"
-                              value={item.price}
-                              onChange={(e) =>
-                                handlePriceChange(index, e.target.value)
-                              }
-                              className="w-full border rounded-md px-2 py-1 text-sm"
-                            />
-                          </td>
-                          <td className="p-2 items-center text-center space-x-2">
-                            <button
-                              type="button"
-                              onClick={() => handleDeletetableData(item, index)}
-                              className="text-red-500 hover:text-red-700"
-                              title="Delete Product"
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-5 w-5"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                              >
-                                <path d="M3 6h18" />
-                                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                              </svg>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
-              <div>
-                <label
-                  htmlFor="remark"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Remark
-                </label>
-                <textarea
-                  id="description"
-                  {...registerMain("remark")}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500  min-h-[100px]"
-                  placeholder="Remarks..."
-                ></textarea>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 md:gap-6 md:mx-5 md:mt-2 mb-6">
-              <div>
-                <label
-                  htmlFor="leadBy"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  LeadBy
-                </label>
-                {editMode ? (
                   <select
-                    id="leadBy"
-                    {...registerMain("leadBy")}
-                    className="mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
+                    id="branch"
+                    {...registerMain("branch")}
+                    // onChange={
+                    //   (e) =>
+                    //     setTableObject({
+                    //       ...tableObject,
+                    //       softwareTrade: e.target.value
+                    //     }) // Update state on change
+                    // }
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
                   >
-                    {allstaff?.map((user) => (
-                      <option key={user._id} value={user._id}>
-                        {user.name}
+                    <option value="">Select Branch</option>
+                    {companybranches?.map((branch, index) => (
+                      <option key={index} value={branch._id}>
+                        {branch.branchName}
                       </option>
                     ))}
                   </select>
-                ) : (
-                  <>
-                    <input type="hidden" {...registerMain("leadBy")} />
-                    <p className="mt-1 w-full border rounded-md p-2 text-gray-600 cursor-not-allowed">
-                      {loggeduser?.name}
-                    </p>
-                  </>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Net Amount
-                </label>
-                <input
-                  type="number"
-                  id="netAmount"
-                  {...registerMain("netAmount")}
-                  readOnly // Make it non-editable
-                  // value={calculateTotalAmount()} // Auto-updates with total price
-                  className=" mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
-                  placeholder="Net Amount"
-                />
-              </div>
+                </div>
 
-              <div className="h-full flex items-end mt-2 md:mt-0">
+                {/* Customer Select Dropdown */}
                 <div>
-                  {validateError.emptyleadData && (
+                  <label
+                    htmlFor="customerName"
+                    className="block text-sm  font-medium text-gray-700"
+                  >
+                    Customer Name
+                  </label>
+                  <div className="flex w-full text-sm ">
+                    <Select
+                      options={customerOptions}
+                      // value={selectedCustomer?.value}
+                      value={customerOptions.find(
+                        (option) => option.value === watchMain("customerName")
+                      )}
+                      getOptionLabel={(option) =>
+                        `${option.label}-(${option.mobile})`
+                      } // Show only customer name
+                      getOptionValue={(option) => option._id}
+                      filterOption={customFilter} // Enable searching by name & mobile
+                      {...registerMain("customerName", {
+                        required: "Customer is Required"
+                      })}
+                      onBlur={() => {
+                        const selected = customerOptions.find(
+                          (option) => option.value === watchMain("customerName")
+                        )
+                        if (selected) {
+                          setValueMain("customerName", selected.value)
+                        }
+                      }}
+                      onChange={(selectedOption) => {
+                        handleSelectedCustomer(selectedOption)
+                        setSelectedCustomer(selectedOption)
+                        // setValueMain("customerName", selectedOption.value)
+                        setValueMain("customerName", selectedOption.value, {
+                          shouldValidate: true
+                        })
+                      }}
+                      className="mt-1 w-full"
+                      styles={{
+                        menu: (provided) => ({
+                          ...provided,
+                          maxHeight: "200px", // Set dropdown max height
+                          overflowY: "auto" // Enable scrolling
+                        }),
+                        menuList: (provided) => ({
+                          ...provided,
+                          maxHeight: "200px", // Ensures dropdown scrolls internally
+                          overflowY: "auto"
+                        })
+                      }}
+                      menuPortalTarget={document.body} // Prevents nested scrolling issues
+                      menuShouldScrollIntoView={false}
+                    />
+
+                    <button
+                      type="button" // Prevents form submission
+                      onClick={() => {
+                        setModalOpen(true)
+                        clearMainerrors()
+                      }}
+                      className="bg-blue-500 hover:bg-blue-600  px-3 rounded-md text-white "
+                    >
+                      ADD
+                    </button>
+                  </div>
+                  {errorsMain.customerName && (
                     <p className="text-red-500 text-sm">
-                      {validateError.emptyleadData}
+                      {errorsMain.customerName.message}
                     </p>
                   )}
-                  <button
-                    type="submit"
-                    className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-                  >
-                    {process === "Registration" ? "SUBMIT" : "UPDATE"}
-                  </button>
                 </div>
+
+                <div>
+                  <label
+                    htmlFor="mobile"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Mobile
+                  </label>
+                  <input
+                    id="mobile"
+                    {...registerMain("mobile")}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
+                    placeholder="Mobile..."
+                  ></input>
+                </div>
+                <div>
+                  <label
+                    htmlFor="phone"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Phone
+                  </label>
+                  <input
+                    id="phone"
+                    {...registerMain("phone")}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
+                    placeholder="Landline..."
+                  ></input>
+                </div>
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    {...registerMain("email")}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
+                    placeholder="Email..."
+                  ></input>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="trade"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Trade
+                  </label>
+                  <input
+                    id="trade"
+                    {...registerMain("trade")}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
+                    placeholder="Trade..."
+                  ></input>
+                </div>
+                <div className="">
+                  <label
+                    htmlFor="remark"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Remark
+                  </label>
+                  <textarea
+                    id="description"
+                    {...registerMain("remark")}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500  max-h-[100px]"
+                    placeholder="Remarks..."
+                  ></textarea>
+                </div>
+              </div>
+              <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:gap-4">
+                  {process === "edit" && (
+                    <div>
+                      <label
+                        htmlFor="leadId"
+                        className="block text-sm font-medium text-gray-700"
+                      >
+                        Lead Id
+                      </label>
+                      <input
+                        id="leadId"
+                        type="text"
+                        {...registerMain("leadId")}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
+                        placeholder="Lead Id..."
+                      />
+                      {errorsMain.leadId && (
+                        <span className="mt-2 text-sm text-red-600">
+                          {errorsMain.leadId.message}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  <div className="w-full relative ">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Select License
+                    </label>
+                    {/* Button to open dropdown and show selected value */}
+                    <button
+                      type="button"
+                      onClick={() => setIslicenseOpen(!isLicenseOpen)}
+                      className="border px-2 md:py-1.5 py-2 w-full bg-white text-left rounded flex justify-between items-center"
+                    >
+                      {selectedLicense ?? "Select License"}
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 transition-transform duration-200"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+
+                    {/* Dropdown List */}
+                    {isLicenseOpen && (
+                      <div className=" md:w-72 w-full mt-1 bg-white border rounded-md shadow-lg z-30  max-h-60 absolute overflow-y-auto ">
+                        <ul className="">
+                          {/* Option to unselect license */}
+                          <li
+                            className="p-2 hover:bg-gray-200 cursor-pointer font-semibold text-red-500"
+                            onClick={() => handleLicenseSelect(null)}
+                          >
+                            No License
+                          </li>
+
+                          {/* List of available licenses */}
+                          {customerTableData?.map((item, index) => (
+                            <li
+                              key={item.licenseNumber || index}
+                              className="p-2 hover:bg-gray-200 cursor-pointer"
+                              onClick={() =>
+                                handleLicenseSelect(item.licenseNumber)
+                              }
+                            >
+                              {`${item.licenseNumber} - ${item.productName}`}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <label
+                      htmlFor="leadFor"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Lead for
+                    </label>
+
+                    <div className="flex items-center space-x-2">
+                      {/* Toggle Dropdown Button */}
+                      <button
+                        type="button"
+                        onClick={handleToggleDropdown}
+                        className="border px-2 md:py-1.5  py-2 md:w-80 w-full bg-white text-left rounded flex justify-between items-center"
+                      >
+                        Select a product/services
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5 transition-transform duration-200"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleAddProducts}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded "
+                      >
+                        ADD
+                      </button>
+                    </div>
+                    {/* Product List (Visible when isOpen is true) */}
+                    {isleadForOpen && (
+                      <div className="absolute w-full z-30 left-0 mt-2 md:w-80 border bg-white shadow-lg rounded-md p-2 max-h-40 overflow-y-auto">
+                        {selectedLicense &&
+                          leadList?.map((item) => {
+                            const currentProductState =
+                              productOrserviceSelections[selectedLicense]?.find(
+                                (p) => p._id === item._id
+                              ) || {
+                                selected: false
+                              }
+
+                            return (
+                              <label
+                                key={item._id}
+                                className="flex items-center space-x-2 mb-1"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={currentProductState.selected}
+                                  onChange={() =>
+                                    handleProductORserviceSelect(item._id)
+                                  }
+                                  className="form-checkbox"
+                                />
+                                <span>
+                                  {item.productName || item.serviceName}
+                                </span>
+                              </label>
+                            )
+                          })}
+                        {!selectedLicense &&
+                          leadList?.map((item) => {
+                            const currentProductState =
+                              licensewithoutProductSelection?.find(
+                                (p) => p._id === item._id
+                              ) || { selected: false }
+                            return (
+                              <label
+                                key={item._id}
+                                className="flex items-center space-x-2 mb-1"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={currentProductState.selected}
+                                  onChange={() =>
+                                    handleProductORserviceSelect(item._id)
+                                  }
+                                  className="form-checkbox"
+                                />
+                                <span>
+                                  {item.productName || item.serviceName}
+                                </span>
+                              </label>
+                            )
+                          })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {selectedleadlist && selectedleadlist.length > 0 && (
+                  <div className=" flex flex-col-1 bg-white border rounded-md  max-h-[200px] overflow-y-auto overflow-x-auto bg-green-300 mt-4">
+                    <table className="w-full border-collapse">
+                      <thead className="text-font-semibold">
+                        <tr className="bg-gray-100 border-b sticky top-0">
+                          <th className="p-2 font-semibold">License Number</th>
+                          <th className="p-2">Product/ Service</th>
+                          <th className="p-2 ">Price</th>
+                          <th className="p-2 ">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedleadlist.map((item, index) => (
+                          <tr key={index} className="border-b hover:bg-gray-50">
+                            <td className="px-2 py-1">
+                              {item.licenseNumber || "Not Selected"}
+                            </td>
+                            <td className="px-2 py-1">
+                              {item.productorServiceName}
+                            </td>
+                            {/* Editable Price Input */}
+                            <td className="px-2 py-1">
+                              <input
+                                type="number"
+                                value={item.price}
+                                onChange={(e) =>
+                                  handlePriceChange(index, e.target.value)
+                                }
+                                className="w-full border rounded-md px-2 py-1 text-sm"
+                              />
+                            </td>
+                            <td className="px-2 py-1 items-center text-center space-x-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleDeletetableData(item, index)
+                                }
+                                className="text-red-500 hover:text-red-700"
+                                title="Delete Product"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-5 w-5"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                >
+                                  <path d="M3 6h18" />
+                                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                </svg>
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:gap-4">
+                  <div>
+                    <label
+                      htmlFor="leadBy"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      LeadBy
+                    </label>
+                    {editMode ? (
+                      <select
+                        id="leadBy"
+                        {...registerMain("leadBy")}
+                        className="mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
+                      >
+                        {allstaff?.map((user) => (
+                          <option key={user._id} value={user._id}>
+                            {user.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <>
+                        <input type="hidden" {...registerMain("leadBy")} />
+                        <p className="mt-1 w-full border rounded-md p-2 text-gray-600 cursor-not-allowed">
+                          {loggeduser?.name}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Net Amount
+                    </label>
+                    <input
+                      type="number"
+                      id="netAmount"
+                      {...registerMain("netAmount")}
+                      readOnly // Make it non-editable
+                      // value={calculateTotalAmount()} // Auto-updates with total price
+                      className=" mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
+                      placeholder="Net Amount"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="justify-center items-center text-center mt-4 ">
+              <div>
+                {validateError.emptyleadData && (
+                  <p className="text-red-500 text-sm">
+                    {validateError.emptyleadData}
+                  </p>
+                )}
+                <button
+                  type="submit"
+                  className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                >
+                  {process === "Registration" ? "SUBMIT" : "UPDATE"}
+                </button>
               </div>
             </div>
           </form>
