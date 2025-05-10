@@ -972,6 +972,16 @@ export const OnsiteApply = async (req, res) => {
     const { selectedid, assignedto, compensatoryLeave } = req.query
 
     const { formData, tableRows } = req.body
+    // console.log(formData)
+    const onsiteObjectId = new mongoose.Types.ObjectId(formData.onsiteId)
+    console.log(onsiteObjectId)
+    const checkForthisonsiteusedforCompensatoryleave = await CompensatoryLeave.findOne({ onsiteId: onsiteObjectId, leaveUsed: true })
+    console.log(checkForthisonsiteusedforCompensatoryleave)
+    if (checkForthisonsiteusedforCompensatoryleave) {
+      console.log("used")
+      return res.status(201).json({ message: "Cant make date change compensatory for this onsite taken" })
+    }
+
     const selectedObjectId = new mongoose.Types.ObjectId(selectedid)
     const assignedObjectId = new mongoose.Types.ObjectId(assignedto)
 
@@ -1082,7 +1092,8 @@ export const OnsiteApply = async (req, res) => {
         onsitedata.onsiteData.push(tableRows)
       }
       const successonsite = await onsitedata.save()
-      if (compensatoryLeave) {
+      if (compensatoryLeave === "true") {
+        console.log("compenstatoryleave", compensatoryLeave)
         const year = new Date(onsiteDate).getFullYear()
 
         const compensatoryleaveapply = new CompensatoryLeave({

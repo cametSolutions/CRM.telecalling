@@ -595,7 +595,7 @@ function LeaveApplication() {
       console.log(error.response.data.message)
     }
   }
-
+ 
   const handleDateClick = (date) => {
     setclickedDate(date)
     const clickedDate = date
@@ -607,6 +607,7 @@ function LeaveApplication() {
       return formattedHolyDate === date
     })
     if (isHoliday || isSunday) {
+     
       setcompensatoryLeave(true)
     }
 
@@ -697,6 +698,8 @@ function LeaveApplication() {
       })
       if (isHoliday || isSunday) {
         setcompensatoryLeave(true)
+      } else {
+        setcompensatoryLeave(false)
       }
     }
     // Access current values for leave type & category
@@ -744,12 +747,7 @@ function LeaveApplication() {
       setFormData((prev) => ({
         ...prev,
         [name]: value
-        // halfDayPeriod:
-        //   selectedTab === "Onsite"
-        //     ? formData.onsiteType
-        //     : formData.leaveType === "Half Day"
-        //     ? "Morning"
-        //     : ""
+       
       }))
     }
 
@@ -772,7 +770,6 @@ function LeaveApplication() {
     })
   }
   const handleSubmit = async (tab) => {
-
     try {
       if (tab === "New Leave" || tab === "Edit Leave") {
         const dayOfWeek = new Date(formData.leaveDate).getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
@@ -793,7 +790,6 @@ function LeaveApplication() {
       }
 
       if (tab === "Leave" || tab === "New Leave" || tab === "Edit Leave") {
-        console.log("GG")
         // Validation
         let newErrors = {}
         if (!formData.leaveType) newErrors.leaveType = "Shift is required"
@@ -812,15 +808,7 @@ function LeaveApplication() {
         if (formData.leaveId) {
           isApprovedLeave = allleaves?.find((leave) => {
             const matchedid = leave._id === formData.leaveId
-            // const leaveDate = new Date(leave.leaveDate) // Convert leave.leaveDate to Date object
-            // Compare the year, month, and day only (ignoring time)
-            //           const isSameDate =
-            //             leaveDate.getFullYear() === formStartDate.getFullYear() &&
-            //             leaveDate.getMonth() === formStartDate.getMonth() &&
-            //             leaveDate.getDate() === formStartDate.getDate()
-            //           const isSametype = leave.leaveType === formleaveType
-            // const isSameHalftype=leave.halfDayPeriod===formhalfdayPeriod
-            // Check if adminverified or departmentverified is true
+           
             return (
               matchedid && (leave.adminverified || leave.departmentverified)
             )
@@ -944,6 +932,7 @@ function LeaveApplication() {
           )
 
           if (response.status === 200) {
+            setcompensatoryLeave(false)
             setLoader(false)
             toast.success("Onsite applied successfully")
             setSelectedTab("Leave")
@@ -972,6 +961,12 @@ function LeaveApplication() {
             refreshHook()
             refreshHookOnsite()
             refreshHookCompensatory()
+          } else if (response.status === 201) {
+            setLoader(false)
+            setMessage((prev) => ({
+              ...prev,
+              bottom: response.data.message
+            }))
           }
         }
       }
@@ -1057,10 +1052,7 @@ function LeaveApplication() {
       case "Leave":
         return (
           <div className=" rounded-lg shadow-lg max-w-[380px]  min-w-[300px] z-40 border border-gray-300 overflow-hidden">
-            {/* Header */}
-            {/* <div className="bg-gray-100 px-6 py-2 text-lg font-bold text-gray-700 border-b">
-              {user?.name?.toUpperCase()}
-            </div> */}
+            
 
             {/* Leave Balance Section */}
             <div className="p-2">
@@ -1248,6 +1240,7 @@ function LeaveApplication() {
                           setEdit(true)
 
                           setFormData({
+                            onsiteId: onsite._id,
                             onsiteDate: onsite.onsiteDate
                               .toString()
                               .split("T")[0],
@@ -1839,6 +1832,7 @@ function LeaveApplication() {
                       className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600 ml-3"
                       onClick={() => {
                         setShowModal(false)
+                        setcompensatoryLeave(false)
                         setEdit(false)
                         setFormData({
                           description: "",
@@ -1879,6 +1873,7 @@ function LeaveApplication() {
                       className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
                       onClick={() => {
                         setShowModal(false)
+                        setcompensatoryLeave(false)
                         setFormData({
                           description: "",
                           onsite: false,
@@ -1922,6 +1917,7 @@ function LeaveApplication() {
                       className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
                       onClick={() => {
                         setShowModal(false)
+                        setcompensatoryLeave(false)
                         setFormData({
                           description: "",
                           onsite: false,

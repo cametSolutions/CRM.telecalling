@@ -13,6 +13,91 @@ import { sendEmail } from "../../helper/nodemailer.js"
 const { Staff, Admin } = models
 import mongoose from "mongoose"
 import Holymaster from "../../model/secondaryUser/holydaymasterSchema.js"
+export const GetscrollCustomer = async (req, res) => {
+
+
+  try {
+    const { page = 1, limit = 100, search = "", userBranch } = req.query
+    // Pagination setup
+    const pageNum = parseInt(page);
+    const pageSize = parseInt(limit);
+    const skip = (pageNum - 1) * pageSize;
+
+    // Build search query
+    let searchQuery = {};
+    if (search) {
+      const regex = new RegExp("^" + search, "i");
+
+      searchQuery = {
+        $or: [
+          { customerName: regex },
+          { mobile: typeof search === "string" ? regex : undefined },
+        ].filter(Boolean), // removes undefined if any
+      };
+    }
+  
+    const customers = await Customer.aggregate([{ $match: searchQuery },
+    { $skip: skip },
+    { $limit: pageSize },
+    {
+      $match: {
+        selected: { $exists: true, $ne: [] }
+      }
+    },
+    {
+      $unwind: "$selected"
+    },
+    {
+      $lookup: {
+        from: "products",
+        localField: "selected.product_id",
+        foreignField: "_id",
+        as: "productDetails"
+      }
+    },
+    {
+      $unwind: {
+        path: "$productDetails",
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $addFields: {
+        "selected.productName": "$productDetails.productName"
+      }
+    },
+    {
+      $group: {
+        _id: "$_id",
+        customerName: { $first: "$customerName" },
+        address1: { $first: "$address1" },
+        state: { $first: "$state" },
+        email: { $first: "$email" },
+        mobile: { $first: "$mobile" },
+        selected: { $push: "$selected" }
+      }
+    },
+    {
+      $sort: { customerName: 1 }
+    }
+    ]);
+    console.log("length", customers.length)
+    if (customers.length === 0) {
+      return res
+        .status(200)
+        .json({ message: "No customer found", data: [] })
+    }
+    return res
+      .status(200)
+      .json({ message: "Customer(s) found", data: customers })
+
+
+
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const GetallCallnotes = async (req, res) => {
   try {
     const callnotes = await CallNote.find({})
@@ -717,7 +802,7 @@ export const GetAllCustomer = async (req, res) => {
 
       const filteredCustomers = customers.filter(
         (customer) =>
-         
+
           //Include customers where `selected` is undefined or empty
           !Array.isArray(customer.selected) ||
           customer.selected.length === 0 ||
@@ -736,6 +821,7 @@ export const GetAllCustomer = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+
 
 export const GetCustomer = async (req, res) => {
   const search = req.query?.search
@@ -1242,7 +1328,6 @@ export const GetCustomer = async (req, res) => {
       .json({ message: "An error occurred while fetching customer data." })
   }
 }
-
 export const GetLicense = async (req, res) => {
   try {
     const licensenumber = await License.find()

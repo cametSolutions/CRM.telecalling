@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react"
 import { BarLoader } from "react-spinners"
 import { CiEdit } from "react-icons/ci"
+import { PropagateLoader } from "react-spinners"
 import { useNavigate } from "react-router-dom"
 import UseFetch from "../../hooks/useFetch"
 import debounce from "lodash.debounce"
@@ -22,9 +23,11 @@ const CustomerListform = () => {
   const navigate = useNavigate()
   const dispatch = useDispatch()
   // const tableContainerRef = useRef(null) // Ref to track table container scrolling
-
+  const scrollTriggeredRef = useRef(false)
   const [searchQuery, setSearchQuery] = useState(true)
-  const [loading, setLoading] = useState(true)
+  const [searchTerm, setsearchTerm] = useState("")
+  const [pages, setPages] = useState(1)
+  // const [loading, setLoading] = useState(true)
   const [tableHeight, setTableHeight] = useState("auto")
   const [displayedCustomers, setDisplayedCustomers] = useState([]) // Initially displayed customers
   const [loadMoreCount, setLoadMoreCount] = useState(10)
@@ -36,17 +39,11 @@ const CustomerListform = () => {
   const [branch, setBranches] = useState([])
   const [userRole, setUserRole] = useState(null)
   const headerRef = useRef(null)
-  const {
-    data: customerData,
-
-    error
-  } = UseFetch(
-    user &&
-      branch &&
-      `/customer/getCustomer?role=${user?.role}&userBranch=${encodeURIComponent(
-        branch
-      )}`
+  const containerRef = useRef(null)
+  const { data: list, loading: scrollLoading } = UseFetch(
+    `/customer/getcust?limit=100&page=${pages}&search=${searchTerm}`
   )
+ 
   useEffect(() => {
     if (headerRef.current) {
       const headerHeight = headerRef.current.getBoundingClientRect().height
@@ -69,27 +66,51 @@ const CustomerListform = () => {
       setUserRole(null) // Handle case where user or role doesn't exist
     }
   }, [])
-  //custom hook is used for search
-  const searchData = useSearch({ fullData: customerData })
+  
   useEffect(() => {
-    if (searchData) {
-      setAfterSearchData(searchData)
+    if (list) {
+      if (!searchTerm) {
+        scrollTriggeredRef.current = false
+       
+        setAfterSearchData((prev) => [...prev, ...list])
+      } else {
+        scrollTriggeredRef.current = false
+        setAfterSearchData((prev) => [...prev, ...list])
+      }
     }
-  }, [searchData])
-  useEffect(() => {
-    if (searchAfterData) {
-      setLoading(false)
-    }
-  }, [searchAfterData])
+  }, [list])
 
+  const handleScroll = () => {
+    const container = containerRef.current
+
+    if (!container) return false
+
+    const { clientHeight, scrollHeight, scrollTop } = container
+    const totalScrollableDistance = scrollHeight - clientHeight
+
+    // Calculate current scroll position as percentage
+    const scrollPercentage = (scrollTop / totalScrollableDistance) * 100
+
+    // Trigger when scroll reaches 80%
+    if (scrollPercentage >= 90 && !scrollTriggeredRef.current) {
+      scrollTriggeredRef.current = true
+
+      setPages((prev) => prev + 1)
+
+    }
+  }
   //Handle search with lodash debounce to optimize search performance
   const handleSearch = debounce((query) => {
     if (query.trim() === "") {
-      setLoading(true)
-      dispatch(removeSearch())
+      
+      setsearchTerm(query)
+      setPages(1)
+      setAfterSearchData([])
     } else {
-      setLoading(true)
-      dispatch(setSearch(query))
+  
+      setsearchTerm(query)
+      setAfterSearchData([])
+      setPages(1)
     }
   }, 500)
   const handleChange = (e) => handleSearch(e.target.value)
@@ -131,9 +152,9 @@ const CustomerListform = () => {
               className="w-full border border-gray-300 rounded-full py-1 px-4 pl-10 focus:outline-none"
               placeholder="Search for..."
             />
-            {loading && (
+            {scrollLoading&& (
               <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <ClipLoader color="#36D7B7" loading={loading} size={20} />
+                <ClipLoader color="#36D7B7" loading={scrollLoading} size={20} />
               </div>
             )}
           </div>
@@ -173,6 +194,8 @@ const CustomerListform = () => {
         </div>
 
         <div
+          onScroll={handleScroll}
+          ref={containerRef}
           // style={{ height: tableHeight }} // Dynamically set table height
           className="overflow-y-auto max-h-96 rounded-lg" // Fixed height for scrolling
         >
@@ -301,7 +324,13 @@ const CustomerListform = () => {
                     colSpan="11"
                     className="px-4 py-4 text-center text-gray-500"
                   >
-                    Loading...
+                    {scrollLoading ? (
+                      <div className="justify center">
+                        <PropagateLoader color="#3b82f6" size={10} />
+                      </div>
+                    ) : (
+                      <div>No Data found</div>
+                    )}
                   </td>
                 </tr>
               )}
