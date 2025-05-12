@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react"
+import  { useState, useEffect, useCallback } from "react"
 import debounce from "lodash.debounce"
-import axios from "axios"
 import api from "../../../api/api"
 import io from "socket.io-client" // Import Socket.IO client
 import { FaSearch, FaPhone } from "react-icons/fa"

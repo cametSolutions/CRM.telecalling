@@ -735,37 +735,37 @@ export const DeleteCustomer = async (req, res) => {
 }
 export const GetAllCustomer = async (req, res) => {
   try {
-    const { userbranch } = req.query
+    const { branchSelected } = req.query
+    console.log("branch", branchSelected)
     let allcustomers
     let customers
-    let parsedBranch
 
-    if (userbranch) {
-      parsedBranch = JSON.parse(decodeURIComponent(userbranch))
-    }
-    if (!userbranch) {
-      allcustomers = await Customer.aggregate([
-        // {
-        //   $match: {
-        //     "selected.productName": { $exists: true } // Customers where productName is missing in "selected"
-        //   }
-        // },
-        {
-          $project: {
-            _id: 1, // Exclude _id
-            customerName: 1,
-            address1: 1,
-            "selected.licensenumber": 1,
-            "selected.branchName": 1,
-            "selected.branch_id": 1,
-            "selected.productName": 1,
-            "selected.procuct_id": 1,
-            mobile: 1,
-            landline: 1,
-            email: 1
-          }
-        }
-      ])
+
+
+    if (!branchSelected) {
+      return res.status(400).json({ message: "branch id is missing" })
+      // allcustomers = await Customer.aggregate([
+      //   // {
+      //   //   $match: {
+      //   //     "selected.productName": { $exists: true } // Customers where productName is missing in "selected"
+      //   //   }
+      //   // },
+      //   {
+      //     $project: {
+      //       _id: 1, // Exclude _id
+      //       customerName: 1,
+      //       address1: 1,
+      //       "selected.licensenumber": 1,
+      //       "selected.branchName": 1,
+      //       "selected.branch_id": 1,
+      //       "selected.productName": 1,
+      //       "selected.procuct_id": 1,
+      //       mobile: 1,
+      //       landline: 1,
+      //       email: 1
+      //     }
+      //   }
+      // ])
     } else {
       customers = await Customer.aggregate([
         // {
@@ -791,31 +791,28 @@ export const GetAllCustomer = async (req, res) => {
       ])
     }
 
-    if (!userbranch) {
-      return res
-        .status(200)
-        .json({ message: "customers found", data: allcustomers })
-    } else {
-      const objectIds = parsedBranch?.map(
-        (id) => new mongoose.Types.ObjectId(id)
-      )
 
-      const filteredCustomers = customers.filter(
-        (customer) =>
+    // const objectIds = parsedBranch?.map(
+    //   (id) => new mongoose.Types.ObjectId(id)
+    // )
+    const objectIds = new mongoose.Types.ObjectId(branchSelected)
 
-          //Include customers where `selected` is undefined or empty
-          !Array.isArray(customer.selected) ||
-          customer.selected.length === 0 ||
-          // Or those with at least one matching branch_id
-          customer.selected.some((selection) =>
-            objectIds.some((objId) => objId.equals(selection.branch_id))
-          )
-      )
+    const filteredCustomers = customers.filter(
+      (customer) =>
 
-      return res
-        .status(200)
-        .json({ message: "customers found", data: filteredCustomers })
-    }
+        //Include customers where `selected` is undefined or empty
+        !Array.isArray(customer.selected) ||
+        customer.selected.length === 0 ||
+        // Or those with at least one matching branch_id
+        customer.selected.some((selection) =>
+          objectIds.equals(selection.branch_id))
+
+    )
+
+    return res
+      .status(200)
+      .json({ message: "customers found", data: filteredCustomers })
+
   } catch (error) {
     console.log(error)
     return res.status(500).json({ message: "Internal server error" })

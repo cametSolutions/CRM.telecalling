@@ -33,12 +33,10 @@ const UserPermissions = () => {
   }, [debouncedQuery])
   useEffect(() => {
     if (userData && debouncedQuery === "") {
-console.log("HHH")
       const { allusers } = userData
       setUser(allusers)
     }
     if (debouncedQuery) {
-console.log("hhhh")
       const filtered = user.filter((staff) =>
         staff.name.toLowerCase().includes(debouncedQuery.toLowerCase())
       )

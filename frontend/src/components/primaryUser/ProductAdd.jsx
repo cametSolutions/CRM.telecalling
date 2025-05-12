@@ -51,9 +51,7 @@ const ProductAdd = ({
     hsn_id: "",
     hsnName: ""
   })
-  // const { data: productData, error: productError } = UseFetch(
-  //   "/product/getallProducts"
-  // )
+ 
   const { data: companyData, error: companyError } = UseFetch(
     "/company/getCompany"
   )

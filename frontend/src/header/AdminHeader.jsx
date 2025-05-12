@@ -164,7 +164,6 @@ export default function AdminHeader() {
       label: "HSN"
     }
   ]
-  console.log(user)
   const transactions = [
     {
       to: "/admin/transaction/lead",

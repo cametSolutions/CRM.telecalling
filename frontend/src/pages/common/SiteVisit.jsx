@@ -108,8 +108,7 @@ const SiteVisit = () => {
           // const lon = position.coords.longitude
           const lat = 10.062760; // Manually set latitude for more precision
           const lon = 76.318021
-          console.log("lat", lat)
-          console.log("lon", lon)
+         
           setLatitude(lat)
           setLongitude(lon)
           console.log(`Latitude: ${lat}, Longitude: ${lon}`)

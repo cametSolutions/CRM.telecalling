@@ -7,16 +7,12 @@ import { FaSpinner } from "react-icons/fa"
 import { FaHistory } from "react-icons/fa"
 import api from "../../../api/api"
 import { toast } from "react-toastify"
-import Select from "react-select"
 import UseFetch from "../../../hooks/useFetch"
 import { formatDate } from "../../../utils/dateUtils"
-import useDebounce from "../../../hooks/useDebounce"
 const LeadFollowUp = () => {
-  const [status, setStatus] = useState("Pending")
   const [selectedLeadId, setSelectedLeadId] = useState(null)
   const [historyList, setHistoryList] = useState([])
   const [user, setUser] = useState(null)
-  const [pedingleadTableData, setpendingLeadTableData] = useState([])
   const [followupDateLoader, setfollowupDateLoader] = useState(false)
   const [input, setInput] = useState("")
   const [showFullRemarks, setShowFullRemarks] = useState("")
@@ -26,13 +22,7 @@ const LeadFollowUp = () => {
   const [followupDateModal, setfollowupDateModal] = useState(false)
   const [showFullName, setShowFullName] = useState(false)
   const [showFullEmail, setShowFullEmail] = useState(false)
-  const [approvedToggleStatus, setapprovedToggleStatus] = useState(false)
-  const [submitLoading, setsubmitLoading] = useState(false)
-  const [allocationOptions, setAllocationOptions] = useState([])
-  const [followUpDate, setFollowUpDate] = useState("")
-  const [selectedAllocates, setSelectedAllocates] = useState({})
-  const [allStaffs, setallStaffs] = useState([])
-  const [loader, setloader] = useState(true)
+  // const [submitLoading, setsubmitLoading] = useState(false)
   const [tableData, setTableData] = useState([])
   const [formData, setFormData] = useState({
     followUpDate: "",
@@ -43,14 +33,14 @@ const LeadFollowUp = () => {
   })
 
   const { data: loggedusersallocatedleads, loading } = UseFetch(
-    status && "/lead/getallLead?Status=Approved"
+    "/lead/getallLead?Status=Approved"
   )
-  const { data } = UseFetch("/auth/getallUsers")
   const navigate = useNavigate()
   useEffect(() => {
     const userData = localStorage.getItem("user")
     if (userData) setUser(JSON.parse(userData))
   }, [])
+
   useEffect(() => {
     if (user) {
       setFormData((prev) => ({
@@ -60,21 +50,7 @@ const LeadFollowUp = () => {
     }
   }, [user])
 
-  useEffect(() => {
-    if (data) {
-      const { allusers = [], allAdmins = [] } = data
-
-      // Combine allusers and allAdmins
-      const combinedUsers = [...allusers, ...allAdmins]
-
-      setAllocationOptions(
-        combinedUsers.map((item) => ({
-          value: item?._id,
-          label: item?.name
-        }))
-      )
-    }
-  }, [data])
+ 
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedValue(input) // this is your debounced result
@@ -96,77 +72,10 @@ const LeadFollowUp = () => {
       }
     }
   }, [loggedusersallocatedleads])
-  const toggleStatus = async () => {
-    setShowFullEmail(false)
-    setShowFullName(false)
-    if (approvedToggleStatus === false) {
-      setsubmitLoading(true)
-      const response = await api.get("/lead/getallLead?Status=Approved")
-      if (response.status >= 200 && response.status < 300) {
-        setTableData(response.data.data)
-        setapprovedToggleStatus(!approvedToggleStatus)
-        setsubmitLoading(false)
-        const initialSelected = {}
+  
 
-        response.data.data.forEach((item) => {
-          if (item.allocatedTo?._id) {
-            const match = allocationOptions.find(
-              (opt) => opt.value === item.allocatedTo._id
-            )
 
-            if (match) {
-              initialSelected[item._id] = match
-            }
-          }
-        })
-
-        setSelectedAllocates(initialSelected)
-      }
-    } else {
-      const response = await api.get("/lead/getallLead?Status=Pending")
-      if (response.status >= 200 && response.status < 300) {
-        setTableData(response.data.data)
-        setapprovedToggleStatus(!approvedToggleStatus)
-        setsubmitLoading(false)
-      }
-    }
-  }
-
-  const handleSelectedAllocates = (item, value) => {
-    setTableData((prevLeads) =>
-      prevLeads.map((lead) =>
-        lead._id === item._id ? { ...lead, allocatedTo: value } : lead
-      )
-    )
-  }
-
-  const handleSubmit = async (leadAllocationData) => {
-    try {
-      setsubmitLoading(true)
-      if (approvedToggleStatus) {
-        const response = await api.post(
-          "/lead/leadAllocation",
-          leadAllocationData
-        )
-        if (response.status >= 200 && response.status < 300) {
-          setTableData(response.data.data)
-          setsubmitLoading(false)
-        }
-      } else {
-        const response = await api.post(
-          "/lead/leadAllocation?allocationpending=true",
-          leadAllocationData
-        )
-
-        if (response.status >= 200 && response.status < 300) {
-          setTableData(response.data.data)
-          setsubmitLoading(false)
-        }
-      }
-    } catch (error) {
-      console.log("error:", error.message)
-    }
-  }
+ 
   const handleDataChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({
@@ -217,7 +126,7 @@ const LeadFollowUp = () => {
   }
   return (
     <div className="h-full ">
-      {submitLoading && (
+      {loading&& (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
           color="#4A90E2" // Change color as needed

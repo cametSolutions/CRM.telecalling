@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo } from "react"
+import { useEffect, useState, useMemo } from "react"
 // import LoadingBar from "react-top-loading-bar"
 import { Country, State } from "country-state-city"
 import BarLoader from "react-spinners/BarLoader"
@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom"
 const LeadMaster = ({
   process,
   Data,
+  isReadOnly,
   handleleadData,
   handleEditData,
   loadingState,
@@ -26,7 +27,7 @@ const LeadMaster = ({
     register: registerMain,
     handleSubmit: handleSubmitMain,
     setValue: setValueMain,
-    getValues: getValuesMain,
+
     watch: watchMain,
 
     clearErrors: clearMainerrors,
@@ -38,7 +39,6 @@ const LeadMaster = ({
     handleSubmit: handleSubmitModal,
     setValue: setValueModal,
     getValues: getValuesModal,
-    watch: watchModal,
     setError,
     clearErrors: clearmodalErros,
     formState: { errors: errorsModal },
@@ -56,13 +56,10 @@ const LeadMaster = ({
   const [licensewithoutProductSelection, setlicenseWithoutProductSelection] =
     useState({})
   const [selectedState, setSelectedState] = useState(null)
-  const [selectedProducts, setSelectedProducts] = useState(null)
   const [selectedleadlist, setSelectedLeadList] = useState([])
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   const [selectedLicense, setSelectedLicense] = useState(null)
-  const [filteredProduct, setFilteredProduct] = useState([])
   const [modalOpen, setModalOpen] = useState(false)
-  const [progress, setProgress] = useState(0)
   const [customerOptions, setCustomerOptions] = useState([])
   const [isleadForOpen, setIsleadForOpen] = useState(false)
   const [isLicenseOpen, setIslicenseOpen] = useState(false)
@@ -75,27 +72,36 @@ const LeadMaster = ({
 
   const [allcustomer, setallcustomer] = useState([])
   // State to toggle the table
-  const [editState, seteditState] = useState(true)
 
   // Create a ref for the dropdown container
-  const dropdownRef = useRef(null)
+  // const dropdownRef = useRef(null)
 
   const { data: productData, loading: productLoading } = UseFetch(
-    "/product/getallProducts"
+    loggeduser &&
+      selectedBranch &&
+      selectedBranch.length &&
+      `/product/getallProducts?branchselected=${encodeURIComponent(
+        JSON.stringify(selectedBranch)
+      )}`
   )
   const { data: companybranches } = UseFetch("/branch/getBranch")
   const { data: partners } = UseFetch("/customer/getallpartners")
-  const { data: serviceData } = UseFetch("/product/getallServices")
+  const { data: serviceData } = UseFetch(
+    loggeduser &&
+      selectedBranch &&
+      `/product/getallServices?branchselected=${selectedBranch}`
+  )
   const { data: alluser, loading: usersLoading } = UseFetch("/auth/getallUsers")
   const {
     data: customerData,
     loading: customerLoading,
     refreshHook
   } = UseFetch(
-    loggeduser&&selectedBranch&&
-       `/customer/getallCustomer?branchSelected=${encodeURIComponent(selectedBranch)}`
-      
+    loggeduser &&
+      selectedBranch &&
+      `/customer/getallCustomer?branchSelected=${selectedBranch}`
   )
+
   const navigate = useNavigate()
   useEffect(() => {
     const userData = localStorage.getItem("user")
@@ -125,34 +131,17 @@ const LeadMaster = ({
       partners
     ) {
       setPartner(partners)
-      if (loggeduser?.role === "Admin") {
-        const combinedlead = [...productData, ...serviceData]
-        setLeadList(combinedlead)
-      } else {
-        const userBranchIds = loggeduser.selected.map((sel) => sel.branch_id)
 
-        const filteredProducts = productData.filter((product) =>
-          product.selected.some((sel) => userBranchIds.includes(sel.branch_id))
-        )
-        const filteredServices = serviceData.filter((service) =>
-          userBranchIds.includes(service.branch)
-        )
-        const combinedproductandservice = [
-          ...filteredProducts,
-          ...filteredServices
-        ]
-        setLeadList(combinedproductandservice)
-        // const filteredproduct = productData.map((item)=>item.selected.includes(loggeduser.selecte)     }
-      }
+      const combinedlead = [...productData, ...serviceData]
+      setLeadList(combinedlead)
     }
   }, [loggeduser, branches, productData, serviceData, partners])
   useEffect(() => {
     if (companybranches?.length > 0) {
       const defaultBranch = companybranches[0]._id
       if (defaultBranch) {
-        console.log(defaultBranch)
-        setSelectedBranch(defaultBranch)
-        setValueMain("branch", defaultBranch)
+        setSelectedBranch([defaultBranch])
+        setValueMain("leadBranch", defaultBranch)
       }
     }
   }, [companybranches])
@@ -195,35 +184,35 @@ const LeadMaster = ({
       })
       setlicenseWithoutProductSelection(productListwithoutlicenseOnEdit)
       const groupedByLicenseNumber = {}
-      const productlistwithlicenseonEdit = Data[0].leadFor.map((lead) => {
-        if (lead.licenseNumber) {
-          if (!groupedByLicenseNumber[lead.licenseNumber]) {
-            groupedByLicenseNumber[lead.licenseNumber] = [] // create array if not exist
-          }
-          leadList?.forEach((product) => {
-            const existingIndex = groupedByLicenseNumber[
-              lead.licenseNumber
-            ].findIndex((item) => item._id === product._id)
+      // const productlistwithlicenseonEdit = Data[0].leadFor.map((lead) => {
+      //   if (lead.licenseNumber) {
+      //     if (!groupedByLicenseNumber[lead.licenseNumber]) {
+      //       groupedByLicenseNumber[lead.licenseNumber] = [] // create array if not exist
+      //     }
+      //     leadList?.forEach((product) => {
+      //       const existingIndex = groupedByLicenseNumber[
+      //         lead.licenseNumber
+      //       ].findIndex((item) => item._id === product._id)
 
-            if (existingIndex !== -1) {
-              // If already exists, just update 'selected' flag
-              if (lead.productorServiceId._id === product._id) {
-                groupedByLicenseNumber[lead.licenseNumber][
-                  existingIndex
-                ].selected = product._id === lead.productorServiceId._id
-              }
-            } else {
-              // If not exists, push new product with correct selected
-              const item = {
-                ...product,
-                selected: product._id === lead.productorServiceId._id
-              }
-              groupedByLicenseNumber[lead.licenseNumber].push(item)
-            }
-          })
-          return groupedByLicenseNumber
-        }
-      })
+      //       if (existingIndex !== -1) {
+      //         // If already exists, just update 'selected' flag
+      //         if (lead.productorServiceId._id === product._id) {
+      //           groupedByLicenseNumber[lead.licenseNumber][
+      //             existingIndex
+      //           ].selected = product._id === lead.productorServiceId._id
+      //         }
+      //       } else {
+      //         // If not exists, push new product with correct selected
+      //         const item = {
+      //           ...product,
+      //           selected: product._id === lead.productorServiceId._id
+      //         }
+      //         groupedByLicenseNumber[lead.licenseNumber].push(item)
+      //       }
+      //     })
+      //     return groupedByLicenseNumber
+      //   }
+      // })
       setProductorServiceSelections(groupedByLicenseNumber)
       const selectedcustomerlicenseandproduct =
         Data[0]?.customerName?.selected?.map((sel) => ({
@@ -274,13 +263,13 @@ const LeadMaster = ({
     }
   }, [alluser])
 
-  useEffect(() => {
-    if (productLoading || usersLoading || customerLoading) {
-      setProgress(50) // Mid-way loading
-    } else {
-      setProgress(100) // Complete when all are loaded
-    }
-  }, [productLoading, usersLoading, customerLoading])
+  // useEffect(() => {
+  //   if (productLoading || usersLoading || customerLoading) {
+  //     setProgress(50) // Mid-way loading
+  //   } else {
+  //     setProgress(100) // Complete when all are loaded
+  //   }
+  // }, [productLoading, usersLoading, customerLoading])
 
   useEffect(() => {
     setValueMain("netAmount", calculateTotalAmount())
@@ -410,10 +399,12 @@ const LeadMaster = ({
           String(item?.address1)?.trim() === String(option?.address)?.trim()
       )
       ?.flatMap((item) =>
-        item.selected.map((sel) => ({
-          licenseNumber: sel.licensenumber || "N/A",
-          productName: sel.productName || "Unknown"
-        }))
+        item.selected
+          .filter((sel) => String(sel.branch_id) === String(selectedBranch))
+          .map((sel) => ({
+            licenseNumber: sel.licensenumber || "N/A",
+            productName: sel.productName || "Unknown"
+          }))
       )
     setcustomerTableData(filteredcustomer)
   }
@@ -527,7 +518,7 @@ const LeadMaster = ({
       return updatedList
     })
   }
-  const onSubmit = async (data, event) => {
+  const onSubmit = async (data) => {
     try {
       if (process === "Registration") {
         if (selectedleadlist.length === 0) {
@@ -563,7 +554,7 @@ const LeadMaster = ({
       return normalizedStored === normalizedInput
     })
   }
-  const onmodalsubmit = async (data, event) => {
+  const onmodalsubmit = async (data) => {
     try {
       const checkexistingNumber = isMobileExists(data.mobile, allcustomer)
       if (checkexistingNumber) {
@@ -656,22 +647,23 @@ const LeadMaster = ({
               <div className="md:w-1/2  flex flex-col-1 md:grid md:grid-cols-2 gap-2 md:gap-4 md:mx-5">
                 <div>
                   <label
-                    htmlFor="branch"
+                    htmlFor="leadBranch"
                     className="block text-sm font-medium text-gray-700"
                   >
                     Branch
                   </label>
                   <select
-                    id="branch"
-                    {...registerMain("branch")}
-                    // onChange={
-                    //   (e) =>
-                    //     setTableObject({
-                    //       ...tableObject,
-                    //       softwareTrade: e.target.value
-                    //     }) // Update state on change
-                    // }
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                    id="leadBranch"
+                    disabled={isReadOnly}
+                    {...registerMain("leadBranch")}
+                    onChange={
+                      (e) => setSelectedBranch([e.target.value]) // Update state on change
+                    }
+                    className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none ${
+                      isReadOnly
+                        ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                        : ""
+                    }`}
                   >
                     <option value="">Select Branch</option>
                     {companybranches?.map((branch, index) => (
@@ -693,6 +685,7 @@ const LeadMaster = ({
                   <div className="flex w-full text-sm ">
                     <Select
                       options={customerOptions}
+                      isDisabled={isReadOnly}
                       // value={selectedCustomer?.value}
                       value={customerOptions.find(
                         (option) => option.value === watchMain("customerName")
@@ -721,8 +714,21 @@ const LeadMaster = ({
                           shouldValidate: true
                         })
                       }}
-                      className="mt-1 w-full"
+                      className={`mt-1 w-full ${
+                        isReadOnly
+                          ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                          : ""
+                      }`}
                       styles={{
+                        control: (base, state) => ({
+                          ...base,
+                          cursor: state.isDisabled ? "not-allowed" : "default",
+                          backgroundColor: state.isDisabled
+                            ? "#f3f4f6"
+                            : "white",
+                          color: state.isDisabled ? "#6b7280" : "black", // Tailwind's text-gray-500
+                          opacity: state.isDisabled ? 0.7 : 1
+                        }),
                         menu: (provided) => ({
                           ...provided,
                           maxHeight: "200px", // Set dropdown max height
@@ -738,16 +744,18 @@ const LeadMaster = ({
                       menuShouldScrollIntoView={false}
                     />
 
-                    <button
-                      type="button" // Prevents form submission
-                      onClick={() => {
-                        setModalOpen(true)
-                        clearMainerrors()
-                      }}
-                      className="bg-blue-500 hover:bg-blue-600  px-3 rounded-md text-white "
-                    >
-                      ADD
-                    </button>
+                    {!Data && (
+                      <button
+                        type="button" // Prevents form submission
+                        onClick={() => {
+                          setModalOpen(true)
+                          clearMainerrors()
+                        }}
+                        className="bg-blue-500 hover:bg-blue-600  px-3 rounded-md text-white "
+                      >
+                        ADD
+                      </button>
+                    )}
                   </div>
                   {errorsMain.customerName && (
                     <p className="text-red-500 text-sm">
@@ -765,8 +773,13 @@ const LeadMaster = ({
                   </label>
                   <input
                     id="mobile"
+                    readOnly={isReadOnly}
                     {...registerMain("mobile")}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
+                    className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500 ${
+                      isReadOnly
+                        ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                        : ""
+                    }`}
                     placeholder="Mobile..."
                   ></input>
                 </div>
@@ -779,8 +792,13 @@ const LeadMaster = ({
                   </label>
                   <input
                     id="phone"
+                    disabled={isReadOnly}
                     {...registerMain("phone")}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
+                    className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500 ${
+                      isReadOnly
+                        ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                        : ""
+                    }`}
                     placeholder="Landline..."
                   ></input>
                 </div>
@@ -793,8 +811,13 @@ const LeadMaster = ({
                   </label>
                   <input
                     id="email"
+                    disabled={isReadOnly}
                     {...registerMain("email")}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
+                    className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500 ${
+                      isReadOnly
+                        ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                        : ""
+                    }`}
                     placeholder="Email..."
                   ></input>
                 </div>
@@ -808,8 +831,13 @@ const LeadMaster = ({
                   </label>
                   <input
                     id="trade"
+                    disabled={isReadOnly}
                     {...registerMain("trade")}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
+                    className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500 ${
+                      isReadOnly
+                        ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                        : ""
+                    }`}
                     placeholder="Trade..."
                   ></input>
                 </div>
@@ -822,8 +850,13 @@ const LeadMaster = ({
                   </label>
                   <textarea
                     id="description"
+                    disabled={isReadOnly}
                     {...registerMain("remark")}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500  max-h-[100px]"
+                    className={`block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500  max-h-[100px] ${
+                      isReadOnly
+                        ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                        : ""
+                    }`}
                     placeholder="Remarks..."
                   ></textarea>
                 </div>
@@ -840,9 +873,14 @@ const LeadMaster = ({
                       </label>
                       <input
                         id="leadId"
+                        disabled={isReadOnly}
                         type="text"
                         {...registerMain("leadId")}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
+                        className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500 ${
+                          isReadOnly
+                            ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                            : ""
+                        }`}
                         placeholder="Lead Id..."
                       />
                       {errorsMain.leadId && (
@@ -859,8 +897,13 @@ const LeadMaster = ({
                     {/* Button to open dropdown and show selected value */}
                     <button
                       type="button"
+                      disabled={isReadOnly}
                       onClick={() => setIslicenseOpen(!isLicenseOpen)}
-                      className="border px-2 md:py-1.5 py-2 w-full bg-white text-left rounded flex justify-between items-center"
+                      className={`mt-1 border px-2 md:py-1.5 py-2 w-full text-left rounded flex justify-between items-center ${
+                        isReadOnly
+                          ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                          : ""
+                      }`}
                     >
                       {selectedLicense ?? "Select License"}
                       <svg
@@ -917,8 +960,13 @@ const LeadMaster = ({
                       {/* Toggle Dropdown Button */}
                       <button
                         type="button"
+                        disabled={isReadOnly}
                         onClick={handleToggleDropdown}
-                        className="border px-2 md:py-1.5  py-2 md:w-80 w-full bg-white text-left rounded flex justify-between items-center"
+                        className={`mt-1 border px-2 md:py-1.5  py-2 md:w-80 w-full text-left rounded flex justify-between items-center ${
+                          isReadOnly
+                            ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                            : ""
+                        }`}
                       >
                         Select a product/services
                         <svg
@@ -934,14 +982,15 @@ const LeadMaster = ({
                           />
                         </svg>
                       </button>
-
-                      <button
-                        type="button"
-                        onClick={handleAddProducts}
-                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded "
-                      >
-                        ADD
-                      </button>
+                      {!Data && (
+                        <button
+                          type="button"
+                          onClick={handleAddProducts}
+                          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded "
+                        >
+                          ADD
+                        </button>
+                      )}
                     </div>
                     {/* Product List (Visible when isOpen is true) */}
                     {isleadForOpen && (
@@ -1005,7 +1054,7 @@ const LeadMaster = ({
                 </div>
 
                 {selectedleadlist && selectedleadlist.length > 0 && (
-                  <div className=" flex flex-col-1 bg-white border rounded-md  max-h-[200px] overflow-y-auto overflow-x-auto bg-green-300 mt-4">
+                  <div className=" flex flex-col-1 bg-white border rounded-md  max-h-[200px] overflow-y-auto overflow-x-auto mt-4">
                     <table className="w-full border-collapse">
                       <thead className="text-font-semibold">
                         <tr className="bg-gray-100 border-b sticky top-0">
@@ -1028,11 +1077,16 @@ const LeadMaster = ({
                             <td className="px-2 py-1">
                               <input
                                 type="number"
+                                readOnly={isReadOnly}
                                 value={item.price}
                                 onChange={(e) =>
                                   handlePriceChange(index, e.target.value)
                                 }
-                                className="w-full border rounded-md px-2 py-1 text-sm"
+                                className={`w-full border rounded-md px-2 py-1 text-sm ${
+                                  isReadOnly
+                                    ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                                    : ""
+                                }`}
                               />
                             </td>
                             <td className="px-2 py-1 items-center text-center space-x-2">
@@ -1076,7 +1130,11 @@ const LeadMaster = ({
                       <select
                         id="leadBy"
                         {...registerMain("leadBy")}
-                        className="mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
+                        className={`mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300 ${
+                          isReadOnly
+                            ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                            : ""
+                        }`}
                       >
                         {allstaff?.map((user) => (
                           <option key={user._id} value={user._id}>
@@ -1103,7 +1161,11 @@ const LeadMaster = ({
                       {...registerMain("netAmount")}
                       readOnly // Make it non-editable
                       // value={calculateTotalAmount()} // Auto-updates with total price
-                      className=" mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300"
+                      className={`mt-1 w-full border rounded-md p-2 focus:outline-none ${
+                        isReadOnly
+                          ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                          : ""
+                      }`}
                       placeholder="Net Amount"
                     />
                   </div>
@@ -1261,7 +1323,7 @@ const LeadMaster = ({
                         }}
                         className="border focus:outline-none"
                         styles={{
-                          control: (provided, state) => ({
+                          control: (provided) => ({
                             ...provided,
                             border: "1px solid #d1d5db", // Tailwind's border-gray-300
                             boxShadow: "none",
@@ -1303,7 +1365,7 @@ const LeadMaster = ({
                           setValueModal("state", option.value)
                         }}
                         styles={{
-                          control: (provided, state) => ({
+                          control: (provided) => ({
                             ...provided,
                             border: "1px solid #d1d5db", // Tailwind's border-gray-300
                             boxShadow: "none",
@@ -1387,7 +1449,7 @@ const LeadMaster = ({
                     {/* Types of Industry Dropdown */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
-                        Type's of Industry
+                        Types of Industry
                       </label>
                       <select
                         id="industry"

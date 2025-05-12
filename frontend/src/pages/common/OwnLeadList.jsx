@@ -1,9 +1,8 @@
-import React, { useState } from "react"
+import  { useState } from "react"
 import UseFetch from "../../hooks/useFetch"
 import { useNavigate } from "react-router-dom"
 import { PropagateLoader } from "react-spinners"
 import { formatDate } from "../../utils/dateUtils"
-import { json } from "react-router-dom"
 
 export default function OwnLeadList() {
   const [showFullName, setShowFullName] = useState(false)
@@ -21,12 +20,12 @@ export default function OwnLeadList() {
           <h2 className="text-lg font-bold">Owned Lead List</h2>
 
           <button
-            onClick={() => {
-              console.log("H")
+            onClick={() => 
+              
               user?.role === "Admin"
                 ? navigate("/admin/transaction/lead")
                 : navigate("/staff/transaction/lead")
-            }}
+            }
             className="bg-black text-white py-2 px-3 rounded-lg shadow-lg hover:bg-gray-600"
           >
             Go Lead
@@ -47,7 +46,6 @@ export default function OwnLeadList() {
                 <th className="px-2 py-2 text-center">Product/Services</th>
                 <th className="px-4 py-2 text-center">Net Amount</th>
                 {/* <th className="px-4 py-2 text-center">Lead By</th> */}
-              
               </tr>
             </thead>
             <tbody className="text-center divide-gray-200 bg-gray-200 whitespace-nowrap">
@@ -92,16 +90,18 @@ export default function OwnLeadList() {
                     </td>
                     <td className="px-4  border border-gray-300">
                       <button
-                        onClick={() =>
+                        onClick={() => 
                           user.role === "Admin"
                             ? navigate("/admin/transaction/lead/leadEdit", {
                                 state: {
-                                  leadId: item._id
+                                  leadId: item._id,
+                                  isReadOnly: item.leadBy !== item.allocatedTo
                                 }
                               })
                             : navigate("/staff/transaction/lead/leadEdit", {
                                 state: {
-                                  leadId: item._id
+                                  leadId: item._id,
+                                  isReadOnly: item.leadBy !== item.allocatedTo
                                 }
                               })
                         }
@@ -113,15 +113,11 @@ export default function OwnLeadList() {
                     <td className="px-4  border border-gray-300">
                       {item?.netAmount}
                     </td>
-                   
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan="8"
-                    className="px-4 py-4 text-center bg-gray-100"
-                  >
+                  <td colSpan="8" className="px-4 py-4 text-center bg-gray-100">
                     {loading ? (
                       <div className="flex justify-center items-center gap-2">
                         <PropagateLoader color="#3b82f6" size={10} />

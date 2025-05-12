@@ -39,7 +39,6 @@ function EditHsn() {
 
   // function used to handle data from onValue component
   const handleOnValue = (data) => {
-    console.log(data)
     setHsnData((prev) => ({
       ...prev,
       onValue: data,

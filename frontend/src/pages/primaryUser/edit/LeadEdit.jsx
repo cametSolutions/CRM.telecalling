@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { useLocation } from "react-router-dom"
 import BarLoader from "react-spinners/BarLoader"
 import LeadMaster from "../../common/LeadMaster"
@@ -11,7 +11,7 @@ function LeadEdit() {
   const navigate = useNavigate()
 
   const location = useLocation()
-  const { leadId } = location.state || {}
+  const { leadId, isReadOnly } = location.state || {}
   const userData = localStorage.getItem("user")
   const user = JSON.parse(userData)
 
@@ -65,6 +65,7 @@ function LeadEdit() {
         editloadingState={loader}
         seteditLoadingState={setLoader}
         Data={fetcheddata}
+        isReadOnly={isReadOnly}
       />
     </div>
   )

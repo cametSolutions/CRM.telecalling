@@ -30,12 +30,9 @@ const LeaveApprovalAndPending = () => {
     const user = JSON.parse(userData)
     setUser(user)
   }, [])
-  console.log(headerRef)
   useEffect(() => {
     if (headerRef.current) {
-      console.log("Hhh")
       const headerHeight = headerRef.current.getBoundingClientRect().height
-      console.log(headerHeight)
       setTableHeight(`calc(80vh - ${headerHeight}px)`) // Subtract header height from full viewport height
     }
   }, [])
@@ -132,7 +129,6 @@ const LeaveApprovalAndPending = () => {
               `/auth/approvedOnsiteList?onsite=true&startdate=${dates.startDate}&enddate=${dates.endDate}&role=${user?.role}&userid=${user?._id}`
             )
           } else if (approvedLeave && !approvedOnsite) {
-            console.log("hh")
             response = await api.get(
               `/auth/approvedLeaveList?onsite=false&startdate=${dates.startDate}&enddate=${dates.endDate}&userid=${user?._id}&role=${user?.role}`
             )
