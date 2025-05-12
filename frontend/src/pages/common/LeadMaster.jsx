@@ -644,7 +644,7 @@ const LeadMaster = ({
 
           <form onSubmit={handleSubmitMain(onSubmit)} className="py-5">
             <div className="md:flex items-start">
-              <div className="md:w-1/2  flex flex-col-1 md:grid md:grid-cols-2 gap-2 md:gap-4 md:mx-5">
+              <div className="md:w-1/2  grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 md:mx-5">
                 <div>
                   <label
                     htmlFor="leadBranch"
