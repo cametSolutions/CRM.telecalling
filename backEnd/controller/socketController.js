@@ -26,13 +26,6 @@ export const broadcastMessage = (message) => {
     wss.clients.forEach((client) => {
       console.log(`Client state: ${client.readyState}`)
     })
-    // wss.clients.forEach((client) => {
-    //   if (client.readyState === WebSocketServer.OPEN) {
-    //     console.log("messsagesffddfdfd", message)
-    //     client.send(message)
-    //   } else {
-    //     console.log("errrrrrrrundallooooo")
-    //   }
-    // })
+   
   }
 }

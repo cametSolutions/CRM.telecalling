@@ -58,6 +58,8 @@ const CustomerAdd = ({
 
   // const [selectedBranch, setSelectedBranch] = useState(false)
   const [productOptions, setProductOptions] = useState([])
+  const [loggeduser, setloggedUser] = useState(null)
+  const [loggeduserBranch, setLoggeduserBranches] = useState(null)
   const [companyOptions, setCompanyOptions] = useState([])
   const [branchOptions, setBranchOptions] = useState([])
   const [showTable, setShowTable] = useState(false)
@@ -98,12 +100,30 @@ const CustomerAdd = ({
   //now created
   const [isChecking, setIsChecking] = useState(false)
   const { data: productData, error: productError } = UseFetch(
-    "/product/getallProducts"
+    loggeduserBranch &&
+      `/product/getallProducts?branchselected=${encodeURIComponent(
+        JSON.stringify(loggeduserBranch)
+      )}`
   )
   const { data: licensenumber, error: licensenumberError } = UseFetch(
     "/customer/getLicensenumber"
   )
   const { data: partners } = UseFetch("/customer/getallpartners")
+  const { data: allcompanyBranches } = UseFetch("/branch/getBranch")
+  useEffect(() => {
+    if (allcompanyBranches && allcompanyBranches.length) {
+      const userData = localStorage.getItem("user")
+      const user = JSON.parse(userData)
+      setloggedUser(user)
+      if (user.role === "Admin") {
+        const branches = allcompanyBranches.map((branch) => branch._id)
+        setLoggeduserBranches(branches)
+      } else {
+        const branches = user.selected.map((branch) => branch.branch_id)
+        setLoggeduserBranches(branches)
+      }
+    }
+  }, [allcompanyBranches])
   useEffect(() => {
     if (productData) {
       setTableObject({
@@ -550,7 +570,6 @@ const CustomerAdd = ({
 
   return (
     <div className="container justify-center items-center min-h-screen p-8 bg-gray-100">
-     
       <div className="w-auto bg-white shadow-lg rounded p-8 mx-auto">
         <h2 className="text-2xl font-semibold mb-6">Customer Master</h2>
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -1623,7 +1642,6 @@ const CustomerAdd = ({
 
             {/* Submit Button */}
             <div className="mt-6">
-            
               <button
                 type="submit"
                 className={`flex items-center justify-center bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 ${

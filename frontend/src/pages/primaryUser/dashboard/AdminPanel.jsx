@@ -20,8 +20,7 @@ export default function AdminPanel() {
       selected &&
       `/auth/adminpanelleavecount?quarter=${quarter}&month=${month}&year=${selectedYear}`
   )
-  console.log(selected)
-  console.log(selectedYear)
+  
   const months = [
     "January",
     "February",

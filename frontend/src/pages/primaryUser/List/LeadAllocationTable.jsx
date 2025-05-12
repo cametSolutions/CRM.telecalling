@@ -8,39 +8,52 @@ import UseFetch from "../../../hooks/useFetch"
 import { formatDate } from "../../../utils/dateUtils"
 const LeadAllocationTable = () => {
   const [status, setStatus] = useState("Pending")
-  const [pedingleadTableData, setpendingLeadTableData] = useState([])
+const [toggleLoading,setToggleLoading]=useState(false)
+  const [loggedUserBranches, setLoggeduserBranches] = useState([])
   const [showFullName, setShowFullName] = useState(false)
   const [showFullEmail, setShowFullEmail] = useState(false)
   const [approvedToggleStatus, setapprovedToggleStatus] = useState(false)
   const [submitLoading, setsubmitLoading] = useState(false)
   const [allocationOptions, setAllocationOptions] = useState([])
   const [selectedAllocates, setSelectedAllocates] = useState({})
-  const [allStaffs, setallStaffs] = useState([])
-  const [loader, setloader] = useState(true)
+  const [loggedUser, setLoggedUser] = useState(null)
   const [tableData, setTableData] = useState([])
-  const userData = localStorage.getItem("user")
-  const user = JSON.parse(userData)
+
   const { data: leadPendinglist, loading } = UseFetch(
     status &&
-      user &&
-      `/lead/getallLead?Status=${status}&assignedto=${user._id}&role=${user.role}`
+      loggedUser &&
+      loggedUserBranches &&
+      `/lead/getallLead?Status=${status}&userBranch=${encodeURIComponent(
+        JSON.stringify(loggedUserBranches)
+      )}&role=${loggedUser.role}`
   )
+
   const { data } = UseFetch("/auth/getallUsers")
   const navigate = useNavigate()
+  useEffect(() => {
+    const userData = localStorage.getItem("user")
+    const user = JSON.parse(userData)
+    setLoggedUser(user)
 
+    const branches = user?.selected
+      ? user.selected.map((branch) => branch.branch_id)
+      : []
+
+    setLoggeduserBranches(branches)
+  }, [])
   useEffect(() => {
     if (data) {
       const { allusers = [], allAdmins = [] } = data
 
       // Combine allusers and allAdmins
       const combinedUsers = [...allusers, ...allAdmins]
-      if (user.role === "Staff") {
-       
-        const filteredAssignedusers = allusers.filter(
-          (staff) => staff.assignedto._id === user._id
+      if (loggedUser.role === "Staff") {
+        const filteredBranchStaffs = allusers.filter((staff) =>
+          staff.selected.some((s) => loggedUserBranches.includes(s.branch_id))
         )
+
         setAllocationOptions(
-          filteredAssignedusers.map((item) => ({
+          filteredBranchStaffs.map((item) => ({
             value: item?._id,
             label: item?.name
           }))
@@ -58,18 +71,23 @@ const LeadAllocationTable = () => {
   useEffect(() => {
     if (leadPendinglist) {
       setTableData(leadPendinglist)
+      setapprovedToggleStatus(!approvedToggleStatus)
     }
   }, [leadPendinglist])
   const toggleStatus = async () => {
     setShowFullEmail(false)
     setShowFullName(false)
     if (approvedToggleStatus === false) {
-      setsubmitLoading(true)
-      const response = await api.get(`/lead/getallLead?Status=Approved&assignedto=${user._id}&role=${user.role}`)
+      setToggleLoading(true)
+      const response = await api.get(
+        `/lead/getallLead?Status=Approved&userBranch=${encodeURIComponent(
+          JSON.stringify(loggedUserBranches)
+        )}&role=${loggedUser.role}`
+      )
       if (response.status >= 200 && response.status < 300) {
         setTableData(response.data.data)
         setapprovedToggleStatus(!approvedToggleStatus)
-        setsubmitLoading(false)
+         setToggleLoading(false)
         const initialSelected = {}
 
         response.data.data.forEach((item) => {
@@ -87,15 +105,19 @@ const LeadAllocationTable = () => {
         setSelectedAllocates(initialSelected)
       }
     } else {
-      const response = await api.get(`/lead/getallLead?Status=Pending&assignedto=${user._id}&role=${user.role}`)
+setToggleLoading(true)
+      const response = await api.get(
+        `/lead/getallLead?Status=Pending&userBranch=${encodeURIComponent(
+          JSON.stringify(loggedUserBranches)
+        )}&role=${loggedUser.role}`
+      )
       if (response.status >= 200 && response.status < 300) {
         setTableData(response.data.data)
         setapprovedToggleStatus(!approvedToggleStatus)
-        setsubmitLoading(false)
+        setToggleLoading(false)
       }
     }
   }
-
   const handleSelectedAllocates = (item, value) => {
     setTableData((prevLeads) =>
       prevLeads.map((lead) =>
@@ -128,7 +150,7 @@ const LeadAllocationTable = () => {
         }
       }
     } catch (error) {
-      sg("error:", error.message)
+      console.log("error:", error.message)
     }
   }
   return (
@@ -160,7 +182,7 @@ const LeadAllocationTable = () => {
               </button>
               <button
                 onClick={() =>
-                  user.role === "Admin"
+                  loggedUser.role === "Admin"
                     ? navigate("/admin/transaction/lead")
                     : navigate("/staff/transaction/lead")
                 }
@@ -232,7 +254,7 @@ const LeadAllocationTable = () => {
                       <td className="px-4  border border-gray-300">
                         <button
                           onClick={() =>
-                            user.role === "Admin"
+                            loggedUser.role === "Admin"
                               ? navigate("/admin/transaction/lead/leadEdit", {
                                   state: {
                                     leadId: item._id
@@ -309,12 +331,14 @@ const LeadAllocationTable = () => {
                       colSpan="11"
                       className="px-4 py-4 text-center bg-gray-100"
                     >
-                      {loading ? (
+                      {loading||toggleLoading ? (
                         <div className="flex justify-center items-center gap-2">
                           <PropagateLoader color="#3b82f6" size={10} />
                         </div>
+                      ) : approvedToggleStatus ? (
+                        "No Approved allocated Leads"
                       ) : (
-                        "No Allocation Pending"
+                        "No Pending allocated Leads"
                       )}
                     </td>
                   </tr>

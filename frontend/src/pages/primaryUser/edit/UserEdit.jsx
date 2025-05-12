@@ -22,7 +22,6 @@ function UserEdit() {
     userlevelPermission,
     imageData
   ) => {
-    // console.log(userData)
 
     try {
       const response = await api.post(

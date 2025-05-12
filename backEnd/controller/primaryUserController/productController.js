@@ -72,7 +72,24 @@ export const EditProduct = async (req, res) => {
 
 export const GetallProducts = async (req, res) => {
   try {
-    const products = await Product.find()
+    const { branchselected = null } = req.query
+    let products
+    if (branchselected) {
+      const decodedbranches = JSON.parse(decodeURIComponent(branchselected))
+
+      products = await Product.find({
+        selected: {
+          $elemMatch: {
+            branch_id: { $in: decodedbranches }
+          }
+        }
+      })
+
+
+
+    } else {
+      products = await Product.find()
+    }
 
     if (!products && products.length < 0) {
       res.status(404).json({ messsge: "products not found" })
@@ -386,7 +403,15 @@ export const UpdateServices = async (req, res) => {
 }
 export const GetallServices = async (req, res) => {
   try {
-    const services = await Service.find({})
+    const { branchselected = null } = req.query
+    let services
+    if (branchselected) {
+      const branchObjectId = new mongoose.Types.ObjectId(branchselected)
+      services = await Service.find({ branch: branchObjectId })
+    } else {
+
+      services = await Service.find({})
+    }
     if (services) {
       return res.status(200).json({ message: "Services found", data: services })
     }

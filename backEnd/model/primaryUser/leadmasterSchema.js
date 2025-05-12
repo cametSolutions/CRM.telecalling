@@ -18,6 +18,7 @@ const leadSchema = new mongoose.Schema(
     pincode: { type: String },
     trade: { type: String },
     leadConfirmed: { type: Boolean, default: false },
+    leadBranch: { type: mongoose.Schema.Types.ObjectId, ref: "Branch" },
     leadFor: [
       {
         productorServiceId: {

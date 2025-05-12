@@ -20,7 +20,7 @@ export const LeadRegister = async (req, res) => {
       remark,
       netAmount,
       allocatedTo,
-      leadBy
+      leadBy, leadBranch
     } = leadData
 
     const checkedHavePendingLeads = await LeadMaster.findOne({
@@ -82,6 +82,7 @@ export const LeadRegister = async (req, res) => {
       pincode,
       trade,
       leadFor,
+      leadBranch,
       remark,
       leadBy,
       assignedto,
@@ -156,8 +157,11 @@ export const GetAllservices = async (req, res) => {
 }
 export const GetallLead = async (req, res) => {
   try {
-    const { Status, assignedto, role } = req.query
-    const objectId = new mongoose.Types.ObjectId(assignedto)
+    const { Status, userBranch, role } = req.query
+    if (!Status && !role) {
+      return res.status(400).json({ message: "Status or role is missing " })
+    }
+    let branchObjectIds
     if (Status === "Pending") {
       // const pendingLeads = await LeadMaster.find({
       //   allocatedTo: null,assignedto:objectId
@@ -165,7 +169,16 @@ export const GetallLead = async (req, res) => {
       const query = { allocatedTo: null };
 
       if (role === "Staff") {
-        query.assignedto = objectId;
+        const decodedbranches = JSON.parse(decodeURIComponent(userBranch))
+        branchObjectIds = decodedbranches.map((branch) => new mongoose.Types.ObjectId(branch))
+
+        query.leadBranch = { $in: branchObjectIds }
+      } else {
+        const decodedbranches = JSON.parse(decodeURIComponent(userBranch))
+        if (decodedbranches && decodedbranches.length > 0) {
+          branchObjectIds = decodedbranches.map((branch) => new mongoose.Types.ObjectId(branch))
+          query.leadBranch = { $in: branchObjectIds }
+        }
       }
 
       const pendingLeads = await LeadMaster.find(query)
@@ -199,11 +212,20 @@ export const GetallLead = async (req, res) => {
           .json({ message: "pending leads found", data: populatedPendingLeads })
       }
     } else if (Status === "Approved") {
-      
+
       const query = { allocatedTo: { $ne: null } };
 
       if (role === "Staff") {
-        query.assignedto = objectId;
+        const decodedbranches = JSON.parse(decodeURIComponent(userBranch))
+        branchObjectIds = decodedbranches.map((branch) => new mongoose.Types.ObjectId(branch))
+
+        query.leadBranch = { $in: branchObjectIds }
+      } else {
+        const decodedbranches = JSON.parse(decodeURIComponent(userBranch))
+        if (decodedbranches && decodedbranches.length > 0) {
+          branchObjectIds = decodedbranches.map((branch) => new mongoose.Types.ObjectId(branch))
+          query.leadBranch = { $in: branchObjectIds }
+        }
       }
 
       const approvedAllocatedLeads = await LeadMaster.find(query)
@@ -500,12 +522,9 @@ export const GetownLeadList = async (req, res) => {
     const { userId } = req.query
     const objectId = new mongoose.Types.ObjectId(userId)
     // const matchedLead=await LeadMaster.find({leadBy:objectId,allocatedTo:null})
-    const matchedLead = await LeadMaster.find({
-      $or: [
-        { leadBy: objectId, allocatedTo: objectId },
-        { leadBy: objectId, allocatedTo: null }
-      ]
-    }).populate({ path: "customerName", select: "customerName" })
+    const matchedLead = await LeadMaster.find(
+      { leadBy: objectId }
+    ).populate({ path: "customerName", select: "customerName" })
     return res.status(200).json({ message: "lead found", data: matchedLead })
 
   } catch (error) {
