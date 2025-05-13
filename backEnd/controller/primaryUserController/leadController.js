@@ -155,6 +155,23 @@ export const GetAllservices = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+export const GetallfollowupList = async (req, res) => {
+
+  try {
+    const { loggeduserId } = req.query
+    const userObjectId = new mongoose.Types.ObjectId(loggeduserId)
+    const query = {
+      allocatedTo: { $ne: null }, $or: [
+        { allocatedTo: userObjectId },
+        { allocatedBy: userObjectId }
+      ]
+    }
+    const selectedfollowup = await LeadMaster.find(query).populate({ path: "customerName", select: "customerName" })
+    return res.status(201).json({ messge: "leadfollowup found", data: selectedfollowup })
+
+  } catch (error) {
+  }
+}
 export const GetallLead = async (req, res) => {
   try {
     const { Status, userBranch, role } = req.query
@@ -342,21 +359,35 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
 
 export const UpadateOrLeadAllocationRegister = async (req, res) => {
   try {
-    const { allocationpending } = req.query
+    const { allocationpending, allocatedBy } = req.query
+
+    const allocatedbyObjectid = new mongoose.Types.ObjectId(allocatedBy)
 
     const leadAllocationData = req.body
     let allocatedToModel
-    const isStaff = await Staff.find({ _id: leadAllocationData.allocatedTo })
-    if (isStaff) {
+    let allocatedByModel
+    const isStaffallocatedtomodel = await Staff.findOne({ _id: leadAllocationData.allocatedTo })
+
+    if (isStaffallocatedtomodel) {
       allocatedToModel = "Staff"
     } else {
-      const isAdmin = await Admin.find({ _id: leadAllocationData.allocatdTo })
-      if (isAdmin) {
+      const isAdminallocatedtomodel = await Admin.findOne({ _id: leadAllocationData.allocatdTo })
+      if (isAdminallocatedtomodel) {
         allocatedToModel = "Admin"
       }
     }
-    if (!allocatedToModel) {
-      return res.status(400).json({ message: "Invalid allocated reference" })
+    const isStaffallocatedbymodel = await Staff.findOne({ _id: allocatedbyObjectid })
+    if (isStaffallocatedbymodel) {
+      allocatedByModel = "Staff"
+    } else {
+      const isAdminallocatedbymodel = await Staff.findOne({ _id: allocatedbyObjectid })
+      if (isAdminallocatedbymodel) {
+        allocatedByModel = "Admin"
+      }
+    }
+
+    if (!allocatedToModel || !allocatedByModel) {
+      return res.status(400).json({ message: "Invalid allocated/allocatedby reference" })
     }
     const updatedLead = await LeadMaster.findByIdAndUpdate(
       {
@@ -365,7 +396,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       { allocatedTo: leadAllocationData.allocatedTo, allocatedToModel },
       { new: true }
     )
-    if (allocationpending && updatedLead) {
+    if (allocationpending === "true" && updatedLead) {
       const pendingLeads = await LeadMaster.find({
         allocatedTo: null
       })
@@ -396,7 +427,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       return res
         .status(201)
         .json({ message: "pending leads found", data: populatedLeads })
-    } else {
+    } else if (allocationpending === "false") {
       const allocatedLeads = await LeadMaster.find({
         allocatedTo: { $ne: null }
       })
@@ -424,6 +455,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
           return { ...lead, leadBy: populatedLeadBy } // Merge populated data
         })
       )
+      console.log(populatedLeads)
       return res
         .status(201)
         .json({ message: "updated allocation", data: populatedLeads })

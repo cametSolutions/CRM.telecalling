@@ -8,7 +8,7 @@ import UseFetch from "../../../hooks/useFetch"
 import { formatDate } from "../../../utils/dateUtils"
 const LeadAllocationTable = () => {
   const [status, setStatus] = useState("Pending")
-const [toggleLoading,setToggleLoading]=useState(false)
+  const [toggleLoading, setToggleLoading] = useState(false)
   const [loggedUserBranches, setLoggeduserBranches] = useState([])
   const [showFullName, setShowFullName] = useState(false)
   const [showFullEmail, setShowFullEmail] = useState(false)
@@ -70,8 +70,9 @@ const [toggleLoading,setToggleLoading]=useState(false)
   }, [data])
   useEffect(() => {
     if (leadPendinglist) {
+console.log("hhhhh")
       setTableData(leadPendinglist)
-      setapprovedToggleStatus(!approvedToggleStatus)
+      // setapprovedToggleStatus(!approvedToggleStatus)
     }
   }, [leadPendinglist])
   const toggleStatus = async () => {
@@ -87,7 +88,7 @@ const [toggleLoading,setToggleLoading]=useState(false)
       if (response.status >= 200 && response.status < 300) {
         setTableData(response.data.data)
         setapprovedToggleStatus(!approvedToggleStatus)
-         setToggleLoading(false)
+        setToggleLoading(false)
         const initialSelected = {}
 
         response.data.data.forEach((item) => {
@@ -105,7 +106,7 @@ const [toggleLoading,setToggleLoading]=useState(false)
         setSelectedAllocates(initialSelected)
       }
     } else {
-setToggleLoading(true)
+      setToggleLoading(true)
       const response = await api.get(
         `/lead/getallLead?Status=Pending&userBranch=${encodeURIComponent(
           JSON.stringify(loggedUserBranches)
@@ -130,8 +131,10 @@ setToggleLoading(true)
     try {
       setsubmitLoading(true)
       if (approvedToggleStatus) {
+        console.log(approvedToggleStatus)
+      
         const response = await api.post(
-          "/lead/leadAllocation",
+          `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&allocatedBy=${loggedUser._id}`,
           leadAllocationData
         )
         if (response.status >= 200 && response.status < 300) {
@@ -139,9 +142,12 @@ setToggleLoading(true)
           setsubmitLoading(false)
         }
       } else {
+        console.log(approvedToggleStatus)
+        
         const response = await api.post(
-          "/lead/leadAllocation?allocationpending=true",
+          `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&allocatedBy=${loggedUser._id}`,
           leadAllocationData
+      
         )
 
         if (response.status >= 200 && response.status < 300) {
@@ -153,6 +159,7 @@ setToggleLoading(true)
       console.log("error:", error.message)
     }
   }
+console.log(approvedToggleStatus)
   return (
     <div className="h-full ">
       {submitLoading && (
@@ -331,7 +338,7 @@ setToggleLoading(true)
                       colSpan="11"
                       className="px-4 py-4 text-center bg-gray-100"
                     >
-                      {loading||toggleLoading ? (
+                      {loading || toggleLoading ? (
                         <div className="flex justify-center items-center gap-2">
                           <PropagateLoader color="#3b82f6" size={10} />
                         </div>

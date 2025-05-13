@@ -12,7 +12,8 @@ import { formatDate } from "../../../utils/dateUtils"
 const LeadFollowUp = () => {
   const [selectedLeadId, setSelectedLeadId] = useState(null)
   const [historyList, setHistoryList] = useState([])
-  const [user, setUser] = useState(null)
+  const [loggedUser, setloggedUser] = useState(null)
+  const [loggedUserBranches, setloggedUserBranches] = useState(null)
   const [followupDateLoader, setfollowupDateLoader] = useState(false)
   const [input, setInput] = useState("")
   const [showFullRemarks, setShowFullRemarks] = useState("")
@@ -31,26 +32,41 @@ const LeadFollowUp = () => {
 
     Remarks: ""
   })
-
+  const { data: branches } = UseFetch("/branch/getBranch")
   const { data: loggedusersallocatedleads, loading } = UseFetch(
-    "/lead/getallLead?Status=Approved"
+    loggedUser &&
+      loggedUserBranches &&
+      `/lead/getallLeadFollowUp?branchSelected=${encodeURIComponent(
+        JSON.stringify(loggedUserBranches)
+      )}&loggeduserId=${loggedUser._id}`
   )
   const navigate = useNavigate()
   useEffect(() => {
-    const userData = localStorage.getItem("user")
-    if (userData) setUser(JSON.parse(userData))
-  }, [])
+    console.log(branches)
+    if (branches) {
+      const userData = localStorage.getItem("user")
+      const user = JSON.parse(userData)
+      if (user.role === "Admin") {
+        const branches = branches.map((branch) => branch._id)
+        setloggedUserBranches(branches)
+      } else {
+        const branches = user.selected.map((branch) => branch.branch_id)
+        setloggedUserBranches(branches)
+      }
+
+      setloggedUser(user)
+    }
+  }, [branches])
 
   useEffect(() => {
-    if (user) {
+    if (loggedUser) {
       setFormData((prev) => ({
         ...prev,
-        followedId: user?._id
+        followedId: loggedUser?._id
       }))
     }
-  }, [user])
+  }, [loggedUser])
 
- 
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedValue(input) // this is your debounced result
@@ -61,21 +77,19 @@ const LeadFollowUp = () => {
     }
   }, [input])
   useEffect(() => {
-    if (loggedusersallocatedleads && user) {
-      if (user?.role === "Admin") {
-        setTableData(loggedusersallocatedleads)
-      } else {
-        const filteredLeads = loggedusersallocatedleads.filter(
-          (item) => item?.allocatedTo?._id === user._id
-        )
-        setTableData(filteredLeads)
-      }
+    if (loggedusersallocatedleads && loggedUser) {
+      setTableData(loggedusersallocatedleads)
+      // if (loggedUser?.role === "Admin") {
+      //   setTableData(loggedusersallocatedleads)
+      // } else {
+      //   const filteredLeads = loggedusersallocatedleads.filter(
+      //     (item) => item?.allocatedTo?._id === user._id
+      //   )
+      //   setTableData(filteredLeads)
+      // }
     }
   }, [loggedusersallocatedleads])
-  
 
-
- 
   const handleDataChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({
@@ -91,6 +105,10 @@ const LeadFollowUp = () => {
     setHistoryList(history)
     setSelectedLeadId(id)
   }
+const handlefollowupdate=()=>{
+ setfollowupDateModal(!followupDateModal)
+                            setSelectedLeadId(item?._id)}
+
   const handleFollowUpDateSubmit = async () => {
     try {
       let newErrors = {}
@@ -108,7 +126,7 @@ const LeadFollowUp = () => {
       setfollowupDateLoader(!followupDateLoader)
 
       const response = await api.put(
-        `/lead/followupDateUpdate?selectedleaddocId=${selectedLeadId}&loggeduserid=${user._id}`,
+        `/lead/followupDateUpdate?selectedleaddocId=${selectedLeadId}&loggeduserid=${loggedUser._id}`,
         formData
       )
       toast.success(response.data.message)
@@ -126,7 +144,7 @@ const LeadFollowUp = () => {
   }
   return (
     <div className="h-full ">
-      {loading&& (
+      {loading && (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
           color="#4A90E2" // Change color as needed
@@ -151,7 +169,7 @@ const LeadFollowUp = () => {
               </button> */}
               <button
                 onClick={() =>
-                  user.role === "Admin"
+                  loggedUser.role === "Admin"
                     ? navigate("/admin/transaction/lead")
                     : navigate("/staff/transaction/lead")
                 }
@@ -240,7 +258,7 @@ const LeadFollowUp = () => {
                       <td className="px-4  border border-gray-300">
                         <button
                           onClick={() =>
-                            user.role === "Admin"
+                            loggedUser.role === "Admin"
                               ? navigate("/admin/transaction/lead/leadEdit", {
                                   state: {
                                     leadId: item._id
@@ -299,10 +317,7 @@ const LeadFollowUp = () => {
                       </td>
                       <td className="px-4  border border-gray-300">
                         <button
-                          onClick={() => {
-                            setfollowupDateModal(!followupDateModal)
-                            setSelectedLeadId(item?._id)
-                          }}
+                          onClick={handlefollowupdate}
                           className=" px-4 "
                         >
                           <MdOutlineEventAvailable className="text-green-600 text-xl" />
@@ -339,7 +354,7 @@ const LeadFollowUp = () => {
                     <table className="w-full text-sm border-collapse">
                       <thead className="text-center sticky top-0 z-10">
                         <tr className="bg-indigo-100">
-                          {user?.role === "Admin" && (
+                          {loggedUser?.role === "Admin" && (
                             <th className="border border-indigo-200 p-2 min-w-[100px] ">
                               FollowedBy
                             </th>
@@ -365,7 +380,7 @@ const LeadFollowUp = () => {
                                 index % 2 === 0 ? "bg-gray-50" : "bg-white"
                               }
                             >
-                              {user?.role === "Admin" && (
+                              {loggedUser?.role === "Admin" && (
                                 <td className="border border-gray-200 p-2">
                                   {item?.followedId?.name}
                                 </td>

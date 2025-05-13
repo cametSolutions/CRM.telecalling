@@ -9,7 +9,7 @@ const CustomerSchema = new mongoose.Schema({
   city: { type: String },
   pincode: {
     type: String
-    
+
   },
   email: { type: String },
   incomingNumber: { type: String },
@@ -19,7 +19,8 @@ const CustomerSchema = new mongoose.Schema({
   partner: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Partner",
-    default: null
+    default: null,
+    set: v => (v === "" ? null : v)
   },
   contactPerson: {
     type: String
