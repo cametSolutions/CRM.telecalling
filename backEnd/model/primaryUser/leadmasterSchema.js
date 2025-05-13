@@ -50,6 +50,11 @@ const leadSchema = new mongoose.Schema(
       refpath: " allocatedToModel",
       default: null // Setting default value to null
     },
+    allocatedToModel: {
+      type: String,
+      enum: ["Staff", "Admin"], // Only these two models are allowed
+      default: null // Setting default value to null
+    },
     followUpDatesandRemarks: [
       {
         followUpDate: { type: Date },
@@ -61,14 +66,16 @@ const leadSchema = new mongoose.Schema(
           default: null
         },
         followedByModel: { type: String, enum: ["Staff", "Admin"] }
+
       }
     ],
-
-    allocatedToModel: {
+    allocatedBy: { type: mongoose.Schema.Types.ObjectId, refpath: "allocatedByModel" },
+    allocatedByModel: {
       type: String,
-      enum: ["Staff", "Admin"], // Only these two models are allowed
-      default: null // Setting default value to null
-    }
+      enum: ["Staff", "Admin"]
+    },
+
+
   },
   { timestamps: true }
 )

@@ -81,7 +81,7 @@ export const GetscrollCustomer = async (req, res) => {
       $sort: { customerName: 1 }
     }
     ]);
-    console.log("length", customers.length)
+ 
     if (customers.length === 0) {
       return res
         .status(200)
@@ -699,6 +699,7 @@ export const CustomerEdit = async (req, res) => {
     // Update or add tabledata (handle array of objects)
     if (Array.isArray(tableData) && tableData.length > 0) {
       if (parsedIndex >= 0 && parsedIndex < existingCustomer.selected.length) {
+
         existingCustomer.selected.splice(parsedIndex, 1, tableData[0])
       } else {
         tableData.map((item) => existingCustomer.selected.push(item))
@@ -712,7 +713,7 @@ export const CustomerEdit = async (req, res) => {
       message: "Customer updated successfully"
     })
   } catch (error) {
-    console.error("Error updating customer:", error)
+    console.error("Error updating customer:", error.message)
     res.status(500).json({ message: "Internal server error" })
   }
 }
