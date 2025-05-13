@@ -71,6 +71,14 @@ export const GetscrollCustomer = async (req, res) => {
         _id: "$_id",
         customerName: { $first: "$customerName" },
         address1: { $first: "$address1" },
+        address2: { $first: "$address2" },
+        country: { $first: "$country" },
+        city: { $first: "$city" },
+        pincode: { $first: "$pincode" },
+        contactPerson: { $first: "$contactPerson" },
+        landline: { $first: "$landline" },
+        industry: { $first: "$industry" },
+        partner: { $first: "$partner" },
         state: { $first: "$state" },
         email: { $first: "$email" },
         mobile: { $first: "$mobile" },
@@ -81,7 +89,7 @@ export const GetscrollCustomer = async (req, res) => {
       $sort: { customerName: 1 }
     }
     ]);
- 
+
     if (customers.length === 0) {
       return res
         .status(200)

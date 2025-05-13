@@ -105,9 +105,14 @@ const LeadFollowUp = () => {
     setHistoryList(history)
     setSelectedLeadId(id)
   }
-const handlefollowupdate=()=>{
- setfollowupDateModal(!followupDateModal)
-                            setSelectedLeadId(item?._id)}
+  const handlefollowupdate = (Id) => {
+    setfollowupDateModal(!followupDateModal)
+    setSelectedLeadId(Id)
+    setFormData((prev) => ({
+      ...prev,
+      followUpDate:new Date().toISOString().split("T")[0]
+    }))
+  }
 
   const handleFollowUpDateSubmit = async () => {
     try {
@@ -317,7 +322,7 @@ const handlefollowupdate=()=>{
                       </td>
                       <td className="px-4  border border-gray-300">
                         <button
-                          onClick={handlefollowupdate}
+                          onClick={() => handlefollowupdate(item._id)}
                           className=" px-4 "
                         >
                           <MdOutlineEventAvailable className="text-green-600 text-xl" />

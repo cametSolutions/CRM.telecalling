@@ -66,7 +66,7 @@ const CustomerListform = () => {
       setUserRole(null) // Handle case where user or role doesn't exist
     }
   }, [])
-  
+  console.log(searchAfterData)
   useEffect(() => {
     if (list) {
       if (!searchTerm) {
