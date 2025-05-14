@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react"
+import { flushSync } from "react-dom"
 import { PropagateLoader } from "react-spinners"
 import { MdOutlineEventAvailable } from "react-icons/md"
-import { useNavigate } from "react-router-dom"
+import { useFetcher, useNavigate } from "react-router-dom"
 import BarLoader from "react-spinners/BarLoader"
 import { FaSpinner } from "react-icons/fa"
 import { FaHistory } from "react-icons/fa"
@@ -11,6 +12,9 @@ import UseFetch from "../../../hooks/useFetch"
 import { formatDate } from "../../../utils/dateUtils"
 const LeadFollowUp = () => {
   const [selectedLeadId, setSelectedLeadId] = useState(null)
+  const [leads, setLeads] = useState([])
+  const [hasOwnLeads, setHasownLeads] = useState(false)
+  const [ownFollowUp, setOwnFollowUp] = useState(true)
   const [historyList, setHistoryList] = useState([])
   const [loggedUser, setloggedUser] = useState(null)
   const [loggedUserBranches, setloggedUserBranches] = useState(null)
@@ -42,7 +46,6 @@ const LeadFollowUp = () => {
   )
   const navigate = useNavigate()
   useEffect(() => {
-    console.log(branches)
     if (branches) {
       const userData = localStorage.getItem("user")
       const user = JSON.parse(userData)
@@ -57,6 +60,91 @@ const LeadFollowUp = () => {
       setloggedUser(user)
     }
   }, [branches])
+  useEffect(() => {
+    if (loggedusersallocatedleads) {
+      setLeads(loggedusersallocatedleads.followupLeads)
+      setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
+    }
+  }, [loggedusersallocatedleads])
+  useEffect(() => {
+    if (leads && leads.length && loggedUser && ownFollowUp) {
+    
+      const currentDate = new Date()
+
+      // 1. Leads with follow-ups
+      const leadsWithFollowUps = leads
+        .filter((lead) => lead.allocatedTo._id === loggedUser._id)
+        .filter((lead) => lead.followUpDatesandRemarks.length > 0)
+        .map((lead) => {
+          // Get the closest nextfollowUpDate from the followUpDatesandRemarks array
+          const nextFollowUp = lead.followUpDatesandRemarks.reduce(
+            (closest, curr) => {
+              const currDate = new Date(curr.nextfollowUpDate)
+              const closestDate = new Date(closest.nextfollowUpDate)
+              return Math.abs(currDate - currentDate) <
+                Math.abs(closestDate - currentDate)
+                ? curr
+                : closest
+            }
+          )
+
+          return {
+            ...lead,
+            closestNextFollowUp: new Date(nextFollowUp.nextfollowUpDate)
+          }
+        })
+        .sort((a, b) => a.closestNextFollowUp - b.closestNextFollowUp)
+
+      // 2. Leads with empty followUpDatesandRemarks
+      const leadsWithoutFollowUps = leads.filter(
+        (lead) => lead.followUpDatesandRemarks.length === 0
+      )
+
+      // 3. Combined
+      const finalSortedLeads = [...leadsWithFollowUps, ...leadsWithoutFollowUps]
+
+
+      setTableData(finalSortedLeads)
+    } else if (loggedusersallocatedleads && loggedUser) {
+     
+      const currentDate = new Date()
+
+      // 1. Leads with follow-ups
+      const leadsWithFollowUps = leads
+        .filter((lead) => lead.allocatedTo._id !== loggedUser._id)
+        .filter((lead) => lead.followUpDatesandRemarks.length > 0)
+        .map((lead) => {
+          // Get the closest nextfollowUpDate from the followUpDatesandRemarks array
+          const nextFollowUp = lead.followUpDatesandRemarks.reduce(
+            (closest, curr) => {
+              const currDate = new Date(curr.nextfollowUpDate)
+              const closestDate = new Date(closest.nextfollowUpDate)
+              return Math.abs(currDate - currentDate) <
+                Math.abs(closestDate - currentDate)
+                ? curr
+                : closest
+            }
+          )
+
+          return {
+            ...lead,
+            closestNextFollowUp: new Date(nextFollowUp.nextfollowUpDate)
+          }
+        })
+        .sort((a, b) => a.closestNextFollowUp - b.closestNextFollowUp)
+
+      // 2. Leads with empty followUpDatesandRemarks
+      const leadsWithoutFollowUps = leads.filter(
+        (lead) => lead.followUpDatesandRemarks.length === 0
+      )
+
+      // 3. Combined
+      const finalSortedLeads = [...leadsWithFollowUps, ...leadsWithoutFollowUps]
+
+
+      setTableData(finalSortedLeads)
+    }
+  }, [ownFollowUp, leads, loggedUser])
 
   useEffect(() => {
     if (loggedUser) {
@@ -76,19 +164,6 @@ const LeadFollowUp = () => {
       clearTimeout(handler) // cleanup
     }
   }, [input])
-  useEffect(() => {
-    if (loggedusersallocatedleads && loggedUser) {
-      setTableData(loggedusersallocatedleads)
-      // if (loggedUser?.role === "Admin") {
-      //   setTableData(loggedusersallocatedleads)
-      // } else {
-      //   const filteredLeads = loggedusersallocatedleads.filter(
-      //     (item) => item?.allocatedTo?._id === user._id
-      //   )
-      //   setTableData(filteredLeads)
-      // }
-    }
-  }, [loggedusersallocatedleads])
 
   const handleDataChange = (e) => {
     const { name, value } = e.target
@@ -100,6 +175,8 @@ const LeadFollowUp = () => {
       setErrors((prev) => ({ ...prev, [name]: "" })) // ✅ Clear error
     }
   }
+
+
   const handleHistory = (history, id) => {
     setHistoryModal(!historyModal)
     setHistoryList(history)
@@ -110,7 +187,7 @@ const LeadFollowUp = () => {
     setSelectedLeadId(Id)
     setFormData((prev) => ({
       ...prev,
-      followUpDate:new Date().toISOString().split("T")[0]
+      followUpDate: new Date().toISOString().split("T")[0]
     }))
   }
 
@@ -160,18 +237,26 @@ const LeadFollowUp = () => {
           <div className="flex justify-between items-center mb-4 ">
             <h2 className="text-lg font-bold">Lead Follow Up</h2>
             <div className="flex gap-6 items-center">
-              {/* <button
-                onClick={toggleStatus}
-                className={`${
-                  approvedToggleStatus ? "bg-green-500" : "bg-gray-300"
-                } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
-              >
-                <div
-                  className={`${
-                    approvedToggleStatus ? "translate-x-5" : "translate-x-0"
-                  } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                ></div>
-              </button> */}
+              {hasOwnLeads && (
+                <>
+                  <span>
+                    {ownFollowUp ? "Own FollowUp" : "Colleague  FollowUp"}
+                  </span>
+                  <button
+                    onClick={() => setOwnFollowUp(!ownFollowUp)}
+                    className={`${
+                      ownFollowUp ? "bg-green-500" : "bg-gray-300"
+                    } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
+                  >
+                    <div
+                      className={`${
+                        ownFollowUp ? "translate-x-5" : "translate-x-0"
+                      } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                    ></div>
+                  </button>
+                </>
+              )}
+
               <button
                 onClick={() =>
                   loggedUser.role === "Admin"
@@ -214,7 +299,9 @@ const LeadFollowUp = () => {
                   </th>
                   <th className="px-4 py-2 text-center">Remark</th>
                   <th className="px-1 py-2 text-center">History</th>
-                  <th className="px-1 py-2 text-center">Select Date</th>
+                  {ownFollowUp && (
+                    <th className="px-1 py-2 text-center">Select Date</th>
+                  )}
                 </tr>
               </thead>
               <tbody className="text-center divide-gray-200 bg-gray-200 whitespace-nowrap">
@@ -320,14 +407,16 @@ const LeadFollowUp = () => {
                           <FaHistory className="text-xl text-green-500" />
                         </button>
                       </td>
-                      <td className="px-4  border border-gray-300">
-                        <button
-                          onClick={() => handlefollowupdate(item._id)}
-                          className=" px-4 "
-                        >
-                          <MdOutlineEventAvailable className="text-green-600 text-xl" />
-                        </button>
-                      </td>
+                      {ownFollowUp && (
+                        <td className="px-4  border border-gray-300">
+                          <button
+                            onClick={() => handlefollowupdate(item._id)}
+                            className=" px-4 "
+                          >
+                            <MdOutlineEventAvailable className="text-green-600 text-xl" />
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))
                 ) : (
@@ -441,9 +530,17 @@ const LeadFollowUp = () => {
                         Select Follow Up Date
                       </label>
                       <input
-                        type="date"
+                        type="text"
+                        readOnly
                         name="followUpDate"
-                        value={formData?.followUpDate || ""}
+                        // value={formData?.followUpDate || ""}
+                        value={
+                          formData?.followUpDate
+                            ? new Date(formData.followUpDate)
+                                .toLocaleDateString("en-GB") // this gives dd/mm/yyyy
+                                .replace(/\//g, "-") // change / to -
+                            : ""
+                        }
                         className="rounded-md w-full py-1 px-2 border border-gray-200 focus:outline-none"
                         onChange={handleDataChange}
                       ></input>
@@ -473,7 +570,7 @@ const LeadFollowUp = () => {
                       <textarea
                         rows={4}
                         name="Remarks"
-                        className="rounded-lg w-full border border-gray-200 focus:outline-none"
+                        className="rounded-lg w-full border border-gray-200 focus:outline-none p-3"
                         value={formData?.Remarks || ""}
                         onChange={handleDataChange}
                       ></textarea>
