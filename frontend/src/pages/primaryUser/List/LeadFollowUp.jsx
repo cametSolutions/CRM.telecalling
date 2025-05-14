@@ -37,7 +37,11 @@ const LeadFollowUp = () => {
     Remarks: ""
   })
   const { data: branches } = UseFetch("/branch/getBranch")
-  const { data: loggedusersallocatedleads, loading } = UseFetch(
+  const {
+    data: loggedusersallocatedleads,
+    loading,
+    refreshHook
+  } = UseFetch(
     loggedUser &&
       loggedUserBranches &&
       `/lead/getallLeadFollowUp?branchSelected=${encodeURIComponent(
@@ -216,6 +220,7 @@ const LeadFollowUp = () => {
 
         Remarks: ""
       })
+      refreshHook()
     } catch (error) {
       console.log("error:", error.message)
     }
