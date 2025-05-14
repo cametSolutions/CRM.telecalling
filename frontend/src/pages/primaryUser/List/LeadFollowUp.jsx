@@ -68,7 +68,6 @@ const LeadFollowUp = () => {
   }, [loggedusersallocatedleads])
   useEffect(() => {
     if (leads && leads.length && loggedUser && ownFollowUp) {
-    
       const currentDate = new Date()
 
       // 1. Leads with follow-ups
@@ -103,10 +102,8 @@ const LeadFollowUp = () => {
       // 3. Combined
       const finalSortedLeads = [...leadsWithFollowUps, ...leadsWithoutFollowUps]
 
-
       setTableData(finalSortedLeads)
     } else if (loggedusersallocatedleads && loggedUser) {
-     
       const currentDate = new Date()
 
       // 1. Leads with follow-ups
@@ -140,7 +137,6 @@ const LeadFollowUp = () => {
 
       // 3. Combined
       const finalSortedLeads = [...leadsWithFollowUps, ...leadsWithoutFollowUps]
-
 
       setTableData(finalSortedLeads)
     }
@@ -176,7 +172,6 @@ const LeadFollowUp = () => {
     }
   }
 
-
   const handleHistory = (history, id) => {
     setHistoryModal(!historyModal)
     setHistoryList(history)
@@ -211,6 +206,7 @@ const LeadFollowUp = () => {
         `/lead/followupDateUpdate?selectedleaddocId=${selectedLeadId}&loggeduserid=${loggedUser._id}`,
         formData
       )
+
       toast.success(response.data.message)
       setfollowupDateLoader(false)
       setfollowupDateModal(false)
@@ -377,7 +373,13 @@ const LeadFollowUp = () => {
                         {item?.netAmount}
                       </td>
                       <td className="px-1 border border-gray-300">
-                        {formatDate(item.leadDate)}
+                        {item.followUpDatesandRemarks.length
+                          ? formatDate(
+                              item.followUpDatesandRemarks[
+                                item.followUpDatesandRemarks.length - 1
+                              ].nextfollowUpDate
+                            )
+                          : "Not selected"}
                       </td>
 
                       <td
