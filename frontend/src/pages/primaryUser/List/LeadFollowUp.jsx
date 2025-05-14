@@ -54,8 +54,8 @@ const LeadFollowUp = () => {
       const userData = localStorage.getItem("user")
       const user = JSON.parse(userData)
       if (user.role === "Admin") {
-        const branches = branches.map((branch) => branch._id)
-        setloggedUserBranches(branches)
+        const branch = branches.map((branch) => branch._id)
+        setloggedUserBranches(branch)
       } else {
         const branches = user.selected.map((branch) => branch.branch_id)
         setloggedUserBranches(branches)

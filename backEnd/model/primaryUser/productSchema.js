@@ -7,6 +7,6 @@ const productSchema = new mongoose.Schema({
 
   selected: [],
   GSTIN: String
-})
+}, { timestamps: true })
 
 export default mongoose.model("Product", productSchema)
