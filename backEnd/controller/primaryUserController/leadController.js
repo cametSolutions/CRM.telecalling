@@ -158,16 +158,28 @@ export const GetAllservices = async (req, res) => {
 export const GetallfollowupList = async (req, res) => {
 
   try {
-    const { loggeduserId } = req.query
+    const { loggeduser } = req.query
+    const loggeduserId = loggeduser._id
     const userObjectId = new mongoose.Types.ObjectId(loggeduserId)
-    const query = {
-      allocatedTo: { $ne: null }, $or: [
-        { allocatedTo: userObjectId },
-        { allocatedBy: userObjectId }
-      ]
+    let query
+    if (loggeduser.role === "Staff") {
+      query = {
+        allocatedTo: { $ne: null }, $or: [
+          { allocatedTo: userObjectId },
+          { allocatedBy: userObjectId }
+        ]
+      }
+    } else {
+      query = { allocatedTo: { $ne: null } }
+
     }
 
+
+
     const selectedfollowup = await LeadMaster.find(query).populate({ path: "customerName", select: "customerName" }).lean()
+
+
+
     const followupLeads = await Promise.all(
       selectedfollowup.map(async (lead) => {
         if (
@@ -196,10 +208,10 @@ export const GetallfollowupList = async (req, res) => {
         return { ...lead, leadBy: populatedLeadBy, allocatedTo: populatedAllocatedTo } // Merge populated data
       })
     )
-  
+
     const ischekCollegueLeads = followupLeads.some((item) => item.allocatedBy.equals(userObjectId))
 
-    return res.status(201).json({ messge: "leadfollowup found", data: {followupLeads, ischekCollegueLeads } })
+    return res.status(201).json({ messge: "leadfollowup found", data: { followupLeads, ischekCollegueLeads } })
 
   } catch (error) {
     console.log("error:", error.message)
