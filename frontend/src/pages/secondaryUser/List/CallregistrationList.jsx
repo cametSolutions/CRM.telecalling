@@ -1,10 +1,11 @@
-import  { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback } from "react"
 import debounce from "lodash.debounce"
 import api from "../../../api/api"
 import io from "socket.io-client" // Import Socket.IO client
 import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles" // Import the Tile component
 import { useNavigate } from "react-router-dom"
+import servicesSchema from "../../../../../backEnd/model/primaryUser/servicesSchema"
 
 const socket = io("https://www.crm.camet.in")
 // const socket = io("http://localhost:9000") // Adjust the URL to your backend
@@ -13,6 +14,7 @@ const CallregistrationList = () => {
   const navigate = useNavigate()
 
   const [today, setToday] = useState(null)
+  const [searchTerm, setSearchTerm] = useState("")
   const [users, setUser] = useState(null)
   const [userCallStatus, setUserCallstatus] = useState([])
   const [callList, setCallList] = useState([])
@@ -62,11 +64,14 @@ const CallregistrationList = () => {
       const stats = getCallStats(callList, users.name)
 
       setUserCallstatus(stats)
+
       setFilteredCalls(callList)
+
       filterCallData(callList)
       setLoading(false)
     }
   }, [callList])
+
   useEffect(() => {
     if (users) {
       const userId = users._id
@@ -117,42 +122,35 @@ const CallregistrationList = () => {
       }
     }
   }, [users])
-
   const handleSearch = debounce((search) => {
-    // Step 1: Filter for today's solved calls and all pending calls
-    const relevantCalls = callList.filter((call) =>
-      call.callregistration.some((registration) => {
-        const isTodaySolved =
-          registration.formdata?.status === "solved" &&
-          registration.timedata?.endTime?.split("T")[0] === today
-        const isPending = registration.formdata?.status === "pending"
-        return isTodaySolved || isPending
+    setSearchTerm(search)
+    const searchText = search.toString().toLowerCase()
+
+    const filteredData = callList.filter((customer) => {
+      // Check customerName
+      const nameMatch = customer.customerName
+        ?.toLowerCase()
+        .includes(searchText)
+
+      // Check mobile (if exists)
+      const mobileMatch = customer.mobile?.toString().includes(searchText)
+
+      // Check callregistration.incomingNumber or license
+      const callMatch = customer.callregistration?.some((call) => {
+        const incomingNumberMatch = call.formdata?.incomingNumber
+          ?.toString()
+          .includes(searchText)
+        const branchMatch = call.branchName?.some((branch) =>
+          branch.toLowerCase().includes(searchText)
+        )
+        const licenseMatch = call.license?.toString().includes(searchText)
+        return incomingNumberMatch || licenseMatch || branchMatch
       })
-    )
 
-    // Step 2: Filter based on search query
-    let sortedCalls
-    if (!isNaN(search)) {
-      // Search by license if it's a number
-      sortedCalls = relevantCalls.filter((call) =>
-        call.callregistration.some((registration) => {
-          const license = registration?.license
-          return (
-            typeof license === "number" && license.toString().includes(search)
-          )
-        })
-      )
-    } else if (search) {
-      // Search by customer name if searchQuery is not empty
-      sortedCalls = relevantCalls.filter((call) =>
-        call.customerName.toLowerCase().includes(search.toLowerCase())
-      )
-    } else {
-      // If no search query, just use the relevant calls
-      sortedCalls = relevantCalls
-    }
+      return nameMatch || mobileMatch || callMatch
+    })
 
-    setFilteredCalls(sortedCalls)
+    setFilteredCalls(filteredData)
   }, 300)
 
   const handleChange = (e) => handleSearch(e.target.value)
@@ -299,35 +297,10 @@ const CallregistrationList = () => {
     return `${hrs} hr ${mins} min ${secs} sec`
   }
 
-  const handlemerge = async () => {
-    try {
-      const res = await api.get("/auth/merge")
-
-      if (res.status === 200) {
-        console.log("✅ Success:", res.data)
-      } else {
-        console.log("⚠️ Unexpected Response:", res)
-      }
-    } catch (error) {
-      if (error.response) {
-        // Server responded with a status code outside the 2xx range
-        console.error(
-          "❌ Server Error:",
-          error.response.status,
-          error.response.data
-        )
-      } else if (error.request) {
-        // Request was made but no response received
-        console.error("❌ No Response from Server:", error.request)
-      } else {
-        // Something else went wrong in setting up the request
-        console.error("❌ Request Setup Error:", error.message)
-      }
-    }
-  }
+ 
   return (
     <div className="container mx-auto p-2  md:p-5 ">
-      <div className="w-auto  bg-white shadow-lg rounded p-4 pt-1 h-full ">
+      <div className="w-auto shadow-lg rounded p-4 pt-1 h-full ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
           {/* Search Bar for large screens */}
 
@@ -337,6 +310,7 @@ const CallregistrationList = () => {
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
               <input
                 type="text"
+                // value={searchTerm||""}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-full py-2 px-4 pl-10 focus:outline-none"
                 placeholder="Search for..."
@@ -876,7 +850,7 @@ const CallregistrationList = () => {
               ) : (
                 <tr>
                   <td
-                    colSpan="10"
+                    colSpan="12"
                     className="px-4 py-4 text-center text-sm text-gray-500"
                   >
                     {loading ? "Loading..." : "No Calls"}
