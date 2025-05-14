@@ -46,7 +46,7 @@ const LeadFollowUp = () => {
       loggedUserBranches &&
       `/lead/getallLeadFollowUp?branchSelected=${encodeURIComponent(
         JSON.stringify(loggedUserBranches)
-      )}&loggeduserId=${loggedUser._id}`
+      )}&loggeduser=${loggedUser}`
   )
   const navigate = useNavigate()
   useEffect(() => {
