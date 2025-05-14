@@ -414,6 +414,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
     let allocatedByModel
     const isStaffallocatedtomodel = await Staff.findOne({ _id: leadAllocationData.allocatedTo })
 
+
     if (isStaffallocatedtomodel) {
       allocatedToModel = "Staff"
     } else {
@@ -426,12 +427,11 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
     if (isStaffallocatedbymodel) {
       allocatedByModel = "Staff"
     } else {
-      const isAdminallocatedbymodel = await Staff.findOne({ _id: allocatedbyObjectid })
+      const isAdminallocatedbymodel = await Admin.findOne({ _id: allocatedbyObjectid })
       if (isAdminallocatedbymodel) {
         allocatedByModel = "Admin"
       }
     }
-
     if (!allocatedToModel || !allocatedByModel) {
       return res.status(400).json({ message: "Invalid allocated/allocatedby reference" })
     }
