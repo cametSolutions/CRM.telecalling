@@ -32,10 +32,32 @@ export const GetscrollCustomer = async (req, res) => {
         $or: [
           { customerName: regex },
           { mobile: typeof search === "string" ? regex : undefined },
+          {
+            $expr: {
+              $gt: [
+                {
+                  $size: {
+                    $filter: {
+                      input: "$selected",
+                      as: "item",
+                      cond: {
+                        $regexMatch: {
+                          input: { $toString: "$$item.licensenumber" },
+                          regex: regex
+                        }
+                      }
+                    }
+                  }
+                },
+                0
+              ]
+            }
+          }
+         
+
         ].filter(Boolean), // removes undefined if any
       };
     }
-
     const customers = await Customer.aggregate([{ $match: searchQuery },
     { $skip: skip },
     { $limit: pageSize },

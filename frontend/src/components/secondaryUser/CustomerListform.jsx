@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 import { BarLoader } from "react-spinners"
 import { CiEdit } from "react-icons/ci"
 import { PropagateLoader } from "react-spinners"
@@ -7,8 +7,6 @@ import UseFetch from "../../hooks/useFetch"
 import debounce from "lodash.debounce"
 import { useDispatch } from "react-redux"
 import ClipLoader from "react-spinners/ClipLoader"
-import { setSearch, removeSearch } from "../../../slices/search"
-import useSearch from "../../hooks/useSearch"
 import {
   FaUserPlus,
   FaSearch,
@@ -21,7 +19,6 @@ import { Link } from "react-router-dom"
 
 const CustomerListform = () => {
   const navigate = useNavigate()
-  const dispatch = useDispatch()
   // const tableContainerRef = useRef(null) // Ref to track table container scrolling
   const scrollTriggeredRef = useRef(false)
   const [searchQuery, setSearchQuery] = useState(true)
@@ -29,12 +26,8 @@ const CustomerListform = () => {
   const [pages, setPages] = useState(1)
   // const [loading, setLoading] = useState(true)
   const [tableHeight, setTableHeight] = useState("auto")
-  const [displayedCustomers, setDisplayedCustomers] = useState([]) // Initially displayed customers
-  const [loadMoreCount, setLoadMoreCount] = useState(10)
-  const [allCustomers, setAllCustomers] = useState([]) // All customers list
   const [showFullAddress, setShowFullAddress] = useState({})
   const [searchAfterData, setAfterSearchData] = useState([])
-  const [stringCustomers, setStringCustomers] = useState([])
   const [user, setUser] = useState(null)
   const [branch, setBranches] = useState([])
   const [userRole, setUserRole] = useState(null)
@@ -43,7 +36,6 @@ const CustomerListform = () => {
   const { data: list, loading: scrollLoading } = UseFetch(
     `/customer/getcust?limit=100&page=${pages}&search=${searchTerm}`
   )
- 
   useEffect(() => {
     if (headerRef.current) {
       const headerHeight = headerRef.current.getBoundingClientRect().height
@@ -66,7 +58,6 @@ const CustomerListform = () => {
       setUserRole(null) // Handle case where user or role doesn't exist
     }
   }, [])
-  console.log(searchAfterData)
   useEffect(() => {
     if (list) {
       if (!searchTerm) {
@@ -112,7 +103,7 @@ const CustomerListform = () => {
       setAfterSearchData([])
       setPages(1)
     }
-  }, 500)
+  }, 1000)
   const handleChange = (e) => handleSearch(e.target.value)
 
   // Function to toggle showing full address
@@ -130,13 +121,13 @@ const CustomerListform = () => {
       : address
   }
   return (
-    <div className=" m-2 overflow-y-hidden ">
-      {/* {searchAfterData.length == 0 && (
+    <div className=" overflow-y-hidden ">
+      {scrollLoading&& (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
           color="#4A90E2" // Change color as needed
         />
-      )} */}
+      )}
       <div className="w-auto shadow-lg rounded p-8  h-full">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-4">
           <h3 className="text-2xl text-black font-bold">Customer List</h3>
