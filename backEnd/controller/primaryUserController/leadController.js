@@ -166,10 +166,44 @@ export const GetallfollowupList = async (req, res) => {
         { allocatedBy: userObjectId }
       ]
     }
-    const selectedfollowup = await LeadMaster.find(query).populate({ path: "customerName", select: "customerName" })
-    return res.status(201).json({ messge: "leadfollowup found", data: selectedfollowup })
+
+    const selectedfollowup = await LeadMaster.find(query).populate({ path: "customerName", select: "customerName" }).lean()
+    const followupLeads = await Promise.all(
+      selectedfollowup.map(async (lead) => {
+        if (
+          !lead.assignedtoleadByModel ||
+          !mongoose.models[lead.assignedtoleadByModel] || !lead.allocatedToModel || !mongoose.models[lead.allocatedToModel]
+        ) {
+          console.error(
+            `Model ${lead.assignedtoleadByModel}or ${lead.allocatedToModel} is not registered`
+          )
+          return lead // Return lead as-is if model is invalid
+        }
+
+        // Fetch the referenced document manually
+        const assignedModel = mongoose.model(lead.assignedtoleadByModel)
+        const allocatedmodel = mongoose.model(lead.allocatedToModel)
+        const populatedLeadBy = await assignedModel
+          .findById(lead.leadBy)
+          .select("name")
+          .lean()
+
+        const populatedAllocatedTo = await allocatedmodel
+          .findById(lead.allocatedTo)
+          .select("name")
+          .lean()
+
+        return { ...lead, leadBy: populatedLeadBy, allocatedTo: populatedAllocatedTo } // Merge populated data
+      })
+    )
+  
+    const ischekCollegueLeads = followupLeads.some((item) => item.allocatedBy.equals(userObjectId))
+
+    return res.status(201).json({ messge: "leadfollowup found", data: {followupLeads, ischekCollegueLeads } })
 
   } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
   }
 }
 export const GetallLead = async (req, res) => {
@@ -393,7 +427,8 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       {
         _id: leadAllocationData._id
       },
-      { allocatedTo: leadAllocationData.allocatedTo, allocatedToModel },
+
+      { allocatedTo: leadAllocationData.allocatedTo, allocatedBy, allocatedToModel },
       { new: true }
     )
     if (allocationpending === "true" && updatedLead) {
