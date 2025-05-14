@@ -212,7 +212,7 @@ export default function PrimaryUserDashBoard() {
   }
 
   return (
-    <div className="min-h-full bg-[#bfdbf7]">
+    <div className="min-h-full bg-[#bfdbf7] ">
       {showBirthdayPopup && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
           <div

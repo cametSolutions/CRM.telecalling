@@ -299,8 +299,8 @@ const CallregistrationList = () => {
 
  
   return (
-    <div className="container mx-auto p-2  md:p-5 ">
-      <div className="w-auto shadow-lg rounded p-4 pt-1 h-full ">
+    <div className="container mx-auto p-2  md:p-5 bg-white">
+      <div className="w-auto shadow-lg rounded p-4 pt-1 h-full bg-neutral-50 ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
           {/* Search Bar for large screens */}
 
