@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
+import DeleteAlert from "./DeleteAlert"
 import { toast } from "react-toastify"
 import BarLoader from "react-spinners/BarLoader"
 import MyDatePicker from "./MyDatePicker"
 import api from "../../api/api"
-import { FaCheckCircle, FaTimesCircle } from "react-icons/fa"
+// import { FaCheckCircle, FaTimesCircle } from "react-icons/fa"
 import dayjs from "dayjs"
 
 const LeaveApprovalAndPending = () => {
@@ -13,6 +14,7 @@ const LeaveApprovalAndPending = () => {
   const [leaveList, setLeaveList] = useState([])
   const [onsite, setonsite] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [filteredlist, setFilteredlist] = useState([])
   const [allleaveRequest, setallleaveReques] = useState([])
   const [ispending, setPending] = useState(true)
   const [leaveStatus, setLeaveStatus] = useState({})
@@ -36,7 +38,23 @@ const LeaveApprovalAndPending = () => {
       setTableHeight(`calc(80vh - ${headerHeight}px)`) // Subtract header height from full viewport height
     }
   }, [])
-
+  useEffect(() => {
+    console.log(searchQuery)
+    if (leaveList) {
+      if (searchQuery) {
+        console.log(leaveList)
+        const filtered = leaveList.filter((item) =>
+          item.userId?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        setFilteredlist(filtered)
+        console.log(filtered)
+      }
+    } else {
+      setFilteredlist([])
+    }
+    console.log(leaveList)
+  }, [searchQuery, leaveList])
+  console.log(leaveList)
   useEffect(() => {
     const today = dayjs()
 
@@ -208,7 +226,7 @@ const LeaveApprovalAndPending = () => {
     } else if (approvedLeave || approvedOnsite) {
       fetchApprovedList()
     } // Call the async function
-  }, [dates, user, ispending, searchQuery])
+  }, [dates, user, ispending])
   const ApprovedToggle = async () => {
     try {
       setLoader(true)
@@ -485,7 +503,6 @@ const LeaveApprovalAndPending = () => {
         )
 
         if (onsiteReject.status === 200) {
-          1
           const list = onsiteReject.data.data
 
           const initialToggles = {}
@@ -562,7 +579,7 @@ const LeaveApprovalAndPending = () => {
     } catch (error) {
       setLoader(false)
       console.log("error:", error.message)
-      toast.error(error?.response?.data?.message)
+      toast.error("An error occured ")
     }
   }
 
@@ -862,8 +879,8 @@ const LeaveApprovalAndPending = () => {
               </tr>
             </thead>
             <tbody>
-              {leaveList?.length > 0 ? (
-                leaveList
+              {(searchQuery ? filteredlist : leaveList)?.length > 0 ? (
+                (searchQuery ? filteredlist : leaveList)
                   .slice()
                   .sort((a, b) => {
                     const dateA = new Date(a.leaveDate || a.onsiteDate)
@@ -987,25 +1004,19 @@ const LeaveApprovalAndPending = () => {
                         </button>
                       </td>
                       <td className="border border-gray-300 py-1 relative px-1">
-                        {/* //pass collection id as user._id */}
-                        <button
-                          onClick={() =>
-                            toggleReject(user?._id, user?.leaveCategory)
-                          }
-                        >
-                          {leaveStatus[user?._id] ? (
-                            <FaCheckCircle className="text-green-500" />
-                          ) : (
-                            <FaTimesCircle className="text-red-500" />
-                          )}
-                        </button>
+                        <DeleteAlert
+                          onDelete={toggleReject}
+                          Id={user._id}//pass document id
+                          category={user?.leaveCategory}
+                        />
+                        
                       </td>
                     </tr>
                   ))
               ) : (
                 <tr>
                   <td
-                    colSpan="11"
+                    colSpan="14"
                     className="px-4 py-4 text-center text-gray-500"
                   >
                     {loading

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react"
+import  { useState, useEffect, useMemo } from "react"
 import DeleteAlert from "../../../components/common/DeleteAlert"
 import BarLoader from "react-spinners/BarLoader"
 import Edit from "../../../components/common/Edit"
@@ -52,6 +52,7 @@ export const ServicesRegistration = () => {
     [companyData, selectedCompany]
   )
   const handleDelete = async (id) => {
+
     try {
       await api.delete(`/product/serviceDelete?id=${id}`)
 

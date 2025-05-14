@@ -1,8 +1,7 @@
-import React from "react"
 import Swal from "sweetalert2"
 import { MdDelete } from "react-icons/md"
 
-function DeleteAlert({ onDelete, Id }) {
+function DeleteAlert({ onDelete, Id, category }) {
   const handleDelete = async () => {
     const confirmResult = await Swal.fire({
       title: "Are you sure?",
@@ -11,17 +10,26 @@ function DeleteAlert({ onDelete, Id }) {
       showCancelButton: true,
       confirmButtonColor: "#3085d6", // Button color during confirmation
       cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!",
+      confirmButtonText: "Yes, delete it!"
     })
 
     if (confirmResult.isConfirmed) {
-      onDelete(Id)
-      Swal.fire({
-        title: "Deleted!",
-        text: "Your file has been deleted.",
-        icon: "success",
-        confirmButtonColor: "#3085d6", // Add the button color here too
-      })
+      const success = await onDelete(Id, category)
+      if (success) {
+        Swal.fire({
+          title: "Deleted!",
+          text: "Your file has been deleted.",
+          icon: "success",
+          confirmButtonColor: "#3085d6" // Add the button color here too
+        })
+      } else {
+        Swal.fire({
+          title: "Failed!",
+          text: "Something went wrong. File was not deleted.",
+          icon: "error",
+          confirmButtonColor: "#d33"
+        })
+      }
     }
   }
 

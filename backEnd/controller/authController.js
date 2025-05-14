@@ -972,13 +972,9 @@ export const OnsiteApply = async (req, res) => {
     const { selectedid, assignedto, compensatoryLeave } = req.query
 
     const { formData, tableRows } = req.body
-    // console.log(formData)
     const onsiteObjectId = new mongoose.Types.ObjectId(formData.onsiteId)
-    console.log(onsiteObjectId)
     const checkForthisonsiteusedforCompensatoryleave = await CompensatoryLeave.findOne({ onsiteId: onsiteObjectId, leaveUsed: true })
-    console.log(checkForthisonsiteusedforCompensatoryleave)
     if (checkForthisonsiteusedforCompensatoryleave) {
-      console.log("used")
       return res.status(201).json({ message: "Cant make date change compensatory for this onsite taken" })
     }
 
@@ -1093,7 +1089,6 @@ export const OnsiteApply = async (req, res) => {
       }
       const successonsite = await onsitedata.save()
       if (compensatoryLeave === "true") {
-        console.log("compenstatoryleave", compensatoryLeave)
         const year = new Date(onsiteDate).getFullYear()
 
         const compensatoryleaveapply = new CompensatoryLeave({
@@ -2252,8 +2247,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
     return res.status(200).json({
       message: "Attendence report found",
       data: { staffAttendanceStats, listofHolidays, sundayFulldate }
-      // fulldateholiday: || [],
-      // currentMonthSundays:||"abhi"
+     
     })
   } catch (error) {
     console.log("error", error)
@@ -2367,16 +2361,52 @@ export const GetallUsersLeave = async (req, res) => {
       })
         .populate("userId", "name") // Populates userId with the name field only
         .lean() // Converts to plain JavaScript objects (instead of Mongoose docs)
-      const namesOnly = leavelist.map((item) => item.userId?.name)
-      const uniqueNames = [...new Set(namesOnly)]
-      if (uniqueNames && uniqueNames.length > 0) {
+      const grouped = {};
+
+      leavelist.forEach((item) => {
+        const name = item.userId?.name;
+        if (!name) return;
+
+        if (!grouped[name]) {
+          grouped[name] = {
+            hasFullDay: false,
+            hasMorning: false,
+            hasAfternoon: false,
+          };
+        }
+
+        if (item.leaveType === "Full Day") {
+          grouped[name].hasFullDay = true;
+        } else if (item.leaveType === "Half Day") {
+          if (item.halfDayPeriod === "Morning") {
+            grouped[name].hasMorning = true;
+          }
+          if (item.halfDayPeriod === "Afternoon") {
+            grouped[name].hasAfternoon = true;
+          }
+        }
+      });
+      const result = Object.entries(grouped).map(([name, status]) => {
+        if (status.hasFullDay || (status.hasMorning && status.hasAfternoon)) {
+          return { name, leaveStatus: "Full Day" };
+        }
+        if (status.hasMorning) {
+          return { name, leaveStatus: "Half Day (Morning)" };
+        }
+        if (status.hasAfternoon) {
+          return { name, leaveStatus: "Half Day (Afternoon)" };
+        }
+        return { name, leaveStatus: "Unknown" };
+      });
+
+      if (result) {
         return res
           .status(200)
-          .json({ message: "leaves found", data: uniqueNames })
+          .json({ message: "leaves found", data: result })
       } else {
         return res
           .status(200)
-          .json({ message: "no leaves found for today", data: uniqueNames })
+          .json({ message: "no leaves found for today", data: result })
       }
     }
   } catch (error) {
@@ -3248,7 +3278,7 @@ export const RejectOnsite = async (req, res) => {
     const matchedCompensatoryLeave = await CompensatoryLeave.findOne({
       onsiteId: matchedonsiteRequest
     }).populate({ path: "userId", select: "name" })
-    if (matchedCompensatoryLeave.leaveUsed) {
+    if (matchedCompensatoryLeave?.leaveUsed) {
       return res.status(409).json({
         message: `Cannot delete this onsite entry.${matchedCompensatoryLeave?.userId?.name}  earned a leave for  this site`
       })
@@ -3259,7 +3289,7 @@ export const RejectOnsite = async (req, res) => {
     })
 
     if (deletedOnsiteRequest.deletedCount === 0) {
-      return res.status(404).json({ message: "Onsite request not found" })
+      return res.status(404).json({ message: "No onsite request found to delete" })
     } else if (deletedOnsiteRequest.deletedCount > 0) {
       const query = {
         onsiteDate: {
