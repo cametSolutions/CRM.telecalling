@@ -42,10 +42,8 @@ export default function CallRegistration() {
   const [customerData, setCustomerData] = useState([])
   const [submitLoading, setSubmitLoading] = useState(false)
   const [loading, setloading] = useState(false)
-  const [name, setName] = useState("")
   const [message, setMessage] = useState("")
   const [callList, setCallList] = useState([])
-  const [editform, setEditformdata] = useState({})
   const [productDetails, setProductDetails] = useState([])
   const [user, setUser] = useState(false)
   const [searching, setSearching] = useState(false)
@@ -54,7 +52,6 @@ export default function CallRegistration() {
   const [selectedProducts, setSelectedProducts] = useState([])
   const [isRunning, setIsRunning] = useState(false) // Start with the timer running
   const [startTime, setStartTime] = useState(Date.now())
-  const [endTime, setEndTime] = useState(null)
   const [formData, setFormData] = useState(null)
   const [callData, setCallData] = useState([])
   const [branch, setBranches] = useState([])
@@ -182,25 +179,34 @@ export default function CallRegistration() {
   }, [search]) // Only re-run the effect if search changes
   useEffect(() => {
     if (calldetails) {
+      console.log(calldetails)
       // Fetch the call details using the ID
       fetchCallDetails(calldetails)
         .then((callData) => {
+          console.log(callData)
           const matchingRegistration =
             callData.callDetails.callregistration.find(
               (registration) => registration.timedata.token === token
             )
+          console.log(matchingRegistration)
           // /// If a matching registration is found, extract the product details
-          const productId = matchingRegistration
-            ? matchingRegistration.product._id
-            : null
+          const productId = matchingRegistration?.product?._id
 
+          console.log(productId)
+          if (productId === undefined) {
+            console.log("hh")
+          }
+          // callData..callDetails.customerid.selected
+          // if()
           const matchingProducts =
-            callData.callDetails.customerid.selected.filter(
-              (product) => product.product_id === productId
+            callData.callDetails?.customerid?.selected.filter(
+              (product) => product?.product_id === productId
             )
+          console.log(matchingProducts)
           setSearch(callData?.callDetails?.customerid?.customerName)
           setSelectedCustomer(callData?.callDetails?.customerid)
-          if (matchingProducts.length === 0) {
+          if (matchingProducts.length === 0 && productId) {
+            console.log("hh")
             // setProductDetails(matchingProducts)
             setProductDetails([
               {
@@ -211,6 +217,16 @@ export default function CallRegistration() {
                 note: "The product has been upgraded or changed after your previous call and no longer exists for this customer."
               }
             ])
+          } else if (productId === undefined) {
+            const matchedLicenseofthecustomer = matchingRegistration.license
+
+            const matchingproducts =
+              callData.callDetails.customerid.selected.filter(
+                (item) => item.licensenumber === matchedLicenseofthecustomer
+              )
+            setProductDetails(matchingproducts)
+            console.log(matchingproducts)
+            console.log("hhh")
           } else {
             setProductDetails(matchingProducts)
           }
@@ -238,21 +254,22 @@ export default function CallRegistration() {
 
   const fetchCallDetails = async (callId) => {
     setLoader(true)
-    const response = await fetch(
-      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
-      {
-        method: "GET",
-        credentials: "include" // This allows cookies to be sent with the request
-      }
-    )
     // const response = await fetch(
-    //   `http://localhost:9000/api/customer/getcallregister/${callId}`,
+    //   `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
     //   {
     //     method: "GET",
     //     credentials: "include" // This allows cookies to be sent with the request
     //   }
     // )
+    const response = await fetch(
+      `http://localhost:9000/api/customer/getcallregister/${callId}`,
+      {
+        method: "GET",
+        credentials: "include" // This allows cookies to be sent with the request
+      }
+    )
     const data = await response.json()
+    console.log(data)
 
     return data
   }
@@ -603,19 +620,19 @@ Problem:    \t${selectedText}
     } else {
       const branches = JSON.stringify(branch)
 
-      // url =
-      //   branches &&
-      //   branches.length > 0 &&
-      //   `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
-      //     user.role
-      //   }&userBranch=${encodeURIComponent(branches)}`
-
       url =
         branches &&
-        branches?.length > 0 &&
-        `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+        branches.length > 0 &&
+        `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
           user.role
         }&userBranch=${encodeURIComponent(branches)}`
+
+      // url =
+      //   branches &&
+      //   branches?.length > 0 &&
+      //   `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+      //     user.role
+      //   }&userBranch=${encodeURIComponent(branches)}`
     }
 
     try {

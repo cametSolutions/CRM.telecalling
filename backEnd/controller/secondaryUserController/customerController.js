@@ -2428,6 +2428,7 @@ export const GetCallRegister = async (req, res) => {
         return res.status(404).json({ message: "No registered Calls" })
       }
     } else if (callId) {
+console.log(callId)
       const callDetails = await CallRegistration.findById(callId)
         .populate("customerid")
         .populate({
@@ -2435,6 +2436,7 @@ export const GetCallRegister = async (req, res) => {
           model: "Product"
         })
         .populate({ path: "callregistration.formdata.callnote" })
+// console.log("calldetais",callDetails)
 
       const attendedByIds = new Set()
       const completedByIds = new Set()
@@ -2583,8 +2585,10 @@ export const GetCallRegister = async (req, res) => {
         }
       })
       if (!callDetails) {
+console.log("hhhhhhhhhhhhhhhh")
         return res.status(404).json({ message: "Calls not found" })
       } else {
+console.log(callDetails)
         return res
           .status(200)
           .json({ message: "calls with respect customer found", callDetails })
