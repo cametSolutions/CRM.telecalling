@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef } from "react"
 import {
   MdSupportAgent,
   MdAdminPanelSettings,
@@ -8,7 +8,7 @@ import {
 import { FiChevronDown, FiX } from "react-icons/fi"
 import { FaSpinner, FaUserCircle } from "react-icons/fa"
 import { toast } from "react-toastify"
-import { Link, useFetcher } from "react-router-dom"
+import { Link } from "react-router-dom"
 import UseFetch from "../../../hooks/useFetch"
 import api from "../../../api/api"
 export default function PrimaryUserDashBoard() {
@@ -59,7 +59,7 @@ export default function PrimaryUserDashBoard() {
       setbirthdayshown(true)
     }
   })
-
+  console.log(leaveList)
   useEffect(() => {
     if (birthdays && birthdays.length > 0 && !birthdayAlreadyShown) {
       // Show popup for the first birthday person
@@ -166,7 +166,7 @@ export default function PrimaryUserDashBoard() {
     },
     {
       label: "admin",
-      to: user?.role==="Admin"?"/admin/adminpanel":"",
+      to: user?.role === "Admin" ? "/admin/adminpanel" : "",
       icon: MdAdminPanelSettings
     }
   ]
@@ -212,7 +212,7 @@ export default function PrimaryUserDashBoard() {
   }
 
   return (
-    <div className="min-h-full  shadow-lg rounded-lg bg-[#bfdbf7]">
+    <div className="min-h-full bg-[#bfdbf7]">
       {showBirthdayPopup && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
           <div
@@ -324,15 +324,15 @@ export default function PrimaryUserDashBoard() {
 
       {/* Main Content */}
       <div
-        className="flex flex-col lg:flex-row md:gap-6 gap-3 p-2 md:p-4  "
+        className="flex flex-col lg:flex-row md:gap-6 gap-3 m-2 p-2 md:p-4  "
         style={{ minHeight: "calc(100vh - 200px)" }}
       >
         {/* LEFT SIDE */}
         <div className="lg:w-1/2 flex flex-col md:gap-6 gap-3">
           {/* Top Row - Leave and Birthday */}
-          <div className="flex md:gap-6 gap-3 min-h-60">
+          <div className="grid grid-cols-1 md:grid-cols-2 md:gap-6 gap-3 min-h-60">
             {/* Leave List */}
-            <div className="p-4 rounded-lg w-1/2 shadow-md bg-white border-l-4 border-orange-500">
+            <div className="p-4 rounded-lg  shadow-md bg-white border-l-4 border-orange-500">
               <h2 className="font-bold text-lg mb-3 text-orange-700">
                 Today's Leave
               </h2>
@@ -342,10 +342,16 @@ export default function PrimaryUserDashBoard() {
                     key={index}
                     className="text-left py-1 border-b border-gray-100"
                   >
-                    <span className="font-medium text-gray-700">
-                      {index + 1}.
-                    </span>{" "}
-                    {item}
+                    {/* {item.name}-{item.leaveStatus} */}
+                    <p >
+                      <span className="font-medium text-gray-700">
+                        {index + 1}.
+                      </span>
+                      <span className="font-semibold">{item.name}</span> -
+                      <span className="text-blue-600 ml-1">
+                        {item.leaveStatus}
+                      </span>
+                    </p>
                   </div>
                 ))
               ) : (
@@ -354,7 +360,7 @@ export default function PrimaryUserDashBoard() {
             </div>
 
             {/* Birthday List */}
-            <div className="p-4 rounded-lg w-1/2 shadow-md bg-white border-l-4 border-pink-500">
+            <div className="p-4 rounded-lg  shadow-md bg-white border-l-4 border-pink-500">
               <h2 className="font-bold text-lg mb-3 text-pink-700">
                 Birthdays
               </h2>
