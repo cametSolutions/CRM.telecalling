@@ -186,11 +186,10 @@ export default function CallRegistration() {
             callData.callDetails.callregistration.find(
               (registration) => registration.timedata.token === token
             )
-         
+
           // /// If a matching registration is found, extract the product details
           const productId = matchingRegistration?.product?._id
 
-         
           const matchingProducts =
             callData.callDetails?.customerid?.selected.filter(
               (product) => product?.product_id === productId
@@ -198,7 +197,6 @@ export default function CallRegistration() {
           setSearch(callData?.callDetails?.customerid?.customerName)
           setSelectedCustomer(callData?.callDetails?.customerid)
           if (matchingProducts.length === 0 && productId) {
-         
             setProductDetails([
               {
                 product_id: matchingRegistration.product._id,
@@ -216,11 +214,10 @@ export default function CallRegistration() {
                 (item) => item.licensenumber === matchedLicenseofthecustomer
               )
             setProductDetails(matchingproducts)
-          
           } else {
             setProductDetails(matchingProducts)
           }
-          
+
           const editData = {
             incomingNumber: matchingRegistration?.formdata?.incomingNumber,
             token: matchingRegistration?.timedata?.token,
@@ -327,9 +324,12 @@ export default function CallRegistration() {
     return token
   }
   function timeStringToSeconds(timeString) {
+    console.log(timeString)
+    
     const [hours, minutes, seconds] = timeString.split(":").map(Number)
     return hours * 3600 + minutes * 60 + seconds
   }
+
   const setDateandTime = (dateString) => {
     const dateObj = new Date(dateString)
 
@@ -357,6 +357,8 @@ export default function CallRegistration() {
 
     const endTime = new Date().toISOString()
     const durationInSeconds = timeStringToSeconds(time)
+console.log(durationInSeconds)
+
     // Save timer value in local storage
     if (!token) {
       const branchName = product.branchName
