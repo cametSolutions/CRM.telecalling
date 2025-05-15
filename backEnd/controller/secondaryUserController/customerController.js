@@ -1446,13 +1446,15 @@ export const customerCallRegistration = async (req, res) => {
 
           callToUpdate.formdata.solution = calldata.formdata.solution
           callToUpdate.formdata.status = calldata.formdata.status
+          // callToUpdate.formdata.attendedBy = [callToUpdate.formdata.attendedBy]
           callToUpdate.formdata.attendedBy.push(calldata.formdata.attendedBy)
+          
           if (calldata.formdata.status === "solved") {
             callToUpdate.formdata.completedBy.push(
               calldata.formdata.completedBy
             )
           }
-          callToUpdate.formdata.completedBy = calldata.formdata.completedBy
+          // callToUpdate.formdata.completedBy = calldata.formdata.completedBy
           callToUpdate.license = calldata.license
           callToUpdate.branchName = calldata.branchName
 
