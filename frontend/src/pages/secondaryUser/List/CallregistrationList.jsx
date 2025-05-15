@@ -196,36 +196,36 @@ const CallregistrationList = () => {
         const { formdata, timedata } = registration
         const callDate = timedata.endTime.split("T")[0]
         if (callDate === today) {
-          const lastAttended = formdata.attendedBy.length
-            ? formdata.attendedBy[formdata.attendedBy.length - 1]
+          const lastAttended = formdata?.attendedBy?.length
+            ? formdata?.attendedBy[formdata.attendedBy.length - 1]
             : null
-          if (lastAttended.callerId.name === userName) {
+          if (lastAttended?.callerId?.name === userName) {
             totalCalls++
             // Count all calls for today
 
             if (
               formdata.status === "pending" &&
-              lastAttended.callerId.name === userName
+              lastAttended?.callerId?.name === userName
             ) {
               pendingCalls++ // Pending call count
             }
 
             if (
               formdata.status === "solved" &&
-              lastAttended.callerId.name === userName
+              lastAttended?.callerId?.name === userName
             ) {
               if (
-                formdata.completedBy.length &&
-                formdata.completedBy[formdata.completedBy.length - 1].name ===
+                formdata?.completedBy?.length &&
+                formdata?.completedBy[formdata?.completedBy?.length - 1].name ===
                   userName
               ) {
                 solvedCalls++ // Solved call count
               }
 
               if (
-                formdata.completedBy.length &&
-                lastAttended.callerId.name !==
-                  formdata.completedBy[formdata.completedBy.length - 1].name
+                formdata?.completedBy?.length &&
+                lastAttended?.callerId?.name !==
+                  formdata?.completedBy[formdata?.completedBy?.length - 1].name
               ) {
                 collegeSolvedCalls++ // College solved call count
               }
@@ -234,7 +234,7 @@ const CallregistrationList = () => {
             if (
               lastAttended &&
               lastAttended.duration &&
-              lastAttended.callerId.name === userName
+              lastAttended?.callerId?.name === userName
             ) {
               totalDuration += lastAttended.duration // Sum total duration
             }
