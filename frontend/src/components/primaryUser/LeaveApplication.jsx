@@ -16,6 +16,7 @@ function LeaveApplication() {
   const [visibleDays, setVisibleDays] = useState([])
   const [BalanceprivilegeleaveCount, setBalanceprivilegeLeaveCount] =
     useState(0)
+  const [BalancesickleaveCount, setBalansickLeaveCount] = useState(0)
   const [visibleMonth, setVisibleMonth] = useState("")
   const [currentDate, setCurrentDate] = useState(new Date())
   const [leaveBalance, setLeaveBalance] = useState({})
@@ -50,11 +51,7 @@ function LeaveApplication() {
     description: "",
     eventId: null
   })
-  const [selectedAttendance, setselectedAttendance] = useState({
-    attendanceDate: "",
-    inTime: { hours: "12", minutes: "00", amPm: "AM" },
-    outTime: { hours: "12", minutes: "00", amPm: "AM" }
-  })
+
   const [isOnsite, setIsOnsite] = useState(false)
   const [loader, setLoader] = useState(false)
   const [tableRows, setTableRows] = useState([])
@@ -374,16 +371,6 @@ function LeaveApplication() {
     compensatoryleaves
   ])
 
-  // Handle month change
-  const handleMonthChange = (info) => {
-    const newMonth = info.view.currentStart.getMonth()
-    const newYear = info.view.currentStart.getFullYear()
-
-    setCurrentMonth(newMonth)
-    setCurrentYear(newYear)
-    calculateRemainingDays(newYear, newMonth)
-  }
-
   useEffect(() => {
     if (isOnsite) {
       setFormData((prev) => ({
@@ -592,7 +579,7 @@ function LeaveApplication() {
       console.log(error.response.data.message)
     }
   }
- 
+
   const handleDateClick = (date) => {
     setclickedDate(date)
     const clickedDate = date
@@ -604,7 +591,6 @@ function LeaveApplication() {
       return formattedHolyDate === date
     })
     if (isHoliday || isSunday) {
-     
       setcompensatoryLeave(true)
     }
 
@@ -638,17 +624,7 @@ function LeaveApplication() {
 
     setShowModal(true)
   }
-  const handleInputChange = debounce((e) => {
-    const { name, value } = e.target
 
-    setFormData({
-      ...formData,
-      [name]: value
-    })
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" })) // ✅ Clear error
-    }
-  }, 300)
   // Check if a date is the currently selected date
   const isSelected = (date) => {
     return date.toDateString() === selectedDate.toDateString()
@@ -678,9 +654,9 @@ function LeaveApplication() {
   const goToToday = () => {
     setCurrentDate(new Date())
   }
-  const handleChange = (e) => handleInputChange(e)
   const handleDataChange = (e) => {
     setMessage((prev) => ({
+      ...prev,
       top: "",
       bottom: ""
     }))
@@ -744,7 +720,6 @@ function LeaveApplication() {
       setFormData((prev) => ({
         ...prev,
         [name]: value
-       
       }))
     }
 
@@ -805,7 +780,7 @@ function LeaveApplication() {
         if (formData.leaveId) {
           isApprovedLeave = allleaves?.find((leave) => {
             const matchedid = leave._id === formData.leaveId
-           
+
             return (
               matchedid && (leave.adminverified || leave.departmentverified)
             )
@@ -1049,8 +1024,6 @@ function LeaveApplication() {
       case "Leave":
         return (
           <div className=" rounded-lg shadow-lg max-w-[380px]  min-w-[300px] z-40 border border-gray-300 overflow-hidden">
-            
-
             {/* Leave Balance Section */}
             <div className="p-2">
               <h2 className="text-gray-600 font-semibold text-lg ">
