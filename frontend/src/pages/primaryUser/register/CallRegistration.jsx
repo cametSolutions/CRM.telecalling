@@ -255,20 +255,20 @@ export default function CallRegistration() {
 
   const fetchCallDetails = async (callId) => {
     setLoader(true)
-    // const response = await fetch(
-    //   `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
-    //   {
-    //     method: "GET",
-    //     credentials: "include" // This allows cookies to be sent with the request
-    //   }
-    // )
     const response = await fetch(
-      `http://localhost:9000/api/customer/getcallregister/${callId}`,
+      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
       {
         method: "GET",
         credentials: "include" // This allows cookies to be sent with the request
       }
     )
+    // const response = await fetch(
+    //   `http://localhost:9000/api/customer/getcallregister/${callId}`,
+    //   {
+    //     method: "GET",
+    //     credentials: "include" // This allows cookies to be sent with the request
+    //   }
+    // )
     const data = await response.json()
     console.log(data)
 
@@ -621,19 +621,19 @@ Problem:    \t${selectedText}
     } else {
       const branches = JSON.stringify(branch)
 
-      url =
-        branches &&
-        branches.length > 0 &&
-        `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
-          user.role
-        }&userBranch=${encodeURIComponent(branches)}`
-
       // url =
       //   branches &&
-      //   branches?.length > 0 &&
-      //   `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+      //   branches.length > 0 &&
+      //   `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
       //     user.role
       //   }&userBranch=${encodeURIComponent(branches)}`
+
+      url =
+        branches &&
+        branches?.length > 0 &&
+        `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+          user.role
+        }&userBranch=${encodeURIComponent(branches)}`
     }
 
     try {
