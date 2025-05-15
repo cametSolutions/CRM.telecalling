@@ -179,30 +179,30 @@ export default function CallRegistration() {
   }, [search]) // Only re-run the effect if search changes
   useEffect(() => {
     if (calldetails) {
-      console.log(calldetails)
+      // console.log(calldetails)
       // Fetch the call details using the ID
       fetchCallDetails(calldetails)
         .then((callData) => {
-          console.log(callData)
+          // console.log(callData)
           const matchingRegistration =
             callData.callDetails.callregistration.find(
               (registration) => registration.timedata.token === token
             )
-          console.log(matchingRegistration)
+          // console.log(matchingRegistration)
           // /// If a matching registration is found, extract the product details
           const productId = matchingRegistration?.product?._id
 
-          console.log(productId)
-          if (productId === undefined) {
-            console.log("hh")
-          }
+          // console.log(productId)
+          // if (productId === undefined) {
+          //   console.log("hh")
+          // }
           // callData..callDetails.customerid.selected
           // if()
           const matchingProducts =
             callData.callDetails?.customerid?.selected.filter(
               (product) => product?.product_id === productId
             )
-          console.log(matchingProducts)
+          // console.log(matchingProducts)
           setSearch(callData?.callDetails?.customerid?.customerName)
           setSelectedCustomer(callData?.callDetails?.customerid)
           if (matchingProducts.length === 0 && productId) {
@@ -217,19 +217,20 @@ export default function CallRegistration() {
                 note: "The product has been upgraded or changed after your previous call and no longer exists for this customer."
               }
             ])
-          } else if (productId === undefined) {
-            const matchedLicenseofthecustomer = matchingRegistration.license
-
-            const matchingproducts =
-              callData.callDetails.customerid.selected.filter(
-                (item) => item.licensenumber === matchedLicenseofthecustomer
-              )
-            setProductDetails(matchingproducts)
-            console.log(matchingproducts)
-            console.log("hhh")
           } else {
             setProductDetails(matchingProducts)
           }
+          //  else if (productId === undefined) {
+          //             const matchedLicenseofthecustomer = matchingRegistration.license
+
+          //             const matchingproducts =
+          //               callData.callDetails.customerid.selected.filter(
+          //                 (item) => item.licensenumber === matchedLicenseofthecustomer
+          //               )
+          //             setProductDetails(matchingproducts)
+          //             console.log(matchingproducts)
+          //             console.log("hhh")
+          //           }
 
           const editData = {
             incomingNumber: matchingRegistration?.formdata?.incomingNumber,
