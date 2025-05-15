@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react"
-import axios from "axios"
 import { toast } from "react-toastify"
 import dayjs from "dayjs"
 import { FaArrowRight } from "react-icons/fa"
@@ -8,7 +7,6 @@ import { HiChevronLeft, HiChevronRight } from "react-icons/hi" // Impo
 import UseFetch from "../../hooks/useFetch"
 import api from "../../api/api"
 import debounce from "lodash.debounce"
-import { isPast } from "date-fns"
 
 function LeaveApplication() {
   const [events, setEvents] = useState([])
@@ -22,7 +20,6 @@ function LeaveApplication() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [leaveBalance, setLeaveBalance] = useState({})
   const [BalancedcasualleaveCount, setBalancecasualLeaveCount] = useState(0)
-  const [BalancesickleaveCount, setBalancesickLeaveCount] = useState(0)
   const [BalancecompensatoryleaveCount, setBalancecompensatoryLeaveCount] =
     useState(0)
   const [allleaves, setAllleaves] = useState([])
