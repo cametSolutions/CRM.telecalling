@@ -53,7 +53,7 @@ export const GetscrollCustomer = async (req, res) => {
               ]
             }
           }
-         
+
 
         ].filter(Boolean), // removes undefined if any
       };
@@ -767,65 +767,36 @@ export const DeleteCustomer = async (req, res) => {
 export const GetAllCustomer = async (req, res) => {
   try {
     const { branchSelected } = req.query
-    console.log("branch", branchSelected)
-    let allcustomers
-    let customers
+
 
 
 
     if (!branchSelected) {
       return res.status(400).json({ message: "branch id is missing" })
-      // allcustomers = await Customer.aggregate([
-      //   // {
-      //   //   $match: {
-      //   //     "selected.productName": { $exists: true } // Customers where productName is missing in "selected"
-      //   //   }
-      //   // },
-      //   {
-      //     $project: {
-      //       _id: 1, // Exclude _id
-      //       customerName: 1,
-      //       address1: 1,
-      //       "selected.licensenumber": 1,
-      //       "selected.branchName": 1,
-      //       "selected.branch_id": 1,
-      //       "selected.productName": 1,
-      //       "selected.procuct_id": 1,
-      //       mobile: 1,
-      //       landline: 1,
-      //       email: 1
-      //     }
-      //   }
-      // ])
-    } else {
-      customers = await Customer.aggregate([
-        // {
-        //   $match: {
-        //     "selected.productName": { $exists: true } // Customers where productName is missing in "selected"
-        //   }
-        // },
-        {
-          $project: {
-            _id: 1, // Exclude _id
-            customerName: 1,
-            address1: 1,
-            "selected.licensenumber": 1,
-            "selected.branch_id": 1,
-            "selected.branchName": 1,
-            "selected.productName": 1,
-            "selected.product_id": 1,
-            mobile: 1,
-            landline: 1,
-            email: 1
-          }
-        }
-      ])
+
     }
+    const customers = await Customer.aggregate([
+
+      {
+        $project: {
+          _id: 1, // Exclude _id
+          customerName: 1,
+          address1: 1,
+          "selected.licensenumber": 1,
+          "selected.branch_id": 1,
+          "selected.branchName": 1,
+          "selected.productName": 1,
+          "selected.product_id": 1,
+          mobile: 1,
+          landline: 1,
+          email: 1
+        }
+      }
+    ])
 
 
-    // const objectIds = parsedBranch?.map(
-    //   (id) => new mongoose.Types.ObjectId(id)
-    // )
+
+
     const objectIds = new mongoose.Types.ObjectId(branchSelected)
 
     const filteredCustomers = customers.filter(
@@ -2428,7 +2399,6 @@ export const GetCallRegister = async (req, res) => {
         return res.status(404).json({ message: "No registered Calls" })
       }
     } else if (callId) {
-console.log(callId)
       const callDetails = await CallRegistration.findById(callId)
         .populate("customerid")
         .populate({
@@ -2436,7 +2406,6 @@ console.log(callId)
           model: "Product"
         })
         .populate({ path: "callregistration.formdata.callnote" })
-// console.log("calldetais",callDetails)
 
       const attendedByIds = new Set()
       const completedByIds = new Set()
@@ -2585,10 +2554,8 @@ console.log(callId)
         }
       })
       if (!callDetails) {
-console.log("hhhhhhhhhhhhhhhh")
         return res.status(404).json({ message: "Calls not found" })
       } else {
-console.log(callDetails)
         return res
           .status(200)
           .json({ message: "calls with respect customer found", callDetails })

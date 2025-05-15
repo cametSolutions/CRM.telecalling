@@ -14,7 +14,8 @@ const CallRegistrationSchema = new mongoose.Schema(
       {
         product: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "Product" // Reference to Product schema
+          ref: "Product", // Reference to Product schema
+          set: v => (v === "" ? null : v)
         },
         license: Number,
         branchName: [],
