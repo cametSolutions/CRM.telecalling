@@ -324,8 +324,7 @@ export default function CallRegistration() {
     return token
   }
   function timeStringToSeconds(timeString) {
-    console.log(timeString)
-    
+
     const [hours, minutes, seconds] = timeString.split(":").map(Number)
     return hours * 3600 + minutes * 60 + seconds
   }
@@ -343,7 +342,6 @@ export default function CallRegistration() {
 
     return `${date} ${time}` // Example: "03/02/2025 02:48:57 PM"
   }
-
   const stopTimer = async (time, product) => {
     if (!product) {
       toast.error("No product selected.")
@@ -357,7 +355,6 @@ export default function CallRegistration() {
 
     const endTime = new Date().toISOString()
     const durationInSeconds = timeStringToSeconds(time)
-console.log(durationInSeconds)
 
     // Save timer value in local storage
     if (!token) {
@@ -386,7 +383,7 @@ console.log(durationInSeconds)
           calldate: startTime
         }
 
-        updatedformData.completedBy = "" // Clear completedBy if status is pending
+        updatedformData.completedBy = [] // Clear completedBy if status is pending
       } else if (updatedformData.status === "solved") {
         updatedformData.attendedBy = {
           callerId: user._id,
@@ -429,9 +426,8 @@ console.log(durationInSeconds)
       )
       if (response.status === 200) {
         toast.success(response.data.message)
-        // if (!selectedProducts[0]?.product_id) {
-        //   setIsModalOpen(true) // Open popup if no product is selected
-        // }
+        setSubmitLoading(false)
+
         setSelectedProducts([])
         setSelectedCustomer(null)
         setCustomerData([])
@@ -439,7 +435,16 @@ console.log(durationInSeconds)
         socket.emit("updatedCalls")
         sendWhatapp(calldata, selectedText)
         setSearch("")
-        // setafterCallSubmitting(true)
+      } else if (response.status === 207) {
+        setSubmitLoading(false)
+        toast.success(response.data.message)
+        setSelectedProducts([])
+        setSelectedCustomer(null)
+        setCustomerData([])
+        setSearching(false)
+        socket.emit("updatedCalls")
+        sendWhatapp(calldata, selectedText)
+        setSearch("")
       } else {
         toast.error(response.data.message)
       }
@@ -504,10 +509,9 @@ console.log(durationInSeconds)
           }
         }
       )
-
       if (response.status === 200) {
         toast.success(response.data.message)
-        // setafterCallSubmitting(true)
+        setSubmitLoading(false)
         setCustomerData([])
         setSearch("")
         setSearching(false)
@@ -515,11 +519,22 @@ console.log(durationInSeconds)
         setSelectedProducts([])
         socket.emit("updatedCalls")
         sendWhatapp(calldata, selectedText)
+      } else if (response.status === 207) {
+        setSubmitLoading(false)
+        setCustomerData([])
+        setSearch("")
+        setSearching(false)
+        setSelectedCustomer(null)
+        setSelectedProducts([])
+        socket.emit("updatedCalls")
+        sendWhatapp(calldata, selectedText)
+        toast.success(response.data.message)
       } else {
         toast.error(response.data.message)
       }
     }
   }
+
   const formatTableToText = (calldata, selectedText) => {
     const date = formatDate(calldata.timedata.startTime)
     return `
