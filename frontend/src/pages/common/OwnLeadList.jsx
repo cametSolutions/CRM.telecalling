@@ -28,7 +28,7 @@ export default function OwnLeadList() {
             }
             className="bg-black text-white py-2 px-3 rounded-lg shadow-lg hover:bg-gray-600"
           >
-            Go Lead
+            New Lead
           </button>
         </div>
 

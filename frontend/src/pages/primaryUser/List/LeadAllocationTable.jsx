@@ -70,7 +70,7 @@ const LeadAllocationTable = () => {
   }, [data])
   useEffect(() => {
     if (leadPendinglist) {
-console.log("hhhhh")
+      console.log("hhhhh")
       setTableData(leadPendinglist)
       // setapprovedToggleStatus(!approvedToggleStatus)
     }
@@ -132,9 +132,11 @@ console.log("hhhhh")
       setsubmitLoading(true)
       if (approvedToggleStatus) {
         console.log(approvedToggleStatus)
-      
+
         const response = await api.post(
-          `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&allocatedBy=${loggedUser._id}`,
+          `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&allocatedBy=${
+            loggedUser._id
+          }`,
           leadAllocationData
         )
         if (response.status >= 200 && response.status < 300) {
@@ -143,11 +145,12 @@ console.log("hhhhh")
         }
       } else {
         console.log(approvedToggleStatus)
-        
+
         const response = await api.post(
-          `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&allocatedBy=${loggedUser._id}`,
+          `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&allocatedBy=${
+            loggedUser._id
+          }`,
           leadAllocationData
-      
         )
 
         if (response.status >= 200 && response.status < 300) {
@@ -159,7 +162,7 @@ console.log("hhhhh")
       console.log("error:", error.message)
     }
   }
-console.log(approvedToggleStatus)
+  console.log(approvedToggleStatus)
   return (
     <div className="h-full ">
       {submitLoading && (
@@ -205,21 +208,65 @@ console.log(approvedToggleStatus)
             <table className="min-w-full border border-gray-300">
               <thead className="bg-blue-500 text-white text-sm whitespace-nowrap">
                 <tr>
-                  <th className="px-4 py-2 text-center">Lead Date</th>
-                  <th className="px-4 py-2 text-center">Lead ID</th>
-                  <th className="px-4 py-2 text-center">Customer Name</th>
-                  <th className="px-4 py-2 text-center">Mobile Number</th>
-                  <th className="px-4 py-2 text-center">Phone Number</th>
-                  <th className="px-4 py-2 text-center">Email Id</th>
-                  <th className="px-2 py-2 text-center">Product/Services</th>
-                  <th className="px-4 py-2 text-center">Net Amount</th>
-                  <th className="px-4 py-2 text-center">Lead By</th>
-                  <th className="px-4 py-2 text-center">Allocated To</th>
+                  <th className="px-4 py-2 text-center">Name</th>
+                  <th className="px-4 py-2 text-center">Mobile</th>
+                  <th className="px-4 py-2 text-center">Phone</th>
+                  <th className="px-4 py-2 text-center">Email</th>
+                  <th className="px-4 py-2 text-center">Lead Id</th>
+                  <th className="px-4 py-2 text-center">Followup Date</th>
                   <th className="px-4 py-2 text-center">Action</th>
+                  <th className="px-4 py-2 text-center">Netmount</th>
                 </tr>
               </thead>
               <tbody className="text-center divide-gray-200 bg-gray-200 whitespace-nowrap">
-                {tableData && tableData.length > 0 ? (
+                <tr>
+                  <td>Abhi</td>
+                  <td>9876543210</td>
+                  <td>040-123456</td>
+                  <td>abhi@example.com</td>
+                  <td>Manager</td>
+                  <td>John</td>
+                  <td>
+                    <div className="flex flex-col items-center gap-1">
+                      <button
+                        className="text-blue-600 hover:underline"
+                        onClick={() => openModal("view")}
+                      >
+                        View
+                      </button>
+                      <button
+                        className="text-green-600 hover:underline"
+                        onClick={() => openModal("modify")}
+                      >
+                        Modify
+                      </button>
+                    </div>
+                  </td>
+                  <td>2</td>
+                </tr>{" "}
+                <tr className="text-xs text-left ">
+                  <td >
+                    <strong className="font-normal text-sm">LeadBy:</strong>
+                    abhi
+                  </td>
+                  <td>
+                    <strong className="font-normal text-sm">AssignedTo:</strong>
+                  </td>
+                  <td>
+                    <strong className="font-normal text-sm">AssignedBy:</strong>
+                  </td>
+                  <td>
+                    <strong className="font-normal text-sm">Lead ID:</strong>
+                  </td>
+                  <td>
+                    <strong className="font-normal text-sm">
+                      No.of Followup :
+                    </strong>
+                  </td>
+                  <td colSpan={3}></td>
+                  {/* Empty span to fill the remaining 3 columns */}
+                </tr>
+                {/* {tableData && tableData.length > 0 ? (
                   tableData.map((item) => (
                     <tr key={item.id} className="">
                       <td className="px-1 border border-gray-300">
@@ -349,7 +396,7 @@ console.log(approvedToggleStatus)
                       )}
                     </td>
                   </tr>
-                )}
+                )} */}
               </tbody>
             </table>
           </div>

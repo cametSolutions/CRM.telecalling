@@ -333,30 +333,71 @@ export const GetselectedDateCalls = async (req, res) => {
                     // Check if any attendedBy.calldate matches the date range
                     $size: {
                       $filter: {
-                        input: { $ifNull: ["$$call.formdata.attendedBy", []] }, // Handle empty attendedBy array
+                        input: {
+                          $filter: {
+                            input: { $ifNull: ["$$call.formdata.attendedBy", []] },
+                            as: "att",
+                            cond: { $eq: [{ $type: "$$att" }, "object"] } // only include objects
+                          }
+                        },
+                        // input: { $ifNull: ["$$call.formdata.attendedBy", []] }, // Handle empty attendedBy array
                         as: "attendee",
                         cond: {
                           $and: [
                             { $ne: ["$$attendee.calldate", null] },
                             { $ne: ["$$attendee.calldate", ""] },
                             {
-                              $and: [
+                              $gte: [
                                 {
-                                  $gte: [
-                                    { $toDate: "$$attendee.calldate" },
-                                    new Date(startDate)
-                                  ]
+                                  $toDate: {
+                                    $cond: {
+                                      if: { $isArray: "$$attendee.calldate" },
+                                      then: { $arrayElemAt: ["$$attendee.calldate", 0] },
+                                      else: "$$attendee.calldate"
+                                    }
+                                  }
                                 },
+                                new Date(startDate)
+                              ]
+                            },
+                            {
+                              $lte: [
                                 {
-                                  $lte: [
-                                    { $toDate: "$$attendee.calldate" },
-                                    new Date(endDate)
-                                  ]
-                                }
+                                  $toDate: {
+                                    $cond: {
+                                      if: { $isArray: "$$attendee.calldate" },
+                                      then: { $arrayElemAt: ["$$attendee.calldate", 0] },
+                                      else: "$$attendee.calldate"
+                                    }
+                                  }
+                                },
+                                new Date(endDate)
                               ]
                             }
                           ]
                         }
+                        // cond: {
+                        //   $and: [
+                        //     { $ne: ["$$attendee.calldate", null] },
+                        //     { $ne: ["$$attendee.calldate", ""] },
+                        //     {
+                        //       $and: [
+                        //         {
+                        //           $gte: [
+                        //             { $toDate: "$$attendee.calldate" },
+                        //             new Date(startDate)
+                        //           ]
+                        //         },
+                        //         {
+                        //           $lte: [
+                        //             { $toDate: "$$attendee.calldate" },
+                        //             new Date(endDate)
+                        //           ]
+                        //         }
+                        //       ]
+                        //     }
+                        //   ]
+                        // }
                       }
                     }
                   },
@@ -1467,7 +1508,7 @@ export const customerCallRegistration = async (req, res) => {
             } else {
               callToUpdate.formdata.completedBy = [];
             }
-          
+
           }
           callToUpdate.license = calldata.license
           callToUpdate.branchName = calldata.branchName
