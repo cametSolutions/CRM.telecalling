@@ -1446,21 +1446,33 @@ export const customerCallRegistration = async (req, res) => {
 
           callToUpdate.formdata.solution = calldata.formdata.solution
           callToUpdate.formdata.status = calldata.formdata.status
-          callToUpdate.formdata.attendedBy = [callToUpdate.formdata.attendedBy]
-          callToUpdate.formdata.attendedBy.push(calldata.formdata.attendedBy)
+          let existingAttendedBy = callToUpdate.formdata.attendedBy;
 
-          if (calldata.formdata.status === "solved") {
-            callToUpdate.formdata.completedBy = [callToUpdate.formdata.completedBy]
-            callToUpdate.formdata.completedBy.push(
-              calldata.formdata.completedBy
-            )
+          // Convert to array if it's a string
+          if (!Array.isArray(existingAttendedBy)) {
+            existingAttendedBy = existingAttendedBy ? [existingAttendedBy] : [];
           }
-          // callToUpdate.formdata.completedBy = calldata.formdata.completedBy
+          if (calldata.formdata.attendedBy) {
+            existingAttendedBy.push(calldata.formdata.attendedBy);
+          }
+
+          // Assign it back to the document
+          callToUpdate.formdata.attendedBy = existingAttendedBy;
+          if (calldata.formdata.status === "solved") {
+            const newCompletedBy = calldata.formdata.completedBy;
+
+            if (newCompletedBy) {
+              callToUpdate.formdata.completedBy = [];
+              callToUpdate.formdata.completedBy.push(calldata.formdata.completedBy)
+            } else {
+              callToUpdate.formdata.completedBy = [];
+            }
+          
+          }
           callToUpdate.license = calldata.license
           callToUpdate.branchName = calldata.branchName
 
           // Save the updated document
-
           const updatedCall = await user.save()
 
           if (updatedCall) {
@@ -1504,7 +1516,7 @@ export const customerCallRegistration = async (req, res) => {
                 const mapAndCheckAttendedBy = (data, selectedId) => {
                   //  Count how many times callerId matches selectedId
                   const matchCount = data.formdata.attendedBy.filter(
-                    (attendee) => attendee.callerId.equals(selectedId)
+                    (attendee) => attendee?.callerId?.equals(selectedId)
                   ).length
 
                   // Return true if matchCount >= 2, otherwise false
