@@ -435,7 +435,6 @@ const Summary = () => {
           `/customer/getselectedDateCalls?${query}`
         ) // Replace with your API endpoint
         const data = response.data.data
-
         if (users?.role === "Admin") {
           setCallList(data)
         } else {
