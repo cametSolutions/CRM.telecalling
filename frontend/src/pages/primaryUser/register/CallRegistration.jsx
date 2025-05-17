@@ -7,10 +7,10 @@ import io from "socket.io-client"
 import { formatDate } from "../../../utils/dateUtils"
 import { useForm } from "react-hook-form"
 import {
-  formatDistanceStrict,
+  
   parseISO,
   differenceInDays,
-  format
+  
 } from "date-fns"
 import api from "../../../api/api"
 
@@ -25,8 +25,7 @@ export default function CallRegistration() {
   const {
     register,
     handleSubmit,
-    setError,
-    clearErrors,
+   
     setValue,
     reset,
     formState: { errors }
@@ -60,7 +59,6 @@ export default function CallRegistration() {
   const location = useLocation()
   const { calldetails, token } = location?.state || {}
 
-  const [tokenData, setTokenData] = useState(null)
   const { data: registeredCall, refreshHook } = UseFetch(
     selectedCustomer?._id &&
       `/customer/getcallregister?customerid=${selectedCustomer?._id || null}`
@@ -361,7 +359,6 @@ export default function CallRegistration() {
       const branchName = product.branchName
 
       const uniqueToken = generateUniqueNumericToken()
-      setTokenData(uniqueToken)
 
       const timeData = {
         startTime: startTime.toISOString(),
@@ -727,7 +724,6 @@ Problem:    \t${selectedText}
       // refreshHook()
     } else {
       setIsRunning(false)
-      setTime(0) // Reset the timer when no customer is selected
     }
 
     // Additional actions can be performed here (e.g., populate form fields)

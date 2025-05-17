@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useLocation, useRef } from "react"
+import  { useState, useEffect, useRef } from "react"
 import { Link, NavLink, useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
 import { FiLogOut } from "react-icons/fi"
 import {
-  FaSearch,
-  FaTimes,
+  
   FaChevronRight,
   FaChevronDown
 } from "react-icons/fa"
@@ -149,6 +148,12 @@ export default function StaffHeader() {
     }
   ]
   const leads = [
+    {
+      to: "/staff/transaction/lead/ownedLeadlist",
+      label: "Own Lead",
+      control: true
+    },
+    { to: "/staff/transaction/lead/lead", label: "New Lead", control: true },
     {
       to: "/staff/transaction/lead/leadAllocation",
       label: "Lead Allocation",

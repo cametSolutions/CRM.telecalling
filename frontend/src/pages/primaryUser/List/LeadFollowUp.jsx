@@ -1,23 +1,16 @@
 import { useState, useEffect } from "react"
 import React from "react"
-import Select from "react-select"
-import { flushSync } from "react-dom"
 import { PropagateLoader } from "react-spinners"
-import { MdOutlineEventAvailable } from "react-icons/md"
-import { useFetcher, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import BarLoader from "react-spinners/BarLoader"
 import { FaSpinner } from "react-icons/fa"
-import { FaHistory } from "react-icons/fa"
 import api from "../../../api/api"
 import { toast } from "react-toastify"
 import UseFetch from "../../../hooks/useFetch"
-import { formatDate } from "../../../utils/dateUtils"
-import { all } from "axios"
 const LeadFollowUp = () => {
   const [selectedLeadId, setSelectedLeadId] = useState(null)
   const [selectedDocId, setselectedDocid] = useState(null)
   const [selectedTab, setselectedTab] = useState("")
-  const [allocationOptions, setAllocationOptions] = useState([])
   const [leads, setLeads] = useState([])
   const [hasOwnLeads, setHasownLeads] = useState(false)
   const [ownFollowUp, setOwnFollowUp] = useState(true)
@@ -27,14 +20,13 @@ const LeadFollowUp = () => {
   const [followupDateLoader, setfollowupDateLoader] = useState(false)
   const [input, setInput] = useState("")
   const [showFullRemarks, setShowFullRemarks] = useState("")
-  const [selectedAllocates, setSelectedAllocates] = useState({})
+  // const [selectedAllocates, setSelectedAllocates] = useState({})
   const [errors, setErrors] = useState({})
   const [showModal, setShowModal] = useState(false)
   const [debouncedValue, setDebouncedValue] = useState("")
   const [followupDateModal, setfollowupDateModal] = useState(false)
   const [showFullName, setShowFullName] = useState(false)
   const [showFullEmail, setShowFullEmail] = useState(false)
-  // const [submitLoading, setsubmitLoading] = useState(false)
   const [tableData, setTableData] = useState([])
   const [formData, setFormData] = useState({
     followUpDate: "",
@@ -44,7 +36,6 @@ const LeadFollowUp = () => {
     Remarks: ""
   })
   const { data: branches } = UseFetch("/branch/getBranch")
-  const { data } = UseFetch("/auth/getallUsers")
   const {
     data: loggedusersallocatedleads,
     loading,
@@ -72,50 +63,23 @@ const LeadFollowUp = () => {
       setloggedUser(user)
     }
   }, [branches])
-  useEffect(() => {
-    if (data) {
-      const { allusers = [], allAdmins = [] } = data
+  
+  // useEffect(() => {
+  //   let initialSelected = {}
+  //   tableData.forEach((item) => {
+  //     if (item.allocatedTo?._id) {
+  //       const match = allocationOptions.find(
+  //         (opt) => opt.value === item.allocatedTo._id
+  //       )
 
-      // Combine allusers and allAdmins
-      const combinedUsers = [...allusers, ...allAdmins]
-      if (loggedUser.role === "Staff") {
-        const filteredBranchStaffs = allusers.filter((staff) =>
-          staff.selected.some((s) => loggedUserBranches.includes(s.branch_id))
-        )
+  //       if (match) {
+  //         initialSelected[item._id] = match
+  //       }
+  //     }
+  //   })
 
-        setAllocationOptions(
-          filteredBranchStaffs.map((item) => ({
-            value: item?._id,
-            label: item?.name
-          }))
-        )
-      } else {
-        setAllocationOptions(
-          combinedUsers.map((item) => ({
-            value: item?._id,
-            label: item?.name
-          }))
-        )
-      }
-    }
-  }, [data])
-  useEffect(() => {
-    let initialSelected = {}
-    tableData.forEach((item) => {
-
-      if (item.allocatedTo?._id) {
-        const match = allocationOptions.find(
-          (opt) => opt.value === item.allocatedTo._id
-        )
-
-        if (match) {
-          initialSelected[item._id] = match
-        }
-      }
-    })
-
-    setSelectedAllocates(initialSelected)
-  }, [allocationOptions, tableData])
+  //   setSelectedAllocates(initialSelected)
+  // }, [allocationOptions, tableData])
   useEffect(() => {
     if (loggedusersallocatedleads) {
       setLeads(loggedusersallocatedleads.followupLeads)
@@ -124,7 +88,6 @@ const LeadFollowUp = () => {
   }, [loggedusersallocatedleads])
   useEffect(() => {
     if (leads && leads.length && loggedUser && ownFollowUp) {
-    
       const currentDate = new Date()
 
       // 1. Leads with follow-ups
@@ -161,7 +124,6 @@ const LeadFollowUp = () => {
 
       setTableData(finalSortedLeads)
     } else if (loggedusersallocatedleads && loggedUser) {
-
       const currentDate = new Date()
 
       // 1. Leads with follow-ups
@@ -218,47 +180,7 @@ const LeadFollowUp = () => {
     }
   }, [input])
 
-  const handleSubmit = async (leadAllocationData) => {
-
-    try {
-      setsubmitLoading(true)
-      if (approvedToggleStatus) {
-        console.log(approvedToggleStatus)
-
-        const response = await api.post(
-          `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&allocatedBy=${
-            loggedUser._id
-          }`,
-          leadAllocationData
-        )
-        if (response.status >= 200 && response.status < 300) {
-
-          setTableData(response.data.data)
-          setsubmitLoading(false)
-        }
-      } else {
-
-        const response = await api.post(
-          `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&allocatedBy=${
-            loggedUser._id
-          }`,
-          leadAllocationData
-        )
-
-        if (response.status >= 200 && response.status < 300) {
-          setSelectedAllocates((prev) => {
-            const updated = { ...prev }
-            delete updated[leadAllocationData._id]
-            return updated
-          })
-          setTableData(response.data.data)
-          setsubmitLoading(false)
-        }
-      }
-    } catch (error) {
-      console.log("error:", error.message)
-    }
-  }
+ 
 
   const handleDataChange = (e) => {
     const { name, value } = e.target
@@ -272,9 +194,8 @@ const LeadFollowUp = () => {
   }
 
   const handleHistory = (history, id, docId) => {
-  
     setselectedDocid(docId)
-   
+
     setShowModal(!showModal)
     setHistoryList(history)
     setSelectedLeadId(id)
@@ -325,16 +246,15 @@ const LeadFollowUp = () => {
     }
   }
   return (
-    <div className="h-full ">
+    <div className="h-full flex flex-col ">
       {loading && (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
           color="#4A90E2" // Change color as needed
         />
       )}
-      <div className="h-full md:p-6 p-3 bg-blue-50">
-        <div className="md:px-8 px-3 md:py-3  shadow-xl h-full border border-gray-100 rounded-xl bg-gray-50 ">
-          <div className="flex justify-between items-center mb-4 ">
+    
+          <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3 ">
             <h2 className="text-lg font-bold">Lead Follow Up</h2>
             <div className="flex gap-6 items-center">
               {hasOwnLeads && (
@@ -363,14 +283,14 @@ const LeadFollowUp = () => {
                     ? navigate("/admin/transaction/lead")
                     : navigate("/staff/transaction/lead")
                 }
-                className="bg-black text-white py-2 px-3 rounded-lg shadow-lg hover:bg-gray-600"
+                className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600"
               >
-                Go Lead
+                New Lead
               </button>
             </div>
           </div>
           {/* Responsive Table Container */}
-          <div className="overflow-x-auto rounded-lg text-center overflow-y-auto max-h-96 shadow-xl">
+          <div className="flex-1 overflow-x-auto rounded-lg text-center overflow-y-auto  shadow-xl md:mx-5 mx-3">
             <table className=" border-collapse border border-gray-400 w-full text-sm">
               <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
                 <tr>
@@ -407,20 +327,12 @@ const LeadFollowUp = () => {
                       <tr className="bg-white ">
                         <td
                           onClick={() => setShowFullName(!showFullName)}
-                          // className={`px-4 cursor-pointer ${
-                          //   showFullName
-                          //     ? "whitespace-normal"
-                          //     : "truncate whitespace-nowrap overflow-hidden max-w-[150px]"
-                          // }`}
                           className={`px-4 cursor-pointer overflow-hidden ${
                             showFullName
                               ? "whitespace-normal max-h-[3em]" // ≈2 lines of text (1.5em line-height)
                               : "truncate whitespace-nowrap max-w-[120px]"
                           }`}
                           style={{ lineHeight: "1.5em" }} // fine-tune as needed
-                          // className={`truncate overflow-hidden px-4 ${
-                          //   !showFullName ? "max-w-[150px]" : ""
-                          // }`}
                         >
                           {item.customerName.customerName}
                         </td>
@@ -444,8 +356,9 @@ const LeadFollowUp = () => {
                                     state: {
                                       leadId: item._id,
                                       isReadOnly: !(
-                                        item.allocatedTo === loggedUser._id ||
-                                        item.leadBy === loggedUser._id
+                                        item.allocatedTo._id ===
+                                          loggedUser._id ||
+                                        item.leadBy._id === loggedUser._id
                                       )
                                     }
                                   })
@@ -453,8 +366,9 @@ const LeadFollowUp = () => {
                                     state: {
                                       leadId: item._id,
                                       isReadOnly: !(
-                                        item.allocatedTo === loggedUser._id ||
-                                        item.leadBy === loggedUser._id
+                                        item.allocatedTo._id ===
+                                          loggedUser._id ||
+                                        item.leadBy._id === loggedUser._id
                                       )
                                     }
                                   })
@@ -498,56 +412,7 @@ const LeadFollowUp = () => {
                           {item?.leadBy?.name}
                         </td>
                         <td className="border border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
-                          <Select
-                            options={allocationOptions}
-                            value={selectedAllocates[item._id] || null}
-                            onChange={(selectedOption) => {
-                              setSelectedAllocates((prev) => ({
-                                ...prev,
-                                [item._id]: selectedOption
-                              }))
-                              handleSelectedAllocates(
-                                item,
-                                selectedOption.value
-                              )
-                            }}
-                            className="w-44 focus:outline-none"
-                            styles={{
-                              control: (base, state) => ({
-                                ...base,
-                                minHeight: "32px", // control height
-                                height: "32px",
-                                boxShadow: "none", // removes blue glow
-                                borderColor: state.isFocused
-                                  ? "#ccc"
-                                  : base.borderColor, // optional: neutral border on focus
-                                "&:hover": {
-                                  borderColor: "#ccc" // optional hover styling
-                                }
-                              }),
-                              valueContainer: (base) => ({
-                                ...base,
-                                paddingTop: "2px", // Reduce vertical padding
-                                paddingBottom: "2px"
-                              }),
-                              indicatorsContainer: (base) => ({
-                                ...base,
-                                height: "30px"
-                              }),
-                              menu: (provided) => ({
-                                ...provided,
-                                maxHeight: "200px", // Set dropdown max height
-                                overflowY: "auto" // Enable scrolling
-                              }),
-                              menuList: (provided) => ({
-                                ...provided,
-                                maxHeight: "200px", // Ensures dropdown scrolls internally
-                                overflowY: "auto"
-                              })
-                            }}
-                            menuPortalTarget={document.body} // Prevents nested scrolling issues
-                            menuShouldScrollIntoView={false}
-                          />
+                          {item?.allocatedTo?.name}
                         </td>
                         <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5">
                           {item.allocatedBy?.name}
@@ -560,10 +425,10 @@ const LeadFollowUp = () => {
                         </td>
                         <td className="border border-t-0 border-gray-400   px-4 py-0.5 "></td>
                         <td
-                          className="border border-t-0 border-gray-400   px-4 py-0.5 text-blue-400 hover:text-blue-500 hover:cursor-pointer font-semibold"
-                          onClick={() => handleSubmit(item)}
+                          className="border border-t-0 border-gray-400   px-4 py-0.5"
+                          
                         >
-                          Allocates
+                        
                         </td>
                         <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
                       </tr>
@@ -572,7 +437,13 @@ const LeadFollowUp = () => {
                 ) : (
                   <tr>
                     <td colSpan={8} className="text-center text-gray-500 py-4">
-                      No data available.
+                      {loading ? (
+                        <div className="justify center">
+                          <PropagateLoader color="#3b82f6" size={10} />
+                        </div>
+                      ) : (
+                        "No data available."
+                      )}
                     </td>
                   </tr>
                 )}
@@ -585,26 +456,7 @@ const LeadFollowUp = () => {
                     selectedTab === "Next Follow Up" ? "md:w-80" : "md:w-1/2"
                   } p-5 rounded-lg `}
                 >
-                  {/* <div className="text-gray-600 font-semibold space-x-6">
-                    <span
-                      className="hover:cursor-pointer"
-                      onClick={() => {
-                        setselectedTab("Follow Up History")
-                        setfollowupDateModal(false)
-                      }}
-                    >
-                      History
-                    </span>
-                    <span
-                      className="hover:cursor-pointer"
-                      onClick={() => {
-                        handlefollowupdate(selectedLeadId, selectedDocId)
-                        setselectedTab("Next Follow Up")
-                      }}
-                    >
-                      Next Follow Up
-                    </span>
-                  </div> */}
+                 
                   <div className="text-gray-600 font-semibold space-x-6">
                     <span
                       className={`hover:cursor-pointer pb-1 ${
@@ -808,349 +660,10 @@ const LeadFollowUp = () => {
             )}
           </div>
 
-          {/* <div className="overflow-x-auto rounded-lg text-center ">
-            <table className="min-w-full border border-gray-300">
-              <thead className="bg-blue-500 text-white text-sm ">
-                <tr>
-                  <th className="px-4 py-2 text-center">Lead Date</th>
-                  <th className="px-1 py-2 text-center min-w-[80px]">
-                    No Of <br />
-                    Follow Up
-                  </th>
-                  <th className="px-4 py-2 text-center">Lead ID</th>
-                  <th className="px-4 py-2 text-center">Customer Name</th>
-                  <th className="px-4 py-2 text-center">Mobile Number</th>
-                  <th className="px-4 py-2 text-center">Phone Number</th>
-                  <th className="px-2 py-2 text-center">Email Id</th>
-                  <th className="px-4 py-2 text-center">
-                    Product
-                    <br />
-                    Services
-                  </th>
-                  <th className="px-4 py-2 text-center">Lead By</th>
-                  <th className="px-4 py-2 text-center">Lead Allocated To</th>
-                  <th className="px-4 py-2 text-center">Net Amount</th>
-                  <th className="px-1 py-2 text-center min-w-[100px]">
-                    Next Follow
-                    <br /> Up Date
-                  </th>
-                  <th className="px-4 py-2 text-center">Remark</th>
-                  <th className="px-1 py-2 text-center">History</th>
-                  {ownFollowUp && (
-                    <th className="px-1 py-2 text-center">Select Date</th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="text-center divide-gray-200 bg-gray-200 whitespace-nowrap">
-                {tableData && tableData.length > 0 ? (
-                  tableData.map((item) => (
-                    <tr key={item.id} className="">
-                      <td className="px-1 py-1.5 border border-gray-300">
-                        {formatDate(item.leadDate)}
-                      </td>
-                      <td className="px-1  border border-gray-300">
-                        {item?.followUpDatesandRemarks?.length}
-                      </td>
-                      <td className="px-4  border border-gray-300">
-                        {item?.leadId}
-                      </td>
-                      <td
-                        className="px-4 border border-gray-300 cursor-pointer"
-                        onClick={() => setShowFullName(!showFullName)}
-                      >
-                        <div
-                          className={`truncate overflow-hidden ${
-                            !showFullName ? "max-w-[100px]" : ""
-                          }`}
-                        >
-                          {item?.customerName?.customerName}
-                        </div>
-                      </td>
-                      <td className="px-4  border border-gray-300">
-                        {item?.mobile}
-                      </td>
-                      <td className="px-4  border border-gray-300">
-                        {item.phone}
-                      </td>
-                      <td
-                        className="px-4  border border-gray-300 cursor-pointer"
-                        onClick={() => setShowFullEmail(!showFullEmail)}
-                      >
-                        <div
-                          className={`truncate overflow-hidden ${
-                            !showFullEmail ? "max-w-[100px]" : ""
-                          }`}
-                        >
-                          {item?.email}
-                        </div>
-                      </td>
-                      <td className="px-4  border border-gray-300">
-                        <button
-                          onClick={() =>
-                            loggedUser.role === "Admin"
-                              ? navigate("/admin/transaction/lead/leadEdit", {
-                                  state: {
-                                    leadId: item._id
-                                  }
-                                })
-                              : navigate("/staff/transaction/lead/leadEdit", {
-                                  state: {
-                                    leadId: item._id
-                                  }
-                                })
-                          }
-                          className="bg-blue-700 hover:bg-blue-800 text-white rounded-lg px-4 shadow-md"
-                        >
-                          View
-                        </button>
-                      </td>
-                      <td className="px-4  border border-gray-300">
-                        {item?.leadBy?.name}
-                      </td>
-                      <td className="px-1  border border-gray-300">
-                        {item?.allocatedTo?.name}
-                      </td>
-                      <td className="px-4  border border-gray-300">
-                        {item?.netAmount}
-                      </td>
-                      <td className="px-1 border border-gray-300">
-                        {item.followUpDatesandRemarks.length
-                          ? formatDate(
-                              item.followUpDatesandRemarks[
-                                item.followUpDatesandRemarks.length - 1
-                              ].nextfollowUpDate
-                            )
-                          : "Not selected"}
-                      </td>
+        
 
-                      <td
-                        className="px-2 border border-gray-300 text-blue-800 hover:cursor-pointer"
-                        onClick={() => setShowFullRemarks(!showFullRemarks)}
-                      >
-                        <div
-                          className={`truncate overflow-hidden ${
-                            !showFullRemarks ? "max-w-[150px]" : ""
-                          }`}
-                        >
-                          {item?.followUpDatesandRemarks?.length > 0 &&
-                            item.followUpDatesandRemarks[
-                              item.followUpDatesandRemarks.length - 1
-                            ]?.Remarks}
-                        </div>
-                      </td>
-                      <td className="px-4  border border-gray-300">
-                        <button
-                          onClick={() =>
-                            handleHistory(
-                              item?.followUpDatesandRemarks,
-                              item.leadId
-                            )
-                          }
-                        >
-                          <FaHistory className="text-xl text-green-500" />
-                        </button>
-                      </td>
-                      {ownFollowUp && (
-                        <td className="px-4  border border-gray-300">
-                          <button
-                            onClick={() => handlefollowupdate(item._id)}
-                            className=" px-4 "
-                          >
-                            <MdOutlineEventAvailable className="text-green-600 text-xl" />
-                          </button>
-                        </td>
-                      )}
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan="15"
-                      className="px-4 py-4 text-center bg-gray-100"
-                    >
-                      {loading ? (
-                        <div className="flex justify-center items-center gap-2">
-                          <PropagateLoader color="#3b82f6" size={10} />
-                        </div>
-                      ) : (
-                        "No Lead Follow Up"
-                      )}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-            {historyModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 ">
-                <div className="bg-gray-100   text-center w-full  md:w-1/2 p-5 rounded-lg">
-                  <h1 className=" font-bold">
-                    {`Follow Up History of LEAD ID
-                  -${selectedLeadId}`}
-                  </h1>
-                  <div className="overflow-x-auto overflow-y-auto  md:max-h-64 lg:max-h-96 shadow-xl">
-                    <table className="w-full text-sm border-collapse">
-                      <thead className="text-center sticky top-0 z-10">
-                        <tr className="bg-indigo-100">
-                          {loggedUser?.role === "Admin" && (
-                            <th className="border border-indigo-200 p-2 min-w-[100px] ">
-                              FollowedBy
-                            </th>
-                          )}
-
-                          <th className="border border-indigo-200 p-2 min-w-[100px] ">
-                            Date
-                          </th>
-                          <th className="border border-indigo-200 p-2 w-fit min-w-[200px]">
-                            Remark
-                          </th>
-                          <th className="border border-indigo-200 p-2 min-w-[100px] ">
-                            Next Follow Up Date
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {historyList && historyList.length > 0 ? (
-                          historyList.map((item, index) => (
-                            <tr
-                              key={index}
-                              className={
-                                index % 2 === 0 ? "bg-gray-50" : "bg-white"
-                              }
-                            >
-                              {loggedUser?.role === "Admin" && (
-                                <td className="border border-gray-200 p-2">
-                                  {item?.followedId?.name}
-                                </td>
-                              )}
-
-                              <td className="border border-gray-200 p-2">
-                                {item?.followUpDate?.toString().split("T")[0] ||
-                                  "N/A"}
-                              </td>
-                              <td className="border border-gray-200 p-2">
-                                {item?.Remarks || "N/A"}
-                              </td>
-                              <td className="border border-gray-200 p-2">
-                                {
-                                  item?.nextfollowUpDate
-                                    ?.toString()
-                                    .split("T")[0]
-                                }
-                              </td>
-                            </tr>
-                          ))
-                        ) : (
-                          <tr>
-                            <td
-                              colSpan={4}
-                              className="text-center bg-white p-3 text-gray-500 italic"
-                            >
-                              No followUp s
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setHistoryModal(!historyModal)
-                      setSelectedLeadId(null)
-                    }}
-                    className="bg-gray-500 hover:bg-gray-600 rounded-lg px-3 py-1 mt-3 text-white "
-                  >
-                    CLOSE
-                  </button>
-                </div>
-              </div>
-            )}
-            {followupDateModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 ">
-                <div className="bg-gray-100   text-center w-full  md:w-96 p-5 rounded-lg">
-                  <div className=" rounded-lg grid grid-cols-1 gap-3 p-3 shadow-xl bg-white">
-                    <div>
-                      <label className="block text-left font-semibold text-gray-500">
-                        Select Follow Up Date
-                      </label>
-                      <input
-                        type="text"
-                        readOnly
-                        name="followUpDate"
-                        // value={formData?.followUpDate || ""}
-                        value={
-                          formData?.followUpDate
-                            ? new Date(formData.followUpDate)
-                                .toLocaleDateString("en-GB") // this gives dd/mm/yyyy
-                                .replace(/\//g, "-") // change / to -
-                            : ""
-                        }
-                        className="rounded-md w-full py-1 px-2 border border-gray-200 focus:outline-none"
-                        onChange={handleDataChange}
-                      ></input>
-                      {errors.followUpDate && (
-                        <p className="text-red-500">{errors.followUpDate}</p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-left font-semibold text-gray-500">
-                        Select Next Follow Up Date
-                      </label>
-                      <input
-                        type="date"
-                        name="nextfollowUpDate"
-                        value={formData?.nextfollowUpDate || ""}
-                        className="rounded-md w-full py-1 px-2 border border-gray-200 focus:outline-none"
-                        onChange={handleDataChange}
-                      ></input>
-                      {errors.nextfollowUpDate && (
-                        <p className="text-red-500">
-                          {errors.nextfollowUpDate}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-left">Remarks</label>
-                      <textarea
-                        rows={4}
-                        name="Remarks"
-                        className="rounded-lg w-full border border-gray-200 focus:outline-none p-3"
-                        value={formData?.Remarks || ""}
-                        onChange={handleDataChange}
-                      ></textarea>
-                      {errors.Remarks && (
-                        <p className="text-red-500">{errors.Remarks}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex justify-center gap-3 mt-3">
-                    <button
-                      onClick={() => setfollowupDateModal(!followupDateModal)}
-                      className="bg-gray-600 rounded-lg px-4 py-1 shadow-xl text-white "
-                    >
-                      {" "}
-                      CLOSE
-                    </button>
-                    <button
-                      onClick={handleFollowUpDateSubmit}
-                      className="bg-blue-800 rounded-lg px-4 py-2  text-white shadow-xl"
-                    >
-                      {followupDateLoader ? (
-                        <div className="flex items-center">
-                          Processing
-                          <FaSpinner className="animate-spin h-5 w-5  text-white ml-2" />
-                        </div>
-                      ) : (
-                        <div>SUBMIT</div>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div> */}
-        </div>
       </div>
-    </div>
+    
   )
 }
 

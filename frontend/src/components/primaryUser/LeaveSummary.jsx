@@ -1,4 +1,4 @@
-import  { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import * as XLSX from "xlsx"
 import ExcelJS from "exceljs"
 import { saveAs } from "file-saver"
@@ -20,10 +20,8 @@ const leaveSummary = () => {
   const [selectedYear, setSelectedYear] = useState(currentYear)
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)
   const [onsiteTypes, setOnsiteTypes] = useState({})
-  const [editIndex, setEditIndex] = useState(null)
   const [formData, setFormData] = useState({})
   const [selectedDate, setselectedDate] = useState(null)
-  const [Loading, setLoading] = useState(null)
   const [type, setType] = useState("")
   const [holiday, setHoly] = useState(null)
   const [currentmonthSundays, setCurrentmonthSundays] = useState(null)
@@ -39,7 +37,7 @@ const leaveSummary = () => {
     data,
 
     loading,
-    refreshHook
+    
   } = UseFetch(apiUrl)
 
   useEffect(() => {
@@ -108,12 +106,7 @@ const leaveSummary = () => {
     setselectedStaff(filteredAttendance)
   }
   // Handle onsite type change
-  const handleOnsiteTypeChange = (date, index, newType) => {
-    setOnsiteTypes((prev) => ({
-      ...prev,
-      [`${date}-${index}`]: newType
-    }))
-  }
+  
   const handleAttendance = useCallback((date, type, inTime, outTime) => {
     setModalOpen(true)
     setselectedDate(date)
@@ -138,7 +131,6 @@ const leaveSummary = () => {
       selectedUser(attendee.userId)
     }
 
-    setEditIndex(null)
     setFormData(
       Object.fromEntries(Object.keys(formData).map((key) => [key, ""]))
     )
@@ -269,21 +261,7 @@ const leaveSummary = () => {
       toast.error(error.response.data.message)
     }
   }
-  const handleDownloadFailedData = () => {
-    if (nonsavedData.length > 0) {
-      // Create a new workbook
-      const workbook = XLSX.utils.book_new()
-
-      // Convert failed data to sheet
-      const worksheet = XLSX.utils.json_to_sheet(nonsavedData)
-
-      // Append sheet to workbook
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Failed Data")
-
-      // Generate Excel file and trigger download
-      XLSX.writeFile(workbook, "failed_data.xlsx")
-    }
-  }
+ 
 
   const handleDownload = (data) => {
     // Using ExcelJS instead of XLSX for better styling control
@@ -393,9 +371,8 @@ const leaveSummary = () => {
       saveAs(blob, "Attendance_Report.xlsx")
     })
   }
-
   return (
-    <div className="w-full">
+    <div className="w-full flex flex-col h-full">
       {loading && (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
@@ -408,7 +385,7 @@ const leaveSummary = () => {
         <h1 className=" sm:text-md md:text-2xl font-bold mb-1">
           User Leave Summary
         </h1>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-end gap-2 md:gap-4 mb-3 md:mr-8 mx-5">
+        <div className="grid grid-cols-2 md:flex md:flex-row md:items-center md:justify-end gap-2 md:gap-4 mb-3 md:mr-8 mx-5">
           {/* Search Input */}
           <div className="w-full md:w-auto">
             <input
@@ -465,79 +442,79 @@ const leaveSummary = () => {
         ""
       ) : (
         <>
-          <div className="max-h-[calc(100vh-200px)] overflow-y-auto px-5 ">
+          <div className="flex-1 flex flex-col overflow-y-auto mx-4 mb-4 overflow-hidden shadow-xl rounded-lg">
             {leavesummaryList && leavesummaryList.length > 0 ? (
               leavesummaryList?.map((attendee, index) => (
                 <div key={index}>
                   {selectedName === null || selectedName === attendee.name ? (
-                    <>
+                    <div
+                      ref={listRef}
+                      // className={`${
+                      //   selectedName === attendee.name && !modalOpen
+                      //     ? "sticky top-0 z-20 "
+                      //     : ""
+                      // }`}
+                    >
+                      {/* Your existing summary card code */}
                       <div
-                        ref={listRef}
-                        className={`${
-                          selectedName === attendee.name && !modalOpen
-                            ? "sticky top-0 z-20 bg-white"
-                            : ""
-                        }`}
-                      >
-                        {/* Your existing summary card code */}
-                        <div
-                          className={` md:py-2 md:mr-4 shadow-lg rounded-lg w-full border cursor-pointer
+                        className={` md:h-20 md:mr-4 shadow-lg rounded-lg w-full border cursor-pointer
                       ${
                         selectedName === attendee.name
-                          ? "bg-gray-200"
+                          ? "bg-gray-200 sticky top-0 z-40"
                           : "bg-gray-200 mb-2"
                       }`}
-                          onClick={() => handleSelectAttendee(attendee)}
-                        >
-                          <div className="md:flex w-full">
-                            <div className=" text-sm md:text-md font-semibold text-gray-800 w-full  md:w-[225px] p-2">
-                              {attendee.name}
-                            </div>
-                            <div className="w-full overflow-x-auto">
-                              <table className="w-full ">
-                                <thead className="bg-gray-200 text-gray-800">
-                                  <tr>
-                                    {[
-                                      "Present",
-                                      "Leave",
-                                      "Late Cutting",
-                                      "Not Marked",
-                                      "Onsite"
-                                    ].map((label, idx) => (
-                                      <th
-                                        key={idx}
-                                        className="s py-1 text-gray-800 text-sm font-medium text-center min-w-[100px]"
-                                      >
-                                        {label}
-                                      </th>
-                                    ))}
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr className="bg-gray-200 text-gray-800">
-                                    {[
-                                      attendee.present,
-                                      attendee.absent,
-                                      attendee.latecutting,
-                                      attendee.notMarked,
-                                      attendee.onsite
-                                    ].map((value, idx) => (
-                                      <td
-                                        key={idx}
-                                        className="px-4 py-2 text-lg font-semibold text-center "
-                                      >
-                                        {value}
-                                      </td>
-                                    ))}
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
+                        onClick={() => handleSelectAttendee(attendee)}
+                      >
+                        <div className="md:flex w-full">
+                          <div className=" text-sm md:text-md font-semibold text-gray-800 w-full  md:w-[225px] p-2">
+                            {attendee.name}
+                          </div>
+                          <div className="w-full overflow-x-auto">
+                            <table className="w-full ">
+                              <thead className="bg-gray-200 text-gray-800">
+                                <tr>
+                                  {[
+                                    "Present",
+                                    "Leave",
+                                    "Late Cutting",
+                                    "Not Marked",
+                                    "Onsite"
+                                  ].map((label, idx) => (
+                                    <th
+                                      key={idx}
+                                      className="s py-1 text-gray-800 text-sm font-medium text-center min-w-[100px]"
+                                    >
+                                      {label}
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr className="bg-gray-200 text-gray-800">
+                                  {[
+                                    attendee.present,
+                                    attendee.absent,
+                                    attendee.latecutting,
+                                    attendee.notMarked,
+                                    attendee.onsite
+                                  ].map((value, idx) => (
+                                    <td
+                                      key={idx}
+                                      className="px-4 py-2 text-lg font-semibold text-center "
+                                    >
+                                      {value}
+                                    </td>
+                                  ))}
+                                </tr>
+                              </tbody>
+                            </table>
                           </div>
                         </div>
-                        {selectedName === attendee.name &&
-                          currentmonthSundays &&
-                          holiday && (
+                      </div>
+                      {selectedName === attendee.name &&
+                        currentmonthSundays &&
+                        holiday && (
+                          <div className="flex-1  ">
                             <ResponsiveTable
                               attendee={attendee}
                               user={user}
@@ -549,9 +526,9 @@ const leaveSummary = () => {
                               sundays={currentmonthSundays}
                               holiday={holiday}
                             />
-                          )}
-                      </div>
-                    </>
+                          </div>
+                        )}
+                    </div>
                   ) : null}
                 </div>
               ))

@@ -7,13 +7,11 @@ import BarLoader from "react-spinners/BarLoader"
 import api from "../../../api/api"
 import Select from "react-select"
 import UseFetch from "../../../hooks/useFetch"
-import { formatDate } from "../../../utils/dateUtils"
 const LeadAllocationTable = () => {
   const [status, setStatus] = useState("Pending")
 
   const [toggleLoading, setToggleLoading] = useState(false)
   const [validateError, setValidateError] = useState({})
-  const [showAllocates, setAllocates] = useState(false)
   const [loggedUserBranches, setLoggeduserBranches] = useState([])
   const [showFullName, setShowFullName] = useState(false)
   const [showFullEmail, setShowFullEmail] = useState(false)
@@ -32,7 +30,6 @@ const LeadAllocationTable = () => {
         JSON.stringify(loggedUserBranches)
       )}&role=${loggedUser.role}`
   )
-
   const { data } = UseFetch("/auth/getallUsers")
   const navigate = useNavigate()
   useEffect(() => {
@@ -75,12 +72,11 @@ const LeadAllocationTable = () => {
   }, [data])
   useEffect(() => {
     if (leadPendinglist) {
-   
-      // setapprovedToggleStatus(!approvedToggleStatus)
+      setTableData(leadPendinglist)
     }
   }, [leadPendinglist])
-
   const toggleStatus = async () => {
+    setTableData([])
     setShowFullEmail(false)
     setShowFullName(false)
     if (approvedToggleStatus === false) {
@@ -97,7 +93,6 @@ const LeadAllocationTable = () => {
         const initialSelected = {}
 
         response.data.data.forEach((item) => {
-
           if (item.allocatedTo?._id) {
             const match = allocationOptions.find(
               (opt) => opt.value === item.allocatedTo._id
@@ -135,8 +130,6 @@ const LeadAllocationTable = () => {
   }
 
   const handleSubmit = async (leadAllocationData) => {
- 
-
     if (!selectedAllocates.hasOwnProperty(leadAllocationData._id)) {
       setValidateError((prev) => ({
         ...prev,
@@ -148,7 +141,6 @@ const LeadAllocationTable = () => {
     try {
       setsubmitLoading(true)
       if (approvedToggleStatus) {
-
         const response = await api.post(
           `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&allocatedBy=${
             loggedUser._id
@@ -156,12 +148,10 @@ const LeadAllocationTable = () => {
           leadAllocationData
         )
         if (response.status >= 200 && response.status < 300) {
-
           setTableData(response.data.data)
           setsubmitLoading(false)
         }
       } else {
-
         const response = await api.post(
           `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&allocatedBy=${
             loggedUser._id
@@ -183,23 +173,25 @@ const LeadAllocationTable = () => {
       console.log("error:", error.message)
     }
   }
-  
+
   return (
-    <div className="h-full ">
+    <div className="flex flex-col h-full" >
       {submitLoading && (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
           color="#4A90E2" // Change color as needed
         />
       )}
-      <div className="h-full md:p-6 p-3 bg-blue-50">
-        <div className="md:px-8 px-3 py-3 shadow-xl h-full border border-gray-100 rounded-xl bg-gray-50 ">
-          <div className="flex justify-between items-center mb-4 ">
+      
+        
+          <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3 ">
             <h2 className="text-lg font-bold">
               {approvedToggleStatus ? "Approved" : "Pending"} Allocation List
             </h2>
             <div className="flex gap-6 items-center">
               <button
+                aria-pressed={approvedToggleStatus}
+                aria-label="Toggle Approval Status"
                 onClick={toggleStatus}
                 className={`${
                   approvedToggleStatus ? "bg-green-500" : "bg-gray-300"
@@ -217,40 +209,40 @@ const LeadAllocationTable = () => {
                     ? navigate("/admin/transaction/lead")
                     : navigate("/staff/transaction/lead")
                 }
-                className="bg-black text-white py-2 px-3 rounded-lg shadow-lg hover:bg-gray-600"
+                className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600"
               >
-                Go Lead
+                New Lead
               </button>
             </div>
           </div>
 
           {/* Responsive Table Container */}
-          <div className="overflow-x-auto rounded-lg text-center overflow-y-auto max-h-96 shadow-xl">
-            <table className=" border-collapse border border-gray-400 w-full text-sm">
+          <div className="flex-1  overflow-x-auto rounded-lg text-center overflow-y-auto border  shadow-xl mx-3 md:mx-5 ">
+            <table className="w-full text-sm">
               <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
                 <tr>
-                  <th className="border border-r-0 border-gray-400 px-4 ">
+                  <th className="border border-r-0 border-t-0 border-gray-400 px-4 ">
                     Name
                   </th>
-                  <th className="border border-r-0 border-l-0 border-gray-400  px-4 max-w-[200px] min-w-[200px]">
+                  <th className="border border-r-0 border-t-0 border-l-0 border-gray-400  px-4 max-w-[200px] min-w-[200px]">
                     Mobile
                   </th>
-                  <th className="border border-r-0 border-l-0 border-gray-400 px-4 ">
+                  <th className="border border-r-0 border-l-0 border-t-0 border-gray-400 px-4 ">
                     Phone
                   </th>
-                  <th className="border border-r-0 border-l-0 border-gray-400 px-4 ">
+                  <th className="border border-r-0 border-l-0 border-t-0 border-gray-400 px-4 ">
                     Email
                   </th>
-                  <th className="border border-r-0 border-l-0 border-gray-400 px-4  min-w-[100px]">
+                  <th className="border  border-l-0 border-t-0 border-gray-400 px-4  min-w-[100px]">
                     Lead Id
                   </th>
-                  <th className="border border-gray-400 px-4 ">
+                  <th className="border border-t-0   border-blue-500 px-4 ">
                     Followup Date
                   </th>
-                  <th className="border border-gray-400 px-4  min-w-[100px]">
+                  <th className="border border-t-0 border-gray-400 px-4  min-w-[100px]">
                     Action
                   </th>
-                  <th className="border border-gray-400 px-4 py-2">
+                  <th className="border border-t-0 border-gray-400 px-4 py-2">
                     Net Amount
                   </th>
                 </tr>
@@ -259,23 +251,15 @@ const LeadAllocationTable = () => {
                 {tableData && tableData.length > 0 ? (
                   tableData.map((item, index) => (
                     <React.Fragment key={index}>
-                      <tr className="bg-white ">
+                      <tr className="bg-white">
                         <td
                           onClick={() => setShowFullName(!showFullName)}
-                          // className={`px-4 cursor-pointer ${
-                          //   showFullName
-                          //     ? "whitespace-normal"
-                          //     : "truncate whitespace-nowrap overflow-hidden max-w-[150px]"
-                          // }`}
-                          className={`px-4 cursor-pointer overflow-hidden ${
+                          className={`px-4 cursor-pointer overflow-hidden border border-r-0 border-b-0 border-gray-400 ${
                             showFullName
                               ? "whitespace-normal max-h-[3em]" // ≈2 lines of text (1.5em line-height)
                               : "truncate whitespace-nowrap max-w-[120px]"
                           }`}
                           style={{ lineHeight: "1.5em" }} // fine-tune as needed
-                          // className={`truncate overflow-hidden px-4 ${
-                          //   !showFullName ? "max-w-[150px]" : ""
-                          // }`}
                         >
                           {item.customerName.customerName}
                         </td>
@@ -319,22 +303,23 @@ const LeadAllocationTable = () => {
                             View / Modify
                           </button>
                         </td>
-                        <td className="borrder border-b-0 border-gray-400 px-4 ">
-                          {item.netAmount}
-                        </td>
+                        <td className="border border-b-0 border-gray-400 px-4 "></td>
                       </tr>
 
-                      <tr className=" font-semibold bg-gray-200">
-                        <td className=" px-4 ">Leadby</td>
+                      <tr className=" font-semibold bg-gray-100">
+                        <td className=" px-4 border border-b-0 border-t-0 border-r-0 border-gray-400 ">Leadby</td>
                         <td className=" px-4">Assignedto</td>
                         <td className=" px-4 ">Assignedby</td>
                         <td className="px-4 ">No. of Followups</td>
                         <td className="px-4 min-w-[120px]">Lead Date</td>
-                        <td className=" border border-t-0 border-b-0 border-gray-400 px-4 "></td>
-                        <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer">
+                        <td className=" border border-t-0 border-b-0 border-gray-400 px-4 bg-white "></td>
+                        <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer bg-white">
                           Follow Up
                         </td>
-                        <td className=" border border-t-0 border-b-0 border-gray-400 px-4 "></td>
+                        <td className=" border border-t-0 border-b-0 border-gray-400 px-4 bg-white ">
+                          {" "}
+                          {item.netAmount}
+                        </td>
                       </tr>
 
                       <tr className="bg-white">
@@ -417,7 +402,7 @@ const LeadAllocationTable = () => {
                           className="border border-t-0 border-gray-400   px-4 py-0.5 text-blue-400 hover:text-blue-500 hover:cursor-pointer font-semibold"
                           onClick={() => handleSubmit(item)}
                         >
-                          Allocates
+                          Allocate
                         </td>
                         <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
                       </tr>
@@ -426,15 +411,34 @@ const LeadAllocationTable = () => {
                 ) : (
                   <tr>
                     <td colSpan={8} className="text-center text-gray-500 py-4">
-                      No data available.
+                      {loading ? (
+                        <div className="justify center">
+                          <PropagateLoader color="#3b82f6" size={10} />
+                        </div>
+                      ) : (
+                        <div>
+                          {approvedToggleStatus ? "" : "No Pending Leads"}
+                        </div>
+                      )}
+                      {toggleLoading ? (
+                        <div className="justify center">
+                          <PropagateLoader color="#3b82f6" size={10} />
+                        </div>
+                      ) : (
+                        <div>
+                          {approvedToggleStatus
+                            ? "No Allocated Leads"
+                            : "No Allocated Leads"}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
+        
+      
     </div>
   )
 }
