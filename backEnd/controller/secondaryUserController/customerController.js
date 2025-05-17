@@ -839,7 +839,6 @@ export const GetAllCustomer = async (req, res) => {
 
 
     const objectIds = new mongoose.Types.ObjectId(branchSelected)
-
     const filteredCustomers = customers.filter(
       (customer) =>
 
@@ -3038,8 +3037,8 @@ export const GetallcurrentMonthHoly = async (req, res) => {
 }
 export const Getleavemaster = async (req, res) => {
   try {
-    const a = await Leavemaster.find({})
-    if (a) {
+    const leaveMaster = await Leavemaster.find({})
+    if (leaveMaster) {
       return res.status(200).json({ message: "Leave master found", data: a })
     }
   } catch (error) {

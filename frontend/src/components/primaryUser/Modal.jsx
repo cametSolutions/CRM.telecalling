@@ -66,7 +66,7 @@ const Modal = ({
     return { hours, minutes, amPm: period }
   }
   const currentMonth = new Date(formData?.leaveDate).toString().slice(0, 7)
-  const { data: leaves, refreshHook } = UseFetch(
+  const { data: leaves } = UseFetch(
     staffId && `/auth/getallLeave?userid=${staffId}`
   )
   const { data: leavemasterleavecount } = UseFetch(
@@ -169,13 +169,12 @@ const Modal = ({
         privilegeleavestartsfrom !== null
       ) {
         let privilegeCount
-        let casualCount
         if (privileagestartYear < leaveYear && leaveYear < currentYear) {
           privilegeCount = 12 * privilegePerMonth
         } else if (privileagestartYear < leaveYear) {
           privilegeCount = currentmonth * privilegePerMonth
         } else if (privileagestartYear === leaveYear) {
-          const monthsRemainingInStartYear = 12 - startmonth + 1 // Calculate remaining months including startMonth
+          const monthsRemainingInStartYear = 12 - privileagestartmonth + 1 // Calculate remaining months including startMonth
           privilegeCount = monthsRemainingInStartYear * privilegePerMonth
         }
         ownedprivilegeCount = privilegeCount
@@ -300,7 +299,7 @@ const Modal = ({
         } else if (privileagestartYear < leaveYear) {
           privilegeCount = currentmonth * privilegePerMonth
         } else if (privileagestartYear === leaveYear) {
-          const monthsRemainingInStartYear = 12 - startmonth + 1 // Calculate remaining months including startMonth
+          const monthsRemainingInStartYear = 12 - privilileagestartmonth + 1 // Calculate remaining months including startMonth
           privilegeCount = monthsRemainingInStartYear * privilegePerMonth
         }
         ownedprivilegeCount = privilegeCount
@@ -738,7 +737,6 @@ const Modal = ({
                     type="radio"
                     value="Full Day"
                     checked={selectedOnsite.onsiteType === "Full Day"}
-                    // onChange={(e) => setLeaveOption(e.target.value)}
                     onChange={(e) => {
                       setselectedOnsite((prev) => ({
                         ...prev,
@@ -754,7 +752,6 @@ const Modal = ({
                     type="radio"
                     value="Half Day"
                     checked={selectedOnsite.onsiteType === "Half Day"}
-                    // onChange={(e) => setLeaveOption(e.target.value)}
                     onChange={(e) => {
                       setselectedOnsite((prev) => ({
                         ...prev,
@@ -768,7 +765,6 @@ const Modal = ({
                   <select
                     className="border p-2 rounded w-auto"
                     value={selectedOnsite?.halfDayPeriod || "Morning"}
-                    // onChange={(e) => setLeaveOption(e.target.value)}
                     onChange={(e) => {
                       setselectedOnsite((prev) => ({
                         ...prev,

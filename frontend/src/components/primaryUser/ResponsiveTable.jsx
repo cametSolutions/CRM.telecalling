@@ -12,27 +12,27 @@ const ResponsiveTable = ({
   holiday
 }) => {
   return (
-    <div className="relative">
+    <div className="relative overflow-x-auto  overflow-y-auto rounded-lg max-h-96">
       <div
-        className="overflow-x-auto max-h-[calc(100vh-270px)]"
+        className=""
         onScroll={handleScroll}
       >
         <table className="w-full min-w-max border-collapse text-sm">
           {/* <thead className={`sticky top-0 z-20 bg-white}> */}
           <thead
             className={` ${
-              !modalOpen && " text-sm  sticky top-0 z-20 bg-gray-100"
+              !modalOpen && " text-sm sticky top-0 z-20 bg-blue-200"
             }`}
           >
             <tr>
               <th
                 rowSpan="2"
                 className={`border border-gray-400 p-2 ${
-                  !modalOpen ? "sticky left-0 z-10" : ""
-                } bg-gray-100`}
+                  !modalOpen ? "sticky left-0 z-20 bg-blue-200" : " bg-blue-200"
+                } `}
                 // className={`border border-gray-300 p-2 sticky ${ !modalOpen&&left-0  z-10 }bg-gray-100`}
               >
-                Date
+                Dates
               </th>
               <th colSpan="2" className="border  border-gray-400 p-1">
                 Present
@@ -154,29 +154,7 @@ const ResponsiveTable = ({
                         <td
                           onClick={() => {
                             if (user?.role === "Admin") {
-                              // handleLeave(
-                              //   date,
-                              //   "Leave",
-                              //   {
-                              //     field: details?.casualLeave
-                              //       ? "casual Leave"
-                              //       : details?.compensatoryLeave
-                              //       ? "compensatory Leave"
-                              //       : details?.privileageLeave
-                              //       ? "privileage Leave"
-                              //       : details?.otherLeave
-                              //       ? "other Leave"
-                              //       : null,
-                              //     value:
-                              //       details?.casualLeave ||
-                              //       details?.compensatoryLeave ||
-                              //       details?.privileageLeave ||
-                              //       details?.otherLeave
-                              //   },
-                              //   details?.halfDayperiod,
-                              //   details?.reason,
-                              //   details?.leaveId
-                              // )
+                            
                               handleLeave(
                                 date,
                                 "Leave",
@@ -194,29 +172,7 @@ const ResponsiveTable = ({
                         <td
                           onClick={() => {
                             if (user?.role === "Admin") {
-                              // handleLeave(
-                              //   date,
-                              //   "Leave",
-                              //   {
-                              //     field: details?.casualLeave
-                              //       ? "casual Leave"
-                              //       : details?.compensatoryLeave
-                              //       ? "compensatory Leave"
-                              //       : details?.privileageLeave
-                              //       ? "privileage Leave"
-                              //       : details?.otherLeave
-                              //       ? "other Leave"
-                              //       : null,
-                              //     value:
-                              //       details?.casualLeave ||
-                              //       details?.compensatoryLeave ||
-                              //       details?.privileageLeave ||
-                              //       details?.otherLeave
-                              //   },
-                              //   details?.halfDayperiod,
-                              //   details?.reason,
-                              //   details?.leaveId
-                              // )
+                            
                               handleLeave(
                                 date,
                                 "Leave",
@@ -234,29 +190,7 @@ const ResponsiveTable = ({
                         <td
                           onClick={() => {
                             if (user?.role === "Admin") {
-                              // handleLeave(
-                              //   date,
-                              //   "Leave",
-                              //   {
-                              //     field: details?.casualLeave
-                              //       ? "casual Leave"
-                              //       : details?.compensatoryLeave
-                              //       ? "compensatory Leave"
-                              //       : details?.privileageLeave
-                              //       ? "privileage Leave"
-                              //       : details?.otherLeave
-                              //       ? "other Leave"
-                              //       : null,
-                              //     value:
-                              //       details?.casualLeave ||
-                              //       details?.compensatoryLeave ||
-                              //       details?.privileageLeave ||
-                              //       details?.otherLeave
-                              //   },
-                              //   details?.halfDayperiod,
-                              //   details?.reason,
-                              //   details?.leaveId
-                              // )
+                             
                               handleLeave(
                                 date,
                                 "Leave",
@@ -274,29 +208,7 @@ const ResponsiveTable = ({
                         <td
                           onClick={() => {
                             if (user?.role === "Admin") {
-                              // handleLeave(
-                              //   date,
-                              //   "Leave",
-                              //   {
-                              //     field: details?.casualLeave
-                              //       ? "casual Leave"
-                              //       : details?.compensatoryLeave
-                              //       ? "compensatory Leave"
-                              //       : details?.privileageLeave
-                              //       ? "privileage Leave"
-                              //       : details?.otherLeave
-                              //       ? "other Leave"
-                              //       : null,
-                              //     value:
-                              //       details?.casualLeave ||
-                              //       details?.compensatoryLeave ||
-                              //       details?.privileageLeave ||
-                              //       details?.otherLeave
-                              //   },
-                              //   details?.halfDayperiod,
-                              //   details?.reason,
-                              //   details?.leaveId
-                              // )
+                             
                               handleLeave(
                                 date,
                                 "Leave",

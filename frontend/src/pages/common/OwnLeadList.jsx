@@ -1,11 +1,12 @@
-import  { useState } from "react"
+import React, { useEffect, useState } from "react"
 import UseFetch from "../../hooks/useFetch"
 import { useNavigate } from "react-router-dom"
 import { PropagateLoader } from "react-spinners"
-import { formatDate } from "../../utils/dateUtils"
 
 export default function OwnLeadList() {
   const [showFullName, setShowFullName] = useState(false)
+  const [tableData, setTableData] = useState([])
+  const [loggedUser, setLoggedUser] = useState(null)
   const [showFullEmail, setShowFullEmail] = useState(false)
   const userData = localStorage.getItem("user")
   const user = JSON.parse(userData)
@@ -13,124 +14,173 @@ export default function OwnLeadList() {
   const { data: ownedlead, loading } = UseFetch(
     user && `/lead/ownregisteredLead?userId=${user._id}`
   )
+  useEffect(() => {
+    const userData = localStorage.getItem("user")
+    const user = JSON.parse(userData)
+    setLoggedUser(user)
+  }, [])
+  useEffect(() => {
+    setTableData(ownedlead)
+  }, [ownedlead])
+ 
   return (
-    <div className="h-full md:p-6 p-3 bg-blue-50">
-      <div className="md:px-8 px-3 py-3 shadow-xl h-full border border-gray-100 rounded-xl bg-gray-50 ">
-        <div className="flex justify-between items-center mb-4 ">
-          <h2 className="text-lg font-bold">Owned Lead List</h2>
+    <div className="h-full flex flex-col">
+      <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3">
+        <h2 className="text-lg font-bold">Owned Lead List</h2>
 
-          <button
-            onClick={() => 
-              
-              user?.role === "Admin"
-                ? navigate("/admin/transaction/lead")
-                : navigate("/staff/transaction/lead")
-            }
-            className="bg-black text-white py-2 px-3 rounded-lg shadow-lg hover:bg-gray-600"
-          >
-            New Lead
-          </button>
-        </div>
+        <button
+          onClick={() =>
+            user?.role === "Admin"
+              ? navigate("/admin/transaction/lead")
+              : navigate("/staff/transaction/lead")
+          }
+          className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600"
+        >
+          New Lead
+        </button>
+      </div>
 
-        {/* Responsive Table Container */}
-        <div className="overflow-x-auto rounded-lg text-center ">
-          <table className="min-w-full border border-gray-300">
-            <thead className="bg-blue-500 text-white text-sm whitespace-nowrap">
-              <tr>
-                <th className="px-4 py-2 text-center">Lead Date</th>
-                <th className="px-4 py-2 text-center">Lead ID</th>
-                <th className="px-4 py-2 text-center">Customer Name</th>
-                <th className="px-4 py-2 text-center">Mobile Number</th>
-                <th className="px-4 py-2 text-center">Phone Number</th>
-                <th className="px-4 py-2 text-center">Email Id</th>
-                <th className="px-2 py-2 text-center">Product/Services</th>
-                <th className="px-4 py-2 text-center">Net Amount</th>
-                {/* <th className="px-4 py-2 text-center">Lead By</th> */}
-              </tr>
-            </thead>
-            <tbody className="text-center divide-gray-200 bg-gray-200 whitespace-nowrap">
-              {ownedlead && ownedlead.length > 0 ? (
-                ownedlead.map((item) => (
-                  <tr key={item.id} className="">
-                    <td className="px-1 border border-gray-300">
-                      {formatDate(item.leadDate)}
-                    </td>
-                    <td className="px-4  border border-gray-300">
-                      {item?.leadId}
-                    </td>{" "}
+      {/* Responsive Table Container */}
+
+      <div className=" flex-1 overflow-x-auto rounded-lg text-center overflow-y-auto  shadow-xl mx-3 md:mx-5">
+        <table className=" border-collapse border border-gray-400 w-full text-sm">
+          <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
+            <tr>
+              <th className="border border-r-0 border-gray-400 px-4 ">Name</th>
+              <th className="border border-r-0 border-l-0 border-gray-400  px-4 max-w-[200px] min-w-[200px]">
+                Mobile
+              </th>
+              <th className="border border-r-0 border-l-0 border-gray-400 px-4 ">
+                Phone
+              </th>
+              <th className="border border-r-0 border-l-0 border-gray-400 px-4 ">
+                Email
+              </th>
+              <th className="border border-r-0 border-l-0 border-gray-400 px-4  min-w-[100px]">
+                Lead Id
+              </th>
+              <th className="border border-gray-400 px-4 ">Followup Date</th>
+              <th className="border border-gray-400 px-4  min-w-[100px]">
+                Action
+              </th>
+              <th className="border border-gray-400 px-4 py-2">Net Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tableData && tableData.length > 0 ? (
+              tableData.map((item, index) => (
+                <React.Fragment key={index}>
+                  <tr className="bg-white ">
                     <td
-                      className="px-4 border border-gray-300 cursor-pointer"
                       onClick={() => setShowFullName(!showFullName)}
+                      className={`px-4 cursor-pointer overflow-hidden ${
+                        showFullName
+                          ? "whitespace-normal max-h-[3em]" // ≈2 lines of text (1.5em line-height)
+                          : "truncate whitespace-nowrap max-w-[120px]"
+                      }`}
+                      style={{ lineHeight: "1.5em" }} // fine-tune as needed
                     >
-                      <div
-                        className={`truncate overflow-hidden ${
-                          !showFullName ? "max-w-[100px]" : ""
-                        }`}
-                      >
-                        {item?.customerName?.customerName}
-                      </div>
+                      {item.customerName.customerName}
                     </td>
-                    <td className="px-4  border border-gray-300">
-                      {item?.mobile}
+                    <td className="  px-4 ">{item.mobile}</td>
+                    <td className="px-4 ">0481</td>
+                    <td className="px-4 ">{item.email}</td>
+                    <td className=" px-4 ">{item.leadId}</td>
+                    <td className="border border-b-0 border-gray-400 px-4 ">
+                      {
+                        item.followUpDatesandRemarks[
+                          item.followUpDatesandRemarks.length - 1
+                        ]?.nextfollowpdate
+                      }
                     </td>
-                    <td className="px-4  border border-gray-300">
-                      {item.phone}
-                    </td>
-                    <td
-                      className="px-4  border border-gray-300 cursor-pointer"
-                      onClick={() => setShowFullEmail(!showFullEmail)}
-                    >
-                      <div
-                        className={`truncate overflow-hidden ${
-                          !showFullEmail ? "max-w-[100px]" : ""
-                        }`}
-                      >
-                        {item?.email}
-                      </div>
-                    </td>
-                    <td className="px-4  border border-gray-300">
+
+                    <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold"></td>
+                    <td className="borrder border-b-0 border-gray-400 px-4 "></td>
+                  </tr>
+
+                  <tr className=" font-semibold bg-gray-200">
+                    <td className=" px-4 ">Leadby</td>
+                    <td className=" px-4">Assignedto</td>
+                    <td className=" px-4 ">Assignedby</td>
+                    <td className="px-4 ">No. of Followups</td>
+                    <td className="px-4 min-w-[120px]">Lead Date</td>
+                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4 bg-white "></td>
+                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4 bg-white ">
+                      {" "}
                       <button
-                        onClick={() => 
-                          user.role === "Admin"
+                        onClick={() =>
+                          loggedUser.role === "Admin"
                             ? navigate("/admin/transaction/lead/leadEdit", {
                                 state: {
                                   leadId: item._id,
-                                  isReadOnly: item.leadBy !== item.allocatedTo
+                                  isReadOnly: !(
+                                    (item.allocatedTo?._id === loggedUser._id &&
+                                      item.leadBy._id === loggedUser._id) ||
+                                    (item.allocatedTo === null &&
+                                      item.leadBy._id === loggedUser._id)
+                                  )
                                 }
                               })
                             : navigate("/staff/transaction/lead/leadEdit", {
                                 state: {
                                   leadId: item._id,
-                                  isReadOnly: item.leadBy !== item.allocatedTo
+                                  isReadOnly: !(
+                                    (item.allocatedTo?._id === loggedUser._id &&
+                                      item.leadBy._id === loggedUser._id) ||
+                                    (item.allocatedTo === null &&
+                                      item.leadBy._id === loggedUser._id)
+                                  )
                                 }
                               })
                         }
-                        className="bg-blue-700 hover:bg-blue-800 text-white rounded-lg px-4 shadow-md"
+                        className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer"
                       >
-                        View
+                        View/Modify
                       </button>
                     </td>
-                    <td className="px-4  border border-gray-300">
-                      {item?.netAmount}
+                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4 bg-white ">
+                      {" "}
+                      {item.netAmount}
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="8" className="px-4 py-4 text-center bg-gray-100">
-                    {loading ? (
-                      <div className="flex justify-center items-center gap-2">
-                        <PropagateLoader color="#3b82f6" size={10} />
-                      </div>
-                    ) : (
-                      "No Owned Leads/Leads are Allocated"
-                    )}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+
+                  <tr className="bg-white">
+                    <td className="border border-t-0 border-r-0  border-gray-400 px-4 py-0.5 ">
+                      {item?.leadBy?.name}
+                    </td>
+                    <td className="border border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 "></td>
+                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5">
+                      {item.allocatedBy?.name}
+                    </td>
+                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400  px-4 py-0.5 ">
+                      {item.followUpDatesandRemarks.length}
+                    </td>
+                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
+                      {item.leadDate?.toString().split("T")[0]}
+                    </td>
+                    <td className="border border-t-0 border-gray-400   px-4 py-0.5 "></td>
+                    <td className="border border-t-0 border-gray-400   px-4 py-0.5">
+                      {" "}
+                    </td>
+                    <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
+                  </tr>
+                </React.Fragment>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={8} className="text-center text-gray-500 py-4">
+                  {loading ? (
+                    <div className="justify center">
+                      <PropagateLoader color="#3b82f6" size={10} />
+                    </div>
+                  ) : (
+                    <div>No Own Leads</div>
+                  )}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   )

@@ -104,7 +104,6 @@ const LeadMaster = ({
       selectedBranch &&
       `/customer/getallCustomer?branchSelected=${selectedBranch}`
   )
-
   const navigate = useNavigate()
   useEffect(() => {
     const userData = localStorage.getItem("user")
@@ -140,14 +139,19 @@ const LeadMaster = ({
     }
   }, [loggeduser, branches, productData, serviceData, partners])
   useEffect(() => {
-    if (companybranches?.length > 0) {
+    if (companybranches && companybranches.length > 0) {
       const defaultBranch = companybranches[0]._id
-      if (defaultBranch) {
+      if (Data && Data.length) {
+
+        const customerBranch = Data[0].leadBranch
+        setSelectedBranch([customerBranch])
+        setValueMain("leadBranch", customerBranch)
+      } else if (defaultBranch) {
         setSelectedBranch([defaultBranch])
         setValueMain("leadBranch", defaultBranch)
       }
     }
-  }, [companybranches])
+  }, [companybranches, Data])
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -177,7 +181,8 @@ const LeadMaster = ({
     }
   }, [loggeduser, setValueMain])
   useEffect(() => {
-    if (Data && Data.length > 0) {
+    if (Data && Data.length > 0 && customerOptions && customerOptions.length) {
+     
       setValueMain("leadId", Data[0]?.leadId)
       setValueMain("customerName", Data[0]?.customerName?._id)
       setValueMain("mobile", Data[0]?.customerName?.mobile)
@@ -630,9 +635,9 @@ const LeadMaster = ({
           color="#4A90E2" // Change color as needed
         />
       )}
-      <div className="h-full overflow-y-auto container justify-center items-center  p-2 md:p-8 ">
+      <div className="h-full overflow-y-auto container justify-center items-center p-3 md:p-8 shadow-xl">
         <div
-          className="shadow-lg rounded p-2 md:p-8 mx-auto"
+          className="shadow-lg rounded p-2 md:p-3 lg:p-8 mx-auto "
           style={{
             opacity:
               productLoading || usersLoading || customerLoading ? 0.2 : 1,
@@ -644,19 +649,19 @@ const LeadMaster = ({
           }}
         >
           <div className="flex justify-between">
-            <h2 className="text-md md:text-2xl font-semibold  mb-2 md:mb-1">
+            <h2 className="text-xl md:text-2xl font-semibold  mb-2 md:mb-1">
               {Data && Data.length > 0 ? "Lead Edit" : "Lead"}
             </h2>
-            {/* <button
+            <button
               onClick={() =>
                 loggeduser.role === "Admin"
                   ? navigate("/admin/transaction/lead")
                   : navigate("/staff/transaction/lead")
               }
-              className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-lg shadow-xl"
+              className="bg-black hover:bg-gray-600 text-white px-2 py-1 rounded-lg shadow-xl"
             >
-              Go Lead
-            </button> */}
+              New Lead
+            </button>
           </div>
 
           {showmessage && (
@@ -670,9 +675,9 @@ const LeadMaster = ({
             />
           )}
 
-          <form onSubmit={handleSubmitMain(onSubmit)} className="py-5">
+          <form onSubmit={handleSubmitMain(onSubmit)} className="md:py-5">
             <div className="md:flex items-start">
-              <div className="md:w-1/2  grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 md:mx-5">
+              <div className="md:w-1/2  grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 md:mr-2">
                 <div>
                   <label
                     htmlFor="leadBranch"
@@ -718,7 +723,7 @@ const LeadMaster = ({
                   >
                     Customer Name
                   </label>
-                  <div className="flex w-full text-sm ">
+                  <div className="flex w-full text-sm mt-1">
                     <Select
                       options={customerOptions}
                       isDisabled={isReadOnly}
@@ -753,7 +758,7 @@ const LeadMaster = ({
                         setSelectedLeadList([])
                         setSelectedLicense(null)
                       }}
-                      className={`mt-1 w-full ${
+                      className={`w-full ${
                         isReadOnly
                           ? "cursor-not-allowed bg-gray-100 text-gray-500"
                           : ""
@@ -783,18 +788,19 @@ const LeadMaster = ({
                       menuShouldScrollIntoView={false}
                     />
 
-                    {!Data && (
-                      <button
-                        type="button" // Prevents form submission
-                        onClick={() => {
-                          setModalOpen(true)
-                          clearMainerrors()
-                        }}
-                        className="bg-blue-500 hover:bg-blue-600  px-3 rounded-md text-white "
-                      >
-                        ADD
-                      </button>
-                    )}
+                    <button
+                      type="button" // Prevents form submission
+                      onClick={() => {
+                        setModalOpen(true)
+                        clearMainerrors()
+                      }}
+                      className={` border  bg-blue-600 hover:bg-blue-700 text-white text-left rounded px-3 py-[0.30rem] text-lg
+    flex justify-between items-center
+    ${isReadOnly ? "cursor-not-allowed " : ""}
+  `}
+                    >
+                      ADD
+                    </button>
                   </div>
                   {errorsMain.customerName && (
                     <p className="text-red-500 text-sm">
@@ -900,7 +906,7 @@ const LeadMaster = ({
                   ></textarea>
                 </div>
               </div>
-              <div>
+              <div className="md:ml-2  md:w-1/2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:gap-4">
                   {process === "edit" && (
                     <div>
@@ -987,7 +993,7 @@ const LeadMaster = ({
                       </div>
                     )}
                   </div>
-                  <div className="relative" ref={dropdownLeadforRef}>
+                  <div className="relative " ref={dropdownLeadforRef}>
                     <label
                       htmlFor="leadFor"
                       className="block text-sm font-medium text-gray-700"
@@ -995,19 +1001,19 @@ const LeadMaster = ({
                       Lead for
                     </label>
 
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center ">
                       {/* Toggle Dropdown Button */}
                       <button
                         type="button"
                         disabled={isReadOnly}
                         onClick={handleToggleDropdown}
-                        className={`mt-1 border px-2 md:py-1.5  py-2 md:w-80 w-full text-left rounded flex justify-between items-center ${
+                        className={`mt-1 border px-2 md:py-1.5  py-2 w-full text-left rounded flex justify-between items-center ${
                           isReadOnly
                             ? "cursor-not-allowed bg-gray-100 text-gray-500"
                             : ""
                         }`}
                       >
-                        Select a product/services
+                        Product/Services
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           className="h-5 w-5 transition-transform duration-200"
@@ -1021,15 +1027,14 @@ const LeadMaster = ({
                           />
                         </svg>
                       </button>
-                      {!Data && (
-                        <button
-                          type="button"
-                          onClick={handleAddProducts}
-                          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded "
-                        >
-                          ADD
-                        </button>
-                      )}
+
+                      <button
+                        type="button"
+                        onClick={handleAddProducts}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-lg"
+                      >
+                        ADD
+                      </button>
                     </div>
                     {/* Product List (Visible when isOpen is true) */}
                     {isleadForOpen && (
@@ -1203,7 +1208,7 @@ const LeadMaster = ({
                       className={`mt-1 w-full border rounded-md p-2 focus:outline-none ${
                         isReadOnly
                           ? "cursor-not-allowed bg-gray-100 text-gray-500"
-                          : ""
+                          : "cursor-not-allowed"
                       }`}
                       placeholder="Net Amount"
                     />
@@ -1226,7 +1231,7 @@ const LeadMaster = ({
                 )}
                 <button
                   type="submit"
-                  className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                  className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
                 >
                   {process === "Registration" ? "SUBMIT" : "UPDATE"}
                 </button>
