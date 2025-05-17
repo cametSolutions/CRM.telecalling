@@ -157,7 +157,10 @@ const LeadMaster = ({
       ) {
         setIslicenseOpen(false)
       }
-      if (dropdownLeadforRef.current && !dropdownLeadforRef.current.contains(event.target)) {
+      if (
+        dropdownLeadforRef.current &&
+        !dropdownLeadforRef.current.contains(event.target)
+      ) {
         setIsleadForOpen(false)
       }
     }
@@ -480,6 +483,7 @@ const LeadMaster = ({
   }
 
   const handleAddProducts = () => {
+    setIsleadForOpen(false)
     if (validateError.emptyleadData) {
       setValidateError((prev) => ({
         ...prev,
