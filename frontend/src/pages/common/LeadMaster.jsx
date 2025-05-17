@@ -231,7 +231,8 @@ const LeadMaster = ({
   }, [customerData])
 
   useEffect(() => {
-    if (customerData) {
+    if (customerData && customerData.length) {
+   
       setCustomerOptions(
         customerData.map((item) => ({
           value: item?._id,
@@ -385,7 +386,7 @@ const LeadMaster = ({
     setIsleadForOpen((prev) => !prev) // Toggle dropdown visibility
   }
   const handleSelectedCustomer = (option) => {
-    const filteredcustomer = allcustomer
+    const filteredcustomerLicenseandproducts = allcustomer
       ?.filter(
         (item) =>
           String(item?.customerName)?.trim() ===
@@ -400,7 +401,7 @@ const LeadMaster = ({
             productName: sel.productName || "Unknown"
           }))
       )
-    setcustomerTableData(filteredcustomer)
+    setcustomerTableData(filteredcustomerLicenseandproducts)
   }
   const handlePriceChange = (index, newPrice) => {
     setSelectedLeadList((prevList) =>
@@ -459,7 +460,16 @@ const LeadMaster = ({
 
   const handleAddProducts = () => {
     if (validateError.emptyleadData) {
-      setValidateError({ emptyleadData: "" })
+      setValidateError((prev) => ({
+        ...prev,
+        emptyleadData: ""
+      }))
+    }
+    if (validateError.readonlyError) {
+      setValidateError((prev) => ({
+        ...prev,
+        readonlyError: ""
+      }))
     }
     setSelectedLeadList((prev) => {
       let updatedList = [...prev]
@@ -515,10 +525,11 @@ const LeadMaster = ({
   const onSubmit = async (data) => {
     try {
       if (process === "Registration") {
+
         if (selectedleadlist.length === 0) {
           setValidateError((prev) => ({
             ...prev,
-            emptyleadData: "No Lead genarated do it"
+            emptyleadData: "No Lead generated do it"
           }))
           return
         }
@@ -526,6 +537,15 @@ const LeadMaster = ({
 
         await handleleadData(data, selectedleadlist)
       } else if (process === "edit") {
+
+        if (isReadOnly) {
+          setValidateError((prev) => ({
+            ...prev,
+            readonlyError:
+              "Can't make changes unless the user is the leadBy or allocatedTo"
+          }))
+          return
+        }
         seteditLoadingState(true)
         await handleEditData(data, selectedleadlist, Data[0]?._id)
       }
@@ -614,7 +634,6 @@ const LeadMaster = ({
             >
               Go Lead
             </button> */}
-            
           </div>
 
           {showmessage && (
@@ -643,7 +662,15 @@ const LeadMaster = ({
                     disabled={isReadOnly}
                     {...registerMain("leadBranch")}
                     onChange={
-                      (e) => setSelectedBranch([e.target.value]) // Update state on change
+                      (e) => {
+                        setSelectedBranch([e.target.value])
+                        setValueMain("customerName", "") // Clear customer in the form
+                        setSelectedCustomer(null)
+                        setcustomerTableData([])
+                        setSelectedLeadList([])
+                        setValueMain("netAmount", "")
+                        setSelectedLicense(null)
+                      } // Update state on change
                     }
                     className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none ${
                       isReadOnly
@@ -672,10 +699,11 @@ const LeadMaster = ({
                     <Select
                       options={customerOptions}
                       isDisabled={isReadOnly}
-                      // value={selectedCustomer?.value}
-                      value={customerOptions.find(
-                        (option) => option.value === watchMain("customerName")
-                      )}
+                      value={
+                        customerOptions.find(
+                          (option) => option.value === watchMain("customerName")
+                        ) || null
+                      }
                       getOptionLabel={(option) =>
                         `${option.label}-(${option.mobile})`
                       } // Show only customer name
@@ -695,10 +723,12 @@ const LeadMaster = ({
                       onChange={(selectedOption) => {
                         handleSelectedCustomer(selectedOption)
                         setSelectedCustomer(selectedOption)
-                        // setValueMain("customerName", selectedOption.value)
                         setValueMain("customerName", selectedOption.value, {
                           shouldValidate: true
                         })
+                        setValueMain("netAmount", "")
+                        setSelectedLeadList([])
+                        setSelectedLicense(null)
                       }}
                       className={`mt-1 w-full ${
                         isReadOnly
@@ -908,7 +938,7 @@ const LeadMaster = ({
 
                     {/* Dropdown List */}
                     {isLicenseOpen && (
-                      <div className=" md:w-72 w-full mt-1 bg-white border rounded-md shadow-lg z-30  max-h-60 absolute overflow-y-auto ">
+                      <div className=" w-full mt-1 bg-white border rounded-md shadow-lg z-30  max-h-60 absolute overflow-y-auto ">
                         <ul className="">
                           {/* Option to unselect license */}
                           <li
@@ -1164,6 +1194,11 @@ const LeadMaster = ({
                 {validateError.emptyleadData && (
                   <p className="text-red-500 text-sm">
                     {validateError.emptyleadData}
+                  </p>
+                )}
+                {validateError.readonlyError && (
+                  <p className="text-red-500 text-sm">
+                    {validateError.readonlyError}
                   </p>
                 )}
                 <button
