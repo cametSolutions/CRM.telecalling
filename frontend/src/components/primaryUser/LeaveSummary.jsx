@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from "react"
+import  { useState, useEffect, useRef, useCallback } from "react"
 import * as XLSX from "xlsx"
-import FileSaver from "file-saver"
 import ExcelJS from "exceljs"
 import { saveAs } from "file-saver"
 import BarLoader from "react-spinners/BarLoader"

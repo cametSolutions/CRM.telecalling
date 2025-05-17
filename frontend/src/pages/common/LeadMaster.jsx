@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useRef } from "react"
 // import LoadingBar from "react-top-loading-bar"
 import { Country, State } from "country-state-city"
 import BarLoader from "react-spinners/BarLoader"
@@ -50,6 +50,7 @@ const LeadMaster = ({
   const [leadList, setLeadList] = useState([])
   const [ispopupModalOpen, setIspopupModalOpen] = useState(false)
   const [modalloader, setModalLoader] = useState(false)
+
   const [partner, setPartner] = useState([])
   const [editMode, setEditMode] = useState(false)
   const [selectedCountry, setSelectedCountry] = useState(null)
@@ -71,6 +72,8 @@ const LeadMaster = ({
   const [selectedBranch, setSelectedBranch] = useState(null)
 
   const [allcustomer, setallcustomer] = useState([])
+  const dropdownLicenseRef = useRef(null)
+  const dropdownLeadforRef = useRef(null)
   // State to toggle the table
 
   // Create a ref for the dropdown container
@@ -145,6 +148,25 @@ const LeadMaster = ({
       }
     }
   }, [companybranches])
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        dropdownLicenseRef.current &&
+        !dropdownLicenseRef.current.contains(event.target)
+      ) {
+        setIslicenseOpen(false)
+      }
+      if (dropdownLeadforRef.current && !dropdownLeadforRef.current.contains(event.target)) {
+        setIsleadForOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
 
   useEffect(() => {
     if (loggeduser?._id) {
@@ -232,7 +254,6 @@ const LeadMaster = ({
 
   useEffect(() => {
     if (customerData && customerData.length) {
-   
       setCustomerOptions(
         customerData.map((item) => ({
           value: item?._id,
@@ -525,7 +546,6 @@ const LeadMaster = ({
   const onSubmit = async (data) => {
     try {
       if (process === "Registration") {
-
         if (selectedleadlist.length === 0) {
           setValidateError((prev) => ({
             ...prev,
@@ -537,7 +557,6 @@ const LeadMaster = ({
 
         await handleleadData(data, selectedleadlist)
       } else if (process === "edit") {
-
         if (isReadOnly) {
           setValidateError((prev) => ({
             ...prev,
@@ -906,7 +925,7 @@ const LeadMaster = ({
                       )}
                     </div>
                   )}
-                  <div className="w-full relative ">
+                  <div className="w-full relative " ref={dropdownLicenseRef}>
                     <label className="block text-sm font-medium text-gray-700">
                       Select License
                     </label>
@@ -964,7 +983,7 @@ const LeadMaster = ({
                       </div>
                     )}
                   </div>
-                  <div className="relative">
+                  <div className="relative" ref={dropdownLeadforRef}>
                     <label
                       htmlFor="leadFor"
                       className="block text-sm font-medium text-gray-700"
