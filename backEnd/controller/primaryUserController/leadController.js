@@ -300,12 +300,13 @@ export const GetallLead = async (req, res) => {
             !lead.assignedtoleadByModel ||
             !mongoose.models[lead.assignedtoleadByModel] ||
             !lead.allocatedToModel ||
-            !mongoose.models[lead.allocatedToModel]
+            !mongoose.models[lead.allocatedToModel] || !lead.allocatedByModel || !mongoose.models[lead.allocatedByModel]
           ) {
             console.error(
               `Model ${lead.assignedtoleadByModel} is not registered`
             )
             console.error(`Model ${lead.allocatedToModel} is not registered`)
+            console.error(`Model ${lead.allocatedByModel} is not registered`)
 
             return lead // Return lead as-is if model is invalid
           }
@@ -314,12 +315,15 @@ export const GetallLead = async (req, res) => {
 
           const assignedModel = mongoose.model(lead.assignedtoleadByModel)
           const allocatedModel = mongoose.model(lead.allocatedToModel)
+          const allocatedbyModel = mongoose.model(lead.allocatedByModel)
+
           const populatedLeadBy = await assignedModel
             .findById(lead.leadBy)
             .select("name")
           const populatedAllocates = await allocatedModel
             .findById(lead.allocatedTo)
             .select("name")
+          const populatedAllocatedBy = await allocatedbyModel(lead.allocatedBy)
           // 👇 Now handle followUpDatesandRemarks population
           const populatedFollowUps = await Promise.all(
             (lead.followUpDatesandRemarks || []).map(async (followUp) => {
@@ -345,6 +349,7 @@ export const GetallLead = async (req, res) => {
             ...lead,
             leadBy: populatedLeadBy,
             allocatedTo: populatedAllocates,
+            allocatedBy: populatedAllocatedBy,
             followUpDatesandRemarks: populatedFollowUps
           } // Merge populated data
         })
@@ -440,10 +445,11 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         _id: leadAllocationData._id
       },
 
-      { allocatedTo: leadAllocationData.allocatedTo, allocatedBy, allocatedToModel },
+      { allocatedTo: leadAllocationData.allocatedTo, allocatedBy, allocatedToModel,allocatedByModel },
       { new: true }
     )
     if (allocationpending === "true" && updatedLead) {
+
       const pendingLeads = await LeadMaster.find({
         allocatedTo: null
       })
@@ -502,7 +508,6 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
           return { ...lead, leadBy: populatedLeadBy } // Merge populated data
         })
       )
-      console.log(populatedLeads)
       return res
         .status(201)
         .json({ message: "updated allocation", data: populatedLeads })
