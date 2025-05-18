@@ -204,8 +204,32 @@ export const GetallfollowupList = async (req, res) => {
           .findById(lead.allocatedTo)
           .select("name")
           .lean()
+        // Handle followUpDatesandRemarks population
+        let populatedFollowUps = []
+        if (
+          Array.isArray(lead.followUpDatesandRemarks) &&
+          lead.followUpDatesandRemarks.length > 0
+        ) {
+          populatedFollowUps = await Promise.all(
+            lead.followUpDatesandRemarks.map(async (entry) => {
+              const { followedId, followedByModel } = entry
 
-        return { ...lead, leadBy: populatedLeadBy, allocatedTo: populatedAllocatedTo } // Merge populated data
+              // Validate model
+              if (followedId && followedByModel && mongoose.models[followedByModel]) {
+                const FollowedModel = mongoose.model(followedByModel)
+                const followedUser = await FollowedModel
+                  .findById(followedId)
+                  .select("name")
+                  .lean()
+                return { ...entry, followedId: followedUser }
+              }
+
+              return entry // Leave as is if model not found or invalid
+            })
+          )
+        }
+
+        return { ...lead, leadBy: populatedLeadBy, allocatedTo: populatedAllocatedTo, followUpDatesandRemarks: populatedFollowUps } // Merge populated data
       })
     )
 
@@ -226,9 +250,7 @@ export const GetallLead = async (req, res) => {
     }
     let branchObjectIds
     if (Status === "Pending") {
-      // const pendingLeads = await LeadMaster.find({
-      //   allocatedTo: null,assignedto:objectId
-      // })
+     
       const query = { allocatedTo: null };
 
       if (role === "Staff") {
@@ -370,6 +392,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
   try {
     const formData = req.body
     const { selectedleaddocId, loggeduserid } = req.query
+  
     let followedByModel
     const isStaff = await Staff.find({ _id: loggeduserid })
     if (isStaff) {
@@ -413,7 +436,6 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
     const { allocationpending, allocatedBy } = req.query
 
     const allocatedbyObjectid = new mongoose.Types.ObjectId(allocatedBy)
-
     const leadAllocationData = req.body
     let allocatedToModel
     let allocatedByModel

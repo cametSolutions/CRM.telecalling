@@ -63,23 +63,7 @@ const LeadFollowUp = () => {
       setloggedUser(user)
     }
   }, [branches])
-  
-  // useEffect(() => {
-  //   let initialSelected = {}
-  //   tableData.forEach((item) => {
-  //     if (item.allocatedTo?._id) {
-  //       const match = allocationOptions.find(
-  //         (opt) => opt.value === item.allocatedTo._id
-  //       )
 
-  //       if (match) {
-  //         initialSelected[item._id] = match
-  //       }
-  //     }
-  //   })
-
-  //   setSelectedAllocates(initialSelected)
-  // }, [allocationOptions, tableData])
   useEffect(() => {
     if (loggedusersallocatedleads) {
       setLeads(loggedusersallocatedleads.followupLeads)
@@ -180,8 +164,6 @@ const LeadFollowUp = () => {
     }
   }, [input])
 
- 
-
   const handleDataChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({
@@ -195,7 +177,7 @@ const LeadFollowUp = () => {
 
   const handleHistory = (history, id, docId) => {
     setselectedDocid(docId)
-
+    setselectedTab("Follow Up History")
     setShowModal(!showModal)
     setHistoryList(history)
     setSelectedLeadId(id)
@@ -227,12 +209,16 @@ const LeadFollowUp = () => {
       setfollowupDateLoader(!followupDateLoader)
 
       const response = await api.put(
-        `/lead/followupDateUpdate?selectedleaddocId=${selectedLeadId}&loggeduserid=${loggedUser._id}`,
+        `/lead/followupDateUpdate?selectedleaddocId=${selectedDocId}&loggeduserid=${loggedUser._id}`,
         formData
       )
 
       toast.success(response.data.message)
       setfollowupDateLoader(false)
+      setselectedDocid(null)
+      setSelectedLeadId(null)
+      setHistoryList([])
+      setShowModal(false)
       setfollowupDateModal(false)
       setFormData({
         followUpDate: "",
@@ -253,417 +239,406 @@ const LeadFollowUp = () => {
           color="#4A90E2" // Change color as needed
         />
       )}
-    
-          <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3 ">
-            <h2 className="text-lg font-bold">Lead Follow Up</h2>
-            <div className="flex gap-6 items-center">
-              {hasOwnLeads && (
-                <>
-                  <span>
-                    {ownFollowUp ? "Own FollowUp" : "Colleague  FollowUp"}
-                  </span>
-                  <button
-                    onClick={() => setOwnFollowUp(!ownFollowUp)}
-                    className={`${
-                      ownFollowUp ? "bg-green-500" : "bg-gray-300"
-                    } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
-                  >
-                    <div
-                      className={`${
-                        ownFollowUp ? "translate-x-5" : "translate-x-0"
-                      } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                    ></div>
-                  </button>
-                </>
-              )}
 
+      <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3 ">
+        <h2 className="text-lg font-bold">Lead Follow Up</h2>
+        <div className="flex gap-6 items-center">
+          
+            <>
+              <span>
+                {ownFollowUp ? "Own FollowUp" : "Colleague  FollowUp"}
+              </span>
               <button
-                onClick={() =>
-                  loggedUser.role === "Admin"
-                    ? navigate("/admin/transaction/lead")
-                    : navigate("/staff/transaction/lead")
-                }
-                className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600"
+                onClick={() => setOwnFollowUp(!ownFollowUp)}
+                className={`${
+                  ownFollowUp ? "bg-green-500" : "bg-gray-300"
+                } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
               >
-                New Lead
+                <div
+                  className={`${
+                    ownFollowUp ? "translate-x-5" : "translate-x-0"
+                  } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                ></div>
               </button>
-            </div>
-          </div>
-          {/* Responsive Table Container */}
-          <div className="flex-1 overflow-x-auto rounded-lg text-center overflow-y-auto  shadow-xl md:mx-5 mx-3">
-            <table className=" border-collapse border border-gray-400 w-full text-sm">
-              <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
-                <tr>
-                  <th className="border border-r-0 border-gray-400 px-4 ">
-                    Name
-                  </th>
-                  <th className="border border-r-0 border-l-0 border-gray-400  px-4 max-w-[200px] min-w-[200px]">
-                    Mobile
-                  </th>
-                  <th className="border border-r-0 border-l-0 border-gray-400 px-4 ">
-                    Phone
-                  </th>
-                  <th className="border border-r-0 border-l-0 border-gray-400 px-4 ">
-                    Email
-                  </th>
-                  <th className="border border-r-0 border-l-0 border-gray-400 px-4  min-w-[100px]">
-                    Lead Id
-                  </th>
-                  <th className="border border-gray-400 px-4 ">
-                    Followup Date
-                  </th>
-                  <th className="border border-gray-400 px-4  min-w-[100px]">
-                    Action
-                  </th>
-                  <th className="border border-gray-400 px-4 py-2">
-                    Net Amount
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {tableData && tableData.length > 0 ? (
-                  tableData.map((item, index) => (
-                    <React.Fragment key={index}>
-                      <tr className="bg-white ">
-                        <td
-                          onClick={() => setShowFullName(!showFullName)}
-                          className={`px-4 cursor-pointer overflow-hidden ${
-                            showFullName
-                              ? "whitespace-normal max-h-[3em]" // ≈2 lines of text (1.5em line-height)
-                              : "truncate whitespace-nowrap max-w-[120px]"
-                          }`}
-                          style={{ lineHeight: "1.5em" }} // fine-tune as needed
-                        >
-                          {item.customerName.customerName}
-                        </td>
-                        <td className="  px-4 ">{item.mobile}</td>
-                        <td className="px-4 ">0481</td>
-                        <td className="px-4 ">{item.email}</td>
-                        <td className=" px-4 ">{item.leadId}</td>
-                        <td className="border border-b-0 border-gray-400 px-4 ">
-                          {
-                            item.followUpDatesandRemarks[
-                              item.followUpDatesandRemarks.length - 1
-                            ]?.nextfollowpdate
-                          }
-                        </td>
+            </>
+          
 
-                        <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
-                          <button
-                            onClick={() =>
-                              loggedUser.role === "Admin"
-                                ? navigate("/admin/transaction/lead/leadEdit", {
-                                    state: {
-                                      leadId: item._id,
-                                      isReadOnly: !(
-                                        item.allocatedTo._id ===
-                                          loggedUser._id ||
-                                        item.leadBy._id === loggedUser._id
-                                      )
-                                    }
-                                  })
-                                : navigate("/staff/transaction/lead/leadEdit", {
-                                    state: {
-                                      leadId: item._id,
-                                      isReadOnly: !(
-                                        item.allocatedTo._id ===
-                                          loggedUser._id ||
-                                        item.leadBy._id === loggedUser._id
-                                      )
-                                    }
-                                  })
-                            }
-                            className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer"
-                          >
-                            View / Modify
-                          </button>
-                        </td>
-                        <td className="borrder border-b-0 border-gray-400 px-4 ">
-                          {item.netAmount}
-                        </td>
-                      </tr>
+          <button
+            onClick={() =>
+              loggedUser.role === "Admin"
+                ? navigate("/admin/transaction/lead")
+                : navigate("/staff/transaction/lead")
+            }
+            className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600"
+          >
+            New Lead
+          </button>
+        </div>
+      </div>
+      {/* Responsive Table Container */}
+      <div className="flex-1 overflow-x-auto rounded-lg text-center overflow-y-auto  shadow-xl md:mx-5 mx-3">
+        <table className=" border-collapse border border-gray-400 w-full text-sm">
+          <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
+            <tr>
+              <th className="border border-r-0 border-gray-400 px-4 ">Name</th>
+              <th className="border border-r-0 border-l-0 border-gray-400  px-4 max-w-[200px] min-w-[200px]">
+                Mobile
+              </th>
+              <th className="border border-r-0 border-l-0 border-gray-400 px-4 ">
+                Phone
+              </th>
+              <th className="border border-r-0 border-l-0 border-gray-400 px-4 ">
+                Email
+              </th>
+              <th className="border border-r-0 border-l-0 border-gray-400 px-4  min-w-[100px]">
+                Lead Id
+              </th>
+              <th className="border border-gray-400 px-4 ">Followup Date</th>
+              <th className="border border-gray-400 px-4  min-w-[100px]">
+                Action
+              </th>
+              <th className="border border-gray-400 px-4 py-2">Net Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tableData && tableData.length > 0 ? (
+              tableData.map((item, index) => (
+                <React.Fragment key={index}>
+                  <tr className="bg-white ">
+                    <td
+                      onClick={() => setShowFullName(!showFullName)}
+                      className={`px-4 cursor-pointer overflow-hidden ${
+                        showFullName
+                          ? "whitespace-normal max-h-[3em]" // ≈2 lines of text (1.5em line-height)
+                          : "truncate whitespace-nowrap max-w-[120px]"
+                      }`}
+                      style={{ lineHeight: "1.5em" }} // fine-tune as needed
+                    >
+                      {item.customerName.customerName}
+                    </td>
+                    <td className="  px-4 ">{item.mobile}</td>
+                    <td className="px-4 ">0481</td>
+                    <td className="px-4 ">{item.email}</td>
+                    <td className=" px-4 ">{item.leadId}</td>
+                    <td className="border border-b-0 border-gray-400 px-4 ">
+                      {
+                        item.followUpDatesandRemarks[
+                          item.followUpDatesandRemarks.length - 1
+                        ]?.nextfollowpdate
+                      }
+                    </td>
 
-                      <tr className=" font-semibold bg-gray-200">
-                        <td className=" px-4 ">Leadby</td>
-                        <td className=" px-4">Assignedto</td>
-                        <td className=" px-4 ">Assignedby</td>
-                        <td className="px-4 ">No. of Followups</td>
-                        <td className="px-4 min-w-[120px]">Lead Date</td>
-                        <td className=" border border-t-0 border-b-0 border-gray-400 px-4 "></td>
-                        <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleHistory(
-                                item?.followUpDatesandRemarks,
-                                item.leadId,
-                                item._id
-                              )
-                            }
-                          >
-                            Follow Up
-                          </button>
-                        </td>
-                        <td className=" border border-t-0 border-b-0 border-gray-400 px-4 "></td>
-                      </tr>
-
-                      <tr className="bg-white">
-                        <td className="border border-t-0 border-r-0  border-gray-400 px-4 py-0.5 ">
-                          {item?.leadBy?.name}
-                        </td>
-                        <td className="border border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
-                          {item?.allocatedTo?.name}
-                        </td>
-                        <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5">
-                          {item.allocatedBy?.name}
-                        </td>
-                        <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400  px-4 py-0.5 ">
-                          {item.followUpDatesandRemarks.length}
-                        </td>
-                        <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
-                          {item.leadDate?.toString().split("T")[0]}
-                        </td>
-                        <td className="border border-t-0 border-gray-400   px-4 py-0.5 "></td>
-                        <td
-                          className="border border-t-0 border-gray-400   px-4 py-0.5"
-                          
-                        >
-                        
-                        </td>
-                        <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
-                      </tr>
-                    </React.Fragment>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={8} className="text-center text-gray-500 py-4">
-                      {loading ? (
-                        <div className="justify center">
-                          <PropagateLoader color="#3b82f6" size={10} />
-                        </div>
-                      ) : (
-                        "No data available."
-                      )}
+                    <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
+                      <button
+                        onClick={() =>
+                          loggedUser.role === "Admin"
+                            ? navigate("/admin/transaction/lead/leadEdit", {
+                                state: {
+                                  leadId: item._id,
+                                  isReadOnly: !(
+                                    item.allocatedTo._id === loggedUser._id ||
+                                    item.leadBy._id === loggedUser._id
+                                  )
+                                }
+                              })
+                            : navigate("/staff/transaction/lead/leadEdit", {
+                                state: {
+                                  leadId: item._id,
+                                  isReadOnly: !(
+                                    item.allocatedTo._id === loggedUser._id ||
+                                    item.leadBy._id === loggedUser._id
+                                  )
+                                }
+                              })
+                        }
+                        className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer"
+                      >
+                        View / Modify
+                      </button>
+                    </td>
+                    <td className="borrder border-b-0 border-gray-400 px-4 ">
+                      {item.netAmount}
                     </td>
                   </tr>
-                )}
-              </tbody>
-            </table>
-            {showModal && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40 ">
-                <div
-                  className={`bg-gray-100   text-center w-full ${
-                    selectedTab === "Next Follow Up" ? "md:w-80" : "md:w-1/2"
-                  } p-5 rounded-lg `}
-                >
-                 
-                  <div className="text-gray-600 font-semibold space-x-6">
-                    <span
-                      className={`hover:cursor-pointer pb-1 ${
-                        selectedTab === "Follow Up History"
-                          ? "border-b-2 border-blue-500 text-blue-600"
-                          : ""
-                      }`}
-                      onClick={() => {
-                        setselectedTab("Follow Up History")
-                        setfollowupDateModal(false)
-                      }}
-                    >
-                      History
-                    </span>
-                    <span
-                      className={`hover:cursor-pointer pb-1 ${
-                        selectedTab === "Next Follow Up"
-                          ? "border-b-2 border-blue-500 text-blue-600"
-                          : ""
-                      }`}
-                      onClick={() => {
-                        handlefollowupdate(selectedLeadId, selectedDocId)
-                        setselectedTab("Next Follow Up")
-                      }}
-                    >
-                      Next Follow Up
-                    </span>
-                  </div>
 
-                  <h1 className=" font-bold">
-                    {`${
-                      selectedTab === "Next Follow Up"
-                        ? selectedTab
-                        : selectedTab + " of"
-                    } LEAD ID - ${selectedLeadId}`}
-                  </h1>
-                  {!followupDateModal ? (
-                    <div className="overflow-x-auto overflow-y-auto  md:max-h-64 lg:max-h-96 shadow-xl">
-                      <table className="w-full text-sm border-collapse">
-                        <thead className="text-center sticky top-0 z-10">
-                          <tr className="bg-indigo-100">
+                  <tr className=" font-semibold bg-gray-200">
+                    <td className=" px-4 ">Leadby</td>
+                    <td className=" px-4">Assignedto</td>
+                    <td className=" px-4 ">Assignedby</td>
+                    <td className="px-4 ">No. of Followups</td>
+                    <td className="px-4 min-w-[120px]">Lead Date</td>
+                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4 "></td>
+                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleHistory(
+                            item?.followUpDatesandRemarks,
+                            item.leadId,
+                            item._id
+                          )
+                        }
+                      >
+                        Follow Up
+                      </button>
+                    </td>
+                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4 "></td>
+                  </tr>
+
+                  <tr className="bg-white">
+                    <td className="border border-t-0 border-r-0  border-gray-400 px-4 py-0.5 ">
+                      {item?.leadBy?.name}
+                    </td>
+                    <td className="border border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
+                      {item?.allocatedTo?.name}
+                    </td>
+                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5">
+                      {item.allocatedBy?.name}
+                    </td>
+                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400  px-4 py-0.5 ">
+                      {item.followUpDatesandRemarks.length}
+                    </td>
+                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
+                      {item.leadDate?.toString().split("T")[0]}
+                    </td>
+                    <td className="border border-t-0 border-gray-400   px-4 py-0.5 "></td>
+                    <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
+                    <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
+                  </tr>
+                </React.Fragment>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={8} className="text-center text-gray-500 py-4">
+                  {loading ? (
+                    <div className="justify center">
+                      <PropagateLoader color="#3b82f6" size={10} />
+                    </div>
+                  ) : (
+                    "No data available."
+                  )}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+        {showModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40 ">
+            <div
+              className={`bg-gray-100   text-center w-full ${
+                selectedTab === "Next Follow Up" ? "md:w-80" : "md:w-1/2"
+              } p-2 md:p-5 rounded-lg `}
+            >
+              <div className="text-gray-600 font-semibold space-x-6 mb-1">
+                <span
+                  className={`hover:cursor-pointer pb-1 ${
+                    selectedTab === "Follow Up History"
+                      ? "border-b-2 border-blue-500 text-blue-600"
+                      : ""
+                  }`}
+                  onClick={() => {
+                    setselectedTab("Follow Up History")
+                    setfollowupDateModal(false)
+                  }}
+                >
+                  History
+                </span>
+                <span
+                  className={`hover:cursor-pointer pb-1 ${
+                    selectedTab === "Next Follow Up"
+                      ? "border-b-2 border-blue-500 text-blue-600"
+                      : ""
+                  }`}
+                  onClick={() => {
+                    handlefollowupdate(selectedLeadId, selectedDocId)
+                    setselectedTab("Next Follow Up")
+                  }}
+                >
+                  Next Follow Up
+                </span>
+              </div>
+
+              <h1 className=" font-bold">
+                {`${
+                  selectedTab === "Next Follow Up"
+                    ? selectedTab
+                    : selectedTab + " of"
+                } LEAD ID - ${selectedLeadId}`}
+              </h1>
+              {!followupDateModal ? (
+                <div className="overflow-x-auto overflow-y-auto  md:max-h-64 lg:max-h-96 shadow-xl rounded-lg">
+                  <table className="w-full text-sm border-collapse">
+                    <thead className="text-center sticky top-0 z-10">
+                      <tr className="bg-indigo-100">
+                        {loggedUser?.role === "Admin" && (
+                          <th className="border border-indigo-200 p-2 min-w-[100px] ">
+                            FollowedBy
+                          </th>
+                        )}
+
+                        <th className="border border-indigo-200 p-2 min-w-[100px] ">
+                          Date
+                        </th>
+                        <th className="border border-indigo-200 p-2 w-fit min-w-[200px]">
+                          Remark
+                        </th>
+                        <th className="border border-indigo-200 p-2 min-w-[100px] ">
+                          Next Follow Up Date
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {historyList && historyList.length > 0 ? (
+                        historyList.map((item, index) => (
+                          <tr
+                            key={index}
+                            className={
+                              index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                            }
+                          >
                             {loggedUser?.role === "Admin" && (
-                              <th className="border border-indigo-200 p-2 min-w-[100px] ">
-                                FollowedBy
-                              </th>
+                              <td className="border border-gray-200 p-2">
+                                {item?.followedId?.name}
+                              </td>
                             )}
 
-                            <th className="border border-indigo-200 p-2 min-w-[100px] ">
-                              Date
-                            </th>
-                            <th className="border border-indigo-200 p-2 w-fit min-w-[200px]">
-                              Remark
-                            </th>
-                            <th className="border border-indigo-200 p-2 min-w-[100px] ">
-                              Next Follow Up Date
-                            </th>
+                            <td className="border border-gray-200 p-2">
+                              {item?.followUpDate?.toString().split("T")[0] ||
+                                "N/A"}
+                            </td>
+                            <td className="border border-gray-200 p-2">
+                              {item?.Remarks || "N/A"}
+                            </td>
+                            <td className="border border-gray-200 p-2">
+                              {item?.nextfollowUpDate?.toString().split("T")[0]}
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {historyList && historyList.length > 0 ? (
-                            historyList.map((item, index) => (
-                              <tr
-                                key={index}
-                                className={
-                                  index % 2 === 0 ? "bg-gray-50" : "bg-white"
-                                }
-                              >
-                                {loggedUser?.role === "Admin" && (
-                                  <td className="border border-gray-200 p-2">
-                                    {item?.followedId?.name}
-                                  </td>
-                                )}
-
-                                <td className="border border-gray-200 p-2">
-                                  {item?.followUpDate
-                                    ?.toString()
-                                    .split("T")[0] || "N/A"}
-                                </td>
-                                <td className="border border-gray-200 p-2">
-                                  {item?.Remarks || "N/A"}
-                                </td>
-                                <td className="border border-gray-200 p-2">
-                                  {
-                                    item?.nextfollowUpDate
-                                      ?.toString()
-                                      .split("T")[0]
-                                  }
-                                </td>
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td
-                                colSpan={4}
-                                className="text-center bg-white p-3 text-gray-500 italic"
-                              >
-                                No followUp s
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="text-center w-fullrounded-lg">
-                      <div className=" rounded-lg grid grid-cols-1 gap-3 p-3 shadow-xl bg-white">
-                        <div>
-                          <label className="block text-left font-semibold text-gray-500">
-                            Select Follow Up Date
-                          </label>
-                          <input
-                            type="text"
-                            readOnly
-                            name="followUpDate"
-                            // value={formData?.followUpDate || ""}
-                            value={
-                              formData?.followUpDate
-                                ? new Date(formData.followUpDate)
-                                    .toLocaleDateString("en-GB") // this gives dd/mm/yyyy
-                                    .replace(/\//g, "-") // change / to -
-                                : ""
-                            }
-                            className="rounded-md w-full py-1 px-2 border border-gray-200 focus:outline-none"
-                            onChange={handleDataChange}
-                          ></input>
-                          {errors.followUpDate && (
-                            <p className="text-red-500">
-                              {errors.followUpDate}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <label className="block text-left font-semibold text-gray-500">
-                            Select Next Follow Up Date
-                          </label>
-                          <input
-                            type="date"
-                            name="nextfollowUpDate"
-                            value={formData?.nextfollowUpDate || ""}
-                            className="rounded-md w-full py-1 px-2 border border-gray-200 focus:outline-none"
-                            onChange={handleDataChange}
-                          ></input>
-                          {errors.nextfollowUpDate && (
-                            <p className="text-red-500">
-                              {errors.nextfollowUpDate}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <label className="block text-left">Remarks</label>
-                          <textarea
-                            rows={4}
-                            name="Remarks"
-                            className="rounded-lg w-full border border-gray-200 focus:outline-none p-3"
-                            value={formData?.Remarks || ""}
-                            onChange={handleDataChange}
-                          ></textarea>
-                          {errors.Remarks && (
-                            <p className="text-red-500">{errors.Remarks}</p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  {selectedTab === "Next Follow Up" ? (
-                    <div className="flex justify-center gap-3 mt-3">
-                      <button
-                        onClick={() => setfollowupDateModal(!followupDateModal)}
-                        className="bg-gray-600 rounded-lg px-4 py-1 shadow-xl text-white "
-                      >
-                        {" "}
-                        CLOSE
-                      </button>
-                      <button
-                        onClick={handleFollowUpDateSubmit}
-                        className="bg-blue-800 rounded-lg px-4 py-2  text-white shadow-xl"
-                      >
-                        {followupDateLoader ? (
-                          <div className="flex items-center">
-                            Processing
-                            <FaSpinner className="animate-spin h-5 w-5  text-white ml-2" />
-                          </div>
-                        ) : (
-                          <div>SUBMIT</div>
-                        )}
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setShowModal(!showModal)
-                        setSelectedLeadId(null)
-                      }}
-                      className="bg-gray-500 hover:bg-gray-600 rounded-lg px-3 py-1 mt-3 text-white "
-                    >
-                      CLOSE
-                    </button>
-                  )}
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan={4}
+                            className="text-center bg-white p-3 text-gray-500 italic"
+                          >
+                            No followUp s
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="text-center w-fullrounded-lg">
+                  <div className=" rounded-lg grid grid-cols-1 gap-3 p-3 shadow-xl bg-white">
+                    <div>
+                      <label className="block text-left font-semibold text-gray-500">
+                        Select Follow Up Date
+                      </label>
+                      <input
+                        type="text"
+                        readOnly
+                        name="followUpDate"
+                        // value={formData?.followUpDate || ""}
+                        value={
+                          formData?.followUpDate
+                            ? new Date(formData.followUpDate)
+                                .toLocaleDateString("en-GB") // this gives dd/mm/yyyy
+                                .replace(/\//g, "-") // change / to -
+                            : ""
+                        }
+                        className="rounded-md w-full py-1 px-2 border border-gray-200 focus:outline-none"
+                        onChange={handleDataChange}
+                      ></input>
+                      {errors.followUpDate && (
+                        <p className="text-red-500">{errors.followUpDate}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-left font-semibold text-gray-500">
+                        Select Next Follow Up Date
+                      </label>
+                      <input
+                        type="date"
+                        name="nextfollowUpDate"
+                        value={formData?.nextfollowUpDate || ""}
+                        className="rounded-md w-full py-1 px-2 border border-gray-200 focus:outline-none hover:cursor-pointer"
+                        onChange={handleDataChange}
+                      ></input>
+                      {errors.nextfollowUpDate && (
+                        <p className="text-red-500">
+                          {errors.nextfollowUpDate}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-left">Remarks</label>
+                      <textarea
+                        rows={4}
+                        name="Remarks"
+                        className="rounded-lg w-full border border-gray-200 focus:outline-none p-3"
+                        value={formData?.Remarks || ""}
+                        onChange={handleDataChange}
+                      ></textarea>
+                      {errors.Remarks && (
+                        <p className="text-red-500">{errors.Remarks}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {selectedTab === "Next Follow Up" ? (
+                <div className="flex justify-center gap-3 mt-3">
+                  <button
+                    onClick={() => {
+                      setfollowupDateModal(false)
+                      setShowModal(false)
+                      setselectedDocid(null)
+                      setSelectedLeadId(null)
+                      setFormData({
+                        followUpDate: "",
+                        nextfollowUpDate: "",
+
+                        Remarks: ""
+                      })
+                    }}
+                    className="bg-gray-600 rounded-lg px-4 py-1 shadow-xl text-white "
+                  >
+                    {" "}
+                    CLOSE
+                  </button>
+                  <button
+                    onClick={handleFollowUpDateSubmit}
+                    className="bg-blue-800 rounded-lg px-4 py-2  text-white shadow-xl"
+                  >
+                    {followupDateLoader ? (
+                      <div className="flex items-center">
+                        Processing
+                        <FaSpinner className="animate-spin h-5 w-5  text-white ml-2" />
+                      </div>
+                    ) : (
+                      <div>SUBMIT</div>
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => {
+                    setShowModal(false)
+                    setfollowupDateModal(false)
+                    setSelectedLeadId(null)
+                    setselectedDocid(null)
+                    setHistoryList([])
+                  }}
+                  className="bg-gray-500 hover:bg-gray-600 rounded-lg px-3 py-1 mt-3 text-white "
+                >
+                  CLOSE
+                </button>
+              )}
+            </div>
           </div>
-
-        
-
+        )}
       </div>
-    
+    </div>
   )
 }
 
