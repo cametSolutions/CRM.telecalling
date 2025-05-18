@@ -86,6 +86,7 @@ const LeadAllocationTable = () => {
           JSON.stringify(loggedUserBranches)
         )}&role=${loggedUser.role}`
       )
+
       if (response.status >= 200 && response.status < 300) {
         setTableData(response.data.data)
         setapprovedToggleStatus(!approvedToggleStatus)
@@ -175,270 +176,278 @@ const LeadAllocationTable = () => {
   }
 
   return (
-    <div className="flex flex-col h-full" >
+    <div className="flex flex-col h-full">
       {submitLoading && (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
           color="#4A90E2" // Change color as needed
         />
       )}
-      
-        
-          <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3 ">
-            <h2 className="text-lg font-bold">
-              {approvedToggleStatus ? "Approved" : "Pending"} Allocation List
-            </h2>
-            <div className="flex gap-6 items-center">
-              <button
-                aria-pressed={approvedToggleStatus}
-                aria-label="Toggle Approval Status"
-                onClick={toggleStatus}
-                className={`${
-                  approvedToggleStatus ? "bg-green-500" : "bg-gray-300"
-                } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
-              >
-                <div
-                  className={`${
-                    approvedToggleStatus ? "translate-x-5" : "translate-x-0"
-                  } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                ></div>
-              </button>
-              <button
-                onClick={() =>
-                  loggedUser.role === "Admin"
-                    ? navigate("/admin/transaction/lead")
-                    : navigate("/staff/transaction/lead")
-                }
-                className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600"
-              >
-                New Lead
-              </button>
-            </div>
-          </div>
 
-          {/* Responsive Table Container */}
-          <div className="flex-1  overflow-x-auto rounded-lg text-center overflow-y-auto border  shadow-xl mx-3 md:mx-5 ">
-            <table className="w-full text-sm">
-              <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
-                <tr>
-                  <th className="border border-r-0 border-t-0 border-gray-400 px-4 ">
-                    Name
-                  </th>
-                  <th className="border border-r-0 border-t-0 border-l-0 border-gray-400  px-4 max-w-[200px] min-w-[200px]">
-                    Mobile
-                  </th>
-                  <th className="border border-r-0 border-l-0 border-t-0 border-gray-400 px-4 ">
-                    Phone
-                  </th>
-                  <th className="border border-r-0 border-l-0 border-t-0 border-gray-400 px-4 ">
-                    Email
-                  </th>
-                  <th className="border  border-l-0 border-t-0 border-gray-400 px-4  min-w-[100px]">
-                    Lead Id
-                  </th>
-                  <th className="border border-t-0   border-blue-500 px-4 ">
-                    Followup Date
-                  </th>
-                  <th className="border border-t-0 border-gray-400 px-4  min-w-[100px]">
-                    Action
-                  </th>
-                  <th className="border border-t-0 border-gray-400 px-4 py-2">
-                    Net Amount
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {tableData && tableData.length > 0 ? (
-                  tableData.map((item, index) => (
-                    <React.Fragment key={index}>
-                      <tr className="bg-white">
-                        <td
-                          onClick={() => setShowFullName(!showFullName)}
-                          className={`px-4 cursor-pointer overflow-hidden border border-r-0 border-b-0 border-gray-400 ${
-                            showFullName
-                              ? "whitespace-normal max-h-[3em]" // ≈2 lines of text (1.5em line-height)
-                              : "truncate whitespace-nowrap max-w-[120px]"
-                          }`}
-                          style={{ lineHeight: "1.5em" }} // fine-tune as needed
-                        >
-                          {item.customerName.customerName}
-                        </td>
-                        <td className="  px-4 ">{item.mobile}</td>
-                        <td className="px-4 ">0481</td>
-                        <td className="px-4 ">{item.email}</td>
-                        <td className=" px-4 ">{item.leadId}</td>
-                        <td className="border border-b-0 border-gray-400 px-4 ">
-                          {
-                            item.followUpDatesandRemarks[
-                              item.followUpDatesandRemarks.length - 1
-                            ]?.nextfollowpdate
-                          }
-                        </td>
+      <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3 ">
+        <h2 className="text-lg font-bold">
+          {approvedToggleStatus ? "Approved" : "Pending"} Allocation List
+        </h2>
+        <div className="flex gap-6 items-center">
+          <button
+            aria-pressed={approvedToggleStatus}
+            aria-label="Toggle Approval Status"
+            onClick={toggleStatus}
+            className={`${
+              approvedToggleStatus ? "bg-green-500" : "bg-gray-300"
+            } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
+          >
+            <div
+              className={`${
+                approvedToggleStatus ? "translate-x-5" : "translate-x-0"
+              } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+            ></div>
+          </button>
+          <button
+            onClick={() =>
+              loggedUser.role === "Admin"
+                ? navigate("/admin/transaction/lead")
+                : navigate("/staff/transaction/lead")
+            }
+            className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600"
+          >
+            New Lead
+          </button>
+        </div>
+      </div>
 
-                        <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
-                          <button
-                            onClick={() =>
-                              loggedUser.role === "Admin"
-                                ? navigate("/admin/transaction/lead/leadEdit", {
-                                    state: {
-                                      leadId: item._id,
-                                      isReadOnly: !(
-                                        item.allocatedTo === loggedUser._id ||
-                                        item.leadBy === loggedUser._id
-                                      )
-                                    }
-                                  })
-                                : navigate("/staff/transaction/lead/leadEdit", {
-                                    state: {
-                                      leadId: item._id,
-                                      isReadOnly: !(
-                                        item.allocatedTo === loggedUser._id ||
-                                        item.leadBy === loggedUser._id
-                                      )
-                                    }
-                                  })
-                            }
-                            className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer"
-                          >
-                            View / Modify
-                          </button>
-                        </td>
-                        <td className="border border-b-0 border-gray-400 px-4 "></td>
-                      </tr>
+      {/* Responsive Table Container */}
+      <div className="flex-1  overflow-x-auto rounded-lg text-center overflow-y-auto border  shadow-xl mx-3 md:mx-5 mb-3">
+        <table className="w-full text-sm">
+          <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
+            <tr>
+              <th className="border border-r-0 border-t-0 border-gray-400 px-4 ">
+                Name
+              </th>
+              <th className="border border-r-0 border-t-0 border-l-0 border-gray-400  px-4 max-w-[200px] min-w-[200px]">
+                Mobile
+              </th>
+              <th className="border border-r-0 border-l-0 border-t-0 border-gray-400 px-4 ">
+                Phone
+              </th>
+              <th className="border border-r-0 border-l-0 border-t-0 border-gray-400 px-4 ">
+                Email
+              </th>
+              <th className="border  border-l-0 border-t-0 border-gray-400 px-4  min-w-[100px]">
+                Lead Id
+              </th>
+              <th className="border border-t-0   border-blue-500 px-4 ">
+                Followup Date
+              </th>
+              <th className="border border-t-0 border-gray-400 px-4  min-w-[100px]">
+                Action
+              </th>
+              <th className="border border-t-0 border-gray-400 px-4 py-2">
+                Net Amount
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {tableData && tableData.length > 0 ? (
+              tableData.map((item, index) => (
+                <React.Fragment key={index}>
+                  <tr className="bg-white">
+                    <td
+                      onClick={() => setShowFullName(!showFullName)}
+                      className={`px-4 cursor-pointer overflow-hidden border border-r-0 border-b-0 border-gray-400 ${
+                        showFullName
+                          ? "whitespace-normal max-h-[3em]" // ≈2 lines of text (1.5em line-height)
+                          : "truncate whitespace-nowrap max-w-[120px]"
+                      }`}
+                      style={{ lineHeight: "1.5em" }} // fine-tune as needed
+                    >
+                      {item.customerName.customerName}
+                    </td>
+                    <td className="  px-4 ">{item.mobile}</td>
+                    <td className="px-4 ">0481</td>
+                    <td className="px-4 ">{item.email}</td>
+                    <td className=" px-4 ">{item.leadId}</td>
+                    <td className="border border-b-0 border-gray-400 px-4 ">
+                      {
+                        item.followUpDatesandRemarks[
+                          item.followUpDatesandRemarks.length - 1
+                        ]?.nextfollowpdate
+                      }
+                    </td>
 
-                      <tr className=" font-semibold bg-gray-100">
-                        <td className=" px-4 border border-b-0 border-t-0 border-r-0 border-gray-400 ">Leadby</td>
-                        <td className=" px-4">Assignedto</td>
-                        <td className=" px-4 ">Assignedby</td>
-                        <td className="px-4 ">No. of Followups</td>
-                        <td className="px-4 min-w-[120px]">Lead Date</td>
-                        <td className=" border border-t-0 border-b-0 border-gray-400 px-4 bg-white "></td>
-                        <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer bg-white">
-                          Follow Up
-                        </td>
-                        <td className=" border border-t-0 border-b-0 border-gray-400 px-4 bg-white ">
-                          {" "}
-                          {item.netAmount}
-                        </td>
-                      </tr>
-
-                      <tr className="bg-white">
-                        <td className="border border-t-0 border-r-0  border-gray-400 px-4 py-0.5 ">
-                          {item?.leadBy?.name}
-                        </td>
-                        <td className="border border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
-                          <Select
-                            options={allocationOptions}
-                            value={selectedAllocates[item._id] || null}
-                            onChange={(selectedOption) => {
-                              setSelectedAllocates((prev) => ({
-                                ...prev,
-                                [item._id]: selectedOption
-                              }))
-                              handleSelectedAllocates(
-                                item,
-                                selectedOption.value
-                              )
-                              setValidateError((prev) => ({
-                                ...prev,
-                                [item._id]: ""
-                              }))
-                            }}
-                            className="w-44 focus:outline-none"
-                            styles={{
-                              control: (base, state) => ({
-                                ...base,
-                                minHeight: "32px", // control height
-                                height: "32px",
-                                boxShadow: "none", // removes blue glow
-                                borderColor: state.isFocused
-                                  ? "#ccc"
-                                  : base.borderColor, // optional: neutral border on focus
-                                "&:hover": {
-                                  borderColor: "#ccc" // optional hover styling
+                    <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
+                      <button
+                        onClick={() =>
+                          loggedUser.role === "Admin"
+                            ? navigate("/admin/transaction/lead/leadEdit", {
+                                state: {
+                                  leadId: item._id,
+                                  isReadOnly: !(
+                                    item.allocatedTo === loggedUser._id ||
+                                    item.leadBy === loggedUser._id
+                                  )
                                 }
-                              }),
-                              valueContainer: (base) => ({
-                                ...base,
-                                paddingTop: "2px", // Reduce vertical padding
-                                paddingBottom: "2px"
-                              }),
-                              indicatorsContainer: (base) => ({
-                                ...base,
-                                height: "30px"
-                              }),
-                              menu: (provided) => ({
-                                ...provided,
-                                maxHeight: "200px", // Set dropdown max height
-                                overflowY: "auto" // Enable scrolling
-                              }),
-                              menuList: (provided) => ({
-                                ...provided,
-                                maxHeight: "200px", // Ensures dropdown scrolls internally
-                                overflowY: "auto"
                               })
-                            }}
-                            menuPortalTarget={document.body} // Prevents nested scrolling issues
-                            menuShouldScrollIntoView={false}
-                          />
+                            : navigate("/staff/transaction/lead/leadEdit", {
+                                state: {
+                                  leadId: item._id,
+                                  isReadOnly: !(
+                                    item.allocatedTo === loggedUser._id ||
+                                    item.leadBy === loggedUser._id
+                                  )
+                                }
+                              })
+                        }
+                        className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer"
+                      >
+                        View / Modify
+                      </button>
+                    </td>
+                    <td className="border border-b-0 border-gray-400 px-4 "></td>
+                  </tr>
 
-                          {validateError[item._id] && (
-                            <p className="text-red-500 text-sm">
-                              {validateError[item._id]}
-                            </p>
-                          )}
-                        </td>
-                        <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5">
-                          {item.allocatedBy?.name}
-                        </td>
-                        <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400  px-4 py-0.5 ">
-                          {item.followUpDatesandRemarks.length}
-                        </td>
-                        <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
-                          {item.leadDate?.toString().split("T")[0]}
-                        </td>
-                        <td className="border border-t-0 border-gray-400   px-4 py-0.5 "></td>
-                        <td
-                          className="border border-t-0 border-gray-400   px-4 py-0.5 text-blue-400 hover:text-blue-500 hover:cursor-pointer font-semibold"
-                          onClick={() => handleSubmit(item)}
-                        >
-                          Allocate
-                        </td>
-                        <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
-                      </tr>
-                    </React.Fragment>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={8} className="text-center text-gray-500 py-4">
-                      {loading ? (
-                        <div className="justify center">
-                          <PropagateLoader color="#3b82f6" size={10} />
-                        </div>
-                      ) : (
-                        <div>
-                          {approvedToggleStatus ? "" : "No Pending Leads"}
-                        </div>
-                      )}
-                      {toggleLoading ? (
-                        <div className="justify center">
-                          <PropagateLoader color="#3b82f6" size={10} />
-                        </div>
-                      ) : (
-                        <div>
-                          {approvedToggleStatus
-                            ? "No Allocated Leads"
-                            : "No Allocated Leads"}
-                        </div>
-                      )}
+                  <tr className=" font-semibold bg-gray-100">
+                    <td className=" px-4 border border-b-0 border-t-0 border-r-0 border-gray-400 ">
+                      Leadby
+                    </td>
+                    <td className=" px-4">Assignedto</td>
+                    <td className=" px-4 ">Assignedby</td>
+                    <td className="px-4 ">No. of Followups</td>
+                    <td className="px-4 min-w-[120px]">Lead Date</td>
+                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4 bg-white "></td>
+                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer bg-white">
+                      Follow Up
+                    </td>
+                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4 bg-white ">
+                      {" "}
+                      {item.netAmount}
                     </td>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        
-      
+
+                  <tr className="bg-white">
+                    <td className="border border-t-0 border-r-0  border-gray-400 px-4 py-0.5 ">
+                      {item?.leadBy?.name}
+                    </td>
+                    <td className="border border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
+                      <Select
+                        options={allocationOptions}
+                        value={selectedAllocates[item._id] || null}
+                        onChange={(selectedOption) => {
+                          setSelectedAllocates((prev) => ({
+                            ...prev,
+                            [item._id]: selectedOption
+                          }))
+                          handleSelectedAllocates(item, selectedOption.value)
+                          setValidateError((prev) => ({
+                            ...prev,
+                            [item._id]: ""
+                          }))
+                        }}
+                        className="w-44 focus:outline-red-500"
+                        styles={{
+                          control: (base) => ({
+                            ...base,
+                            minHeight: "32px", // control height
+                            height: "32px",
+                            boxShadow: "none", // removes blue glow
+                            borderColor: "red",
+                            cursor: "pointer",
+                            "&:hover": {
+                              borderColor: "red" // optional hover styling
+                            }
+                          }),
+                          option: (base, state) => ({
+                            ...base,
+                            cursor: "pointer", // 👈 ensures pointer on option hover
+                            backgroundColor: state.isFocused
+                              ? "#f0f0f0"
+                              : "white", // optional styling
+                            color: "black"
+                          }),
+                          valueContainer: (base) => ({
+                            ...base,
+                            paddingTop: "2px", // Reduce vertical padding
+                            paddingBottom: "2px"
+                          }),
+                          indicatorsContainer: (base) => ({
+                            ...base,
+                            height: "30px"
+                          }),
+                          menu: (provided) => ({
+                            ...provided,
+                            maxHeight: "200px", // Set dropdown max height
+                            overflowY: "auto" // Enable scrolling
+                          }),
+                          menuList: (provided) => ({
+                            ...provided,
+                            maxHeight: "200px", // Ensures dropdown scrolls internally
+                            overflowY: "auto"
+                          })
+                        }}
+                        menuPlacement="auto"
+                        menuPosition="absolute"
+                        menuPortalTarget={document.body} // Prevents nested scrolling issues
+                        menuShouldScrollIntoView={false}
+                      />
+
+                      {validateError[item._id] && (
+                        <p className="text-red-500 text-sm">
+                          {validateError[item._id]}
+                        </p>
+                      )}
+                    </td>
+                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5">
+                      {item.allocatedBy?.name}
+                    </td>
+                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400  px-4 py-0.5 ">
+                      {item.followUpDatesandRemarks.length}
+                    </td>
+                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
+                      {item.leadDate?.toString().split("T")[0]}
+                    </td>
+                    <td className="border border-t-0 border-gray-400   px-4 py-0.5 "></td>
+                    <td
+                      className="border border-t-0 border-gray-400   px-4 py-0.5 text-red-400 hover:text-red-500 hover:cursor-pointer font-semibold"
+                      onClick={() => handleSubmit(item)}
+                    >
+                      Allocate
+                    </td>
+                    <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
+                  </tr>
+                </React.Fragment>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={8} className="text-center text-gray-500 py-4">
+                  {approvedToggleStatus ? (
+                    toggleLoading ? (
+                      
+                        <div className="flex justify-center">
+                          <PropagateLoader color="#3b82f6" size={10} />
+                        </div>
+                      
+                    ) : (
+                      <div>No Allocated Leads</div>
+                    )
+                  ) : loading ? (
+                    
+                      <div className="flex justify-center">
+                        <PropagateLoader color="#3b82f6" size={10} />
+                      </div>
+                    
+                  ) : toggleLoading ? (
+                    <div className="flex justify-center">
+                      <PropagateLoader color="#3b82f6" size={10} />
+                    </div>
+                  ) : (
+                    <div>No Pending Leads</div>
+                  )}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
