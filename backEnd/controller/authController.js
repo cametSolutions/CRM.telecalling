@@ -2247,7 +2247,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
     return res.status(200).json({
       message: "Attendence report found",
       data: { staffAttendanceStats, listofHolidays, sundayFulldate }
-     
+
     })
   } catch (error) {
     console.log("error", error)
@@ -3604,8 +3604,9 @@ export const GetStaffCallList = async (req, res) => {
 
 export const GetindividualStaffCall = async (req, res) => {
   try {
+    // const { startDate } = req.query
     const startDate = new Date("2024-11-16T00:00:00.000Z")
-
+    return res.status(200).json({ message: "no data", data: [] })
     const calls = await CallRegistration.aggregate([
       {
         $project: {
@@ -3638,49 +3639,53 @@ export const GetindividualStaffCall = async (req, res) => {
         select: "productName" // Optionally select fields from the Product schema you need
       }
     ])
-    for (const call of populatedCalls) {
-      for (const registration of call.callregistration) {
-        // Ensure attendedBy is an array
-        if (Array.isArray(registration.formdata.attendedBy)) {
-          // Fetch attendedBy details
-          registration.formdata.attendedBy = await Promise.all(
-            registration.formdata.attendedBy.map(async (attended) => {
-              const user = await Staff.findById(attended.callerId).select(
-                "name"
-              )
-              return {
-                callerId: user?.name
-              }
-            })
-          )
-        } else {
-          registration.attendedBy = [] // Default to an empty array if undefined
+   
+    const allpopulate = await Promise.all(
+      populatedCalls.map(async (item) => {
+        // Loop over callregistration (async inside map — better use for...of)
+        for (const items of item.callregistration) {
+          try {
+            // Ensure attendedBy is an array
+            if (Array.isArray(items.formdata.attendedBy)) {
+              items.formdata.attendedBy = await Promise.all(
+                items.formdata.attendedBy.map(async (attended) => {
+                  const user = await Staff.findById(attended.callerId).select("name");
+                  return { callerId: user?.name };
+                })
+              );
+            } else {
+              items.formdata.attendedBy = [];
+            }
+
+            // Ensure completedBy is an array
+            if (Array.isArray(items.formdata.completedBy)) {
+              items.formdata.completedBy = await Promise.all(
+                items.formdata.completedBy.map(async (completed) => {
+                  const user = await Staff.findById(completed.callerId).select("name");
+                  return { callerId: user?.name };
+                })
+              );
+            } else {
+              items.formdata.completedBy = [];
+            }
+          } catch (error) {
+            console.log("error:", error)
+
+          }
+
         }
 
-        // Ensure completedBy is an array
-        if (Array.isArray(registration.formdata.completedBy)) {
-          // Fetch completedBy details
-          registration.formdata.completedBy = await Promise.all(
-            registration.formdata.completedBy.map(async (completed) => {
-              const user = await Staff.findById(completed.callerId).select(
-                "name"
-              )
-              return {
-                callerId: user?.name
-              }
-            })
-          )
-        } else {
-          registration.completedBy = [] // Default to an empty array if undefined
-        }
-      }
-    }
+        // Return modified item
+        return item;
+      })
+    );
+    
 
     if (calls) {
       // Respond with the filtered call data
       return res
         .status(200)
-        .json({ message: "Matched calls found", data: populatedCalls })
+        .json({ message: "Matched calls found", data: allpopulate })
     }
   } catch (error) {
     console.error("Error fetching staff call data:", error)

@@ -142,7 +142,7 @@ const CustomerAdd = ({
         if (customer.selected.length > 0) {
           setShowTable(true)
         }
-console.log(customer)
+        console.log(customer)
         reset({
           customerName: customer.customerName,
           address1: customer.address1,
@@ -404,7 +404,7 @@ console.log(customer)
     "Accounts & Chartered Account",
     "Stationery",
     "Printing & Publishing",
-
+    "Hotel",
     "Pipes",
     "Tubes & Fittings"
     // Add more trades as needed
@@ -935,20 +935,6 @@ console.log(customer)
                   )}
                 />
 
-                {/* <select
-                  id="branchName"
-                  {...register("branchName")}
-                  onChange={handleBranchChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
-                >
-                  <option value="">-- Select a branch --</option>
-
-                  {filteredBranches?.map((branch) => (
-                    <option key={branch._id} value={branch.branch_id}>
-                      {branch.branchName}
-                    </option>
-                  ))}
-                </select> */}
               </div>
               <div>
                 <label
