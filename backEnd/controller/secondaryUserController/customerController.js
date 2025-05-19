@@ -308,6 +308,16 @@ export const UpdateServices = async (req, res) => {
 export const GetselectedDateCalls = async (req, res) => {
   try {
     const { startDate, endDate } = req.query
+    const start = new Date(startDate);
+    // console.log(start)
+    start.setHours(0, 0, 0, 0); // Start of the day
+    // console.log("startdate",startDate)
+    // console.log(start)
+
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999); // End of the day
+
+
     const customerCalls = await CallRegistration.aggregate([
       {
         $match: {
@@ -357,7 +367,7 @@ export const GetselectedDateCalls = async (req, res) => {
                                     }
                                   }
                                 },
-                                new Date(startDate)
+                                start
                               ]
                             },
                             {
@@ -371,33 +381,12 @@ export const GetselectedDateCalls = async (req, res) => {
                                     }
                                   }
                                 },
-                                new Date(endDate)
+                                end
                               ]
                             }
                           ]
                         }
-                        // cond: {
-                        //   $and: [
-                        //     { $ne: ["$$attendee.calldate", null] },
-                        //     { $ne: ["$$attendee.calldate", ""] },
-                        //     {
-                        //       $and: [
-                        //         {
-                        //           $gte: [
-                        //             { $toDate: "$$attendee.calldate" },
-                        //             new Date(startDate)
-                        //           ]
-                        //         },
-                        //         {
-                        //           $lte: [
-                        //             { $toDate: "$$attendee.calldate" },
-                        //             new Date(endDate)
-                        //           ]
-                        //         }
-                        //       ]
-                        //     }
-                        //   ]
-                        // }
+
                       }
                     }
                   },
@@ -565,7 +554,6 @@ export const GetselectedDateCalls = async (req, res) => {
         }
       }
     ])
-
     return res
       .status(200)
       .json({ message: "customercalls found", data: customerCalls })
