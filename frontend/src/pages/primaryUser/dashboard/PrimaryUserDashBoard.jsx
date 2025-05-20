@@ -343,7 +343,7 @@ export default function PrimaryUserDashBoard() {
                     className="text-left py-1 border-b border-gray-100"
                   >
                     {/* {item.name}-{item.leaveStatus} */}
-                    <p >
+                    <p>
                       <span className="font-medium text-gray-700">
                         {index + 1}.
                       </span>
@@ -366,6 +366,7 @@ export default function PrimaryUserDashBoard() {
               </h2>
               {birthdays && birthdays.length > 0 ? (
                 birthdays.map((item, index) => {
+                  console.log(item)
                   const isToday = birthdayPerson?.some(
                     (person) => person?.name === item?.name
                   )
@@ -379,7 +380,18 @@ export default function PrimaryUserDashBoard() {
                       <span className="font-medium text-gray-700">
                         {index + 1}.
                       </span>{" "}
-                      {item?.name}
+                      {item?.name} -
+                      <span className="text-pink-500 ml-1">
+                        {item?.dateofbirth
+                          ? new Date(item.dateofbirth).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "long",
+                                day: "numeric"
+                              }
+                            )
+                          : ""}
+                      </span>
                       {isToday && <span className="ml-2">🎂</span>}
                     </div>
                   )
