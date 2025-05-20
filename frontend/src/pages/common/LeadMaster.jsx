@@ -142,7 +142,6 @@ const LeadMaster = ({
     if (companybranches && companybranches.length > 0) {
       const defaultBranch = companybranches[0]._id
       if (Data && Data.length) {
-
         const customerBranch = Data[0].leadBranch
         setSelectedBranch([customerBranch])
         setValueMain("leadBranch", customerBranch)
@@ -182,7 +181,6 @@ const LeadMaster = ({
   }, [loggeduser, setValueMain])
   useEffect(() => {
     if (Data && Data.length > 0 && customerOptions && customerOptions.length) {
-     
       setValueMain("leadId", Data[0]?.leadId)
       setValueMain("customerName", Data[0]?.customerName?._id)
       setValueMain("mobile", Data[0]?.customerName?.mobile)
@@ -261,17 +259,23 @@ const LeadMaster = ({
   }, [customerData])
 
   useEffect(() => {
-    if (customerData && customerData.length) {
-      setCustomerOptions(
-        customerData.map((item) => ({
+    if (customerData && customerData.length && selectedBranch) {
+      
+      const options = customerData.map((item) => {
+        const matchingSelected = item.selected?.find(
+          (sel) => sel.branch_id === selectedBranch[0]
+        )
+        return {
           value: item?._id,
           label: item?.customerName,
           address: item?.address1,
           mobile: item?.mobile || "",
+          license: matchingSelected?.licensenumber || "",
           email: item?.email,
           phone: item?.landline
-        }))
-      )
+        }
+      })
+      setCustomerOptions(options)
     }
   }, [customerData])
   useEffect(() => {
@@ -415,6 +419,7 @@ const LeadMaster = ({
     setIsleadForOpen((prev) => !prev) // Toggle dropdown visibility
   }
   const handleSelectedCustomer = (option) => {
+    console.log("h")
     const filteredcustomerLicenseandproducts = allcustomer
       ?.filter(
         (item) =>
@@ -733,7 +738,7 @@ const LeadMaster = ({
                         ) || null
                       }
                       getOptionLabel={(option) =>
-                        `${option.label}-(${option.mobile})`
+                        `${option.label}-(${option.mobile})-(${option.license})`
                       } // Show only customer name
                       getOptionValue={(option) => option._id}
                       filterOption={customFilter} // Enable searching by name & mobile
@@ -749,6 +754,7 @@ const LeadMaster = ({
                         }
                       }}
                       onChange={(selectedOption) => {
+                        console.log("h")
                         handleSelectedCustomer(selectedOption)
                         setSelectedCustomer(selectedOption)
                         setValueMain("customerName", selectedOption.value, {
@@ -766,7 +772,7 @@ const LeadMaster = ({
                       styles={{
                         control: (base, state) => ({
                           ...base,
-                          cursor: state.isDisabled ? "not-allowed" : "default",
+                          cursor: state.isDisabled ? "not-allowed" : "pointer",
                           backgroundColor: state.isDisabled
                             ? "#f3f4f6"
                             : "white",
