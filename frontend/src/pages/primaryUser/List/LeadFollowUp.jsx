@@ -231,6 +231,7 @@ const LeadFollowUp = () => {
       console.log("error:", error.message)
     }
   }
+  console.log(tableData)
   return (
     <div className="h-full flex flex-col ">
       {loading && (
@@ -243,25 +244,21 @@ const LeadFollowUp = () => {
       <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3 ">
         <h2 className="text-lg font-bold">Lead Follow Up</h2>
         <div className="flex gap-6 items-center">
-          
-            <>
-              <span>
-                {ownFollowUp ? "Own FollowUp" : "Colleague  FollowUp"}
-              </span>
-              <button
-                onClick={() => setOwnFollowUp(!ownFollowUp)}
+          <>
+            <span>{ownFollowUp ? "Own FollowUp" : "Colleague  FollowUp"}</span>
+            <button
+              onClick={() => setOwnFollowUp(!ownFollowUp)}
+              className={`${
+                ownFollowUp ? "bg-green-500" : "bg-gray-300"
+              } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
+            >
+              <div
                 className={`${
-                  ownFollowUp ? "bg-green-500" : "bg-gray-300"
-                } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
-              >
-                <div
-                  className={`${
-                    ownFollowUp ? "translate-x-5" : "translate-x-0"
-                  } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                ></div>
-              </button>
-            </>
-          
+                  ownFollowUp ? "translate-x-5" : "translate-x-0"
+                } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+              ></div>
+            </button>
+          </>
 
           <button
             onClick={() =>
@@ -320,13 +317,7 @@ const LeadFollowUp = () => {
                     <td className="px-4 ">0481</td>
                     <td className="px-4 ">{item.email}</td>
                     <td className=" px-4 ">{item.leadId}</td>
-                    <td className="border border-b-0 border-gray-400 px-4 ">
-                      {
-                        item.followUpDatesandRemarks[
-                          item.followUpDatesandRemarks.length - 1
-                        ]?.nextfollowpdate
-                      }
-                    </td>
+                    <td className="border border-b-0 border-gray-400 px-4 "></td>
 
                     <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
                       <button
@@ -367,7 +358,16 @@ const LeadFollowUp = () => {
                     <td className=" px-4 ">Assignedby</td>
                     <td className="px-4 ">No. of Followups</td>
                     <td className="px-4 min-w-[120px]">Lead Date</td>
-                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4 "></td>
+                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4 ">
+                      {new Date(
+                        item.followUpDatesandRemarks[
+                          item.followUpDatesandRemarks.length - 1
+                        ]?.nextfollowUpDate
+                      )
+                        .toLocaleDateString("en-GB")
+                        .split("/")
+                        .join("-")}
+                    </td>
                     <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer">
                       <button
                         type="button"
@@ -503,14 +503,19 @@ const LeadFollowUp = () => {
                             )}
 
                             <td className="border border-gray-200 p-2">
-                              {item?.followUpDate?.toString().split("T")[0] ||
-                                "N/A"}
+                              {new Date(item.followUpDate)
+                                .toLocaleDateString("en-GB")
+                                .split("/")
+                                .join("-")}
                             </td>
                             <td className="border border-gray-200 p-2">
                               {item?.Remarks || "N/A"}
                             </td>
                             <td className="border border-gray-200 p-2">
-                              {item?.nextfollowUpDate?.toString().split("T")[0]}
+                              {new Date(item.nextfollowUpDate)
+                                .toLocaleDateString("en-GB")
+                                .split("/")
+                                .join("-")}
                             </td>
                           </tr>
                         ))
