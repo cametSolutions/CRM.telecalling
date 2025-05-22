@@ -150,7 +150,8 @@ export default function AdminHeader() {
     {
       to: "/admin/transaction/lead/leadFollowUp",
       label: "Lead Follow Up"
-    }
+    },
+    { to: "/admin/transaction/lead/demoFollowup", label: "Demo" }
   ]
   const inventorys = [
     {

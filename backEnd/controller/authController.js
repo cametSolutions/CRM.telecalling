@@ -335,8 +335,7 @@ export const Login = async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid login credentials" })
     }
-
-    const token = generateToken(res, user.id)
+    const token = generateToken(res, user._id)
     if (user.role === "Admin") {
       const allbranches = await Branch.find()
       const branch = allbranches.map((branch) => branch.branchName)
@@ -568,7 +567,7 @@ export const GetAllstaffs = async (req, res) => {
 }
 export const GetallUsers = async (req, res) => {
   try {
-    const allusers = await Staff.find()
+    const allusers = await Staff.find({isVerified:true})
       .populate({ path: "department", select: "department" })
       .populate({ path: "assignedto", select: "name" })
 

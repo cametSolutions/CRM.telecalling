@@ -69,6 +69,18 @@ const leadSchema = new mongoose.Schema(
 
       }
     ],
+    demofollowUp: {
+      type: [{
+        demoallocatedTo: { type: mongoose.Schema.Types.ObjectId, refpath: "demoallocatedtoModel", default: null },
+        demoallocatedtoModel: { type: String, enum: ["Staff", "Admin"] },
+        demoallocatedBy: { type: mongoose.Schema.Types.ObjectId, refpath: "demoallocatedByModel", default: null },
+        demoallocatedByModel: { type: String, enum: ["Staff", "Admin"] },
+        demoDescription: { type: String },
+        demoallocatedDate: { type: Date },
+        demofollowerDate: { type: Date, default: null },
+        demofollowerDescription: { type: String, default: null }
+      }], default: []
+    },
     allocatedBy: { type: mongoose.Schema.Types.ObjectId, refpath: "allocatedByModel" },
     allocatedByModel: {
       type: String,

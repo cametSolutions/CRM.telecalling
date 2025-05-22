@@ -9,7 +9,10 @@ import {
   UpdateLeadfollowUpDate,
   UpdateLeadRegister,
   GetownLeadList,
-  GetallfollowupList
+  GetallfollowupList,
+SetDemoallocation,
+GetrepecteduserDemo,
+UpdaeOrSubmitdemofollowByfollower
 } from "../../controller/primaryUserController/leadController.js"
 const router = express.Router()
 
@@ -22,5 +25,8 @@ router.get("/getallLead", authMiddleware, GetallLead)
 router.get("/getallLeadFollowUp", authMiddleware, GetallfollowupList)
 router.get("/getallServices", authMiddleware, GetAllservices)
 router.get("/ownregisteredLead", authMiddleware, GetownLeadList)
+router.post("/setdemolead",authMiddleware,SetDemoallocation)
+router.get("/getrespecteddemolead",authMiddleware,GetrepecteduserDemo)
+router.post("/demosubmitbyfollower",authMiddleware,UpdaeOrSubmitdemofollowByfollower)
 
 export default router

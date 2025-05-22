@@ -13,6 +13,7 @@ const LeadAllocationTable = () => {
   const [toggleLoading, setToggleLoading] = useState(false)
   const [validateError, setValidateError] = useState({})
   const [loggedUserBranches, setLoggeduserBranches] = useState([])
+  const [selectedCompanyBranch, setSelectedCompanyBranch] = useState(null)
   const [showFullName, setShowFullName] = useState(false)
   const [showFullEmail, setShowFullEmail] = useState(false)
   const [approvedToggleStatus, setapprovedToggleStatus] = useState(false)
@@ -21,55 +22,70 @@ const LeadAllocationTable = () => {
   const [selectedAllocates, setSelectedAllocates] = useState({})
   const [loggedUser, setLoggedUser] = useState(null)
   const [tableData, setTableData] = useState([])
-
+  const { data: branches } = UseFetch("/branch/getBranch")
   const { data: leadPendinglist, loading } = UseFetch(
     status &&
       loggedUser &&
-      loggedUserBranches &&
-      `/lead/getallLead?Status=${status}&userBranch=${encodeURIComponent(
-        JSON.stringify(loggedUserBranches)
-      )}&role=${loggedUser.role}`
+      selectedCompanyBranch &&
+      `/lead/getallLead?Status=${status}&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
   )
+  console.log(leadPendinglist)
+  console.log(status)
   const { data } = UseFetch("/auth/getallUsers")
   const navigate = useNavigate()
   useEffect(() => {
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
     setLoggedUser(user)
-
-    const branches = user?.selected
-      ? user.selected.map((branch) => branch.branch_id)
-      : []
-
-    setLoggeduserBranches(branches)
   }, [])
   useEffect(() => {
-    if (data) {
+    if (loggedUser && branches && branches.length > 0) {
+      if (loggedUser.role === "Admin") {
+        const isselctedArray = loggedUser?.selected
+        if (isselctedArray) {
+          const loggeduserBranches = loggedUser.selected.map((item) => {
+            return { value: item.branch_id, label: item.branchName }
+          })
+          setLoggeduserBranches(loggeduserBranches)
+          setSelectedCompanyBranch(loggeduserBranches[0].value)
+        } else {
+          const loggeduserBranches = branches.map((item) => {
+            return { value: item._id, label: item.branchName }
+          })
+          setLoggeduserBranches(loggeduserBranches)
+          setSelectedCompanyBranch(loggeduserBranches[0].value)
+        }
+      } else {
+console.log(loggedUser)
+        const loggeduserBranches = loggedUser.selected.map((item) => {
+          return { value: item.branch_id, label: item.branchName }
+        })
+        console.log(loggeduserBranches)
+        setLoggeduserBranches(loggeduserBranches)
+        setSelectedCompanyBranch(loggeduserBranches[0].value)
+      }
+    }
+  }, [loggedUser, branches])
+  useEffect(() => {
+    if (data && selectedCompanyBranch) {
       const { allusers = [], allAdmins = [] } = data
 
       // Combine allusers and allAdmins
-      const combinedUsers = [...allusers, ...allAdmins]
-      if (loggedUser.role === "Staff") {
-        const filteredBranchStaffs = allusers.filter((staff) =>
-          staff.selected.some((s) => loggedUserBranches.includes(s.branch_id))
-        )
 
-        setAllocationOptions(
-          filteredBranchStaffs.map((item) => ({
-            value: item?._id,
-            label: item?.name
-          }))
-        )
-      } else {
-        setAllocationOptions(
-          combinedUsers.map((item) => ({
-            value: item?._id,
-            label: item?.name
-          }))
-        )
-      }
+      console.log(allusers)
+      const filter = allusers.filter((staff) =>
+        staff.selected.some((s) => selectedCompanyBranch === s.branch_id)
+      )
+      const combinedUsers = [...filter, ...allAdmins]
+      console.log(filter)
+      setAllocationOptions(
+        combinedUsers.map((item) => ({
+          value: item._id,
+          label: item.name
+        }))
+      )
     }
-  }, [data])
+  }, [data, selectedCompanyBranch])
   useEffect(() => {
     if (leadPendinglist) {
       setTableData(leadPendinglist)
@@ -82,9 +98,7 @@ const LeadAllocationTable = () => {
     if (approvedToggleStatus === false) {
       setToggleLoading(true)
       const response = await api.get(
-        `/lead/getallLead?Status=Approved&userBranch=${encodeURIComponent(
-          JSON.stringify(loggedUserBranches)
-        )}&role=${loggedUser.role}`
+        `/lead/getallLead?Status=Approved&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
       )
 
       if (response.status >= 200 && response.status < 300) {
@@ -110,9 +124,7 @@ const LeadAllocationTable = () => {
     } else {
       setToggleLoading(true)
       const response = await api.get(
-        `/lead/getallLead?Status=Pending&userBranch=${encodeURIComponent(
-          JSON.stringify(loggedUserBranches)
-        )}&role=${loggedUser.role}`
+        `/lead/getallLead?Status=Pending&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
       )
       if (response.status >= 200 && response.status < 300) {
         setSelectedAllocates({})
@@ -174,21 +186,39 @@ const LeadAllocationTable = () => {
       console.log("error:", error.message)
     }
   }
-
+  console.log(approvedToggleStatus)
   return (
     <div className="flex flex-col h-full">
-      {submitLoading && (
-        <BarLoader
-          cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
-          color="#4A90E2" // Change color as needed
-        />
-      )}
+      {submitLoading ||
+        (loading && (
+          <BarLoader
+            cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
+            color="#4A90E2" // Change color as needed
+          />
+        ))}
 
       <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3 ">
-        <h2 className="text-lg font-bold">
+        <h2 className="text-lg font-bold ">
           {approvedToggleStatus ? "Approved" : "Pending"} Allocation List
         </h2>
-        <div className="flex gap-6 items-center">
+        <div className="flex justify-end  ml-auto gap-6 items-center">
+          {/* Branch Dropdown */}
+          <select
+            // value={selectedCompanyBranch || ""}
+            onChange={(e) => {
+              setSelectedCompanyBranch(e.target.value)
+              console.log("hh")
+              setStatus(approvedToggleStatus ? "Approved" : "Pending")
+              console.log(approvedToggleStatus ? "Approved" : "Pending")
+            }}
+            className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px]"
+          >
+            {loggedUserBranches?.map((branch) => (
+              <option key={branch._id} value={branch.value}>
+                {branch.label}
+              </option>
+            ))}
+          </select>
           <button
             aria-pressed={approvedToggleStatus}
             aria-label="Toggle Approval Status"
@@ -421,20 +451,16 @@ const LeadAllocationTable = () => {
                 <td colSpan={8} className="text-center text-gray-500 py-4">
                   {approvedToggleStatus ? (
                     toggleLoading ? (
-                      
-                        <div className="flex justify-center">
-                          <PropagateLoader color="#3b82f6" size={10} />
-                        </div>
-                      
+                      <div className="flex justify-center">
+                        <PropagateLoader color="#3b82f6" size={10} />
+                      </div>
                     ) : (
                       <div>No Allocated Leads</div>
                     )
                   ) : loading ? (
-                    
-                      <div className="flex justify-center">
-                        <PropagateLoader color="#3b82f6" size={10} />
-                      </div>
-                    
+                    <div className="flex justify-center">
+                      <PropagateLoader color="#3b82f6" size={10} />
+                    </div>
                   ) : toggleLoading ? (
                     <div className="flex justify-center">
                       <PropagateLoader color="#3b82f6" size={10} />

@@ -9,7 +9,7 @@ import BarLoader from "react-spinners/BarLoader"
 import api from "../../../api/api"
 import { toast } from "react-toastify"
 import UseFetch from "../../../hooks/useFetch"
-const LeadFollowUp = () => {
+const DemoFollowUp = () => {
   const [selectedLeadId, setSelectedLeadId] = useState(null)
 
   const [demoerror, setDemoError] = useState({
@@ -18,20 +18,17 @@ const LeadFollowUp = () => {
     demoDescription: ""
   })
   const [isdemofollownotClosed, setisdemofollowedNotClosed] = useState(false)
-
+  const [loggeduserBranch, setloggedUserBranch] = useState([])
   const [isOpen, setIsOpen] = useState(false)
-  const [isAllocated, setIsAllocated] = useState(false) //for set allocation or not
-  const [isOwner, setOwner] = useState(false)
   const [message, setMessage] = useState("")
   const [demofollowerLoader, setdemofollowerLoader] = useState(false)
-  const [loader, setLoader] = useState(false)
   const containerRef = useRef(null)
   const [allocationOptions, setAllocationOptions] = useState([])
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState("")
   const [isHaveEditchoice, setIsEditable] = useState(false)
   const [selectedDocId, setselectedDocid] = useState(null)
   const [selectedTab, setselectedTab] = useState("")
-  const [leads, setLeads] = useState([])
+  const [demoLead, setdemoLeads] = useState([])
   const [hasOwnLeads, setHasownLeads] = useState(false)
   const [ownFollowUp, setOwnFollowUp] = useState(true)
   const [historyList, setHistoryList] = useState([])
@@ -56,7 +53,6 @@ const LeadFollowUp = () => {
 
     Remarks: ""
   })
-
   const [demoDetails, setDemodetails] = useState({
     matchedindex: "",
     leadId: "",
@@ -72,28 +68,66 @@ const LeadFollowUp = () => {
     demoallocatedDate: "",
     demoDescription: ""
   })
-  const { data: demolead } = UseFetch(
-    loggedUser && `/lead/getrespecteddemolead?userid=${loggedUser._id}`
-  )
-  const { data: branches } = UseFetch("/branch/getBranch")
-  const { data } = UseFetch("/auth/getallUsers")
-  const {
-    data: loggedusersallocatedleads,
-    loading,
-    refreshHook
-  } = UseFetch(
+  const { data: demolead, loading } = UseFetch(
     loggedUser &&
       selectedCompanyBranch &&
-      `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduser=${loggedUser}`
+      `/lead/getrespecteddemolead?userid=${loggedUser._id}&selectedBranch=${selectedCompanyBranch}`
   )
+  console.log(demolead)
+  const { data: branches } = UseFetch("/branch/getBranch")
+console.log(branches)
+  const { data } = UseFetch("/auth/getallUsers")
+  // const {
+  //   data: loggedusersallocatedleads,
+  //   loading,
+  //   refreshHook
+  // } = UseFetch(
+  //   loggedUser &&
+  //     loggedUserBranches &&
+  //     `/lead/getallLeadFollowUp?branchSelected=${encodeURIComponent(
+  //       JSON.stringify(loggedUserBranches)
+  //     )}&loggeduser=${loggedUser}`
+  // )
   useEffect(() => {
-    if (branches) {
-      const defaultbranch = branches[0]
-      setselectedCompanyBranch(defaultbranch._id)
+    if (branches && loggedUser) {
+      console.log(loggedUser)
+      if (loggedUser.role === "Admin") {
+        const isselectedArray = loggedUser?.selected
+        if (isselectedArray) {
+          console.log("hhh")
+          const loggeduserbranches = loggedUser.selected.map((item) => {
+            return {
+              value: item.branch_id,
+              label: item.branchName
+            }
+          })
+          setloggedUserBranch(loggeduserbranches)
+          console.log(loggeduserbranches)
+          setselectedCompanyBranch(loggeduserbranches[0].value)
+          console.log(loggeduserbranches[0].value)
+        } else {
+          const loggeduserbranches = branches.map((item) => {
+            return { value: item.branch_id, label: item.branchName }
+          })
+          setloggedUserBranch(loggeduserbranches)
+          setselectedCompanyBranch(loggeduserbranches[0].value)
+        }
+
+        console.log(isselectedArray)
+      } else {
+        const loggeduserbranches = loggedUser.selected.map((item) => {
+          return { value: item.branch_id, label: item.branchName }
+        })
+console.log(loggeduserbranches)
+        setloggedUserBranch(loggeduserbranches)
+        setselectedCompanyBranch(loggeduserbranches[0].value)
+      }
     }
-  }, [branches])
+  }, [branches, loggedUser])
   useEffect(() => {
+    console.log(data)
     if (data && selectedCompanyBranch) {
+      console.log("h")
       const { allusers = [], allAdmins = [] } = data
 
       const filteredSelectedBranchStaffs = allusers.filter((user) =>
@@ -113,6 +147,7 @@ const LeadFollowUp = () => {
   }, [data, selectedCompanyBranch])
   useEffect(() => {
     if (demolead && demolead.length > 0) {
+      console.log(demolead)
 
       setDemodetails((prev) => ({
         ...prev,
@@ -127,6 +162,9 @@ const LeadFollowUp = () => {
       }))
     }
   }, [demolead])
+  console.log(demoDetails)
+  console.log(allocationOptions)
+  console.log(loggedUserBranches)
   const navigate = useNavigate()
   useEffect(() => {
     if (branches) {
@@ -157,21 +195,14 @@ const LeadFollowUp = () => {
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
+  console.log(message)
 
   useEffect(() => {
-    if (loggedusersallocatedleads) {
-      setLeads(loggedusersallocatedleads.followupLeads)
-      setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
-    }
-  }, [loggedusersallocatedleads])
-  useEffect(() => {
-    if (leads && leads.length && loggedUser && ownFollowUp) {
+    if (demolead && demolead.length > 0) {
       const currentDate = new Date()
 
       // 1. Leads with follow-ups
-      const leadsWithFollowUps = leads
-        .filter((lead) => lead.allocatedTo._id === loggedUser._id)
-        .filter((lead) => lead.followUpDatesandRemarks.length > 0)
+      const leadsWithFollowUps = demolead
         .map((lead) => {
           // Get the closest nextfollowUpDate from the followUpDatesandRemarks array
           const nextFollowUp = lead.followUpDatesandRemarks.reduce(
@@ -193,43 +224,7 @@ const LeadFollowUp = () => {
         .sort((a, b) => a.closestNextFollowUp - b.closestNextFollowUp)
 
       // 2. Leads with empty followUpDatesandRemarks
-      const leadsWithoutFollowUps = leads.filter(
-        (lead) => lead.followUpDatesandRemarks.length === 0
-      )
-
-      // 3. Combined
-      const finalSortedLeads = [...leadsWithFollowUps, ...leadsWithoutFollowUps]
-
-      setTableData(finalSortedLeads)
-    } else if (loggedusersallocatedleads && loggedUser) {
-      const currentDate = new Date()
-
-      // 1. Leads with follow-ups
-      const leadsWithFollowUps = leads
-        .filter((lead) => lead.allocatedTo._id !== loggedUser._id)
-        .filter((lead) => lead.followUpDatesandRemarks.length > 0)
-        .map((lead) => {
-          // Get the closest nextfollowUpDate from the followUpDatesandRemarks array
-          const nextFollowUp = lead.followUpDatesandRemarks.reduce(
-            (closest, curr) => {
-              const currDate = new Date(curr.nextfollowUpDate)
-              const closestDate = new Date(closest.nextfollowUpDate)
-              return Math.abs(currDate - currentDate) <
-                Math.abs(closestDate - currentDate)
-                ? curr
-                : closest
-            }
-          )
-
-          return {
-            ...lead,
-            closestNextFollowUp: new Date(nextFollowUp.nextfollowUpDate)
-          }
-        })
-        .sort((a, b) => a.closestNextFollowUp - b.closestNextFollowUp)
-
-      // 2. Leads with empty followUpDatesandRemarks
-      const leadsWithoutFollowUps = leads.filter(
+      const leadsWithoutFollowUps = demolead.filter(
         (lead) => lead.followUpDatesandRemarks.length === 0
       )
 
@@ -237,8 +232,8 @@ const LeadFollowUp = () => {
       const finalSortedLeads = [...leadsWithFollowUps, ...leadsWithoutFollowUps]
       setTableData(finalSortedLeads)
     }
-  }, [ownFollowUp, leads, loggedUser])
-
+  }, [demolead])
+  console.log(tableData)
   useEffect(() => {
     if (loggedUser) {
       setFormData((prev) => ({
@@ -264,70 +259,48 @@ const LeadFollowUp = () => {
       ...prev,
       [name]: value
     }))
-    if (isAllocated) {
-      setDemodata((prev) => ({
-        ...prev,
-        ...(name === "nextfollowUpDate"
-          ? { demoallocatedDate: value }
-          : { demoDescription: value })
-      }))
-    }
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" })) // ✅ Clear error
     }
-    if (name === "Remarks") {
-      if (demoerror.demoDescription) {
-        setDemoError((prev) => ({ ...prev, demoDescription: "" }))
-      }
-    } else if (name === "nextfollowUpDate") {
-      if (demoerror.demoDate) {
-        setDemoError((prev) => ({
-          ...prev,
-          demoDate: ""
-        }))
-      }
-    }
   }
-  const handleHistory = (history, leadid, docId, allocatedTo, demofollowUp) => {
-    const owner = loggedUser._id === allocatedTo
-    setOwner(owner)
+  console.log(demoData)
+  const handleHistory = (history, id, docId, allocatedTo, demofollowUp) => {
+    console.log(demofollowUp)
+    const a = demofollowUp[demofollowUp.length - 1]
+    console.log(a)
 
-    const isHaveDemo = demofollowUp[demofollowUp?.length - 1]
-    if (isHaveDemo) {
-      setDemodata({
-        demoallocatedTo: isHaveDemo.demoallocatedTo,
-        demoallocatedDate: isHaveDemo.demoallocatedDate
-          .toString()
-          .split("T")[0],
-        demoDescription: isHaveDemo.demoDescription
-      })
-
-      const isEditable =
-        demofollowUp[demofollowUp?.length - 1]?.demofollowerDate === null
-    
-      setIsEditable(isEditable)
-      setIsAllocated(true)
-    }
-
+    setDemodata({
+      demoallocatedTo: a.demoallocatedTo,
+      demoallocatedDate: a.demoallocatedDate.toString().split("T")[0],
+      demoDescription: a.demoDescription
+    })
+    const isdemofollowed =
+      demofollowUp[demofollowUp.length - 1].demofollowerDate === null
+    console.log(isdemofollowed)
+    setisdemofollowedNotClosed(isdemofollowed)
+    console.log(allocatedTo)
+    console.log(loggedUser)
+    const isEditable = loggedUser._id === allocatedTo
+    setIsEditable(isEditable)
     setselectedDocid(docId)
     setselectedTab("History")
     setShowModal(!showModal)
     setHistoryList(history)
-    setSelectedLeadId(leadid)
+    setSelectedLeadId(id)
   }
   const handlefollowupdate = (Id, docId) => {
     setfollowupDateModal(true)
     setSelectedLeadId(Id)
     setselectedDocid(docId)
-    if (!demoData.demoallocatedTo) {
-      setFormData((prev) => ({
-        ...prev,
-        followUpDate: new Date().toISOString().split("T")[0]
-      }))
-    }
+    setFormData((prev) => ({
+      ...prev,
+      followUpDate: new Date().toISOString().split("T")[0]
+    }))
   }
   const handleDemoSubmit = async () => {
+    console.log("hh")
     if (isdemofollownotClosed) {
+      console.log("H")
       setDemoError((prev) => ({
         ...prev,
         submiterror: "Cant submit demo is not closed",
@@ -335,52 +308,23 @@ const LeadFollowUp = () => {
       }))
       return
     }
-    const newError = {}
-    if (demoData.demoallocatedDate === "") {
-      newError.demoDate = "Follow up is Required"
-    }
-    if (demoData.demoDescription === "") {
-      newError.demoDescription = "Remarks is Required"
-    }
-    if (demoData.demoallocatedTo === "") {
-      newError.selectStaff = "Staff is Required"
-    }
-    if (Object.keys(newError).length > 0) {
-      setDemoError(newError)
-      return
-    }
 
     try {
-      setLoader(true)
-
+      console.log(demoData)
+      console.log(loggedUser)
+      console.log(selectedLeadId)
       const response = await api.post(
-        `/lead/setdemolead?demoallocatedBy=${loggedUser._id}&leaddocId=${selectedDocId}`,
-        { demoData, formData }
+        `/lead/setdemolead?demoallocatedBy=${loggedUser._id}&leadId=${selectedLeadId}`,
+        demoData
       )
-
-      setLoader(false)
-      setFormData((prev) => ({
-        ...prev,
-        followUpDate: "",
-        nextfollowUpDate: "",
-        followedId: "",
-        Remarks: ""
-      }))
-      setDemodata((prev) => ({
-        ...prev,
-        demoallocatedTo: "",
-        demoallocatedDate: "",
-        demoDescription: ""
-      }))
-      refreshHook()
+      console.log(response.data)
       toast.success(response.data.message)
-      setShowModal(false)
     } catch (error) {
-      toast.error("something went wrong ")
       console.log(error)
     }
   }
   const handleDemofollowup = async () => {
+    console.log("HH")
     try {
       setdemofollowerLoader(true)
 
@@ -395,6 +339,7 @@ const LeadFollowUp = () => {
       if (Object.keys(demofollowuperror).length > 0) {
         setDemofollowersubmitError(demofollowuperror)
       }
+      console.log(demoDetails)
       const response = await api.post("/lead/demosubmitbyfollower", demoDetails)
       if (response.status === 201) {
         toast.success(response.data.message)
@@ -410,48 +355,53 @@ const LeadFollowUp = () => {
       console.log(error)
     }
   }
+  console.log(demolead)
+  // const handleFollowUpDateSubmit = async () => {
+  //   try {
+  //     let newErrors = {}
+  //     if (!formData.followUpDate)
+  //       newErrors.followUpDate = "Follow Up Date is required"
+  //     if (!formData.nextfollowUpDate)
+  //       newErrors.nextfollowUpDate = "Next Follow Up Date Is Required"
+  //     if (!formData.Remarks)
+  //       if (!formData.Remarks) newErrors.Remarks = "Remarks is Required"
 
-  const handleFollowUpDateSubmit = async () => {
-    try {
-      let newErrors = {}
-      if (!formData.followUpDate)
-        newErrors.followUpDate = "Follow Up Date is required"
-      if (!formData.nextfollowUpDate)
-        newErrors.nextfollowUpDate = "Next Follow Up Date Is Required"
-      if (!formData.Remarks)
-        if (!formData.Remarks) newErrors.Remarks = "Remarks is Required"
+  //     if (Object.keys(newErrors).length > 0) {
+  //       setErrors(newErrors)
+  //       return
+  //     }
+  //     setfollowupDateLoader(!followupDateLoader)
 
-      if (Object.keys(newErrors).length > 0) {
-        setErrors(newErrors)
-        return
-      }
-      setfollowupDateLoader(!followupDateLoader)
+  //     const response = await api.put(
+  //       `/lead/followupDateUpdate?selectedleaddocId=${selectedDocId}&loggeduserid=${loggedUser._id}`,
+  //       formData
+  //     )
 
-      const response = await api.put(
-        `/lead/followupDateUpdate?selectedleaddocId=${selectedDocId}&loggeduserid=${loggedUser._id}`,
-        formData
-      )
+  //     toast.success(response.data.message)
+  //     setIsEditable(false)
+  //     setfollowupDateLoader(false)
+  //     setselectedDocid(null)
+  //     setSelectedLeadId(null)
+  //     setHistoryList([])
+  //     setShowModal(false)
+  //     setfollowupDateModal(false)
+  //     setFormData({
+  //       followUpDate: "",
+  //       nextfollowUpDate: "",
 
-      toast.success(response.data.message)
-      setIsEditable(false)
-      setfollowupDateLoader(false)
-      setselectedDocid(null)
-      setSelectedLeadId(null)
-      setHistoryList([])
-      setShowModal(false)
-      setfollowupDateModal(false)
-      setFormData({
-        followUpDate: "",
-        nextfollowUpDate: "",
-
-        Remarks: ""
-      })
-      refreshHook()
-    } catch (error) {
-      setIsEditable(false)
-      console.log("error:", error.message)
-    }
-  }
+  //       Remarks: ""
+  //     })
+  //     refreshHook()
+  //   } catch (error) {
+  //     setIsEditable(false)
+  //     console.log("error:", error.message)
+  //   }
+  // }
+  console.log(selectedCompanyBranch)
+  console.log(tableData)
+  console.log(allocationOptions)
+  console.log(demoData)
+  console.log(demoerror)
   return (
     <div className="h-full flex flex-col ">
       {loading && (
@@ -463,7 +413,7 @@ const LeadFollowUp = () => {
 
       <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center mx-3 md:mx-5 mt-3 mb-3 gap-4">
         {/* Title */}
-        <h2 className="text-lg font-bold">Lead Follow Up</h2>
+        <h2 className="text-lg font-bold">Demo Follow Up</h2>
 
         {/* Right Section */}
         <div className="grid grid-cols-2 md:flex md:flex-row md:gap-6 gap-3 items-start md:items-center w-full md:w-auto">
@@ -615,13 +565,13 @@ const LeadFollowUp = () => {
 
           {/* Branch Dropdown */}
           <select
-            value={selectedCompanyBranch || ""}
-            onChange={(e) => setselectedCompanyBranch(e.target.value)}
+            // value={selectedCompanyBranch || ""}
+            onChange={(e) => selectedCompanyBranch(e.target.value)}
             className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px] w-full"
           >
-            {branches?.map((branch) => (
-              <option key={branch._id} value={branch._id}>
-                {branch.branchName}
+            {loggeduserBranch?.map((branch) => (
+              <option key={branch._id} value={branch.value}>
+                {branch.label}
               </option>
             ))}
           </select>
@@ -659,6 +609,100 @@ const LeadFollowUp = () => {
         </div>
       </div>
 
+      {/* <div className="flex flex-col md:flex  md:justify-between items-center mx-3 md:mx-5 mt-3 mb-3 ">
+        <h2 className="text-lg font-bold">Lead Follow Up</h2>
+        <div className=" md:flex md:gap-6 items-center bg-red-200">
+         
+          <div className="relative inline-block bg-green-300 items-center" ref={containerRef}>
+            
+            <div onClick={() => setIsOpen(!isOpen)} className="cursor-pointer items-center flex">
+              <FiMessageCircle  className="text-4xl text-gray-700" />
+              {1 > 0 && (
+                <span className="relative  bg-red-600 text-white text-xs px-1.5 py-0.5 rounded-full">
+                  {1}
+                </span>
+              )}
+            </div>
+
+            
+            {isOpen && (
+              <div className="absolute top-8 right-0 bg-white shadow-lg border rounded-md p-4 w-64 z-50">
+                <label className="block text-sm mb-1 text-gray-700">
+                  Demo Assigned Date
+                </label>
+                <input
+                  type="date"
+                  readOnly
+                  className="w-full border px-2 py-1 rounded mb-3 text-sm cursor-not-allowed bg-gray-100"
+                />
+                <label className="block text-sm mb-1 text-gray-700">
+                  Description By Assigner
+                </label>
+                <textarea
+                  readOnly
+                  rows={3}
+                  className="w-full border px-2 py-1 rounded text-sm focus:outline-none cursor-not-allowed bg-gray-100"
+                />
+                <label className="block text-sm mb-1 text-gray-700">
+                  Follow-up Date
+                </label>
+                <input
+                  type="date"
+                  className="w-full border px-2 py-1 rounded mb-3 text-sm"
+                />
+                <label className="block text-sm mb-1 text-gray-700">
+                  Description
+                </label>
+                <textarea
+                  rows={2}
+                  className="w-full border px-2 py-1 rounded text-sm focus:outline-none"
+                  placeholder="Enter description..."
+                />
+                <button className="mt-3 w-full bg-blue-600 text-white py-1 rounded text-sm hover:bg-blue-700">
+                  Submit
+                </button>
+              </div>
+            )}
+          </div>
+          <select
+            value={selectedCompanyBranch || ""}
+            onChange={() => handleChange}
+            className="border border-gray-300 py-1 rounded-md px-2  mr-2 focus:outline-none min-w-[120px] cursor-pointer"
+          >
+            {branches?.map((branch) => (
+              <option key={branch._id} value={branch._id}>
+                {branch.branchName}
+              </option>
+            ))}
+          </select>
+          <>
+            <span>{ownFollowUp ? "Own FollowUp" : "Colleague  FollowUp"}</span>
+            <button
+              onClick={() => setOwnFollowUp(!ownFollowUp)}
+              className={`${
+                ownFollowUp ? "bg-green-500" : "bg-gray-300"
+              } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
+            >
+              <div
+                className={`${
+                  ownFollowUp ? "translate-x-5" : "translate-x-0"
+                } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+              ></div>
+            </button>
+          </>
+
+          <button
+            onClick={() =>
+              loggedUser.role === "Admin"
+                ? navigate("/admin/transaction/lead")
+                : navigate("/staff/transaction/lead")
+            }
+            className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600"
+          >
+            New Lead
+          </button>
+        </div>
+      </div> */}
       {/* Responsive Table Container */}
       <div className="flex-1 overflow-x-auto rounded-lg text-center overflow-y-auto  shadow-xl md:mx-5 mx-3 mb-3">
         <table className=" border-collapse border border-gray-400 w-full text-sm">
@@ -735,7 +779,7 @@ const LeadFollowUp = () => {
                       </button>
                     </td>
                     <td className="borrder border-b-0 border-gray-400 px-4 ">
-                      
+                      {item.netAmount}
                     </td>
                   </tr>
 
@@ -762,16 +806,16 @@ const LeadFollowUp = () => {
                           handleHistory(
                             item?.followUpDatesandRemarks,
                             item.leadId, //like 00001
-                            item?._id, //lead doc id
-                            item?.allocatedTo?._id,
-                            item?.demofollowUp
+                            item._id, //lead doc id
+                            item.allocatedTo._id,
+                            item.demofollowUp
                           )
                         }
                       >
                         Follow Up
                       </button>
                     </td>
-                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4 ">{item.netAmount} </td>
+                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4 "></td>
                   </tr>
 
                   <tr className="bg-white">
@@ -820,14 +864,8 @@ const LeadFollowUp = () => {
                   : selectedTab === "Demo"
                   ? "md:w-1/3"
                   : "md:w-1/2"
-              } px-2 md:px-5 rounded-lg pb-3 `}
+              } p-2 md:p-5 rounded-lg `}
             >
-              {loader && (
-                <BarLoader
-                  cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
-                  color="#4A90E2" // Change color as needed
-                />
-              )}
               <div className="text-gray-600 font-semibold space-x-6 mb-1">
                 <span
                   className={`hover:cursor-pointer pb-1 ${
@@ -837,36 +875,42 @@ const LeadFollowUp = () => {
                   }`}
                   onClick={() => {
                     setselectedTab("History")
-                    setIsAllocated(false)
                     // setfollowupDateModal(false)
                   }}
                 >
                   History
                 </span>
                 {/* isHaveEditchoice &&  */}
-                {isOwner && (
-                  <span
-                    className={`hover:cursor-pointer pb-1 ${
-                      selectedTab === "Next Follow Up"
-                        ? "border-b-2 border-blue-500 text-blue-600"
-                        : ""
-                    }`}
-                    onClick={() => {
-                      handlefollowupdate(selectedLeadId, selectedDocId)
-                      setselectedTab("Next Follow Up")
-                    }}
-                  >
-                    Next Follow Up
-                  </span>
-                )}
+                <span
+                  className={`hover:cursor-pointer pb-1 ${
+                    selectedTab === "Next Follow Up"
+                      ? "border-b-2 border-blue-500 text-blue-600"
+                      : ""
+                  }`}
+                  onClick={() => {
+                    handlefollowupdate(selectedLeadId, selectedDocId)
+                    setselectedTab("Next Follow Up")
+                  }}
+                >
+                  Next Follow Up
+                </span>
+
+                <span
+                  className={`hover:cursor-pointer pb-1 ${
+                    selectedTab === "Demo"
+                      ? "border-b-2 border-blue-500 text-blue-600"
+                      : ""
+                  }`}
+                  onClick={() => setselectedTab("Demo")}
+                >
+                  Demo
+                </span>
               </div>
 
               <h1 className=" font-bold">
                 {`${
                   selectedTab === "Next Follow Up"
-                    ? isAllocated
-                      ? "Demo Follow Up"
-                      : selectedTab
+                    ? selectedTab
                     : selectedTab + " of"
                 } LEAD ID - ${selectedLeadId}`}
               </h1>
@@ -944,10 +988,10 @@ const LeadFollowUp = () => {
                   case "Next Follow Up":
                     return (
                       <div className="text-center w-fullrounded-lg">
-                        <div className=" rounded-lg grid grid-cols-1 gap-1  p-3 shadow-xl bg-white">
+                        <div className=" rounded-lg grid grid-cols-1 gap-3 p-3 shadow-xl bg-white">
                           <div>
                             <label className="block text-left font-semibold text-gray-500">
-                              Follow Up
+                              Select Follow Up Date
                             </label>
                             <input
                               type="text"
@@ -955,11 +999,7 @@ const LeadFollowUp = () => {
                               name="followUpDate"
                               // value={formData?.followUpDate || ""}
                               value={
-                                demoData.demoallocatedDate
-                                  ? demoData.demoallocatedDate
-                                      .toString()
-                                      .split("T")[0]
-                                  : formData?.followUpDate
+                                formData?.followUpDate
                                   ? new Date(formData.followUpDate)
                                       .toLocaleDateString("en-GB") // this gives dd/mm/yyyy
                                       .replace(/\//g, "-") // change / to -
@@ -967,7 +1007,7 @@ const LeadFollowUp = () => {
                               }
                               className="rounded-md w-full py-1 px-2 border border-gray-200 focus:outline-none"
                               onChange={handleDataChange}
-                            />
+                            ></input>
                             {errors.followUpDate && (
                               <p className="text-red-500">
                                 {errors.followUpDate}
@@ -976,15 +1016,12 @@ const LeadFollowUp = () => {
                           </div>
                           <div>
                             <label className="block text-left font-semibold text-gray-500">
-                              Next Follow Up
+                              Select Next Follow Up Date
                             </label>
                             <input
                               type="date"
                               name="nextfollowUpDate"
-                              value={
-                                formData?.nextfollowUpDate ||
-                                demoData.demoallocatedDate
-                              }
+                              value={formData?.nextfollowUpDate || ""}
                               className="rounded-md w-full py-1 px-2 border border-gray-200 focus:outline-none hover:cursor-pointer"
                               onChange={handleDataChange}
                             ></input>
@@ -993,35 +1030,39 @@ const LeadFollowUp = () => {
                                 {errors.nextfollowUpDate}
                               </p>
                             )}
-                            {demoerror.demoDate && (
-                              <p className="text-red-500">
-                                {demoerror.demoDate}
-                              </p>
+                          </div>
+                          <div>
+                            <label className="block text-left">Remarks</label>
+                            <textarea
+                              rows={4}
+                              name="Remarks"
+                              className="rounded-lg w-full border border-gray-200 focus:outline-none p-3"
+                              value={formData?.Remarks || ""}
+                              onChange={handleDataChange}
+                            ></textarea>
+                            {errors.Remarks && (
+                              <p className="text-red-500">{errors.Remarks}</p>
                             )}
                           </div>
-                          <div className="text-left flex items-center  gap-2 ">
-                            <input
-                              type="checkbox"
-                              disabled={isHaveEditchoice}
-                             
-                              id="allocation"
-                              className="w-4 h-4"
-                              checked={isAllocated}
-                              onChange={() => {
-                                setIsAllocated(!isAllocated)
-                                setFormData((prev) => ({
+                        </div>
+                      </div>
+                    )
+                  case "Demo":
+                    return (
+                      <div className="min-h-24 mt-2">
+                        <div className="flex flex-col md:flex-row justify-start px-4 gap-3 ">
+                          <div className="flex flex-col text-left">
+                            <div
+                              onClick={() =>
+                                setDemoError((prev) => ({
                                   ...prev,
-                                  Remarks: "",
-                                  nextfollowUpDate: ""
+                                  selectStaff:
+                                    "Cant change staff demo is not closed",
+                                  demoDate: "",
+                                  demoDescription: ""
                                 }))
-                              }}
-                            />
-                            <label htmlFor="allocation" className="text-sm">
-                              Allocation
-                            </label>
-                          </div>
-                          {isAllocated && (
-                            <div className=" text-left">
+                              }
+                            >
                               <label
                                 htmlFor="staffName"
                                 className="block text-sm  font-medium  text-gray-700 "
@@ -1042,12 +1083,8 @@ const LeadFollowUp = () => {
                                     ...prev,
                                     demoallocatedTo: selectedOption.value
                                   }))
-                                  setDemoError((prev) => ({
-                                    ...prev,
-                                    selectStaff: ""
-                                  }))
                                 }}
-                                className={`w-full  focus:outline-none ${
+                                className={`w-full md:w-52 focus:outline-none ${
                                   isdemofollownotClosed
                                     ? "bg-gray-100 cursor-not-allowed"
                                     : ""
@@ -1102,30 +1139,108 @@ const LeadFollowUp = () => {
                                 menuShouldScrollIntoView={false}
                               />
                             </div>
-                          )}
-                          {demoerror.selectStaff && (
-                            <p className="text-red-500 text-sm text-left">
-                              {demoerror.selectStaff}
-                            </p>
-                          )}
-                          <div>
-                            <label className="block text-left">Remarks</label>
-                            <textarea
-                              rows={3}
-                              name="Remarks"
-                              className="rounded-lg w-full border border-gray-200 focus:outline-none px-2"
-                              value={formData?.Remarks ||demoData.demoDescription}
-                              onChange={handleDataChange}
-                            />
-                            {errors.Remarks && (
-                              <p className="text-red-500">{errors.Remarks}</p>
-                            )}
-                            {demoerror.demoDescription && (
-                              <p className="text-red-500">
-                                {demoerror.demoDescription}
+                            {demoerror.selectStaff && (
+                              <p className="text-red-500 text-sm">
+                                {demoerror.selectStaff}
                               </p>
                             )}
                           </div>
+                          <div className="flex flex-col text-left">
+                            <div
+                              onClick={() =>
+                                setDemoError((prev) => ({
+                                  ...prev,
+                                  demoDate:
+                                    "Cant change Date demo is not closed",
+                                  demoDescription: "",
+                                  selectStaff: ""
+                                }))
+                              }
+                            >
+                              <label
+                                htmlFor="demoDate"
+                                className="block text-sm  font-medium  text-gray-700 "
+                              >
+                                Select Demo Date
+                              </label>
+
+                              <input
+                                type="date"
+                                readOnly={isdemofollownotClosed}
+                                value={demoData.demoallocatedDate || ""}
+                                name="demoallocatedDate"
+                                onChange={(e) => {
+                                  setDemoError((prev) => ({
+                                    ...prev,
+                                    demoDate:
+                                      "Cant select a date demo is not closed"
+                                  }))
+                                  setDemodata((prev) => ({
+                                    ...prev,
+                                    demoallocatedDate: e.target.value
+                                  }))
+                                }}
+                                className={`border border-gray-400 rounded-md py-1 w-full md:w-52 px-3 focus:outline-none  ${
+                                  isdemofollownotClosed
+                                    ? "bg-gray-100 cursor-not-allowed"
+                                    : "cursor-pointer"
+                                }`}
+                              />
+                            </div>
+                            {demoerror.demoDate && (
+                              <p className="text-red-500 text-sm">
+                                {demoerror.demoDate}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="mt-3 w-full px-4">
+                          <div
+                            onClick={() =>
+                              setDemoError((prev) => ({
+                                ...prev,
+                                demoDescription:
+                                  "Cant Type  demo is not closed",
+                                selectStaff: "",
+                                demoDate: ""
+                              }))
+                            }
+                            className="text-left"
+                          >
+                            <label
+                              htmlFor="demoDate"
+                              className="block text-sm  font-medium  text-gray-700 "
+                            >
+                              Description
+                            </label>
+                            <textarea
+                              name="demoDescription"
+                              value={demoData.demoDescription || ""}
+                              readOnly={isdemofollownotClosed}
+                              onChange={(e) => {
+                                setDemoError((prev) => ({
+                                  ...prev,
+                                  demoDescription:
+                                    "Cant Type nothing demo is not closed"
+                                }))
+                                setDemodata((prev) => ({
+                                  ...prev,
+                                  demoDescription: e.target.value
+                                }))
+                              }}
+                              className={`border border-gray-400 rounded-md min-h-24 w-full focus:outline-none tex-black  mt-1 px-3 ${
+                                isdemofollownotClosed
+                                  ? "bg-gray-100 cursor-not-allowed"
+                                  : ""
+                              }`}
+                              placeholder="Type..."
+                            />
+                          </div>
+                          {demoerror.demoDescription && (
+                            <p className="text-red-500 text-sm">
+                              {demoerror.demoDescription}
+                            </p>
+                          )}
                         </div>
                       </div>
                     )
@@ -1147,11 +1262,6 @@ const LeadFollowUp = () => {
 
                         Remarks: ""
                       })
-                      setDemodata({
-                        demoallocatedTo: "",
-                        demoallocatedDate: "",
-                        demoDescription: ""
-                      })
                     }}
                     className="bg-gray-600 rounded-lg px-4 py-1 shadow-xl text-white "
                   >
@@ -1159,9 +1269,7 @@ const LeadFollowUp = () => {
                     CLOSE
                   </button>
                   <button
-                    onClick={
-                      isAllocated ? handleDemoSubmit : handleFollowUpDateSubmit
-                    }
+                    onClick={handleFollowUpDateSubmit}
                     className="bg-blue-800 rounded-lg px-4 py-2  text-white shadow-xl"
                   >
                     {followupDateLoader ? (
@@ -1189,7 +1297,35 @@ const LeadFollowUp = () => {
                   CLOSE
                 </button>
               ) : (
-                ""
+                <div>
+                  {demoerror.submiterror && (
+                    <p className="text-red-500 text-sm">
+                      {demoerror.submiterror}
+                    </p>
+                  )}
+                  <div className="flex justify-center  space-x-3 mt-2">
+                    <button
+                      onClick={() => {
+                        setShowModal(false)
+                        setDemoError({
+                          selectStaff: "",
+                          demoDate: "",
+                          demoDescription: "",
+                          submiterror: ""
+                        })
+                      }}
+                      className="bg-gray-500 hover:bg-gray-600 rounded-lg px-3 py-2  text-white"
+                    >
+                      CLOSE
+                    </button>
+                    <button
+                      className="bg-blue-700 hover:bg-blue-800 rounded-lg px-3 py-2  text-white shadow-xl"
+                      onClick={handleDemoSubmit}
+                    >
+                      SUBMIT
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -1199,4 +1335,4 @@ const LeadFollowUp = () => {
   )
 }
 
-export default LeadFollowUp
+export default DemoFollowUp
