@@ -716,14 +716,18 @@ export const GetrepecteduserDemo = async (req, res) => {
 export const UpdaeOrSubmitdemofollowByfollower = async (req, res) => {
   try {
     const demoDetails = req.body
-    const { matchedindex, leadDocId, followerDate, followerDescription } = demoDetails
+    const { matcheddemoindex, mathchedfollowUpDatesandRemarksIndex, leadDocId, followerDate, followerDescription } = demoDetails
 
     const updatedLead = await LeadMaster.updateOne(
       { _id: leadDocId },
       {
         $set: {
-          [`demofollowUp.${matchedindex}.demofollowerDate`]: new Date(followerDate),
-          [`demofollowUp.${matchedindex}.demofollowerDescription`]: followerDescription
+          [`demofollowUp.${matcheddemoindex}.demofollowerDate`]: new Date(followerDate),
+          [`demofollowUp.${matcheddemoindex}.demofollowerDescription`]: followerDescription
+
+        },
+        $push: {
+          [`followUpDatesandRemarks.${mathchedfollowUpDatesandRemarksIndex}.folowerData`]: demoDetails
         }
       }
     )
