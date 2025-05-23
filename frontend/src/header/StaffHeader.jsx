@@ -149,7 +149,7 @@ export default function StaffHeader() {
       label: "Own Lead",
       control: true
     },
-    { to: "/staff/transaction/lead/lead", label: "New Lead", control: true },
+    { to: "/staff/transaction/lead", label: "New Lead", control: true },
     {
       to: "/staff/transaction/lead/leadAllocation",
       label: "Lead Allocation",
