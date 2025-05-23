@@ -102,10 +102,10 @@ const DemoFollowUp = () => {
   }, [branches])
   useEffect(() => {
     if (ownFollowUp) {
-console.log("h")
+      console.log("h")
       refreshHook()
     } else {
-console.log("h")
+      console.log("h")
       setTableData([])
     }
   }, [ownFollowUp])
@@ -113,9 +113,13 @@ console.log("h")
 
   useEffect(() => {
     if (demolead && demolead.length > 0) {
+      
+
       setDemodetails((prev) => ({
         ...prev,
-        matchedindex: demolead[0].matchedDemoIndex,
+        matcheddemoindex: demolead[0].matchedDemoIndex,
+        mathchedfollowUpDatesandRemarksIndex:
+          demolead[0].followUpDatesandRemarks.length - 1,
         leadId: demolead[0].leadId,
         leadDocId: demolead[0]._id,
         demoAssignedBy: demolead[0].demoallocatedByDetails.name,

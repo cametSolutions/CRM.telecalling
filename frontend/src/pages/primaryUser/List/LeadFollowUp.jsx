@@ -165,7 +165,6 @@ const LeadFollowUp = () => {
   }, [branches])
   // Close when clicking outside
 
-
   useEffect(() => {
     if (loggedusersallocatedleads) {
       setLeads(loggedusersallocatedleads.followupLeads)
@@ -298,8 +297,8 @@ const LeadFollowUp = () => {
   }
 
   const handleHistory = (history, leadid, docId, allocatedTo, demofollowUp) => {
-console.log(allocatedTo)
-console.log("h")
+    console.log(history)
+
     const owner = loggedUser._id === allocatedTo
     setOwner(owner)
 
@@ -311,7 +310,7 @@ console.log("h")
       const demoassignedDate = formatDate(
         respectedfollowUpDatesandRemarks.followUpDate
       )
-  
+
       setFormData((prev) => ({
         ...prev,
         followUpDate: respectedfollowUpDatesandRemarks.followUpDate,
@@ -356,10 +355,8 @@ console.log("h")
       }))
     }
   }
-  
-  const handleDemoSubmit = async () => {
- 
 
+  const handleDemoSubmit = async () => {
     if (isdemofollownotClosed) {
       setDemoError((prev) => ({
         ...prev,
@@ -418,7 +415,6 @@ console.log("h")
       console.log(error)
     }
   }
- 
 
   const handleFollowUpDateSubmit = async () => {
     try {
@@ -461,7 +457,7 @@ console.log("h")
       console.log("error:", error.message)
     }
   }
-
+  console.log(historyList)
   return (
     <div className="h-full flex flex-col ">
       {loading && (
@@ -780,36 +776,77 @@ console.log("h")
                           </thead>
                           <tbody>
                             {historyList && historyList.length > 0 ? (
-                              historyList.map((item, index) => (
-                                <tr
-                                  key={index}
-                                  className={
-                                    index % 2 === 0 ? "bg-gray-50" : "bg-white"
-                                  }
-                                >
-                                  {loggedUser?.role === "Admin" && (
-                                    <td className="border border-gray-200 p-2">
-                                      {item?.followedId?.name}
-                                    </td>
-                                  )}
+                              historyList.map((item, index) => {
+                                const hasFollowerData =
+                                  Array.isArray(item.folowerData) &&
+                                  item.folowerData.length > 0
 
-                                  <td className="border border-gray-200 p-2">
-                                    {new Date(item.followUpDate)
-                                      .toLocaleDateString("en-GB")
-                                      .split("/")
-                                      .join("-")}
-                                  </td>
-                                  <td className="border border-gray-200 p-2">
-                                    {item?.Remarks || "N/A"}
-                                  </td>
-                                  <td className="border border-gray-200 p-2">
-                                    {new Date(item.nextfollowUpDate)
-                                      .toLocaleDateString("en-GB")
-                                      .split("/")
-                                      .join("-")}
-                                  </td>
-                                </tr>
-                              ))
+                                return hasFollowerData ? (
+                                  item.folowerData.map((subItem, subIndex) => (
+                                    <tr
+                                      key={`${index}-${subIndex}`}
+                                      className={
+                                        (index + subIndex) % 2 === 0
+                                          ? "bg-gray-50"
+                                          : "bg-white"
+                                      }
+                                    >
+                                      {loggedUser?.role === "Admin" && (
+                                        <td className="border border-gray-200 p-2">
+                                          {item?.followedId?.name}
+                                        </td>
+                                      )}
+
+                                      <td className="border border-gray-200 p-2">
+                                        {new Date(subItem.followerDate)
+                                          .toLocaleDateString("en-GB")
+                                          .split("/")
+                                          .join("-")}
+                                      </td>
+                                      <td className="border border-gray-200 p-2">
+                                        {subItem?.followerDescription || "N/A"}
+                                      </td>
+                                      <td className="border border-gray-200 p-2">
+                                        {/* {new Date(item.nextfollowUpDate)
+                                          .toLocaleDateString("en-GB")
+                                          .split("/")
+                                          .join("-")} */}
+                                      </td>
+                                    </tr>
+                                  ))
+                                ) : (
+                                  <tr
+                                    key={index}
+                                    className={
+                                      index % 2 === 0
+                                        ? "bg-gray-50"
+                                        : "bg-white"
+                                    }
+                                  >
+                                    {loggedUser?.role === "Admin" && (
+                                      <td className="border border-gray-200 p-2">
+                                        {item?.followedId?.name}
+                                      </td>
+                                    )}
+
+                                    <td className="border border-gray-200 p-2">
+                                      {new Date(item.followUpDate)
+                                        .toLocaleDateString("en-GB")
+                                        .split("/")
+                                        .join("-")}
+                                    </td>
+                                    <td className="border border-gray-200 p-2">
+                                      {item?.Remarks || "N/A"}
+                                    </td>
+                                    <td className="border border-gray-200 p-2">
+                                      {new Date(item.nextfollowUpDate)
+                                        .toLocaleDateString("en-GB")
+                                        .split("/")
+                                        .join("-")}
+                                    </td>
+                                  </tr>
+                                )
+                              })
                             ) : (
                               <tr>
                                 <td

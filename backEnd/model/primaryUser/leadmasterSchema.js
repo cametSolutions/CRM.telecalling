@@ -65,7 +65,8 @@ const leadSchema = new mongoose.Schema(
           refpath: "followedByModel",
           default: null
         },
-        followedByModel: { type: String, enum: ["Staff", "Admin"] }
+        followedByModel: { type: String, enum: ["Staff", "Admin"] },
+        folowerData: []
 
       }
     ],
