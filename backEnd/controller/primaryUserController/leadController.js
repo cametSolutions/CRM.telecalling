@@ -157,10 +157,12 @@ export const GetAllservices = async (req, res) => {
 }
 export const GetallfollowupList = async (req, res) => {
 
+
   try {
-    const { loggeduser } = req.query
+    const { loggeduser, branchSelected } = req.query
     const loggeduserId = loggeduser._id
     const userObjectId = new mongoose.Types.ObjectId(loggeduserId)
+    const branchObjectId = new mongoose.Types.ObjectId(branchSelected)
     let query
     if (loggeduser.role === "Staff") {
       query = {
@@ -170,7 +172,7 @@ export const GetallfollowupList = async (req, res) => {
         ]
       }
     } else {
-      query = { allocatedTo: { $ne: null } }
+      query = { allocatedTo: { $ne: null }, leadBranch: branchObjectId }
 
     }
 
@@ -195,6 +197,7 @@ export const GetallfollowupList = async (req, res) => {
         // Fetch the referenced document manually
         const assignedModel = mongoose.model(lead.assignedtoleadByModel)
         const allocatedmodel = mongoose.model(lead.allocatedToModel)
+        const allocatedbymodel = mongoose.model(lead.allocatedByModel)
         const populatedLeadBy = await assignedModel
           .findById(lead.leadBy)
           .select("name")
@@ -204,6 +207,11 @@ export const GetallfollowupList = async (req, res) => {
           .findById(lead.allocatedTo)
           .select("name")
           .lean()
+        const populatedallocatedBy = await allocatedbymodel
+          .findById(lead.allocatedBy)
+          .select("name")
+          .lean()
+
         // Handle followUpDatesandRemarks population
         let populatedFollowUps = []
         if (
@@ -229,11 +237,11 @@ export const GetallfollowupList = async (req, res) => {
           )
         }
 
-        return { ...lead, leadBy: populatedLeadBy, allocatedTo: populatedAllocatedTo, followUpDatesandRemarks: populatedFollowUps } // Merge populated data
+        return { ...lead, leadBy: populatedLeadBy, allocatedTo: populatedAllocatedTo, allocatedBy: populatedallocatedBy, followUpDatesandRemarks: populatedFollowUps } // Merge populated data
       })
     )
 
-    const ischekCollegueLeads = followupLeads.some((item) => item.allocatedBy.equals(userObjectId))
+    const ischekCollegueLeads = followupLeads.some((item) => item.allocatedBy._id.equals(userObjectId))
 
     return res.status(201).json({ messge: "leadfollowup found", data: { followupLeads, ischekCollegueLeads } })
 
@@ -242,29 +250,273 @@ export const GetallfollowupList = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+export const SetDemoallocation = async (req, res) => {
+  try {
+    const { demoallocatedBy, leaddocId } = req.query
+    const { demoData, formData } = req.body
+    
+    const { demoallocatedTo, ...balanceData } = demoData
+    const allocatedToObjectId = new mongoose.Types.ObjectId(demoallocatedTo)
+
+
+    const allocatedByObjectId = new mongoose.Types.ObjectId(demoallocatedBy)
+    let followedByModel
+    let demoallocatedByModel
+    let demoallocatedtoModel
+    const isallocatedbyStaff = await Staff.findOne({ _id: allocatedByObjectId })
+    if (isallocatedbyStaff) {
+      demoallocatedByModel = "Staff"
+    } else {
+      const isallocatedbyAdmin = await Admin.findOne({ _id: allocatedByObjectId })
+      if (isallocatedbyAdmin) {
+        demoallocatedByModel = "Admin"
+      }
+    }
+    const isallocatedtoStaff = await Staff.findOne({ _id: allocatedToObjectId })
+    if (isallocatedtoStaff) {
+      demoallocatedtoModel = "Staff"
+    } else {
+      isallocatedtoAdmin = await Admin.findOne({ _id: allocatedToObjectId })
+      if (isallocatedtoAdmin) {
+        demoallocatedtoModel = "Admin"
+      }
+
+    }
+    //////////for push followup data///
+    const isstaffFollowedBy = await Staff.findOne({ _id: allocatedByObjectId })//here allocatedByObjectId and followedby is same
+    if (isstaffFollowedBy) {
+      followedByModel = "Staff"
+    } else {
+      const isadminFollowedBy = await Admin.findOne({ _id: allocatedByObjectId })//here allocatedByObjectId and followedby is same
+      if (isadminFollowedBy) {
+        followedByModel = "Admin"
+      }
+    }
+    // const check = await LeadMaster.findOne({ leadId })
+
+    // if (!check) {
+    //   return res.status(404).json({ message: "Lead not found" })
+    // }
+    const updatefollowUpDate = await LeadMaster.findOneAndUpdate(
+      { _id: leaddocId },
+      {
+        $push: {
+          followUpDatesandRemarks: {
+            nextfollowUpDate: formData.nextfollowUpDate,
+            followUpDate: formData.followUpDate,
+            Remarks: formData.Remarks,
+            followedId: demoallocatedBy,
+            followedByModel
+          },
+          demofollowUp: {
+            demoallocatedTo,
+            demoallocatedtoModel,
+            demoallocatedBy,
+            demoallocatedByModel,
+            demoDescription: demoData.demoDescription,
+            demoallocatedDate: demoData.demoallocatedDate
+          }
+        }
+      },
+      { upsert: true }
+    )
+    // const adddemodetails = {
+    //   demoallocatedTo,
+    //   demoallocatedtoModel,
+    //   demoallocatedBy,
+    //   demoallocatedByModel,
+    //   demoDescription: demoData.demoDescription,
+    //   demoallocatedDate: demoData.demoallocatedDate,
+    // }
+    // check.demofollowUp.push(adddemodetails)
+    // await check.save()
+    return res.status(200).json({ message: "Demo added succesfully" })
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const GetrepecteduserDemo = async (req, res) => {
+  try {
+    const { userid, selectedBranch } = req.query
+    console.log("select", selectedBranch)
+    const userObjectId = new mongoose.Types.ObjectId(userid)
+    const branchObjectId = new mongoose.Types.ObjectId(selectedBranch)
+
+    const matchedLeads = await LeadMaster.aggregate([
+      {
+        $match: {
+          leadBranch: branchObjectId,
+          demofollowUp: {
+            $elemMatch: {
+              demoallocatedTo: userObjectId
+            }
+          }
+        }
+      },
+      {
+        $addFields: {
+          matchedDemoFollowUp: {
+            $first: {
+              $filter: {
+                input: "$demofollowUp",
+                as: "demo",
+                cond: {
+                  $eq: ["$$demo.demoallocatedTo", userObjectId]
+                }
+              }
+            }
+          },
+          matchedDemoIndex: {
+            $indexOfArray: [
+              "$demofollowUp.demoallocatedTo",
+              userObjectId
+            ]
+          }
+
+        }
+      },
+      {
+        $unwind: "$matchedDemoFollowUp"
+      },
+
+      {
+        $facet: {
+          staff: [
+            {
+              $match: {
+                "matchedDemoFollowUp.demoallocatedByModel": "Staff"
+              }
+            },
+            {
+              $lookup: {
+                from: "staffs",
+                let: { userId: "$matchedDemoFollowUp.demoallocatedBy" },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: { $eq: ["$_id", "$$userId"] }
+                    }
+                  },
+                  {
+                    $project: {
+                      _id: 0,
+                      name: 1
+                    }
+                  }
+                ],
+                as: "demoallocatedByDetails"
+              }
+            }
+          ],
+          admin: [
+            {
+              $match: {
+                "matchedDemoFollowUp.demoallocatedByModel": "Admin"
+              }
+            },
+            {
+              $lookup: {
+                from: "admins",
+                let: { userId: "$matchedDemoFollowUp.demoallocatedBy" },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: { $eq: ["$_id", "$$userId"] }
+                    }
+                  },
+                  {
+                    $project: {
+                      _id: 0,
+                      name: 1
+                    }
+                  }
+                ],
+                as: "demoallocatedByDetails"
+              }
+            }
+          ]
+        }
+      },
+
+      {
+        $project: {
+          results: {
+            $concatArrays: ["$staff", "$admin"]
+          }
+        }
+      },
+      {
+        $unwind: "$results"
+      },
+      {
+        $replaceRoot: {
+          newRoot: "$results"
+        }
+      },
+      {
+        $unwind: {
+          path: "$demoallocatedByDetails",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      // {
+      //   $project: {
+      //     _id: 1,
+      //     leadId: 1,
+      //     matchedDemoIndex: 1,
+      //     matchedDemoFollowUp: 1,
+      //     demoallocatedByDetails: 1
+      //   }
+      // }
+    ]);
+    console.log(matchedLeads)
+    return res.status(200).json({ message: "Matched demo found", data: matchedLeads })
+  } catch (error) {
+  }
+}
+export const UpdaeOrSubmitdemofollowByfollower = async (req, res) => {
+  try {
+    const demoDetails = req.body
+    const { matchedindex, leadDocId, followerDate, followerDescription } = demoDetails
+    const ObjectId = new mongoose.Types.ObjectId(leadDocId)
+    // console.log(demoDetails)
+    // const findMatchedLead=await LeadMaster.findOne({_id:demoDetails.leadDocId})
+    const updatedLead = await LeadMaster.updateOne(
+      { _id: leadDocId },
+      {
+        $set: {
+          [`demofollowUp.${matchedindex}.demofollowerDate`]: new Date(followerDate),
+          [`demofollowUp.${matchedindex}.demofollowerDescription`]: followerDescription
+        }
+      }
+    )
+    if (updatedLead.modifiedCount > 0) {
+      return res.status(201).json({ message: "Demo submitted Succesfully" })
+    } else if (updatedLead.matchedCount > 0 && updatedLead.modifiedCount === 0) {
+
+      return res.status(304).json({ message: "Match found ,not submitted" })
+    } else {
+      return res.status(404).json({ message: "not submitted" });
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const GetallLead = async (req, res) => {
   try {
-    const { Status, userBranch, role } = req.query
+    const { Status, selectedBranch, role } = req.query
+    const branchObjectId = new mongoose.Types.ObjectId(selectedBranch)
+
     if (!Status && !role) {
       return res.status(400).json({ message: "Status or role is missing " })
     }
     let branchObjectIds
     if (Status === "Pending") {
-     
-      const query = { allocatedTo: null };
+      const query = { allocatedTo: null, leadBranch: branchObjectId };
 
-      if (role === "Staff") {
-        const decodedbranches = JSON.parse(decodeURIComponent(userBranch))
-        branchObjectIds = decodedbranches.map((branch) => new mongoose.Types.ObjectId(branch))
 
-        query.leadBranch = { $in: branchObjectIds }
-      } else {
-        const decodedbranches = JSON.parse(decodeURIComponent(userBranch))
-        if (decodedbranches && decodedbranches.length > 0) {
-          branchObjectIds = decodedbranches.map((branch) => new mongoose.Types.ObjectId(branch))
-          query.leadBranch = { $in: branchObjectIds }
-        }
-      }
 
       const pendingLeads = await LeadMaster.find(query)
         .populate({ path: "customerName", select: "customerName" })
@@ -298,20 +550,20 @@ export const GetallLead = async (req, res) => {
       }
     } else if (Status === "Approved") {
 
-      const query = { allocatedTo: { $ne: null } };
+      const query = { allocatedTo: { $ne: null }, leadBranch: branchObjectId };
 
-      if (role === "Staff") {
-        const decodedbranches = JSON.parse(decodeURIComponent(userBranch))
-        branchObjectIds = decodedbranches.map((branch) => new mongoose.Types.ObjectId(branch))
+      // if (role === "Staff") {
+      //   const decodedbranches = JSON.parse(decodeURIComponent(userBranch))
+      //   branchObjectIds = decodedbranches.map((branch) => new mongoose.Types.ObjectId(branch))
 
-        query.leadBranch = { $in: branchObjectIds }
-      } else {
-        const decodedbranches = JSON.parse(decodeURIComponent(userBranch))
-        if (decodedbranches && decodedbranches.length > 0) {
-          branchObjectIds = decodedbranches.map((branch) => new mongoose.Types.ObjectId(branch))
-          query.leadBranch = { $in: branchObjectIds }
-        }
-      }
+      //   query.leadBranch = { $in: branchObjectIds }
+      // } else {
+      //   const decodedbranches = JSON.parse(decodeURIComponent(userBranch))
+      //   if (decodedbranches && decodedbranches.length > 0) {
+      //     branchObjectIds = decodedbranches.map((branch) => new mongoose.Types.ObjectId(branch))
+      //     query.leadBranch = { $in: branchObjectIds }
+      //   }
+      // }
 
       const approvedAllocatedLeads = await LeadMaster.find(query)
         .populate({ path: "customerName", select: "customerName" })
@@ -392,7 +644,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
   try {
     const formData = req.body
     const { selectedleaddocId, loggeduserid } = req.query
-  
+
     let followedByModel
     const isStaff = await Staff.find({ _id: loggeduserid })
     if (isStaff) {

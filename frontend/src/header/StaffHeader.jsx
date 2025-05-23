@@ -1,12 +1,8 @@
-import  { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Link, NavLink, useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
 import { FiLogOut } from "react-icons/fi"
-import {
-  
-  FaChevronRight,
-  FaChevronDown
-} from "react-icons/fa"
+import { FaChevronRight, FaChevronDown } from "react-icons/fa"
 import { FaSignOutAlt } from "react-icons/fa"
 import { FaUserCircle } from "react-icons/fa" // Import the icon
 export default function StaffHeader() {
@@ -153,7 +149,7 @@ export default function StaffHeader() {
       label: "Own Lead",
       control: true
     },
-    { to: "/staff/transaction/lead/lead", label: "New Lead", control: true },
+    { to: "/staff/transaction/lead", label: "New Lead", control: true },
     {
       to: "/staff/transaction/lead/leadAllocation",
       label: "Lead Allocation",
@@ -163,7 +159,8 @@ export default function StaffHeader() {
       to: "/staff/transaction/lead/leadFollowUp",
       label: "Lead Follow Up",
       control: user?.permissions?.[0]?.LeadFollowUp ?? false
-    }
+    },
+    { to: "/staff/transaction/lead/demoFollowup", label: "Demo", control: true }
   ]
   const inventorys = [
     {
