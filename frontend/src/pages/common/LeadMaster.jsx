@@ -260,7 +260,6 @@ const LeadMaster = ({
 
   useEffect(() => {
     if (customerData && customerData.length && selectedBranch) {
-      
       const options = customerData.map((item) => {
         const matchingSelected = item.selected?.find(
           (sel) => sel.branch_id === selectedBranch[0]
@@ -707,7 +706,7 @@ const LeadMaster = ({
                     }
                     className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none ${
                       isReadOnly
-                        ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                        ? "cursor-not-allowed bg-gray-100 text-black"
                         : ""
                     }`}
                   >
@@ -754,7 +753,6 @@ const LeadMaster = ({
                         }
                       }}
                       onChange={(selectedOption) => {
-                        console.log("h")
                         handleSelectedCustomer(selectedOption)
                         setSelectedCustomer(selectedOption)
                         setValueMain("customerName", selectedOption.value, {
@@ -766,7 +764,7 @@ const LeadMaster = ({
                       }}
                       className={`w-full ${
                         isReadOnly
-                          ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                          ? "cursor-not-allowed bg-gray-100 text-black"
                           : ""
                       }`}
                       styles={{
@@ -776,7 +774,7 @@ const LeadMaster = ({
                           backgroundColor: state.isDisabled
                             ? "#f3f4f6"
                             : "white",
-                          color: state.isDisabled ? "#6b7280" : "black", // Tailwind's text-gray-500
+                          color: state.isDisabled ? "black" : "black", // Tailwind's text-gray-500
                           opacity: state.isDisabled ? 0.7 : 1
                         }),
                         menu: (provided) => ({
@@ -828,7 +826,7 @@ const LeadMaster = ({
                     {...registerMain("mobile")}
                     className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500 ${
                       isReadOnly
-                        ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                        ? "cursor-not-allowed bg-gray-100 text-black"
                         : ""
                     }`}
                     placeholder="Mobile..."
@@ -847,7 +845,7 @@ const LeadMaster = ({
                     {...registerMain("phone")}
                     className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500 ${
                       isReadOnly
-                        ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                        ? "cursor-not-allowed bg-gray-100 text-black"
                         : ""
                     }`}
                     placeholder="Landline..."
@@ -866,7 +864,7 @@ const LeadMaster = ({
                     {...registerMain("email")}
                     className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500 ${
                       isReadOnly
-                        ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                        ? "cursor-not-allowed bg-gray-100 text-black"
                         : ""
                     }`}
                     placeholder="Email..."
@@ -886,7 +884,7 @@ const LeadMaster = ({
                     {...registerMain("trade")}
                     className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500 ${
                       isReadOnly
-                        ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                        ? "cursor-not-allowed bg-gray-100 text-black"
                         : ""
                     }`}
                     placeholder="Trade..."
@@ -905,7 +903,7 @@ const LeadMaster = ({
                     {...registerMain("remark")}
                     className={`block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500  max-h-[100px] ${
                       isReadOnly
-                        ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                        ? "cursor-not-allowed bg-gray-100 text-black"
                         : ""
                     }`}
                     placeholder="Remarks..."
@@ -929,7 +927,7 @@ const LeadMaster = ({
                         {...registerMain("leadId")}
                         className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500 ${
                           isReadOnly
-                            ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                            ? "cursor-not-allowed bg-gray-100 text-black"
                             : ""
                         }`}
                         placeholder="Lead Id..."
@@ -1134,7 +1132,7 @@ const LeadMaster = ({
                                 }
                                 className={`w-full border rounded-md px-2 py-1 text-sm ${
                                   isReadOnly
-                                    ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                                    ? "cursor-not-allowed bg-gray-100 text-black"
                                     : ""
                                 }`}
                               />
@@ -1182,7 +1180,7 @@ const LeadMaster = ({
                         {...registerMain("leadBy")}
                         className={`mt-1 w-full border rounded-md p-2 focus:ring focus:ring-blue-300 ${
                           isReadOnly
-                            ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                            ? "cursor-not-allowed bg-gray-100 text-black"
                             : ""
                         }`}
                       >
@@ -1195,7 +1193,11 @@ const LeadMaster = ({
                     ) : (
                       <>
                         <input type="hidden" {...registerMain("leadBy")} />
-                        <p className="mt-1 w-full border rounded-md p-2 text-gray-600 cursor-not-allowed">
+                        <p className={`mt-1 w-full border rounded-md p-2 cursor-not-allowed  ${
+                          isReadOnly
+                            ? "cursor-not-allowed bg-gray-100 text-black"
+                            : "text-gray-500"
+                        }`}>
                           {loggeduser?.name}
                         </p>
                       </>
@@ -1213,7 +1215,7 @@ const LeadMaster = ({
                       // value={calculateTotalAmount()} // Auto-updates with total price
                       className={`mt-1 w-full border rounded-md p-2 focus:outline-none ${
                         isReadOnly
-                          ? "cursor-not-allowed bg-gray-100 text-gray-500"
+                          ? "cursor-not-allowed bg-gray-100 text-black"
                           : "cursor-not-allowed"
                       }`}
                       placeholder="Net Amount"

@@ -175,13 +175,7 @@ export const GetallfollowupList = async (req, res) => {
       query = { allocatedTo: { $ne: null }, leadBranch: branchObjectId }
 
     }
-
-
-
     const selectedfollowup = await LeadMaster.find(query).populate({ path: "customerName", select: "customerName" }).lean()
-
-
-
     const followupLeads = await Promise.all(
       selectedfollowup.map(async (lead) => {
         if (
@@ -253,8 +247,10 @@ export const GetallfollowupList = async (req, res) => {
 export const SetDemoallocation = async (req, res) => {
   try {
     const { demoallocatedBy, leaddocId } = req.query
-    const { demoData, formData } = req.body
-    
+    const { demoData, formData, editdemoIndex, editfollowUpDatesandRemarksEditIndex } = req.body
+
+
+
     const { demoallocatedTo, ...balanceData } = demoData
     const allocatedToObjectId = new mongoose.Types.ObjectId(demoallocatedTo)
 
@@ -297,39 +293,56 @@ export const SetDemoallocation = async (req, res) => {
     // if (!check) {
     //   return res.status(404).json({ message: "Lead not found" })
     // }
-    const updatefollowUpDate = await LeadMaster.findOneAndUpdate(
+    let updateQuery = {};
+
+    if (typeof editfollowUpDatesandRemarksEditIndex === "number") {
+      // Edit existing followUpDatesandRemarks entry
+      updateQuery[`followUpDatesandRemarks.${editfollowUpDatesandRemarksEditIndex}.nextfollowUpDate`] = formData.nextfollowUpDate;
+      updateQuery[`followUpDatesandRemarks.${editfollowUpDatesandRemarksEditIndex}.followUpDate`] = formData.followUpDate;
+      updateQuery[`followUpDatesandRemarks.${editfollowUpDatesandRemarksEditIndex}.Remarks`] = formData.Remarks;
+      updateQuery[`followUpDatesandRemarks.${editfollowUpDatesandRemarksEditIndex}.followedId`] = formData.followedId;
+      updateQuery[`followUpDatesandRemarks.${editfollowUpDatesandRemarksEditIndex}.followedByModel`] = followedByModel;
+    } else {
+      // Add new
+      updateQuery.$push = {
+        followUpDatesandRemarks: {
+          nextfollowUpDate: formData.nextfollowUpDate,
+          followUpDate: formData.followUpDate,
+          Remarks: formData.Remarks,
+          followedId: demoallocatedBy,
+          followedByModel,
+        },
+      };
+
+    }
+    if (typeof editdemoIndex === "number") {
+      // Edit existing demofollowUp entry
+      updateQuery[`demofollowUp.${editdemoIndex}.demoallocatedTo`] = demoallocatedTo;
+      updateQuery[`demofollowUp.${editdemoIndex}.demoallocatedtoModel`] = demoallocatedtoModel;
+      updateQuery[`demofollowUp.${editdemoIndex}.demoallocatedBy`] = demoallocatedBy;
+      updateQuery[`demofollowUp.${editdemoIndex}.demoallocatedByModel`] = demoallocatedByModel;
+      updateQuery[`demofollowUp.${editdemoIndex}.demoDescription`] = demoData.demoDescription;
+      updateQuery[`demofollowUp.${editdemoIndex}.demoallocatedDate`] = demoData.demoallocatedDate;
+    } else {
+      // Add new
+      if (!updateQuery.$push) updateQuery.$push = {};
+      updateQuery.$push.demofollowUp = {
+        demoallocatedTo,
+        demoallocatedtoModel,
+        demoallocatedBy,
+        demoallocatedByModel,
+        demoDescription: demoData.demoDescription,
+        demoallocatedDate: demoData.demoallocatedDate,
+      };
+    }
+
+    await LeadMaster.findOneAndUpdate(
       { _id: leaddocId },
-      {
-        $push: {
-          followUpDatesandRemarks: {
-            nextfollowUpDate: formData.nextfollowUpDate,
-            followUpDate: formData.followUpDate,
-            Remarks: formData.Remarks,
-            followedId: demoallocatedBy,
-            followedByModel
-          },
-          demofollowUp: {
-            demoallocatedTo,
-            demoallocatedtoModel,
-            demoallocatedBy,
-            demoallocatedByModel,
-            demoDescription: demoData.demoDescription,
-            demoallocatedDate: demoData.demoallocatedDate
-          }
-        }
-      },
-      { upsert: true }
-    )
-    // const adddemodetails = {
-    //   demoallocatedTo,
-    //   demoallocatedtoModel,
-    //   demoallocatedBy,
-    //   demoallocatedByModel,
-    //   demoDescription: demoData.demoDescription,
-    //   demoallocatedDate: demoData.demoallocatedDate,
-    // }
-    // check.demofollowUp.push(adddemodetails)
-    // await check.save()
+      Object.keys(updateQuery).includes("$push") ? updateQuery : { $set: updateQuery },
+      { new: true, upsert: false }
+    );
+
+
     return res.status(200).json({ message: "Demo added succesfully" })
   } catch (error) {
     console.log("error:", error.message)
@@ -339,10 +352,130 @@ export const SetDemoallocation = async (req, res) => {
 export const GetrepecteduserDemo = async (req, res) => {
   try {
     const { userid, selectedBranch } = req.query
-    console.log("select", selectedBranch)
+
     const userObjectId = new mongoose.Types.ObjectId(userid)
     const branchObjectId = new mongoose.Types.ObjectId(selectedBranch)
 
+    // const matchedLeads = await LeadMaster.aggregate([
+
+    //   {
+    //     $match: {
+    //       leadBranch: branchObjectId,
+    //       demofollowUp: {
+    //         $elemMatch: {
+    //           demoallocatedTo: userObjectId
+    //         }
+    //       }
+    //     }
+    //   },
+    //   {
+    //     $addFields: {
+    //       matchedDemoFollowUp: {
+    //         $first: {
+    //           $filter: {
+    //             input: "$demofollowUp",
+    //             as: "demo",
+    //             cond: {
+    //               $eq: ["$$demo.demoallocatedTo", userObjectId]
+    //             }
+    //           }
+    //         }
+    //       },
+    //       matchedDemoIndex: {
+    //         $indexOfArray: [
+    //           "$demofollowUp.demoallocatedTo",
+    //           userObjectId
+    //         ]
+    //       }
+
+    //     }
+    //   },
+    //   {
+    //     $unwind: "$matchedDemoFollowUp"
+    //   },
+
+    //   {
+    //     $facet: {
+    //       staff: [
+    //         {
+    //           $match: {
+    //             "matchedDemoFollowUp.demoallocatedByModel": "Staff"
+    //           }
+    //         },
+    //         {
+    //           $lookup: {
+    //             from: "staffs",
+    //             let: { userId: "$matchedDemoFollowUp.demoallocatedBy" },
+    //             pipeline: [
+    //               {
+    //                 $match: {
+    //                   $expr: { $eq: ["$_id", "$$userId"] }
+    //                 }
+    //               },
+    //               {
+    //                 $project: {
+    //                   _id: 0,
+    //                   name: 1
+    //                 }
+    //               }
+    //             ],
+    //             as: "demoallocatedByDetails"
+    //           }
+    //         }
+    //       ],
+    //       admin: [
+    //         {
+    //           $match: {
+    //             "matchedDemoFollowUp.demoallocatedByModel": "Admin"
+    //           }
+    //         },
+    //         {
+    //           $lookup: {
+    //             from: "admins",
+    //             let: { userId: "$matchedDemoFollowUp.demoallocatedBy" },
+    //             pipeline: [
+    //               {
+    //                 $match: {
+    //                   $expr: { $eq: ["$_id", "$$userId"] }
+    //                 }
+    //               },
+    //               {
+    //                 $project: {
+    //                   _id: 0,
+    //                   name: 1
+    //                 }
+    //               }
+    //             ],
+    //             as: "demoallocatedByDetails"
+    //           }
+    //         }
+    //       ]
+    //     }
+    //   },
+
+    //   {
+    //     $project: {
+    //       results: {
+    //         $concatArrays: ["$staff", "$admin"]
+    //       }
+    //     }
+    //   },
+    //   {
+    //     $unwind: "$results"
+    //   },
+    //   {
+    //     $replaceRoot: {
+    //       newRoot: "$results"
+    //     }
+    //   },
+    //   {
+    //     $unwind: {
+    //       path: "$demoallocatedByDetails",
+    //       preserveNullAndEmptyArrays: true
+    //     }
+    //   },
+
+    // ]);
     const matchedLeads = await LeadMaster.aggregate([
       {
         $match: {
@@ -368,18 +501,13 @@ export const GetrepecteduserDemo = async (req, res) => {
             }
           },
           matchedDemoIndex: {
-            $indexOfArray: [
-              "$demofollowUp.demoallocatedTo",
-              userObjectId
-            ]
+            $indexOfArray: ["$demofollowUp.demoallocatedTo", userObjectId]
           }
-
         }
       },
       {
         $unwind: "$matchedDemoFollowUp"
       },
-
       {
         $facet: {
           staff: [
@@ -438,7 +566,6 @@ export const GetrepecteduserDemo = async (req, res) => {
           ]
         }
       },
-
       {
         $project: {
           results: {
@@ -460,17 +587,128 @@ export const GetrepecteduserDemo = async (req, res) => {
           preserveNullAndEmptyArrays: true
         }
       },
-      // {
-      //   $project: {
-      //     _id: 1,
-      //     leadId: 1,
-      //     matchedDemoIndex: 1,
-      //     matchedDemoFollowUp: 1,
-      //     demoallocatedByDetails: 1
-      //   }
-      // }
+      // 🔍 Lookup customerName from customers collection
+      {
+        $lookup: {
+          from: "customers",
+          localField: "customerName",
+          foreignField: "_id",
+          as: "customerTmp"
+        }
+      },
+      {
+        $unwind: {
+          path: "$customerTmp",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      { $set: { customerName: "$customerTmp" } },
+      { $unset: "customerTmp" },
+      ////Lookup on allocatedby////
+      // 1. Lookup from both possible sources (staffs/admins)
+
+      {
+        $lookup: {
+          from: "staffs",
+          localField: "allocatedBy",
+          foreignField: "_id",
+          as: "allocatedByStaff"
+        }
+      },
+      {
+        $lookup: {
+          from: "admins",
+          localField: "allocatedBy",
+          foreignField: "_id",
+          as: "allocatedByAdmin"
+        }
+      },
+
+      // 2. Merge the result based on the model
+      {
+        $addFields: {
+          allocatedByTemp: {
+            $cond: [
+              { $eq: ["$allocatedByModel", "Staff"] },
+              { $arrayElemAt: ["$allocatedByStaff", 0] },
+              { $arrayElemAt: ["$allocatedByAdmin", 0] }
+            ]
+          }
+        }
+      },
+
+      // 3. Replace original field
+      {
+        $set: {
+          allocatedBy: "$allocatedByTemp"
+        }
+      },
+
+      // 4. Clean up temp fields
+      {
+        $unset: ["allocatedByTemp", "allocatedByStaff", "allocatedByAdmin"]
+      }
+      ,
+      // 🔍 Lookup allocatedTo (assumes Staff, adapt if needed)
+      {
+        $lookup: {
+          from: "staffs",
+          let: { id: "$allocatedTo", model: "$allocatedToModel" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$_id", "$$id"] },
+                    { $eq: ["$$model", "Staff"] }
+                  ]
+                }
+              }
+            },
+            { $project: { _id: 0, name: 1 } }
+          ],
+          as: "allocatedToTmp"
+        }
+      },
+      {
+        $unwind: {
+          path: "$allocatedToTmp",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      { $set: { allocatedTo: "$allocatedToTmp" } },
+      { $unset: "allocatedToTmp" },
+      // 🔍 Lookup leadBy (assumes Staff, adapt if needed)
+      {
+        $lookup: {
+          from: "staffs",
+          let: { id: "$leadBy", model: "$assignedtoleadByModel" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$_id", "$$id"] },
+                    { $eq: ["$$model", "Staff"] }
+                  ]
+                }
+              }
+            },
+            { $project: { _id: 0, name: 1 } }
+          ],
+          as: "leadByTmp"
+        }
+      },
+      {
+        $unwind: {
+          path: "$leadByTmp",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      { $set: { leadBy: "$leadByTmp" } },
+      { $unset: "leadByTmp" }
     ]);
-    console.log(matchedLeads)
+
     return res.status(200).json({ message: "Matched demo found", data: matchedLeads })
   } catch (error) {
   }
@@ -479,9 +717,7 @@ export const UpdaeOrSubmitdemofollowByfollower = async (req, res) => {
   try {
     const demoDetails = req.body
     const { matchedindex, leadDocId, followerDate, followerDescription } = demoDetails
-    const ObjectId = new mongoose.Types.ObjectId(leadDocId)
-    // console.log(demoDetails)
-    // const findMatchedLead=await LeadMaster.findOne({_id:demoDetails.leadDocId})
+
     const updatedLead = await LeadMaster.updateOne(
       { _id: leadDocId },
       {
