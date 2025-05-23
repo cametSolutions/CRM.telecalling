@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import React from "react"
+import { formatDate } from "../../../utils/dateUtils"
 import { FiMessageCircle } from "react-icons/fi"
 import { FaSpinner } from "react-icons/fa"
 import Select from "react-select"
@@ -19,13 +20,16 @@ const LeadFollowUp = () => {
   })
   const [isdemofollownotClosed, setisdemofollowedNotClosed] = useState(false)
 
-  const [isOpen, setIsOpen] = useState(false)
+  const [editdemoIndex, setdemoEditIndex] = useState(null)
+  const [
+    editfollowUpDatesandRemarksEditIndex,
+    setfollowUpDatesandRemarksEditIndex
+  ] = useState(null)
   const [isAllocated, setIsAllocated] = useState(false) //for set allocation or not
   const [isOwner, setOwner] = useState(false)
   const [message, setMessage] = useState("")
   const [demofollowerLoader, setdemofollowerLoader] = useState(false)
   const [loader, setLoader] = useState(false)
-  const containerRef = useRef(null)
   const [allocationOptions, setAllocationOptions] = useState([])
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState("")
   const [isHaveEditchoice, setIsEditable] = useState(false)
@@ -48,6 +52,7 @@ const LeadFollowUp = () => {
   const [followupDateModal, setfollowupDateModal] = useState(false)
   const [showFullName, setShowFullName] = useState(false)
   const [showFullEmail, setShowFullEmail] = useState(false)
+  const [mathcheddemoleadcount, setmathcheddemoleadcount] = useState(0)
   const [tableData, setTableData] = useState([])
   const [formData, setFormData] = useState({
     followUpDate: "",
@@ -72,8 +77,14 @@ const LeadFollowUp = () => {
     demoallocatedDate: "",
     demoDescription: ""
   })
+  const navigate = useNavigate()
   const { data: demolead } = UseFetch(
     loggedUser && `/lead/getrespecteddemolead?userid=${loggedUser._id}`
+  )
+  const { data: demoleadcount } = UseFetch(
+    loggedUser &&
+      selectedCompanyBranch &&
+      `/lead/getrespecteddemolead?userid=${loggedUser._id}&selectedBranch=${selectedCompanyBranch}`
   )
   const { data: branches } = UseFetch("/branch/getBranch")
   const { data } = UseFetch("/auth/getallUsers")
@@ -86,6 +97,17 @@ const LeadFollowUp = () => {
       selectedCompanyBranch &&
       `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduser=${loggedUser}`
   )
+  useEffect(() => {
+    if (demoleadcount && demoleadcount.length > 0) {
+      const count = demoleadcount?.filter(
+        (item) =>
+          item.matchedDemoFollowUp &&
+          item.matchedDemoFollowUp.demofollowerDescription == null &&
+          item.matchedDemoFollowUp.demofollowerDate == null
+      ).length
+      setmathcheddemoleadcount(count)
+    }
+  }, [demoleadcount])
   useEffect(() => {
     if (branches) {
       const defaultbranch = branches[0]
@@ -113,7 +135,6 @@ const LeadFollowUp = () => {
   }, [data, selectedCompanyBranch])
   useEffect(() => {
     if (demolead && demolead.length > 0) {
-
       setDemodetails((prev) => ({
         ...prev,
         matchedindex: demolead[0].matchedDemoIndex,
@@ -127,7 +148,6 @@ const LeadFollowUp = () => {
       }))
     }
   }, [demolead])
-  const navigate = useNavigate()
   useEffect(() => {
     if (branches) {
       const userData = localStorage.getItem("user")
@@ -144,19 +164,7 @@ const LeadFollowUp = () => {
     }
   }, [branches])
   // Close when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target)
-      ) {
-        setIsOpen(false)
-        setMessage("")
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+
 
   useEffect(() => {
     if (loggedusersallocatedleads) {
@@ -288,23 +296,43 @@ const LeadFollowUp = () => {
       }
     }
   }
+
   const handleHistory = (history, leadid, docId, allocatedTo, demofollowUp) => {
     const owner = loggedUser._id === allocatedTo
     setOwner(owner)
 
     const isHaveDemo = demofollowUp[demofollowUp?.length - 1]
+
     if (isHaveDemo) {
+      const respectedfollowUpDatesandRemarks = history[history.length - 1]
+
+      const demoassignedDate = formatDate(
+        respectedfollowUpDatesandRemarks.followUpDate
+      )
+  
+      setFormData((prev) => ({
+        ...prev,
+        followUpDate: respectedfollowUpDatesandRemarks.followUpDate,
+        nextfollowUpDate: respectedfollowUpDatesandRemarks.nextfollowUpDate,
+        followedId: respectedfollowUpDatesandRemarks.followedId,
+        Remarks: respectedfollowUpDatesandRemarks.Remarks
+      }))
+      setdemoEditIndex(demofollowUp.length - 1)
+      setfollowUpDatesandRemarksEditIndex(history.length - 1)
       setDemodata({
         demoallocatedTo: isHaveDemo.demoallocatedTo,
         demoallocatedDate: isHaveDemo.demoallocatedDate
           .toString()
           .split("T")[0],
+        demoassignedDate,
         demoDescription: isHaveDemo.demoDescription
       })
 
       const isEditable =
         demofollowUp[demofollowUp?.length - 1]?.demofollowerDate === null
-    
+      const ischeckdisabled =
+        demofollowUp[demofollowUp?.length - 1]?.demofollowerDate !== null
+      setisdemofollowedNotClosed(ischeckdisabled)
       setIsEditable(isEditable)
       setIsAllocated(true)
     }
@@ -326,7 +354,10 @@ const LeadFollowUp = () => {
       }))
     }
   }
+  
   const handleDemoSubmit = async () => {
+ 
+
     if (isdemofollownotClosed) {
       setDemoError((prev) => ({
         ...prev,
@@ -355,7 +386,12 @@ const LeadFollowUp = () => {
 
       const response = await api.post(
         `/lead/setdemolead?demoallocatedBy=${loggedUser._id}&leaddocId=${selectedDocId}`,
-        { demoData, formData }
+        {
+          demoData,
+          formData,
+          editdemoIndex,
+          editfollowUpDatesandRemarksEditIndex
+        }
       )
 
       setLoader(false)
@@ -380,36 +416,7 @@ const LeadFollowUp = () => {
       console.log(error)
     }
   }
-  const handleDemofollowup = async () => {
-    try {
-      setdemofollowerLoader(true)
-
-      const demofollowuperror = {}
-      if (demoDetails.followerDescription === "") {
-        demofollowuperror.descriptionerror =
-          "Description is empty please fill it"
-      }
-      if (demoDetails.followerDate === "") {
-        demofollowuperror.dateerror = "Please select a Date"
-      }
-      if (Object.keys(demofollowuperror).length > 0) {
-        setDemofollowersubmitError(demofollowuperror)
-      }
-      const response = await api.post("/lead/demosubmitbyfollower", demoDetails)
-      if (response.status === 201) {
-        toast.success(response.data.message)
-        setMessage("Submitted successfully")
-      } else if (response.status === 304) {
-        setMessage("not submitted")
-        toast.error(response.data.message)
-      }
-      setdemofollowerLoader(false)
-    } catch (error) {
-      setdemofollowerLoader(false)
-      setMessage("not submitted")
-      console.log(error)
-    }
-  }
+ 
 
   const handleFollowUpDateSubmit = async () => {
     try {
@@ -452,6 +459,7 @@ const LeadFollowUp = () => {
       console.log("error:", error.message)
     }
   }
+
   return (
     <div className="h-full flex flex-col ">
       {loading && (
@@ -468,150 +476,23 @@ const LeadFollowUp = () => {
         {/* Right Section */}
         <div className="grid grid-cols-2 md:flex md:flex-row md:gap-6 gap-3 items-start md:items-center w-full md:w-auto">
           {/* Message Icon with Badge and Popup */}
-          <div className="relative col-span-2 sm:col-span-1" ref={containerRef}>
+          {mathcheddemoleadcount > 0 && (
             <div
-              onClick={() => setIsOpen(!isOpen)}
+              onClick={() =>
+                loggedUser?.role === "Admin"
+                  ? navigate("/admin/transaction/lead/demoFollowup")
+                  : navigate("/staff/transaction/lead/demoFollowup")
+              }
               className="cursor-pointer flex items-center gap-1 relative"
             >
               <FiMessageCircle className="text-3xl text-gray-700" />
-              {1 > 0 && (
+              {mathcheddemoleadcount > 0 && (
                 <span className="absolute -top-1 bg-red-600 text-white text-xs px-1.5 py-0.5 rounded-full">
-                  {1}
+                  {mathcheddemoleadcount}
                 </span>
               )}
             </div>
-
-            {isOpen && (
-              <div className="absolute top-10 right-0 bg-white shadow-lg border rounded-md p-4 w-80 md:w-96 z-50">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ">
-                  <div>
-                    <label className="block text-sm mb-1 text-gray-700 font-semibold">
-                      Search
-                    </label>
-                    <input
-                      type="text"
-                      // value={demoDetails?.demoAssignedBy || ""}
-                      className="w-full border px-2 py-1 rounded mb-1 text-sm cursor-not-allowed bg-gray-100"
-                      placeholder="Search Customer..."
-                    />
-                    <label className="block text-sm mb-1 text-gray-700 font-semibold">
-                      Demo Assigned By
-                    </label>
-                    <input
-                      type="text"
-                      value={demoDetails?.demoAssignedBy || ""}
-                      className="w-full border px-2 py-1 rounded mb-1 text-sm cursor-not-allowed bg-gray-100"
-                      readOnly
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm mb-1 text-gray-700 font-semibold">
-                      Demo Assigned Date
-                    </label>
-                    <input
-                      type="date"
-                      value={demoDetails?.demoAssignedDate || ""}
-                      readOnly
-                      className="w-full border px-2 py-1 rounded mb-1 text-sm cursor-not-allowed bg-gray-100"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm mb-1 text-gray-700 font-semibold">
-                      Description By Assigner
-                    </label>
-                    <textarea
-                      readOnly
-                      value={demoDetails?.demoAssignedDescription || ""}
-                      rows={2}
-                      className="w-full border px-2 py-1 rounded text-sm focus:outline-none cursor-not-allowed bg-gray-100"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm mb-1 text-gray-700 font-semibold">
-                      Follow-up Date
-                    </label>
-                    <input
-                      type="date"
-                      value={demoDetails?.followerDate || ""}
-                      onChange={(e) => {
-                        setDemodetails((prev) => ({
-                          ...prev,
-                          followerDate: e.target.value
-                        }))
-                        if (demosubmitError.dateerror) {
-                          setDemofollowersubmitError((prev) => ({
-                            ...prev,
-                            dateerror: ""
-                          })) // ✅ Clear error
-                        }
-                      }}
-                      className="w-full border px-2 py-1 rounded mb-1 text-sm"
-                    />
-                    {demosubmitError.dateerror && (
-                      <p className="text-red-500">
-                        {demosubmitError.dateerror}
-                      </p>
-                    )}
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-sm mb-1 text-gray-700 font-semibold">
-                      Description
-                    </label>
-
-                    <textarea
-                      rows={2}
-                      value={demoDetails?.followerDescription || ""}
-                      onChange={(e) => {
-                        setDemodetails((prev) => ({
-                          ...prev,
-                          followerDescription: e.target.value
-                        }))
-                        if (demosubmitError.descriptionerror) {
-                          setDemofollowersubmitError((prev) => ({
-                            ...prev,
-                            descriptionerror: ""
-                          })) // ✅ Clear error
-                        }
-                      }}
-                      className="w-full border px-2 py-1 rounded text-sm focus:outline-none"
-                      placeholder="Enter description..."
-                    />
-                    {demosubmitError.descriptionerror && (
-                      <p className="text-red-500">
-                        {demosubmitError.descriptionerror}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="text-center">
-                  {message && (
-                    <p
-                      className={
-                        message === "Submitted successfully"
-                          ? "text-green-600"
-                          : message === "not submitted"
-                          ? "text-red-500"
-                          : "text-gray-600"
-                      }
-                    >
-                      {message}
-                    </p>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => handleDemofollowup()}
-                  className="mt-2 w-full bg-blue-600 text-white py-1 rounded text-sm hover:bg-blue-700 flex justify-center items-center"
-                >
-                  {demofollowerLoader ? (
-                    <FaSpinner className="animate-spin h-5 w-5  text-white " />
-                  ) : (
-                    "SUBMIT"
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Branch Dropdown */}
           <select
@@ -734,9 +615,7 @@ const LeadFollowUp = () => {
                         View / Modify
                       </button>
                     </td>
-                    <td className="borrder border-b-0 border-gray-400 px-4 ">
-                      
-                    </td>
+                    <td className="borrder border-b-0 border-gray-400 px-4 "></td>
                   </tr>
 
                   <tr className=" font-semibold bg-gray-200">
@@ -771,7 +650,9 @@ const LeadFollowUp = () => {
                         Follow Up
                       </button>
                     </td>
-                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4 ">{item.netAmount} </td>
+                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4 ">
+                      {item.netAmount}{" "}
+                    </td>
                   </tr>
 
                   <tr className="bg-white">
@@ -955,8 +836,8 @@ const LeadFollowUp = () => {
                               name="followUpDate"
                               // value={formData?.followUpDate || ""}
                               value={
-                                demoData.demoallocatedDate
-                                  ? demoData.demoallocatedDate
+                                demoData.demoassignedDate
+                                  ? demoData.demoassignedDate
                                       .toString()
                                       .split("T")[0]
                                   : formData?.followUpDate
@@ -981,9 +862,10 @@ const LeadFollowUp = () => {
                             <input
                               type="date"
                               name="nextfollowUpDate"
+                              disabled={isdemofollownotClosed}
                               value={
-                                formData?.nextfollowUpDate ||
-                                demoData.demoallocatedDate
+                                demoData.demoallocatedDate ||
+                                formData?.nextfollowUpDate
                               }
                               className="rounded-md w-full py-1 px-2 border border-gray-200 focus:outline-none hover:cursor-pointer"
                               onChange={handleDataChange}
@@ -1002,10 +884,13 @@ const LeadFollowUp = () => {
                           <div className="text-left flex items-center  gap-2 ">
                             <input
                               type="checkbox"
-                              disabled={isHaveEditchoice}
-                             
+                              disabled={demoData.demoDescription}
                               id="allocation"
-                              className="w-4 h-4"
+                              className={`w-4 h-4  ${
+                                isdemofollownotClosed
+                                  ? "cursor-not-allowed"
+                                  : ""
+                              }`}
                               checked={isAllocated}
                               onChange={() => {
                                 setIsAllocated(!isAllocated)
@@ -1047,18 +932,24 @@ const LeadFollowUp = () => {
                                     selectStaff: ""
                                   }))
                                 }}
-                                className={`w-full  focus:outline-none ${
-                                  isdemofollownotClosed
-                                    ? "bg-gray-100 cursor-not-allowed"
-                                    : ""
-                                }`}
+                                className="w-full  focus:outline-none "
                                 styles={{
-                                  control: (base) => ({
+                                  control: (base, state) => ({
                                     ...base,
                                     minHeight: "32px", // control height
                                     height: "32px",
                                     boxShadow: "none", // removes blue glow
-                                    borderColor: "gray"
+                                    borderColor: "gray",
+                                    cursor: state.isDisabled
+                                      ? "not-allowed"
+                                      : "",
+                                    backgroundColor: state.isDisabled
+                                      ? "#f3f4f6"
+                                      : "white",
+                                    color: state.isDisabled
+                                      ? "#6b7280"
+                                      : "black", // Tailwind's text-gray-500
+                                    opacity: state.isDisabled ? 0.7 : 1
                                   }),
                                   option: (base, state) => ({
                                     ...base,
@@ -1112,9 +1003,16 @@ const LeadFollowUp = () => {
                             <label className="block text-left">Remarks</label>
                             <textarea
                               rows={3}
+                              disabled={isdemofollownotClosed}
                               name="Remarks"
-                              className="rounded-lg w-full border border-gray-200 focus:outline-none px-2"
-                              value={formData?.Remarks ||demoData.demoDescription}
+                              className={`rounded-lg w-full border border-gray-200 focus:outline-none px-2 bg-gray-200 ${
+                                isdemofollownotClosed
+                                  ? "cursor-not-allowed"
+                                  : "cursor-text"
+                              }`}
+                              value={
+                                formData?.Remarks || demoData.demoDescription
+                              }
                               onChange={handleDataChange}
                             />
                             {errors.Remarks && (
@@ -1170,7 +1068,7 @@ const LeadFollowUp = () => {
                         <FaSpinner className="animate-spin h-5 w-5  text-white ml-2" />
                       </div>
                     ) : (
-                      <div>SUBMIT</div>
+                      <div>{isHaveEditchoice ? "UPDATE" : "SUBMIT"}</div>
                     )}
                   </button>
                 </div>
