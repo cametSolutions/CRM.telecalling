@@ -298,6 +298,8 @@ const LeadFollowUp = () => {
   }
 
   const handleHistory = (history, leadid, docId, allocatedTo, demofollowUp) => {
+console.log(allocatedTo)
+console.log("h")
     const owner = loggedUser._id === allocatedTo
     setOwner(owner)
 

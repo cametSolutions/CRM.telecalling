@@ -29,8 +29,7 @@ const LeadAllocationTable = () => {
       selectedCompanyBranch &&
       `/lead/getallLead?Status=${status}&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
   )
-  console.log(leadPendinglist)
-  console.log(status)
+ 
   const { data } = UseFetch("/auth/getallUsers")
   const navigate = useNavigate()
   useEffect(() => {
@@ -56,11 +55,9 @@ const LeadAllocationTable = () => {
           setSelectedCompanyBranch(loggeduserBranches[0].value)
         }
       } else {
-console.log(loggedUser)
         const loggeduserBranches = loggedUser.selected.map((item) => {
           return { value: item.branch_id, label: item.branchName }
         })
-        console.log(loggeduserBranches)
         setLoggeduserBranches(loggeduserBranches)
         setSelectedCompanyBranch(loggeduserBranches[0].value)
       }
@@ -72,12 +69,10 @@ console.log(loggedUser)
 
       // Combine allusers and allAdmins
 
-      console.log(allusers)
       const filter = allusers.filter((staff) =>
         staff.selected.some((s) => selectedCompanyBranch === s.branch_id)
       )
       const combinedUsers = [...filter, ...allAdmins]
-      console.log(filter)
       setAllocationOptions(
         combinedUsers.map((item) => ({
           value: item._id,
@@ -186,16 +181,15 @@ console.log(loggedUser)
       console.log("error:", error.message)
     }
   }
-  console.log(approvedToggleStatus)
+ 
   return (
     <div className="flex flex-col h-full">
-      {submitLoading ||
-        (loading && (
-          <BarLoader
-            cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
-            color="#4A90E2" // Change color as needed
-          />
-        ))}
+      {(submitLoading || loading) && (
+        <BarLoader
+          cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
+          color="#4A90E2" // Change color as needed
+        />
+      )}
 
       <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3 ">
         <h2 className="text-lg font-bold ">
@@ -207,9 +201,7 @@ console.log(loggedUser)
             // value={selectedCompanyBranch || ""}
             onChange={(e) => {
               setSelectedCompanyBranch(e.target.value)
-              console.log("hh")
               setStatus(approvedToggleStatus ? "Approved" : "Pending")
-              console.log(approvedToggleStatus ? "Approved" : "Pending")
             }}
             className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px]"
           >
