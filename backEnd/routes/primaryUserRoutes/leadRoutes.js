@@ -12,7 +12,8 @@ import {
   GetallfollowupList,
 SetDemoallocation,
 GetrepecteduserDemo,
-UpdaeOrSubmitdemofollowByfollower
+UpdaeOrSubmitdemofollowByfollower,
+GetdemoleadCount
 } from "../../controller/primaryUserController/leadController.js"
 const router = express.Router()
 
@@ -27,6 +28,7 @@ router.get("/getallServices", authMiddleware, GetAllservices)
 router.get("/ownregisteredLead", authMiddleware, GetownLeadList)
 router.post("/setdemolead",authMiddleware,SetDemoallocation)
 router.get("/getrespecteddemolead",authMiddleware,GetrepecteduserDemo)
+router.get("/demoleadcount",authMiddleware,GetdemoleadCount)
 router.post("/demosubmitbyfollower",authMiddleware,UpdaeOrSubmitdemofollowByfollower)
 
 export default router
