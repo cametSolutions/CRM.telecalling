@@ -1,6 +1,6 @@
 import Customer from "../../model/secondaryUser/customerSchema.js"
 import Leavemaster from "../../model/secondaryUser/leavemasterSchema.js"
-
+import { generateUniqueNumericToken } from "../../helper/callTokenGeneration.js"
 import { sendWhatapp } from "../../helper/whatapp.js"
 import moment from "moment" // You can use moment.js to handle date manipulation easily
 import License from "../../model/secondaryUser/licenseSchema.js"
@@ -309,10 +309,8 @@ export const GetselectedDateCalls = async (req, res) => {
   try {
     const { startDate, endDate } = req.query
     const start = new Date(startDate);
-    // console.log(start)
     start.setHours(0, 0, 0, 0); // Start of the day
-    // console.log("startdate",startDate)
-    // console.log(start)
+   
 
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999); // End of the day
@@ -1440,6 +1438,8 @@ export const customerCallRegistration = async (req, res) => {
     // Find if there is already a call registration for this customer
     const user = await CallRegistration.findOne({ customerid: customerId })
 
+
+
     if (user) {
       const token = calldata.formdata.token
       if (token) {
@@ -1789,6 +1789,26 @@ export const customerCallRegistration = async (req, res) => {
           }
         }
       } else {
+        const isTokenUsed = await CallRegistration.findOne({
+          "callregistration.timedata.token": calldata.timedata.token
+        });
+
+        if (isTokenUsed) {
+          const newToken = generateUniqueNumericToken()
+          const isAgainUsed = await CallRegistration.findOne({
+            "callregistration.timedata.token": newToken
+          })
+          if (isAgainUsed) {
+
+            throw new Error("Token already exists"); // ⛔ Execution jumps to catch block here
+
+          } else {
+            calldata.timedata.token = newToken
+          }
+
+
+        }
+
         user.callregistration.push(calldata)
         const updatedCall = await user.save()
         const Id = calldata.formdata.attendedBy.callerId
@@ -1921,6 +1941,25 @@ export const customerCallRegistration = async (req, res) => {
         }
       }
     } else {
+      const isTokenUsed = await CallRegistration.findOne({
+        "callregistration.timedata.token": calldata.timedata.token
+      });
+
+      if (isTokenUsed) {
+        const newToken = generateUniqueNumericToken()
+        const isAgainUsed = await CallRegistration.findOne({
+          "callregistration.timedata.token": newToken
+        })
+        if (isAgainUsed) {
+
+          throw new Error("Token already exists"); // ⛔ Execution jumps to catch block here
+
+        } else {
+          calldata.timedata.token = newToken
+        }
+
+
+      }
       //If no document is found, create a new one with the given call data
       const newCall = new CallRegistration({
         customerid: customerId,
