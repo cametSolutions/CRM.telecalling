@@ -1,17 +1,15 @@
-import React, { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Link, NavLink, useNavigate } from "react-router-dom"
+import { FiMessageCircle } from "react-icons/fi"
 import { FiLogOut } from "react-icons/fi"
-import {
-  FaSearch,
-  FaTimes,
-  FaChevronRight,
-  FaChevronDown
-} from "react-icons/fa"
+import UseFetch from "../hooks/useFetch"
+import { FaChevronRight, FaChevronDown } from "react-icons/fa"
 import { FaSignOutAlt } from "react-icons/fa"
 import { FaUserCircle } from "react-icons/fa" // Import the icon
 import { toast } from "react-toastify"
 export default function AdminHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mathcheddemoleadcount, setmathcheddemoleadcount] = useState(0)
   const [user, setUser] = useState(null)
   const [transactionMenuOpen, setTransactionMenuOpen] = useState(false)
   const [masterMenuOpen, setMasterMenuOpen] = useState(false)
@@ -24,6 +22,14 @@ export default function AdminHeader() {
   const [openInnerMenu, setOpenInnerMenu] = useState(null) // Inner submenu state
   const navigate = useNavigate()
   const menuContainerRef = useRef(null)
+  const { data: demoleadcount } = UseFetch(
+    user && `/lead/demoleadcount?loggeduserid=${user._id}`
+  )
+  useEffect(() => {
+    if (demoleadcount > 0) {
+      setmathcheddemoleadcount(demoleadcount)
+    }
+  }, [demoleadcount])
   useEffect(() => {
     const storedUser = localStorage.getItem("user")
     if (storedUser) {
@@ -169,7 +175,6 @@ export default function AdminHeader() {
   ]
   const transactions = [
     {
-    
       label: "Lead",
       hasChildren: true
     },
@@ -649,9 +654,43 @@ export default function AdminHeader() {
             ))}
           </nav>
         </div>
+        {mathcheddemoleadcount > 0 && (
+          <div
+            onClick={() =>
+              user?.role === "Admin"
+                ? navigate("/admin/transaction/lead/demoFollowup")
+                : navigate("/staff/transaction/lead/demoFollowup")
+            }
+            className="cursor-pointer flex items-center  relative mr-8 md:hidden"
+          >
+            <FiMessageCircle className="text-4xl text-gray-700" />
+            {mathcheddemoleadcount > 0 && (
+              <span className="absolute -top-1 bg-red-600 text-white text-xs px-1.5 py-0.5 rounded-full">
+                {mathcheddemoleadcount}
+              </span>
+            )}
+          </div>
+        )}
 
         <div className=" hidden md:flex flex-grow justify-center items-center ">
           <div className="relative flex items-center">
+            {mathcheddemoleadcount > 0 && (
+              <div
+                onClick={() =>
+                  user?.role === "Admin"
+                    ? navigate("/admin/transaction/lead/demoFollowup")
+                    : navigate("/staff/transaction/lead/demoFollowup")
+                }
+                className="cursor-pointer flex items-center  relative mr-3"
+              >
+                <FiMessageCircle className="text-4xl text-gray-700" />
+                {mathcheddemoleadcount > 0 && (
+                  <span className="absolute -top-1 bg-red-600 text-white text-xs px-1.5 py-0.5 rounded-full">
+                    {mathcheddemoleadcount}
+                  </span>
+                )}
+              </div>
+            )}
             {user?.profileUrl && user?.profileUrl?.length > 0 ? (
               <img
                 src={user?.profileUrl}

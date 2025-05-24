@@ -159,17 +159,19 @@ export const GetallfollowupList = async (req, res) => {
 
 
   try {
-    const { loggeduser, branchSelected } = req.query
-    const loggeduserId = loggeduser._id
-    const userObjectId = new mongoose.Types.ObjectId(loggeduserId)
+    const { loggeduserid, branchSelected, role } = req.query
+
+
+    const userObjectId = new mongoose.Types.ObjectId(loggeduserid)
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected)
     let query
-    if (loggeduser.role === "Staff") {
+    if (role === "Staff") {
       query = {
         allocatedTo: { $ne: null }, $or: [
           { allocatedTo: userObjectId },
           { allocatedBy: userObjectId }
-        ]
+        ],
+        leadBranch: branchObjectId
       }
     } else {
       query = { allocatedTo: { $ne: null }, leadBranch: branchObjectId }
@@ -349,177 +351,119 @@ export const SetDemoallocation = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+export const GetdemoleadCount = async (req, res) => {
+  try {
+    const { loggeduserid } = req.query
+    const objectid = new mongoose.Types.ObjectId(loggeduserid)
+    const followupCount = await LeadMaster.find({ "demofollowUp.demoallocatedTo": objectid })
+    const pendingDemoCount = followupCount.filter((item) => item.demofollowUp.some((demo) => demo.demoallocatedTo.equals(objectid) && demo.demofollowerDate === null)).length
+    return res.status(200).json({ message: "found mathch", data: pendingDemoCount })
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "internal server error" })
+  }
+}
 export const GetrepecteduserDemo = async (req, res) => {
   try {
-    const { userid, selectedBranch } = req.query
-
+    const { userid, selectedBranch, role } = req.query
     const userObjectId = new mongoose.Types.ObjectId(userid)
     const branchObjectId = new mongoose.Types.ObjectId(selectedBranch)
+    let matchStage = {
+      leadBranch: branchObjectId
+    };
 
-    // const matchedLeads = await LeadMaster.aggregate([
-
-    //   {
-    //     $match: {
-    //       leadBranch: branchObjectId,
-    //       demofollowUp: {
-    //         $elemMatch: {
-    //           demoallocatedTo: userObjectId
-    //         }
-    //       }
-    //     }
-    //   },
-    //   {
-    //     $addFields: {
-    //       matchedDemoFollowUp: {
-    //         $first: {
-    //           $filter: {
-    //             input: "$demofollowUp",
-    //             as: "demo",
-    //             cond: {
-    //               $eq: ["$$demo.demoallocatedTo", userObjectId]
-    //             }
-    //           }
-    //         }
-    //       },
-    //       matchedDemoIndex: {
-    //         $indexOfArray: [
-    //           "$demofollowUp.demoallocatedTo",
-    //           userObjectId
-    //         ]
-    //       }
-
-    //     }
-    //   },
-    //   {
-    //     $unwind: "$matchedDemoFollowUp"
-    //   },
-
-    //   {
-    //     $facet: {
-    //       staff: [
-    //         {
-    //           $match: {
-    //             "matchedDemoFollowUp.demoallocatedByModel": "Staff"
-    //           }
-    //         },
-    //         {
-    //           $lookup: {
-    //             from: "staffs",
-    //             let: { userId: "$matchedDemoFollowUp.demoallocatedBy" },
-    //             pipeline: [
-    //               {
-    //                 $match: {
-    //                   $expr: { $eq: ["$_id", "$$userId"] }
-    //                 }
-    //               },
-    //               {
-    //                 $project: {
-    //                   _id: 0,
-    //                   name: 1
-    //                 }
-    //               }
-    //             ],
-    //             as: "demoallocatedByDetails"
-    //           }
-    //         }
-    //       ],
-    //       admin: [
-    //         {
-    //           $match: {
-    //             "matchedDemoFollowUp.demoallocatedByModel": "Admin"
-    //           }
-    //         },
-    //         {
-    //           $lookup: {
-    //             from: "admins",
-    //             let: { userId: "$matchedDemoFollowUp.demoallocatedBy" },
-    //             pipeline: [
-    //               {
-    //                 $match: {
-    //                   $expr: { $eq: ["$_id", "$$userId"] }
-    //                 }
-    //               },
-    //               {
-    //                 $project: {
-    //                   _id: 0,
-    //                   name: 1
-    //                 }
-    //               }
-    //             ],
-    //             as: "demoallocatedByDetails"
-    //           }
-    //         }
-    //       ]
-    //     }
-    //   },
-
-    //   {
-    //     $project: {
-    //       results: {
-    //         $concatArrays: ["$staff", "$admin"]
-    //       }
-    //     }
-    //   },
-    //   {
-    //     $unwind: "$results"
-    //   },
-    //   {
-    //     $replaceRoot: {
-    //       newRoot: "$results"
-    //     }
-    //   },
-    //   {
-    //     $unwind: {
-    //       path: "$demoallocatedByDetails",
-    //       preserveNullAndEmptyArrays: true
-    //     }
-    //   },
-
-    // ]);
-    const matchedLeads = await LeadMaster.aggregate([
-      {
-        $match: {
-          leadBranch: branchObjectId,
-          demofollowUp: {
-            $elemMatch: {
-              demoallocatedTo: userObjectId
-            }
-          }
-        }
-      },
-      {
-        $addFields: {
-          matchedDemoFollowUp: {
-            $first: {
-              $filter: {
-                input: "$demofollowUp",
-                as: "demo",
-                cond: {
-                  $eq: ["$$demo.demoallocatedTo", userObjectId]
-                }
-              }
+    if (role === "Staff") {
+      matchStage = {
+        leadBranch: branchObjectId,
+        $or: [
+          {
+            demofollowUp: {
+              $elemMatch: { demoallocatedTo: userObjectId }
             }
           },
-          matchedDemoIndex: {
-            $indexOfArray: ["$demofollowUp.demoallocatedTo", userObjectId]
+          {
+            demofollowUp: {
+              $elemMatch: { demoallocatedBy: userObjectId }
+            }
           }
+        ]
+      }
+        ;
+    } else if (role === "Admin") {
+      matchStage.$and = [
+        { demofollowUp: { $exists: true } },
+        { demofollowUp: { $ne: [] } }
+      ]
+    }
+
+    const matchedLeads = await LeadMaster.aggregate([
+      {
+        $match: matchStage
+      },
+
+      {
+        $addFields: {
+
+          demofollowUp: {
+            $cond: {
+              if: { $eq: [role, "Staff"] },
+              then: {
+
+                $filter: {
+                  input: "$demofollowUp",
+                  as: "demo",
+                  cond: {
+                    $or: [
+                      { $eq: ["$$demo.demoallocatedTo", userObjectId] },
+                      { $eq: ["$$demo.demoallocatedBy", userObjectId] }
+                    ]
+                  }
+                }
+
+              },
+              else: {
+                $cond: {
+                  if: { $isArray: "$demofollowUp" },
+                  then: "$demofollowUp",
+                  else: []
+                }
+              } // Admin gets first entry
+            }
+          }
+
+
         }
       },
       {
-        $unwind: "$matchedDemoFollowUp"
+        $set: {
+          demofollowUp: {
+            $map: {
+              input: "$demofollowUp",
+              as: "item",
+              in: {
+                $mergeObjects: ["$$item", { index: { $indexOfArray: ["$demofollowUp", "$$item"] } }]
+              }
+            }
+          }
+        }
+      }
+      ,
+      {
+        $unwind: "$demofollowUp"
       },
       {
         $facet: {
           staff: [
             {
               $match: {
-                "matchedDemoFollowUp.demoallocatedByModel": "Staff"
+                "demofollowUp.demoallocatedByModel": "Staff",
+
               }
             },
             {
               $lookup: {
                 from: "staffs",
-                let: { userId: "$matchedDemoFollowUp.demoallocatedBy" },
+                let: { userId: "$demofollowUp.demoallocatedBy" },
                 pipeline: [
                   {
                     $match: {
@@ -528,25 +472,42 @@ export const GetrepecteduserDemo = async (req, res) => {
                   },
                   {
                     $project: {
-                      _id: 0,
+                      _id: 1,
                       name: 1
                     }
                   }
                 ],
                 as: "demoallocatedByDetails"
+              }
+            },
+            {
+              $lookup: {
+                from: "staffs",
+                let: { userId: "$demofollowUp.demoallocatedTo" },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: { $eq: ["$_id", "$$userId"] }
+                    }
+                  },
+                  {
+                    $project: { _id: 1, name: 1 }
+                  }
+                ],
+                as: "demoallocatedToDetails"
               }
             }
           ],
           admin: [
             {
               $match: {
-                "matchedDemoFollowUp.demoallocatedByModel": "Admin"
+                "demofollowUp.demoallocatedByModel": "Admin"
               }
             },
             {
               $lookup: {
                 from: "admins",
-                let: { userId: "$matchedDemoFollowUp.demoallocatedBy" },
+                let: { userId: "$demofollowUp.demoallocatedBy" },
                 pipeline: [
                   {
                     $match: {
@@ -555,12 +516,29 @@ export const GetrepecteduserDemo = async (req, res) => {
                   },
                   {
                     $project: {
-                      _id: 0,
+                      _id: 1,
                       name: 1
                     }
                   }
                 ],
                 as: "demoallocatedByDetails"
+              }
+            },
+            {
+              $lookup: {
+                from: "staffs", // Assuming `demoallocatedToModel` for Admin also refers to staff
+                let: { userId: "$demofollowUp.demoallocatedTo" },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: { $eq: ["$_id", "$$userId"] }
+                    }
+                  },
+                  {
+                    $project: { _id: 1, name: 1 }
+                  }
+                ],
+                as: "demoallocatedToDetails"
               }
             }
           ]
@@ -587,6 +565,28 @@ export const GetrepecteduserDemo = async (req, res) => {
           preserveNullAndEmptyArrays: true
         }
       },
+      {
+        $unwind: {
+          path: "$demoallocatedToDetails",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $set: {
+          "demofollowUp.demoallocatedBy":
+          {
+            _id: "$demoallocatedByDetails._id",
+            name: "$demoallocatedByDetails.name"
+          },
+          "demofollowUp.demoallocatedTo": {
+            _id: "$demoallocatedToDetails._id",
+            name: "$demoallocatedToDetails.name"
+          }
+        }
+      },
+      {
+        $unset: ["demoallocatedByDetails", "demoallocatedToDetails"]
+      },
       // 🔍 Lookup customerName from customers collection
       {
         $lookup: {
@@ -602,7 +602,16 @@ export const GetrepecteduserDemo = async (req, res) => {
           preserveNullAndEmptyArrays: true
         }
       },
-      { $set: { customerName: "$customerTmp" } },
+      {
+        $set: {
+          customerName: {
+            customerName: "$customerTmp.customerName",
+            email: "$customerTmp.email",
+            mobile: "$customerTmp.mobile",
+            landline: "$customerTmp.landline"
+          },
+        }
+      },
       { $unset: "customerTmp" },
       ////Lookup on allocatedby////
       // 1. Lookup from both possible sources (staffs/admins)
@@ -640,7 +649,7 @@ export const GetrepecteduserDemo = async (req, res) => {
       // 3. Replace original field
       {
         $set: {
-          allocatedBy: "$allocatedByTemp"
+          allocatedBy: { name: "$allocatedByTemp.name" }
         }
       },
 
@@ -706,9 +715,27 @@ export const GetrepecteduserDemo = async (req, res) => {
         }
       },
       { $set: { leadBy: "$leadByTmp" } },
-      { $unset: "leadByTmp" }
-    ]);
+      { $unset: "leadByTmp" },
 
+      {
+        $group: {
+          _id: "$_id",
+          leadId: { $first: "$leadId" },
+          customerName: { $first: "$customerName" },
+          leadDate: { $first: "$leadDate" },
+          leadFor: { $first: "$leadFor" },
+          leadBy: { $first: "$leadBy" },
+          leadBranch: { $first: "$leadBranch" },
+          demofollowUp: { $push: "$demofollowUp" },
+          followUpDatesandRemarks: { $first: "$followUpDatesandRemarks" },
+          netAmount: { $first: "$netAmount" },
+          remark: { $first: "$remark" },
+          allocatedTo: { $first: "$allocatedTo" },
+          allocatedBy: { $first: "$allocatedBy" }
+        }
+      }
+
+    ]);
     return res.status(200).json({ message: "Matched demo found", data: matchedLeads })
   } catch (error) {
   }
@@ -717,6 +744,13 @@ export const UpdaeOrSubmitdemofollowByfollower = async (req, res) => {
   try {
     const demoDetails = req.body
     const { matcheddemoindex, mathchedfollowUpDatesandRemarksIndex, leadDocId, followerDate, followerDescription } = demoDetails
+    const followerData = {
+      matcheddemoindex: demoDetails.matcheddemoindex,
+      demoAssignedBy: demoDetails.demoAssignedBy,
+      demoAssignedDate: demoDetails.demoAssignedDate,
+      followerDate: demoDetails.followerDate,
+      followerDescription: demoDetails.followerDescription
+    }
 
     const updatedLead = await LeadMaster.updateOne(
       { _id: leadDocId },
@@ -727,7 +761,7 @@ export const UpdaeOrSubmitdemofollowByfollower = async (req, res) => {
 
         },
         $push: {
-          [`followUpDatesandRemarks.${mathchedfollowUpDatesandRemarksIndex}.folowerData`]: demoDetails
+          [`followUpDatesandRemarks.${mathchedfollowUpDatesandRemarksIndex}.folowerData`]: followerData
         }
       }
     )
@@ -792,18 +826,7 @@ export const GetallLead = async (req, res) => {
 
       const query = { allocatedTo: { $ne: null }, leadBranch: branchObjectId };
 
-      // if (role === "Staff") {
-      //   const decodedbranches = JSON.parse(decodeURIComponent(userBranch))
-      //   branchObjectIds = decodedbranches.map((branch) => new mongoose.Types.ObjectId(branch))
 
-      //   query.leadBranch = { $in: branchObjectIds }
-      // } else {
-      //   const decodedbranches = JSON.parse(decodeURIComponent(userBranch))
-      //   if (decodedbranches && decodedbranches.length > 0) {
-      //     branchObjectIds = decodedbranches.map((branch) => new mongoose.Types.ObjectId(branch))
-      //     query.leadBranch = { $in: branchObjectIds }
-      //   }
-      // }
 
       const approvedAllocatedLeads = await LeadMaster.find(query)
         .populate({ path: "customerName", select: "customerName" })
@@ -837,7 +860,7 @@ export const GetallLead = async (req, res) => {
           const populatedAllocates = await allocatedModel
             .findById(lead.allocatedTo)
             .select("name")
-          const populatedAllocatedBy = await allocatedbyModel(lead.allocatedBy)
+          const populatedAllocatedBy = await allocatedbyModel.findById(lead.allocatedBy).select("name")
           // 👇 Now handle followUpDatesandRemarks population
           const populatedFollowUps = await Promise.all(
             (lead.followUpDatesandRemarks || []).map(async (followUp) => {

@@ -1,12 +1,15 @@
 import { useState, useEffect, useRef } from "react"
 import { Link, NavLink, useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
+import { FiMessageCircle } from "react-icons/fi"
 import { FiLogOut } from "react-icons/fi"
 import { FaChevronRight, FaChevronDown } from "react-icons/fa"
 import { FaSignOutAlt } from "react-icons/fa"
+import UseFetch from "../hooks/useFetch"
 import { FaUserCircle } from "react-icons/fa" // Import the icon
 export default function StaffHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mathcheddemoleadcount, setmathcheddemoleadcount] = useState(0)
   const [user, setUser] = useState(null)
   const [leadMenuOpen, setLeadMenuOpen] = useState(false)
   const [transactionMenuOpen, setTransactionMenuOpen] = useState(false)
@@ -21,6 +24,14 @@ export default function StaffHeader() {
   const navigate = useNavigate()
 
   const menuContainerRef = useRef(null)
+  const { data: demoleadcount } = UseFetch(
+    user && `/lead/demoleadcount?loggeduserid=${user._id}`
+  )
+  useEffect(() => {
+    if (demoleadcount > 0) {
+      setmathcheddemoleadcount(demoleadcount)
+    }
+  }, [demoleadcount])
   useEffect(() => {
     const storedUser = localStorage.getItem("user")
     if (storedUser) {
@@ -204,7 +215,6 @@ export default function StaffHeader() {
   ]
   const transactions = [
     {
-      to: "/staff/transaction/lead",
       label: "Lead",
       control: user?.permissions?.[0]?.Lead ?? false,
       hasChildren: true
@@ -244,7 +254,7 @@ export default function StaffHeader() {
     }
   ]
   return (
-    <header className="sticky top-0 z-50 flex bg-gray-300 md:bg-white shadow-md py-4 items-center">
+    <header className="sticky top-0 z-50 flex bg-white shadow-md py-4 items-center">
       {/* Mobile menu button */}
       <div className="md:hidden flex justify-between py-2 px-4">
         <button
@@ -441,46 +451,7 @@ export default function StaffHeader() {
                               )}
                           </div>
                         ))
-                    : // .map((master, masterIndex) => (
-                      //   <div key={master.to} className="relative py-2">
-                      //     <div
-                      //       className="flex justify-between px-4 text-gray-600 text-sm hover:bg-gray-100 cursor-pointer"
-                      //       onClick={() => {
-                      //         if (master.hasChildren) {
-                      //           toggleInnerMenu(masterIndex)
-                      //         } else {
-                      //           setMobileMenuOpen(false)
-                      //           navigate(master.to)
-                      //         }
-                      //       }}
-                      //     >
-                      //       <span>{master.label}</span>
-                      //       {master.hasChildren &&
-                      //         (openInnerMenu === masterIndex ? (
-                      //           <FaChevronDown className="w-3 h-3 text-gray-500" />
-                      //         ) : (
-                      //           <FaChevronRight className="w-3 h-3 text-gray-500" />
-                      //         ))}
-                      //     </div>
-
-                      //     {/* Inner Submenu */}
-                      //     {openInnerMenu === masterIndex &&
-                      //       master.hasChildren && (
-                      //         <div className="ml-4 mt-2 border-l-4 border-blue-400 bg-gray-50 p-2 submenu-container">
-                      //           {inventorys.map((child) => (
-                      //             <Link
-                      //               key={child.to}
-                      //               to={child.to}
-                      //               className="block px-4 py-1 text-gray-600 text-sm hover:bg-gray-200"
-                      //             >
-                      //               {child.label}
-                      //             </Link>
-                      //           ))}
-                      //         </div>
-                      //       )}
-                      //   </div>
-                      // ))
-                      null}
+                    : null}
                 </div>
               )}
             </div>
@@ -750,9 +721,43 @@ export default function StaffHeader() {
           ))}
         </nav>
       </div>
+      {mathcheddemoleadcount > 0 && (
+        <div
+          onClick={() =>
+            user?.role === "Admin"
+              ? navigate("/admin/transaction/lead/demoFollowup")
+              : navigate("/staff/transaction/lead/demoFollowup")
+          }
+          className="cursor-pointer flex items-center  relative mr-8 md:hidden"
+        >
+          <FiMessageCircle className="text-4xl text-gray-700" />
+          {mathcheddemoleadcount > 0 && (
+            <span className="absolute -top-1 bg-red-600 text-white text-xs px-1.5 py-0.5 rounded-full">
+              {mathcheddemoleadcount}
+            </span>
+          )}
+        </div>
+      )}
 
       <div className=" hidden md:flex flex-grow justify-center items-center ">
         <div className="relative flex items-center">
+          {mathcheddemoleadcount > 0 && (
+            <div
+              onClick={() =>
+                user?.role === "Admin"
+                  ? navigate("/admin/transaction/lead/demoFollowup")
+                  : navigate("/staff/transaction/lead/demoFollowup")
+              }
+              className="cursor-pointer flex items-center  relative mr-3"
+            >
+              <FiMessageCircle className="text-4xl text-gray-700" />
+              {mathcheddemoleadcount > 0 && (
+                <span className="absolute -top-1 bg-red-600 text-white text-xs px-1.5 py-0.5 rounded-full">
+                  {mathcheddemoleadcount}
+                </span>
+              )}
+            </div>
+          )}
           {user?.profileUrl && user?.profileUrl?.length > 0 ? (
             <img
               src={user?.profileUrl}
@@ -775,6 +780,7 @@ export default function StaffHeader() {
           >
             {user?.name || "Profile"}
           </span>
+
           <div
             onClick={logout}
             className="flex  items-center gap-1 p-2  rounded hover:cursor-pointer hover:scale-110 hover:shadow-lg transform transition-transform duration-300"

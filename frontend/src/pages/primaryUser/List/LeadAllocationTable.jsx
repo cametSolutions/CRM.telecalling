@@ -97,6 +97,7 @@ const LeadAllocationTable = () => {
       )
 
       if (response.status >= 200 && response.status < 300) {
+console.log(response.data.data)
         setTableData(response.data.data)
         setapprovedToggleStatus(!approvedToggleStatus)
         setToggleLoading(false)

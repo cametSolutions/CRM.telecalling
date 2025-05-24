@@ -13,7 +13,6 @@ const DemoFollowUp = () => {
   const [loader, setLoader] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [message, setMessage] = useState("")
-  const containerRef = useRef(null)
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState("")
   const [ownFollowUp, setOwnFollowUp] = useState(true)
   const [loggedUser, setloggedUser] = useState(null)
@@ -33,7 +32,8 @@ const DemoFollowUp = () => {
   })
 
   const [demoDetails, setDemodetails] = useState({
-    matchedindex: "",
+    matcheddemoindex: "",
+    mathchedfollowUpDatesandRemarksIndex: "",
     leadId: "",
     leadDocId: "",
     demoAssignedBy: "",
@@ -50,8 +50,9 @@ const DemoFollowUp = () => {
   } = UseFetch(
     loggedUser &&
       selectedCompanyBranch &&
-      `/lead/getrespecteddemolead?userid=${loggedUser._id}&selectedBranch=${selectedCompanyBranch}`
+      `/lead/getrespecteddemolead?userid=${loggedUser._id}&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
   )
+  console.log(selectedCompanyBranch)
   const { data: branches } = UseFetch("/branch/getBranch")
 
   useEffect(() => {
@@ -68,9 +69,11 @@ const DemoFollowUp = () => {
           setloggedUserBranch(loggeduserbranches)
           setselectedCompanyBranch(loggeduserbranches[0].value)
         } else {
+          console.log(branches)
           const loggeduserbranches = branches.map((item) => {
-            return { value: item.branch_id, label: item.branchName }
+            return { value: item._id, label: item.branchName }
           })
+          console.log(loggeduserbranches)
           setloggedUserBranch(loggeduserbranches)
           setselectedCompanyBranch(loggeduserbranches[0].value)
         }
@@ -102,40 +105,26 @@ const DemoFollowUp = () => {
   }, [branches])
   useEffect(() => {
     if (ownFollowUp) {
-      console.log("h")
+      console.log("d")
       refreshHook()
     } else {
-      console.log("h")
+      console.log("g")
       setTableData([])
     }
   }, [ownFollowUp])
-  console.log(tableData)
-
+ 
   useEffect(() => {
-    if (demolead && demolead.length > 0) {
-      
+    if (demolead && demolead.length > 0 && ownFollowUp) {
 
-      setDemodetails((prev) => ({
-        ...prev,
-        matcheddemoindex: demolead[0].matchedDemoIndex,
-        mathchedfollowUpDatesandRemarksIndex:
-          demolead[0].followUpDatesandRemarks.length - 1,
-        leadId: demolead[0].leadId,
-        leadDocId: demolead[0]._id,
-        demoAssignedBy: demolead[0].demoallocatedByDetails.name,
-        demoAssignedDate: demolead[0].matchedDemoFollowUp.demoallocatedDate
-          .toString()
-          .split("T")[0],
-        demoAssignedDescription:
-          demolead[0].matchedDemoFollowUp.demoDescription,
-        followerDescription:
-          demolead[0].matchedDemoFollowUp?.demofollowerDescription || "",
-        followUpDate: demolead[0].matchedDemoFollowUp?.demofollowerDate || ""
-      }))
       const currentDate = new Date()
 
       // 1. Leads with follow-ups
       const leadsWithFollowUps = demolead
+        .filter((lead) =>
+          lead.demofollowUp?.some(
+            (demo) => demo.demoallocatedTo?._id === loggedUser._id
+          )
+        )
         .map((lead) => {
           // Get the closest nextfollowUpDate from the followUpDatesandRemarks array
           const nextFollowUp = lead.followUpDatesandRemarks.reduce(
@@ -156,16 +145,41 @@ const DemoFollowUp = () => {
         })
         .sort((a, b) => a.closestNextFollowUp - b.closestNextFollowUp)
 
-      // 2. Leads with empty followUpDatesandRemarks
-      const leadsWithoutFollowUps = demolead.filter(
-        (lead) => lead.followUpDatesandRemarks.length === 0
-      )
-
       // 3. Combined
-      const finalSortedLeads = [...leadsWithFollowUps, ...leadsWithoutFollowUps]
-      setTableData(finalSortedLeads)
+      setTableData(leadsWithFollowUps)
+    } else if (demolead && demolead.length > 0) {
+      const currentDate = new Date()
+
+     
+      // 1. Leads with follow-ups
+      const filtereddemolead = demolead
+        .filter((lead) =>
+          lead.demofollowUp?.some(
+            (demo) => demo.demoallocatedTo?._id !== loggedUser._id
+          )
+        )
+        .map((lead) => {
+          const nextFollowUp = lead.followUpDatesandRemarks.reduce(
+            (closest, curr) => {
+              const currDate = new Date(curr.nextfollowUpDate)
+              const closestDate = new Date(closest.nextfollowUpDate)
+              return Math.abs(currDate - currentDate) <
+                Math.abs(closestDate - currentDate)
+                ? curr
+                : closest
+            }
+          )
+
+          return {
+            ...lead,
+            closestNextFollowUp: new Date(nextFollowUp.nextfollowUpDate)
+          }
+        })
+
+        .sort((a, b) => a.closestNextFollowUp - b.closestNextFollowUp)
+      setTableData(filtereddemolead)
     }
-  }, [demolead])
+  }, [demolead, ownFollowUp])
   useEffect(() => {
     if (loggedUser) {
       setFormData((prev) => ({
@@ -184,7 +198,26 @@ const DemoFollowUp = () => {
       clearTimeout(handler) // cleanup
     }
   }, [input])
+  console.log(demoDetails)
+  const handleDemoshow = (demo, item) => {
+    console.log(demo)
+    const currentDate = new Date()
 
+    setDemodetails((prev) => ({
+      ...prev,
+      leadDocId: item._id,
+      leadId: item.leadId,
+      mathchedfollowUpDatesandRemarksIndex:
+        item.followUpDatesandRemarks.length - 1,
+      matcheddemoindex: demo.index,
+      demoAssignedBy: demo.demoallocatedBy.name,
+      demoAssignedDate: demo.demoallocatedDate,
+      demoAssignedDescription: demo.demoDescription,
+      followerDate: currentDate
+    }))
+    setIsOpen(true)
+  }
+  console.log(demolead)
   const handleDemofollowup = async () => {
     try {
       const demofollowuperror = {}
@@ -199,6 +232,8 @@ const DemoFollowUp = () => {
         setDemofollowersubmitError(demofollowuperror)
         return
       }
+      console.log(demoDetails)
+
       setLoader(true)
 
       const response = await api.post("/lead/demosubmitbyfollower", demoDetails)
@@ -217,7 +252,8 @@ const DemoFollowUp = () => {
       console.log(error)
     }
   }
-
+  console.log(demolead)
+  console.log(demoDetails)
   return (
     <div className="h-full flex flex-col ">
       {loading && (
@@ -236,7 +272,7 @@ const DemoFollowUp = () => {
           {/* Branch Dropdown */}
           <select
             // value={selectedCompanyBranch || ""}
-            onChange={(e) => selectedCompanyBranch(e.target.value)}
+            onChange={(e) => setselectedCompanyBranch(e.target.value)}
             className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px] w-full"
           >
             {loggeduserBranch?.map((branch) => (
@@ -306,116 +342,110 @@ const DemoFollowUp = () => {
           </thead>
           <tbody>
             {tableData && tableData.length > 0 ? (
-              tableData.map((item, index) => (
-                <React.Fragment key={index}>
-                  <tr className="bg-white ">
-                    <td
-                      onClick={() => setShowFullName(!showFullName)}
-                      className={`px-4 cursor-pointer overflow-hidden ${
-                        showFullName
-                          ? "whitespace-normal max-h-[3em]" // ≈2 lines of text (1.5em line-height)
-                          : "truncate whitespace-nowrap max-w-[120px]"
-                      }`}
-                      style={{ lineHeight: "1.5em" }} // fine-tune as needed
-                    >
-                      {item.customerName.customerName}
-                    </td>
-                    <td className="  px-4 ">{item.mobile}</td>
-                    <td className="px-4 ">0481</td>
-                    <td className="px-4 ">{item.email}</td>
-                    <td className=" px-4 ">{item.leadId}</td>
-                    <td className="border border-b-0 border-gray-400 px-4 "></td>
-
-                    <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
-                      <button
-                        onClick={() =>
-                          loggedUser.role === "Admin"
-                            ? navigate("/admin/transaction/lead/leadEdit", {
-                                state: {
-                                  leadId: item._id,
-                                  isReadOnly: !(
-                                    item.allocatedTo._id === loggedUser._id ||
-                                    item.leadBy._id === loggedUser._id
-                                  )
-                                }
-                              })
-                            : navigate("/staff/transaction/lead/leadEdit", {
-                                state: {
-                                  leadId: item._id,
-                                  isReadOnly: !(
-                                    item.allocatedTo._id === loggedUser._id ||
-                                    item.leadBy._id === loggedUser._id
-                                  )
-                                }
-                              })
-                        }
-                        className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer"
+              tableData.map((item, index) =>
+                item.demofollowUp.map((demo) => (
+                  <React.Fragment key={index}>
+                    <tr className="bg-white ">
+                      <td
+                        onClick={() => setShowFullName(!showFullName)}
+                        className={`px-4 cursor-pointer overflow-hidden ${
+                          showFullName
+                            ? "whitespace-normal max-h-[3em]" // ≈2 lines of text (1.5em line-height)
+                            : "truncate whitespace-nowrap max-w-[120px]"
+                        }`}
+                        style={{ lineHeight: "1.5em" }} // fine-tune as needed
                       >
-                        View / Modify
-                      </button>
-                    </td>
-                    <td className="borrder border-b-0 border-gray-400 px-4 "></td>
-                  </tr>
+                        {item.customerName.customerName}
+                      </td>
+                      <td className="  px-4 ">{item.mobile}</td>
+                      <td className="px-4 ">0481</td>
+                      <td className="px-4 ">{item.email}</td>
+                      <td className=" px-4 ">{item.leadId}</td>
+                      <td className="border border-b-0 border-gray-400 px-4 "></td>
 
-                  <tr className=" font-semibold bg-gray-200">
-                    <td className=" px-4 ">Leadby</td>
-                    <td className=" px-4">Assignedto</td>
-                    <td className=" px-4 ">Assignedby</td>
-                    <td className="px-4 ">No. of Followups</td>
-                    <td className="px-4 min-w-[120px]">Lead Date</td>
-                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4 ">
-                      {new Date(
-                        item.followUpDatesandRemarks[
-                          item.followUpDatesandRemarks.length - 1
-                        ]?.nextfollowUpDate
-                      )
-                        .toLocaleDateString("en-GB")
-                        .split("/")
-                        .join("-")}
-                    </td>
-                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const currentDate = new Date()
+                      <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
+                        <button
+                          onClick={() =>
+                            loggedUser.role === "Admin"
+                              ? navigate("/admin/transaction/lead/leadEdit", {
+                                  state: {
+                                    leadId: item._id,
+                                    isReadOnly: !(
+                                      item.allocatedTo._id === loggedUser._id ||
+                                      item.leadBy._id === loggedUser._id
+                                    )
+                                  }
+                                })
+                              : navigate("/staff/transaction/lead/leadEdit", {
+                                  state: {
+                                    leadId: item._id,
+                                    isReadOnly: !(
+                                      item.allocatedTo._id === loggedUser._id ||
+                                      item.leadBy._id === loggedUser._id
+                                    )
+                                  }
+                                })
+                          }
+                          className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer"
+                        >
+                          View / Modify
+                        </button>
+                      </td>
+                      <td className="borrder border-b-0 border-gray-400 px-4 "></td>
+                    </tr>
 
-                          setDemodetails((prev) => ({
-                            ...prev,
-                            followerDate: currentDate
-                          }))
-                          setIsOpen(true)
-                        }}
-                      >
-                        Submit
-                      </button>
-                    </td>
-                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4 ">
-                      {item.netAmount}
-                    </td>
-                  </tr>
+                    <tr className=" font-semibold bg-gray-200">
+                      <td className=" px-4 ">Leadby</td>
+                      <td className=" px-4">Assignedto</td>
+                      <td className=" px-4 ">Assignedby</td>
+                      <td className="px-4 ">No. of Followups</td>
+                      <td className="px-4 min-w-[120px]">Lead Date</td>
+                      <td className=" border border-t-0 border-b-0 border-gray-400 px-4 ">
+                        {new Date(
+                          item.followUpDatesandRemarks[
+                            item.followUpDatesandRemarks.length - 1
+                          ]?.nextfollowUpDate
+                        )
+                          .toLocaleDateString("en-GB")
+                          .split("/")
+                          .join("-")}
+                      </td>
+                      <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer">
+                        <button
+                          type="button"
+                          onClick={() => handleDemoshow(demo, item)}
+                        >
+                          Task
+                        </button>
+                      </td>
+                      <td className=" border border-t-0 border-b-0 border-gray-400 px-4 ">
+                        {item.netAmount}
+                      </td>
+                    </tr>
 
-                  <tr className="bg-white">
-                    <td className="border border-t-0 border-r-0  border-gray-400 px-4 py-0.5 ">
-                      {item?.leadBy?.name}
-                    </td>
-                    <td className="border border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
-                      {item?.allocatedTo?.name}
-                    </td>
-                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5">
-                      {item.allocatedBy?.name}
-                    </td>
-                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400  px-4 py-0.5 ">
-                      {item.followUpDatesandRemarks.length}
-                    </td>
-                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
-                      {item.leadDate?.toString().split("T")[0]}
-                    </td>
-                    <td className="border border-t-0 border-gray-400   px-4 py-0.5 "></td>
-                    <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
-                    <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
-                  </tr>
-                </React.Fragment>
-              ))
+                    <tr className="bg-white">
+                      <td className="border border-t-0 border-r-0  border-gray-400 px-4 py-0.5 ">
+                        {item?.leadBy?.name}
+                      </td>
+                      <td className="border border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
+                        {item?.allocatedTo?.name}
+                      </td>
+                      <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5">
+                        {item.allocatedBy?.name}
+                      </td>
+                      <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400  px-4 py-0.5 ">
+                        {item.followUpDatesandRemarks.length}
+                      </td>
+                      <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
+                        {item.leadDate?.toString().split("T")[0]}
+                      </td>
+                      <td className="border border-t-0 border-gray-400   px-4 py-0.5 "></td>
+                      <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
+                      <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
+                    </tr>
+                  </React.Fragment>
+                ))
+              )
             ) : (
               <tr>
                 <td colSpan={8} className="text-center text-gray-500 py-4">
@@ -461,7 +491,11 @@ const DemoFollowUp = () => {
                     </label>
                     <input
                       type="date"
-                      value={demoDetails?.demoAssignedDate || ""}
+                      value={
+                        demoDetails?.demoAssignedDate
+                          .toString()
+                          .split("T")[0] || ""
+                      }
                       readOnly
                       className="w-full border border-gray-300 px-2 py-1 rounded text-sm cursor-not-allowed bg-gray-200"
                     />
@@ -483,6 +517,7 @@ const DemoFollowUp = () => {
                     </label>
                     <input
                       type="text"
+                      readOnly
                       value={
                         demoDetails?.followerDate
                           .toLocaleDateString("en-GB")
@@ -501,7 +536,7 @@ const DemoFollowUp = () => {
                           })) // ✅ Clear error
                         }
                       }}
-                      className="w-full border border-gray-300 px-2 py-1 rounded  text-sm"
+                      className="w-full border border-gray-300 px-2 py-1 rounded  text-sm focus:outline-none"
                     />
                     {demosubmitError.dateerror && (
                       <p className="text-red-500 text-left text-sm ">
@@ -572,6 +607,18 @@ const DemoFollowUp = () => {
                       setIsOpen(false)
                       setDemofollowersubmitError({})
                       setMessage("")
+                      setDemodetails((prev) => ({
+                        ...prev,
+                        matchedindex: "",
+                        mathchedfollowUpDatesandRemarksIndex: "",
+                        leadId: "",
+                        leadDocId: "",
+                        demoAssignedBy: "",
+                        demoAssignedDate: "",
+                        demoAssignedDescription: "",
+                        followerDate: "",
+                        followerDescription: ""
+                      }))
                     }}
                     className="bg-gray-500 hover:bg-gray-600 text-white px-3 rounded-sm"
                   >

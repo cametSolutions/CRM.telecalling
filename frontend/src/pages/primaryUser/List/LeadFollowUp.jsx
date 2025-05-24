@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react"
 import React from "react"
 import { formatDate } from "../../../utils/dateUtils"
-import { FiMessageCircle } from "react-icons/fi"
-import { FaSpinner } from "react-icons/fa"
+
+import { FaSpinner, FaTable } from "react-icons/fa"
 import Select from "react-select"
 import { PropagateLoader } from "react-spinners"
 import { useNavigate } from "react-router-dom"
@@ -27,6 +27,7 @@ const LeadFollowUp = () => {
   ] = useState(null)
   const [isAllocated, setIsAllocated] = useState(false) //for set allocation or not
   const [isOwner, setOwner] = useState(false)
+ 
   const [message, setMessage] = useState("")
   const [demofollowerLoader, setdemofollowerLoader] = useState(false)
   const [loader, setLoader] = useState(false)
@@ -52,7 +53,7 @@ const LeadFollowUp = () => {
   const [followupDateModal, setfollowupDateModal] = useState(false)
   const [showFullName, setShowFullName] = useState(false)
   const [showFullEmail, setShowFullEmail] = useState(false)
-  const [mathcheddemoleadcount, setmathcheddemoleadcount] = useState(0)
+
   const [tableData, setTableData] = useState([])
   const [formData, setFormData] = useState({
     followUpDate: "",
@@ -81,11 +82,7 @@ const LeadFollowUp = () => {
   const { data: demolead } = UseFetch(
     loggedUser && `/lead/getrespecteddemolead?userid=${loggedUser._id}`
   )
-  const { data: demoleadcount } = UseFetch(
-    loggedUser &&
-      selectedCompanyBranch &&
-      `/lead/getrespecteddemolead?userid=${loggedUser._id}&selectedBranch=${selectedCompanyBranch}`
-  )
+  
   const { data: branches } = UseFetch("/branch/getBranch")
   const { data } = UseFetch("/auth/getallUsers")
   const {
@@ -95,25 +92,16 @@ const LeadFollowUp = () => {
   } = UseFetch(
     loggedUser &&
       selectedCompanyBranch &&
-      `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduser=${loggedUser}`
+      `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}`
   )
-  useEffect(() => {
-    if (demoleadcount && demoleadcount.length > 0) {
-      const count = demoleadcount?.filter(
-        (item) =>
-          item.matchedDemoFollowUp &&
-          item.matchedDemoFollowUp.demofollowerDescription == null &&
-          item.matchedDemoFollowUp.demofollowerDate == null
-      ).length
-      setmathcheddemoleadcount(count)
-    }
-  }, [demoleadcount])
+
   useEffect(() => {
     if (branches) {
       const defaultbranch = branches[0]
       setselectedCompanyBranch(defaultbranch._id)
     }
   }, [branches])
+
   useEffect(() => {
     if (data && selectedCompanyBranch) {
       const { allusers = [], allAdmins = [] } = data
@@ -173,6 +161,9 @@ const LeadFollowUp = () => {
   }, [loggedusersallocatedleads])
   useEffect(() => {
     if (leads && leads.length && loggedUser && ownFollowUp) {
+      console.log(tableData)
+      console.log("h")
+
       const currentDate = new Date()
 
       // 1. Leads with follow-ups
@@ -209,6 +200,8 @@ const LeadFollowUp = () => {
 
       setTableData(finalSortedLeads)
     } else if (loggedusersallocatedleads && loggedUser) {
+      console.log(leads)
+
       const currentDate = new Date()
 
       // 1. Leads with follow-ups
@@ -242,6 +235,7 @@ const LeadFollowUp = () => {
 
       // 3. Combined
       const finalSortedLeads = [...leadsWithFollowUps, ...leadsWithoutFollowUps]
+      console.log(finalSortedLeads)
       setTableData(finalSortedLeads)
     }
   }, [ownFollowUp, leads, loggedUser])
@@ -474,23 +468,6 @@ const LeadFollowUp = () => {
         {/* Right Section */}
         <div className="grid grid-cols-2 md:flex md:flex-row md:gap-6 gap-3 items-start md:items-center w-full md:w-auto">
           {/* Message Icon with Badge and Popup */}
-          {mathcheddemoleadcount > 0 && (
-            <div
-              onClick={() =>
-                loggedUser?.role === "Admin"
-                  ? navigate("/admin/transaction/lead/demoFollowup")
-                  : navigate("/staff/transaction/lead/demoFollowup")
-              }
-              className="cursor-pointer flex items-center gap-1 relative"
-            >
-              <FiMessageCircle className="text-3xl text-gray-700" />
-              {mathcheddemoleadcount > 0 && (
-                <span className="absolute -top-1 bg-red-600 text-white text-xs px-1.5 py-0.5 rounded-full">
-                  {mathcheddemoleadcount}
-                </span>
-              )}
-            </div>
-          )}
 
           {/* Branch Dropdown */}
           <select
