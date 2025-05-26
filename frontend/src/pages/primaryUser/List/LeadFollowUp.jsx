@@ -27,7 +27,7 @@ const LeadFollowUp = () => {
   ] = useState(null)
   const [isAllocated, setIsAllocated] = useState(false) //for set allocation or not
   const [isOwner, setOwner] = useState(false)
- 
+
   const [message, setMessage] = useState("")
   const [demofollowerLoader, setdemofollowerLoader] = useState(false)
   const [loader, setLoader] = useState(false)
@@ -82,7 +82,7 @@ const LeadFollowUp = () => {
   const { data: demolead } = UseFetch(
     loggedUser && `/lead/getrespecteddemolead?userid=${loggedUser._id}`
   )
-  
+
   const { data: branches } = UseFetch("/branch/getBranch")
   const { data } = UseFetch("/auth/getallUsers")
   const {
@@ -299,37 +299,40 @@ const LeadFollowUp = () => {
     const isHaveDemo = demofollowUp[demofollowUp?.length - 1]
 
     if (isHaveDemo) {
-      const respectedfollowUpDatesandRemarks = history[history.length - 1]
+      const isdemofollowupclosed = isHaveDemo.demofollowerDate === null
+      if (isdemofollowupclosed) {
+        const respectedfollowUpDatesandRemarks = history[history.length - 1]
 
-      const demoassignedDate = formatDate(
-        respectedfollowUpDatesandRemarks.followUpDate
-      )
+        const demoassignedDate = formatDate(
+          respectedfollowUpDatesandRemarks.followUpDate
+        )
 
-      setFormData((prev) => ({
-        ...prev,
-        followUpDate: respectedfollowUpDatesandRemarks.followUpDate,
-        nextfollowUpDate: respectedfollowUpDatesandRemarks.nextfollowUpDate,
-        followedId: respectedfollowUpDatesandRemarks.followedId,
-        Remarks: respectedfollowUpDatesandRemarks.Remarks
-      }))
-      setdemoEditIndex(demofollowUp.length - 1)
-      setfollowUpDatesandRemarksEditIndex(history.length - 1)
-      setDemodata({
-        demoallocatedTo: isHaveDemo.demoallocatedTo,
-        demoallocatedDate: isHaveDemo.demoallocatedDate
-          .toString()
-          .split("T")[0],
-        demoassignedDate,
-        demoDescription: isHaveDemo.demoDescription
-      })
+        setFormData((prev) => ({
+          ...prev,
+          followUpDate: respectedfollowUpDatesandRemarks.followUpDate,
+          nextfollowUpDate: respectedfollowUpDatesandRemarks.nextfollowUpDate,
+          followedId: respectedfollowUpDatesandRemarks.followedId,
+          Remarks: respectedfollowUpDatesandRemarks.Remarks
+        }))
+        setdemoEditIndex(demofollowUp.length - 1)
+        setfollowUpDatesandRemarksEditIndex(history.length - 1)
+        setDemodata({
+          demoallocatedTo: isHaveDemo.demoallocatedTo,
+          demoallocatedDate: isHaveDemo.demoallocatedDate
+            .toString()
+            .split("T")[0],
+          demoassignedDate,
+          demoDescription: isHaveDemo.demoDescription
+        })
 
-      const isEditable =
-        demofollowUp[demofollowUp?.length - 1]?.demofollowerDate === null
-      const ischeckdisabled =
-        demofollowUp[demofollowUp?.length - 1]?.demofollowerDate !== null
-      setisdemofollowedNotClosed(ischeckdisabled)
-      setIsEditable(isEditable)
-      setIsAllocated(true)
+        const isEditable =
+          demofollowUp[demofollowUp?.length - 1]?.demofollowerDate === null
+        const ischeckdisabled =
+          demofollowUp[demofollowUp?.length - 1]?.demofollowerDate !== null
+        setisdemofollowedNotClosed(ischeckdisabled)
+        setIsEditable(isEditable)
+        setIsAllocated(true)
+      }
     }
 
     setselectedDocid(docId)
