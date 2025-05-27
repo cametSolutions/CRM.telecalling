@@ -291,15 +291,12 @@ const LeadFollowUp = () => {
   }
 
   const handleHistory = (history, leadid, docId, allocatedTo, demofollowUp) => {
-    console.log(history)
-
+ 
     const owner = loggedUser._id === allocatedTo
     setOwner(owner)
-
-    const isHaveDemo = demofollowUp[demofollowUp?.length - 1]
-
+    const isHaveDemo = demofollowUp?demofollowUp[demofollowUp?.length - 1]:null
     if (isHaveDemo) {
-      const isdemofollowupclosed = isHaveDemo.demofollowerDate === null
+      const isdemofollowupclosed = isHaveDemo?.demofollowerDate === null
       if (isdemofollowupclosed) {
         const respectedfollowUpDatesandRemarks = history[history.length - 1]
 
@@ -341,6 +338,7 @@ const LeadFollowUp = () => {
     setHistoryList(history)
     setSelectedLeadId(leadid)
   }
+console.log(showModal)
   const handlefollowupdate = (Id, docId) => {
     setfollowupDateModal(true)
     setSelectedLeadId(Id)
@@ -1024,9 +1022,9 @@ const LeadFollowUp = () => {
                               rows={3}
                               disabled={isdemofollownotClosed}
                               name="Remarks"
-                              className={`rounded-lg w-full border border-gray-200 focus:outline-none px-2 bg-gray-200 ${
+                              className={`rounded-lg w-full border border-gray-200 focus:outline-none px-2 ${
                                 isdemofollownotClosed
-                                  ? "cursor-not-allowed"
+                                  ? "cursor-not-allowed bg-gray-200"
                                   : "cursor-text"
                               }`}
                               value={
