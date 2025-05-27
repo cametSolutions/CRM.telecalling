@@ -654,7 +654,7 @@ const LeadMaster = ({
         >
           <div className="flex justify-between">
             <h2 className="text-xl md:text-2xl font-semibold  mb-2 md:mb-1">
-              {Data && Data.length > 0 ? "Lead Edit" : "Lead"}
+              {Data && Data?.length > 0 ? "Lead Edit" : "Lead"}
             </h2>
             <button
               onClick={() =>
@@ -798,10 +798,9 @@ const LeadMaster = ({
                         setModalOpen(true)
                         clearMainerrors()
                       }}
-                      className={` border  bg-blue-600 hover:bg-blue-700 text-white text-left rounded px-3 py-[0.30rem] text-lg
-    flex justify-between items-center
-    ${isReadOnly ? "cursor-not-allowed " : ""}
-  `}
+                      className={` border  bg-blue-600 hover:bg-blue-700 text-white text-left rounded px-3 py-[0.30rem] text-lg  flex justify-between items-center ${
+                        isReadOnly ? "cursor-not-allowed " : ""
+                      } `}
                     >
                       ADD
                     </button>
@@ -1193,11 +1192,13 @@ const LeadMaster = ({
                     ) : (
                       <>
                         <input type="hidden" {...registerMain("leadBy")} />
-                        <p className={`mt-1 w-full border rounded-md p-2 cursor-not-allowed  ${
-                          isReadOnly
-                            ? "cursor-not-allowed bg-gray-100 text-black"
-                            : "text-gray-500"
-                        }`}>
+                        <p
+                          className={`mt-1 w-full border rounded-md p-2 cursor-not-allowed  ${
+                            isReadOnly
+                              ? "cursor-not-allowed bg-gray-100 text-black"
+                              : "text-gray-500"
+                          }`}
+                        >
                           {loggeduser?.name}
                         </p>
                       </>

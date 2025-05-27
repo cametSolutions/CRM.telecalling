@@ -29,7 +29,7 @@ const LeadAllocationTable = () => {
       selectedCompanyBranch &&
       `/lead/getallLead?Status=${status}&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
   )
- 
+
   const { data } = UseFetch("/auth/getallUsers")
   const navigate = useNavigate()
   useEffect(() => {
@@ -97,7 +97,7 @@ const LeadAllocationTable = () => {
       )
 
       if (response.status >= 200 && response.status < 300) {
-console.log(response.data.data)
+        console.log(response.data.data)
         setTableData(response.data.data)
         setapprovedToggleStatus(!approvedToggleStatus)
         setToggleLoading(false)
@@ -182,7 +182,7 @@ console.log(response.data.data)
       console.log("error:", error.message)
     }
   }
- 
+
   return (
     <div className="flex flex-col h-full">
       {(submitLoading || loading) && (
@@ -352,72 +352,79 @@ console.log(response.data.data)
                       {item?.leadBy?.name}
                     </td>
                     <td className="border border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
-                      <Select
-                        options={allocationOptions}
-                        value={selectedAllocates[item._id] || null}
-                        onChange={(selectedOption) => {
-                          setSelectedAllocates((prev) => ({
-                            ...prev,
-                            [item._id]: selectedOption
-                          }))
-                          handleSelectedAllocates(item, selectedOption.value)
-                          setValidateError((prev) => ({
-                            ...prev,
-                            [item._id]: ""
-                          }))
-                        }}
-                        className="w-44 focus:outline-red-500"
-                        styles={{
-                          control: (base) => ({
-                            ...base,
-                            minHeight: "32px", // control height
-                            height: "32px",
-                            boxShadow: "none", // removes blue glow
-                            borderColor: "red",
-                            cursor: "pointer",
-                            "&:hover": {
-                              borderColor: "red" // optional hover styling
-                            }
-                          }),
-                          option: (base, state) => ({
-                            ...base,
-                            cursor: "pointer", // 👈 ensures pointer on option hover
-                            backgroundColor: state.isFocused
-                              ? "#f0f0f0"
-                              : "white", // optional styling
-                            color: "black"
-                          }),
-                          valueContainer: (base) => ({
-                            ...base,
-                            paddingTop: "2px", // Reduce vertical padding
-                            paddingBottom: "2px"
-                          }),
-                          indicatorsContainer: (base) => ({
-                            ...base,
-                            height: "30px"
-                          }),
-                          menu: (provided) => ({
-                            ...provided,
-                            maxHeight: "200px", // Set dropdown max height
-                            overflowY: "auto" // Enable scrolling
-                          }),
-                          menuList: (provided) => ({
-                            ...provided,
-                            maxHeight: "200px", // Ensures dropdown scrolls internally
-                            overflowY: "auto"
-                          })
-                        }}
-                        menuPlacement="auto"
-                        menuPosition="absolute"
-                        menuPortalTarget={document.body} // Prevents nested scrolling issues
-                        menuShouldScrollIntoView={false}
-                      />
+                      <div className="text-center">
+                        <div className="inline-block">
+                          <Select
+                            options={allocationOptions}
+                            value={selectedAllocates[item._id] || null}
+                            onChange={(selectedOption) => {
+                              setSelectedAllocates((prev) => ({
+                                ...prev,
+                                [item._id]: selectedOption
+                              }))
+                              handleSelectedAllocates(
+                                item,
+                                selectedOption.value
+                              )
+                              setValidateError((prev) => ({
+                                ...prev,
+                                [item._id]: ""
+                              }))
+                            }}
+                            className="w-44 focus:outline-red-500"
+                            styles={{
+                              control: (base) => ({
+                                ...base,
+                                minHeight: "32px", // control height
+                                height: "32px",
+                                boxShadow: "none", // removes blue glow
+                                borderColor: "red",
+                                cursor: "pointer",
+                                "&:hover": {
+                                  borderColor: "red" // optional hover styling
+                                }
+                              }),
+                              option: (base, state) => ({
+                                ...base,
+                                cursor: "pointer", // 👈 ensures pointer on option hover
+                                backgroundColor: state.isFocused
+                                  ? "#f0f0f0"
+                                  : "white", // optional styling
+                                color: "black"
+                              }),
+                              valueContainer: (base) => ({
+                                ...base,
+                                paddingTop: "2px", // Reduce vertical padding
+                                paddingBottom: "2px"
+                              }),
+                              indicatorsContainer: (base) => ({
+                                ...base,
+                                height: "30px"
+                              }),
+                              menu: (provided) => ({
+                                ...provided,
+                                maxHeight: "200px", // Set dropdown max height
+                                overflowY: "auto" // Enable scrolling
+                              }),
+                              menuList: (provided) => ({
+                                ...provided,
+                                maxHeight: "200px", // Ensures dropdown scrolls internally
+                                overflowY: "auto"
+                              })
+                            }}
+                            menuPlacement="auto"
+                            menuPosition="absolute"
+                            menuPortalTarget={document.body} // Prevents nested scrolling issues
+                            menuShouldScrollIntoView={false}
+                          />
 
-                      {validateError[item._id] && (
-                        <p className="text-red-500 text-sm">
-                          {validateError[item._id]}
-                        </p>
-                      )}
+                          {validateError[item._id] && (
+                            <p className="text-red-500 text-sm">
+                              {validateError[item._id]}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </td>
                     <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5">
                       {item.allocatedBy?.name}
