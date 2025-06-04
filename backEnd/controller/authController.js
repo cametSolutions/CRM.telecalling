@@ -5,6 +5,7 @@ import YearlyAchiever from "../model/primaryUser/yearylyAchieversSchema.js"
 import { getStaffSolvedCallCounts } from "../helper/staffHighestandlowestsolvedcallscount.js"
 import LeadMaster from "../model/primaryUser/leadmasterSchema.js"
 import { checkAcheivementlist } from "../helper/achievementCheck.js"
+import { PreviousmonthLeavesummary } from "../helper/previousMonthleaveSummary.js"
 import mongoose from "mongoose"
 import Branch from "../model/primaryUser/branchSchema.js"
 import Attendance from "../model/primaryUser/attendanceSchema.js"
@@ -1107,15 +1108,18 @@ export const OnsiteApply = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+
 export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
   try {
     const { year, month } = req.query || { year: yearParam, month: monthParam }
+    // console.log("year", year, "month", month)
 
     function getSundays(year, month) {
       const sundays = []
       const date = new Date(year, month - 1, 1) // Start from the 1st day of the month
 
-      while (date.getMonth() === month - 1) {s
+      while (date.getMonth() === month - 1) {
+
         if (date.getDay() === 0) {
           // 0 represents Sunday
           sundays.push(date.getDate()) // Get only the day (1-31)
@@ -2128,9 +2132,13 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               }
             }
           } else {
-            if (stats.name === "Aleena Thadevues") {
-              console.log("date", date)
-            }
+            // if (stats.name === "Aleena Thadevues") {
+            //   console.log("date", date)
+            //   const previousMonth = month - 1
+            //   const a = PreviousmonthLeavesummary(previousMonth, year, stats.userId)
+            //   console.log("dataaaaa", a)
+            // }
+
 
           }
 
@@ -2164,9 +2172,9 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             tempGroup = []
           }
         }
-        if (stats.name === "Aleena Thadevues") {
-          console.log(groups)
-        }
+        // if (stats.name === "Aleena Thadevues") {
+        //   console.log(groups)
+        // }
         groups.forEach((group) => {
           const first = group[0]
           const stringfirst = first.toISOString().split("T")[0]
@@ -2181,9 +2189,9 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           const prevFullPresent = isPresent(previousDay)
 
           const nextFullPresent = isPresent(nextDay)
-          if (stats.name.trim() === "Aleena Thadevues") {
-            console.log("nextpresent", previousDay, prevFullPresent)
-          }
+          // if (stats.name.trim() === "Aleena Thadevues") {
+          //   console.log("nextpresent", previousDay, prevFullPresent)
+          // }
           if (prevFullPresent?.status || nextFullPresent?.status) {
 
             stats.attendancedates[stringfirst].present = 1
