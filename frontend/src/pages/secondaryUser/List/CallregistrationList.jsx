@@ -75,9 +75,9 @@ const CallregistrationList = () => {
       const userId = users._id
       socket.emit("updatedCalls", userId)
       // Listen for initial data from the server
-      socket.on("updatedCalls", ({ calls, user }) => {
+      socket.on("updatedCalls", ({ mergedCalls, user }) => {
         if (users.role === "Admin") {
-          setCallList(calls)
+          setCallList(mergedCalls)
         } else {
           const userBranchName = new Set(
             users?.selected?.map((branch) => branch.branchName)
@@ -85,7 +85,7 @@ const CallregistrationList = () => {
 
           const branchNamesArray = Array.from(userBranchName)
 
-          const filtered = calls.filter(
+          const filtered = mergedCalls.filter(
             (call) =>
               Array.isArray(call?.callregistration) && // Check if callregistration is an array
               call.callregistration.some((registration) => {

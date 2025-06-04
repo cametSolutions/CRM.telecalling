@@ -418,7 +418,6 @@ const LeadMaster = ({
     setIsleadForOpen((prev) => !prev) // Toggle dropdown visibility
   }
   const handleSelectedCustomer = (option) => {
-    console.log("h")
     const filteredcustomerLicenseandproducts = allcustomer
       ?.filter(
         (item) =>

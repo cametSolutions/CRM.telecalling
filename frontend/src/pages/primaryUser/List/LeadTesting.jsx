@@ -2,7 +2,7 @@ import { useState, useEffect } from "react"
 import React from "react"
 import { formatDate } from "../../../utils/dateUtils"
 
-import { FaSpinner, FaTable } from "react-icons/fa"
+import { FaSpinner } from "react-icons/fa"
 import Select from "react-select"
 import { PropagateLoader } from "react-spinners"
 import { useNavigate } from "react-router-dom"
@@ -10,16 +10,16 @@ import BarLoader from "react-spinners/BarLoader"
 import api from "../../../api/api"
 import { toast } from "react-toastify"
 import UseFetch from "../../../hooks/useFetch"
-const LeadFollowUp = () => {
+const LeadTesting= () => {
   const [selectedLeadId, setSelectedLeadId] = useState(null)
 
   const [demoerror, setDemoError] = useState({
     selectStaff: "",
-    allocationDate: "",
+    demoDate: "",
     demoDescription: ""
   })
   const [isdemofollownotClosed, setisdemofollowedNotClosed] = useState(false)
-  const [isClosed, setIsClosed] = useState(false)
+
   const [editdemoIndex, setdemoEditIndex] = useState(null)
   const [
     editfollowUpDatesandRemarksEditIndex,
@@ -29,7 +29,6 @@ const LeadFollowUp = () => {
   const [isOwner, setOwner] = useState(false)
 
   const [message, setMessage] = useState("")
-  const [pending, setPending] = useState(true)
   const [demofollowerLoader, setdemofollowerLoader] = useState(false)
   const [loader, setLoader] = useState(false)
   const [allocationOptions, setAllocationOptions] = useState([])
@@ -42,7 +41,7 @@ const LeadFollowUp = () => {
   const [ownFollowUp, setOwnFollowUp] = useState(true)
   const [historyList, setHistoryList] = useState([])
   const [loggedUser, setloggedUser] = useState(null)
-  const [loggedUserBranches, setloggedUserBranches] = useState([])
+  const [loggedUserBranches, setloggedUserBranches] = useState(null)
   const [followupDateLoader, setfollowupDateLoader] = useState(false)
   const [input, setInput] = useState("")
   const [showFullRemarks, setShowFullRemarks] = useState("")
@@ -95,6 +94,14 @@ const LeadFollowUp = () => {
       selectedCompanyBranch &&
       `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}`
   )
+
+  useEffect(() => {
+    if (branches) {
+      const defaultbranch = branches[0]
+      setselectedCompanyBranch(defaultbranch._id)
+    }
+  }, [branches])
+
   useEffect(() => {
     if (data && selectedCompanyBranch) {
       const { allusers = [], allAdmins = [] } = data
@@ -134,82 +141,47 @@ const LeadFollowUp = () => {
       const userData = localStorage.getItem("user")
       const user = JSON.parse(userData)
       if (user.role === "Admin") {
-        if (user?.selected) {
-          const branches = user.selected.map((branch) => {
-            return {
-              value: branch.branch_id,
-              label: branch.branchName
-            }
-          })
-          setloggedUserBranches(branches)
-        } else {
-          const branches = branches.map((branch) => {
-            return {
-              value: branch.branch_id,
-              label: branch.branchName
-            }
-          })
-          setloggedUserBranches(branches)
-        }
+        const branch = branches.map((branch) => branch._id)
+        setloggedUserBranches(branch)
       } else {
-        const branches = user.selected.map((branch) => {
-          return {
-            value: branch.branch_id,
-            label: branch.branchName
-          }
-        })
+        const branches = user.selected.map((branch) => branch.branch_id)
         setloggedUserBranches(branches)
       }
 
       setloggedUser(user)
     }
   }, [branches])
-  useEffect(() => {
-    if (loggedUserBranches && loggedUserBranches.length > 0) {
-      const defaultbranch = loggedUserBranches[0]
-      setselectedCompanyBranch(defaultbranch.value)
-    }
-  }, [loggedUserBranches])
   // Close when clicking outside
 
   useEffect(() => {
     if (loggedusersallocatedleads) {
       setLeads(loggedusersallocatedleads.followupLeads)
-      setTableData([])
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
     }
   }, [loggedusersallocatedleads])
   useEffect(() => {
-    if (leads && leads.length && loggedUser) {
-    
+    if (leads && leads.length && loggedUser && ownFollowUp) {
+      console.log(tableData)
+      console.log("h")
 
       const currentDate = new Date()
 
       // 1. Leads with follow-ups
       const leadsWithFollowUps = leads
-        .filter(
-          (lead) =>
-            lead.allocatedTo._id === loggedUser._id &&
-            Array.isArray(lead.activityLog) &&
-            lead.activityLog.some((log) => log.followup && log.nextfollowup)
-        )
+        .filter((lead) => lead.allocatedTo._id === loggedUser._id)
+        .filter((lead) => lead.followUpDatesandRemarks.length > 0)
         .map((lead) => {
-          const pendingFollowups = lead.activityLog?.filter((log) => {
-            return (
-              log.followup && // field exists and has value
-              log.nextfollowup && // field exists and has value
-              log.taskClosed === false // still pending
-            )
-          })
           // Get the closest nextfollowUpDate from the followUpDatesandRemarks array
-          const nextFollowUp = pendingFollowups.reduce((closest, curr) => {
-            const currDate = new Date(curr.nextfollowUpDate)
-            const closestDate = new Date(closest.nextfollowUpDate)
-            return Math.abs(currDate - currentDate) <
-              Math.abs(closestDate - currentDate)
-              ? curr
-              : closest
-          })
+          const nextFollowUp = lead.followUpDatesandRemarks.reduce(
+            (closest, curr) => {
+              const currDate = new Date(curr.nextfollowUpDate)
+              const closestDate = new Date(closest.nextfollowUpDate)
+              return Math.abs(currDate - currentDate) <
+                Math.abs(closestDate - currentDate)
+                ? curr
+                : closest
+            }
+          )
 
           return {
             ...lead,
@@ -219,24 +191,53 @@ const LeadFollowUp = () => {
         .sort((a, b) => a.closestNextFollowUp - b.closestNextFollowUp)
 
       // 2. Leads with empty followUpDatesandRemarks
-      const leadsWithoutFollowUps = leads.filter((lead) =>
-        ownFollowUp
-          ? lead.allocatedTo?._id === loggedUser._id
-          : lead?.allocatedTo?._id !== loggedUser?._id &&
-            Array.isArray(lead.activityLog) &&
-            lead.activityLog.some(
-              (log) =>
-                log.taskTo === "followup" &&
-                (!log.nextfollowup || log.nextfollowup.trim?.() === "")
-            )
+      const leadsWithoutFollowUps = leads.filter(
+        (lead) => lead.followUpDatesandRemarks.length === 0
       )
 
       // 3. Combined
       const finalSortedLeads = [...leadsWithFollowUps, ...leadsWithoutFollowUps]
 
       setTableData(finalSortedLeads)
+    } else if (loggedusersallocatedleads && loggedUser) {
+      console.log(leads)
+
+      const currentDate = new Date()
+
+      // 1. Leads with follow-ups
+      const leadsWithFollowUps = leads
+        .filter((lead) => lead.allocatedTo._id !== loggedUser._id)
+        .filter((lead) => lead.followUpDatesandRemarks.length > 0)
+        .map((lead) => {
+          // Get the closest nextfollowUpDate from the followUpDatesandRemarks array
+          const nextFollowUp = lead.followUpDatesandRemarks.reduce(
+            (closest, curr) => {
+              const currDate = new Date(curr.nextfollowUpDate)
+              const closestDate = new Date(closest.nextfollowUpDate)
+              return Math.abs(currDate - currentDate) <
+                Math.abs(closestDate - currentDate)
+                ? curr
+                : closest
+            }
+          )
+
+          return {
+            ...lead,
+            closestNextFollowUp: new Date(nextFollowUp.nextfollowUpDate)
+          }
+        })
+        .sort((a, b) => a.closestNextFollowUp - b.closestNextFollowUp)
+
+      // 2. Leads with empty followUpDatesandRemarks
+      const leadsWithoutFollowUps = leads.filter(
+        (lead) => lead.followUpDatesandRemarks.length === 0
+      )
+
+      // 3. Combined
+      const finalSortedLeads = [...leadsWithFollowUps, ...leadsWithoutFollowUps]
+      console.log(finalSortedLeads)
+      setTableData(finalSortedLeads)
     }
-   
   }, [ownFollowUp, leads, loggedUser])
 
   useEffect(() => {
@@ -257,7 +258,7 @@ const LeadFollowUp = () => {
       clearTimeout(handler) // cleanup
     }
   }, [input])
- 
+
   const handleDataChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({
@@ -267,7 +268,7 @@ const LeadFollowUp = () => {
     if (isAllocated) {
       setDemodata((prev) => ({
         ...prev,
-        ...(name === "nextfollowUpDate" || name === "allocationDate"
+        ...(name === "nextfollowUpDate"
           ? { demoallocatedDate: value }
           : { demoDescription: value })
       }))
@@ -280,28 +281,20 @@ const LeadFollowUp = () => {
         setDemoError((prev) => ({ ...prev, demoDescription: "" }))
       }
     } else if (name === "nextfollowUpDate") {
-      if (errors.nextfollowUpDate) {
-        setErrors((prev) => ({
-          ...prev,
-          nextfollowUpDate: ""
-        }))
-      }
-    } else if (name === "allocationDate") {
-      if (demoerror.allocationDate) {
+      if (demoerror.demoDate) {
         setDemoError((prev) => ({
           ...prev,
-          allocationDate: ""
+          demoDate: ""
         }))
       }
     }
   }
 
   const handleHistory = (history, leadid, docId, allocatedTo, demofollowUp) => {
+ 
     const owner = loggedUser._id === allocatedTo
     setOwner(owner)
-    const isHaveDemo = demofollowUp
-      ? demofollowUp[demofollowUp?.length - 1]
-      : null
+    const isHaveDemo = demofollowUp?demofollowUp[demofollowUp?.length - 1]:null
     if (isHaveDemo) {
       const isdemofollowupclosed = isHaveDemo?.demofollowerDate === null
       if (isdemofollowupclosed) {
@@ -345,6 +338,7 @@ const LeadFollowUp = () => {
     setHistoryList(history)
     setSelectedLeadId(leadid)
   }
+console.log(showModal)
   const handlefollowupdate = (Id, docId) => {
     setfollowupDateModal(true)
     setSelectedLeadId(Id)
@@ -356,18 +350,19 @@ const LeadFollowUp = () => {
       }))
     }
   }
+
   const handleDemoSubmit = async () => {
     if (isdemofollownotClosed) {
       setDemoError((prev) => ({
         ...prev,
-        submiterror: "Cant submit, demo is not closed",
+        submiterror: "Cant submit demo is not closed",
         demoDescription: ""
       }))
       return
     }
     const newError = {}
     if (demoData.demoallocatedDate === "") {
-      newError.allocationDate = "Allocation Date is  Required"
+      newError.demoDate = "Follow up is Required"
     }
     if (demoData.demoDescription === "") {
       newError.demoDescription = "Remarks is Required"
@@ -380,14 +375,17 @@ const LeadFollowUp = () => {
       return
     }
 
-
     try {
       setLoader(true)
 
       const response = await api.post(
         `/lead/setdemolead?demoallocatedBy=${loggedUser._id}&leaddocId=${selectedDocId}`,
-
-        demoData
+        {
+          demoData,
+          formData,
+          editdemoIndex,
+          editfollowUpDatesandRemarksEditIndex
+        }
       )
 
       setLoader(false)
@@ -418,11 +416,8 @@ const LeadFollowUp = () => {
       let newErrors = {}
       if (!formData.followUpDate)
         newErrors.followUpDate = "Follow Up Date is required"
-
-      if (!formData.nextfollowUpDate && !isClosed)
+      if (!formData.nextfollowUpDate)
         newErrors.nextfollowUpDate = "Next Follow Up Date Is Required"
-
-
       if (!formData.Remarks)
         if (!formData.Remarks) newErrors.Remarks = "Remarks is Required"
 
@@ -430,12 +425,11 @@ const LeadFollowUp = () => {
         setErrors(newErrors)
         return
       }
-
       setfollowupDateLoader(!followupDateLoader)
 
       const response = await api.put(
         `/lead/followupDateUpdate?selectedleaddocId=${selectedDocId}&loggeduserid=${loggedUser._id}`,
-        { formData, closed: isClosed }
+        formData
       )
 
       toast.success(response.data.message)
@@ -458,6 +452,7 @@ const LeadFollowUp = () => {
       console.log("error:", error.message)
     }
   }
+  console.log(historyList)
   return (
     <div className="h-full flex flex-col ">
       {loading && (
@@ -469,27 +464,11 @@ const LeadFollowUp = () => {
 
       <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center mx-3 md:mx-5 mt-3 mb-3 gap-4">
         {/* Title */}
-        <h2 className="text-lg font-bold">Lead Follow Up</h2>
+        <h2 className="text-lg font-bold">Lead Testing</h2>
 
         {/* Right Section */}
         <div className="grid grid-cols-2 md:flex md:flex-row md:gap-6 gap-3 items-start md:items-center w-full md:w-auto">
-          <div className="flex items-center gap-2">
-            <span className="text-sm whitespace-nowrap">
-              {pending ? "Pending" : "Cleared"}
-            </span>
-            <button
-              onClick={() => setPending(!pending)}
-              className={`${
-                pending ? "bg-green-500" : "bg-gray-300"
-              } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
-            >
-              <div
-                className={`${
-                  pending ? "translate-x-5" : "translate-x-0"
-                } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-              ></div>
-            </button>
-          </div>
+          {/* Message Icon with Badge and Popup */}
 
           {/* Branch Dropdown */}
           <select
@@ -497,9 +476,9 @@ const LeadFollowUp = () => {
             onChange={(e) => setselectedCompanyBranch(e.target.value)}
             className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px] w-full"
           >
-            {loggedUserBranches?.map((branch) => (
-              <option key={branch.value} value={branch.value}>
-                {branch.label}
+            {branches?.map((branch) => (
+              <option key={branch._id} value={branch._id}>
+                {branch.branchName}
               </option>
             ))}
           </select>
@@ -510,10 +489,7 @@ const LeadFollowUp = () => {
               {ownFollowUp ? "Own FollowUp" : "Colleague FollowUp"}
             </span>
             <button
-              onClick={() => {
-                setOwnFollowUp(!ownFollowUp)
-                setTableData([])
-              }}
+              onClick={() => setOwnFollowUp(!ownFollowUp)}
               className={`${
                 ownFollowUp ? "bg-green-500" : "bg-gray-300"
               } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
@@ -625,21 +601,21 @@ const LeadFollowUp = () => {
                     <td className="px-4 ">No. of Followups</td>
                     <td className="px-4 min-w-[120px]">Lead Date</td>
                     <td className=" border border-t-0 border-b-0 border-gray-400 px-4 ">
-                      {/* {new Date(
+                      {new Date(
                         item.followUpDatesandRemarks[
                           item.followUpDatesandRemarks.length - 1
                         ]?.nextfollowUpDate
                       )
                         .toLocaleDateString("en-GB")
                         .split("/")
-                        .join("-")} */}
+                        .join("-")}
                     </td>
                     <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer">
                       <button
                         type="button"
                         onClick={() =>
                           handleHistory(
-                            item?.activityLog,
+                            item?.followUpDatesandRemarks,
                             item.leadId, //like 00001
                             item?._id, //lead doc id
                             item?.allocatedTo?._id,
@@ -666,7 +642,7 @@ const LeadFollowUp = () => {
                       {item.allocatedBy?.name}
                     </td>
                     <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400  px-4 py-0.5 ">
-                      {/* {item.followUpDatesandRemarks.length} */}
+                      {item.followUpDatesandRemarks.length}
                     </td>
                     <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
                       {item.leadDate?.toString().split("T")[0]}
@@ -759,17 +735,17 @@ const LeadFollowUp = () => {
                         <table className="w-full text-sm border-collapse">
                           <thead className="text-center sticky top-0 z-10">
                             <tr className="bg-indigo-100">
+                              {loggedUser?.role === "Admin" && (
+                                <th className="border border-indigo-200 p-2 min-w-[100px] ">
+                                  FollowedBy
+                                </th>
+                              )}
+
                               <th className="border border-indigo-200 p-2 min-w-[100px] ">
                                 Date
                               </th>
-                              <th className="border border-indigo-200 p-2 min-w-[100px] ">
-                                User
-                              </th>
-                              <th className="border border-indigo-200 p-2 min-w-[100px] ">
-                                Task
-                              </th>
                               <th className="border border-indigo-200 p-2 w-fit min-w-[200px]">
-                                Remarks
+                                Remark
                               </th>
                               <th className="border border-indigo-200 p-2 min-w-[100px] ">
                                 Next Follow Up Date
@@ -793,16 +769,18 @@ const LeadFollowUp = () => {
                                           : "bg-white"
                                       }
                                     >
+                                      {loggedUser?.role === "Admin" && (
+                                        <td className="border border-gray-200 p-2">
+                                          {item?.followedId?.name}
+                                        </td>
+                                      )}
+
                                       <td className="border border-gray-200 p-2">
                                         {new Date(subItem.followerDate)
                                           .toLocaleDateString("en-GB")
                                           .split("/")
                                           .join("-")}
                                       </td>
-                                      <td className="border border-gray-200 p-2">
-                                        {item?.followedId?.name}
-                                      </td>
-
                                       <td className="border border-gray-200 p-2">
                                         {subItem?.followerDescription || "N/A"}
                                       </td>
@@ -823,54 +801,26 @@ const LeadFollowUp = () => {
                                         : "bg-white"
                                     }
                                   >
+                                    {loggedUser?.role === "Admin" && (
+                                      <td className="border border-gray-200 p-2">
+                                        {item?.followedId?.name}
+                                      </td>
+                                    )}
+
                                     <td className="border border-gray-200 p-2">
-                                      {new Date(item.submissionDate)
+                                      {new Date(item.followUpDate)
                                         .toLocaleDateString("en-GB")
                                         .split("/")
                                         .join("-")}
                                     </td>
                                     <td className="border border-gray-200 p-2">
-                                      {item?.submittedUser?.name}
-                                    </td>
-                                    <td className="border border-gray-200 p-2 min-w-[160px]">
-                                      <div className="flex justify-center">
-                                        {item.taskTo ? (
-                                          <>
-                                            <span>{item.taskBy}</span>-
-                                            <span>
-                                              {item.taskallocatedTo?.name}
-                                            </span>
-                                          </>
-                                        ) : (
-                                          item.taskBy
-                                        )}
-                                      </div>
-
-                                      {item.taskTo && (
-                                        <>
-                                          <span>{item.taskTo}</span>
-                                          {item.allocationDate && (
-                                            <span>
-                                              -on(
-                                              {new Date(
-                                                item.allocationDate
-                                              ).toLocaleDateString("en-GB")}
-                                              )
-                                            </span>
-                                          )}
-                                        </>
-                                      )}
+                                      {item?.Remarks || "N/A"}
                                     </td>
                                     <td className="border border-gray-200 p-2">
-                                      {item?.remarks || "N/A"}
-                                    </td>
-                                    <td className="border border-gray-200 p-2">
-                                      {item?.nextFollowUpDate
-                                        ? new Date(item?.nextFollowUpDate)
-                                            .toLocaleDateString("en-GB")
-                                            .split("/")
-                                            .join("-")
-                                        : "-"}
+                                      {new Date(item.nextfollowUpDate)
+                                        .toLocaleDateString("en-GB")
+                                        .split("/")
+                                        .join("-")}
                                     </td>
                                   </tr>
                                 )
@@ -922,10 +872,36 @@ const LeadFollowUp = () => {
                               </p>
                             )}
                           </div>
+                          <div>
+                            <label className="block text-left font-semibold text-gray-500">
+                              Next Follow Up
+                            </label>
+                            <input
+                              type="date"
+                              name="nextfollowUpDate"
+                              disabled={isdemofollownotClosed}
+                              value={
+                                demoData.demoallocatedDate ||
+                                formData?.nextfollowUpDate
+                              }
+                              className="rounded-md w-full py-1 px-2 border border-gray-200 focus:outline-none hover:cursor-pointer"
+                              onChange={handleDataChange}
+                            ></input>
+                            {errors.nextfollowUpDate && (
+                              <p className="text-red-500">
+                                {errors.nextfollowUpDate}
+                              </p>
+                            )}
+                            {demoerror.demoDate && (
+                              <p className="text-red-500">
+                                {demoerror.demoDate}
+                              </p>
+                            )}
+                          </div>
                           <div className="text-left flex items-center  gap-2 ">
                             <input
                               type="checkbox"
-                              // disabled={demoData.demoDescription}
+                              disabled={demoData.demoDescription}
                               id="allocation"
                               className={`w-4 h-4  ${
                                 isdemofollownotClosed
@@ -934,9 +910,6 @@ const LeadFollowUp = () => {
                               }`}
                               checked={isAllocated}
                               onChange={() => {
-                                if (isClosed) {
-                                  return
-                                }
                                 setIsAllocated(!isAllocated)
                                 setFormData((prev) => ({
                                   ...prev,
@@ -947,27 +920,6 @@ const LeadFollowUp = () => {
                             />
                             <label htmlFor="allocation" className="text-sm">
                               Allocation
-                            </label>
-                            <input
-                              type="checkbox"
-                              // disabled={demoData.demoDescription}
-                              id="close"
-                              className="w-4 h-4"
-                              checked={isClosed}
-                              onChange={() => {
-                                if (isAllocated) {
-                                  return
-                                }
-                                setIsClosed(!isClosed)
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  Remarks: "",
-                                  nextfollowUpDate: ""
-                                }))
-                              }}
-                            />
-                            <label htmlFor="allocation" className="text-sm">
-                              Closed
                             </label>
                           </div>
                           {isAllocated && (
@@ -1064,44 +1016,6 @@ const LeadFollowUp = () => {
                               {demoerror.selectStaff}
                             </p>
                           )}
-                          {!isClosed && (
-                            <div>
-                              <label className="block text-left font-semibold text-gray-500">
-                                {isAllocated
-                                  ? "Allocation Date"
-                                  : "Next Follow Up"}
-                              </label>
-                              <input
-                                type="date"
-                                name={
-                                  isAllocated
-                                    ? "allocationDate"
-                                    : "nextfollowUpDate"
-                                }
-                                disabled={isdemofollownotClosed}
-                                value={
-                                  demoData.demoallocatedDate ||
-                                  formData?.nextfollowUpDate
-                                }
-                                className="rounded-md w-full py-1 px-2 border border-gray-200 focus:outline-none hover:cursor-pointer"
-                                onChange={handleDataChange}
-                              ></input>
-                              <div className="text-left text-sm">
-                                {errors.nextfollowUpDate && (
-                                  <p className="text-red-500">
-                                    {errors.nextfollowUpDate}
-                                  </p>
-                                )}
-
-                                {demoerror.allocationDate && (
-                                  <p className="text-red-500">
-                                    {demoerror.allocationDate}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
                           <div>
                             <label className="block text-left">Remarks</label>
                             <textarea
@@ -1118,16 +1032,14 @@ const LeadFollowUp = () => {
                               }
                               onChange={handleDataChange}
                             />
-                            <div className="text-left text-sm">
-                              {errors.Remarks && (
-                                <p className="text-red-500">{errors.Remarks}</p>
-                              )}
-                              {demoerror.demoDescription && (
-                                <p className="text-red-500">
-                                  {demoerror.demoDescription}
-                                </p>
-                              )}
-                            </div>
+                            {errors.Remarks && (
+                              <p className="text-red-500">{errors.Remarks}</p>
+                            )}
+                            {demoerror.demoDescription && (
+                              <p className="text-red-500">
+                                {demoerror.demoDescription}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1202,4 +1114,4 @@ const LeadFollowUp = () => {
   )
 }
 
-export default LeadFollowUp
+export default LeadTesting

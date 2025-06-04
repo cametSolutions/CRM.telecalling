@@ -6,12 +6,7 @@ import ClipLoader from "react-spinners/ClipLoader"
 import io from "socket.io-client"
 import { formatDate } from "../../../utils/dateUtils"
 import { useForm } from "react-hook-form"
-import {
-  
-  parseISO,
-  differenceInDays,
-  
-} from "date-fns"
+import { parseISO, differenceInDays } from "date-fns"
 import api from "../../../api/api"
 
 import UseFetch from "../../../hooks/useFetch"
@@ -25,7 +20,7 @@ export default function CallRegistration() {
   const {
     register,
     handleSubmit,
-   
+
     setValue,
     reset,
     formState: { errors }
@@ -322,7 +317,6 @@ export default function CallRegistration() {
     return token
   }
   function timeStringToSeconds(timeString) {
-
     const [hours, minutes, seconds] = timeString.split(":").map(Number)
     return hours * 3600 + minutes * 60 + seconds
   }
@@ -631,10 +625,9 @@ Problem:    \t${selectedText}
       //   `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
       //     user.role
       //   }&userBranch=${encodeURIComponent(branches)}`
-
       url =
         branches &&
-        branches?.length > 0 &&
+        branches.length > 0 &&
         `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
           user.role
         }&userBranch=${encodeURIComponent(branches)}`

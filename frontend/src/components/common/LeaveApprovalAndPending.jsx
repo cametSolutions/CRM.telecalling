@@ -39,22 +39,17 @@ const LeaveApprovalAndPending = () => {
     }
   }, [])
   useEffect(() => {
-    console.log(searchQuery)
     if (leaveList) {
       if (searchQuery) {
-        console.log(leaveList)
         const filtered = leaveList.filter((item) =>
           item.userId?.name?.toLowerCase().includes(searchQuery.toLowerCase())
         )
         setFilteredlist(filtered)
-        console.log(filtered)
       }
     } else {
       setFilteredlist([])
     }
-    console.log(leaveList)
   }, [searchQuery, leaveList])
-  console.log(leaveList)
   useEffect(() => {
     const today = dayjs()
 

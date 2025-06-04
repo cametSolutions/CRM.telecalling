@@ -157,6 +157,16 @@ export default function AdminHeader() {
       to: "/admin/transaction/lead/leadFollowUp",
       label: "Lead Follow Up"
     },
+    {
+      to: "/admin/transaction/lead/leadProgramming",
+      label: "Lead Programming",
+      control: true
+    },
+    {
+      to: "/admin/transaction/lead/leadTesting",
+      label: "Lead Testing",
+      control: true
+    },
     { to: "/admin/transaction/lead/demoFollowup", label: "Demo" }
   ]
   const inventorys = [

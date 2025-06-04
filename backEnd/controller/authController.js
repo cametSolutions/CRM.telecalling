@@ -567,7 +567,7 @@ export const GetAllstaffs = async (req, res) => {
 }
 export const GetallUsers = async (req, res) => {
   try {
-    const allusers = await Staff.find({isVerified:true})
+    const allusers = await Staff.find({ isVerified: true })
       .populate({ path: "department", select: "department" })
       .populate({ path: "assignedto", select: "name" })
 
@@ -2095,11 +2095,19 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
         return `${prevYear}-${prevMonth}-${prevDay}`
       }
+      // if (stats.name.trim() === "Aleena Thadevues") {
+      //   console.log("stats", stats)
+      // }
 
       ; (function calculateAbsences(allholidayfulldate, attendances, onsites) {
         const isPresent = (date) => {
+          // if (stats.name.trim() === "Aleena Thadevues") {
+
+          //   console.log("prevdaaaaaaaaayy", date)
+          // }
           for (const dates in attendances.attendancedates) {
             if (date === dates) {
+              // console.log("date",date)
               const attendance = attendances.attendancedates[dates]
 
               if (
@@ -2109,6 +2117,16 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                 attendance.compensatoryLeave !== "" ||
                 attendance.notMarked !== ""
               ) {
+                // if (stats.name.trim() === "Aleena Thadevues") {
+                //   console.log("leave undor notmarked", date)
+                //   // console.log("+++++++++++++++")
+                //   // console.log(date, "otherleave", attendance.otherLeave !== "")
+                //   // console.log(date, "otherleave", attendance.privileageLeave !== "")
+                //   // console.log(date, "otherleave", attendance.casualLeave !== "")
+                //   // console.log(date, "otherleave", attendance.compensatoryLeave !== "")
+                //   // console.log(date, "otherleave", attendance.notMarked !== "")
+                //   // console.log("88888888888888888")
+                // }
                 return {
                   status: false,
                   present: attendance.present,
@@ -2116,17 +2134,24 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                   notMarked: attendance.notMarked
                 }
               } else {
+                // if (stats.name.trim() === "Aleena Thadevues") {
+                //   console.log("no leave", date)
+                // }
+
                 return {
                   status: true,
                   present: attendance.present,
                   notMarked: attendance.notMarked
                 }
               }
+            } else {
+              // console.log("undefineddate",date)
             }
           }
         }
         // Sort dates first to ensure they are in order
         const sortedHolidays = allholidayfulldate.sort()
+
 
         // Find groups of consecutive holidays
         let groups = []
@@ -2159,12 +2184,22 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
           const previousDay = getPreviousDate(stringfirst)
           const nextDay = getNextDate(stringlast)
-
+          // if (stats.name.trim() === "Aleena Thadevues") {
+          //   console.log("prev", previousDay, stats.name)
+          // }
           const prevFullPresent = isPresent(previousDay)
+          // if (stats.name.trim() === "Aleena Thadevues") {
+          //   console.log("fullpresent", previousDay, prevFullPresent)
+          // }
           const nextFullPresent = isPresent(nextDay)
 
           if (prevFullPresent?.status || nextFullPresent?.status) {
+
             stats.attendancedates[stringfirst].present = 1
+            // if (stats.name.trim() === "Aleena Thadevues") {
+            //   console.log("---------------------")
+            //   console.log(stringfirst, stats.attendancedates[stringfirst].present)
+            // }
             stats.attendancedates[stringlast].present = 1
             stats.attendancedates[stringlast].notMarked = ""
             // stats.attendancedates[nextDay].otherLeave = 1
@@ -2181,6 +2216,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           // }
         })
       })(allholidays, stats, onsites)
+
 
       // for (const dates in stats.attendancedates) {
       //   stats.present += stats.attendancedates[dates].present
@@ -3638,7 +3674,7 @@ export const GetindividualStaffCall = async (req, res) => {
         select: "productName" // Optionally select fields from the Product schema you need
       }
     ])
-   
+
     const allpopulate = await Promise.all(
       populatedCalls.map(async (item) => {
         // Loop over callregistration (async inside map — better use for...of)
@@ -3678,7 +3714,7 @@ export const GetindividualStaffCall = async (req, res) => {
         return item;
       })
     );
-    
+
 
     if (calls) {
       // Respond with the filtered call data

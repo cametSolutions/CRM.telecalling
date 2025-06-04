@@ -142,7 +142,6 @@ const CustomerAdd = ({
         if (customer.selected.length > 0) {
           setShowTable(true)
         }
-        console.log(customer)
         reset({
           customerName: customer.customerName,
           address1: customer.address1,

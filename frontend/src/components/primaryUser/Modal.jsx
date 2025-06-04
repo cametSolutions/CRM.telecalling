@@ -446,8 +446,8 @@ const Modal = ({
   return (
     isOpen &&
     Object.keys(leaveBalance).length > 0 && (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center  ">
-        <div className="bg-green-50 p-5 rounded-lg shadow-lg w-[350px] z-40 mt-16">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50  ">
+        <div className="bg-green-50 p-5 rounded-lg shadow-lg w-[350px] mt-16">
           <h2 className="text-xl font-semibold text-center mb-2">
             {typeofMode} Application
           </h2>
