@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from "react"
-import * as XLSX from "xlsx"
 import ExcelJS from "exceljs"
 import { saveAs } from "file-saver"
 import BarLoader from "react-spinners/BarLoader"
@@ -8,7 +7,7 @@ import Modal from "./Modal"
 import api from "../../api/api"
 import UseFetch from "../../hooks/useFetch"
 import { toast } from "react-toastify"
-const leaveSummary = () => {
+const LeaveSummary = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [warningMessage, setWarningMessage] = useState("")
   const [newattende, setnewattendee] = useState([])
@@ -19,7 +18,6 @@ const leaveSummary = () => {
   const [selectedStaff, setselectedStaff] = useState("")
   const [selectedYear, setSelectedYear] = useState(currentYear)
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)
-  const [onsiteTypes, setOnsiteTypes] = useState({})
   const [formData, setFormData] = useState({})
   const [selectedDate, setselectedDate] = useState(null)
   const [type, setType] = useState("")
@@ -36,10 +34,8 @@ const leaveSummary = () => {
   const {
     data,
 
-    loading,
-    
+    loading
   } = UseFetch(apiUrl)
-
   useEffect(() => {
     if (data) {
       const { staffAttendanceStats, listofHolidays, sundayFulldate } = data
@@ -106,7 +102,7 @@ const leaveSummary = () => {
     setselectedStaff(filteredAttendance)
   }
   // Handle onsite type change
-  
+
   const handleAttendance = useCallback((date, type, inTime, outTime) => {
     setModalOpen(true)
     setselectedDate(date)
@@ -261,7 +257,6 @@ const leaveSummary = () => {
       toast.error(error.response.data.message)
     }
   }
- 
 
   const handleDownload = (data) => {
     // Using ExcelJS instead of XLSX for better styling control
@@ -371,6 +366,7 @@ const leaveSummary = () => {
       saveAs(blob, "Attendance_Report.xlsx")
     })
   }
+  
   return (
     <div className="w-full flex flex-col h-full">
       {loading && (
@@ -562,4 +558,4 @@ const leaveSummary = () => {
   )
 }
 
-export default leaveSummary
+export default LeaveSummary

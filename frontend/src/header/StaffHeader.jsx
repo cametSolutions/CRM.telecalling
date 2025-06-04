@@ -171,7 +171,17 @@ export default function StaffHeader() {
       label: "Lead Follow Up",
       control: user?.permissions?.[0]?.LeadFollowUp ?? false
     },
-    { to: "/staff/transaction/lead/demoFollowup", label: "Demo", control: true }
+    {
+      to: "/staff/transaction/lead/leadTask",
+      label: "Task",
+      control: true
+    },
+  
+    {
+      to: "/staff/transaction/lead/leadReallocation",
+      label: "Lead Reallocation",
+      control: true
+    },
   ]
   const inventorys = [
     {

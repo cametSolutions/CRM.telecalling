@@ -67,7 +67,6 @@ const UserPermissionList = ({ user, closeModal, Loader }) => {
 
   const handleChange = (e) => {
     const { name, checked } = e.target
-    console.log("chedkedin", checked)
     // Update the user permissions
     const updatedPermissions = {
       ...userPermissions,

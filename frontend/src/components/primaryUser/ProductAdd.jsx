@@ -324,7 +324,7 @@ const ProductAdd = ({
       }
       // Refetch the product data
     } catch (error) {
-      console.log("error on onsubmit")
+      console.log("error on onsubmit",error)
       toast.error("Failed to add product!")
     }
   }

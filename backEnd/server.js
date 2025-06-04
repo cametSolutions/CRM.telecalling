@@ -58,7 +58,7 @@ io.on("connection", (socket) => {
       const todayStart =
         new Date().toISOString().split("T")[0] + "T00:00:00.000Z"
       const todayEnd = new Date().toISOString().split("T")[0] + "T23:59:59.999Z"
-     
+
       const pendingcalls = await CallRegistration.aggregate([
         {
           $set: {
@@ -83,6 +83,7 @@ io.on("connection", (socket) => {
           }
         }
       ])
+     
       const todayscalls = await CallRegistration.aggregate([
         // Filter the callregistration array to keep only entries with today's attendance
         {
@@ -226,17 +227,33 @@ io.on("connection", (socket) => {
           }
         }
       ])
-
-      const uniqueCalls = new Map()
-      ;[...pendingcalls, ...todayscalls].forEach((call) => {
-        uniqueCalls.set(call._id.toString(), call) // Ensures only one instance per _id
+      // Step 1: Use a Map to store unique merged entries by _id
+      const mergedMap = new Map();
+      // const uniqueCalls = new Map()
+      //   ;[...pendingcalls, ...todayscalls].forEach((call) => {
+      //     uniqueCalls.set(call._id.toString(), call) // Ensures only one instance per _id
+      //   })
+      // const calls = Array.from(uniqueCalls.values())
+      pendingcalls.forEach((call) => {
+        mergedMap.set(call._id, { ...call })
       })
-      const calls = Array.from(uniqueCalls.values())
-
+      todayscalls.forEach((call) => {
+        if (mergedMap.has(call._id)) {
+          //Merge callregistration arrays
+          const existing = mergedMap.get(call._id)
+          existing.callregistration = [...existing.callregistration,
+          ...call.callregistration]
+          mergedMap.set(call._id, existing)
+        } else {
+          mergedMap.set(call._id, { ...call })
+        }
+      })
+      // Final merged array
+      const mergedCalls = Array.from(mergedMap.values());
       // Extract unique IDs for attendedBy and completedBy
       const attendedByIds = new Set()
       const completedByIds = new Set()
-      calls.forEach((call) =>
+      mergedCalls.forEach((call) =>
         call.callregistration.forEach((entry) => {
           // Handle `attendedBy`
           const attendedBy = entry.formdata.attendedBy
@@ -344,7 +361,7 @@ io.on("connection", (socket) => {
         ])
       )
 
-      calls.forEach((call) =>
+      mergedCalls.forEach((call) =>
         call.callregistration.forEach((entry) => {
           // Handle attendedBy field
           if (Array.isArray(entry?.formdata?.attendedBy)) {
@@ -393,8 +410,8 @@ io.on("connection", (socket) => {
           user = await Admin.findOne({ _id: objectId })
         }
       }
-     
-      io.emit("updatedCalls", { calls, user })
+
+      io.emit("updatedCalls", { mergedCalls, user })
     } catch (error) {
       console.error("Error fetching call data:", error)
       socket.emit("error", "Error fetching data")

@@ -10,6 +10,7 @@ import debounce from "lodash.debounce"
 
 function LeaveApplication() {
   const [events, setEvents] = useState([])
+// const [ownCalander,setOwnCalander]=useState()
   const [edit, setEdit] = useState(null)
   const [isHaveCompensatoryleave, setcompensatoryLeave] = useState(false)
   const [selectedDate, setSelectedDate] = useState(new Date())
@@ -1647,6 +1648,23 @@ function LeaveApplication() {
       <div className="flex items-center justify-between sticky top-0 py-3 px-4 z-30 bg-white">
         <h2 className="text-xl font-semibold">{visibleMonth}</h2>
         <div className="flex space-x-2">
+          {/* <div className="flex items-center gap-2">
+            <span className="text-sm whitespace-nowrap">
+             {ownFollowUp ? "Own FollowUp" : "Colleague FollowUp"}
+            </span>
+            <button
+              onClick={() => setOwnCalander(!ownCalander)}
+              className={`${
+                ownCalender ? "bg-green-500" : "bg-gray-300"
+              } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
+            >
+              <div
+                className={`${
+                  ownCalender ? "translate-x-5" : "translate-x-0"
+                } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+              ></div>
+            </button>
+          </div>  */}
           <button
             onClick={prevMonth}
             className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"

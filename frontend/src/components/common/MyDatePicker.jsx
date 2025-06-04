@@ -1,4 +1,4 @@
-import { useState, forwardRef, useEffect } from "react"
+import { forwardRef, useEffect } from "react"
 import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
 import { FaCalendarAlt } from "react-icons/fa"
@@ -11,18 +11,14 @@ const MyDatePicker = ({ setDates, dates, onClear, loader }) => {
 useEffect(()=>{
   console.log("🧩 setDates changed:", setDates);
 },[setDates])
-  console.log("start", dates.startDate)
-  console.log("end", dates.endDate)
-  console.log("h")
+ 
   // useEffect(() => {
   //   if (dateRange.startDate && dateRange.endDate) {
   //     handleSelect(dateRange)
   //   }
   // }, [dateRange])
   const normalizeDateToUTC = (date) => {
-    console.log("h")
     if (!date) return null
-    console.log("PPPp")
     const utcDate = new Date(
       Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
     )
@@ -30,18 +26,14 @@ useEffect(()=>{
   }
 
   const handleDateRange = (date) => {
-    console.log(date)
-    console.log(date[1]===null)
-    console.log("j")
    
-console.log("uuu")
+   
       setDates({
         startDate: date[0] ? date[0] : null,
         endDate: date[1] ? date[1]: null
       })
     
 
-    console.log("l")
   }
 
   const CustomInput = forwardRef(({ value, onClick }, ref) => (

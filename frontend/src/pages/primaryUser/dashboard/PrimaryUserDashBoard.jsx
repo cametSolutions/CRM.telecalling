@@ -59,7 +59,6 @@ export default function PrimaryUserDashBoard() {
       setbirthdayshown(true)
     }
   })
-  console.log(leaveList)
   useEffect(() => {
     if (birthdays && birthdays.length > 0 && !birthdayAlreadyShown) {
       // Show popup for the first birthday person
@@ -366,7 +365,6 @@ export default function PrimaryUserDashBoard() {
               </h2>
               {birthdays && birthdays.length > 0 ? (
                 birthdays.map((item, index) => {
-                  console.log(item)
                   const isToday = birthdayPerson?.some(
                     (person) => person?.name === item?.name
                   )
