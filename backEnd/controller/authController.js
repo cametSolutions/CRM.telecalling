@@ -1115,7 +1115,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       const sundays = []
       const date = new Date(year, month - 1, 1) // Start from the 1st day of the month
 
-      while (date.getMonth() === month - 1) {
+      while (date.getMonth() === month - 1) {s
         if (date.getDay() === 0) {
           // 0 represents Sunday
           sundays.push(date.getDate()) // Get only the day (1-31)
@@ -2101,53 +2101,42 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
       ; (function calculateAbsences(allholidayfulldate, attendances, onsites) {
         const isPresent = (date) => {
-          // if (stats.name.trim() === "Aleena Thadevues") {
 
-          //   console.log("prevdaaaaaaaaayy", date)
-          // }
-          for (const dates in attendances.attendancedates) {
-            if (date === dates) {
-              // console.log("date",date)
-              const attendance = attendances.attendancedates[dates]
+          const attendance = attendances.attendancedates[date]
+          if (attendance) {
+            if (
+              attendance.otherLeave !== "" ||
+              attendance.privileageLeave !== "" ||
+              attendance.casualLeave !== "" ||
+              attendance.compensatoryLeave !== "" ||
+              attendance.notMarked !== ""
+            ) {
 
-              if (
-                attendance.otherLeave !== "" ||
-                attendance.privileageLeave !== "" ||
-                attendance.casualLeave !== "" ||
-                attendance.compensatoryLeave !== "" ||
-                attendance.notMarked !== ""
-              ) {
-                // if (stats.name.trim() === "Aleena Thadevues") {
-                //   console.log("leave undor notmarked", date)
-                //   // console.log("+++++++++++++++")
-                //   // console.log(date, "otherleave", attendance.otherLeave !== "")
-                //   // console.log(date, "otherleave", attendance.privileageLeave !== "")
-                //   // console.log(date, "otherleave", attendance.casualLeave !== "")
-                //   // console.log(date, "otherleave", attendance.compensatoryLeave !== "")
-                //   // console.log(date, "otherleave", attendance.notMarked !== "")
-                //   // console.log("88888888888888888")
-                // }
-                return {
-                  status: false,
-                  present: attendance.present,
-                  otherLeave: attendance.otherLeave,
-                  notMarked: attendance.notMarked
-                }
-              } else {
-                // if (stats.name.trim() === "Aleena Thadevues") {
-                //   console.log("no leave", date)
-                // }
-
-                return {
-                  status: true,
-                  present: attendance.present,
-                  notMarked: attendance.notMarked
-                }
+              return {
+                status: false,
+                present: attendance.present,
+                otherLeave: attendance.otherLeave,
+                notMarked: attendance.notMarked
               }
             } else {
-              // console.log("undefineddate",date)
+
+
+              return {
+                status: true,
+                present: attendance.present,
+                notMarked: attendance.notMarked
+              }
             }
+          } else {
+            if (stats.name === "Aleena Thadevues") {
+              console.log("date", date)
+            }
+
           }
+
+
+
+
         }
         // Sort dates first to ensure they are in order
         const sortedHolidays = allholidayfulldate.sort()
@@ -2175,7 +2164,9 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             tempGroup = []
           }
         }
-
+        if (stats.name === "Aleena Thadevues") {
+          console.log(groups)
+        }
         groups.forEach((group) => {
           const first = group[0]
           const stringfirst = first.toISOString().split("T")[0]
@@ -2188,11 +2179,11 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           //   console.log("prev", previousDay, stats.name)
           // }
           const prevFullPresent = isPresent(previousDay)
-          // if (stats.name.trim() === "Aleena Thadevues") {
-          //   console.log("fullpresent", previousDay, prevFullPresent)
-          // }
-          const nextFullPresent = isPresent(nextDay)
 
+          const nextFullPresent = isPresent(nextDay)
+          if (stats.name.trim() === "Aleena Thadevues") {
+            console.log("nextpresent", previousDay, prevFullPresent)
+          }
           if (prevFullPresent?.status || nextFullPresent?.status) {
 
             stats.attendancedates[stringfirst].present = 1

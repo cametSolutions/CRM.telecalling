@@ -83,7 +83,7 @@ io.on("connection", (socket) => {
           }
         }
       ])
-     
+
       const todayscalls = await CallRegistration.aggregate([
         // Filter the callregistration array to keep only entries with today's attendance
         {
@@ -93,48 +93,55 @@ io.on("connection", (socket) => {
                 input: "$callregistration",
                 as: "call",
                 cond: {
-                  $anyElementTrue: {
-                    $map: {
-                      input: {
-                        $cond: {
-                          if: {
-                            $isArray: {
-                              $ifNull: ["$$call.formdata.attendedBy", []]
-                            }
-                          },
-                          then: { $ifNull: ["$$call.formdata.attendedBy", []] },
-                          else: []
-                        }
-                      },
-                      as: "attendance",
-                      in: {
-                        $and: [
-                          { $ifNull: ["$$attendance.calldate", false] },
-                          {
-                            $gte: [
-                              {
-                                $ifNull: ["$$attendance.calldate", new Date(0)]
-                              },
-                              todayStart
-                            ]
-                          },
-                          {
-                            $lt: [
-                              {
-                                $ifNull: ["$$attendance.calldate", new Date(0)]
-                              },
-                              todayEnd
-                            ]
+                  $and: [{ $eq: ["$$call.formdata.status", "solved"] },
+                  {
+                    $anyElementTrue: {
+                      $map: {
+                        input: {
+                          $cond: {
+                            if: {
+                              $isArray: {
+                                $ifNull: ["$$call.formdata.attendedBy", []]
+                              }
+                            },
+                            then: { $ifNull: ["$$call.formdata.attendedBy", []] },
+                            else: []
                           }
-                        ]
+                        },
+                        as: "attendance",
+                        in: {
+                          $and: [
+                            { $ifNull: ["$$attendance.calldate", false] },
+                            {
+                              $gte: [
+                                {
+                                  $ifNull: ["$$attendance.calldate", new Date(0)]
+                                },
+                                todayStart
+                              ]
+                            },
+                            {
+                              $lt: [
+                                {
+                                  $ifNull: ["$$attendance.calldate", new Date(0)]
+                                },
+                                todayEnd
+                              ]
+                            }
+                          ]
+                        }
                       }
                     }
                   }
+
+                  ]
+
                 }
               }
             }
           }
         },
+
 
         // Remove documents where the callregistration array is now empty
         {
@@ -229,11 +236,7 @@ io.on("connection", (socket) => {
       ])
       // Step 1: Use a Map to store unique merged entries by _id
       const mergedMap = new Map();
-      // const uniqueCalls = new Map()
-      //   ;[...pendingcalls, ...todayscalls].forEach((call) => {
-      //     uniqueCalls.set(call._id.toString(), call) // Ensures only one instance per _id
-      //   })
-      // const calls = Array.from(uniqueCalls.values())
+    
       pendingcalls.forEach((call) => {
         mergedMap.set(call._id, { ...call })
       })
@@ -360,7 +363,6 @@ io.on("connection", (socket) => {
           user.name
         ])
       )
-
       mergedCalls.forEach((call) =>
         call.callregistration.forEach((entry) => {
           // Handle attendedBy field
