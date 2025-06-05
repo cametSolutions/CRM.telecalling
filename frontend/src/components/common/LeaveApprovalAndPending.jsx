@@ -65,11 +65,17 @@ const LeaveApprovalAndPending = () => {
   }, [])
   useEffect(() => {
     const fetchPendingList = async () => {
-      if (dates.startDate !== "" && dates.endDate !== "" && user) {
+      if (
+        (dates.startDate !== "" && dates.startDate !== null) &&
+        (dates.endDate !== "" && dates.endDate !== null) &&
+        user
+      ) {
         try {
+         
           setLoader(true)
           let response
           if (pendingLeave && !pendingOnsite) {
+
             response = await api.get(
               `/auth/pendingleaveList?onsite=false&startdate=${dates.startDate}&enddate=${dates.endDate}&role=${user?.role}&userid=${user?._id}`
             )
@@ -706,10 +712,7 @@ const LeaveApprovalAndPending = () => {
       })
     }
   }
-  const handlecheck = async () => {
-    const response = await api.get("/auth/check")
-    const data = response.data
-  }
+  
   const handleDropdownSelect = (option) => {
     if (option === "pending") {
       if (onsite) {
@@ -825,9 +828,10 @@ const LeaveApprovalAndPending = () => {
               {/* Date Picker */}
               {dates.startDate && (
                 <MyDatePicker
-                  handleSelect={handleDate}
+                  // handleSelect={handleDate}
+                  setDates={setDates}
                   dates={dates}
-                  loader={setLoader}
+                  // loader={setLoader}
                 />
               )}
             </div>
@@ -1001,10 +1005,9 @@ const LeaveApprovalAndPending = () => {
                       <td className="border border-gray-300 py-1 relative px-1">
                         <DeleteAlert
                           onDelete={toggleReject}
-                          Id={user._id}//pass document id
+                          Id={user._id} //pass document id
                           category={user?.leaveCategory}
                         />
-                        
                       </td>
                     </tr>
                   ))
