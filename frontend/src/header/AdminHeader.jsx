@@ -126,9 +126,9 @@ export default function AdminHeader() {
     {
       to: "/admin/masters/product",
       label: "Product"
-    },s
+    },
     {
-    
+  s
       label: "Inventory",
       hasChildren: true
     },
