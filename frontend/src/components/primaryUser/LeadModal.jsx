@@ -11,7 +11,6 @@ export default function LeadModal({
   setShowComponent,
   pending
 }) {
-
   const [selectedTab, setselectedTab] = useState("History")
   const [error, setError] = useState({})
   const [loading, setLoading] = useState(false)
@@ -30,18 +29,15 @@ export default function LeadModal({
   const [formData, setFormData] = useState({})
 
   useEffect(() => {
-
     setHistoryList(Data.activityLog)
     let formattedTaskTo
     if (pending) {
-    
-
       setTaskDetails((prev) => ({
         ...prev,
         taskassignedBy: Data?.matchedlog?.submittedUser,
-        taskassignedmodel:Data?.matchedlog?.submissiondoneByModel,
+        taskassignedmodel: Data?.matchedlog?.submissiondoneByModel,
         taskassignedDate: Data?.matchedlog?.allocationDate,
-        taskDescriptionByassigner:Data?.matchedlog?.remarks,
+        taskDescriptionByassigner: Data?.matchedlog?.remarks,
         taskName: Data?.matchedlog?.taskTo,
         submissionDate: new Date(),
         leadId: Data.leadId,
@@ -55,7 +51,6 @@ export default function LeadModal({
         Data?.matchedlog?.taskTo.slice(1).toLowerCase()
       settaskLabel(formattedTaskTo)
     } else {
-    
       setTaskDetails((prev) => ({
         ...prev,
         taskassignedBy: Data.matchedlog.submittedUser,
@@ -338,7 +333,11 @@ export default function LeadModal({
               )
             case "Demo":
             case "Programming":
-            case "Testing":
+            case "testing-&-implementation":
+            case "training":
+            case "coding-&-testing":
+            case "software-services":
+            case "customermeet":
               return (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 shadow-xl border border-gray-200 p-3 rounded-lg mx-3 md:mx-5">
                   <div>
