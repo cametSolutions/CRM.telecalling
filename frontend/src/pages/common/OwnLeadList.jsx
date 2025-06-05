@@ -87,11 +87,11 @@ export default function OwnLeadList() {
                     <td className="px-4 ">{item.email}</td>
                     <td className=" px-4 ">{item.leadId}</td>
                     <td className="border border-b-0 border-gray-400 px-4 ">
-                      {
+                      {/* {
                         item.followUpDatesandRemarks[
                           item.followUpDatesandRemarks.length - 1
                         ]?.nextfollowpdate
-                      }
+                      } */}
                     </td>
 
                     <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold"></td>
@@ -153,7 +153,7 @@ export default function OwnLeadList() {
                       {item.allocatedBy?.name}
                     </td>
                     <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400  px-4 py-0.5 ">
-                      {item.followUpDatesandRemarks.length}
+                      {/* {item.followUpDatesandRemarks.length} */}
                     </td>
                     <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
                       {item.leadDate?.toString().split("T")[0]}
