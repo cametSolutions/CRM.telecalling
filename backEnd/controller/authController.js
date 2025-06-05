@@ -2200,7 +2200,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           stats.notMarked += day.notMarked !== "" ? Number(day.notMarked) : 0;
         }
 
-        console.log("✅ Final updated stats:", stats);
       })();
 
 
@@ -5327,7 +5326,6 @@ export const GetsomeAllsummary = async (
           stats.notMarked += day.notMarked !== "" ? Number(day.notMarked) : 0;
         }
 
-        console.log("✅ Final updated stats:", stats);
       })();
 
 

@@ -73,9 +73,10 @@ const AttendanceExcelUploader = () => {
       socket.off("attendanceconversionProgress")
       socket.off("attendanceconversionComplete")
       socket.off("attendanceconversionError")
+      socket.disconnect()
     }
   }, [])
-  
+
   const handleDownloadFailedData = () => {
     if (nonsavedData.length > 0) {
       // Create a new workbook

@@ -12,6 +12,7 @@ const leadSchema = new mongoose.Schema(
     location: { type: String },
     pincode: { type: String },
     trade: { type: String },
+    partner: { type: mongoose.Schema.Types.ObjectId, ref:" Partner" },
     leadConfirmed: { type: Boolean, default: false },
     leadClosed: { type: Boolean, default: false },
     leadBranch: { type: mongoose.Schema.Types.ObjectId, ref: "Branch" },

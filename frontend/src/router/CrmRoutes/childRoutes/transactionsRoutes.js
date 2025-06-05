@@ -6,9 +6,8 @@ import LeadAllocationTable from "../../../pages/primaryUser/List/LeadAllocationT
 import LeadEdit from "../../../pages/primaryUser/edit/LeadEdit"
 import LeadFollowUp from "../../../pages/primaryUser/List/LeadFollowUp"
 import OwnLeadList from "../../../pages/common/OwnLeadList"
-import DemoFollowUp from "../../../pages/primaryUser/List/DemoFollowUp"
-import LeadProgramming from "../../../pages/primaryUser/List/LeadProgramming"
-import LeadTesting from "../../../pages/primaryUser/List/LeadTesting"
+import LeadTask from "../../../pages/primaryUser/List/LeadTask"
+import Reallocation from "../../../pages/primaryUser/List/Reallocation"
 const transactionsRoutes = [
   { path: "/admin/transaction/lead", component: LeadRegister },
   { path: "/admin/transaction/lead/leadEdit", component: LeadEdit },
@@ -21,10 +20,10 @@ const transactionsRoutes = [
     path: "/admin/transaction/lead/leadAllocation",
     component: LeadAllocationTable
   },
-  { path: "/admin/transaction/lead/leadProgramming", component: LeadProgramming },
-  { path: "/admin/transaction/lead/leadTesting", component: LeadTesting },
+  { path: "/admin/transaction/lead/leadTask", component: LeadTask },
+  { path: "/admin/transaction/lead/leadReallocation", component: Reallocation },
+
   { path: "/admin/transaction/lead/leadFollowUp", component: LeadFollowUp },
-  { path: "/admin/transaction/lead/demoFollowup", component: DemoFollowUp }
 ]
 
 export default transactionsRoutes

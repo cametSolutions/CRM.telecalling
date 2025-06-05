@@ -143,13 +143,13 @@ const LeadFollowUp = () => {
           })
           setloggedUserBranches(branches)
         } else {
-          const branches = branches.map((branch) => {
+          const staffbranches = branches.map((branch) => {
             return {
               value: branch.branch_id,
               label: branch.branchName
             }
           })
-          setloggedUserBranches(branches)
+          setloggedUserBranches(staffbranches)
         }
       } else {
         const branches = user.selected.map((branch) => {

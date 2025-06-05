@@ -30,7 +30,7 @@ function LeaveApplication() {
 
   const [MonthData, setMonthData] = useState({})
   const [currentMonthData, setcurrentMonthData] = useState({})
-  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth())
+  const [currentMonth, setCurrentMonth] = useState(null)
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
   const [message, setMessage] = useState({
     top: "",
@@ -71,6 +71,7 @@ function LeaveApplication() {
     currentMonth &&
       `/customer/getallCurrentmonthHoly?currentmonth=${currentMonth}`
   )
+console.log(monthlyHoly)
   const { data: allonsite, refreshHook: refreshHookOnsite } = UseFetch(
     user && `/auth/getallOnsite?userid=${user._id}`
   )

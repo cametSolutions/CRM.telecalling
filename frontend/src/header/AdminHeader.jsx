@@ -9,7 +9,7 @@ import { FaUserCircle } from "react-icons/fa" // Import the icon
 import { toast } from "react-toastify"
 export default function AdminHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [mathcheddemoleadcount, setmathcheddemoleadcount] = useState(0)
+  // const [mathcheddemoleadcount, setmathcheddemoleadcount] = useState(0)
   const [user, setUser] = useState(null)
   const [transactionMenuOpen, setTransactionMenuOpen] = useState(false)
   const [masterMenuOpen, setMasterMenuOpen] = useState(false)
@@ -22,14 +22,14 @@ export default function AdminHeader() {
   const [openInnerMenu, setOpenInnerMenu] = useState(null) // Inner submenu state
   const navigate = useNavigate()
   const menuContainerRef = useRef(null)
-  const { data: demoleadcount } = UseFetch(
-    user && `/lead/demoleadcount?loggeduserid=${user._id}`
-  )
-  useEffect(() => {
-    if (demoleadcount > 0) {
-      setmathcheddemoleadcount(demoleadcount)
-    }
-  }, [demoleadcount])
+  // const { data: demoleadcount } = UseFetch(
+  //   user && `/lead/demoleadcount?loggeduserid=${user._id}`
+  // )
+  // useEffect(() => {
+  //   if (demoleadcount > 0) {
+  //     setmathcheddemoleadcount(demoleadcount)
+  //   }
+  // }, [demoleadcount])
   useEffect(() => {
     const storedUser = localStorage.getItem("user")
     if (storedUser) {
@@ -126,9 +126,9 @@ export default function AdminHeader() {
     {
       to: "/admin/masters/product",
       label: "Product"
-    },
+    },s
     {
-      to: "/admin/masters/inventory",
+    
       label: "Inventory",
       hasChildren: true
     },
@@ -664,7 +664,7 @@ export default function AdminHeader() {
             ))}
           </nav>
         </div>
-        {mathcheddemoleadcount > 0 && (
+        {/* {mathcheddemoleadcount > 0 && (
           <div
             onClick={() =>
               user?.role === "Admin"
@@ -680,11 +680,11 @@ export default function AdminHeader() {
               </span>
             )}
           </div>
-        )}
+        )} */}
 
         <div className=" hidden md:flex flex-grow justify-center items-center ">
           <div className="relative flex items-center">
-            {mathcheddemoleadcount > 0 && (
+            {/* {mathcheddemoleadcount > 0 && (
               <div
                 onClick={() =>
                   user?.role === "Admin"
@@ -700,7 +700,7 @@ export default function AdminHeader() {
                   </span>
                 )}
               </div>
-            )}
+            )} */}
             {user?.profileUrl && user?.profileUrl?.length > 0 ? (
               <img
                 src={user?.profileUrl}
