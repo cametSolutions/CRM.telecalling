@@ -240,7 +240,7 @@ const Reallocation = () => {
             {tableData && tableData.length > 0 ? (
               tableData.map((item) => (
                 <React.Fragment key={item._id}>
-                  <tr className="bg-white">
+                  <tr className="bg-white  border border-gray-400 border-b-0">
                     <td
                       onClick={() => setShowFullName(!showFullName)}
                       className={`px-4 cursor-pointer overflow-hidden border border-r-0 border-b-0 border-gray-400 ${
@@ -324,9 +324,24 @@ const Reallocation = () => {
                         className="py-1 border border-gray-400 rounded-md  w-full focus:outline-none cursor-pointer"
                       >
                         <option>Select Type</option>
+
                         <option value="followup">Followup</option>
                         <option value="programming">Programming</option>
-                        <option value="testing">Testing</option>
+                        <option value="testing-&-implementation">
+                          Testing & Implementation
+                        </option>
+                        <option value="coding-&-testing">
+                          Coding & Testing
+                        </option>
+                        <option value="software-services">
+                          Software Service
+                        </option>
+                        <option value="customermeet">Customer Meet</option>
+                        <option value="demo">Demo</option>
+                        <option value="training">Training</option>
+
+                        <option value="onsite">Onsite</option>
+                        <option value="office">Office</option>
                       </select>
                       {validatetypeError[item._id] && (
                         <p className="text-red-500 text-sm">
@@ -464,6 +479,32 @@ const Reallocation = () => {
                       Allocate
                     </td>
                     <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
+                  </tr>
+                  <tr className="bg-gray-100">
+                    <td className="border border-l-1 border-t-0 border-gray-400 "></td>
+                    <td
+                      colSpan={5}
+                      className="text-center py-1 font-semibold border border-t-0 border-gray-400"
+                    >
+                      <div className="flex  w-full">
+                        {/* <span className="min-w-[100px]"></span> */}
+                        <span className="mx-2">
+                          {item?.matchedlog?.submittedUser?.name} -
+                        </span>
+                        <span className="mx-2">
+                          {item?.matchedlog?.taskBy} -
+                        </span>
+                        <span>{item?.matchedlog?.remarks}</span>
+                      </div>
+                    </td>
+                    <td className="border border-t-0 border-gray-400 "></td>
+                    <td className="border border-t-0 border-gray-400 "></td>
+                    <td className="border border-t-0 border-gray-400 "></td>
+                  </tr>
+                  <tr>
+                    <td colSpan="100%" className="bg-gray-300">
+                      <div className="h-1"></div>
+                    </td>
                   </tr>
                 </React.Fragment>
               ))

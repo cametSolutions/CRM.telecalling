@@ -167,8 +167,6 @@ const LeadAllocationTable = () => {
     try {
       if (selectedAllocationType) {
         const selected = selectedAllocationType[selectedItem._id]
-console.log(selected)
-
 
         setsubmitLoading(true)
 
@@ -296,258 +294,272 @@ console.log(selected)
               </th>
             </tr>
           </thead>
-
-          {tableData && tableData.length > 0 ? (
-            tableData.map((item, index) => (
-              <tbody
-                key={index}
-                className="border-separate border-sapcing-y-2 [&:not(:first-child)]:pt-2"
-              >
-                <tr className="bg-white">
-                  <td className="border border-l-1 border-b-0 border-t-0 border-gray-400  px-4 "></td>
-                  <td
-                    onClick={() => setShowFullName(!showFullName)}
-                    className={`px-4 cursor-pointer overflow-hidden border border-r-0 border-b-0 border-t-0 border-gray-400 ${
-                      showFullName
-                        ? "whitespace-normal max-h-[3em]" // ≈2 lines of text (1.5em line-height)
-                        : "truncate whitespace-nowrap max-w-[120px]"
-                    }`}
-                    style={{ lineHeight: "1.5em" }} // fine-tune as needed
-                  >
-                    {item.customerName.customerName}
-                  </td>
-                  <td className="  px-4 ">{item.mobile}</td>
-                  <td className="px-4 ">0481</td>
-                  <td className="px-4 ">{item.email}</td>
-                  <td className=" px-4 ">{item.leadId}</td>
-                  <td className="border border-b-0 border-t-0 border-gray-400 px-4 "></td>
-
-                  <td className="border border-b-0 border-t-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
-                    <button
-                      onClick={() =>
-                        loggedUser.role === "Admin"
-                          ? navigate("/admin/transaction/lead/leadEdit", {
-                              state: {
-                                leadId: item._id,
-                                isReadOnly: !(
-                                  item.allocatedTo === loggedUser._id ||
-                                  item.leadBy === loggedUser._id
-                                )
-                              }
-                            })
-                          : navigate("/staff/transaction/lead/leadEdit", {
-                              state: {
-                                leadId: item._id,
-                                isReadOnly: !(
-                                  item.allocatedTo === loggedUser._id ||
-                                  item.leadBy === loggedUser._id
-                                )
-                              }
-                            })
-                      }
-                      className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer"
+          <tbody className="bg-gray-300">
+            {tableData && tableData.length > 0 ? (
+              tableData.map((item, index) => (
+                <React.Fragment key={index}>
+                  <tr className="bg-white border border-gray-400 border-b-0 ">
+                    <td className="border border-l-1 border-b-0 border-t-0 border-gray-400  px-4"></td>
+                    <td
+                      onClick={() => setShowFullName(!showFullName)}
+                      className={`px-4 cursor-pointer overflow-hidden border border-r-0 border-b-0 border-t-0 border-gray-400 ${
+                        showFullName
+                          ? "whitespace-normal max-h-[3em]" // ≈2 lines of text (1.5em line-height)
+                          : "truncate whitespace-nowrap max-w-[120px]"
+                      }`}
+                      style={{ lineHeight: "1.5em" }} // fine-tune as needed
                     >
-                      View / Modify
-                    </button>
-                  </td>
-                  <td className="border border-b-0 border-t-0 border-gray-400 px-4 "></td>
-                </tr>
+                      {item.customerName.customerName}
+                    </td>
+                    <td className="  px-4 ">{item.mobile}</td>
+                    <td className="px-4 ">0481</td>
+                    <td className="px-4 ">{item.email}</td>
+                    <td className=" px-4 ">{item.leadId}</td>
+                    <td className="border border-b-0 border-t-0 border-gray-400 px-4 "></td>
 
-                <tr className=" font-semibold bg-gray-100">
-                  <td className=" px-4 border border-b-0 border-t-0 border-r-0 border-gray-400 ">
-                    {index + 1}
-                  </td>
-                  <td className=" px-4 border border-b-0 border-t-0 border-r-0 border-gray-400 ">
-                    Leadby
-                  </td>
-                  <td className=" px-4">Assignedto</td>
-                  <td className=" px-4 ">Assignedby</td>
-                  <td className="px-4 ">No. of Followups</td>
-                  <td className="px-4 min-w-[120px]">Lead Date</td>
-                  <td className=" border border-t-0 border-b-0 border-gray-400 px-1 bg-white ">
-                    <select
-                      value={selectedAllocationType?.[item._id]}
-                      onChange={(e) => {
-                        setselectedAllocationType((prev) => ({
+                    <td className="border border-b-0 border-t-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
+                      <button
+                        onClick={() =>
+                          loggedUser.role === "Admin"
+                            ? navigate("/admin/transaction/lead/leadEdit", {
+                                state: {
+                                  leadId: item._id,
+                                  isReadOnly: !(
+                                    item.allocatedTo === loggedUser._id ||
+                                    item.leadBy === loggedUser._id
+                                  )
+                                }
+                              })
+                            : navigate("/staff/transaction/lead/leadEdit", {
+                                state: {
+                                  leadId: item._id,
+                                  isReadOnly: !(
+                                    item.allocatedTo === loggedUser._id ||
+                                    item.leadBy === loggedUser._id
+                                  )
+                                }
+                              })
+                        }
+                        className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer"
+                      >
+                        View / Modify
+                      </button>
+                    </td>
+                    <td className="border border-b-0 border-t-0 border-gray-400 px-4 "></td>
+                  </tr>
+
+                  <tr className=" font-semibold bg-gray-100">
+                    <td className=" px-4 border border-b-0 border-t-0 border-r-0 border-gray-400 ">
+                      {index + 1}
+                    </td>
+                    <td className=" px-4 border border-b-0 border-t-0 border-r-0 border-gray-400 ">
+                      Leadby
+                    </td>
+                    <td className=" px-4">Assignedto</td>
+                    <td className=" px-4 ">Assignedby</td>
+                    <td className="px-4 ">No. of Followups</td>
+                    <td className="px-4 min-w-[120px]">Lead Date</td>
+                    <td className=" border border-t-0 border-b-0 border-gray-400 px-1 bg-white ">
+                      <select
+                        value={selectedAllocationType?.[item._id]}
+                        onChange={(e) => {
+                          setselectedAllocationType((prev) => ({
+                            ...prev,
+                            [item._id]: e.target.value
+                          }))
+                          setValidatetypeError((prev) => ({
+                            ...prev,
+                            [item._id]: ""
+                          }))
+                        }}
+                        className="py-0.5 border border-gray-400 rounded-md  w-full focus:outline-none cursor-pointer"
+                      >
+                        <option>Select Type</option>
+                        <option value="followup">Followup</option>
+                        <option value="programming">Programming</option>
+                        <option value="testing-&-implementation">
+                          Testing & Implementation
+                        </option>
+                        <option value="coding-&-testing">
+                          Coding & Testing
+                        </option>
+                        <option value="software-services">
+                          Software Service
+                        </option>
+                        <option value="customermeet">Customer Meet</option>
+                        <option value="demo">Demo</option>
+                        <option value="training">Training</option>
+                  
+                        <option value="onsite">Onsite</option>
+                        <option value="office">Office</option>
+                      
+                      </select>
+                      {validatetypeError[item._id] && (
+                        <p className="text-red-500 text-sm">
+                          {validatetypeError[item._id]}
+                        </p>
+                      )}
+                    </td>
+                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer bg-white">
+                      Follow Up
+                    </td>
+                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4 bg-white ">
+                      {" "}
+                      {item.netAmount}
+                    </td>
+                  </tr>
+
+                  <tr className="bg-white ">
+                    <td className="border border-t-0 border-r-0 border-b-0  border-gray-400 px-4 py-0.5 "></td>
+                    <td className="border border-t-0 border-r-0 border-b-0  border-gray-400 px-4 py-0.5 ">
+                      {item?.leadBy?.name}
+                    </td>
+                    <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 ">
+                      <div className="text-center">
+                        <div className="inline-block">
+                          <Select
+                            options={allocationOptions}
+                            value={selectedAllocates[item._id] || null}
+                            onChange={(selectedOption) => {
+                              setSelectedAllocates((prev) => ({
+                                ...prev,
+                                [item._id]: selectedOption
+                              }))
+                              handleSelectedAllocates(
+                                item,
+                                selectedOption.value
+                              )
+                              setValidateError((prev) => ({
+                                ...prev,
+                                [item._id]: ""
+                              }))
+                            }}
+                            className="w-44 focus:outline-red-500 "
+                            styles={{
+                              control: (base) => ({
+                                ...base,
+                                minHeight: "28px", // control height
+                                height: "28px",
+                                boxShadow: "none", // removes blue glow
+                                borderColor: "red",
+                                paddingTop: "0px", // Tailwind py-0.5 = 2px top and bottom
+                                paddingBottom: "0px",
+                                cursor: "pointer",
+                                "&:hover": {
+                                  borderColor: "red" // optional hover styling
+                                }
+                              }),
+                              option: (base, state) => ({
+                                ...base,
+                                cursor: "pointer", // 👈 ensures pointer on option hover
+                                backgroundColor: state.isFocused
+                                  ? "#f0f0f0"
+                                  : "white", // optional styling
+                                color: "black"
+                              }),
+                              valueContainer: (base) => ({
+                                ...base,
+                                paddingTop: "2px", // Reduce vertical padding
+                                paddingBottom: "2px"
+                              }),
+                              indicatorsContainer: (base) => ({
+                                ...base,
+                                height: "30px"
+                              }),
+                              menu: (provided) => ({
+                                ...provided,
+                                maxHeight: "200px", // Set dropdown max height
+                                overflowY: "auto" // Enable scrolling
+                              }),
+                              menuList: (provided) => ({
+                                ...provided,
+                                maxHeight: "200px", // Ensures dropdown scrolls internally
+                                overflowY: "auto"
+                              })
+                            }}
+                            menuPlacement="auto"
+                            menuPosition="absolute"
+                            menuPortalTarget={document.body} // Prevents nested scrolling issues
+                            menuShouldScrollIntoView={false}
+                          />
+
+                          {validateError[item._id] && (
+                            <p className="text-red-500 text-sm">
+                              {validateError[item._id]}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="border  border-t-0 border-r-0 border-l-0 border-b-0  border-gray-400 px-4 py-0.5">
+                      {item.allocatedBy?.name}
+                    </td>
+                    <td className="border  border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400  px-4 py-0.5 ">
+                      {/* {item.followUpDatesandRemarks.length} */}
+                    </td>
+                    <td className="border  border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 ">
+                      {item.leadDate?.toString().split("T")[0]}
+                    </td>
+                    <td className="border border-t-0 border-gray-400 border-b-0  px-4 py-0.5 "></td>
+                    <td
+                      className="border border-t-0 border-gray-400 border-b-0  px-4 py-0.5 text-red-400 hover:text-red-500 hover:cursor-pointer font-semibold"
+                      onClick={() => {
+                        if (!selectedAllocates.hasOwnProperty(item._id)) {
+                          setValidateError((prev) => ({
+                            ...prev,
+                            [item._id]: "Allocate to Someone"
+                          }))
+                          return
+                        }
+                        if (!selectedAllocationType.hasOwnProperty(item._id)) {
+                          setValidatetypeError((prev) => ({
+                            ...prev,
+                            [item._id]: "please select a Type"
+                          }))
+                          return
+                        }
+                        setselectedLeadId(item.leadId)
+                        setShowmodal(true)
+                        setSelectedItem(item)
+                        setFormData((prev) => ({
                           ...prev,
-                          [item._id]: e.target.value
-                        }))
-                        setValidatetypeError((prev) => ({
-                          ...prev,
-                          [item._id]: ""
+                          allocationDate: new Date()
                         }))
                       }}
-                      className="py-0.5 border border-gray-400 rounded-md  w-full focus:outline-none cursor-pointer"
                     >
-                      <option>Select Type</option>
-                      <option value="followup">Followup</option>
-                      <option value="programming">Programming</option>
-                      <option value="testing-&-implementation">Testing & Implementation</option>
-                      <option value="coding-&-testing">Coding & Testing</option>
-                      <option value="software-services">Software Service</option>
-                      <option value="customermeet">Customer Meet</option>
-                      <option value="demo">Demo</option>
-                      <option value="training">Training</option>
-                    </select>
-                    {validatetypeError[item._id] && (
-                      <p className="text-red-500 text-sm">
-                        {validatetypeError[item._id]}
-                      </p>
-                    )}
-                  </td>
-                  <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer bg-white">
-                    Follow Up
-                  </td>
-                  <td className=" border border-t-0 border-b-0 border-gray-400 px-4 bg-white ">
-                    {" "}
-                    {item.netAmount}
-                  </td>
-                </tr>
-
-                <tr className="bg-white ">
-                  <td className="border border-t-0 border-r-0 border-b-0  border-gray-400 px-4 py-0.5 "></td>
-                  <td className="border border-t-0 border-r-0 border-b-0  border-gray-400 px-4 py-0.5 ">
-                    {item?.leadBy?.name}
-                  </td>
-                  <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 ">
-                    <div className="text-center">
-                      <div className="inline-block">
-                        <Select
-                          options={allocationOptions}
-                          value={selectedAllocates[item._id] || null}
-                          onChange={(selectedOption) => {
-                            setSelectedAllocates((prev) => ({
-                              ...prev,
-                              [item._id]: selectedOption
-                            }))
-                            handleSelectedAllocates(item, selectedOption.value)
-                            setValidateError((prev) => ({
-                              ...prev,
-                              [item._id]: ""
-                            }))
-                          }}
-                          className="w-44 focus:outline-red-500 "
-                          styles={{
-                            control: (base) => ({
-                              ...base,
-                              minHeight: "28px", // control height
-                              height: "28px",
-                              boxShadow: "none", // removes blue glow
-                              borderColor: "red",
-                              paddingTop: "0px", // Tailwind py-0.5 = 2px top and bottom
-                              paddingBottom: "0px",
-                              cursor: "pointer",
-                              "&:hover": {
-                                borderColor: "red" // optional hover styling
-                              }
-                            }),
-                            option: (base, state) => ({
-                              ...base,
-                              cursor: "pointer", // 👈 ensures pointer on option hover
-                              backgroundColor: state.isFocused
-                                ? "#f0f0f0"
-                                : "white", // optional styling
-                              color: "black"
-                            }),
-                            valueContainer: (base) => ({
-                              ...base,
-                              paddingTop: "2px", // Reduce vertical padding
-                              paddingBottom: "2px"
-                            }),
-                            indicatorsContainer: (base) => ({
-                              ...base,
-                              height: "30px"
-                            }),
-                            menu: (provided) => ({
-                              ...provided,
-                              maxHeight: "200px", // Set dropdown max height
-                              overflowY: "auto" // Enable scrolling
-                            }),
-                            menuList: (provided) => ({
-                              ...provided,
-                              maxHeight: "200px", // Ensures dropdown scrolls internally
-                              overflowY: "auto"
-                            })
-                          }}
-                          menuPlacement="auto"
-                          menuPosition="absolute"
-                          menuPortalTarget={document.body} // Prevents nested scrolling issues
-                          menuShouldScrollIntoView={false}
-                        />
-
-                        {validateError[item._id] && (
-                          <p className="text-red-500 text-sm">
-                            {validateError[item._id]}
-                          </p>
-                        )}
+                      Allocate
+                    </td>
+                    <td className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5"></td>
+                  </tr>
+                  <tr className="bg-gray-100 ">
+                    <td className="border border-l-1 border-t-0 border-gray-400"></td>
+                    <td
+                      colSpan={5}
+                      className="text-center py-1 font-semibold border border-t-0 border-gray-400"
+                    >
+                      <div className="flex  w-full">
+                        <span className="min-w-[100px]"></span>
+                        <span className="mr-2">Description : </span>
+                        <span>
+                          {" "}
+                          {approvedToggleStatus
+                            ? item?.activityLog[1].remarks
+                            : item?.remark}{" "}
+                        </span>
                       </div>
-                    </div>
-                  </td>
-                  <td className="border  border-t-0 border-r-0 border-l-0 border-b-0  border-gray-400 px-4 py-0.5">
-                    {item.allocatedBy?.name}
-                  </td>
-                  <td className="border  border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400  px-4 py-0.5 ">
-                    {/* {item.followUpDatesandRemarks.length} */}
-                  </td>
-                  <td className="border  border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 ">
-                    {item.leadDate?.toString().split("T")[0]}
-                  </td>
-                  <td className="border border-t-0 border-gray-400 border-b-0  px-4 py-0.5 "></td>
-                  <td
-                    className="border border-t-0 border-gray-400 border-b-0  px-4 py-0.5 text-red-400 hover:text-red-500 hover:cursor-pointer font-semibold"
-                    onClick={() => {
-                      if (!selectedAllocates.hasOwnProperty(item._id)) {
-                        setValidateError((prev) => ({
-                          ...prev,
-                          [item._id]: "Allocate to Someone"
-                        }))
-                        return
-                      }
-                      if (!selectedAllocationType.hasOwnProperty(item._id)) {
-                        setValidatetypeError((prev) => ({
-                          ...prev,
-                          [item._id]: "please select a Type"
-                        }))
-                        return
-                      }
-                      setselectedLeadId(item.leadId)
-                      setShowmodal(true)
-                      setSelectedItem(item)
-                      setFormData((prev) => ({
-                        ...prev,
-                        allocationDate: new Date()
-                      }))
-                    }}
-                  >
-                    Allocate
-                  </td>
-                  <td className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5"></td>
-                </tr>
-                <tr className="bg-gray-100">
-                  <td className="border border-l-1 border-t-0 border-gray-400"></td>
-                  <td
-                    colSpan={5}
-                    className="text-center py-1 font-semibold border border-t-0 border-gray-400"
-                  >
-                    <div className="flex  w-full">
-                      <span className="min-w-[100px]"></span>
-                      <span className="mr-2">Description : </span>
-                      <span>
-                        {" "}
-                        {approvedToggleStatus
-                          ? item?.activityLog[1].remarks
-                          : item?.remark}{" "}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="border border-t-0 border-gray-400 bg-white"></td>
-                  <td className="border border-t-0 border-gray-400 bg-white"></td>
-                  <td className="border border-t-0 border-gray-400 bg-white"></td>
-                </tr>
-              </tbody>
-            ))
-          ) : (
-            <tbody>
+                    </td>
+                    <td className="border border-t-0 border-gray-400 bg-white"></td>
+                    <td className="border border-t-0 border-gray-400 bg-white"></td>
+                    <td className="border border-t-0 border-gray-400 bg-white"></td>
+                  </tr>
+                  <tr>
+                    <td colSpan="100%">
+                      <div className="h-1"></div>
+                    </td>
+                  </tr>
+                </React.Fragment>
+              ))
+            ) : (
               <tr>
                 <td colSpan={9} className="text-center text-gray-500 py-4">
                   {approvedToggleStatus ? (
@@ -571,8 +583,8 @@ console.log(selected)
                   )}
                 </td>
               </tr>
-            </tbody>
-          )}
+            )}
+          </tbody>
         </table>
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40 ">

@@ -40,11 +40,11 @@ export default function LeadTaskComponent({
             <th className="border border-gray-400 px-4 py-2">Net Amount</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="">
           {Data && Data.length > 0 ? (
             Data.map((item, index) => (
               <React.Fragment key={index}>
-                <tr className="bg-white ">
+                <tr className="bg-white border border-gray-400 border-b-0">
                   <td className="  px-4 border border-b-0 border-gray-400"></td>
                   <td
                     onClick={() => setShowFullName(!showFullName)}
@@ -187,15 +187,18 @@ export default function LeadTaskComponent({
                       <span className="mx-2">
                         {item?.matchedlog?.submittedUser?.name} -
                       </span>
-                      <span className="mx-2">
-                        {item?.matchedlog?.taskBy} -
-                      </span>
+                      <span className="mx-2">{item?.matchedlog?.taskBy} -</span>
                       <span>{item?.matchedlog?.remarks}</span>
                     </div>
                   </td>
                   <td className="border border-t-0 border-gray-400 "></td>
                   <td className="border border-t-0 border-gray-400 "></td>
                   <td className="border border-t-0 border-gray-400 "></td>
+                </tr>
+                <tr>
+                  <td colSpan="100%" className="bg-gray-300">
+                    <div className="h-1"></div>
+                  </td>
                 </tr>
               </React.Fragment>
             ))

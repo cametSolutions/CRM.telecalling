@@ -297,7 +297,7 @@ export const SetDemoallocation = async (req, res) => {
           taskallocatedToModel: taskallocatedtoModel,
           remarks: demoData.demoDescription,
           taskBy: "allocated",
-          taskTo: "demo",
+          taskTo: demoData?.selectedType,
 
         }
       }
