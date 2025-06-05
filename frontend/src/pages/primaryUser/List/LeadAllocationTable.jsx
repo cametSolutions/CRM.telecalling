@@ -167,6 +167,8 @@ const LeadAllocationTable = () => {
     try {
       if (selectedAllocationType) {
         const selected = selectedAllocationType[selectedItem._id]
+console.log(selected)
+
 
         setsubmitLoading(true)
 
@@ -380,7 +382,12 @@ const LeadAllocationTable = () => {
                       <option>Select Type</option>
                       <option value="followup">Followup</option>
                       <option value="programming">Programming</option>
-                      <option value="testing">Testing</option>
+                      <option value="testing-&-implementation">Testing & Implementation</option>
+                      <option value="coding-&-testing">Coding & Testing</option>
+                      <option value="software-services">Software Service</option>
+                      <option value="customermeet">Customer Meet</option>
+                      <option value="demo">Demo</option>
+                      <option value="training">Training</option>
                     </select>
                     {validatetypeError[item._id] && (
                       <p className="text-red-500 text-sm">
@@ -525,7 +532,12 @@ const LeadAllocationTable = () => {
                     <div className="flex  w-full">
                       <span className="min-w-[100px]"></span>
                       <span className="mr-2">Description : </span>
-                      <span> {approvedToggleStatus?item?.activityLog[1].remarks:item?.remark} </span>
+                      <span>
+                        {" "}
+                        {approvedToggleStatus
+                          ? item?.activityLog[1].remarks
+                          : item?.remark}{" "}
+                      </span>
                     </div>
                   </td>
                   <td className="border border-t-0 border-gray-400 bg-white"></td>
