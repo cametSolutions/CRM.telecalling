@@ -3,36 +3,13 @@ import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
 import { FaCalendarAlt } from "react-icons/fa"
 const MyDatePicker = ({ setDates, dates, onClear, loader }) => {
-  console.log(setDates)
-  // const [dateRange, setDateRange] = useState({
-  //   startDate: dates.startDate,
-  //   endDate: dates?.endDate
-  // })
-useEffect(()=>{
-  console.log("🧩 setDates changed:", setDates);
-},[setDates])
- 
-  // useEffect(() => {
-  //   if (dateRange.startDate && dateRange.endDate) {
-  //     handleSelect(dateRange)
-  //   }
-  // }, [dateRange])
-  const normalizeDateToUTC = (date) => {
-    if (!date) return null
-    const utcDate = new Date(
-      Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
-    )
-    return utcDate.toISOString().split("T")[0]
-  }
 
   const handleDateRange = (date) => {
-   
-   
+  
       setDates({
         startDate: date[0] ? date[0] : null,
         endDate: date[1] ? date[1]: null
-      })
-    
+      }) 
 
   }
 

@@ -2617,9 +2617,14 @@ export const GetallLeave = async (req, res) => {
 export const GetAllpendingORonsiteRequest = async (req, res) => {
   try {
     const startdate = req?.query?.startdate
+    const start = new Date(startdate);
+    start.setHours(0, 0, 0, 0); // Start of the day
     const enddate = req?.query?.enddate
-    const startDate = startdate.toString().split("T")[0]
-    const endDate = enddate.toString().split("T")[0]
+
+    const end = new Date(enddate);
+    end.setHours(23, 59, 59, 999); // End of the day
+    // const startDate = startdate.toString().split("T")[0]
+    // const endDate = enddate.toString().split("T")[0]
 
     const onsite = req?.query?.onsite
     const userid = req?.query?.userid
@@ -2632,16 +2637,16 @@ export const GetAllpendingORonsiteRequest = async (req, res) => {
     if (onsite === "true") {
       query = {
         onsiteDate: {
-          $gte: startDate, // Greater than or equal to startDate
-          $lte: endDate // Less than or equal to endDate
+          $gte: startdate, // Greater than or equal to startDate
+          $lte: enddate // Less than or equal to endDate
         }
       }
     } else if (onsite === "false") {
       ////
       query = {
         leaveDate: {
-          $gte: startDate, // Greater than or equal to startDate
-          $lte: endDate // Less than or equal to endDate
+          $gte: startdate, // Greater than or equal to startDate
+          $lte: enddate // Less than or equal to endDate
         }
       }
     }
@@ -2876,14 +2881,18 @@ export const cancelLeaveOrOnsiteApproval = async (req, res) => {
       ? new mongoose.Types.ObjectId(selectedId)
       : null
     let baseQuery
+    const startdate = new Date(startDate)
+    startdate.setHours(0, 0, 0, 0)
+    const enddate = new Date(endDate)
+    enddate.setHours(23, 59, 59, 999)
     // Base query common to both cases
     if (onsite === "true") {
       baseQuery = {
-        onsiteDate: { $gte: startDate, $lte: endDate }
+        onsiteDate: { $gte: startdate, $lte: enddate }
       }
     } else if (onsite === "false") {
       baseQuery = {
-        leaveDate: { $gte: startDate, $lte: endDate }
+        leaveDate: { $gte: startdate, $lte: enddate }
       }
     }
 
@@ -3032,8 +3041,12 @@ export const ApproveLeave = async (req, res) => {
       : null
 
     // Base query common to both cases
+    const startdate = new Date(startDate)
+    startdate.setHours(0, 0, 0, 0)
+    const enddate = new Date(endDate)
+    enddate.setHours(23, 59, 59, 99)
     const baseQuery = {
-      leaveDate: { $gte: startDate, $lte: endDate }
+      leaveDate: { $gte: startdate, $lte: enddate }
     }
 
     // Add user-specific filtering for non-admin roles
@@ -3211,10 +3224,13 @@ export const ApproveOnsite = async (req, res) => {
     const selectedObjectId = selectedId
       ? new mongoose.Types.ObjectId(selectedId)
       : null
-
+    const startdate = new Date(startDate)
+    startdate.setHours(0, 0, 0, 0)
+    const enddate = new Date(endDate)
+    enddate.setHours(23, 59, 59, 999)
     // Base query common to both cases
     const baseQuery = {
-      onsiteDate: { $gte: startDate, $lte: endDate }
+      onsiteDate: { $gte: startdate, $lte: enddate }
     }
 
     // Add user-specific filtering for non-admin roles
@@ -3365,7 +3381,10 @@ export const RejectOnsite = async (req, res) => {
     const enddate = req?.query?.enddate
     // Ensure the dates are valid and convert them to ISO format
     const startDate = new Date(startdate) // Convert to Date object
+    startDate.setHours(0, 0, 0, 0)
+
     const endDate = new Date(enddate) // Convert to Date object
+    endDate.setHours(23, 59, 59, 99)
 
     const selectedObjectId = new mongoose.Types.ObjectId(selectedId)
     const userObjectId = new mongoose.Types.ObjectId(userId)
@@ -3464,7 +3483,9 @@ export const RejectLeave = async (req, res) => {
     const enddate = req?.query?.enddate
     // Ensure the dates are valid and convert them to ISO format
     const startDate = new Date(startdate) // Convert to Date object
+    startDate.setHours(0, 0, 0, 0)
     const endDate = new Date(enddate) // Convert to Date object
+    endDate.setHours(23, 59, 59, 999)
 
     const selectedObjectId = new mongoose.Types.ObjectId(selectedId)
     const userObjectId = new mongoose.Types.ObjectId(userId)
