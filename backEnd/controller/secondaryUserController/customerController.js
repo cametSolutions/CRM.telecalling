@@ -3048,6 +3048,7 @@ export const GetallHoly = async (req, res) => {
 }
 export const GetallcurrentMonthHoly = async (req, res) => {
   try {
+console.log('toooooo')
     const { currentmonth } = req.query
     const [year, month] = currentmonth.split("-").map(Number)
     const holidays = await Holymaster.find({

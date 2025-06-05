@@ -182,6 +182,7 @@ const LeadMaster = ({
   useEffect(() => {
     if (Data && Data.length > 0 && customerOptions && customerOptions.length) {
       setValueMain("leadId", Data[0]?.leadId)
+      setValueMain("partner", Data[0]?.partner)
       setValueMain("customerName", Data[0]?.customerName?._id)
       setValueMain("mobile", Data[0]?.customerName?.mobile)
       setValueMain("mobile", Data[0]?.customerName?.phone)
@@ -1096,6 +1097,26 @@ const LeadMaster = ({
                           })}
                       </div>
                     )}
+                    <div className="">
+                      <label
+                        htmlFor="remark"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                        Partnership Type
+                      </label>
+                      <select
+                        id="partner"
+                        {...registerMain("partner")}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                      >
+                        <option value="">Select Partner</option>
+                        {partner?.map((partnr, index) => (
+                          <option key={index} value={partnr._id}>
+                            {partnr.partner}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
 

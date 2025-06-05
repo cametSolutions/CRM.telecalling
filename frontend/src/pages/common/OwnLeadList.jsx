@@ -22,7 +22,7 @@ export default function OwnLeadList() {
   useEffect(() => {
     setTableData(ownedlead)
   }, [ownedlead])
- 
+
   return (
     <div className="h-full flex flex-col">
       <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3">
@@ -66,11 +66,11 @@ export default function OwnLeadList() {
               <th className="border border-gray-400 px-4 py-2">Net Amount</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="bg-gray-200">
             {tableData && tableData.length > 0 ? (
               tableData.map((item, index) => (
                 <React.Fragment key={index}>
-                  <tr className="bg-white ">
+                  <tr className="bg-white border border-b-0 border-gray-400">
                     <td
                       onClick={() => setShowFullName(!showFullName)}
                       className={`px-4 cursor-pointer overflow-hidden ${
@@ -87,11 +87,11 @@ export default function OwnLeadList() {
                     <td className="px-4 ">{item.email}</td>
                     <td className=" px-4 ">{item.leadId}</td>
                     <td className="border border-b-0 border-gray-400 px-4 ">
-                      {
+                      {/* {
                         item.followUpDatesandRemarks[
                           item.followUpDatesandRemarks.length - 1
                         ]?.nextfollowpdate
-                      }
+                      } */}
                     </td>
 
                     <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold"></td>
@@ -114,10 +114,7 @@ export default function OwnLeadList() {
                                 state: {
                                   leadId: item._id,
                                   isReadOnly: !(
-                                    (item.allocatedTo?._id === loggedUser._id &&
-                                      item.leadBy._id === loggedUser._id) ||
-                                    (item.allocatedTo === null &&
-                                      item.leadBy._id === loggedUser._id)
+                                    item.leadBy._id === loggedUser._id
                                   )
                                 }
                               })
@@ -125,10 +122,7 @@ export default function OwnLeadList() {
                                 state: {
                                   leadId: item._id,
                                   isReadOnly: !(
-                                    (item.allocatedTo?._id === loggedUser._id &&
-                                      item.leadBy._id === loggedUser._id) ||
-                                    (item.allocatedTo === null &&
-                                      item.leadBy._id === loggedUser._id)
+                                    item.leadBy._id === loggedUser._id
                                   )
                                 }
                               })
@@ -153,7 +147,7 @@ export default function OwnLeadList() {
                       {item.allocatedBy?.name}
                     </td>
                     <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400  px-4 py-0.5 ">
-                      {item.followUpDatesandRemarks.length}
+                      {/* {item.followUpDatesandRemarks.length} */}
                     </td>
                     <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
                       {item.leadDate?.toString().split("T")[0]}
@@ -163,6 +157,11 @@ export default function OwnLeadList() {
                       {" "}
                     </td>
                     <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
+                  </tr>
+                  <tr>
+                    <td colSpan="100%" className="bg-gray-300">
+                      <div className="h-1"></div>
+                    </td>
                   </tr>
                 </React.Fragment>
               ))

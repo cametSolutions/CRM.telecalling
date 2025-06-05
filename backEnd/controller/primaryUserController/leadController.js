@@ -19,7 +19,7 @@ export const LeadRegister = async (req, res) => {
       leadFor,
       remark,
       netAmount,
-      allocatedTo,
+      partner,
       leadBy, leadBranch
     } = leadData
 
@@ -75,6 +75,7 @@ export const LeadRegister = async (req, res) => {
       pincode,
       trade,
       leadFor,
+      partner,
       leadBranch,
       remark,
       leadBy,
@@ -1350,7 +1351,7 @@ export const GetrespectedprogrammingLead = async (req, res) => {
     const query = {
       $and: [
         { "activityLog.taskallocatedTo": userObjectId },
-        { "activityLog.taskTo": { $in: ["demo", "programming", "testing-&-implementation","coding-&-testing","software-services","customermeet","training"] } }
+        { "activityLog.taskTo": { $in: ["demo", "programming", "testing-&-implementation", "coding-&-testing", "software-services", "customermeet", "training"] } }
       ],
       leadBranch: branchObjectId
     }
@@ -1432,10 +1433,9 @@ export const GetselectedLeadData = async (req, res) => {
       .lean()
 
     if (
-      !selectedLead.assignedtoleadByModel ||
-      !mongoose.models[selectedLead.assignedtoleadByModel] ||
-      !selectedLead.allocatedToModel ||
-      !mongoose.models[selectedLead.allocatedToModel]
+      !selectedLead.leadByModel ||
+      !mongoose.models[selectedLead.leadByModel]
+      
     ) {
       console.error(
         `Model ${selectedLead.assignedtoleadByModel} is not registered`
@@ -1461,16 +1461,14 @@ export const GetselectedLeadData = async (req, res) => {
         .json({ message: "matched lead found", data: [mergedleads] })
     } else {
       // Fetch the referenced document manually
-      const assignedModel = mongoose.model(selectedLead.assignedtoleadByModel)
-      const allocatedModel = mongoose.model(selectedLead.allocatedToModel)
+      const assignedModel = mongoose.model(selectedLead.leadByModel)
+     
 
       const populatedLeadBy = await assignedModel
         .findById(selectedLead.leadBy)
         .select("name")
 
-      const populatedAllocates = await allocatedModel
-        .findById(selectedLead.allocatedTo)
-        .select("name")
+  
       const populatedLeadFor = await Promise.all(
         selectedLead.leadFor.map(async (item) => {
           const productorserviceModel = mongoose.model(
@@ -1488,7 +1486,6 @@ export const GetselectedLeadData = async (req, res) => {
         ...selectedLead, // convert Mongoose doc to plain object
         leadFor: populatedLeadFor,
         leadBy: populatedLeadBy,
-        allocatedTo: populatedAllocates
       }
       if (populatedApprovedLead) {
         return res.status(200).json({
@@ -1514,17 +1511,17 @@ export const GetownLeadList = async (req, res) => {
     const populatedOwnLeads = await Promise.all(
       matchedLead.map(async (lead) => {
         if (
-          !lead.assignedtoleadByModel ||
-          !mongoose.models[lead.assignedtoleadByModel]
+          !lead.leadByModel ||
+          !mongoose.models[lead.leadByModel]
         ) {
           console.error(
-            `Model ${lead.assignedtoleadByModel} is not registered`
+            `Model ${lead.leadByModel} is not registered`
           )
           return lead // Return lead as-is if model is invalid
         }
 
         // Fetch the referenced document manually
-        const assignedModel = mongoose.model(lead.assignedtoleadByModel)
+        const assignedModel = mongoose.model(lead.leadByModel)
         const populatedLeadBy = await assignedModel
           .findById(lead.leadBy)
           .select("name")

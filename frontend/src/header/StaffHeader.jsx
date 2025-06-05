@@ -137,7 +137,7 @@ export default function StaffHeader() {
       control: user?.permissions?.[0]?.Product ?? false
     },
     {
-      to: "/staff/masters/inventory",
+      
       label: "Inventory",
       hasChildren: true,
       control: user?.permissions?.[0]?.Inventory ?? false

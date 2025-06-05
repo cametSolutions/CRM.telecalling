@@ -39,8 +39,6 @@ const ExcelUploaderProduct = () => {
     }
   }
 
-  
-
   // Listen for progress updates
   useEffect(() => {
     socket.on("conversionProgressProduct", (data) => {
@@ -70,11 +68,12 @@ const ExcelUploaderProduct = () => {
     })
 
     // Cleanup on component unmount
-    // return () => {
-    //   socket.off("conversionProgressProduct")
-    //   socket.off("conversionCompleteProduct")
-    //   socket.off("conversionErrorProduct")
-    // }
+    return () => {
+      socket.off("conversionProgressProduct")
+      socket.off("conversionCompleteProduct")
+      socket.off("conversionErrorProduct")
+      socket.disconnect()
+    }
   }, [])
 
   const handleDownloadFailedData = () => {

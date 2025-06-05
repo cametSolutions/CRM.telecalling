@@ -1,4 +1,4 @@
-import  { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import io from "socket.io-client"
 import * as XLSX from "xlsx" // Import XLSX for creating the Excel file
 
@@ -69,6 +69,7 @@ const ExcelUploader = () => {
       socket.off("conversionProgress")
       socket.off("conversionComplete")
       socket.off("conversionError")
+      socket.disconnect()
     }
   }, [])
 
