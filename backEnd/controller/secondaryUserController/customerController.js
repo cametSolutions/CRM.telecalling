@@ -3066,7 +3066,7 @@ export const Getleavemaster = async (req, res) => {
   try {
     const leaveMaster = await Leavemaster.find({})
     if (leaveMaster) {
-      return res.status(200).json({ message: "Leave master found", data: a })
+      return res.status(200).json({ message: "Leave master found", data: leaveMaster })
     }
   } catch (error) {
     console.log("error", error.message)

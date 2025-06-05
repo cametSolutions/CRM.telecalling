@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import  { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { AiOutlinePlus, AiOutlineEdit } from "react-icons/ai"
 import api from "../../../api/api"
@@ -31,7 +31,6 @@ function LeaveMaster() {
   const { data: holydata, refreshHook: holyrefresh } = UseFetch(
     "/customer/getallholy"
   )
-
   useEffect(() => {
     if (holydata && holydata.length > 0 && year) {
       const filteredByYear = holydata.filter((item) => {
