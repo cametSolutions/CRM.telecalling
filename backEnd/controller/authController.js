@@ -1,5 +1,6 @@
 import models from "../model/auth/authSchema.js"
 import Leavemaster from "../model/secondaryUser/leavemasterSchema.js"
+
 import QuarterlyAchiever from "../model/primaryUser/quarterlyAchieversSchema.js"
 import YearlyAchiever from "../model/primaryUser/yearylyAchieversSchema.js"
 import { getStaffSolvedCallCounts } from "../helper/staffHighestandlowestsolvedcallscount.js"
@@ -2098,125 +2099,236 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
         return `${prevYear}-${prevMonth}-${prevDay}`
       }
-     
-
-      ; (async function calculateAbsences(allholidayfulldate, attendances, onsites) {
-        const isPresent = async (date) => {
-
-          const attendance = attendances.attendancedates[date]
-          if (attendance) {
-            if (
-              attendance.otherLeave !== "" ||
-              attendance.privileageLeave !== "" ||
-              attendance.casualLeave !== "" ||
-              attendance.compensatoryLeave !== "" ||
-              attendance.notMarked !== ""
-            ) {
-
-              return {
-                status: false,
-                present: attendance.present,
-                otherLeave: attendance.otherLeave,
-                notMarked: attendance.notMarked
+      (async () => {
+        async function calculateAbsences(allholidayfulldate, attendances, onsites) {
+          const isPresent = async (date) => {
+            const attendance = attendances.attendancedates[date];
+            if (attendance) {
+              if (
+                attendance.otherLeave !== "" ||
+                attendance.privileageLeave !== "" ||
+                attendance.casualLeave !== "" ||
+                attendance.compensatoryLeave !== "" ||
+                attendance.notMarked !== ""
+              ) {
+                return {
+                  status: false,
+                  present: attendance.present,
+                  otherLeave: attendance.otherLeave,
+                  notMarked: attendance.notMarked
+                };
+              } else {
+                return {
+                  status: true,
+                  present: attendance.present,
+                  notMarked: attendance.notMarked
+                };
               }
             } else {
-
-
-              return {
-                status: true,
-                present: attendance.present,
-                notMarked: attendance.notMarked
+              const previousMonth = month - 1;
+              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, year, stats.userId);
+              if (previousmonthlastdayleavestatus) {
+                return { status: false };
+              } else {
+                return { status: true };
               }
             }
-          } else {
-              const previousMonth = month - 1
-              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, year, stats.userId)
-              if (previousmonthlastdayleavestatus) {
-                return { status: false }
-              } else {
-                return { status: true }
+          };
+
+          const sortedHolidays = allholidayfulldate.sort();
+          let groups = [];
+          let tempGroup = [];
+
+          for (let i = 0;i < sortedHolidays.length;i++) {
+            const currDate = new Date(sortedHolidays[i]);
+            const prevDate = i > 0 ? new Date(sortedHolidays[i - 1]) : null;
+
+            if (prevDate && currDate - prevDate === 24 * 60 * 60 * 1000) {
+              if (!tempGroup.length) tempGroup.push(prevDate);
+              tempGroup.push(currDate);
+              groups.push(tempGroup);
+              tempGroup = [];
+            } else {
+              tempGroup.push(currDate);
+              groups.push(tempGroup);
+              tempGroup = [];
+            }
+          }
+
+          for (const group of groups) {
+            const first = group[0];
+            const stringfirst = first.toISOString().split("T")[0];
+            const last = group[group.length - 1];
+            const stringlast = last.toISOString().split("T")[0];
+
+            const previousDay = getPreviousDate(stringfirst);
+            const nextDay = getNextDate(stringlast);
+
+            const prevFullPresent = await isPresent(previousDay);
+            const nextFullPresent = await isPresent(nextDay);
+
+            if (prevFullPresent?.status || nextFullPresent?.status) {
+              if (attendances.attendancedates[stringfirst]) {
+                attendances.attendancedates[stringfirst].present = 1;
+                attendances.attendancedates[stringfirst].notMarked = "";
               }
-
-          }
-
-
-        }
-        // Sort dates first to ensure they are in order
-        const sortedHolidays = allholidayfulldate.sort()
-
-
-        // Find groups of consecutive holidays
-        let groups = []
-        let tempGroup = []
-
-        for (let i = 0;i < sortedHolidays.length;i++) {
-          const currDate = new Date(sortedHolidays[i])
-          const prevDate = i > 0 ? new Date(sortedHolidays[i - 1]) : null
-
-          if (
-            prevDate &&
-            currDate - prevDate === 24 * 60 * 60 * 1000 // 1 day gap
-          ) {
-            if (!tempGroup.length) tempGroup.push(prevDate)
-            tempGroup.push(currDate)
-            groups.push(tempGroup)
-            tempGroup = []
-          } else {
-            tempGroup.push(currDate)
-            groups.push(tempGroup)
-            tempGroup = []
+              if (attendances.attendancedates[stringlast]) {
+                attendances.attendancedates[stringlast].present = 1;
+                attendances.attendancedates[stringlast].notMarked = "";
+              }
+            }
           }
         }
-      
-        for (const group of groups) {
-          const first = group[0]
-          const stringfirst = first.toISOString().split("T")[0]
-          const last = group[group.length - 1]
-          const stringlast = last.toISOString().split("T")[0]
 
-          const previousDay = getPreviousDate(stringfirst)
-          const nextDay = getNextDate(stringlast)
-         
-          const prevFullPresent = await isPresent(previousDay)
+        // ✅ Call the async absence adjustment and wait for it to finish
+        await calculateAbsences(allholidays, stats, onsites);
 
-          const nextFullPresent = await isPresent(nextDay)
-         
-          if (prevFullPresent?.status || nextFullPresent?.status) {
+        // ✅ Now safely process stats
+        for (const date in stats.attendancedates) {
+          const day = stats.attendancedates[date];
 
-            stats.attendancedates[stringfirst].present = 1
-           
-            stats.attendancedates[stringlast].present = 1
-            stats.attendancedates[stringlast].notMarked = ""
-            // stats.attendancedates[nextDay].otherLeave = 1
-            stats.attendancedates[stringfirst].notMarked = ""
-          }
+          stats.present += day.present || 0;
 
+          const leaveTypes = ["casualLeave", "otherLeave", "privileageLeave", "compensatoryLeave"];
+
+          leaveTypes.forEach((type) => {
+            if (!isNaN(day[type])) {
+              stats.absent += Number(day[type]);
+            }
+          });
+
+          stats.notMarked += day.notMarked !== "" ? Number(day.notMarked) : 0;
         }
-      })(allholidays, stats, onsites)
+
+        console.log("✅ Final updated stats:", stats);
+      })();
+
+
+      // ; (async function calculateAbsences(allholidayfulldate, attendances, onsites) {
+      //   const isPresent = async (date) => {
+
+      //     const attendance = attendances.attendancedates[date]
+      //     if (attendance) {
+      //       if (
+      //         attendance.otherLeave !== "" ||
+      //         attendance.privileageLeave !== "" ||
+      //         attendance.casualLeave !== "" ||
+      //         attendance.compensatoryLeave !== "" ||
+      //         attendance.notMarked !== ""
+      //       ) {
+
+      //         return {
+      //           status: false,
+      //           present: attendance.present,
+      //           otherLeave: attendance.otherLeave,
+      //           notMarked: attendance.notMarked
+      //         }
+      //       } else {
+
+
+      //         return {
+      //           status: true,
+      //           present: attendance.present,
+      //           notMarked: attendance.notMarked
+      //         }
+      //       }
+      //     } else {
+      //       const previousMonth = month - 1
+      //       const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, year, stats.userId)
+      //       if (previousmonthlastdayleavestatus) {
+      //         return { status: false }
+      //       } else {
+      //         return { status: true }
+      //       }
+
+      //     }
+
+
+      //   }
+      //   // Sort dates first to ensure they are in order
+      //   const sortedHolidays = allholidayfulldate.sort()
+
+
+      //   // Find groups of consecutive holidays
+      //   let groups = []
+      //   let tempGroup = []
+
+      //   for (let i = 0;i < sortedHolidays.length;i++) {
+      //     const currDate = new Date(sortedHolidays[i])
+      //     const prevDate = i > 0 ? new Date(sortedHolidays[i - 1]) : null
+
+      //     if (
+      //       prevDate &&
+      //       currDate - prevDate === 24 * 60 * 60 * 1000 // 1 day gap
+      //     ) {
+      //       if (!tempGroup.length) tempGroup.push(prevDate)
+      //       tempGroup.push(currDate)
+      //       groups.push(tempGroup)
+      //       tempGroup = []
+      //     } else {
+      //       tempGroup.push(currDate)
+      //       groups.push(tempGroup)
+      //       tempGroup = []
+      //     }
+      //   }
+
+      //   for (const group of groups) {
+      //     const first = group[0]
+      //     const stringfirst = first.toISOString().split("T")[0]
+      //     const last = group[group.length - 1]
+      //     const stringlast = last.toISOString().split("T")[0]
+
+      //     const previousDay = getPreviousDate(stringfirst)
+      //     const nextDay = getNextDate(stringlast)
+
+      //     const prevFullPresent = await isPresent(previousDay)
+      //     // if (stats.name === "Aleena Thadevues") {
+
+      //     //   console.log(stringfirst, prevFullPresent.status)
+      //     // }
+
+      //     const nextFullPresent = await isPresent(nextDay)
+
+      //     if (prevFullPresent?.status || nextFullPresent?.status) {
+
+      //       stats.attendancedates[stringfirst].present = 1
+
+      //       stats.attendancedates[stringlast].present = 1
+      //       stats.attendancedates[stringlast].notMarked = ""
+      //       // stats.attendancedates[nextDay].otherLeave = 1
+      //       stats.attendancedates[stringfirst].notMarked = ""
+
+      //     }
+
+      //   }
+
+
+      // })(allholidays, stats, onsites)
 
 
 
-      for (const date in stats.attendancedates) {
-        const day = stats.attendancedates[date]
+      // for (const date in stats.attendancedates) {
+      //   const day = stats.attendancedates[date]
 
-        stats.present += day.present || 0
+      //   stats.present += day.present || 0
 
-        // Sum all leave types
-        const leaveTypes = [
-          "casualLeave",
-          "otherLeave",
-          "privileageLeave",
-          "compensatoryLeave"
-        ]
+      //   // Sum all leave types
+      //   const leaveTypes = [
+      //     "casualLeave",
+      //     "otherLeave",
+      //     "privileageLeave",
+      //     "compensatoryLeave"
+      //   ]
 
-        leaveTypes.forEach((type) => {
-          if (!isNaN(day[type])) {
-            stats.absent += Number(day[type])
-          }
-        })
+      //   leaveTypes.forEach((type) => {
+      //     if (!isNaN(day[type])) {
+      //       stats.absent += Number(day[type])
+      //     }
+      //   })
 
-        stats.notMarked += day.notMarked !== "" ? Number(day.notMarked) : 0
-      }
+      //     stats.notMarked += day.notMarked !== "" ? Number(day.notMarked) : 0
+
+      // }
 
 
       const combined = stats.earlyGoing + stats.late
@@ -5093,12 +5205,11 @@ export const GetsomeAllsummary = async (
 
         return `${prevYear}-${prevMonth}-${prevDay}`
       }
-      ; (function calculateAbsences(allholidayfulldate, attendances, onsites) {
-        const isPresent = (date) => {
-          for (const dates in attendances.attendancedates) {
-            if (date === dates) {
-              const attendance = attendances.attendancedates[dates]
-
+      (async () => {
+        async function calculateAbsences(allholidayfulldate, attendances, onsites) {
+          const isPresent = async (date) => {
+            const attendance = attendances.attendancedates[date];
+            if (attendance) {
               if (
                 attendance.otherLeave !== "" ||
                 attendance.privileageLeave !== "" ||
@@ -5111,96 +5222,96 @@ export const GetsomeAllsummary = async (
                   present: attendance.present,
                   otherLeave: attendance.otherLeave,
                   notMarked: attendance.notMarked
-                }
+                };
               } else {
                 return {
                   status: true,
                   present: attendance.present,
                   notMarked: attendance.notMarked
-                }
+                };
+              }
+            } else {
+              const previousMonth = month - 1;
+              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, year, stats.userId);
+              if (previousmonthlastdayleavestatus) {
+                return { status: false };
+              } else {
+                return { status: true };
+              }
+            }
+          };
+
+          const sortedHolidays = allholidayfulldate.sort();
+          let groups = [];
+          let tempGroup = [];
+
+          for (let i = 0;i < sortedHolidays.length;i++) {
+            const currDate = new Date(sortedHolidays[i]);
+            const prevDate = i > 0 ? new Date(sortedHolidays[i - 1]) : null;
+
+            if (prevDate && currDate - prevDate === 24 * 60 * 60 * 1000) {
+              if (!tempGroup.length) tempGroup.push(prevDate);
+              tempGroup.push(currDate);
+              groups.push(tempGroup);
+              tempGroup = [];
+            } else {
+              tempGroup.push(currDate);
+              groups.push(tempGroup);
+              tempGroup = [];
+            }
+          }
+
+          for (const group of groups) {
+            const first = group[0];
+            const stringfirst = first.toISOString().split("T")[0];
+            const last = group[group.length - 1];
+            const stringlast = last.toISOString().split("T")[0];
+
+            const previousDay = getPreviousDate(stringfirst);
+            const nextDay = getNextDate(stringlast);
+
+            const prevFullPresent = await isPresent(previousDay);
+            const nextFullPresent = await isPresent(nextDay);
+
+            if (prevFullPresent?.status || nextFullPresent?.status) {
+              if (attendances.attendancedates[stringfirst]) {
+                attendances.attendancedates[stringfirst].present = 1;
+                attendances.attendancedates[stringfirst].notMarked = "";
+              }
+              if (attendances.attendancedates[stringlast]) {
+                attendances.attendancedates[stringlast].present = 1;
+                attendances.attendancedates[stringlast].notMarked = "";
               }
             }
           }
         }
-        // Sort dates first to ensure they are in order
-        const sortedHolidays = allholidayfulldate.sort()
 
-        // Find groups of consecutive holidays
-        let groups = []
-        let tempGroup = []
+        // ✅ Call the async absence adjustment and wait for it to finish
+        await calculateAbsences(allholidays, stats, onsites);
 
-        for (let i = 0;i < sortedHolidays.length;i++) {
-          const currDate = new Date(sortedHolidays[i])
-          const prevDate = i > 0 ? new Date(sortedHolidays[i - 1]) : null
+        // ✅ Now safely process stats
+        for (const date in stats.attendancedates) {
+          const day = stats.attendancedates[date];
 
-          if (
-            prevDate &&
-            currDate - prevDate === 24 * 60 * 60 * 1000 // 1 day gap
-          ) {
-            if (!tempGroup.length) tempGroup.push(prevDate)
-            tempGroup.push(currDate)
-            groups.push(tempGroup)
-            tempGroup = []
-          } else {
-            tempGroup.push(currDate)
-            groups.push(tempGroup)
-            tempGroup = []
-          }
+          stats.present += day.present || 0;
+
+          const leaveTypes = ["casualLeave", "otherLeave", "privileageLeave", "compensatoryLeave"];
+
+          leaveTypes.forEach((type) => {
+            if (!isNaN(day[type])) {
+              stats.absent += Number(day[type]);
+            }
+          });
+
+          stats.notMarked += day.notMarked !== "" ? Number(day.notMarked) : 0;
         }
 
-        groups.forEach((group) => {
-          const first = group[0]
-          const stringfirst = first.toISOString().split("T")[0]
-          const last = group[group.length - 1]
-          const stringlast = last.toISOString().split("T")[0]
-          const previousDay = getPreviousDate(stringfirst)
-          const nextDay = getNextDate(stringlast)
+        console.log("✅ Final updated stats:", stats);
+      })();
 
-          const prevFullPresent = isPresent(previousDay)
-          const nextFullPresent = isPresent(nextDay)
 
-          if (prevFullPresent?.status || nextFullPresent?.status) {
-            stats.attendancedates[stringfirst].present = 1
-            stats.attendancedates[stringlast].present = 1
-            stats.attendancedates[stringfirst].notMarked = ""
-            // stats.attendancedates[nextDay].otherLeave = 1
-            stats.attendancedates[stringlast].notMarked = ""
-          }
-          //else if (
-          //   (prevFullPresent?.notMarked < 1 ||
-          //     prevFullPresent?.notMarked === "") &&
-          //   (nextFullPresent?.notMarked < 1 ||
-          //     nextFullPresent?.notMarked === "")
-          // ) {
-          //   stats.attendancedates[sunday].present = 1
-          //   stats.attendancedates[sunday].notMarked = ""
-          // }
-        })
-      })(allholidays, stats, onsites)
 
-      // for (const dates in stats.attendancedates) {
-      //   stats.present += stats.attendancedates[dates].present
 
-      //   stats.absent +=
-      //     stats.attendancedates[dates].otherLeave &&
-      //       !isNaN(stats.attendancedates[dates].otherLeave)
-      //       ? Number(stats.attendancedates[dates].otherLeave)
-      //       : stats.attendancedates[dates].casualLeave &&
-      //         !isNaN(stats.attendancedates[dates].casualLeave)
-      //         ? Number(stats.attendancedates[dates].casualLeave)
-      //         : stats.attendancedates[dates].privileageLeave &&
-      //           !isNaN(stats.attendancedates[dates].privileageLeave)
-      //           ? Number(stats.attendancedates[dates].privileageLeave)
-      //           : stats.attendancedates[dates].compensatoryLeave &&
-      //             !isNaN(stats.attendancedates[dates].compensatoryLeave)
-      //             ? Number(stats.attendancedates[dates].compensatoryLeave)
-      //             : 0
-
-      //   stats.notMarked +=
-      //     stats.attendancedates[dates].notMarked !== ""
-      //       ? Number(stats.attendancedates[dates].notMarked)
-      //       : 0
-      // }
       for (const date in stats.attendancedates) {
         const day = stats.attendancedates[date]
 
