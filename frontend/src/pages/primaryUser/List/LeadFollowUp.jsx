@@ -181,8 +181,6 @@ const LeadFollowUp = () => {
   }, [loggedusersallocatedleads])
   useEffect(() => {
     if (leads && leads.length && loggedUser) {
-    
-
       const currentDate = new Date()
 
       // 1. Leads with follow-ups
@@ -236,7 +234,6 @@ const LeadFollowUp = () => {
 
       setTableData(finalSortedLeads)
     }
-   
   }, [ownFollowUp, leads, loggedUser])
 
   useEffect(() => {
@@ -257,7 +254,7 @@ const LeadFollowUp = () => {
       clearTimeout(handler) // cleanup
     }
   }, [input])
- 
+
   const handleDataChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({
@@ -380,7 +377,6 @@ const LeadFollowUp = () => {
       return
     }
 
-
     try {
       setLoader(true)
 
@@ -421,7 +417,6 @@ const LeadFollowUp = () => {
 
       if (!formData.nextfollowUpDate && !isClosed)
         newErrors.nextfollowUpDate = "Next Follow Up Date Is Required"
-
 
       if (!formData.Remarks)
         if (!formData.Remarks) newErrors.Remarks = "Remarks is Required"
@@ -971,93 +966,136 @@ const LeadFollowUp = () => {
                             </label>
                           </div>
                           {isAllocated && (
-                            <div className=" text-left">
-                              <label
-                                htmlFor="staffName"
-                                className="block text-sm  font-medium  text-gray-700 "
-                              >
-                                Select Staff
-                              </label>
-                              <Select
-                                options={allocationOptions}
-                                isDisabled={isdemofollownotClosed}
-                                value={
-                                  allocationOptions.find(
-                                    (option) =>
-                                      option.value === demoData.demoallocatedTo
-                                  ) || null
-                                }
-                                onChange={(selectedOption) => {
-                                  setDemodata((prev) => ({
-                                    ...prev,
-                                    demoallocatedTo: selectedOption.value
-                                  }))
-                                  setDemoError((prev) => ({
-                                    ...prev,
-                                    selectStaff: ""
-                                  }))
-                                }}
-                                className="w-full  focus:outline-none "
-                                styles={{
-                                  control: (base, state) => ({
-                                    ...base,
-                                    minHeight: "32px", // control height
-                                    height: "32px",
-                                    boxShadow: "none", // removes blue glow
-                                    borderColor: "gray",
-                                    cursor: state.isDisabled
-                                      ? "not-allowed"
-                                      : "",
-                                    backgroundColor: state.isDisabled
-                                      ? "#f3f4f6"
-                                      : "white",
-                                    color: state.isDisabled
-                                      ? "#6b7280"
-                                      : "black", // Tailwind's text-gray-500
-                                    opacity: state.isDisabled ? 0.7 : 1
-                                  }),
-                                  option: (base, state) => ({
-                                    ...base,
-                                    cursor: "pointer", // 👈 ensures pointer on option hover
-                                    backgroundColor: state.isFocused
-                                      ? "#f9f9f9"
-                                      : "white", // optional styling
-                                    color: "red",
-                                    paddingTop: "6px", // padding for dropdown items
-                                    paddingBottom: "6px"
-                                  }),
-                                  valueContainer: (base) => ({
-                                    ...base,
-                                    paddingTop: "0px", // Reduce vertical padding
-                                    paddingBottom: "0px",
-                                    paddingLeft: "8px",
-                                    height: "26px"
-                                  }),
-                                  indicatorsContainer: (base) => ({
-                                    ...base,
-                                    height: "30px"
-                                  }),
-                                  menuPortal: (base) => ({
-                                    ...base,
-                                    zIndex: 9999 // 🔥 Set high z-index here
-                                  }),
-                                  menu: (provided) => ({
-                                    ...provided,
-                                    maxHeight: "200px", // Set dropdown max height
-                                    overflowY: "auto" // Enable scrolling
-                                  }),
-                                  menuList: (provided) => ({
-                                    ...provided,
-                                    maxHeight: "200px", // Ensures dropdown scrolls internally
-                                    overflowY: "auto"
-                                  })
-                                }}
-                                menuPlacement="auto"
-                                menuPosition="absolute"
-                                menuPortalTarget={document.body} // Prevents nested scrolling issues
-                                menuShouldScrollIntoView={false}
-                              />
-                            </div>
+                            <>
+                              <div>
+                                {" "}
+                                <select
+                                  value={demoData?.selectedType||""}
+                                  onChange={(e) => {
+                                    setDemodata((prev) => ({
+                                      ...prev,
+                                      selectedType: e.target.value
+                                    }))
+                                    setDemoError((prev) => ({
+                                      ...prev,
+                                      allocationTyperror: ""
+                                    }))
+                                  }}
+                                  className="py-0.5 border border-gray-400 rounded-md  w-full focus:outline-none cursor-pointer"
+                                >
+                                  <option>Select Type</option>
+
+                                  <option value="programming">
+                                    Programming
+                                  </option>
+                                  <option value="testing-&-implementation">
+                                    Testing & Implementation
+                                  </option>
+                                  <option value="coding-&-testing">
+                                    Coding & Testing
+                                  </option>
+                                  <option value="software-services">
+                                    Software Service
+                                  </option>
+                                  <option value="customermeet">
+                                    Customer Meet
+                                  </option>
+                                  <option value="demo">Demo</option>
+                                  <option value="training">Training</option>
+
+                                  <option value="onsite">Onsite</option>
+                                  <option value="office">Office</option>
+                                </select>
+                              </div>
+                              <div className=" text-left">
+                                <label
+                                  htmlFor="staffName"
+                                  className="block text-sm  font-medium  text-gray-700 "
+                                >
+                                  Select Staff
+                                </label>
+                                <Select
+                                  options={allocationOptions}
+                                  isDisabled={isdemofollownotClosed}
+                                  value={
+                                    allocationOptions.find(
+                                      (option) =>
+                                        option.value ===
+                                        demoData.demoallocatedTo
+                                    ) || null
+                                  }
+                                  onChange={(selectedOption) => {
+                                    setDemodata((prev) => ({
+                                      ...prev,
+                                      demoallocatedTo: selectedOption.value
+                                    }))
+                                    setDemoError((prev) => ({
+                                      ...prev,
+                                      selectStaff: ""
+                                    }))
+                                  }}
+                                  className="w-full  focus:outline-none "
+                                  styles={{
+                                    control: (base, state) => ({
+                                      ...base,
+                                      minHeight: "32px", // control height
+                                      height: "32px",
+                                      boxShadow: "none", // removes blue glow
+                                      borderColor: "gray",
+                                      cursor: state.isDisabled
+                                        ? "not-allowed"
+                                        : "",
+                                      backgroundColor: state.isDisabled
+                                        ? "#f3f4f6"
+                                        : "white",
+                                      color: state.isDisabled
+                                        ? "#6b7280"
+                                        : "black", // Tailwind's text-gray-500
+                                      opacity: state.isDisabled ? 0.7 : 1
+                                    }),
+                                    option: (base, state) => ({
+                                      ...base,
+                                      cursor: "pointer", // 👈 ensures pointer on option hover
+                                      backgroundColor: state.isFocused
+                                        ? "#f9f9f9"
+                                        : "white", // optional styling
+                                      color: "red",
+                                      paddingTop: "6px", // padding for dropdown items
+                                      paddingBottom: "6px"
+                                    }),
+                                    valueContainer: (base) => ({
+                                      ...base,
+                                      paddingTop: "0px", // Reduce vertical padding
+                                      paddingBottom: "0px",
+                                      paddingLeft: "8px",
+                                      height: "26px"
+                                    }),
+                                    indicatorsContainer: (base) => ({
+                                      ...base,
+                                      height: "30px"
+                                    }),
+                                    menuPortal: (base) => ({
+                                      ...base,
+                                      zIndex: 9999 // 🔥 Set high z-index here
+                                    }),
+                                    menu: (provided) => ({
+                                      ...provided,
+                                      maxHeight: "200px", // Set dropdown max height
+                                      overflowY: "auto" // Enable scrolling
+                                    }),
+                                    menuList: (provided) => ({
+                                      ...provided,
+                                      maxHeight: "200px", // Ensures dropdown scrolls internally
+                                      overflowY: "auto"
+                                    })
+                                  }}
+                                  menuPlacement="auto"
+                                  menuPosition="absolute"
+                                  menuPortalTarget={document.body} // Prevents nested scrolling issues
+                                  menuShouldScrollIntoView={false}
+                                />
+                              </div>
+                            </>
                           )}
                           {demoerror.selectStaff && (
                             <p className="text-red-500 text-sm text-left">

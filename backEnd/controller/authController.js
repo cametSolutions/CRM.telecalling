@@ -1112,7 +1112,6 @@ export const OnsiteApply = async (req, res) => {
 export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
   try {
     const { year, month } = req.query || { year: yearParam, month: monthParam }
-    // console.log("year", year, "month", month)
 
     function getSundays(year, month) {
       const sundays = []
@@ -2099,12 +2098,10 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
         return `${prevYear}-${prevMonth}-${prevDay}`
       }
-      // if (stats.name.trim() === "Aleena Thadevues") {
-      //   console.log("stats", stats)
-      // }
+     
 
-      ; (function calculateAbsences(allholidayfulldate, attendances, onsites) {
-        const isPresent = (date) => {
+      ; (async function calculateAbsences(allholidayfulldate, attendances, onsites) {
+        const isPresent = async (date) => {
 
           const attendance = attendances.attendancedates[date]
           if (attendance) {
@@ -2132,17 +2129,15 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               }
             }
           } else {
-            // if (stats.name === "Aleena Thadevues") {
-            //   console.log("date", date)
-            //   const previousMonth = month - 1
-            //   const a = PreviousmonthLeavesummary(previousMonth, year, stats.userId)
-            //   console.log("dataaaaa", a)
-            // }
-
+              const previousMonth = month - 1
+              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, year, stats.userId)
+              if (previousmonthlastdayleavestatus) {
+                return { status: false }
+              } else {
+                return { status: true }
+              }
 
           }
-
-
 
 
         }
@@ -2172,10 +2167,8 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             tempGroup = []
           }
         }
-        // if (stats.name === "Aleena Thadevues") {
-        //   console.log(groups)
-        // }
-        groups.forEach((group) => {
+      
+        for (const group of groups) {
           const first = group[0]
           const stringfirst = first.toISOString().split("T")[0]
           const last = group[group.length - 1]
@@ -2183,63 +2176,26 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
           const previousDay = getPreviousDate(stringfirst)
           const nextDay = getNextDate(stringlast)
-          // if (stats.name.trim() === "Aleena Thadevues") {
-          //   console.log("prev", previousDay, stats.name)
-          // }
-          const prevFullPresent = isPresent(previousDay)
+         
+          const prevFullPresent = await isPresent(previousDay)
 
-          const nextFullPresent = isPresent(nextDay)
-          // if (stats.name.trim() === "Aleena Thadevues") {
-          //   console.log("nextpresent", previousDay, prevFullPresent)
-          // }
+          const nextFullPresent = await isPresent(nextDay)
+         
           if (prevFullPresent?.status || nextFullPresent?.status) {
 
             stats.attendancedates[stringfirst].present = 1
-            // if (stats.name.trim() === "Aleena Thadevues") {
-            //   console.log("---------------------")
-            //   console.log(stringfirst, stats.attendancedates[stringfirst].present)
-            // }
+           
             stats.attendancedates[stringlast].present = 1
             stats.attendancedates[stringlast].notMarked = ""
             // stats.attendancedates[nextDay].otherLeave = 1
             stats.attendancedates[stringfirst].notMarked = ""
           }
-          //else if (
-          //   (prevFullPresent?.notMarked < 1 ||
-          //     prevFullPresent?.notMarked === "") &&
-          //   (nextFullPresent?.notMarked < 1 ||
-          //     nextFullPresent?.notMarked === "")
-          // ) {
-          //   stats.attendancedates[sunday].present = 1
-          //   stats.attendancedates[sunday].notMarked = ""
-          // }
-        })
+
+        }
       })(allholidays, stats, onsites)
 
 
-      // for (const dates in stats.attendancedates) {
-      //   stats.present += stats.attendancedates[dates].present
 
-      //   stats.absent +=
-      //     stats.attendancedates[dates].otherLeave &&
-      //       !isNaN(stats.attendancedates[dates].otherLeave)
-      //       ? Number(stats.attendancedates[dates].otherLeave)
-      //       : stats.attendancedates[dates].casualLeave &&
-      //         !isNaN(stats.attendancedates[dates].casualLeave)
-      //         ? Number(stats.attendancedates[dates].casualLeave)
-      //         : stats.attendancedates[dates].privileageLeave &&
-      //           !isNaN(stats.attendancedates[dates].privileageLeave)
-      //           ? Number(stats.attendancedates[dates].privileageLeave)
-      //           : stats.attendancedates[dates].compensatoryLeave &&
-      //             !isNaN(stats.attendancedates[dates].compensatoryLeave)
-      //             ? Number(stats.attendancedates[dates].compensatoryLeave)
-      //             : 0
-
-      //   stats.notMarked +=
-      //     stats.attendancedates[dates].notMarked !== ""
-      //       ? Number(stats.attendancedates[dates].notMarked)
-      //       : 0
-      // }
       for (const date in stats.attendancedates) {
         const day = stats.attendancedates[date]
 
