@@ -1350,7 +1350,7 @@ export const GetrespectedprogrammingLead = async (req, res) => {
     const query = {
       $and: [
         { "activityLog.taskallocatedTo": userObjectId },
-        { "activityLog.taskTo": { $in: ["demo", "programming", "testing"] } }
+        { "activityLog.taskTo": { $in: ["demo", "programming", "testing-&-implementation","coding-&-testing","software-services","customermeet","training"] } }
       ],
       leadBranch: branchObjectId
     }
