@@ -128,7 +128,6 @@ export default function AdminHeader() {
       label: "Product"
     },
     {
-  s
       label: "Inventory",
       hasChildren: true
     },
@@ -166,8 +165,7 @@ export default function AdminHeader() {
       to: "/admin/transaction/lead/leadReallocation",
       label: "Lead Reallocation",
       control: true
-    },
-   
+    }
   ]
   const inventorys = [
     {
