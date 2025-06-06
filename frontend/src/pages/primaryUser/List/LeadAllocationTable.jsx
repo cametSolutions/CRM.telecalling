@@ -199,6 +199,7 @@ const LeadAllocationTable = () => {
             setsubmitLoading(false)
           }
         }
+        setShowmodal(false)
       }
     } catch (error) {
       console.log("error:", error.message)
@@ -389,10 +390,9 @@ const LeadAllocationTable = () => {
                         <option value="customermeet">Customer Meet</option>
                         <option value="demo">Demo</option>
                         <option value="training">Training</option>
-                  
+
                         <option value="onsite">Onsite</option>
                         <option value="office">Office</option>
-                      
                       </select>
                       {validatetypeError[item._id] && (
                         <p className="text-red-500 text-sm">
