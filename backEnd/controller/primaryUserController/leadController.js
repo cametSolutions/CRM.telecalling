@@ -1175,7 +1175,7 @@ export const updateReallocation = async (req, res) => {
 }
 export const UpadateOrLeadAllocationRegister = async (req, res) => {
   try {
-    const { allocationpending, allocatedBy, allocationType } = req.query
+    const { allocationpending, allocatedBy, allocationType,selectedbranch } = req.query
     const allocatedbyObjectid = new mongoose.Types.ObjectId(allocatedBy)
     const branchObjectId = new mongoose.Types.ObjectId(selectedbranch)
     const { selectedItem, formData } = req.body
