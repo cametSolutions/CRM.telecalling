@@ -164,6 +164,7 @@ const LeadFollowUp = () => {
       setloggedUser(user)
     }
   }, [branches])
+console.log()
   useEffect(() => {
     if (loggedUserBranches && loggedUserBranches.length > 0) {
       const defaultbranch = loggedUserBranches[0]
@@ -171,7 +172,7 @@ const LeadFollowUp = () => {
     }
   }, [loggedUserBranches])
   // Close when clicking outside
-
+console.log(loggedusersallocatedleads)
   useEffect(() => {
     if (loggedusersallocatedleads) {
       setLeads(loggedusersallocatedleads.followupLeads)

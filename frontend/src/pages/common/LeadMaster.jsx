@@ -567,7 +567,7 @@ const LeadMaster = ({
           return
         }
         setLoadingState(true)
-
+        
         await handleleadData(data, selectedleadlist)
       } else if (process === "edit") {
         if (isReadOnly) {
@@ -1106,7 +1106,9 @@ const LeadMaster = ({
                       </label>
                       <select
                         id="partner"
-                        {...registerMain("partner")}
+                        {...registerMain("partner", {
+                          required: "Partnership is Required"
+                        })}
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
                       >
                         <option value="">Select Partner</option>
@@ -1117,6 +1119,11 @@ const LeadMaster = ({
                         ))}
                       </select>
                     </div>
+                    {errorsMain.partner && (
+                      <p className="text-red-500 text-sm">
+                        {errorsMain.partner.message}
+                      </p>
+                    )}
                   </div>
                 </div>
 

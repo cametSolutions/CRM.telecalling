@@ -185,7 +185,9 @@ export const GetallfollowupList = async (req, res) => {
       query = { allocatedTo: { $ne: null }, leadBranch: branchObjectId }
 
     }
+console.log(query)
     const selectedfollowup = await LeadMaster.find(query).populate({ path: "customerName", select: "customerName" }).lean()
+console.log("ddfdd",selectedfollowup)
 
     const followupLeads = [];
 
