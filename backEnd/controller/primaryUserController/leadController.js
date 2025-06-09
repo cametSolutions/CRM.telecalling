@@ -160,28 +160,49 @@ export const GetallfollowupList = async (req, res) => {
 
 
   try {
-    const { loggeduserid, branchSelected, role } = req.query
+    const { loggeduserid, branchSelected, role, pendingfollowup } = req.query
 
     const userObjectId = new mongoose.Types.ObjectId(loggeduserid)
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected)
     let query
     if (role === "Staff") {
-      query = {
+      if (pendingfollowup === "true") {
+        query = {
 
-        activityLog: {
-          $elemMatch: {
-            taskTo: "followup",
-            $or: [
-              { submittedUser: userObjectId },
-              { taskallocatedTo: userObjectId }
-            ],
-            allocatedClosed: false,
+          activityLog: {
+            $elemMatch: {
+              taskTo: "followup",
+              $or: [
+                { submittedUser: userObjectId },
+                { taskallocatedTo: userObjectId }
+              ],
+              allocatedClosed: false,
 
-          }
-        },
-        leadBranch: branchObjectId,
-        reallocatedTo: false
+            }
+          },
+          leadBranch: branchObjectId,
+          reallocatedTo: false
+        }
+      } else if (pendingfollowup === "false") {
+        query = {
+
+          activityLog: {
+            $elemMatch: {
+              taskBy: "followup",
+              $or: [
+                { submittedUser: userObjectId },
+                { taskallocatedTo: userObjectId }
+              ],
+              taskClosed:true
+
+            }
+          },
+          leadBranch: branchObjectId,
+        
+        }
+
       }
+
     } else {
       query = { leadBranch: branchObjectId }
 

@@ -20,6 +20,7 @@ const LeadFollowUp = () => {
   })
   const [isdemofollownotClosed, setisdemofollowedNotClosed] = useState(false)
   const [isClosed, setIsClosed] = useState(false)
+  const [taskClosed, setfollowupClosed] = useState(false)
   const [editdemoIndex, setdemoEditIndex] = useState(null)
   const [
     editfollowUpDatesandRemarksEditIndex,
@@ -94,7 +95,7 @@ const LeadFollowUp = () => {
   } = UseFetch(
     loggedUser &&
       selectedCompanyBranch &&
-      `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}`
+      `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}&pendingfollowup=${pending}`
   )
   useEffect(() => {
     if (data && selectedCompanyBranch) {
@@ -179,6 +180,7 @@ const LeadFollowUp = () => {
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
     }
   }, [loggedusersallocatedleads])
+
   useEffect(() => {
     if (leads && leads.length && loggedUser) {
       const currentDate = new Date()
@@ -302,12 +304,9 @@ const LeadFollowUp = () => {
   ) => {
     const owner = loggedUser._id === allocatedTo
     setOwner(owner)
-    const isHaveDemo = taskfromFollowup
-      ? history[history.length - 1]
-      : null
+    const isHaveDemo = taskfromFollowup ? history[history.length - 1] : null
     if (isHaveDemo) {
       const demoassignedDate = formatDate(isHaveDemo.submissionDate)
-
       setdemoEditIndex(history.length - 1)
       setfollowUpDatesandRemarksEditIndex(history.length - 1)
       setDemodata({
@@ -326,6 +325,13 @@ const LeadFollowUp = () => {
       setIsEditable(true)
       setIsAllocated(true)
     }
+    const isfollowupclosed = history.some(
+      (item) =>
+        item.submittedUser._id === loggedUser._id &&
+        item.taskBy === "followup" &&
+        item.taskClosed === true
+    )
+    setfollowupClosed(isfollowupclosed)
 
     setselectedDocid(docId)
     setselectedTab("History")
@@ -614,14 +620,17 @@ const LeadFollowUp = () => {
                     <td className="px-4 ">No. of Followups</td>
                     <td className="px-4 min-w-[120px]">Lead Date</td>
                     <td className=" border border-t-0 border-b-0 border-gray-400 px-4 ">
-                      {/* {new Date(
-                        item.followUpDatesandRemarks[
-                          item.followUpDatesandRemarks.length - 1
-                        ]?.nextfollowUpDate
-                      )
-                        .toLocaleDateString("en-GB")
-                        .split("/")
-                        .join("-")} */}
+                      {item.activityLog[item.activityLog.length - 1]
+                        ?.nextFollowUpDate
+                        ? new Date(
+                            item.activityLog[
+                              item.activityLog.length - 1
+                            ]?.nextFollowUpDate
+                          )
+                            .toLocaleDateString("en-GB")
+                            .split("/")
+                            .join("-")
+                        : "-"}
                     </td>
                     <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer">
                       <button
@@ -714,7 +723,7 @@ const LeadFollowUp = () => {
                   History
                 </span>
                 {/* isHaveEditchoice &&  */}
-                {isOwner && (
+                {isOwner && !taskClosed && (
                   <span
                     className={`hover:cursor-pointer pb-1 ${
                       selectedTab === "Next Follow Up"
@@ -982,7 +991,9 @@ const LeadFollowUp = () => {
                                       allocationTyperror: ""
                                     }))
                                   }}
-                                  className={`py-0.5 border border-gray-400 rounded-md  w-full focus:outline-none cursor-pointer ${isdemofollownotClosed?"bg-gray-200":""}`}
+                                  className={`py-0.5 border border-gray-400 rounded-md  w-full focus:outline-none cursor-pointer ${
+                                    isdemofollownotClosed ? "bg-gray-200" : ""
+                                  }`}
                                 >
                                   <option>Select Type</option>
 
