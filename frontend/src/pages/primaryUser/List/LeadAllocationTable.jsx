@@ -109,6 +109,7 @@ const LeadAllocationTable = () => {
 
       if (response.status >= 200 && response.status < 300) {
         const data = response.data.data
+
         setTableData(data)
         data.forEach((item) => {
           setselectedAllocationType((prev) => ({
@@ -119,8 +120,7 @@ const LeadAllocationTable = () => {
         setapprovedToggleStatus(!approvedToggleStatus)
         setToggleLoading(false)
         const initialSelected = {}
-
-        response.data.data.forEach((item) => {
+        data.forEach((item) => {
           if (item.allocatedTo?._id) {
             const match = allocationOptions.find(
               (opt) => opt.value === item.allocatedTo._id
@@ -543,7 +543,7 @@ const LeadAllocationTable = () => {
                         <span>
                           {" "}
                           {approvedToggleStatus
-                            ? item?.activityLog[1].remarks
+                            ? item?.activityLog[1]?.remarks
                             : item?.remark}{" "}
                         </span>
                       </div>

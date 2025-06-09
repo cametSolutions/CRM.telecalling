@@ -12,7 +12,7 @@ const leadSchema = new mongoose.Schema(
     location: { type: String },
     pincode: { type: String },
     trade: { type: String },
-    partner: { type: mongoose.Schema.Types.ObjectId, ref:" Partner" },
+    partner: { type: mongoose.Schema.Types.ObjectId, ref: " Partner" },
     leadConfirmed: { type: Boolean, default: false },
     leadClosed: { type: Boolean, default: false },
     leadBranch: { type: mongoose.Schema.Types.ObjectId, ref: "Branch" },
@@ -57,6 +57,7 @@ const leadSchema = new mongoose.Schema(
       taskDescription: { type: String },
       reallocatedTo: { type: Boolean, default: false },
       taskClosed: { type: Boolean, default: false },
+      allocatedClosed: { type: Boolean, default: false },//block for previously allocated user 
       followUpDate: { type: Date },
       nextFollowUpDate: { type: Date },
       allocationDate: { type: Date },
@@ -64,6 +65,7 @@ const leadSchema = new mongoose.Schema(
 
     }],
     allocationType: { type: String },
+    taskfromFollowup: { type: Boolean,default:false }
   },
   { timestamps: true }
 )
