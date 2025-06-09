@@ -147,7 +147,6 @@ const Reallocation = () => {
       setsubmitError({ submissionerror: "something went error" })
     }
   }
-
   return (
     <div className="flex flex-col h-full">
       {(submitLoading || loading) && (
@@ -208,6 +207,9 @@ const Reallocation = () => {
           <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
             <tr>
               <th className="border border-r-0 border-t-0 border-gray-400 px-4 ">
+                SNO.
+              </th>
+              <th className="border border-r-0 border-t-0 border-gray-400 px-4 ">
                 Name
               </th>
               <th className="border border-r-0 border-t-0 border-l-0 border-gray-400  px-4 max-w-[200px] min-w-[200px]">
@@ -238,9 +240,10 @@ const Reallocation = () => {
           </thead>
           <tbody>
             {tableData && tableData.length > 0 ? (
-              tableData.map((item) => (
+              tableData.map((item,index) => (
                 <React.Fragment key={item._id}>
                   <tr className="bg-white  border border-gray-400 border-b-0">
+                    <td className="  px-4 "></td>
                     <td
                       onClick={() => setShowFullName(!showFullName)}
                       className={`px-4 cursor-pointer overflow-hidden border border-r-0 border-b-0 border-gray-400 ${
@@ -297,6 +300,7 @@ const Reallocation = () => {
                   </tr>
 
                   <tr className=" font-semibold bg-gray-100">
+                    <td className=" px-4 border border-b-0 border-t-0 border-r-0 border-gray-400 ">{index+1}</td>
                     <td className=" px-4 border border-b-0 border-t-0 border-r-0 border-gray-400 ">
                       Leadby
                     </td>
@@ -359,10 +363,13 @@ const Reallocation = () => {
                   </tr>
 
                   <tr className="bg-white">
-                    <td className="border border-t-0 border-r-0  border-gray-400 px-4 py-0.5 ">
+                    <td className="border border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5 ">
+                      
+                    </td>
+                    <td className="border border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5 ">
                       {item?.leadBy?.name}
                     </td>
-                    <td className="border border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
+                    <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 ">
                       <div className="text-center">
                         <div className="inline-block">
                           <Select
@@ -437,21 +444,21 @@ const Reallocation = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5">
+                    <td className="border  border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5">
                       {/* {item?.allocatedBy?.name} */}
                     </td>
-                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400  px-4 py-0.5 ">
+                    <td className="border  border-t-0 border-r-0 border-l-0 border-b-0  border-gray-400  px-4 py-0.5 ">
                       {/* {item.followUpDatesandRemarks.length} */}
                     </td>
-                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
+                    <td className="border  border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 ">
                       {new Date(item?.leadDate).toLocaleDateString()}
                     </td>
-                    <td className="border  border-t-0 border-r-0  border-gray-400 px-4 py-0.5 ">
+                    <td className="border  border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5 ">
                       {/* {item.leadDate?.toString().split("T")[0]} */}
                     </td>
-                    <td className="border border-t-0 border-gray-400   px-4 py-0.5 "></td>
+                    <td className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5 "></td>
                     <td
-                      className="border border-t-0 border-gray-400   px-4 py-0.5 text-red-400 hover:text-red-500 hover:cursor-pointer font-semibold"
+                      className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5 text-red-400 hover:text-red-500 hover:cursor-pointer font-semibold"
                       onClick={() => {
                         if (!selectedAllocates.hasOwnProperty(item._id)) {
                           setValidateError((prev) => ({
@@ -478,7 +485,7 @@ const Reallocation = () => {
                     >
                       Allocate
                     </td>
-                    <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
+                    <td className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5"></td>
                   </tr>
                   <tr className="bg-gray-100">
                     <td className="border border-l-1 border-t-0 border-gray-400 "></td>
@@ -489,12 +496,12 @@ const Reallocation = () => {
                       <div className="flex  w-full">
                         {/* <span className="min-w-[100px]"></span> */}
                         <span className="mx-2">
-                          {item?.matchedlog?.submittedUser?.name} -
+                          {item?.submittedUser?.name} -
                         </span>
                         <span className="mx-2">
-                          {item?.matchedlog?.taskBy} -
+                          {item?.activityLog[item.activityLog.length-1].taskBy} -
                         </span>
-                        <span>{item?.matchedlog?.remarks}</span>
+                        <span>{item?.activityLog[item.activityLog.length-1]?.remarks}</span>
                       </div>
                     </td>
                     <td className="border border-t-0 border-gray-400 "></td>

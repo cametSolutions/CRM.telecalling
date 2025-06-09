@@ -81,7 +81,6 @@ const LeadTask = () => {
       } else if (type === "lead-Task") {
        
         const finalOutput = []
-
         data.forEach((entry) => {
           const activitylog = entry.activityLog
 

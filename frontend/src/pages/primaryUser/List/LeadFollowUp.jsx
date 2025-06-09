@@ -77,7 +77,8 @@ const LeadFollowUp = () => {
   const [demoData, setDemodata] = useState({
     demoallocatedTo: "",
     demoallocatedDate: "",
-    demoDescription: ""
+    demoDescription: "",
+    selectedType: ""
   })
   const navigate = useNavigate()
   const { data: demolead } = UseFetch(
@@ -164,7 +165,6 @@ const LeadFollowUp = () => {
       setloggedUser(user)
     }
   }, [branches])
-console.log()
   useEffect(() => {
     if (loggedUserBranches && loggedUserBranches.length > 0) {
       const defaultbranch = loggedUserBranches[0]
@@ -172,7 +172,6 @@ console.log()
     }
   }, [loggedUserBranches])
   // Close when clicking outside
-console.log(loggedusersallocatedleads)
   useEffect(() => {
     if (loggedusersallocatedleads) {
       setLeads(loggedusersallocatedleads.followupLeads)
@@ -294,47 +293,38 @@ console.log(loggedusersallocatedleads)
     }
   }
 
-  const handleHistory = (history, leadid, docId, allocatedTo, demofollowUp) => {
+  const handleHistory = (
+    history,
+    leadid,
+    docId,
+    allocatedTo,
+    taskfromFollowup
+  ) => {
     const owner = loggedUser._id === allocatedTo
     setOwner(owner)
-    const isHaveDemo = demofollowUp
-      ? demofollowUp[demofollowUp?.length - 1]
+    const isHaveDemo = taskfromFollowup
+      ? history[history.length - 1]
       : null
     if (isHaveDemo) {
-      const isdemofollowupclosed = isHaveDemo?.demofollowerDate === null
-      if (isdemofollowupclosed) {
-        const respectedfollowUpDatesandRemarks = history[history.length - 1]
+      const demoassignedDate = formatDate(isHaveDemo.submissionDate)
 
-        const demoassignedDate = formatDate(
-          respectedfollowUpDatesandRemarks.followUpDate
-        )
+      setdemoEditIndex(history.length - 1)
+      setfollowUpDatesandRemarksEditIndex(history.length - 1)
+      setDemodata({
+        selectedType: isHaveDemo?.taskTo,
+        demoallocatedTo: isHaveDemo?.taskallocatedTo?._id,
+        demoallocatedDate: isHaveDemo?.allocationDate.toString().split("T")[0],
+        demoassignedDate,
+        demoDescription: isHaveDemo?.remarks
+      })
 
-        setFormData((prev) => ({
-          ...prev,
-          followUpDate: respectedfollowUpDatesandRemarks.followUpDate,
-          nextfollowUpDate: respectedfollowUpDatesandRemarks.nextfollowUpDate,
-          followedId: respectedfollowUpDatesandRemarks.followedId,
-          Remarks: respectedfollowUpDatesandRemarks.Remarks
-        }))
-        setdemoEditIndex(demofollowUp.length - 1)
-        setfollowUpDatesandRemarksEditIndex(history.length - 1)
-        setDemodata({
-          demoallocatedTo: isHaveDemo.demoallocatedTo,
-          demoallocatedDate: isHaveDemo.demoallocatedDate
-            .toString()
-            .split("T")[0],
-          demoassignedDate,
-          demoDescription: isHaveDemo.demoDescription
-        })
-
-        const isEditable =
-          demofollowUp[demofollowUp?.length - 1]?.demofollowerDate === null
-        const ischeckdisabled =
-          demofollowUp[demofollowUp?.length - 1]?.demofollowerDate !== null
-        setisdemofollowedNotClosed(ischeckdisabled)
-        setIsEditable(isEditable)
-        setIsAllocated(true)
-      }
+      // const isEditable =
+      //   demofollowUp[demofollowUp?.length - 1]?.demofollowerDate === null
+      // const ischeckdisabled =
+      //   demofollowUp[demofollowUp?.length - 1]?.demofollowerDate !== null
+      setisdemofollowedNotClosed(true)
+      setIsEditable(true)
+      setIsAllocated(true)
     }
 
     setselectedDocid(docId)
@@ -372,6 +362,9 @@ console.log(loggedusersallocatedleads)
     }
     if (demoData.demoallocatedTo === "") {
       newError.selectStaff = "Staff is Required"
+    }
+    if (demoData.selectedType === "") {
+      newError.allocationTyperror = "Type is Required"
     }
     if (Object.keys(newError).length > 0) {
       setDemoError(newError)
@@ -639,7 +632,7 @@ console.log(loggedusersallocatedleads)
                             item.leadId, //like 00001
                             item?._id, //lead doc id
                             item?.allocatedTo?._id,
-                            item?.demofollowUp
+                            item?.taskfromFollowup
                           )
                         }
                       >
@@ -921,7 +914,7 @@ console.log(loggedusersallocatedleads)
                           <div className="text-left flex items-center  gap-2 ">
                             <input
                               type="checkbox"
-                              // disabled={demoData.demoDescription}
+                              disabled={isdemofollownotClosed}
                               id="allocation"
                               className={`w-4 h-4  ${
                                 isdemofollownotClosed
@@ -946,9 +939,13 @@ console.log(loggedusersallocatedleads)
                             </label>
                             <input
                               type="checkbox"
-                              // disabled={demoData.demoDescription}
+                              disabled={isdemofollownotClosed}
                               id="close"
-                              className="w-4 h-4"
+                              className={`w-4 h-4 ${
+                                isdemofollownotClosed
+                                  ? "cursor-not-allowed"
+                                  : ""
+                              }`}
                               checked={isClosed}
                               onChange={() => {
                                 if (isAllocated) {
@@ -969,9 +966,12 @@ console.log(loggedusersallocatedleads)
                           {isAllocated && (
                             <>
                               <div>
-                                {" "}
+                                <label className="block text-left font-semibold text-gray-500">
+                                  Allocation Type
+                                </label>
                                 <select
-                                  value={demoData?.selectedType||""}
+                                  disabled={isdemofollownotClosed}
+                                  value={demoData?.selectedType || ""}
                                   onChange={(e) => {
                                     setDemodata((prev) => ({
                                       ...prev,
@@ -982,7 +982,7 @@ console.log(loggedusersallocatedleads)
                                       allocationTyperror: ""
                                     }))
                                   }}
-                                  className="py-0.5 border border-gray-400 rounded-md  w-full focus:outline-none cursor-pointer"
+                                  className={`py-0.5 border border-gray-400 rounded-md  w-full focus:outline-none cursor-pointer ${isdemofollownotClosed?"bg-gray-200":""}`}
                                 >
                                   <option>Select Type</option>
 
@@ -1008,6 +1008,11 @@ console.log(loggedusersallocatedleads)
                                   <option value="office">Office</option>
                                 </select>
                               </div>
+                              {demoerror.allocationTyperror && (
+                                <p className="text-red-500 text-sm text-left">
+                                  {demoerror.allocationTyperror}
+                                </p>
+                              )}
                               <div className=" text-left">
                                 <label
                                   htmlFor="staffName"

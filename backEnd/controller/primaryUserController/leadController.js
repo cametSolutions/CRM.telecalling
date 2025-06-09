@@ -175,6 +175,7 @@ export const GetallfollowupList = async (req, res) => {
               { submittedUser: userObjectId },
               { taskallocatedTo: userObjectId }
             ],
+            allocatedClosed: false,
 
           }
         },
@@ -182,12 +183,10 @@ export const GetallfollowupList = async (req, res) => {
         reallocatedTo: false
       }
     } else {
-      query = { allocatedTo: { $ne: null }, leadBranch: branchObjectId }
+      query = { leadBranch: branchObjectId }
 
     }
-console.log(query)
     const selectedfollowup = await LeadMaster.find(query).populate({ path: "customerName", select: "customerName" }).lean()
-console.log("ddfdd",selectedfollowup)
 
     const followupLeads = [];
 
@@ -303,7 +302,8 @@ export const SetDemoallocation = async (req, res) => {
           taskTo: demoData?.selectedType,
 
         }
-      }
+      },
+      $set: { taskfromFollowup: true }
     }
     )
 
@@ -789,23 +789,29 @@ export const GetallReallocatedLead = async (req, res) => {
 
     const populatedreallocatedLeads = await Promise.all(
       reallocatedLeads.map(async (lead) => {
+        const submittedusermodel = lead.activityLog[lead.activityLog.length - 1]
         if (
           !lead.leadByModel ||
-          !mongoose.models[lead.leadByModel]
+          !mongoose.models[lead.leadByModel] || !submittedusermodel.submissiondoneByModel || !mongoose.models[submittedusermodel.submissiondoneByModel]
         ) {
           console.error(
             `Model ${lead.leadByModel} is not registered`
+          )
+          console.error(
+            `Model ${submittedusermodel} is not registered`
           )
           return lead // Return lead as-is if model is invalid
         }
 
         // Fetch the referenced document manually
         const assignedModel = mongoose.model(lead.leadByModel)
+        const submitteduserModel = mongoose.model(submittedusermodel.submissiondoneByModel)
+        const populatedSubmitteduser = await submitteduserModel.findById(submittedusermodel.submittedUser).select("name")
         const populatedLeadBy = await assignedModel
           .findById(lead.leadBy)
           .select("name")
 
-        return { ...lead, leadBy: populatedLeadBy } // Merge populated data
+        return { ...lead, leadBy: populatedLeadBy, submittedUser: populatedSubmitteduser } // Merge populated data
       })
     )
     if (populatedreallocatedLeads) {
@@ -827,7 +833,7 @@ export const GetallLead = async (req, res) => {
     if (!Status && !role) {
       return res.status(400).json({ message: "Status or role is missing " })
     }
-    let branchObjectIds
+
     if (Status === "Pending") {
       const query = { leadBranch: branchObjectId, activityLog: { $size: 1 } };
 
@@ -866,7 +872,7 @@ export const GetallLead = async (req, res) => {
     } else if (Status === "Approved") {
 
       const query = {
-        leadBranch: branchObjectId, activityLog: { $exists: true, $not: { $size: 0 } },
+        leadBranch: branchObjectId, reallocatedTo: false, activityLog: { $exists: true, $not: { $size: 0 } },
         $expr: { $gte: [{ $size: "$activityLog" }, 2] }
       }
 
@@ -878,18 +884,22 @@ export const GetallLead = async (req, res) => {
       const populatedApprovedLeads = await Promise.all(
         approvedAllocatedLeads.map(async (lead) => {
           const selected = lead.activityLog[lead.activityLog.length - 1]
+          const lastMatchingActivity = [...(lead.activityLog || [])]
+            .reverse()
+            .find(log => log.taskallocatedTo && log.taskallocatedBy);
+
           if (
             !lead.leadByModel ||
             !mongoose.models[lead.leadByModel] ||
-            !selected.taskallocatedBy || !selected.taskallocatedByModel ||
-            !selected.taskallocatedTo || !selected.taskallocatedToModel
+            !lastMatchingActivity.taskallocatedBy || !lastMatchingActivity.taskallocatedByModel ||
+            !lastMatchingActivity.taskallocatedTo || !lastMatchingActivity.taskallocatedToModel
 
           ) {
             console.error(
               `Model ${lead.leadByModel} is not registered`
             )
-            console.error(`Model ${selected.taskallocatedByModel} is not registered`)
-            console.error(`Model ${selected.taskallocatedToModel} is not registered`)
+            console.error(`Model ${lastMatchingActivity.taskallocatedByModel} is not registered`)
+            console.error(`Model ${lastMatchingActivity.taskallocatedToModel} is not registered`)
 
             return lead // Return lead as-is if model is invalid
           }
@@ -897,16 +907,16 @@ export const GetallLead = async (req, res) => {
           // Fetch the referenced document manually
 
           const leadByModel = mongoose.model(lead.leadByModel)
-          const allocatedToModel = mongoose.model(selected.taskallocatedToModel)
-          const allocatedByModel = mongoose.model(selected.taskallocatedByModel)
+          const allocatedToModel = mongoose.model(lastMatchingActivity.taskallocatedToModel)
+          const allocatedByModel = mongoose.model(lastMatchingActivity.taskallocatedByModel)
 
           const populatedLeadBy = await leadByModel
             .findById(lead.leadBy)
             .select("name")
           const populatedAllocates = await allocatedToModel
-            .findById(selected.taskallocatedTo)
+            .findById(lastMatchingActivity.taskallocatedTo)
             .select("name")
-          const populatedAllocatedBy = await allocatedByModel.findById(selected.taskallocatedBy).select("name")
+          const populatedAllocatedBy = await allocatedByModel.findById(lastMatchingActivity.taskallocatedBy).select("name")
 
 
           return {
@@ -1177,7 +1187,7 @@ export const updateReallocation = async (req, res) => {
 }
 export const UpadateOrLeadAllocationRegister = async (req, res) => {
   try {
-    const { allocationpending, allocatedBy, allocationType,selectedbranch } = req.query
+    const { allocationpending, allocatedBy, allocationType, selectedbranch } = req.query
     const allocatedbyObjectid = new mongoose.Types.ObjectId(allocatedBy)
     const branchObjectId = new mongoose.Types.ObjectId(selectedbranch)
     const { selectedItem, formData } = req.body
@@ -1205,38 +1215,87 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       return res.status(400).json({ message: "Invalid allocated/allocatedby reference" })
     }
 
+    const matchLead = await LeadMaster.findOne({ _id: selectedItem._id })
+    if (matchLead.activityLog.length === 2) {
+      const lastIndex = matchLead.activityLog.length - 1
+      // Update specific fields of the last activityLog entry
+      matchLead.activityLog[lastIndex] = {
+        ...matchLead.activityLog[lastIndex], // keep existing fields
+        submissionDate: new Date(),
+        submittedUser: allocatedBy,
+        submissiondoneByModel: allocatedByModel,
+        taskallocatedBy: allocatedBy,
+        taskallocatedByModel: allocatedByModel,
+        taskallocatedTo: selectedItem.allocatedTo,
+        taskallocatedToModel: allocatedToModel,
+        remarks: formData.allocationDescription,
+        taskBy: "allocated",
+        taskTo: allocationType
+      };
 
+      // Save the document
+      await matchLead.save();
 
-    const updatedLead = await LeadMaster.findByIdAndUpdate(
-      {
-        _id: selectedItem._id
-      },
+    } else if (matchLead.activityLog.length === 1) {
+      const updatedLead = await LeadMaster.findByIdAndUpdate(
+        {
+          _id: selectedItem._id
+        },
 
-      {
+        {
 
-        $push: {
-          activityLog: {
-            submissionDate: new Date(),
-            submittedUser: allocatedBy,
-            submissiondoneByModel: allocatedByModel,
-            taskallocatedBy: allocatedBy,
-            taskallocatedByModel: allocatedByModel,
-            taskallocatedTo: selectedItem.allocatedTo,
-            taskallocatedToModel: allocatedToModel,
-            remarks: formData.allocationDescription,
-            taskBy: "allocated",
-            taskTo: allocationType
+          $push: {
+            activityLog: {
+              submissionDate: new Date(),
+              submittedUser: allocatedBy,
+              submissiondoneByModel: allocatedByModel,
+              taskallocatedBy: allocatedBy,
+              taskallocatedByModel: allocatedByModel,
+              taskallocatedTo: selectedItem.allocatedTo,
+              taskallocatedToModel: allocatedToModel,
+              remarks: formData.allocationDescription,
+              taskBy: "allocated",
+              taskTo: allocationType
+            }
+          },
+          $set: {
+            allocationType: allocationType // Set outside the activityLog array
           }
         },
-        $set: {
-          allocationType: allocationType // Set outside the activityLog array
+
+        { new: true }
+      )
+
+    } else if (matchLead.activityLog.length > 2) {
+
+      matchLead.activityLog.forEach((log) => {
+        if ("allocatedClosed" in log) {
+          log.allocatedClosed = true;
         }
-      },
+      })
+      // Important for deep changes in arrays
+      matchLead.markModified('activityLog');
 
-      { new: true }
-    )
+      // Push new log
+      matchLead.activityLog.push({
+        submissionDate: new Date(),
+        submittedUser: allocatedBy,
+        submissiondoneByModel: allocatedByModel,
+        taskallocatedBy: allocatedBy,
+        taskallocatedByModel: allocatedByModel,
+        taskallocatedTo: selectedItem.allocatedTo,
+        taskallocatedToModel: allocatedToModel,
+        remarks: formData.allocationDescription,
+        taskBy: "allocated",
+        taskTo: allocationType
+      });
 
-    if (allocationpending === "true" && updatedLead) {
+      await matchLead.save();
+
+    }
+
+
+    if (allocationpending === "true") {
       const pendingLeads = await LeadMaster.find({
         leadBranch: branchObjectId,
         activityLog: { $size: 1 }
@@ -1278,17 +1337,17 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       const populatedLeads = await Promise.all(
         allocatedLeads.map(async (lead) => {
           if (
-            !lead.assignedtoleadByModel ||
-            !mongoose.models[lead.assignedtoleadByModel]
+            !lead.leadByModel ||
+            !mongoose.models[lead.leadByModel]
           ) {
             console.error(
-              `Model ${lead.assignedtoleadByModel} is not registered`
+              `Model ${lead.leadByModel} is not registered`
             )
             return lead // Return lead as-is if model is invalid
           }
 
           // Fetch the referenced document manually
-          const assignedModel = mongoose.model(lead.assignedtoleadByModel)
+          const assignedModel = mongoose.model(lead.leadByModel)
           const populatedLeadBy = await assignedModel
             .findById(lead.leadBy)
             .select("name")
@@ -1330,7 +1389,8 @@ export const UpdateLeadTask = async (req, res) => {
           taskClosed: true
 
         }
-      }
+      },
+      $set: { taskfromFollowup: false }
 
     })
     if (updateleadTask) {
@@ -1437,7 +1497,7 @@ export const GetselectedLeadData = async (req, res) => {
     if (
       !selectedLead.leadByModel ||
       !mongoose.models[selectedLead.leadByModel]
-      
+
     ) {
       console.error(
         `Model ${selectedLead.assignedtoleadByModel} is not registered`
@@ -1464,13 +1524,13 @@ export const GetselectedLeadData = async (req, res) => {
     } else {
       // Fetch the referenced document manually
       const assignedModel = mongoose.model(selectedLead.leadByModel)
-     
+
 
       const populatedLeadBy = await assignedModel
         .findById(selectedLead.leadBy)
         .select("name")
 
-  
+
       const populatedLeadFor = await Promise.all(
         selectedLead.leadFor.map(async (item) => {
           const productorserviceModel = mongoose.model(
