@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect,useMemo } from "react"
 import DeleteAlert from "../../../components/common/DeleteAlert"
 import Edit from "../../../components/common/Edit"
 import api from "../../../api/api"
@@ -7,9 +7,14 @@ import { toast } from "react-toastify"
 export const PartnerRegistration = () => {
   const [value, setValue] = useState("")
   const [items, setItems] = useState([])
-
+ const [selectedCompany, setSelectedCompany] = useState("")
+  const [selectedBranch, setSelectedBranch] = useState(null)
   const [editState, seteditState] = useState(true)
   const [editId, setEditId] = useState("")
+  const { data: companyData, error: companyError } = UseFetch(
+    "/company/getCompany"
+  )
+console.log(companyData)
   const { data, loading, error, refreshHook } = UseFetch(
     "/customer/getallpartners"
   )
@@ -19,6 +24,12 @@ export const PartnerRegistration = () => {
       // setTotalPages(data.data.totalPages)
     }
   }, [data])
+  const filteredBranches = useMemo(
+    () =>
+      companyData?.find((company) => company._id === selectedCompany)
+        ?.branches || [],
+    [companyData, selectedCompany]
+  )
 
   const handleEdit = (id) => {
     seteditState(false)
@@ -88,7 +99,7 @@ export const PartnerRegistration = () => {
         ADD PARTNERS
       </h1>
 
-      <div className="flex items-center  w-full px-6  ">
+      <div className="flex items-center  w-full px-8 gap-6 ">
         <input
           type="text"
           onChange={(e) => {
@@ -97,9 +108,36 @@ export const PartnerRegistration = () => {
           placeholder="Enter your brand name"
           className="w-full md:w-1/2  p-1  border border-gray-300 rounded focus:border-gray-500 outline-none"
           value={value}
-          //   onChange={(e) => setValue(e.target.value)}
         />
-        <div className="flex justify-between m-4">
+        <select
+          className="w-full md:w-1/4 p-1 border border-gray-300 rounded focus:border-gray-500 outline-none"
+          value={selectedCompany || ""}
+          onChange={(e) => setSelectedCompany(e.target.value)}
+        >
+          <option value="">Select Company</option>
+          {companyData?.map((company) => (
+            <option key={company._id} value={company._id}>
+              {company.companyName}
+            </option>
+          ))}
+        </select>
+
+        {/* Select Branch (Filtered by Company) */}
+        <select
+          className="w-full md:w-1/4 p-1 border border-gray-300 rounded focus:border-gray-500 outline-none"
+          value={selectedBranch || ""}
+          onChange={(e) => setSelectedBranch(e.target.value)}
+          disabled={!selectedCompany} // Disable if no company is selected
+        >
+          <option value="">Select Branch</option>
+
+          {filteredBranches?.map((branch) => (
+            <option key={branch._id} value={branch._id}>
+              {branch.branchName}
+            </option>
+          ))}
+        </select>
+        <div className="flex justify-between ">
           <button
             onClick={handleSubmit}
             className="bg-blue-500 hover:bg-blue-700 text-white px-4 py-1 rounded "
@@ -112,17 +150,23 @@ export const PartnerRegistration = () => {
         <section className="m-8">
           <div className="w-full xl:mb-0">
             <div className="relative flex flex-col min-w-0 break-words bg-red-50 w-full mb-6 p-6 shadow-xl rounded">
-              <div className="block w-full overflow-x-auto overflow-y-auto h-[calc(80vh-200px)]">
-                <table className="items-center w-full border-collapse">
+              <div className="block w-full overflow-x-auto overflow-y-auto h-[calc(80vh-200px)] border border-gray-400 rounded-md">
+                <table className="items-center w-full border-collapse ">
                   <thead>
-                    <tr className="bg-gray-300 sticky top-0 z-10">
-                      <th className="w-3/6 px-6 text-left text-black  py-3 text-sm uppercase whitespace-nowrap font-semibold">
+                    <tr className="bg-gray-300 sticky top-0 z-10 text-center">
+                      <th className=" px-6 text-black  py-3 text-sm uppercase whitespace-nowrap font-semibold">
                         Partner
                       </th>
-                      <th className="px-6 w-1/6 text-center text-blue-500 align-middle  py-3 text-sm uppercase  whitespace-nowrap font-semibold">
+                      <th className=" px-6  text-black  py-3 text-sm uppercase whitespace-nowrap font-semibold">
+                        Company Name
+                      </th>
+                      <th className="px-6  text-black  py-3 text-sm uppercase whitespace-nowrap font-semibold">
+                        Branch Name
+                      </th>
+                      <th className="px-6   text-blue-500 align-middle  py-3 text-sm uppercase  whitespace-nowrap font-semibold">
                         Edit
                       </th>
-                      <th className="px-6 w-1/6 text-right text-red-500 align-middle  py-3 text-sm uppercase whitespace-nowrap font-semibold">
+                      <th className="px-6  text-red-500 align-middle  py-3 text-sm uppercase whitespace-nowrap font-semibold">
                         Delete
                       </th>
                     </tr>
@@ -130,14 +174,26 @@ export const PartnerRegistration = () => {
                   <tbody>
                     {items?.map((el) => (
                       <tr key={el._id}>
-                        <th className="px-6 text-left col-span-2 text-wrap border-t-0 align-middle border-l-0 border-r-0 whitespace-nowrap text-black p-2">
+                        <th className="px-6  text-wrap border-t-0 align-middle border-l-0 border-r-0 whitespace-nowrap text-black p-2">
                           {el.partner}
                         </th>
-                        <td className="cursor-pointer text-center flex justify-center px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          <Edit onEdit={handleEdit} Id={el._id} />
+                        <th className="px-6   text-wrap border-t-0 align-middle border-l-0 border-r-0 whitespace-nowrap text-black p-2">
+                          {el.partner}
+                        </th>
+                        <th className="px-6   text-wrap border-t-0 align-middle border-l-0 border-r-0 whitespace-nowrap text-black p-2">
+                          {el.partner}
+                        </th>
+                        <td className="cursor-pointer  px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                          <div className=" flex justify-center">
+                            {" "}
+                            <Edit onEdit={handleEdit} Id={el._id} />
+                          </div>
                         </td>
-                        <td className="cursor-pointer text-right px-6 border-t-0 align-middle border-l-0 border-r-0 whitespace-nowrap p-2">
-                          <DeleteAlert onDelete={handleDelete} Id={el._id} />
+                        <td className="cursor-pointer flex justify-center px-6 border-t-0 align-middle border-l-0 border-r-0 whitespace-nowrap p-2">
+                          <div className="flex justify-center">
+                            {" "}
+                            <DeleteAlert onDelete={handleDelete} Id={el._id} />
+                          </div>
                         </td>
                       </tr>
                     ))}
