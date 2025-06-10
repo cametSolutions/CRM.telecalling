@@ -97,6 +97,9 @@ const LeadFollowUp = () => {
       selectedCompanyBranch &&
       `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}&pendingfollowup=${pending}`
   )
+console.log(loggedusersallocatedleads)
+console.log(loggedUser)
+console.log(selectedCompanyBranch)
   useEffect(() => {
     if (data && selectedCompanyBranch) {
       const { allusers = [], allAdmins = [] } = data
@@ -147,10 +150,12 @@ const LeadFollowUp = () => {
         } else {
           const staffbranches = branches.map((branch) => {
             return {
-              value: branch.branch_id,
+              value: branch._id,
               label: branch.branchName
             }
           })
+console.log("H")
+console.log(staffbranches)
           setloggedUserBranches(staffbranches)
         }
       } else {
@@ -183,6 +188,7 @@ const LeadFollowUp = () => {
 
   useEffect(() => {
     if (leads && leads.length && loggedUser) {
+console.log('H')
       const currentDate = new Date()
 
       // 1. Leads with follow-ups

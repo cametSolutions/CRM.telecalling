@@ -185,7 +185,7 @@ const LeadMaster = ({
       setValueMain("partner", Data[0]?.partner)
       setValueMain("customerName", Data[0]?.customerName?._id)
       setValueMain("mobile", Data[0]?.customerName?.mobile)
-      setValueMain("mobile", Data[0]?.customerName?.phone)
+      setValueMain("phone", Data[0]?.customerName?.phone)
       setValueMain("email", Data[0]?.customerName?.email)
       const leadData = Data[0]?.leadFor.map((item) => ({
         licenseNumber: item?.licenseNumber,
@@ -829,7 +829,7 @@ const LeadMaster = ({
                         : ""
                     }`}
                     placeholder="Mobile..."
-                  ></input>
+                 / >
                 </div>
                 <div>
                   <label

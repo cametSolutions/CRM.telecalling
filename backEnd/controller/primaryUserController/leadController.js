@@ -158,7 +158,6 @@ export const GetAllservices = async (req, res) => {
 }
 export const GetallfollowupList = async (req, res) => {
 
-
   try {
     const { loggeduserid, branchSelected, role, pendingfollowup } = req.query
 
@@ -193,12 +192,12 @@ export const GetallfollowupList = async (req, res) => {
                 { submittedUser: userObjectId },
                 { taskallocatedTo: userObjectId }
               ],
-              taskClosed:true
+              taskClosed: true
 
             }
           },
           leadBranch: branchObjectId,
-        
+
         }
 
       }
@@ -212,61 +211,63 @@ export const GetallfollowupList = async (req, res) => {
     const followupLeads = [];
 
     for (const lead of selectedfollowup) {
-      const matchedallocation = lead.activityLog.filter((item) => item?.taskallocatedTo?.equals(userObjectId) && item?.taskTo === "followup")
+      const matchedallocation = lead.activityLog.filter((item) => item?.taskTo === "followup")
+      // console.log("mathched",matchedallocation)
+      if (matchedallocation && matchedallocation.length > 0) {
+        if (
+          !lead.leadByModel || !mongoose.models[lead.leadByModel] ||
+          !matchedallocation[matchedallocation.length-1]?.taskallocatedToModel || !mongoose.models[matchedallocation[matchedallocation.length-1]?.taskallocatedToModel] ||
+          !matchedallocation[matchedallocation.length-1]?.taskallocatedByModel || !mongoose.models[matchedallocation[matchedallocation.length-1]?.taskallocatedByModel]
+        ) {
+          console.error(`Model ${lead.leadByModel}, ${matchedallocation[matchedallocation.length-1].taskallocatedToModel}, or ${matchedallocation[matchedallocation.length-1].taskallocatedByModel} is not registered`);
+          followupLeads.push(lead);
+          continue;
+        }
 
+        // Populate outer fields
+        const leadByModel = mongoose.model(lead.leadByModel);
+        const allocatedToModel = mongoose.model(matchedallocation[matchedallocation.length-1]?.taskallocatedToModel);
+        const allocatedByModel = mongoose.model(matchedallocation[matchedallocation.length-1]?.taskallocatedByModel);
 
-      if (
-        !lead.leadByModel || !mongoose.models[lead.leadByModel] ||
-        !matchedallocation[0].taskallocatedToModel || !mongoose.models[matchedallocation[0].taskallocatedToModel] ||
-        !matchedallocation[0].taskallocatedByModel || !mongoose.models[matchedallocation[0].taskallocatedByModel]
-      ) {
-        console.error(`Model ${lead.leadByModel}, ${matchedallocation[0].taskallocatedToModel}, or ${matchedallocation[0].taskallocatedByModel} is not registered`);
-        followupLeads.push(lead);
-        continue;
+        const populatedLeadBy = await leadByModel.findById(lead.leadBy).select("name").lean();
+        const populatedAllocatedTo = await allocatedToModel.findById(matchedallocation[matchedallocation.length-1].taskallocatedTo).select("name").lean();
+        const populatedAllocatedBy = await allocatedByModel.findById(matchedallocation[matchedallocation.length-1].taskallocatedBy).select("name").lean();
+
+        // Populate activityLog (submittedUser, etc.)
+        const populatedActivityLog = await Promise.all(
+          lead.activityLog.map(async (log) => {
+            let populatedSubmittedUser = null;
+            let populatedTaskAllocatedTo = null;
+
+            if (log.submittedUser && log.submissiondoneByModel && mongoose.models[log.submissiondoneByModel]) {
+              const model = mongoose.model(log.submissiondoneByModel);
+              populatedSubmittedUser = await model.findById(log.submittedUser).select("name").lean();
+            }
+
+            if (log.taskallocatedTo && log.taskallocatedToModel && mongoose.models[log.taskallocatedToModel]) {
+              const model = mongoose.model(log.taskallocatedToModel);
+              populatedTaskAllocatedTo = await model.findById(log.taskallocatedTo).select("name").lean();
+            }
+
+            return {
+              ...log,
+              submittedUser: populatedSubmittedUser || log.submittedUser,
+              taskallocatedTo: populatedTaskAllocatedTo || log.taskallocatedTo,
+            };
+          })
+        );
+
+        followupLeads.push({
+          ...lead,
+          leadBy: populatedLeadBy || lead.leadBy,
+          allocatedTo: populatedAllocatedTo ,
+          allocatedBy: populatedAllocatedBy ,
+          activityLog: populatedActivityLog,
+        });
       }
 
-      // Populate outer fields
-      const leadByModel = mongoose.model(lead.leadByModel);
-      const allocatedToModel = mongoose.model(matchedallocation[0].taskallocatedToModel);
-      const allocatedByModel = mongoose.model(matchedallocation[0].taskallocatedByModel);
 
-      const populatedLeadBy = await leadByModel.findById(lead.leadBy).select("name").lean();
-      const populatedAllocatedTo = await allocatedToModel.findById(matchedallocation[0].taskallocatedTo).select("name").lean();
-      const populatedAllocatedBy = await allocatedByModel.findById(matchedallocation[0].taskallocatedBy).select("name").lean();
-
-      // Populate activityLog (submittedUser, etc.)
-      const populatedActivityLog = await Promise.all(
-        lead.activityLog.map(async (log) => {
-          let populatedSubmittedUser = null;
-          let populatedTaskAllocatedTo = null;
-
-          if (log.submittedUser && log.submissiondoneByModel && mongoose.models[log.submissiondoneByModel]) {
-            const model = mongoose.model(log.submissiondoneByModel);
-            populatedSubmittedUser = await model.findById(log.submittedUser).select("name").lean();
-          }
-
-          if (log.taskallocatedTo && log.taskallocatedToModel && mongoose.models[log.taskallocatedToModel]) {
-            const model = mongoose.model(log.taskallocatedToModel);
-            populatedTaskAllocatedTo = await model.findById(log.taskallocatedTo).select("name").lean();
-          }
-
-          return {
-            ...log,
-            submittedUser: populatedSubmittedUser || log.submittedUser,
-            taskallocatedTo: populatedTaskAllocatedTo || log.taskallocatedTo,
-          };
-        })
-      );
-
-      followupLeads.push({
-        ...lead,
-        leadBy: populatedLeadBy || lead.leadBy,
-        allocatedTo: populatedAllocatedTo || lead.allocatedTo,
-        allocatedBy: populatedAllocatedBy || lead.allocatedBy,
-        activityLog: populatedActivityLog,
-      });
     }
-
 
     const ischekCollegueLeads = followupLeads.some((item) => item.allocatedBy._id.equals(userObjectId))
     return res.status(201).json({ messge: "leadfollowup found", data: { followupLeads, ischekCollegueLeads } })
@@ -871,7 +872,7 @@ export const GetallLead = async (req, res) => {
             !mongoose.models[lead.leadByModel]
           ) {
             console.error(
-              `Model ${lead.leadByModel} is not registeredddddd`
+              `Model ${lead.leadByModel} is not registered`
             )
             return lead // Return lead as-is if model is invalid
           }
