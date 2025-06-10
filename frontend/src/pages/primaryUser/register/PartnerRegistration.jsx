@@ -27,10 +27,10 @@ export const PartnerRegistration = () => {
   console.log(companyData)
   const { data, loading, error, refreshHook } = UseFetch(
     "/customer/getallpartners"
-  ) 
+  )
   useEffect(() => {
     if (data) {
-console.log(data)
+      console.log(data)
       setItems(data)
       // setTotalPages(data.data.totalPages)
     }
@@ -49,13 +49,11 @@ console.log(data)
   }, [companyData])
   useEffect(() => {
     const handleClickOutside = (event) => {
-      
       if (
         dropdownbranchRef.current &&
         !dropdownbranchRef.current.contains(event.target)
       ) {
-console.log(
-"h")
+        console.log("h")
         setIsDropdownOpen(false)
       }
     }
@@ -101,7 +99,7 @@ console.log(
   // }
   console.log(submitError)
   const handleSubmit = async () => {
-console.log(items)
+    console.log(items)
     const newError = {}
     if (formData.partnerName === "")
       newError.partnerError = "Partner Name is required"
@@ -112,7 +110,7 @@ console.log(items)
       setSubmiterror(newError)
       return
     }
-
+console.log(formData)
     return
     try {
       if (editId) {
@@ -156,12 +154,16 @@ console.log(items)
           <div className="flex flex-col w-full">
             <input
               type="text"
-              onChange={(e) =>
+              onChange={(e) => {
                 setFormData((prev) => ({
                   ...prev,
                   partnerName: e.target.value
                 }))
-              }
+                setSubmiterror((prev) => ({
+                  ...prev,
+                  partnerError: ""
+                }))
+              }}
               placeholder="Enter your brand name"
               className="p-1 border border-gray-300 rounded focus:border-gray-500 outline-none"
               value={formData.partnerName || ""}
@@ -190,7 +192,7 @@ console.log(items)
             )}
           </div>
 
-          <div className=" w-full relative"  ref={dropdownbranchRef}>
+          <div className=" w-full relative" ref={dropdownbranchRef}>
             <div
               onClick={() => setIsDropdownOpen((prev) => !prev)}
               className="py-1 px-2 border border-gray-300 rounded-md flex items-center justify-between w-full cursor-pointer"
@@ -213,6 +215,9 @@ console.log(items)
                 />
               </svg>
             </div>
+            {submitError.branchError && (
+              <p className="text-red-500 text-sm">{submitError.branchError}</p>
+            )}
             {isDropdownOpen && (
               <div className="absolute left-0 mt-2 bg-gray-50 z-30 px-2 rounded-md w-full">
                 {filteredBranches?.map((branch) => (
@@ -236,6 +241,7 @@ console.log(items)
                               : prevSelected.filter((id) => id !== branch._id) // remove
                           }
                         })
+                        setSubmiterror((prev) => ({ ...prev, branchError: "" }))
                       }}
                       disabled={!selectedCompany}
                     />

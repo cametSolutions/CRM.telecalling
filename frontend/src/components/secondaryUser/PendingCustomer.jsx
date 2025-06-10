@@ -47,24 +47,7 @@ const PendingCustomer = () => {
     }
   }
 
-  //   const handleSearch = useCallback(
-  //     _.debounce((query) => {
-  //       const lowerCaseQuery = query.toLowerCase()
-  //       setFilteredCustomer(
-  //         customerlist.filter((customer) =>
-  //           customer.customerName.toLowerCase().includes(lowerCaseQuery)
-  //         )
-  //       )
-  //     }, 300),
-  //     [customerlist]
-  //   )
 
-  //   useEffect(() => {
-  //     handleSearch(searchQuery)
-  //   }, [searchQuery, handleSearch])
-console.log(filteredCustomer)
-const a=filteredCustomer.filter((item)=>item.mobile==="7593000466")
-console.log(a)
   return (
     <div className="container mx-auto min-h-screen py-8 bg-gray-100">
       <div className="w-auto  bg-white shadow-lg rounded p-8  h-screen mx-8">

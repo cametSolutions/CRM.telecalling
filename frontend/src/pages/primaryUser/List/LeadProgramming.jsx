@@ -79,7 +79,6 @@ const LeadProgramming = () => {
       selectedCompanyBranch &&
       `/lead/getrespectedleadprogramming?userid=${loggedUser._id}&branchSelected=${selectedCompanyBranch}&role=${loggedUser.role}`
   )
-  console.log(leadprogramming)
   const { data: branches } = UseFetch("/branch/getBranch")
   //   const { data } = UseFetch("/auth/getallUsers")
   //   const {

@@ -43,7 +43,8 @@ export default function LeadModal({
         leadId: Data.leadId,
         leadDocId: Data.leadDocId,
         allocatedTo: Data.allocatedTo,
-        allocatedtomodel: Data?.matchedlog?.taskallocatedToModel
+        allocatedtomodel: Data?.matchedlog?.taskallocatedToModel,
+        taskfromFollowup: Data?.matchedlog?.taskfromFollowup
       }))
 
       formattedTaskTo =
@@ -77,7 +78,6 @@ export default function LeadModal({
         loggedUser._id
     )
   }, [Data])
-
   const handleTaskSubmit = async () => {
     if (!pending) {
       setError((prev) => ({
@@ -333,11 +333,11 @@ export default function LeadModal({
               )
             case "Demo":
             case "Programming":
-            case "testing-&-implementation":
-            case "training":
-            case "coding-&-testing":
-            case "software-services":
-            case "customermeet":
+            case "Testing-&-implementation":
+            case "Training":
+            case "Coding-&-testing":
+            case "Software-services":
+            case "Customermeet":
               return (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 shadow-xl border border-gray-200 p-3 rounded-lg mx-3 md:mx-5">
                   <div>

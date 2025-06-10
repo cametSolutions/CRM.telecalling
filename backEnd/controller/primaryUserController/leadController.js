@@ -166,7 +166,6 @@ export const GetallfollowupList = async (req, res) => {
     let query
     if (role === "Staff") {
       if (pendingfollowup === "true") {
-console.log("h")
         query = {
 
           activityLog: {
@@ -208,32 +207,30 @@ console.log("h")
 
     }
     const selectedfollowup = await LeadMaster.find(query).populate({ path: "customerName", select: "customerName" }).lean()
-console.log(selectedfollowup)
 
     const followupLeads = [];
 
     for (const lead of selectedfollowup) {
       const matchedallocation = lead.activityLog.filter((item) => item?.taskTo === "followup")
-      // console.log("mathched",matchedallocation)
       if (matchedallocation && matchedallocation.length > 0) {
         if (
           !lead.leadByModel || !mongoose.models[lead.leadByModel] ||
-          !matchedallocation[matchedallocation.length-1]?.taskallocatedToModel || !mongoose.models[matchedallocation[matchedallocation.length-1]?.taskallocatedToModel] ||
-          !matchedallocation[matchedallocation.length-1]?.taskallocatedByModel || !mongoose.models[matchedallocation[matchedallocation.length-1]?.taskallocatedByModel]
+          !matchedallocation[matchedallocation.length - 1]?.taskallocatedToModel || !mongoose.models[matchedallocation[matchedallocation.length - 1]?.taskallocatedToModel] ||
+          !matchedallocation[matchedallocation.length - 1]?.taskallocatedByModel || !mongoose.models[matchedallocation[matchedallocation.length - 1]?.taskallocatedByModel]
         ) {
-          console.error(`Model ${lead.leadByModel}, ${matchedallocation[matchedallocation.length-1].taskallocatedToModel}, or ${matchedallocation[matchedallocation.length-1].taskallocatedByModel} is not registered`);
+          console.error(`Model ${lead.leadByModel}, ${matchedallocation[matchedallocation.length - 1].taskallocatedToModel}, or ${matchedallocation[matchedallocation.length - 1].taskallocatedByModel} is not registered`);
           followupLeads.push(lead);
           continue;
         }
 
         // Populate outer fields
         const leadByModel = mongoose.model(lead.leadByModel);
-        const allocatedToModel = mongoose.model(matchedallocation[matchedallocation.length-1]?.taskallocatedToModel);
-        const allocatedByModel = mongoose.model(matchedallocation[matchedallocation.length-1]?.taskallocatedByModel);
+        const allocatedToModel = mongoose.model(matchedallocation[matchedallocation.length - 1]?.taskallocatedToModel);
+        const allocatedByModel = mongoose.model(matchedallocation[matchedallocation.length - 1]?.taskallocatedByModel);
 
         const populatedLeadBy = await leadByModel.findById(lead.leadBy).select("name").lean();
-        const populatedAllocatedTo = await allocatedToModel.findById(matchedallocation[matchedallocation.length-1].taskallocatedTo).select("name").lean();
-        const populatedAllocatedBy = await allocatedByModel.findById(matchedallocation[matchedallocation.length-1].taskallocatedBy).select("name").lean();
+        const populatedAllocatedTo = await allocatedToModel.findById(matchedallocation[matchedallocation.length - 1].taskallocatedTo).select("name").lean();
+        const populatedAllocatedBy = await allocatedByModel.findById(matchedallocation[matchedallocation.length - 1].taskallocatedBy).select("name").lean();
 
         // Populate activityLog (submittedUser, etc.)
         const populatedActivityLog = await Promise.all(
@@ -262,8 +259,8 @@ console.log(selectedfollowup)
         followupLeads.push({
           ...lead,
           leadBy: populatedLeadBy || lead.leadBy,
-          allocatedTo: populatedAllocatedTo ,
-          allocatedBy: populatedAllocatedBy ,
+          allocatedTo: populatedAllocatedTo,
+          allocatedBy: populatedAllocatedBy,
           activityLog: populatedActivityLog,
         });
       }
@@ -324,6 +321,7 @@ export const SetDemoallocation = async (req, res) => {
           remarks: demoData.demoDescription,
           taskBy: "allocated",
           taskTo: demoData?.selectedType,
+          taskfromFollowup: true
 
         }
       },
@@ -1256,39 +1254,48 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         taskBy: "allocated",
         taskTo: allocationType
       };
+      // Conditionally add allocationDate
+      if (allocationType !== "followup") {
+        matchLead.activityLog[lastIndex].allocationDate = formData.allocationDate;
+      }
 
       // Save the document
       await matchLead.save();
 
     } else if (matchLead.activityLog.length === 1) {
-      const updatedLead = await LeadMaster.findByIdAndUpdate(
-        {
-          _id: selectedItem._id
-        },
+      // Create base activity log
+      const activityLogEntry = {
+        submissionDate: new Date(),
+        submittedUser: allocatedBy,
+        submissiondoneByModel: allocatedByModel,
+        taskallocatedBy: allocatedBy,
+        taskallocatedByModel: allocatedByModel,
+        taskallocatedTo: selectedItem.allocatedTo,
+        taskallocatedToModel: allocatedToModel,
+        remarks: formData.allocationDescription,
+        taskBy: "allocated",
+        taskTo: allocationType,
 
-        {
+      };
 
+      // Conditionally add allocationDate
+      if (allocationType !== "followup") {
+        activityLogEntry.allocationDate = formData.allocationDate;
+        activityLogEntry.taskfromFollowup = false
+      }
+
+      await LeadMaster.findByIdAndUpdate(
+        { _id: selectedItem._id },
+        {
           $push: {
-            activityLog: {
-              submissionDate: new Date(),
-              submittedUser: allocatedBy,
-              submissiondoneByModel: allocatedByModel,
-              taskallocatedBy: allocatedBy,
-              taskallocatedByModel: allocatedByModel,
-              taskallocatedTo: selectedItem.allocatedTo,
-              taskallocatedToModel: allocatedToModel,
-              remarks: formData.allocationDescription,
-              taskBy: "allocated",
-              taskTo: allocationType
-            }
+            activityLog: activityLogEntry
           },
           $set: {
-            allocationType: allocationType // Set outside the activityLog array
+            allocationType: allocationType
           }
         },
-
         { new: true }
-      )
+      );
 
     } else if (matchLead.activityLog.length > 2) {
 
@@ -1299,9 +1306,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       })
       // Important for deep changes in arrays
       matchLead.markModified('activityLog');
-
-      // Push new log
-      matchLead.activityLog.push({
+      const activityLogEntry = {
         submissionDate: new Date(),
         submittedUser: allocatedBy,
         submissiondoneByModel: allocatedByModel,
@@ -1312,7 +1317,15 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         remarks: formData.allocationDescription,
         taskBy: "allocated",
         taskTo: allocationType
-      });
+      }
+      if (allocationType !== "followup") {
+        activityLogEntry.allocationDate = formData.allocationDate;
+        activityLogEntry.taskfromFollowup = false
+      }
+
+      // Push new log
+      matchLead.activityLog.push(activityLogEntry);
+
 
       await matchLead.save();
 
@@ -1401,20 +1414,25 @@ export const UpdateLeadTask = async (req, res) => {
       [`activityLog.${Index}.taskClosed`]: true
     };
     await LeadMaster.updateOne({ _id: leadObjectId }, { $set: updateFields })
+    const isReallocated = taskDetails.taskfromFollowup ? false : true
+    // Build the activity log entry
+    const activityLogEntry = {
+      submissionDate: taskDetails.submissionDate,
+      submittedUser: taskDetails.allocatedTo,
+      submissiondoneByModel: taskDetails.allocatedtomodel,
+      remarks: taskDetails.taskDescription,
+      taskBy: taskDetails.taskName,
+      taskClosed: true
+    };
+    // Conditionally add `reallocated: true` to the activity log
+    if (isReallocated) {
+      activityLogEntry.reallocated = true;
+    }
     const updateleadTask = await LeadMaster.findByIdAndUpdate(leadObjectId, {
       $push: {
-        activityLog: {
-          submissionDate: taskDetails.submissionDate,
-          submittedUser: taskDetails.allocatedTo,
-          submissiondoneByModel: taskDetails.allocatedtomodel,
-
-          remarks: taskDetails.taskDescription,
-          taskBy: taskDetails.taskName,
-          taskClosed: true
-
-        }
+        activityLog: activityLogEntry
       },
-      $set: { taskfromFollowup: false }
+      $set: { taskfromFollowup: false, reallocatedTo: true }
 
     })
     if (updateleadTask) {
@@ -1454,8 +1472,8 @@ export const GetrespectedprogrammingLead = async (req, res) => {
         !matchedallocation[0].taskallocatedByModel || !mongoose.models[matchedallocation[0].taskallocatedByModel]
       ) {
         console.error(`Model ${lead.leadByModel}, ${matchedallocation[0].taskallocatedToModel}, or ${matchedallocation[0].taskallocatedByModel} is not registered`);
-        followupLeads.push(lead);
-        continue;
+ 
+        return
       }
 
       // Populate outer fields
