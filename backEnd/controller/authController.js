@@ -166,7 +166,7 @@ export const StaffRegister = async (req, res) => {
       email,
       mobile,
       password,
-      verified,
+      isVerified,
       dateofbirth,
       bloodgroup,
       address,
@@ -186,53 +186,72 @@ export const StaffRegister = async (req, res) => {
     const isStaffExist = await Staff.findOne({ email })
 
     if (!isStaffExist) {
-      try {
-        // Create and save new user
-        const staff = new Staff({
-          name,
-          email,
-          mobile,
-          password,
-          isVerified: verified === "true",
-          role,
-          dateofbirth,
-          bloodgroup,
-          gender,
-          address,
-          country,
-          state,
-          pincode,
-          joiningdate,
-          designation,
-          department,
-          assignedto,
-          assignedtoModel,
-          attendanceId: Number(attendanceId),
-          profileUrl,
-          documentUrl,
-          selected: tabledata
+
+      // Create and save new user
+      const staff = new Staff({
+        name,
+        email,
+        mobile,
+        password,
+        isVerified,
+        role,
+        dateofbirth,
+        bloodgroup,
+        gender,
+        address,
+        country,
+        state,
+        pincode,
+        joiningdate,
+        designation,
+        department,
+        assignedto,
+        assignedtoModel,
+        attendanceId: Number(attendanceId),
+        profileUrl,
+        documentUrl,
+        selected: tabledata
+      })
+      const savedstaff = await staff.save()
+      if (savedstaff) {
+        return res.status(200).json({
+          status: true,
+          message: "staff created successfully"
         })
-
-        const savedstaff = await staff.save()
-
-        if (savedstaff) {
-          return res.status(200).json({
-            status: true,
-            message: "staff created successfully"
-          })
-        }
-      } catch (error) {
-        console.log("show the error", error.message)
-        return res.status(500).json({ message: "Server error" })
       }
+
     } else {
       return res
         .status(409)
         .json({ message: "staff with this email already exists" })
     }
   } catch (error) {
-    console.log("ERROR:", error.message)
-    res.status(500).json({ message: "Internal Server Error" })
+    console.log("ERROR:",error.message)
+    let statusCode = 500
+    let message = "Internal Server Error"
+    if (error.code === 11000) {
+      // Duplicate key error
+      statusCode = 400
+      const duplicateField = Object.keys(error.keyPattern)[0]
+      if (duplicateField === 'email') {
+        message = "Email address is already registered"
+      } else if (duplicateField === 'attendanceId') {
+        message = "Attendance ID already exists"
+      } else {
+        message = `${duplicateField} already exists`
+      }
+    } else if (error.name === 'ValidationError') {
+      // Mongoose validation errors
+      statusCode = 400
+      const validationErrors = Object.values(error.errors).map(err => err.message)
+      message = validationErrors.join(', ')
+    } else if (error.name === 'CastError') {
+      statusCode = 400
+      message = "Invalid data format"
+    }
+
+    res.status(statusCode).json({ message })
+    // res.status(500).json({ message: "Internal Server Error" })
   }
 }
 
@@ -569,7 +588,7 @@ export const GetAllstaffs = async (req, res) => {
 }
 export const GetallUsers = async (req, res) => {
   try {
-    const allusers = await Staff.find({ isVerified: true })
+    const allusers = await Staff.find({})
       .populate({ path: "department", select: "department" })
       .populate({ path: "assignedto", select: "name" })
 

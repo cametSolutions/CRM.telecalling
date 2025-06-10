@@ -91,7 +91,7 @@ const staffSchema = new Schema(
     documentUrl: {
       type: [String]
     },
-    attendanceId: { type: Number },
+    attendanceId: { type: Number, unique: true,index:true },
     callstatus: {
       totalCall: { type: Number, default: 0 },
       solvedCalls: { type: Number, default: 0 },
@@ -224,8 +224,24 @@ adminSchema.pre("save", async function (next) {
     next(error)
   }
 })
+// Create models
+const Staff = mongoose.model("Staff", staffSchema)
+const Admin = mongoose.model("Admin", adminSchema)
+// Ensure indexes are created when the application starts
+const ensureIndexes = async () => {
+  try {
+    await Staff.createIndexes()
+    await Admin.createIndexes()
+    // console.log("Indexes created successfully")
+  } catch (error) {
+    console.error("Error creating indexes:", error)
+  }
+}
+
+// Call this function after connecting to MongoDB
+export { ensureIndexes }
 
 export default {
-  Staff: mongoose.model("Staff", staffSchema),
-  Admin: mongoose.model("Admin", adminSchema)
+  Staff,
+  Admin
 }

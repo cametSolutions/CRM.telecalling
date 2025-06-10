@@ -166,6 +166,7 @@ export const GetallfollowupList = async (req, res) => {
     let query
     if (role === "Staff") {
       if (pendingfollowup === "true") {
+console.log("h")
         query = {
 
           activityLog: {
@@ -207,6 +208,7 @@ export const GetallfollowupList = async (req, res) => {
 
     }
     const selectedfollowup = await LeadMaster.find(query).populate({ path: "customerName", select: "customerName" }).lean()
+console.log(selectedfollowup)
 
     const followupLeads = [];
 
