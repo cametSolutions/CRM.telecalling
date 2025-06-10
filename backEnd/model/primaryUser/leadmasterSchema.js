@@ -62,10 +62,11 @@ const leadSchema = new mongoose.Schema(
       nextFollowUpDate: { type: Date },
       allocationDate: { type: Date },
       taskSubmissionDate: { type: Date },
+      taskfromFollowup: { type: String }
 
     }],
     allocationType: { type: String },
-    taskfromFollowup: { type: Boolean,default:false }
+    taskfromFollowup: { type: Boolean, default: false }
   },
   { timestamps: true }
 )

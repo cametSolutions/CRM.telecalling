@@ -154,7 +154,6 @@ const LeadAllocationTable = () => {
       )
     )
   }
-
   const handleSubmit = async () => {
     if (formData.allocationDescription === "") {
       setValidateError((prev) => ({
@@ -521,10 +520,12 @@ const LeadAllocationTable = () => {
                         setselectedLeadId(item.leadId)
                         setShowmodal(true)
                         setSelectedItem(item)
-                        setFormData((prev) => ({
-                          ...prev,
-                          allocationDate: new Date()
-                        }))
+                        if (selectedAllocationType[item._id] === "followup") {
+                          setFormData((prev) => ({
+                            ...prev,
+                            allocationDate: new Date()
+                          }))
+                        }
                       }}
                     >
                       Allocate
@@ -607,17 +608,30 @@ const LeadAllocationTable = () => {
                 <div className="p-4 shadow-xl border border-gray-200 rounded-lg">
                   <div>
                     <label className="block text-left">Allocated Date</label>
-                    <input
-                      readOnly
-                      value={
-                        formData?.allocationDate
-                          ?.toLocaleDateString("en-GB")
-                          .split("/")
-                          .join("-") || ""
-                      }
-                      type="text"
-                      className="py-1 border border-gray-400 mt-1 text-xl  w-full focus:outline-none cursor-not-allowed rounded-sm px-2"
-                    />
+                    {selectedAllocationType[selectedItem._id] !== "followup" ? (
+                      <input
+                        type="date"
+                        className="py-1 border border-gray-300 mt-1 text-xl w-full focus:outline-none rounded-sm px-2 "
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            allocationDate: e.target.value
+                          }))
+                        }
+                      />
+                    ) : (
+                      <input
+                        readOnly
+                        value={
+                          formData?.allocationDate
+                            ?.toLocaleDateString("en-GB")
+                            .split("/")
+                            .join("-") || ""
+                        }
+                        type="text"
+                        className="py-1 border border-gray-400 mt-1 text-xl  w-full focus:outline-none cursor-not-allowed rounded-sm px-2"
+                      />
+                    )}
                   </div>
 
                   <div>

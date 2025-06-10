@@ -344,34 +344,8 @@ const UserAdd = ({
     setTableData(filtereddData)
   }
 
-  // const handleChangeLevelPermission = (e) => {
-  //   console.log("ggg")
-  //   const { name, checked } = e.target
-  //   console.log(name, "naem")
-  //   console.log("checked", checked)
-  //   setValue(`permissionLevel.${name}`, checked)
-  //   setUserLevelPermissions((prev) => ({
-  //     ...prev,
-  //     [name]: checked
-  //   }))
-  // }
-  const handleChangeLevelPermission = (e) => {
-    const { value, checked } = e.target
-    const selectedPermissions = getValues("permissionLevel") || []
-
-    if (checked) {
-      setUserLevelPermissions((prev) => ({
-        ...prev,
-        [value]: checked
-      }))
-      setValue("permissionLevel", [...selectedPermissions, value]) // Add selected level
-    } else {
-      setValue(
-        "permissionLevel",
-        selectedPermissions.filter((level) => level !== value) // Remove unselected level
-      )
-    }
-  }
+  
+  
   const profileImage = (url) => {
     setImageData((prevData) => ({
       ...prevData,

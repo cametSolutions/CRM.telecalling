@@ -334,8 +334,8 @@ export const Login = async (req, res) => {
     // Determine if the input is an email or a mobile number
     if (emailRegex.test(emailOrMobile)) {
       // If it's an email
-
       user = await Admin.findOne({ email: emailOrMobile }).lean()
+
       if (!user) {
         user = await Staff.findOne({ email: emailOrMobile }).lean()
       }

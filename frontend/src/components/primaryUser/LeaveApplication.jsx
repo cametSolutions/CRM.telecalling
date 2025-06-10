@@ -71,7 +71,6 @@ function LeaveApplication() {
     currentMonth &&
       `/customer/getallCurrentmonthHoly?currentmonth=${currentMonth}`
   )
-console.log(monthlyHoly)
   const { data: allonsite, refreshHook: refreshHookOnsite } = UseFetch(
     user && `/auth/getallOnsite?userid=${user._id}`
   )
