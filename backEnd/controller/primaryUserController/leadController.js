@@ -20,6 +20,7 @@ export const LeadRegister = async (req, res) => {
       remark,
       netAmount,
       partner,
+      allocationType = null,
       leadBy, leadBranch
     } = leadData
 
@@ -63,7 +64,30 @@ export const LeadRegister = async (req, res) => {
     if (!leadByModel) {
       return res.status(400).json({ message: "Invalid leadBy reference" })
     }
-
+    const session = await mongoose.startSession()
+    session.startTransaction()
+    const activityLog = [{
+      submissionDate: leadDate,
+      submittedUser: leadBy,
+      submissiondoneByModel: leadByModel,
+      remarks: remark,
+      taskBy: "lead"
+    }]
+    if (allocationType) {
+      activityLog.push({
+        submissionDate: leadDate,
+        submittedUser: leadBy,
+        submissiondoneByModel: leadByModel,
+        taskallocatedBy: leadBy,
+        taskallocatedByModel: leadByModel,
+        taskallocatedTo: leadBy,
+        taskallocatedToModel: leadByModel,
+        remarks: remark,
+        taskBy: "allocated",
+        taskTo: allocationType,
+        taskfromFollowup: false
+      })
+    }
     const lead = new LeadMaster({
       leadId: newLeadId,
       leadDate,
@@ -82,13 +106,7 @@ export const LeadRegister = async (req, res) => {
       leadByModel, // Now set dynamically
       netAmount: Number(netAmount),
 
-      activityLog: [{
-        submissionDate: leadDate,
-        submittedUser: leadBy,
-        submissiondoneByModel: leadByModel,
-        remarks: remark,
-        taskBy: "lead"
-      }]
+      activityLog
 
     })
 
@@ -100,13 +118,15 @@ export const LeadRegister = async (req, res) => {
         price: item.price
       })
     )
-    await lead.save()
+    await lead.save({ session })
     const leadidonly = new LeadId({
       leadId: newLeadId,
       leadBy,
       leadByModel // Now set dynamically
     })
-    await leadidonly.save()
+    await leadidonly.save({ session })
+    await session.commitTransaction()
+    session.endSession()
     res.status(200).json({
       success: true,
       message: "Lead created successfully"
@@ -1472,7 +1492,7 @@ export const GetrespectedprogrammingLead = async (req, res) => {
         !matchedallocation[0].taskallocatedByModel || !mongoose.models[matchedallocation[0].taskallocatedByModel]
       ) {
         console.error(`Model ${lead.leadByModel}, ${matchedallocation[0].taskallocatedToModel}, or ${matchedallocation[0].taskallocatedByModel} is not registered`);
- 
+
         return
       }
 
