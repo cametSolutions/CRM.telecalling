@@ -144,7 +144,10 @@ export const GetallCallnotes = async (req, res) => {
 }
 export const GetallPartners = async (req, res) => {
   try {
-    const partners = await Partner.find({})
+    const partners = await Partner.find({}).populate({
+      path: 'relationBranches.companyName',
+      select: 'companyName' // Only populate these fields
+    }).populate({ path: 'relationBranches.branchName', select: 'branchName' })
 
     if (partners) {
       return res
@@ -202,6 +205,29 @@ export const DeletePartner = async (req, res) => {
   } catch (error) {
     console.error(error)
     return res.status(500).json({ message: "Server error" })
+  }
+}
+export const DeletepartnerBranch = async (req, res) => {
+  try {
+    const { branchId, docId } = req.query
+    const objectId = new mongoose.Types.ObjectId(docId)
+    const branchObjectId = new mongoose.Types.ObjectId(branchId)
+    const result = await Partner.findByIdAndUpdate(objectId, {
+      $pull: {
+        relationBranches: { branchName: branchObjectId }
+      }
+    })
+    if (result) {
+      const allpartners = await Partner.find({}).populate({
+        path: 'relationBranches.companyName',
+        select: 'companyName' // Only populate these fields
+      }).populate({ path: 'relationBranches.branchName', select: 'branchName' })
+      return res.status(201).json({ message: "Delete successfully", data: allpartners })
+    }
+  
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
   }
 }
 export const DeleteService = async (req, res) => {
@@ -263,14 +289,24 @@ export const UpdatePartners = async (req, res) => {
   }
 
   try {
+    const transformedData = {
+      partner: formData.partnerName,
+      relationBranches: formData.branchName.map(branchId => ({
+        companyName: formData.companyName,
+        branchName: branchId
+      }))
+    }
     const updatedPartners = await Partner.findByIdAndUpdate(
       objectId,
-      formData,
+      transformedData,
       {
-        new: true
+        new: true,
+
+        runValidators: true
+
       }
     )
-
+    console.log(updatedPartners)
     if (!updatedPartners) {
       return res.status(404).json({ message: "partners not found" })
     }
@@ -310,7 +346,7 @@ export const GetselectedDateCalls = async (req, res) => {
     const { startDate, endDate } = req.query
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0); // Start of the day
-   
+
 
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999); // End of the day
@@ -602,17 +638,21 @@ export const PartnerRegistration = async (req, res) => {
         .json({ message: "This callnotes  is already registered" })
     }
 
-    // Create and save call notes
-    const collection = new Partner({
-      partner: formdata.partner
-    })
+    // Create partner
+   
+    await Partner.create({
+      partner: formdata.partnerName.toUpperCase(),
+      relationBranches: formdata.branchName.map(branchId => ({
+        companyName: formdata.companyName,
+        branchName: branchId
+      }))
+    });
 
-    await collection.save()
 
     res.status(200).json({
       status: true,
       message: "Partner created successfully",
-      data: collection
+
     })
   } catch (error) {
     console.log("error:", error.message)
@@ -3048,7 +3088,6 @@ export const GetallHoly = async (req, res) => {
 }
 export const GetallcurrentMonthHoly = async (req, res) => {
   try {
-console.log('toooooo')
     const { currentmonth } = req.query
     const [year, month] = currentmonth.split("-").map(Number)
     const holidays = await Holymaster.find({

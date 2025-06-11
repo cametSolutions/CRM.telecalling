@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react"
 import DeleteAlert from "../../../components/common/DeleteAlert"
+import BarLoader from "react-spinners/BarLoader"
 import Edit from "../../../components/common/Edit"
 import api from "../../../api/api"
 import UseFetch from "../../../hooks/useFetch"
@@ -7,6 +8,7 @@ import { toast } from "react-toastify"
 export const PartnerRegistration = () => {
   // const [value, setValue] = useState("")
   const [items, setItems] = useState([])
+  const [loader, setLoader] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [submitError, setSubmiterror] = useState("")
   const [selectedCompany, setSelectedCompany] = useState("")
@@ -24,15 +26,12 @@ export const PartnerRegistration = () => {
   const { data: companyData, error: companyError } = UseFetch(
     "/company/getCompany"
   )
-  console.log(companyData)
   const { data, loading, error, refreshHook } = UseFetch(
     "/customer/getallpartners"
   )
   useEffect(() => {
     if (data) {
-      console.log(data)
       setItems(data)
-      // setTotalPages(data.data.totalPages)
     }
   }, [data])
   useEffect(() => {
@@ -53,7 +52,6 @@ export const PartnerRegistration = () => {
         dropdownbranchRef.current &&
         !dropdownbranchRef.current.contains(event.target)
       ) {
-        console.log("h")
         setIsDropdownOpen(false)
       }
     }
@@ -73,52 +71,92 @@ export const PartnerRegistration = () => {
   const handleEdit = (id) => {
     seteditState(false)
     const itemToEdit = items.find((item) => item._id === id)
-    console.log(itemToEdit)
+
+const branches=itemToEdit.relationBranches.map((item)=>item.branchName?._id)
     if (itemToEdit) {
-      setFormData((prev) => ({ ...prev, partnerName: itemToEdit.partner }))
+      setFormData((prev) => ({ ...prev, partnerName: itemToEdit.partner,companyName:itemToEdit.relationBranches[0]?.companyName?._id,branchName:branches }))
       setEditId(id)
 
       // Store the ID of the brand being edited
     }
   }
-  console.log(formData)
   const handleDelete = async (id) => {
+
     try {
-      await api.delete(`/customer/partnerDelete?id=${id}`)
+      const response = await api.delete(`/customer/partnerDelete?id=${id}`)
 
       // Remove the deleted item from the items array
       setItems((prevItems) => prevItems.filter((item) => item._id !== id))
+      toast.success(response.data.message)
+      return true
     } catch (error) {
       console.error("Failed to delete item", error)
-      // toast.error("Failed to delete item. Please try again.")
+      toast.error("Failed to delete item. Please try again.")
+      return false
+    }
+  }
+  const handleBranchDelete = async (id, branchId) => {
+    try {
+      const response = await api.delete(
+        `/customer/partnerBranchDelete?branchId=${branchId}&docId=${id}`
+      )
+      toast.success(response.data.message)
+      setItems(response.data.data)
+      return true
+    } catch (error) {
+      toast.error("Failed to delete item. Please try again.")
+      console.log(error.message)
+      return false
     }
   }
 
   // const handleChange = (e) => {
   //   setValue(e.target.value)
   // }
-  console.log(submitError)
+
   const handleSubmit = async () => {
-    console.log(items)
     const newError = {}
     if (formData.partnerName === "")
       newError.partnerError = "Partner Name is required"
     if (formData.companyName === "")
       newError.companyError = "Company is required"
-    if (formData.branchName === "") newError.branchError = "Branch is required"
+    if (
+      !formData.branchName || // covers undefined, null, empty string, empty array
+      (Array.isArray(formData.branchName) && formData.branchName.length === 0)
+    )
+      newError.branchError = "Branch is required"
     if (Object.keys(newError).length > 0) {
       setSubmiterror(newError)
       return
     }
-console.log(formData)
-    return
+  
+    const isDuplicate = formData.branchName.some((newBranchId) => {
+      return items.some(
+        (item) =>
+          item.partner === formData.partnerName &&
+          item.relationBranches.some(
+            (rb) =>
+              rb.companyName._id === formData.companyName &&
+              rb.branchName._id === newBranchId
+          )
+      )
+    })
+    if (isDuplicate) {
+      setSubmiterror((prev) => ({
+        ...prev,
+        duplicateError: "Already Exist"
+      }))
+      return
+    }
+
     try {
+      setLoader(true)
       if (editId) {
         // Update the existing item
 
         await api.put(`/customer/partnerEdit?id=${editId}`, formData)
 
-        toast.success("Call notes updated successfully")
+        toast.success("Partner updated successfully")
         seteditState(true)
       } else {
         // Create a new item
@@ -127,29 +165,32 @@ console.log(formData)
 
         toast.success("partner created successfully")
       }
-      // Refresh the list
-      // const response = await api.get(
-      //   `/inventory/getproductsubDetails?tab=${tab}`
-      // )
+
       refreshHook()
-      //setItems(data.data)
-      // Reset form
-      // setValue("")
+      setFormData({ partnerName: "", branchName: "" })
       setEditId(null)
+      setLoader(false)
     } catch (error) {
       console.error(error)
       toast.error("Something went wrong")
+      setLoader(false)
     }
   }
-  console.log(formData)
   return (
     <div>
+      {loader && (
+        <BarLoader
+          cssOverride={{ width: "100%", height: "6px" }} // Tailwind's `h-4` corresponds to `16px`
+          color="#4A90E2" // Change color as needed
+          // loader={true}
+        />
+      )}
       <h1 className="text-sm font-bold mb-6  text-gray-800 px-6 pt-6  uppercase">
         ADD PARTNERS
       </h1>
 
-      <div className="flex items-start">
-        <div className="grid grid-cols-1 md:grid-cols-4 w-full px-8 gap-6">
+      <div className="md:flex md:items-start ">
+        <div className="grid grid-cols-1 md:grid-cols-4 w-full px-3 md:px-8 gap-6 mb-2">
           {/* Partner Name Input */}
           <div className="flex flex-col w-full">
             <input
@@ -161,7 +202,8 @@ console.log(formData)
                 }))
                 setSubmiterror((prev) => ({
                   ...prev,
-                  partnerError: ""
+                  partnerError: "",
+                  duplicateError: ""
                 }))
               }}
               placeholder="Enter your brand name"
@@ -241,7 +283,11 @@ console.log(formData)
                               : prevSelected.filter((id) => id !== branch._id) // remove
                           }
                         })
-                        setSubmiterror((prev) => ({ ...prev, branchError: "" }))
+                        setSubmiterror((prev) => ({
+                          ...prev,
+                          branchError: "",
+                          duplicateError: ""
+                        }))
                       }}
                       disabled={!selectedCompany}
                     />
@@ -256,26 +302,34 @@ console.log(formData)
             )} */}
           </div>
         </div>
-        <div className="px-8 flex justify-end">
+        <div className="px-3 md:px-8 flex md:justify-end">
           <button
             onClick={handleSubmit}
             className="bg-blue-500 hover:bg-blue-700 text-white px-4 py-1 rounded"
           >
-            {editState ? "SUBMIT" : "UPDATE"}
+            {editState ? "ADD" : "UPDATE"}
           </button>
         </div>
+      </div>
+      <div className="text-center">
+        {submitError.duplicateError && (
+          <p className="text-red-500">{submitError.duplicateError}</p>
+        )}
       </div>
 
       {/* ✅ Separate Button Row (Independent Layout) */}
 
       {items && items.length > 0 && (
-        <section className="m-8">
+        <section className="m-3 md:m-8">
           <div className="w-full xl:mb-0">
             <div className="relative flex flex-col min-w-0 break-words bg-red-50 w-full mb-6 p-6 shadow-xl rounded">
-              <div className="block w-full overflow-x-auto overflow-y-auto h-[calc(80vh-200px)] border border-gray-400 rounded-md">
-                <table className="items-center w-full border-collapse ">
+              <div className="block w-full overflow-x-auto overflow-y-auto h-[calc(80vh-200px)] rounded-md ">
+                <table className="items-center w-full border-collapse border border-gray-300">
                   <thead>
                     <tr className="bg-gray-300 sticky top-0 z-10 text-center">
+                      <th className=" text-black  py-3 text-sm uppercase whitespace-nowrap font-semibold max-w-[50px]">
+                        SNO.
+                      </th>
                       <th className=" px-6 text-black  py-3 text-sm uppercase whitespace-nowrap font-semibold">
                         Partner
                       </th>
@@ -293,32 +347,52 @@ console.log(formData)
                       </th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {items?.map((el) => (
-                      <tr key={el._id}>
-                        <th className="px-6  text-wrap border-t-0 align-middle border-l-0 border-r-0 whitespace-nowrap text-black p-2">
-                          {el.partner}
-                        </th>
-                        <th className="px-6   text-wrap border-t-0 align-middle border-l-0 border-r-0 whitespace-nowrap text-black p-2">
-                          {el.partner}
-                        </th>
-                        <th className="px-6   text-wrap border-t-0 align-middle border-l-0 border-r-0 whitespace-nowrap text-black p-2">
-                          {el.partner}
-                        </th>
-                        <td className="cursor-pointer  px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
-                          <div className=" flex justify-center">
-                            {" "}
-                            <Edit onEdit={handleEdit} Id={el._id} />
-                          </div>
-                        </td>
-                        <td className="cursor-pointer flex justify-center px-6 border-t-0 align-middle border-l-0 border-r-0 whitespace-nowrap p-2">
-                          <div className="flex justify-center">
-                            {" "}
-                            <DeleteAlert onDelete={handleDelete} Id={el._id} />
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                  <tbody className="text-center">
+                    {items?.map((el, Index) =>
+                      el.relationBranches.map((item, index) => (
+                        <tr
+                          key={`${el._id}-${index}`}
+                          className="border-b border-gray-300"
+                        >
+                          <td className="px-6  text-wrap border-t-0 align-middle border-l-0 border-r-0 whitespace-nowrap text-black p-2 max-w-[50px]">
+                            {index === 0 ? Index + 1 : ""}
+                          </td>
+                          <td className="px-6  text-wrap border-t-0 align-middle border-l-0 border-r-0 whitespace-nowrap text-black p-2">
+                            {el.partner}
+                          </td>
+                          <td className="px-6   text-wrap border-t-0 align-middle border-l-0 border-r-0 whitespace-nowrap text-black p-2">
+                            {item?.companyName?.companyName}
+                          </td>
+                          <td className="px-6   text-wrap border-t-0 align-middle border-l-0 border-r-0 whitespace-nowrap text-black p-2">
+                            {item?.branchName?.branchName}
+                          </td>
+                          <td className="cursor-pointer  px-6 border-t-0 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-2">
+                            <div className=" flex justify-center">
+                              {" "}
+                              <Edit onEdit={handleEdit} Id={el._id} />
+                            </div>
+                          </td>
+                          <td className="cursor-pointer flex justify-center px-6 border-t-0 align-middle border-l-0 border-r-0 whitespace-nowrap p-2">
+                            <div className="flex justify-center">
+                              {el.relationBranches.length === 1 ? (
+                                // Only one branch, delete whole partner
+                                <DeleteAlert
+                                  onDelete={handleDelete}
+                                  Id={el._id}
+                                />
+                              ) : (
+                                // Multiple branches, delete only this branch
+                                <DeleteAlert
+                                  onDelete={handleBranchDelete}
+                                  Id={el._id}
+                                  branchId={item.branchName?._id}
+                                />
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
