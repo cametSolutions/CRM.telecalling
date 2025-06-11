@@ -50,7 +50,7 @@ const LeadMaster = ({
   const [leadList, setLeadList] = useState([])
   const [ispopupModalOpen, setIspopupModalOpen] = useState(false)
   const [modalloader, setModalLoader] = useState(false)
-
+  const [selfAllocation, setselfAllocation] = useState(false)
   const [partner, setPartner] = useState([])
   const [editMode, setEditMode] = useState(false)
   const [selectedCountry, setSelectedCountry] = useState(null)
@@ -566,8 +566,10 @@ const LeadMaster = ({
           }))
           return
         }
+
         setLoadingState(true)
-        
+
+
         await handleleadData(data, selectedleadlist)
       } else if (process === "edit") {
         if (isReadOnly) {
@@ -829,7 +831,7 @@ const LeadMaster = ({
                         : ""
                     }`}
                     placeholder="Mobile..."
-                 / >
+                  />
                 </div>
                 <div>
                   <label
@@ -887,9 +889,9 @@ const LeadMaster = ({
                         : ""
                     }`}
                     placeholder="Trade..."
-                  ></input>
+                  />
                 </div>
-                <div className="">
+                <div>
                   <label
                     htmlFor="remark"
                     className="block text-sm font-medium text-gray-700 mb-2"
@@ -906,8 +908,57 @@ const LeadMaster = ({
                         : ""
                     }`}
                     placeholder="Remarks..."
-                  ></textarea>
+                  />
                 </div>
+                <div>
+                  <label
+                    htmlFor="selfAllocation"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Self Allocation
+                  </label>
+                  <select
+                    className="w-full border border-gray-300 rounded-md p-2 focus:outline-none"
+                    onChange={(e) =>
+                      setselfAllocation(e.target.value === "true")
+                    }
+                  >
+                    <option value="false">Direct Allocation (disabled)</option>
+                    <option value="true">Direct Allocation (enabled)</option>
+                  </select>
+                </div>
+                {selfAllocation && (
+                  <div>
+                    <select
+                      {...registerMain("allocationType", {
+                        required: "Allocation type is required"
+                      })}
+className="w-full focus:outline-none rounded-md py-2 border border-gray-300 px-2"
+                    >
+                      <option value="">Select Allocationtype</option>
+                      <option value="followup">Followup</option>
+                      <option value="programming">Programming</option>
+                      <option value="testing-&-implementation">
+                        Testing & Implementation
+                      </option>
+                      <option value="coding-&-testing">Coding & Testing</option>
+                      <option value="software-services">
+                        Software Service
+                      </option>
+                      <option value="customermeet">Customer Meet</option>
+                      <option value="demo">Demo</option>
+                      <option value="training">Training</option>
+
+                      <option value="onsite">Onsite</option>
+                      <option value="office">Office</option>
+                    </select>
+                    {errorsMain.allocationType && (
+                      <p className="text-red-500 text-sm">
+                        {errorsMain.allocationType.message}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="md:ml-2  md:w-1/2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:gap-4">
@@ -1267,7 +1318,7 @@ const LeadMaster = ({
                 )}
                 <button
                   type="submit"
-                  className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+                  className="bg-blue-600 text-white py-2 px-4 mt-3 rounded hover:bg-blue-700"
                 >
                   {process === "Registration" ? "SUBMIT" : "UPDATE"}
                 </button>
