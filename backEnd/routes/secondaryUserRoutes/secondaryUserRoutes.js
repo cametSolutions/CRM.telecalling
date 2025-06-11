@@ -29,7 +29,8 @@ import {
   DeleteService,
   UpdateServices,
   loggeduserCallsCurrentDateCalls,
-GetscrollCustomer
+GetscrollCustomer,
+DeletepartnerBranch
 } from "../../controller/secondaryUserController/customerController.js"
 
 const router = express.Router()
@@ -60,6 +61,8 @@ router.get("/getallServices", authMiddleware, GetallServices)
 router.put("/partnerEdit", authMiddleware, UpdatePartners)
 router.put("/serviceEdit", authMiddleware, UpdateServices)
 router.delete("/partnerDelete", authMiddleware, DeletePartner)
+router.delete(
+"/partnerBranchDelete",authMiddleware,DeletepartnerBranch)
 router.delete("/serviceDelete", authMiddleware, DeleteService)
 router.post("/leavemasterRegistration", authMiddleware, LeavemasterRegister)
 router.get("/getallholy", authMiddleware, GetallHoly)

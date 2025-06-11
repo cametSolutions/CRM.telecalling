@@ -23,7 +23,7 @@ export const resetCallStatus = async (req, res) => {
 
   const objectId = new mongoose.Types.ObjectId(adminid)
   try {
-    const a = await Admin.updateOne(
+    const resetstatus = await Admin.updateOne(
       { _id: objectId }, // Find the user by their ID
       {
         $set: {
@@ -35,7 +35,7 @@ export const resetCallStatus = async (req, res) => {
         }
       }
     )
-    if (a) {
+    if (resetstatus) {
       res.status(200).json({ message: "Admin status updated" })
     }
   } catch (error) {
@@ -2220,134 +2220,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         }
 
       })();
-
-
-      // ; (async function calculateAbsences(allholidayfulldate, attendances, onsites) {
-      //   const isPresent = async (date) => {
-
-      //     const attendance = attendances.attendancedates[date]
-      //     if (attendance) {
-      //       if (
-      //         attendance.otherLeave !== "" ||
-      //         attendance.privileageLeave !== "" ||
-      //         attendance.casualLeave !== "" ||
-      //         attendance.compensatoryLeave !== "" ||
-      //         attendance.notMarked !== ""
-      //       ) {
-
-      //         return {
-      //           status: false,
-      //           present: attendance.present,
-      //           otherLeave: attendance.otherLeave,
-      //           notMarked: attendance.notMarked
-      //         }
-      //       } else {
-
-
-      //         return {
-      //           status: true,
-      //           present: attendance.present,
-      //           notMarked: attendance.notMarked
-      //         }
-      //       }
-      //     } else {
-      //       const previousMonth = month - 1
-      //       const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, year, stats.userId)
-      //       if (previousmonthlastdayleavestatus) {
-      //         return { status: false }
-      //       } else {
-      //         return { status: true }
-      //       }
-
-      //     }
-
-
-      //   }
-      //   // Sort dates first to ensure they are in order
-      //   const sortedHolidays = allholidayfulldate.sort()
-
-
-      //   // Find groups of consecutive holidays
-      //   let groups = []
-      //   let tempGroup = []
-
-      //   for (let i = 0;i < sortedHolidays.length;i++) {
-      //     const currDate = new Date(sortedHolidays[i])
-      //     const prevDate = i > 0 ? new Date(sortedHolidays[i - 1]) : null
-
-      //     if (
-      //       prevDate &&
-      //       currDate - prevDate === 24 * 60 * 60 * 1000 // 1 day gap
-      //     ) {
-      //       if (!tempGroup.length) tempGroup.push(prevDate)
-      //       tempGroup.push(currDate)
-      //       groups.push(tempGroup)
-      //       tempGroup = []
-      //     } else {
-      //       tempGroup.push(currDate)
-      //       groups.push(tempGroup)
-      //       tempGroup = []
-      //     }
-      //   }
-
-      //   for (const group of groups) {
-      //     const first = group[0]
-      //     const stringfirst = first.toISOString().split("T")[0]
-      //     const last = group[group.length - 1]
-      //     const stringlast = last.toISOString().split("T")[0]
-
-      //     const previousDay = getPreviousDate(stringfirst)
-      //     const nextDay = getNextDate(stringlast)
-
-      //     const prevFullPresent = await isPresent(previousDay)
-      //     // if (stats.name === "Aleena Thadevues") {
-
-      //     //   console.log(stringfirst, prevFullPresent.status)
-      //     // }
-
-      //     const nextFullPresent = await isPresent(nextDay)
-
-      //     if (prevFullPresent?.status || nextFullPresent?.status) {
-
-      //       stats.attendancedates[stringfirst].present = 1
-
-      //       stats.attendancedates[stringlast].present = 1
-      //       stats.attendancedates[stringlast].notMarked = ""
-      //       // stats.attendancedates[nextDay].otherLeave = 1
-      //       stats.attendancedates[stringfirst].notMarked = ""
-
-      //     }
-
-      //   }
-
-
-      // })(allholidays, stats, onsites)
-
-
-
-      // for (const date in stats.attendancedates) {
-      //   const day = stats.attendancedates[date]
-
-      //   stats.present += day.present || 0
-
-      //   // Sum all leave types
-      //   const leaveTypes = [
-      //     "casualLeave",
-      //     "otherLeave",
-      //     "privileageLeave",
-      //     "compensatoryLeave"
-      //   ]
-
-      //   leaveTypes.forEach((type) => {
-      //     if (!isNaN(day[type])) {
-      //       stats.absent += Number(day[type])
-      //     }
-      //   })
-
-      //     stats.notMarked += day.notMarked !== "" ? Number(day.notMarked) : 0
-
-      // }
-
 
       const combined = stats.earlyGoing + stats.late
       stats.latecutting =
