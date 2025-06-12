@@ -275,7 +275,6 @@ export const GetallfollowupList = async (req, res) => {
             };
           })
         );
-
         followupLeads.push({
           ...lead,
           leadBy: populatedLeadBy || lead.leadBy,
@@ -1156,6 +1155,7 @@ export const UpdateOrleadallocationTask = async (req, res) => {
 export const updateReallocation = async (req, res) => {
   try {
     const { allocatedBy, selectedbranch, allocationType } = req.query
+    console.log("allocation", allocationType)
     const allocatedbyObjectid = new mongoose.Types.ObjectId(allocatedBy)
     // const branchObjectId = new mongoose.Types.ObjectId(selectedbranch)
     const { selectedItem, formData } = req.body
@@ -1442,7 +1442,8 @@ export const UpdateLeadTask = async (req, res) => {
       submissiondoneByModel: taskDetails.allocatedtomodel,
       remarks: taskDetails.taskDescription,
       taskBy: taskDetails.taskName,
-      taskClosed: true
+      taskClosed: true,
+      reallocatedTo: true
     };
     // Conditionally add `reallocated: true` to the activity log
     if (isReallocated) {
@@ -1452,7 +1453,7 @@ export const UpdateLeadTask = async (req, res) => {
       $push: {
         activityLog: activityLogEntry
       },
-      $set: { taskfromFollowup: false, reallocatedTo: true }
+      $set: { taskfromFollowup: false, reallocatedTo: true, allocationType: "reallocated" }
 
     })
     if (updateleadTask) {

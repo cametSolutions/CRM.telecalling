@@ -1,12 +1,14 @@
 import { useLocation, useNavigate } from "react-router-dom"
 import UseFetch from "../../../hooks/useFetch"
+import MyDatePicker from "../../../components/common/MyDatePicker"
 import BarLoader from "react-spinners/BarLoader"
 import LeadTaskComponent from "../../../components/primaryUser/LeadTaskComponent"
-import { useState, useEffect } from "react"
+import { useState, useEffect, startTransition } from "react"
 const LeadTask = () => {
   const location = useLocation()
   const pagePath = location.pathname
   const [loggedUser, setloggedUser] = useState(null)
+  const [dates, setDates] = useState({ startDate: "", endDate: "" })
   const [filteredData, setFilteredData] = useState([])
   const [ownFollowUp, setOwnFollowUp] = useState(null)
   const [url, setUrl] = useState("")
@@ -16,6 +18,16 @@ const LeadTask = () => {
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
 
   const { data: branches } = UseFetch("/branch/getBranch")
+   useEffect(() => {
+    if ( !pending) {
+      const now = new Date()
+
+      const startDate = new Date(now.getFullYear(), now.getMonth(), 1) // 1st day of current month
+      const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0) // 0th day of next month = last day of current
+
+      setDates({ startDate, endDate })
+    }
+  }, [pending])
   useEffect(() => {
     if (branches) {
       const userData = localStorage.getItem("user")
@@ -155,10 +167,15 @@ const LeadTask = () => {
             }
           })
         })
-        setFilteredData(finalOutput)
+       
+        const filteredOutput = finalOutput.filter((item) => {
+          const submissionDate = new Date(item.matchedlog?.taskSubmissionDate)
+          return submissionDate >= dates.startDate && submissionDate <= dates.endDate
+        })
+        setFilteredData(filteredOutput)
       }
     }
-  }, [data, pending])
+  }, [data, pending,dates])
 
   return (
     <div className="h-full flex flex-col ">
@@ -189,6 +206,9 @@ const LeadTask = () => {
 
         {/* Right Section */}
         <div className="grid grid-cols-2 md:flex md:flex-row md:gap-6 gap-3 items-start md:items-center w-full md:w-auto">
+          {dates.startDate && (
+            <MyDatePicker setDates={setDates} dates={dates} />
+          )}
           {/* Message Icon with Badge and Popup */}
           <div className="flex items-center gap-2">
             <span className="text-sm whitespace-nowrap">

@@ -124,12 +124,12 @@ const Reallocation = () => {
         }))
         return
       }
-
+ const selected = selectedAllocationType[selectedItem._id]
       setsubmitLoading(true)
-
-      const selected = selectedAllocationType[selectedItem._id]
+// return
+      // const selected = selectedAllocationType[selectedItem._id]
       const response = await api.post(
-        `/lead/leadReallocation?allocationType=${selected}&allocatedBy=${loggedUser._id}`,
+        `/lead/leadReallocation?allocationType=${encodeURIComponent(selected)}&allocatedBy=${loggedUser._id}`,
         { selectedItem, formData }
       )
       toast.success(response.data.message)

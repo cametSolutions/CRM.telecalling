@@ -171,7 +171,7 @@ const LeadAllocationTable = () => {
 
         if (approvedToggleStatus) {
           const response = await api.post(
-            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationType=${selected}&allocatedBy=${
+            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationType=${encodeURIComponent(selected)}&allocatedBy=${
               loggedUser._id
             }`,
             { selectedItem, formData }
@@ -182,7 +182,7 @@ const LeadAllocationTable = () => {
           }
         } else {
           const response = await api.post(
-            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationType=${selected}&allocatedBy=${
+            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationType=${encodeURIComponent(selected)}&allocatedBy=${
               loggedUser._id
             }`,
             { selectedItem, formData }

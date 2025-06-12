@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react"
 import React from "react"
 import { formatDate } from "../../../utils/dateUtils"
-
-import { FaSpinner, FaTable } from "react-icons/fa"
+import MyDatePicker from "../../../components/common/MyDatePicker"
+import { FaSpinner } from "react-icons/fa"
 import Select from "react-select"
 import { PropagateLoader } from "react-spinners"
 import { useNavigate } from "react-router-dom"
@@ -21,6 +21,7 @@ const LeadFollowUp = () => {
   const [isdemofollownotClosed, setisdemofollowedNotClosed] = useState(false)
   const [isClosed, setIsClosed] = useState(false)
   const [taskClosed, setfollowupClosed] = useState(false)
+  const [dates, setDates] = useState({ startDate: "", endDate: "" })
   const [editdemoIndex, setdemoEditIndex] = useState(null)
   const [
     editfollowUpDatesandRemarksEditIndex,
@@ -97,6 +98,17 @@ const LeadFollowUp = () => {
       selectedCompanyBranch &&
       `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}&pendingfollowup=${pending}`
   )
+  useEffect(() => {
+    if ( !pending) {
+
+      const now = new Date()
+
+      const startDate = new Date(now.getFullYear(), now.getMonth(), 1) // 1st day of current month
+      const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0) // 0th day of next month = last day of current
+
+      setDates({ startDate, endDate })
+    }
+  }, [pending])
 
   useEffect(() => {
     if (data && selectedCompanyBranch) {
@@ -182,7 +194,7 @@ const LeadFollowUp = () => {
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
     }
   }, [loggedusersallocatedleads])
-
+console.log(leads)
   useEffect(() => {
     if (leads && leads.length && loggedUser) {
       const currentDate = new Date()
@@ -235,7 +247,7 @@ const LeadFollowUp = () => {
 
       // 3. Combined
       const finalSortedLeads = [...leadsWithFollowUps, ...leadsWithoutFollowUps]
-
+console.log(finalSortedLeads)
       setTableData(finalSortedLeads)
     }
   }, [ownFollowUp, leads, loggedUser])
@@ -470,12 +482,18 @@ const LeadFollowUp = () => {
 
         {/* Right Section */}
         <div className="grid grid-cols-2 md:flex md:flex-row md:gap-6 gap-3 items-start md:items-center w-full md:w-auto">
+          {/* {dates.startDate && (
+            <MyDatePicker setDates={setDates} dates={dates} />
+          )} */}
           <div className="flex items-center gap-2">
             <span className="text-sm whitespace-nowrap">
               {pending ? "Pending" : "Cleared"}
             </span>
             <button
-              onClick={() => setPending(!pending)}
+              onClick={() => {
+                setPending(!pending)
+                setTableData([])
+              }}
               className={`${
                 pending ? "bg-green-500" : "bg-gray-300"
               } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
