@@ -124,21 +124,6 @@ const LeadMaster = ({
     }
   }, [showmessage])
   useEffect(() => {
-    if (
-      loggeduser &&
-      productData &&
-      productData.length &&
-      serviceData &&
-      serviceData.length &&
-      partners
-    ) {
-      setPartner(partners)
-
-      const combinedlead = [...productData, ...serviceData]
-      setLeadList(combinedlead)
-    }
-  }, [loggeduser, branches, productData, serviceData, partners])
-  useEffect(() => {
     if (companybranches && companybranches.length > 0) {
       const defaultBranch = companybranches[0]._id
       if (Data && Data.length) {
@@ -151,6 +136,29 @@ const LeadMaster = ({
       }
     }
   }, [companybranches, Data])
+  useEffect(() => {
+    if (
+      loggeduser &&
+      productData &&
+      productData.length &&
+      serviceData &&
+      serviceData.length &&
+      partners &&
+      selectedBranch
+    ) {
+     
+      const filteredPartners = partners.filter((partner) =>
+        partner.relationBranches.some((branch) =>
+          selectedBranch.includes(branch?.branchName?._id)
+        )
+      )
+      setPartner(filteredPartners)
+
+      const combinedlead = [...productData, ...serviceData]
+      setLeadList(combinedlead)
+    }
+  }, [loggeduser, branches, productData, serviceData, partners, selectedBranch]) //here dependency partners is not state its usefetch data for partners
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -296,14 +304,6 @@ const LeadMaster = ({
       setallStaffs(combinedUsers)
     }
   }, [alluser])
-
-  // useEffect(() => {
-  //   if (productLoading || usersLoading || customerLoading) {
-  //     setProgress(50) // Mid-way loading
-  //   } else {
-  //     setProgress(100) // Complete when all are loaded
-  //   }
-  // }, [productLoading, usersLoading, customerLoading])
 
   useEffect(() => {
     setValueMain("netAmount", calculateTotalAmount())
@@ -568,7 +568,6 @@ const LeadMaster = ({
         }
 
         setLoadingState(true)
-
 
         await handleleadData(data, selectedleadlist)
       } else if (process === "edit") {
@@ -929,11 +928,17 @@ const LeadMaster = ({
                 </div>
                 {selfAllocation && (
                   <div>
+                    <label
+                      htmlFor="allocationType"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
+                      Allocation Type
+                    </label>
                     <select
                       {...registerMain("allocationType", {
                         required: "Allocation type is required"
                       })}
-className="w-full focus:outline-none rounded-md py-2 border border-gray-300 px-2"
+                      className="w-full focus:outline-none rounded-md py-2 border border-gray-300 px-2"
                     >
                       <option value="">Select Allocationtype</option>
                       <option value="followup">Followup</option>
@@ -1148,34 +1153,34 @@ className="w-full focus:outline-none rounded-md py-2 border border-gray-300 px-2
                           })}
                       </div>
                     )}
-                    <div className="">
-                      <label
-                        htmlFor="remark"
-                        className="block text-sm font-medium text-gray-700 mb-2"
-                      >
-                        Partnership Type
-                      </label>
-                      <select
-                        id="partner"
-                        {...registerMain("partner", {
-                          required: "Partnership is Required"
-                        })}
-                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
-                      >
-                        <option value="">Select Partner</option>
-                        {partner?.map((partnr, index) => (
-                          <option key={index} value={partnr._id}>
-                            {partnr.partner}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    {errorsMain.partner && (
-                      <p className="text-red-500 text-sm">
-                        {errorsMain.partner.message}
-                      </p>
-                    )}
                   </div>
+                  <div className="">
+                    <label
+                      htmlFor="partner"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Partnership Type
+                    </label>
+                    <select
+                      id="partner"
+                      {...registerMain("partner", {
+                        required: "Partnership is Required"
+                      })}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                    >
+                      <option value="">Select Partner</option>
+                      {partner?.map((partnr, index) => (
+                        <option key={index} value={partnr._id}>
+                          {partnr.partner}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {errorsMain.partner && (
+                    <p className="text-red-500 text-sm">
+                      {errorsMain.partner.message}
+                    </p>
+                  )}
                 </div>
 
                 {selectedleadlist && selectedleadlist.length > 0 && (
@@ -1631,7 +1636,7 @@ className="w-full focus:outline-none rounded-md py-2 border border-gray-300 px-2
                         clearmodalErros()
                         resetModal()
                       }}
-                      className="bg-gray-400 text-white py-2 px-4 rounded-md hover:bg-gray-500"
+                      className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600"
                     >
                       Cancel
                     </button>
