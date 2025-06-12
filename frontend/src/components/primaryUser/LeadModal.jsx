@@ -11,6 +11,7 @@ export default function LeadModal({
   setShowComponent,
   pending
 }) {
+console.log(type)
   const [selectedTab, setselectedTab] = useState("History")
   const [error, setError] = useState({})
   const [loading, setLoading] = useState(false)
@@ -29,6 +30,7 @@ export default function LeadModal({
   const [formData, setFormData] = useState({})
 
   useEffect(() => {
+console.log(Data)
     setHistoryList(Data.activityLog)
     let formattedTaskTo
     if (pending) {
@@ -46,10 +48,11 @@ export default function LeadModal({
         allocatedtomodel: Data?.matchedlog?.taskallocatedToModel,
         taskfromFollowup: Data?.matchedlog?.taskfromFollowup
       }))
-
+console.log(Data.matchedlog.taskTo)
       formattedTaskTo =
         Data?.matchedlog?.taskTo.charAt(0).toUpperCase() +
         Data?.matchedlog?.taskTo.slice(1).toLowerCase()
+console.log(formattedTaskTo)
       settaskLabel(formattedTaskTo)
     } else {
       setTaskDetails((prev) => ({
@@ -105,6 +108,7 @@ export default function LeadModal({
       console.log("error:", error.message)
     }
   }
+console.log(selectedTab)
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40 ">
       <div
