@@ -49,6 +49,7 @@ const LeadMaster = ({
   )
   const [leadList, setLeadList] = useState([])
   const [ispopupModalOpen, setIspopupModalOpen] = useState(false)
+  const [isSelfAllocationChangable, setselfAllocationChangable] = useState(true)
   const [modalloader, setModalLoader] = useState(false)
   const [selfAllocation, setselfAllocation] = useState(false)
   const [partner, setPartner] = useState([])
@@ -56,6 +57,7 @@ const LeadMaster = ({
   const [selectedCountry, setSelectedCountry] = useState(null)
   const [licensewithoutProductSelection, setlicenseWithoutProductSelection] =
     useState({})
+  const [iscustomerchangeandbranch, setcutomerchangeandbranch] = useState(true)
   const [selectedState, setSelectedState] = useState(null)
   const [selectedleadlist, setSelectedLeadList] = useState([])
   const [selectedCustomer, setSelectedCustomer] = useState(null)
@@ -146,7 +148,6 @@ const LeadMaster = ({
       partners &&
       selectedBranch
     ) {
-     
       const filteredPartners = partners.filter((partner) =>
         partner.relationBranches.some((branch) =>
           selectedBranch.includes(branch?.branchName?._id)
@@ -188,9 +189,38 @@ const LeadMaster = ({
     }
   }, [loggeduser, setValueMain])
   useEffect(() => {
-    if (Data && Data.length > 0 && customerOptions && customerOptions.length) {
+    if (
+      Data &&
+      Data.length > 0 &&
+      customerOptions &&
+      customerOptions.length &&
+      loggeduser
+    ) {
+     
+
+      if (Data[0].activityLog.length === 2) {
+        const allocatedtoData =
+          Data[0].activityLog[Data[0].activityLog.length - 1]
+        if (allocatedtoData.taskallocatedBy === loggeduser._id) {
+          setselfAllocationChangable(true)
+        } else {
+          setselfAllocationChangable(false)
+        }
+     
+      } else if (Data[0].activityLog.length > 2) {
+        setselfAllocationChangable(false)
+      }
+      if (Data[0].activityLog.length === 1) {
+        setcutomerchangeandbranch(true)
+      } else if (Data[0].activityLog.length > 1) {
+        setcutomerchangeandbranch(false)
+      }
       setValueMain("leadId", Data[0]?.leadId)
       setValueMain("partner", Data[0]?.partner)
+      setValueMain(
+        "selfAllocation",
+        Data[0]?.selfAllocation === true ? "true" : "false"
+      )
       setValueMain("customerName", Data[0]?.customerName?._id)
       setValueMain("mobile", Data[0]?.customerName?.mobile)
       setValueMain("phone", Data[0]?.customerName?.phone)
@@ -566,7 +596,6 @@ const LeadMaster = ({
           }))
           return
         }
-
         setLoadingState(true)
 
         await handleleadData(data, selectedleadlist)
@@ -627,6 +656,7 @@ const LeadMaster = ({
       setModalLoader(false)
     }
   }
+
   return (
     <div>
       {(modalloader ||
@@ -657,7 +687,7 @@ const LeadMaster = ({
             <h2 className="text-xl md:text-2xl font-semibold  mb-2 md:mb-1">
               {Data && Data?.length > 0 ? "Lead Edit" : "Lead"}
             </h2>
-            <button
+            {/* <button
               onClick={() =>
                 loggeduser.role === "Admin"
                   ? navigate("/admin/transaction/lead")
@@ -666,7 +696,7 @@ const LeadMaster = ({
               className="bg-black hover:bg-gray-600 text-white px-2 py-1 rounded-lg shadow-xl"
             >
               New Lead
-            </button>
+            </button> */}
           </div>
 
           {showmessage && (
@@ -692,7 +722,7 @@ const LeadMaster = ({
                   </label>
                   <select
                     id="leadBranch"
-                    disabled={isReadOnly}
+                    disabled={!iscustomerchangeandbranch}
                     {...registerMain("leadBranch")}
                     onChange={
                       (e) => {
@@ -706,9 +736,9 @@ const LeadMaster = ({
                       } // Update state on change
                     }
                     className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none ${
-                      isReadOnly
-                        ? "cursor-not-allowed bg-gray-100 text-black"
-                        : ""
+                      iscustomerchangeandbranch
+                        ? ""
+                        : "cursor-not-allowed bg-gray-100 text-black"
                     }`}
                   >
                     <option value="">Select Branch</option>
@@ -731,11 +761,19 @@ const LeadMaster = ({
                   <div className="flex w-full text-sm mt-1">
                     <Select
                       options={customerOptions}
-                      isDisabled={isReadOnly}
+                      isDisabled={!iscustomerchangeandbranch}
+                      // value={
+                      //   customerOptions.find(
+                      //     (option) => option.value === watchMain("customerName")
+                      //   )
+                      // }
                       value={
-                        customerOptions.find(
-                          (option) => option.value === watchMain("customerName")
-                        ) || null
+                        customerOptions.length > 0
+                          ? customerOptions.find(
+                              (option) =>
+                                option.value === watchMain("customerName")
+                            ) ?? null
+                          : null
                       }
                       getOptionLabel={(option) =>
                         `${option.label}-(${option.mobile})-(${option.license})`
@@ -764,9 +802,9 @@ const LeadMaster = ({
                         setSelectedLicense(null)
                       }}
                       className={`w-full ${
-                        isReadOnly
-                          ? "cursor-not-allowed bg-gray-100 text-black"
-                          : ""
+                        iscustomerchangeandbranch
+                          ? "cursor-pointer"
+                          : "cursor-not-allowed bg-gray-100 text-black"
                       }`}
                       styles={{
                         control: (base, state) => ({
@@ -824,7 +862,7 @@ const LeadMaster = ({
                     id="mobile"
                     readOnly={isReadOnly}
                     {...registerMain("mobile")}
-                    className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500 ${
+                    className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:outline-none ${
                       isReadOnly
                         ? "cursor-not-allowed bg-gray-100 text-black"
                         : ""
@@ -843,7 +881,7 @@ const LeadMaster = ({
                     id="phone"
                     disabled={isReadOnly}
                     {...registerMain("phone")}
-                    className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500 ${
+                    className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:outline-none ${
                       isReadOnly
                         ? "cursor-not-allowed bg-gray-100 text-black"
                         : ""
@@ -880,13 +918,9 @@ const LeadMaster = ({
                   </label>
                   <input
                     id="trade"
-                    disabled={isReadOnly}
+                    disabled
                     {...registerMain("trade")}
-                    className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500 ${
-                      isReadOnly
-                        ? "cursor-not-allowed bg-gray-100 text-black"
-                        : ""
-                    }`}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm cursor-not-allowed"
                     placeholder="Trade..."
                   />
                 </div>
@@ -899,13 +933,9 @@ const LeadMaster = ({
                   </label>
                   <textarea
                     id="description"
-                    disabled={isReadOnly}
+                    disabled
                     {...registerMain("remark")}
-                    className={`block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500  max-h-[100px] ${
-                      isReadOnly
-                        ? "cursor-not-allowed bg-gray-100 text-black"
-                        : ""
-                    }`}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm  focus:outline-none  max-h-[100px] bg-gray-100 cursor-not-allowed"
                     placeholder="Remarks..."
                   />
                 </div>
@@ -914,17 +944,31 @@ const LeadMaster = ({
                     htmlFor="selfAllocation"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
-                    Self Allocation
+                    Self Allocation/Other
                   </label>
                   <select
-                    className="w-full border border-gray-300 rounded-md p-2 focus:outline-none"
-                    onChange={(e) =>
-                      setselfAllocation(e.target.value === "true")
+                    disabled={!isSelfAllocationChangable}
+                    {...registerMain("selfAllocation", {
+                      required: "This feild is required",
+                      onChange: (e) =>
+                        setselfAllocation(e.target.value === "true")
+                    })}
+                    className={`w-full border border-gray-300 rounded-md p-2 focus:outline-none ${
+                      isSelfAllocationChangable
+                        ? "cursor-pointer"
+                        : "bg-gray-200 cursor-not-allowed"
                     }
+                    `}
                   >
-                    <option value="false">Direct Allocation (disabled)</option>
-                    <option value="true">Direct Allocation (enabled)</option>
+                    <option value="">Select</option>
+                    <option value="true">Self Allocate</option>
+                    <option value="false">Allocate To Other</option>
                   </select>
+                  {errorsMain.selfAllocation && (
+                    <p className="text-red-500 text-sm">
+                      {errorsMain.selfAllocation.message}
+                    </p>
+                  )}
                 </div>
                 {selfAllocation && (
                   <div>
@@ -977,14 +1021,10 @@ const LeadMaster = ({
                       </label>
                       <input
                         id="leadId"
-                        disabled={isReadOnly}
+                        disabled
                         type="text"
                         {...registerMain("leadId")}
-                        className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500 ${
-                          isReadOnly
-                            ? "cursor-not-allowed bg-gray-100 text-black"
-                            : ""
-                        }`}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none bg-gray-100 cursor-not-allowed"
                         placeholder="Lead Id..."
                       />
                       {errorsMain.leadId && (
@@ -1163,10 +1203,15 @@ const LeadMaster = ({
                     </label>
                     <select
                       id="partner"
+                      disabled={isReadOnly}
                       {...registerMain("partner", {
                         required: "Partnership is Required"
                       })}
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                      className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:outline-none  ${
+                        isReadOnly
+                          ? "cursor-not-allowed bg-gray-100"
+                          : "cursor-pointer"
+                      }`}
                     >
                       <option value="">Select Partner</option>
                       {partner?.map((partnr, index) => (
@@ -1175,12 +1220,12 @@ const LeadMaster = ({
                         </option>
                       ))}
                     </select>
+                    {errorsMain.partner && (
+                      <p className="text-red-500 text-sm">
+                        {errorsMain.partner.message}
+                      </p>
+                    )}
                   </div>
-                  {errorsMain.partner && (
-                    <p className="text-red-500 text-sm">
-                      {errorsMain.partner.message}
-                    </p>
-                  )}
                 </div>
 
                 {selectedleadlist && selectedleadlist.length > 0 && (
@@ -1212,7 +1257,7 @@ const LeadMaster = ({
                                 onChange={(e) =>
                                   handlePriceChange(index, e.target.value)
                                 }
-                                className={`w-full border rounded-md px-2 py-1 text-sm ${
+                                className={`w-full border rounded-md px-2 py-1 text-sm focus:outline-none ${
                                   isReadOnly
                                     ? "cursor-not-allowed bg-gray-100 text-black"
                                     : ""
@@ -1275,13 +1320,7 @@ const LeadMaster = ({
                     ) : (
                       <>
                         <input type="hidden" {...registerMain("leadBy")} />
-                        <p
-                          className={`mt-1 w-full border rounded-md p-2 cursor-not-allowed  ${
-                            isReadOnly
-                              ? "cursor-not-allowed bg-gray-100 text-black"
-                              : "text-gray-500"
-                          }`}
-                        >
+                        <p className="mt-1 w-full border rounded-md p-2 cursor-not-allowed bg-gray-100 ">
                           {loggeduser?.name}
                         </p>
                       </>
@@ -1297,11 +1336,7 @@ const LeadMaster = ({
                       {...registerMain("netAmount")}
                       readOnly // Make it non-editable
                       // value={calculateTotalAmount()} // Auto-updates with total price
-                      className={`mt-1 w-full border rounded-md p-2 focus:outline-none ${
-                        isReadOnly
-                          ? "cursor-not-allowed bg-gray-100 text-black"
-                          : "cursor-not-allowed"
-                      }`}
+                      className="mt-1 w-full border rounded-md p-2 focus:outline-none bg-gray-100 cursor-not-allowed"
                       placeholder="Net Amount"
                     />
                   </div>

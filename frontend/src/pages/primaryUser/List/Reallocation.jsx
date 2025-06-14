@@ -275,19 +275,13 @@ const Reallocation = () => {
                             ? navigate("/admin/transaction/lead/leadEdit", {
                                 state: {
                                   leadId: item._id,
-                                  isReadOnly: !(
-                                    item?.allocatedTo === loggedUser._id ||
-                                    item?.leadBy === loggedUser._id
-                                  )
+                                  isReadOnly:true
                                 }
                               })
                             : navigate("/staff/transaction/lead/leadEdit", {
                                 state: {
                                   leadId: item._id,
-                                  isReadOnly: !(
-                                    item?.allocatedTo === loggedUser._id ||
-                                    item?.leadBy === loggedUser._id
-                                  )
+                                  isReadOnly:true 
                                 }
                               })
                         }

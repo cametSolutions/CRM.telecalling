@@ -12,6 +12,7 @@ const CallregistrationList = () => {
   const navigate = useNavigate()
 
   const [today, setToday] = useState(null)
+  const [userBranch, setUserBranch] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [users, setUser] = useState(null)
   const [userCallStatus, setUserCallstatus] = useState([])
@@ -84,7 +85,12 @@ const CallregistrationList = () => {
           )
 
           const branchNamesArray = Array.from(userBranchName)
-
+          setUserBranch(branchNamesArray)
+          console.log(branchNamesArray)
+          const a = mergedCalls.filter(
+            (item) => item.customerName === "Udaya Paint House(Kodungallur)"
+          )
+          console.log(a)
           const filtered = mergedCalls.filter(
             (call) =>
               Array.isArray(call?.callregistration) && // Check if callregistration is an array
@@ -215,8 +221,8 @@ const CallregistrationList = () => {
             ) {
               if (
                 formdata?.completedBy?.length &&
-                formdata?.completedBy[formdata?.completedBy?.length - 1].name ===
-                  userName
+                formdata?.completedBy[formdata?.completedBy?.length - 1]
+                  .name === userName
               ) {
                 solvedCalls++ // Solved call count
               }
@@ -294,7 +300,7 @@ const CallregistrationList = () => {
     return `${hrs} hr ${mins} min ${secs} sec`
   }
 
- 
+  console.log(filteredCalls)
   return (
     <div className="container mx-auto p-2  md:p-5 bg-white">
       <div className="w-auto shadow-lg rounded p-4 pt-1 h-full bg-neutral-50 ">
@@ -538,6 +544,7 @@ const CallregistrationList = () => {
                       )
                     })
                     .map((item) => {
+                      console.log(item.branchName)
                       const today = new Date().toISOString().split("T")[0]
                       const startTimeRaw = item?.timedata?.endTime
                       const callDate = startTimeRaw
@@ -545,146 +552,154 @@ const CallregistrationList = () => {
                             .toISOString()
                             .split("T")[0]
                         : null
-
-                      return (
-                        <>
-                          <tr
-                            key={item.calls?._id}
-                            className={`text-center border border-b-0  bg-gray-300 ${
-                              callDate === today
-                                ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
-                                : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                            }`}
-                          >
-                            <td className="px-2 py-2 w-12 text-sm text-[#010101]">
-                              {item.branchName}
-                            </td>
-
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {item?.timedata.token}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {item.calls?.customerName}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {item?.calls?.productDetails[0]?.productName}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {item?.license}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {setDateandTime(item?.timedata?.startTime)}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]"></td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {item?.formdata?.incomingNumber}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {item?.formdata?.status}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {Array.isArray(item?.formdata?.attendedBy)
-                                ? item.formdata.attendedBy.length > 0
-                                  ? item.formdata.attendedBy[
-                                      item.formdata.attendedBy.length - 1
-                                    ]?.callerId?.name ||
-                                    item.formdata.attendedBy[
-                                      item.formdata.attendedBy.length - 1
-                                    ]?.name ||
-                                    item.formdata.attendedBy[
-                                      item.formdata.attendedBy.length - 1
-                                    ]
-                                  : null
-                                : item?.formdata?.attendedBy?.callerId?.name}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]"></td>
-                            <td className="px-2 py-2 text-xl w-12 text-blue-800">
-                              {item?.formdata?.status !== "solved" ? (
-                                <FaPhone
-                                  onClick={() =>
-                                    users.role === "Admin"
-                                      ? navigate(
-                                          "/admin/transaction/call-registration",
-                                          {
-                                            state: {
-                                              calldetails: item.calls._id,
-                                              token: item.timedata.token
-                                            }
-                                          }
-                                        )
-                                      : navigate(
-                                          "/staff/transaction/call-registration",
-                                          {
-                                            state: {
-                                              calldetails: item?.calls._id,
-                                              token: item?.timedata?.token
-                                            }
-                                          }
-                                        )
-                                  }
-                                />
-                              ) : (
-                                ""
-                              )}
-                            </td>
-                          </tr>
-                          <tr
-                            className={`text-center border-t-0 border-gray-300 ${
-                              item?.formdata?.status === "solved"
-                                ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
-                                : item?.formdata?.status === "pending"
-                                ? callDate === today
+                      // if (userBranch.some(item.branchName)) {
+                      //   console.log("h")
+                      // }
+                      if (
+                        userBranch.some((branch) =>
+                          item.branchName.includes(branch)
+                        )
+                      ) {
+                        return (
+                          <>
+                            <tr
+                              key={item.calls?._id}
+                              className={`text-center border border-b-0  bg-gray-300 ${
+                                callDate === today
                                   ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
                                   : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                            }`}
-                            style={{ height: "5px" }}
-                          >
-                            <td
-                              colSpan="4"
-                              className="py-1 px-8 text-sm text-black text-left"
+                              }`}
                             >
-                              <strong>Description:</strong>{" "}
-                              {item?.formdata?.description || "N/A"}
-                            </td>
+                              <td className="px-2 py-2 w-12 text-sm text-[#010101]">
+                                {item.branchName}
+                              </td>
 
-                            <td
-                              colSpan="3"
-                              className="py-1 px-8 text-sm text-black text-left"
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {item?.timedata.token}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {item.calls?.customerName}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {item?.calls?.productDetails[0]?.productName}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {item?.license}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {setDateandTime(item?.timedata?.startTime)}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]"></td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {item?.formdata?.incomingNumber}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {item?.formdata?.status}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {Array.isArray(item?.formdata?.attendedBy)
+                                  ? item.formdata.attendedBy.length > 0
+                                    ? item.formdata.attendedBy[
+                                        item.formdata.attendedBy.length - 1
+                                      ]?.callerId?.name ||
+                                      item.formdata.attendedBy[
+                                        item.formdata.attendedBy.length - 1
+                                      ]?.name ||
+                                      item.formdata.attendedBy[
+                                        item.formdata.attendedBy.length - 1
+                                      ]
+                                    : null
+                                  : item?.formdata?.attendedBy?.callerId?.name}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]"></td>
+                              <td className="px-2 py-2 text-xl w-12 text-blue-800">
+                                {item?.formdata?.status !== "solved" ? (
+                                  <FaPhone
+                                    onClick={() =>
+                                      users.role === "Admin"
+                                        ? navigate(
+                                            "/admin/transaction/call-registration",
+                                            {
+                                              state: {
+                                                calldetails: item.calls._id,
+                                                token: item.timedata.token
+                                              }
+                                            }
+                                          )
+                                        : navigate(
+                                            "/staff/transaction/call-registration",
+                                            {
+                                              state: {
+                                                calldetails: item?.calls._id,
+                                                token: item?.timedata?.token
+                                              }
+                                            }
+                                          )
+                                    }
+                                  />
+                                ) : (
+                                  ""
+                                )}
+                              </td>
+                            </tr>
+                            <tr
+                              className={`text-center border-t-0 border-gray-300 ${
+                                item?.formdata?.status === "solved"
+                                  ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
+                                  : item?.formdata?.status === "pending"
+                                  ? callDate === today
+                                    ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                    : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
+                                  : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
+                              }`}
+                              style={{ height: "5px" }}
                             >
-                              <strong>Duration:</strong>{" "}
-                              <span className="ml-2">
-                                {`${Math.floor(
-                                  (new Date(
-                                    item?.formdata?.status === "solved"
-                                      ? item.timedata?.endTime // Use end date if the call is solved
-                                      : new Date().setHours(0, 0, 0, 0) // Use today's date at midnight if not solved
-                                  ) -
-                                    new Date(
+                              <td
+                                colSpan="4"
+                                className="py-1 px-8 text-sm text-black text-left"
+                              >
+                                <strong>Description:</strong>{" "}
+                                {item?.formdata?.description || "N/A"}
+                              </td>
+
+                              <td
+                                colSpan="3"
+                                className="py-1 px-8 text-sm text-black text-left"
+                              >
+                                <strong>Duration:</strong>{" "}
+                                <span className="ml-2">
+                                  {`${Math.floor(
+                                    (new Date(
+                                      item?.formdata?.status === "solved"
+                                        ? item.timedata?.endTime // Use end date if the call is solved
+                                        : new Date().setHours(0, 0, 0, 0) // Use today's date at midnight if not solved
+                                    ) -
                                       new Date(
-                                        item.timedata?.startTime
-                                      ).setHours(0, 0, 0, 0)
-                                    )) /
-                                    (1000 * 60 * 60 * 24)
-                                )} days`}
-                              </span>
-                              <span className="ml-1">
-                                {formatDuration(
-                                  item?.timedata?.duration,
-                                  item.calls?.customerName
-                                ) || "N/A"}
-                              </span>
-                            </td>
-                            <td
-                              colSpan="5"
-                              className="py-1 px-12 text-sm text-black text-right"
-                            >
-                              <strong>Solution:</strong>{" "}
-                              {item?.formdata?.solution || "N/A"}
-                            </td>
-                          </tr>
-                        </>
-                      )
+                                        new Date(
+                                          item.timedata?.startTime
+                                        ).setHours(0, 0, 0, 0)
+                                      )) /
+                                      (1000 * 60 * 60 * 24)
+                                  )} days`}
+                                </span>
+                                <span className="ml-1">
+                                  {formatDuration(
+                                    item?.timedata?.duration,
+                                    item.calls?.customerName
+                                  ) || "N/A"}
+                                </span>
+                              </td>
+                              <td
+                                colSpan="5"
+                                className="py-1 px-12 text-sm text-black text-right"
+                              >
+                                <strong>Solution:</strong>{" "}
+                                {item?.formdata?.solution || "N/A"}
+                              </td>
+                            </tr>
+                          </>
+                        )
+                      }
                     })}
 
                   {filteredCalls
@@ -721,127 +736,134 @@ const CallregistrationList = () => {
                       return endTimeB - endTimeA || startTimeB - startTimeA
                     })
                     .map((item) => {
-                      return (
-                        <>
-                          <tr
-                            key={item.calls?._id}
-                            className="text-center border border-b-0 border-gray-300 bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
-                          >
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {item.branchName}
-                            </td>
+                      if (
+                        userBranch.some((branch) =>
+                          item.branchName.includes(branch)
+                        )
+                      ) {
+                        return (
+                          <>
+                            <tr
+                              key={item.calls?._id}
+                              className="text-center border border-b-0 border-gray-300 bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
+                            >
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {item.branchName}
+                              </td>
 
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {item?.timedata.token}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {item.calls?.customerName}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {item?.calls?.productDetails[0]?.productName}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {item?.license}
-                            </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {item?.timedata.token}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {item.calls?.customerName}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {item?.calls?.productDetails[0]?.productName}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {item?.license}
+                              </td>
 
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {setDateandTime(item?.timedata?.startTime)}
-                            </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {setDateandTime(item?.timedata?.startTime)}
+                              </td>
 
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {setDateandTime(item?.timedata?.endTime)}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {item?.formdata?.incomingNumber}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {item?.formdata?.status}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {Array.isArray(item?.formdata?.attendedBy)
-                                ? item.formdata.attendedBy.length > 0
-                                  ? item.formdata.attendedBy[
-                                      item.formdata.attendedBy.length - 1
-                                    ]?.callerId?.name ||
-                                    item.formdata.attendedBy[
-                                      item.formdata.attendedBy.length - 1
-                                    ]?.name ||
-                                    item.formdata.attendedBy[
-                                      item.formdata.attendedBy.length - 1
-                                    ]
-                                  : null
-                                : item?.formdata?.attendedBy?.callerId?.name}
-                            </td>
-                            <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                              {Array.isArray(item?.formdata?.completedBy)
-                                ? item.formdata.completedBy.length > 0
-                                  ? item.formdata.completedBy[
-                                      item.formdata.completedBy.length - 1
-                                    ]?.callerId?.name ||
-                                    item.formdata.completedBy[
-                                      item.formdata.completedBy.length - 1
-                                    ]?.name
-                                  : null
-                                : item?.formdata?.completedBy?.callerId?.name ||
-                                  item?.formdata?.completedBy?.name}
-                            </td>
-                            <td className="px-2 py-2 text-xl w-12 text-blue-800"></td>
-                          </tr>
-                          <tr
-                            className={`text-center border-t-0 border-gray-300 ${
-                              item?.formdata?.status === "solved"
-                                ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
-                                : item?.formdata?.status === "pending"
-                                ? callDate === today
-                                  ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {setDateandTime(item?.timedata?.endTime)}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {item?.formdata?.incomingNumber}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {item?.formdata?.status}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {Array.isArray(item?.formdata?.attendedBy)
+                                  ? item.formdata.attendedBy.length > 0
+                                    ? item.formdata.attendedBy[
+                                        item.formdata.attendedBy.length - 1
+                                      ]?.callerId?.name ||
+                                      item.formdata.attendedBy[
+                                        item.formdata.attendedBy.length - 1
+                                      ]?.name ||
+                                      item.formdata.attendedBy[
+                                        item.formdata.attendedBy.length - 1
+                                      ]
+                                    : null
+                                  : item?.formdata?.attendedBy?.callerId?.name}
+                              </td>
+                              <td className="px-2 py-2 text-sm w-12 text-[#010101]">
+                                {Array.isArray(item?.formdata?.completedBy)
+                                  ? item.formdata.completedBy.length > 0
+                                    ? item.formdata.completedBy[
+                                        item.formdata.completedBy.length - 1
+                                      ]?.callerId?.name ||
+                                      item.formdata.completedBy[
+                                        item.formdata.completedBy.length - 1
+                                      ]?.name
+                                    : null
+                                  : item?.formdata?.completedBy?.callerId
+                                      ?.name ||
+                                    item?.formdata?.completedBy?.name}
+                              </td>
+                              <td className="px-2 py-2 text-xl w-12 text-blue-800"></td>
+                            </tr>
+                            <tr
+                              className={`text-center border-t-0 border-gray-300 ${
+                                item?.formdata?.status === "solved"
+                                  ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
+                                  : item?.formdata?.status === "pending"
+                                  ? callDate === today
+                                    ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                    : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                   : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                            }`}
-                            style={{ height: "5px" }}
-                          >
-                            <td
-                              colSpan="4"
-                              className="py-1 px-8 text-sm text-black text-left"
+                              }`}
+                              style={{ height: "5px" }}
                             >
-                              <strong>Description:</strong>{" "}
-                              {item?.formdata?.description || "N/A"}
-                            </td>
-                            <td
-                              colSpan="3"
-                              className="py-1 px-8 text-sm text-black text-left"
-                            >
-                              <strong>Duration:</strong>
-                              <span className="ml-2">
-                                {`${Math.floor(
-                                  (new Date(
-                                    item?.formdata?.status === "solved"
-                                      ? item.timedata?.endTime // Use end date if the call is solved
-                                      : new Date().setHours(0, 0, 0, 0) // Use today's date at midnight if not solved
-                                  ) -
-                                    new Date(
+                              <td
+                                colSpan="4"
+                                className="py-1 px-8 text-sm text-black text-left"
+                              >
+                                <strong>Description:</strong>{" "}
+                                {item?.formdata?.description || "N/A"}
+                              </td>
+                              <td
+                                colSpan="3"
+                                className="py-1 px-8 text-sm text-black text-left"
+                              >
+                                <strong>Duration:</strong>
+                                <span className="ml-2">
+                                  {`${Math.floor(
+                                    (new Date(
+                                      item?.formdata?.status === "solved"
+                                        ? item.timedata?.endTime // Use end date if the call is solved
+                                        : new Date().setHours(0, 0, 0, 0) // Use today's date at midnight if not solved
+                                    ) -
                                       new Date(
-                                        item.timedata?.startTime
-                                      ).setHours(0, 0, 0, 0)
-                                    )) /
-                                    (1000 * 60 * 60 * 24)
-                                )} days`}
-                              </span>
+                                        new Date(
+                                          item.timedata?.startTime
+                                        ).setHours(0, 0, 0, 0)
+                                      )) /
+                                      (1000 * 60 * 60 * 24)
+                                  )} days`}
+                                </span>
 
-                              <span className="ml-1">
-                                {formatDuration(item?.timedata?.duration) ||
-                                  "N/A"}
-                              </span>
-                            </td>
-                            <td
-                              colSpan="5"
-                              className="py-1 px-12 text-sm text-black text-right"
-                            >
-                              <strong>Solution:</strong>{" "}
-                              {item?.formdata?.solution || "N/A"}
-                            </td>
-                          </tr>
-                        </>
-                      )
+                                <span className="ml-1">
+                                  {formatDuration(item?.timedata?.duration) ||
+                                    "N/A"}
+                                </span>
+                              </td>
+                              <td
+                                colSpan="5"
+                                className="py-1 px-12 text-sm text-black text-right"
+                              >
+                                <strong>Solution:</strong>{" "}
+                                {item?.formdata?.solution || "N/A"}
+                              </td>
+                            </tr>
+                          </>
+                        )
+                      }
                     })}
                 </>
               ) : (

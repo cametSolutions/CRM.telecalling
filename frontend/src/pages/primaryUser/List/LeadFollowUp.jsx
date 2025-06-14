@@ -99,8 +99,7 @@ const LeadFollowUp = () => {
       `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}&pendingfollowup=${pending}`
   )
   useEffect(() => {
-    if ( !pending) {
-
+    if (!pending) {
       const now = new Date()
 
       const startDate = new Date(now.getFullYear(), now.getMonth(), 1) // 1st day of current month
@@ -194,7 +193,6 @@ const LeadFollowUp = () => {
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
     }
   }, [loggedusersallocatedleads])
-console.log(leads)
   useEffect(() => {
     if (leads && leads.length && loggedUser) {
       const currentDate = new Date()
@@ -247,7 +245,6 @@ console.log(leads)
 
       // 3. Combined
       const finalSortedLeads = [...leadsWithFollowUps, ...leadsWithoutFollowUps]
-console.log(finalSortedLeads)
       setTableData(finalSortedLeads)
     }
   }, [ownFollowUp, leads, loggedUser])
@@ -604,14 +601,20 @@ console.log(finalSortedLeads)
 
                     <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
                       <button
-                        onClick={() =>
+                        onClick={() => {
+                          const isAllocatedToeditable = item.activityLog.some(
+                            (it) =>
+                              it?.taskallocatedTo?._id === loggedUser._id &&
+                      
+                              it?.taskClosed === false
+                          )
+                       
                           loggedUser.role === "Admin"
                             ? navigate("/admin/transaction/lead/leadEdit", {
                                 state: {
                                   leadId: item._id,
                                   isReadOnly: !(
-                                    item.allocatedTo._id === loggedUser._id ||
-                                    item.leadBy._id === loggedUser._id
+                                    isAllocatedToeditable 
                                   )
                                 }
                               })
@@ -619,12 +622,11 @@ console.log(finalSortedLeads)
                                 state: {
                                   leadId: item._id,
                                   isReadOnly: !(
-                                    item.allocatedTo._id === loggedUser._id ||
-                                    item.leadBy._id === loggedUser._id
+                                    isAllocatedToeditable 
                                   )
                                 }
                               })
-                        }
+                        }}
                         className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer"
                       >
                         View / Modify

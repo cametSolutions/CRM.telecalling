@@ -1,5 +1,6 @@
 import React from "react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { PropagateLoader } from "react-spinners"
 import LeadModal from "./LeadModal"
 export default function LeadTaskComponent({
@@ -13,6 +14,8 @@ export default function LeadTaskComponent({
   const [showFullName, setShowFullName] = useState(false)
   const [selectedData, setselectedData] = useState({})
   const [showComponent, setShowComponent] = useState(false)
+const navigate=useNavigate()
+
 
   return (
     <div className="flex-1 overflow-x-auto rounded-lg text-center overflow-y-auto  shadow-xl md:mx-5 mx-3 mb-3">
@@ -65,23 +68,24 @@ export default function LeadTaskComponent({
 
                   <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
                     <button
-                      onClick={() =>
+                      onClick={() => 
+
                         loggedUser.role === "Admin"
                           ? navigate("/admin/transaction/lead/leadEdit", {
                               state: {
-                                leadId: item._id,
+                                leadId: item.leadDocId,
                                 isReadOnly: !(
-                                  item.allocatedTo._id === loggedUser._id ||
-                                  item.leadBy._id === loggedUser._id
+                                     item.matchedlog.taskClosed?false: item.matchedlog.taskallocatedTo._id === loggedUser._id 
+                                
                                 )
                               }
                             })
                           : navigate("/staff/transaction/lead/leadEdit", {
                               state: {
-                                leadId: item._id,
+                                leadId: item.leadDocId,
                                 isReadOnly: !(
-                                  item.allocatedTo._id === loggedUser._id ||
-                                  item.leadBy._id === loggedUser._id
+                                 item.matchedlog.taskClosed?false: item.matchedlog.taskallocatedTo._id === loggedUser._id 
+                                  
                                 )
                               }
                             })

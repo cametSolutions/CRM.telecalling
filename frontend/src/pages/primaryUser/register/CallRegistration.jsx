@@ -158,6 +158,7 @@ export default function CallRegistration() {
   useEffect(() => {
     const handler = setTimeout(() => {
       if (search && !selectedCustomer) {
+console.log("J")
         fetchCustomerData(search)
         setloading(true)
       } else {

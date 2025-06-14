@@ -306,7 +306,6 @@ export const UpdatePartners = async (req, res) => {
 
       }
     )
-    console.log(updatedPartners)
     if (!updatedPartners) {
       return res.status(404).json({ message: "partners not found" })
     }
@@ -837,7 +836,6 @@ export const GetAllCustomer = async (req, res) => {
 
 
 
-
     if (!branchSelected) {
       return res.status(400).json({ message: "branch id is missing" })
 
@@ -962,7 +960,6 @@ export const GetCustomer = async (req, res) => {
         }
       } else {
         // Search by customer name
-
         const searchRegex = new RegExp(`^${search}`, "i")
         const customers = await Customer.aggregate([
           {
