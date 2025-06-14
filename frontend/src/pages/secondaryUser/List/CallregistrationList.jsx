@@ -4,6 +4,7 @@ import io from "socket.io-client" // Import Socket.IO client
 import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles" // Import the Tile component
 import { useNavigate } from "react-router-dom"
+import UseFetch from "../../../hooks/useFetch"
 
 const socket = io("https://www.crm.camet.in")
 // const socket = io("http://localhost:9000") // Adjust the URL to your backend
@@ -27,13 +28,19 @@ const CallregistrationList = () => {
 
   // State to track the active filter
   const [activeFilter, setActiveFilter] = useState("All")
-
+  const { data: branches } = UseFetch("/branch/getbranch")
   useEffect(() => {
-    const userData = localStorage.getItem("user")
-    const users = JSON.parse(userData)
+    if (branches && branches.length > 0) {
+      const userData = localStorage.getItem("user")
+      const users = JSON.parse(userData)
+      if (users.role === "Admin") {
+        const userbranch = branches.map((item) => item.branchName)
+        setUserBranch(userbranch)
+      }
 
-    setUser(users)
-  }, [])
+      setUser(users)
+    }
+  }, [branches])
   const filterCallData = useCallback(
     (calls) => {
       const allCallRegistrations = calls.flatMap(
@@ -79,6 +86,7 @@ const CallregistrationList = () => {
       socket.on("updatedCalls", ({ mergedCalls, user }) => {
         if (users.role === "Admin") {
           setCallList(mergedCalls)
+          console.log(branches)
         } else {
           const userBranchName = new Set(
             users?.selected?.map((branch) => branch.branchName)
@@ -86,11 +94,7 @@ const CallregistrationList = () => {
 
           const branchNamesArray = Array.from(userBranchName)
           setUserBranch(branchNamesArray)
-          console.log(branchNamesArray)
-          const a = mergedCalls.filter(
-            (item) => item.customerName === "Udaya Paint House(Kodungallur)"
-          )
-          console.log(a)
+
           const filtered = mergedCalls.filter(
             (call) =>
               Array.isArray(call?.callregistration) && // Check if callregistration is an array
@@ -552,9 +556,7 @@ const CallregistrationList = () => {
                             .toISOString()
                             .split("T")[0]
                         : null
-                      // if (userBranch.some(item.branchName)) {
-                      //   console.log("h")
-                      // }
+
                       if (
                         userBranch.some((branch) =>
                           item.branchName.includes(branch)
