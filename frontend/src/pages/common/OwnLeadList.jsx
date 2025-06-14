@@ -108,13 +108,22 @@ export default function OwnLeadList() {
                     <td className=" border border-t-0 border-b-0 border-gray-400 px-4 bg-white ">
                       {" "}
                       <button
-                        onClick={() =>
+                        onClick={() => {
+                          const isAllocatedToeditable = item.activityLog.some(
+                            (it) =>
+                              it?.taskallocatedTo === loggedUser.id &&
+                              it?.taskfromFollowup === false &&
+                              it?.taskClosed === false
+                          )
+                          const isleadbyEditable =
+                            item.activityLog.length === 1 &&
+                            item.leadBy._id === loggedUser._id
                           loggedUser.role === "Admin"
                             ? navigate("/admin/transaction/lead/leadEdit", {
                                 state: {
                                   leadId: item._id,
                                   isReadOnly: !(
-                                    item.leadBy._id === loggedUser._id
+                                    isAllocatedToeditable||isleadbyEditable
                                   )
                                 }
                               })
@@ -122,11 +131,11 @@ export default function OwnLeadList() {
                                 state: {
                                   leadId: item._id,
                                   isReadOnly: !(
-                                    item.leadBy._id === loggedUser._id
+                                    isAllocatedToeditable||isleadbyEditable
                                   )
                                 }
                               })
-                        }
+                        }}
                         className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer"
                       >
                         View/Modify

@@ -63,6 +63,6 @@ const CustomerSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "CallRegistration"
   }
-})
+}, { timestamps: true })
 
 export default mongoose.model("Customer", CustomerSchema)

@@ -168,12 +168,12 @@ const LeadAllocationTable = () => {
         const selected = selectedAllocationType[selectedItem._id]
 
         setsubmitLoading(true)
-
+        let response
         if (approvedToggleStatus) {
-          const response = await api.post(
-            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationType=${encodeURIComponent(selected)}&allocatedBy=${
-              loggedUser._id
-            }`,
+          response = await api.post(
+            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationType=${encodeURIComponent(
+              selected
+            )}&allocatedBy=${loggedUser._id}`,
             { selectedItem, formData }
           )
           if (response.status >= 200 && response.status < 300) {
@@ -181,10 +181,10 @@ const LeadAllocationTable = () => {
             setsubmitLoading(false)
           }
         } else {
-          const response = await api.post(
-            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationType=${encodeURIComponent(selected)}&allocatedBy=${
-              loggedUser._id
-            }`,
+          response = await api.post(
+            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationType=${encodeURIComponent(
+              selected
+            )}&allocatedBy=${loggedUser._id}`,
             { selectedItem, formData }
           )
 
@@ -199,11 +199,13 @@ const LeadAllocationTable = () => {
           }
         }
         setShowmodal(false)
+        toast.success(response.data.message)
       }
     } catch (error) {
       console.log("error:", error.message)
     }
   }
+ 
   return (
     <div className="flex flex-col h-full">
       {loading && (
@@ -317,33 +319,8 @@ const LeadAllocationTable = () => {
                     <td className=" px-4 ">{item.leadId}</td>
                     <td className="border border-b-0 border-t-0 border-gray-400 px-4 "></td>
 
-                    <td className="border border-b-0 border-t-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
-                      <button
-                        onClick={() =>
-                          loggedUser.role === "Admin"
-                            ? navigate("/admin/transaction/lead/leadEdit", {
-                                state: {
-                                  leadId: item._id,
-                                  isReadOnly: !(
-                                    item.allocatedTo === loggedUser._id ||
-                                    item.leadBy === loggedUser._id
-                                  )
-                                }
-                              })
-                            : navigate("/staff/transaction/lead/leadEdit", {
-                                state: {
-                                  leadId: item._id,
-                                  isReadOnly: !(
-                                    item.allocatedTo === loggedUser._id ||
-                                    item.leadBy === loggedUser._id
-                                  )
-                                }
-                              })
-                        }
-                        className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer"
-                      >
-                        View / Modify
-                      </button>
+                    <td className="border border-b-0 border-t-0 border-gray-400 px-1 ">
+                    
                     </td>
                     <td className="border border-b-0 border-t-0 border-gray-400 px-4 "></td>
                   </tr>
@@ -400,7 +377,40 @@ const LeadAllocationTable = () => {
                       )}
                     </td>
                     <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer bg-white">
-                      Follow Up
+                        <button
+                        onClick={() => {
+                          const isAllocatedToeditable = item.activityLog.some(
+                            (it) =>
+                              it?.taskallocatedTo === loggedUser._id &&
+                              it?.taskfromFollowup === false &&
+                              it?.taskClosed === false
+                          )
+                          const isleadbyEditable =
+                            item.activityLog.length === 1 &&
+                            item.leadBy._id === loggedUser._id
+                     
+                          loggedUser.role === "Admin"
+                            ? navigate("/admin/transaction/lead/leadEdit", {
+                                state: {
+                                  leadId: item._id,
+                                  isReadOnly: !(
+                                    isAllocatedToeditable || isleadbyEditable
+                                  )
+                                }
+                              })
+                            : navigate("/staff/transaction/lead/leadEdit", {
+                                state: {
+                                  leadId: item._id,
+                                  isReadOnly: !(
+                                    isAllocatedToeditable || isleadbyEditable
+                                  )
+                                }
+                              })
+                        }}
+                        className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer"
+                      >
+                        View / Modify
+                      </button>
                     </td>
                     <td className=" border border-t-0 border-b-0 border-gray-400 px-4 bg-white ">
                       {" "}

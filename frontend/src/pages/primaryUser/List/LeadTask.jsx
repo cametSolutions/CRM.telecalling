@@ -18,8 +18,8 @@ const LeadTask = () => {
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
 
   const { data: branches } = UseFetch("/branch/getBranch")
-   useEffect(() => {
-    if ( !pending) {
+  useEffect(() => {
+    if (!pending) {
       const now = new Date()
 
       const startDate = new Date(now.getFullYear(), now.getMonth(), 1) // 1st day of current month
@@ -149,6 +149,7 @@ const LeadTask = () => {
             if (log.taskClosed && log?.taskallocatedTo) {
               finalOutput.push({
                 leadId: entry.leadId,
+                leadDocId: entry._id,
                 leadDate: entry.leadDate,
                 customerName:
                   entry?.customerName?.customerName || entry?.customerName,
@@ -167,15 +168,17 @@ const LeadTask = () => {
             }
           })
         })
-       
+
         const filteredOutput = finalOutput.filter((item) => {
           const submissionDate = new Date(item.matchedlog?.taskSubmissionDate)
-          return submissionDate >= dates.startDate && submissionDate <= dates.endDate
+          return (
+            submissionDate >= dates.startDate && submissionDate <= dates.endDate
+          )
         })
         setFilteredData(filteredOutput)
       }
     }
-  }, [data, pending,dates])
+  }, [data, pending, dates])
 
   return (
     <div className="h-full flex flex-col ">
@@ -185,7 +188,7 @@ const LeadTask = () => {
           color="#4A90E2" // Change color as needed
         />
       )}
-      <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center mx-3 md:mx-5 mt-3 mb-3 gap-4">
+      <div className="flex flex-col md:flex-row  items-start md:items-center mx-3 md:mx-5 mt-3 mb-3 gap-4">
         {/* Title */}
         <h2 className="text-lg font-bold">
           {`${
@@ -205,12 +208,13 @@ const LeadTask = () => {
         </h2>
 
         {/* Right Section */}
-        <div className="grid grid-cols-2 md:flex md:flex-row md:gap-6 gap-3 items-start md:items-center w-full md:w-auto">
+        {/* <div className="grid grid-cols-2 md:flex md:flex-row md:gap-6 gap-3 items-start md:items-center w-full md:w-auto"> */}
+        <div className="flex flex-wrap gap-3 flex-grow justify-start md:justify-end md:gap-6 items-center w-full md:w-auto">
           {dates.startDate && (
             <MyDatePicker setDates={setDates} dates={dates} />
           )}
           {/* Message Icon with Badge and Popup */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-grow md:flex-grow-0 items-center justify-end gap-2">
             <span className="text-sm whitespace-nowrap">
               {pending ? "Pending" : "Cleared"}
             </span>
@@ -231,7 +235,7 @@ const LeadTask = () => {
           <select
             value={selectedCompanyBranch || ""}
             onChange={(e) => setselectedCompanyBranch(e.target.value)}
-            className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px] w-full"
+            className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[150px]"
           >
             {loggedUserBranches?.map((branch) => (
               <option key={branch.value} value={branch.value}>
@@ -262,16 +266,18 @@ const LeadTask = () => {
           )}
 
           {/* New Lead Button */}
-          <button
-            onClick={() =>
-              loggedUser.role === "Admin"
-                ? navigate("/admin/transaction/lead")
-                : navigate("/staff/transaction/lead")
-            }
-            className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600 w-full"
-          >
-            New Lead
-          </button>
+          <div className="">
+            <button
+              onClick={() =>
+                loggedUser.role === "Admin"
+                  ? navigate("/admin/transaction/lead")
+                  : navigate("/staff/transaction/lead")
+              }
+              className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600 max-w-[100px] md:w-full"
+            >
+              New Lead
+            </button>
+          </div>
         </div>
       </div>
       <LeadTaskComponent

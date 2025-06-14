@@ -21,6 +21,7 @@ export const LeadRegister = async (req, res) => {
       netAmount,
       partner,
       allocationType = null,
+      selfAllocation,
       leadBy, leadBranch
     } = leadData
 
@@ -105,7 +106,7 @@ export const LeadRegister = async (req, res) => {
       leadBy,
       leadByModel, // Now set dynamically
       netAmount: Number(netAmount),
-
+      selfAllocation: selfAllocation === "true",
       activityLog
 
     })
@@ -139,7 +140,7 @@ export const LeadRegister = async (req, res) => {
 export const UpdateLeadRegister = async (req, res) => {
   try {
     const { data, leadData } = req.body
-
+    
     const { docID } = req.query
     const objectId = new mongoose.Types.ObjectId(docID)
 
@@ -151,14 +152,81 @@ export const UpdateLeadRegister = async (req, res) => {
         price: item.price
       }
     })
+    if (leadData.selfAllocation === "true") {
+      let leadByModel
+      const isStaff = await Staff.findOne({ _id: leadData.leadBy })
+      if (isStaff) {
+        leadByModel = "Staff"
+      } else {
+        const isAdmin = await Admin.findOne({ _id: leadData.leadBy })
+        if (isAdmin) {
+          leadByModel = "Admin"
+        }
+      }
+      const matchedDoc = await LeadMaster.findOne({ _id: objectId })
+      if (!matchedDoc) {
+        return res.status(404).json({ message: "Lead not found" })
+      }
+      if (matchedDoc.activityLog.length === 1 || matchedDoc.activityLog.length === 2) {
+        const newActivityData = {
+          submissionDate: leadData.leadDate,
+          submittedUser: leadData.leadBy,
+          submissiondoneByModel: leadByModel,
+          taskallocatedBy: leadBy,
+          taskallocatedByModel: leadByModel,
+          taskallocatedTo: leadBy,
+          taskallocatedToModel: leadByModel,
+          remarks: leadData.remark,
+          taskBy: "allocated",
+          taskTo: leadData.allocationType,
+          taskfromFollowup: false
+        }
 
-    const updatedLead = await LeadMaster.findByIdAndUpdate(objectId, {
-      ...data,
-      leadFor: mappedleadData
-    })
-    if (!updatedLead) {
-      return res.status(404).json({ message: "Lead not found" })
+        let updatedLead
+        if (matchedDoc.activityLog.length === 1) {
+          updatedLead = await LeadMaster.findByIdAndUpdate(objectId,
+            {
+              ...data,
+              leadFor: mappedleadData,
+              $push: {
+                activityLog: {
+                  newActivityData
+                }
+              }
+            }
+          )
+
+        } else if (matchedDoc.activityLog.length === 2) {
+          //update last entry in activitylog
+          const lastIndex = matchedDoc.activityLog.length - 1
+          //build the path to the last element in the activitylog array
+          const updatedPath = `activityLog.${lastIndex}`
+          updatedLead = await LeadMaster.findByIdAndUpdate(objectId, { ...data, leadFor: mappedleadData, $set: { [updatedPath]: newActivityData } })
+        }
+
+        if (!updatedLead) {
+          return res.status(404).json({ message: "Lead not found" })
+        }
+      } else if (matchedDoc.activityLog.length > 2) {
+        updatedLead = await LeadMaster.findByIdAndUpdate(objectId, { ...data, leadFor: mappedleadData })
+        if (!updatedLead) {
+          return res.status(404).json({ message: "Lead not found" });
+        }
+      }
+
+
+    } else {
+      const { allocationType, ...restData } = data
+      const updatedLead = await LeadMaster.findByIdAndUpdate(objectId, {
+        ...restData,
+        leadFor: mappedleadData
+      })
+      if (!updatedLead) {
+        return res.status(404).json({ message: "Lead not found" })
+      }
     }
+
+
     return res.status(200).json({ message: "Lead Updated Successfully" })
   } catch (error) {
     console.log("error:", error.message)
@@ -924,7 +992,6 @@ export const GetallLead = async (req, res) => {
         .lean()
       const populatedApprovedLeads = await Promise.all(
         approvedAllocatedLeads.map(async (lead) => {
-          const selected = lead.activityLog[lead.activityLog.length - 1]
           const lastMatchingActivity = [...(lead.activityLog || [])]
             .reverse()
             .find(log => log.taskallocatedTo && log.taskallocatedBy);
@@ -1155,7 +1222,6 @@ export const UpdateOrleadallocationTask = async (req, res) => {
 export const updateReallocation = async (req, res) => {
   try {
     const { allocatedBy, selectedbranch, allocationType } = req.query
-    console.log("allocation", allocationType)
     const allocatedbyObjectid = new mongoose.Types.ObjectId(allocatedBy)
     // const branchObjectId = new mongoose.Types.ObjectId(selectedbranch)
     const { selectedItem, formData } = req.body
@@ -1295,6 +1361,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         remarks: formData.allocationDescription,
         taskBy: "allocated",
         taskTo: allocationType,
+        taskfromFollowup: true
 
       };
 
@@ -1383,7 +1450,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       )
       return res
         .status(201)
-        .json({ message: "pending leads found", data: populatedLeads })
+        .json({ message: "Allocate successfully", data: populatedLeads })
     } else if (allocationpending === "false") {
       const allocatedLeads = await LeadMaster.find({
         allocatedTo: { $ne: null }
