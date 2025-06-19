@@ -423,13 +423,27 @@ export default function AdminHeader() {
                                 master.label === "Lead" && (
                                   <div className="ml-4 mt-2 border-l-4 border-blue-400 bg-gray-50 p-2 submenu-container">
                                     {leads.map((child) => (
-                                      <Link
+                                      <NavLink
                                         key={child.to}
                                         to={child.to}
-                                        className="block px-4 py-1 text-gray-600 text-sm hover:bg-gray-200"
+                                        end
+                                        className={({ isActive }) =>
+                                          `block px-4 py-1 text-md ${
+                                            isActive
+                                              ? "bg-blue-100 text-blue-600 font-semibold"
+                                              : "text-gray-600 hover:bg-gray-200"
+                                          }`
+                                        }
                                       >
                                         {child.label}
-                                      </Link>
+                                      </NavLink>
+                                      // <Link
+                                      //   key={child.to}
+                                      //   to={child.to}
+                                      //   className="block px-4 py-1 text-gray-600 text-sm hover:bg-gray-200"
+                                      // >
+                                      //   {child.label}
+                                      // </Link>
                                     ))}
                                   </div>
                                 )}
