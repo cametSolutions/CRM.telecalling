@@ -641,7 +641,7 @@ const LeadFollowUp = () => {
       {/* Responsive Table Container */}
       <div className="flex-1 overflow-x-auto rounded-lg text-center overflow-y-auto  shadow-xl md:mx-5 mx-3 mb-3">
         <table className=" border-collapse border border-gray-400 w-full text-sm">
-          <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
+          <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 ">
             <tr>
               <th className="border border-r-0 border-gray-400 px-4 ">Name</th>
               <th className="border border-r-0 border-l-0 border-gray-400  px-4 max-w-[200px] min-w-[200px]">
