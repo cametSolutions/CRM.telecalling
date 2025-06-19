@@ -15,6 +15,7 @@ const leadSchema = new mongoose.Schema(
     partner: { type: mongoose.Schema.Types.ObjectId, ref: " Partner" },
     leadConfirmed: { type: Boolean, default: false },
     leadClosed: { type: Boolean, default: false },
+    leadLost: { type: Boolean, default: false },
     leadBranch: { type: mongoose.Schema.Types.ObjectId, ref: "Branch" },
     leadFor: [
       {
@@ -57,6 +58,7 @@ const leadSchema = new mongoose.Schema(
       taskDescription: { type: String },
       reallocatedTo: { type: Boolean, default: false },
       taskClosed: { type: Boolean, default: false },
+      followupClosed: { type: Boolean },
       allocatedClosed: { type: Boolean, default: false },//block for previously allocated user 
       followUpDate: { type: Date },
       nextFollowUpDate: { type: Date },

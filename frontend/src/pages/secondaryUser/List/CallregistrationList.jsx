@@ -4,6 +4,7 @@ import io from "socket.io-client" // Import Socket.IO client
 import { FaSearch, FaPhone } from "react-icons/fa"
 import Tiles from "../../../components/common/Tiles" // Import the Tile component
 import { useNavigate } from "react-router-dom"
+import { PropagateLoader } from "react-spinners"
 import UseFetch from "../../../hooks/useFetch"
 
 const socket = io("https://www.crm.camet.in")
@@ -86,7 +87,6 @@ const CallregistrationList = () => {
       socket.on("updatedCalls", ({ mergedCalls, user }) => {
         if (users.role === "Admin") {
           setCallList(mergedCalls)
-          console.log(branches)
         } else {
           const userBranchName = new Set(
             users?.selected?.map((branch) => branch.branchName)
@@ -304,7 +304,7 @@ const CallregistrationList = () => {
     return `${hrs} hr ${mins} min ${secs} sec`
   }
 
-  console.log(filteredCalls)
+ 
   return (
     <div className="container mx-auto p-2  md:p-5 bg-white">
       <div className="w-auto shadow-lg rounded p-4 pt-1 h-full bg-neutral-50 ">
@@ -548,7 +548,6 @@ const CallregistrationList = () => {
                       )
                     })
                     .map((item) => {
-                      console.log(item.branchName)
                       const today = new Date().toISOString().split("T")[0]
                       const startTimeRaw = item?.timedata?.endTime
                       const callDate = startTimeRaw
@@ -874,7 +873,13 @@ const CallregistrationList = () => {
                     colSpan="12"
                     className="px-4 py-4 text-center text-sm text-gray-500"
                   >
-                    {loading ? "Loading..." : "No Calls"}
+                    {loading ? (
+                      <div className="justify center">
+                        <PropagateLoader color="#3b82f6" size={10} />
+                      </div>
+                    ) : (
+                      <div>No Calls</div>
+                    )}
                   </td>
                 </tr>
               )}
