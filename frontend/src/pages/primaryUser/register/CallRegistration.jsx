@@ -556,7 +556,8 @@ Problem:    \t${selectedText}
     // let whatsappWindow
     let whatsappUrl
     const phoneNumber = `+91${calldata.formdata.incomingNumber}`
-    const textToShare = `${calldata.customerName} - ${phoneNumber}\nCallnote: ${callnote}`
+    const Description = `${calldata.formdata.description}`
+    const textToShare = `${calldata.customerName} - ${phoneNumber}\nCallnote: ${callnote}\nDescription:${Description}`
 
     // if (calldata.formdata.status === "solved") {
     //   const message = formatTableToText(calldata, selectedText)
