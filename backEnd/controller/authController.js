@@ -258,6 +258,7 @@ export const StaffRegister = async (req, res) => {
 export const UpdateUserandAdmin = async (req, res) => {
   const { userId, userData, tabledata, userlevelPermission, imageData } =
     req.body
+console.log(userId)
   const { profileUrl, documentUrl } = imageData
   const { role } = userData
 

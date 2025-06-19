@@ -391,7 +391,8 @@ export default function AdminHeader() {
                                 <span
                                   className="cursor-pointer flex-1"
                                   onClick={() => {
-                                    setMobileMenuOpen(false)
+                                    // setMobileMenuOpen(false)
+                                    toggleInnerMenu(masterIndex)
                                     navigate(master.to)
                                   }}
                                 >
@@ -401,10 +402,10 @@ export default function AdminHeader() {
                                 {/* Chevron Click - Only toggles submenu */}
                                 {master.hasChildren && (
                                   <span
-                                    onClick={(e) => {
-                                      e.stopPropagation() // Prevent label's click event
-                                      toggleInnerMenu(masterIndex)
-                                    }}
+                                    // onClick={(e) => {
+                                    //   e.stopPropagation() // Prevent label's click event
+                                    //   toggleInnerMenu(masterIndex)
+                                    // }}
                                     className="ml-2 cursor-pointer"
                                   >
                                     {openInnerMenu === masterIndex ? (

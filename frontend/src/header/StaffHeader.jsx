@@ -137,7 +137,6 @@ export default function StaffHeader() {
       control: user?.permissions?.[0]?.Product ?? false
     },
     {
-      
       label: "Inventory",
       hasChildren: true,
       control: user?.permissions?.[0]?.Inventory ?? false
@@ -176,12 +175,12 @@ export default function StaffHeader() {
       label: "Task",
       control: true
     },
-  
+
     {
       to: "/staff/transaction/lead/leadReallocation",
       label: "Lead Reallocation",
       control: true
-    },
+    }
   ]
   const inventorys = [
     {
@@ -388,7 +387,6 @@ export default function StaffHeader() {
               {/* Submenu */}
               {activeSubmenu === index && (
                 <div
-                  // ref={(el) => (menuRefs.current[index] = el)}
                   ref={menuContainerRef}
                   className="bg-white border-l-4 border-green-400 max-h-64 overflow-y-auto"
                 >
@@ -418,9 +416,12 @@ export default function StaffHeader() {
                               <span
                                 className="cursor-pointer flex-1"
                                 onClick={() => {
-                                  setMobileMenuOpen(false)
+                                  // setMobileMenuOpen(false)
                                   navigate(master.to)
+                                  toggleInnerMenu(masterIndex)
                                 }}
+
+                                // e.stopPropagation() // Prevent label's click event
                               >
                                 {master.label}
                               </span>
@@ -428,10 +429,10 @@ export default function StaffHeader() {
                               {/* Chevron Click - Only toggles submenu */}
                               {master.hasChildren && (
                                 <span
-                                  onClick={(e) => {
-                                    e.stopPropagation() // Prevent label's click event
-                                    toggleInnerMenu(masterIndex)
-                                  }}
+                                  // onClick={() =>
+                                  //   // e.stopPropagation() // Prevent label's click event
+                                  //   toggleInnerMenu(masterIndex)
+                                  // }
                                   className="ml-2 cursor-pointer"
                                 >
                                   {openInnerMenu === masterIndex ? (
