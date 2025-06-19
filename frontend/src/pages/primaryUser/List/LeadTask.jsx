@@ -19,15 +19,11 @@ const LeadTask = () => {
 
   const { data: branches } = UseFetch("/branch/getBranch")
   useEffect(() => {
-    if (!pending) {
-      const now = new Date()
+    const now = new Date()
+    const startDate = new Date(now.getFullYear(), now.getMonth(), 1) // 1st day of current month
 
-      const startDate = new Date(now.getFullYear(), now.getMonth(), 1) // 1st day of current month
-      const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0) // 0th day of next month = last day of current
-
-      setDates({ startDate, endDate })
-    }
-  }, [pending])
+    setDates({ startDate, endDate: now })
+  }, [])
   useEffect(() => {
     if (branches) {
       const userData = localStorage.getItem("user")
@@ -74,9 +70,14 @@ const LeadTask = () => {
     }
   }, [selectedCompanyBranch, loggedUser, type])
   const { data, loading, refreshHook } = UseFetch(url)
-
+  const formatdate = (date) => new Date(date).toISOString().split("T")[0]
+  const getLocalDate = (date) => {
+    const local = new Date(date)
+    local.setMinutes(date.getMinutes() - date.getTimezoneOffset())
+    return local.toISOString().split("T")[0] // e.g., "2025-06-12"
+  }
   useEffect(() => {
-    if (data && pending && loggedUser) {
+    if (data && pending && loggedUser && dates && dates.endDate) {
       if (type === "followup") {
         const filteredpendingFollowup = data.followupLeads.filter(
           (item) => item.leadFollowupClosed === false
@@ -124,7 +125,20 @@ const LeadTask = () => {
             }
           })
         })
-        setFilteredData(finalOutput)
+
+        const filtereddatepending = finalOutput
+          .filter(
+            (item) =>
+              formatdate(item.matchedlog.allocationDate) <=
+              getLocalDate(dates.endDate)
+          )
+          .sort(
+            (a, b) =>
+              new Date(formatdate(a.matchedlog.allocationDate)) -
+              new Date(formatdate(b.matchedlog.allocationDate))
+          )
+       
+        setFilteredData(filtereddatepending)
       }
     } else if (data && !pending) {
       if (type === "followup") {
@@ -168,13 +182,13 @@ const LeadTask = () => {
             }
           })
         })
+        const filteredOutput = finalOutput.sort(
+          (a, b) =>
+            new Date(b.matchedlog.taskSubmissionDate) -
+            new Date(a.matchedlog.taskSubmissionDate)
+        )
 
-        const filteredOutput = finalOutput.filter((item) => {
-          const submissionDate = new Date(item.matchedlog?.taskSubmissionDate)
-          return (
-            submissionDate >= dates.startDate && submissionDate <= dates.endDate
-          )
-        })
+
         setFilteredData(filteredOutput)
       }
     }

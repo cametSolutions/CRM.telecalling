@@ -124,12 +124,14 @@ const Reallocation = () => {
         }))
         return
       }
- const selected = selectedAllocationType[selectedItem._id]
+      const selected = selectedAllocationType[selectedItem._id]
       setsubmitLoading(true)
-// return
+      // return
       // const selected = selectedAllocationType[selectedItem._id]
       const response = await api.post(
-        `/lead/leadReallocation?allocationType=${encodeURIComponent(selected)}&allocatedBy=${loggedUser._id}`,
+        `/lead/leadReallocation?allocationType=${encodeURIComponent(
+          selected
+        )}&allocatedBy=${loggedUser._id}`,
         { selectedItem, formData }
       )
       toast.success(response.data.message)
@@ -240,7 +242,7 @@ const Reallocation = () => {
           </thead>
           <tbody>
             {tableData && tableData.length > 0 ? (
-              tableData.map((item,index) => (
+              tableData.map((item, index) => (
                 <React.Fragment key={item._id}>
                   <tr className="bg-white  border border-gray-400 border-b-0">
                     <td className="  px-4 "></td>
@@ -275,13 +277,13 @@ const Reallocation = () => {
                             ? navigate("/admin/transaction/lead/leadEdit", {
                                 state: {
                                   leadId: item._id,
-                                  isReadOnly:true
+                                  isReadOnly: true
                                 }
                               })
                             : navigate("/staff/transaction/lead/leadEdit", {
                                 state: {
                                   leadId: item._id,
-                                  isReadOnly:true 
+                                  isReadOnly: true
                                 }
                               })
                         }
@@ -294,7 +296,9 @@ const Reallocation = () => {
                   </tr>
 
                   <tr className=" font-semibold bg-gray-100">
-                    <td className=" px-4 border border-b-0 border-t-0 border-r-0 border-gray-400 ">{index+1}</td>
+                    <td className=" px-4 border border-b-0 border-t-0 border-r-0 border-gray-400 ">
+                      {index + 1}
+                    </td>
                     <td className=" px-4 border border-b-0 border-t-0 border-r-0 border-gray-400 ">
                       Leadby
                     </td>
@@ -357,9 +361,7 @@ const Reallocation = () => {
                   </tr>
 
                   <tr className="bg-white">
-                    <td className="border border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5 ">
-                      
-                    </td>
+                    <td className="border border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5 "></td>
                     <td className="border border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5 ">
                       {item?.leadBy?.name}
                     </td>
@@ -493,11 +495,21 @@ const Reallocation = () => {
                           {item?.submittedUser?.name} -
                         </span>
                         <span className="mx-2">
-                          {item?.activityLog[item.activityLog.length-1].taskBy} -
+                          {
+                            item?.activityLog[item.activityLog.length - 1]
+                              .taskBy
+                          }{" "}
+                          -
                         </span>
-                        <span>{item?.activityLog[item.activityLog.length-1]?.remarks}</span>
+                        <span>
+                          {
+                            item?.activityLog[item.activityLog.length - 1]
+                              ?.remarks
+                          }
+                        </span>
                       </div>
                     </td>
+                    <td className="border border-t-0 border-gray-400 "></td>
                     <td className="border border-t-0 border-gray-400 "></td>
                     <td className="border border-t-0 border-gray-400 "></td>
                     <td className="border border-t-0 border-gray-400 "></td>
@@ -511,7 +523,7 @@ const Reallocation = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={8} className="text-center text-gray-500 py-4">
+                <td colSpan={10} className="text-center text-gray-500 py-4">
                   {approvedToggleStatus ? (
                     toggleLoading ? (
                       <div className="flex justify-center">
@@ -546,7 +558,7 @@ const Reallocation = () => {
                 />
               )}
               <div className="md:px-6 md:py-4 py-2 px-3">
-                <h1 className="font-semibold text-xl">{` Re Allocation for ${selectedType}`}</h1>
+                <h1 className="font-semibold text-xl">{`Lead Reallocation for ${selectedType}-LeadId:${selectedLeadId}`}</h1>
                 <div>
                   <label className="block text-left">Allocated Date</label>
                   <input

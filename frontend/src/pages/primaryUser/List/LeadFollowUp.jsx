@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import React from "react"
 import { formatDate } from "../../../utils/dateUtils"
 import MyDatePicker from "../../../components/common/MyDatePicker"
 import { FaSpinner } from "react-icons/fa"
 import Select from "react-select"
+import { FaChevronDown } from "react-icons/fa" // You can use any icon
+import { BsFilterLeft } from "react-icons/bs"
 import { PropagateLoader } from "react-spinners"
 import { useNavigate } from "react-router-dom"
 import BarLoader from "react-spinners/BarLoader"
@@ -19,6 +21,8 @@ const LeadFollowUp = () => {
     demoDescription: ""
   })
   const [isdemofollownotClosed, setisdemofollowedNotClosed] = useState(false)
+  const [selectedType, setSelectedType] = useState("infollowup")
+  const [isdropdownOpen, setIsdropdownOpen] = useState(false)
   const [isClosed, setIsClosed] = useState(false)
   const [taskClosed, setfollowupClosed] = useState(false)
   const [dates, setDates] = useState({ startDate: "", endDate: "" })
@@ -27,12 +31,16 @@ const LeadFollowUp = () => {
     editfollowUpDatesandRemarksEditIndex,
     setfollowUpDatesandRemarksEditIndex
   ] = useState(null)
+
+  const [filterOpen, setfilterOpen] = useState(false)
+  const [statusAll, setstatusAll] = useState(false)
   const [isAllocated, setIsAllocated] = useState(false) //for set allocation or not
   const [isOwner, setOwner] = useState(false)
-
+  const [statusAllocated, setstatusAllocated] = useState(false)
   const [message, setMessage] = useState("")
   const [pending, setPending] = useState(true)
   const [demofollowerLoader, setdemofollowerLoader] = useState(false)
+  const [allocatedLeads, setAllocatedLeads] = useState([])
   const [loader, setLoader] = useState(false)
   const [allocationOptions, setAllocationOptions] = useState([])
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState("")
@@ -56,26 +64,16 @@ const LeadFollowUp = () => {
   const [followupDateModal, setfollowupDateModal] = useState(false)
   const [showFullName, setShowFullName] = useState(false)
   const [showFullEmail, setShowFullEmail] = useState(false)
-
+  const dropdownRef = useRef(null)
   const [tableData, setTableData] = useState([])
   const [formData, setFormData] = useState({
     followUpDate: "",
     nextfollowUpDate: "",
     followedId: "",
-
+    followupType: "infollowup",
     Remarks: ""
   })
 
-  const [demoDetails, setDemodetails] = useState({
-    matchedindex: "",
-    leadId: "",
-    leadDocId: "",
-    demoAssignedBy: "",
-    demoAssignedDate: "",
-    demoAssignedDescription: "",
-    followerDate: "",
-    followerDescription: ""
-  })
   const [demoData, setDemodata] = useState({
     demoallocatedTo: "",
     demoallocatedDate: "",
@@ -99,16 +97,13 @@ const LeadFollowUp = () => {
       `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}&pendingfollowup=${pending}`
   )
   useEffect(() => {
-    if (!pending) {
-      const now = new Date()
+    const now = new Date()
 
-      const startDate = new Date(now.getFullYear(), now.getMonth(), 1) // 1st day of current month
-      const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0) // 0th day of next month = last day of current
+    const startDate = new Date(now.getFullYear(), now.getMonth(), 1) // 1st day of current month
+    const endDate = new Date() // 0th day of next month = last day of current
 
-      setDates({ startDate, endDate })
-    }
-  }, [pending])
-
+    setDates({ startDate, endDate })
+  }, [statusAll])
   useEffect(() => {
     if (data && selectedCompanyBranch) {
       const { allusers = [], allAdmins = [] } = data
@@ -128,21 +123,7 @@ const LeadFollowUp = () => {
       )
     }
   }, [data, selectedCompanyBranch])
-  useEffect(() => {
-    if (demolead && demolead.length > 0) {
-      setDemodetails((prev) => ({
-        ...prev,
-        matchedindex: demolead[0].matchedDemoIndex,
-        leadId: demolead[0].leadId,
-        leadDocId: demolead[0]._id,
-        demoAssignedBy: demolead[0].demoallocatedByDetails.name,
-        demoAssignedDate: demolead[0].matchedDemoFollowUp.demoallocatedDate
-          .toString()
-          .split("T")[0],
-        demoAssignedDescription: demolead[0].matchedDemoFollowUp.demoDescription
-      }))
-    }
-  }, [demolead])
+
   useEffect(() => {
     if (branches) {
       const userData = localStorage.getItem("user")
@@ -179,75 +160,140 @@ const LeadFollowUp = () => {
       setloggedUser(user)
     }
   }, [branches])
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setfilterOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
   useEffect(() => {
     if (loggedUserBranches && loggedUserBranches.length > 0) {
       const defaultbranch = loggedUserBranches[0]
       setselectedCompanyBranch(defaultbranch.value)
     }
-  }, [loggedUserBranches])
+  }, [loggedUserBranches, dates])
   // Close when clicking outside
+  const formatdate = (date) => new Date(date).toISOString().split("T")[0]
+  const getLocalDate = (date) => {
+    const local = new Date(date)
+    local.setMinutes(date.getMinutes() - date.getTimezoneOffset())
+    return local.toISOString().split("T")[0] // e.g., "2025-06-12"
+  }
   useEffect(() => {
-    if (loggedusersallocatedleads) {
-      setLeads(loggedusersallocatedleads.followupLeads)
-      setTableData([])
+    if (loggedusersallocatedleads && dates.endDate) {
+      if (pending && ownFollowUp) {
+        const currentDate = new Date()
+        const endDateLocal = getLocalDate(new Date(dates.endDate))
+        formatdate(currentDate)
+        const fulldatecurrent =
+          formatdate(currentDate) === endDateLocal
+            ? // formatdate(dates.endDate)
+              formatdate(currentDate)
+            : endDateLocal
+
+        const neverfollowupedLeads =
+          loggedusersallocatedleads.followupLeads.filter(
+            (lead) => lead.neverfollowuped
+          )
+        const havenextFollowup = loggedusersallocatedleads.followupLeads.filter(
+          (lead) => lead.currentdateNextfollowup
+        )
+        const filteredcurrentdatefollowupLeads = havenextFollowup.filter(
+          (lead) => formatdate(lead.nextFollowUpDate) === fulldatecurrent
+        )
+        const iscurrent =
+          fulldatecurrent === endDateLocal ? fulldatecurrent : endDateLocal
+        const overdueFollowups = havenextFollowup.filter(
+          (lead) => formatdate(lead.nextFollowUpDate) < iscurrent
+        )
+        const uniqueoverdueAndcurrentdate = [
+          ...new Set([...overdueFollowups, ...filteredcurrentdatefollowupLeads])
+        ]
+
+        const taskSubmittedLeads =
+          loggedusersallocatedleads.followupLeads.filter(
+            (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
+          )
+        const nonsubmittedtakleads =
+          loggedusersallocatedleads.followupLeads.filter(
+            (lead) =>
+              lead.allocatedfollowup && lead.allocatedTaskClosed === false
+          )
+        setAllocatedLeads(nonsubmittedtakleads)
+
+        const mergedall = [
+          ...neverfollowupedLeads,
+          ...uniqueoverdueAndcurrentdate,
+          ...taskSubmittedLeads
+        ]
+        setTableData(mergedall)
+      }
+
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
     }
-  }, [loggedusersallocatedleads])
-  useEffect(() => {
-    if (leads && leads.length && loggedUser) {
-      const currentDate = new Date()
+  }, [loggedusersallocatedleads, dates, pending, ownFollowUp])
+  // useEffect(() => {
+  //   if (leads && leads.length && loggedUser) {
+  //     const currentDate = new Date()
 
-      // 1. Leads with follow-ups
-      const leadsWithFollowUps = leads
-        .filter(
-          (lead) =>
-            lead.allocatedTo._id === loggedUser._id &&
-            Array.isArray(lead.activityLog) &&
-            lead.activityLog.some((log) => log.followup && log.nextfollowup)
-        )
-        .map((lead) => {
-          const pendingFollowups = lead.activityLog?.filter((log) => {
-            return (
-              log.followup && // field exists and has value
-              log.nextfollowup && // field exists and has value
-              log.taskClosed === false // still pending
-            )
-          })
-          // Get the closest nextfollowUpDate from the followUpDatesandRemarks array
-          const nextFollowUp = pendingFollowups.reduce((closest, curr) => {
-            const currDate = new Date(curr.nextfollowUpDate)
-            const closestDate = new Date(closest.nextfollowUpDate)
-            return Math.abs(currDate - currentDate) <
-              Math.abs(closestDate - currentDate)
-              ? curr
-              : closest
-          })
+  //     // 1. Leads with follow-ups
+  //     const leadsWithFollowUps = leads
+  //       .filter(
+  //         (lead) =>
+  //           lead.allocatedTo._id === loggedUser._id &&
+  //           Array.isArray(lead.activityLog) &&
+  //           lead.activityLog.some((log) => log.followup && log.nextfollowup)
+  //       )
+  //       .map((lead) => {
+  //         const pendingFollowups = lead.activityLog?.filter((log) => {
+  //           return (
+  //             log.followup && // field exists and has value
+  //             log.nextfollowup && // field exists and has value
+  //             log.taskClosed === false // still pending
+  //           )
+  //         })
+  //         // Get the closest nextfollowUpDate from the followUpDatesandRemarks array
+  //         const nextFollowUp = pendingFollowups.reduce((closest, curr) => {
+  //           const currDate = new Date(curr.nextfollowUpDate)
+  //           const closestDate = new Date(closest.nextfollowUpDate)
+  //           return Math.abs(currDate - currentDate) <
+  //             Math.abs(closestDate - currentDate)
+  //             ? curr
+  //             : closest
+  //         })
 
-          return {
-            ...lead,
-            closestNextFollowUp: new Date(nextFollowUp.nextfollowUpDate)
-          }
-        })
-        .sort((a, b) => a.closestNextFollowUp - b.closestNextFollowUp)
+  //         return {
+  //           ...lead,
+  //           closestNextFollowUp: new Date(nextFollowUp.nextfollowUpDate)
+  //         }
+  //       })
+  //       .sort((a, b) => a.closestNextFollowUp - b.closestNextFollowUp)
 
-      // 2. Leads with empty followUpDatesandRemarks
-      const leadsWithoutFollowUps = leads.filter((lead) =>
-        ownFollowUp
-          ? lead.allocatedTo?._id === loggedUser._id
-          : lead?.allocatedTo?._id !== loggedUser?._id &&
-            Array.isArray(lead.activityLog) &&
-            lead.activityLog.some(
-              (log) =>
-                log.taskTo === "followup" &&
-                (!log.nextfollowup || log.nextfollowup.trim?.() === "")
-            )
-      )
+  //     // 2. Leads with empty followUpDatesandRemarks
+  //     const leadsWithoutFollowUps = leads.filter((lead) =>
+  //       ownFollowUp
+  //         ? lead.allocatedTo?._id === loggedUser._id
+  //         : lead?.allocatedTo?._id !== loggedUser?._id &&
+  //           Array.isArray(lead.activityLog) &&
+  //           lead.activityLog.some(
+  //             (log) =>
+  //               log.taskTo === "followup" &&
+  //               (!log.nextfollowup || log.nextfollowup.trim?.() === "")
+  //           )
+  //     )
 
-      // 3. Combined
-      const finalSortedLeads = [...leadsWithFollowUps, ...leadsWithoutFollowUps]
-      setTableData(finalSortedLeads)
-    }
-  }, [ownFollowUp, leads, loggedUser])
+  //     // 3. Combined
+  //     const finalSortedLeads = [...leadsWithFollowUps, ...leadsWithoutFollowUps]
+  //     setTableData(finalSortedLeads)
+  //   }
+  // }, [ownFollowUp, leads, loggedUser])
 
   useEffect(() => {
     if (loggedUser) {
@@ -328,10 +374,6 @@ const LeadFollowUp = () => {
         demoDescription: isHaveDemo?.remarks
       })
 
-      // const isEditable =
-      //   demofollowUp[demofollowUp?.length - 1]?.demofollowerDate === null
-      // const ischeckdisabled =
-      //   demofollowUp[demofollowUp?.length - 1]?.demofollowerDate !== null
       setisdemofollowedNotClosed(true)
       setIsEditable(true)
       setIsAllocated(true)
@@ -340,9 +382,18 @@ const LeadFollowUp = () => {
       (item) =>
         item.submittedUser._id === loggedUser._id &&
         item.taskBy === "followup" &&
-        item.taskClosed === true
+        item.taskClosed === false
     )
-    setfollowupClosed(isfollowupclosed)
+    const userFollowups = history.filter(
+      (item) =>
+        item.submittedUser._id === loggedUser._id && item.taskBy === "followup"
+    )
+
+    const isAllFollowupsClosed =
+      userFollowups.length > 0 &&
+      userFollowups.every((item) => item.taskClosed === true)
+
+    setfollowupClosed(isAllFollowupsClosed)
 
     setselectedDocid(docId)
     setselectedTab("History")
@@ -405,11 +456,13 @@ const LeadFollowUp = () => {
         followedId: "",
         Remarks: ""
       }))
+      setIsAllocated(false)
       setDemodata((prev) => ({
         ...prev,
         demoallocatedTo: "",
         demoallocatedDate: "",
-        demoDescription: ""
+        demoDescription: "",
+        selectedType: ""
       }))
       refreshHook()
       toast.success(response.data.message)
@@ -419,29 +472,28 @@ const LeadFollowUp = () => {
       console.log(error)
     }
   }
-
   const handleFollowUpDateSubmit = async () => {
     try {
       let newErrors = {}
       if (!formData.followUpDate)
         newErrors.followUpDate = "Follow Up Date is required"
+      if (formData.followupType === "infollowup") {
+        if (!formData.nextfollowUpDate )
+          newErrors.nextfollowUpDate = "Next Follow Up Date Is Required"
+      }
 
-      if (!formData.nextfollowUpDate && !isClosed)
-        newErrors.nextfollowUpDate = "Next Follow Up Date Is Required"
-
-      if (!formData.Remarks)
+    
         if (!formData.Remarks) newErrors.Remarks = "Remarks is Required"
 
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors)
         return
       }
-
       setfollowupDateLoader(!followupDateLoader)
 
       const response = await api.put(
         `/lead/followupDateUpdate?selectedleaddocId=${selectedDocId}&loggeduserid=${loggedUser._id}`,
-        { formData, closed: isClosed }
+        formData
       )
 
       toast.success(response.data.message)
@@ -473,41 +525,95 @@ const LeadFollowUp = () => {
         />
       )}
 
-      <div className="flex flex-col md:flex-row md:justify-between items-start md:items-center mx-3 md:mx-5 mt-3 mb-3 gap-4">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center mx-3 md:mx-5 mt-3 mb-3 gap-4">
         {/* Title */}
         <h2 className="text-lg font-bold">Lead Follow Up</h2>
 
         {/* Right Section */}
-        <div className="grid grid-cols-2 md:flex md:flex-row md:gap-6 gap-3 items-start md:items-center w-full md:w-auto">
-          {/* {dates.startDate && (
-            <MyDatePicker setDates={setDates} dates={dates} />
-          )} */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm whitespace-nowrap">
-              {pending ? "Pending" : "Cleared"}
-            </span>
+        <div className="grid grid-cols-2 md:flex md:flex-nowrap md:gap-6 gap-3 md:items-center w-full md:w-auto">
+          {/* Date Picker */}
+          {dates.startDate && (
+            <div className="w-full">
+              <MyDatePicker setDates={setDates} dates={dates} />
+            </div>
+          )}
+          {/* Filter Button */}
+          <div className="relative flex justify-end " ref={dropdownRef}>
             <button
-              onClick={() => {
-                setPending(!pending)
-                setTableData([])
-              }}
-              className={`${
-                pending ? "bg-green-500" : "bg-gray-300"
-              } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
+              type="button"
+              onClick={() => setfilterOpen(!filterOpen)}
+              className="p-1 rounded-md bg-gray-100 md:bg-white border border-gray-300 shadow-sm hover:shadow-md hover:bg-gray-50 transition"
+              title="Filter Options"
             >
-              <div
-                className={`${
-                  pending ? "translate-x-5" : "translate-x-0"
-                } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-              ></div>
+              <BsFilterLeft className="text-md md:text-xl text-gray-800 md:text-gray-700 hover:text-black" />
             </button>
-          </div>
 
+            {filterOpen && (
+              <div className="absolute top-full right-0 mt-2 w-72 bg-white  border border-gray-200 rounded-xl shadow-2xl z-50 p-4 space-y-5 animate-fade-in-down">
+                <h3 className="text-base font-semibold text-gray-800 border-b pb-2">
+                  Filters
+                </h3>
+
+                {/* Filter Toggles */}
+                {[
+                  {
+                    label: statusAll ? "All Leads" : "Filtered Leads",
+                    value: statusAll,
+                    toggle: () => setstatusAll(!statusAll)
+                  },
+                  {
+                    label: statusAllocated
+                      ? "Allocated Leads"
+                      : "Unallocated Leads",
+                    value: statusAllocated,
+                    toggle: () => setstatusAllocated(!statusAllocated)
+                  },
+                  {
+                    label: pending ? "Pending Followup" : "Cleared Followup",
+                    value: pending,
+                    toggle: () => {
+                      setPending(!pending)
+                      setTableData([])
+                    }
+                  },
+                  {
+                    label: ownFollowUp ? "Own Followup" : "Colleague Followup",
+                    value: ownFollowUp,
+                    toggle: () => {
+                      setOwnFollowUp(!ownFollowUp)
+                      setTableData([])
+                    }
+                  }
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between text-sm font-medium text-gray-700 group"
+                  >
+                    <span className="group-hover:text-black transition">
+                      {item.label}
+                    </span>
+                    <button
+                      onClick={item.toggle}
+                      className={`${
+                        item.value ? "bg-emerald-400" : "bg-gray-300"
+                      } w-8 h-5 flex items-center rounded-full transition-colors duration-300`}
+                    >
+                      <div
+                        className={`${
+                          item.value ? "translate-x-3" : "translate-x-0"
+                        } w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                      />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           {/* Branch Dropdown */}
           <select
             value={selectedCompanyBranch || ""}
             onChange={(e) => setselectedCompanyBranch(e.target.value)}
-            className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px] w-full"
+            className="border border-gray-300 py-0.5 rounded-md px-2 focus:outline-none w-36 md:min-w-[120px]"
           >
             {loggedUserBranches?.map((branch) => (
               <option key={branch.value} value={branch.value}>
@@ -515,40 +621,20 @@ const LeadFollowUp = () => {
               </option>
             ))}
           </select>
-
-          {/* Toggle Switch */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm whitespace-nowrap">
-              {ownFollowUp ? "Own FollowUp" : "Colleague FollowUp"}
-            </span>
+          {/* New Lead Button */}
+          <div className="flex justify-end">
+            {" "}
             <button
-              onClick={() => {
-                setOwnFollowUp(!ownFollowUp)
-                setTableData([])
-              }}
-              className={`${
-                ownFollowUp ? "bg-green-500" : "bg-gray-300"
-              } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
+              onClick={() =>
+                loggedUser.role === "Admin"
+                  ? navigate("/admin/transaction/lead")
+                  : navigate("/staff/transaction/lead")
+              }
+              className="bg-black text-white py-0.5 px-3 rounded-lg shadow-lg hover:bg-gray-600 w-24"
             >
-              <div
-                className={`${
-                  ownFollowUp ? "translate-x-5" : "translate-x-0"
-                } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-              ></div>
+              New Lead
             </button>
           </div>
-
-          {/* New Lead Button */}
-          <button
-            onClick={() =>
-              loggedUser.role === "Admin"
-                ? navigate("/admin/transaction/lead")
-                : navigate("/staff/transaction/lead")
-            }
-            className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600 w-full"
-          >
-            New Lead
-          </button>
         </div>
       </div>
 
@@ -578,125 +664,122 @@ const LeadFollowUp = () => {
             </tr>
           </thead>
           <tbody>
-            {tableData && tableData.length > 0 ? (
-              tableData.map((item, index) => (
-                <React.Fragment key={index}>
-                  <tr className="bg-white ">
-                    <td
-                      onClick={() => setShowFullName(!showFullName)}
-                      className={`px-4 cursor-pointer overflow-hidden ${
-                        showFullName
-                          ? "whitespace-normal max-h-[3em]" // ≈2 lines of text (1.5em line-height)
-                          : "truncate whitespace-nowrap max-w-[120px]"
-                      }`}
-                      style={{ lineHeight: "1.5em" }} // fine-tune as needed
-                    >
-                      {item.customerName.customerName}
-                    </td>
-                    <td className="  px-4 ">{item.mobile}</td>
-                    <td className="px-4 ">0481</td>
-                    <td className="px-4 ">{item.email}</td>
-                    <td className=" px-4 ">{item.leadId}</td>
-                    <td className="border border-b-0 border-gray-400 px-4 "></td>
-
-                    <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
-                      <button
-                        onClick={() => {
-                          const isAllocatedToeditable = item.activityLog.some(
-                            (it) =>
-                              it?.taskallocatedTo?._id === loggedUser._id &&
-                      
-                              it?.taskClosed === false
-                          )
-                       
-                          loggedUser.role === "Admin"
-                            ? navigate("/admin/transaction/lead/leadEdit", {
-                                state: {
-                                  leadId: item._id,
-                                  isReadOnly: !(
-                                    isAllocatedToeditable 
-                                  )
-                                }
-                              })
-                            : navigate("/staff/transaction/lead/leadEdit", {
-                                state: {
-                                  leadId: item._id,
-                                  isReadOnly: !(
-                                    isAllocatedToeditable 
-                                  )
-                                }
-                              })
-                        }}
-                        className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer"
+            {(statusAllocated ? allocatedLeads : tableData)?.length > 0 ? (
+              (statusAllocated ? allocatedLeads : tableData).map(
+                (item, index) => (
+                  <React.Fragment key={index}>
+                    <tr className="bg-white ">
+                      <td
+                        onClick={() => setShowFullName(!showFullName)}
+                        className={`px-4 cursor-pointer overflow-hidden ${
+                          showFullName
+                            ? "whitespace-normal max-h-[3em]" // ≈2 lines of text (1.5em line-height)
+                            : "truncate whitespace-nowrap max-w-[120px]"
+                        }`}
+                        style={{ lineHeight: "1.5em" }} // fine-tune as needed
                       >
-                        View / Modify
-                      </button>
-                    </td>
-                    <td className="borrder border-b-0 border-gray-400 px-4 "></td>
-                  </tr>
+                        {item.customerName.customerName}
+                      </td>
+                      <td className="  px-4 ">{item.mobile}</td>
+                      <td className="px-4 ">0481</td>
+                      <td className="px-4 ">{item.email}</td>
+                      <td className=" px-4 ">{item.leadId}</td>
+                      <td className="border border-b-0 border-gray-400 px-4 "></td>
 
-                  <tr className=" font-semibold bg-gray-200">
-                    <td className=" px-4 ">Leadby</td>
-                    <td className=" px-4">Assignedto</td>
-                    <td className=" px-4 ">Assignedby</td>
-                    <td className="px-4 ">No. of Followups</td>
-                    <td className="px-4 min-w-[120px]">Lead Date</td>
-                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4 ">
-                      {item.activityLog[item.activityLog.length - 1]
-                        ?.nextFollowUpDate
-                        ? new Date(
-                            item.activityLog[
-                              item.activityLog.length - 1
-                            ]?.nextFollowUpDate
-                          )
-                            .toLocaleDateString("en-GB")
-                            .split("/")
-                            .join("-")
-                        : "-"}
-                    </td>
-                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleHistory(
-                            item?.activityLog,
-                            item.leadId, //like 00001
-                            item?._id, //lead doc id
-                            item?.allocatedTo?._id,
-                            item?.taskfromFollowup
-                          )
-                        }
-                      >
-                        Follow Up
-                      </button>
-                    </td>
-                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4 ">
-                      {item.netAmount}{" "}
-                    </td>
-                  </tr>
+                      <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
+                        <button
+                          onClick={() => {
+                            const isAllocatedToeditable = item.activityLog.some(
+                              (it) =>
+                                it?.taskallocatedTo?._id === loggedUser._id &&
+                                it?.taskClosed === false
+                            )
 
-                  <tr className="bg-white">
-                    <td className="border border-t-0 border-r-0  border-gray-400 px-4 py-0.5 ">
-                      {item?.leadBy?.name}
-                    </td>
-                    <td className="border border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
-                      {item?.allocatedTo?.name}
-                    </td>
-                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5">
-                      {item.allocatedBy?.name}
-                    </td>
-                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400  px-4 py-0.5 ">
-                      {/* {item.followUpDatesandRemarks.length} */}
-                    </td>
-                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
-                      {item.leadDate?.toString().split("T")[0]}
-                    </td>
-                    <td className="border border-t-0 border-gray-400   px-4 py-0.5 "></td>
-                    <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
-                    <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
-                  </tr>
-                </React.Fragment>
-              ))
+                            loggedUser.role === "Admin"
+                              ? navigate("/admin/transaction/lead/leadEdit", {
+                                  state: {
+                                    leadId: item._id,
+                                    isReadOnly: !isAllocatedToeditable
+                                  }
+                                })
+                              : navigate("/staff/transaction/lead/leadEdit", {
+                                  state: {
+                                    leadId: item._id,
+                                    isReadOnly: !isAllocatedToeditable
+                                  }
+                                })
+                          }}
+                          className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer"
+                        >
+                          View / Modify
+                        </button>
+                      </td>
+                      <td className="borrder border-b-0 border-gray-400 px-4 "></td>
+                    </tr>
+
+                    <tr className=" font-semibold bg-gray-200">
+                      <td className=" px-4 ">Leadby</td>
+                      <td className=" px-4">Assignedto</td>
+                      <td className=" px-4 ">Assignedby</td>
+                      <td className="px-4 ">No. of Followups</td>
+                      <td className="px-4 min-w-[120px]">Lead Date</td>
+                      <td className=" border border-t-0 border-b-0 border-gray-400 px-4 ">
+                        {item.activityLog[item.activityLog.length - 1]
+                          ?.nextFollowUpDate
+                          ? new Date(
+                              item.activityLog[
+                                item.activityLog.length - 1
+                              ]?.nextFollowUpDate
+                            )
+                              .toLocaleDateString("en-GB")
+                              .split("/")
+                              .join("-")
+                          : "-"}
+                      </td>
+                      <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleHistory(
+                              item?.activityLog,
+                              item.leadId, //like 00001
+                              item?._id, //lead doc id
+                              item?.allocatedTo?._id,
+                              item?.taskfromFollowup
+                            )
+                          }
+                        >
+                          Follow Up
+                        </button>
+                      </td>
+                      <td className=" border border-t-0 border-b-0 border-gray-400 px-4 ">
+                        {item.netAmount}{" "}
+                      </td>
+                    </tr>
+
+                    <tr className="bg-white">
+                      <td className="border border-t-0 border-r-0  border-gray-400 px-4 py-0.5 ">
+                        {item?.leadBy?.name}
+                      </td>
+                      <td className="border border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
+                        {item?.allocatedTo?.name}
+                      </td>
+                      <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5">
+                        {item.allocatedBy?.name}
+                      </td>
+                      <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400  px-4 py-0.5 ">
+                        {/* {item.followUpDatesandRemarks.length} */}
+                      </td>
+                      <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
+                        {item.leadDate?.toString().split("T")[0]}
+                      </td>
+                      <td className="border border-t-0 border-gray-400   px-4 py-0.5 "></td>
+                      <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
+                      <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
+                    </tr>
+                  </React.Fragment>
+                )
+              )
             ) : (
               <tr>
                 <td colSpan={8} className="text-center text-gray-500 py-4">
@@ -933,7 +1016,7 @@ const LeadFollowUp = () => {
                                       .replace(/\//g, "-") // change / to -
                                   : ""
                               }
-                              className="rounded-md w-full py-1 px-2 border border-gray-200 focus:outline-none"
+                              className="rounded-md w-full py-1 px-2 border border-gray-200 focus:outline-none shadow-xl"
                               onChange={handleDataChange}
                             />
                             {errors.followUpDate && (
@@ -942,33 +1025,39 @@ const LeadFollowUp = () => {
                               </p>
                             )}
                           </div>
-                          <div className="text-left flex items-center  gap-2 ">
-                            <input
-                              type="checkbox"
-                              disabled={isdemofollownotClosed}
-                              id="allocation"
-                              className={`w-4 h-4  ${
-                                isdemofollownotClosed
-                                  ? "cursor-not-allowed"
-                                  : ""
-                              }`}
-                              checked={isAllocated}
-                              onChange={() => {
-                                if (isClosed) {
-                                  return
-                                }
-                                setIsAllocated(!isAllocated)
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  Remarks: "",
-                                  nextfollowUpDate: ""
-                                }))
-                              }}
-                            />
-                            <label htmlFor="allocation" className="text-sm">
-                              Allocation
-                            </label>
-                            <input
+                          <div className="flex justify-between gap-2 items-center mt-2">
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                disabled={isdemofollownotClosed}
+                                id="allocation"
+                                className={`w-4 h-4  ${
+                                  isdemofollownotClosed
+                                    ? "cursor-not-allowed"
+                                    : ""
+                                }`}
+                                checked={isAllocated}
+                                onChange={() => {
+                                  if (formData.followupType==="closed"||formData.followupType==="lost") {
+                                    return
+                                  }
+                                  setIsAllocated(!isAllocated)
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    Remarks: "",
+                                    nextfollowUpDate: ""
+                                  }))
+                                }}
+                              />
+                              <label
+                                htmlFor="allocation"
+                                className="text-md ml-2"
+                              >
+                                Allocation
+                              </label>
+                            </div>
+
+                            {/* <input
                               type="checkbox"
                               disabled={isdemofollownotClosed}
                               id="close"
@@ -992,7 +1081,45 @@ const LeadFollowUp = () => {
                             />
                             <label htmlFor="allocation" className="text-sm">
                               Closed
-                            </label>
+                            </label> */}
+                            {/* <select
+                              onClick={(e) => setSelectedType(e.target.value)}
+                              className="px-2 border border-gray-200 rounded-md py-0.5 focus:outline-none cursor-pointer shadow-xl"
+                            >
+                              <option value="infollowup">Infollowup</option>
+                              <option value="closed">Closed</option>
+                              <option value="lost">Lost</option>
+                            </select> */}
+                            <div className="relative inline-block w-32">
+                              <select
+                                disabled={isAllocated}
+                                onChange={(e) => {
+                                  setSelectedType(e.target.value)
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    followupType: e.target.value
+                                  }))
+                               
+                                }}
+                                onFocus={() => setIsdropdownOpen(true)}
+                                onBlur={() => setIsdropdownOpen(false)}
+                                className={`appearance-none px-2 border border-gray-300 rounded-md py-1 mr-2 w-full focus:outline-none shadow-md ${
+                                  isAllocated
+                                    ? "cursor-not-allowed bg-gray-200 border border-gray-300"
+                                    : "cursor-pointer"
+                                }`}
+                              >
+                                <option value="infollowup">Infollowup</option>
+                                <option value="closed">Closed</option>
+                                <option value="lost">Lost</option>
+                              </select>
+
+                              <FaChevronDown
+                                className={`absolute right-2 ml-2 top-1/2 h-3 w-4  transform -translate-y-1/2 transition-transform duration-200 pointer-events-none ${
+                                  isdropdownOpen ? "rotate-180" : "rotate-0"
+                                }`}
+                              />
+                            </div>
                           </div>
                           {isAllocated && (
                             <>
@@ -1013,7 +1140,7 @@ const LeadFollowUp = () => {
                                       allocationTyperror: ""
                                     }))
                                   }}
-                                  className={`py-0.5 border border-gray-400 rounded-md  w-full focus:outline-none cursor-pointer ${
+                                  className={`py-1 border border-gray-300 shadow-xl rounded-md  w-full focus:outline-none cursor-pointer ${
                                     isdemofollownotClosed ? "bg-gray-200" : ""
                                   }`}
                                 >
@@ -1073,7 +1200,7 @@ const LeadFollowUp = () => {
                                       selectStaff: ""
                                     }))
                                   }}
-                                  className="w-full  focus:outline-none "
+                                  className="w-full  focus:outline-none shadow-xl "
                                   styles={{
                                     control: (base, state) => ({
                                       ...base,
@@ -1141,7 +1268,7 @@ const LeadFollowUp = () => {
                               {demoerror.selectStaff}
                             </p>
                           )}
-                          {!isClosed && (
+                          {formData.followupType === "infollowup" && (
                             <div>
                               <label className="block text-left font-semibold text-gray-500">
                                 {isAllocated
@@ -1160,9 +1287,9 @@ const LeadFollowUp = () => {
                                   demoData.demoallocatedDate ||
                                   formData?.nextfollowUpDate
                                 }
-                                className="rounded-md w-full py-1 px-2 border border-gray-200 focus:outline-none hover:cursor-pointer"
+                                className="rounded-md w-full py-1 px-2 border border-gray-200 focus:outline-none hover:cursor-pointer shadow-xl"
                                 onChange={handleDataChange}
-                              ></input>
+                              />
                               <div className="text-left text-sm">
                                 {errors.nextfollowUpDate && (
                                   <p className="text-red-500">
@@ -1185,7 +1312,7 @@ const LeadFollowUp = () => {
                               rows={3}
                               disabled={isdemofollownotClosed}
                               name="Remarks"
-                              className={`rounded-lg w-full border border-gray-200 focus:outline-none px-2 ${
+                              className={`rounded-lg w-full border border-gray-200 shadow-xl focus:outline-none px-2 ${
                                 isdemofollownotClosed
                                   ? "cursor-not-allowed bg-gray-200"
                                   : "cursor-text"
@@ -1233,7 +1360,7 @@ const LeadFollowUp = () => {
                         demoDescription: ""
                       })
                     }}
-                    className="bg-gray-600 rounded-lg px-4 py-1 shadow-xl text-white "
+                    className="bg-gray-600 hover:bg-gray-700 rounded-lg px-4 py-1 shadow-xl text-white "
                   >
                     {" "}
                     CLOSE
@@ -1242,9 +1369,9 @@ const LeadFollowUp = () => {
                     onClick={
                       isAllocated ? handleDemoSubmit : handleFollowUpDateSubmit
                     }
-                    className="bg-blue-800 rounded-lg px-4 py-2  text-white shadow-xl"
+                    className="bg-blue-700 hover:bg-blue-800 rounded-lg px-4 py-2  text-white shadow-xl"
                   >
-                    {followupDateLoader ? (
+                    {followupDateLoader || loader ? (
                       <div className="flex items-center">
                         Processing
                         <FaSpinner className="animate-spin h-5 w-5  text-white ml-2" />

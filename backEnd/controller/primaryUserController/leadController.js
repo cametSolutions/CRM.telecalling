@@ -140,7 +140,7 @@ export const LeadRegister = async (req, res) => {
 export const UpdateLeadRegister = async (req, res) => {
   try {
     const { data, leadData } = req.body
-    
+
     const { docID } = req.query
     const objectId = new mongoose.Types.ObjectId(docID)
 
@@ -264,11 +264,13 @@ export const GetallfollowupList = async (req, res) => {
                 { taskallocatedTo: userObjectId }
               ],
               allocatedClosed: false,
-
+              taskClosed: false,
+              followupClosed: false
             }
           },
           leadBranch: branchObjectId,
-          reallocatedTo: false
+          reallocatedTo: false,
+          leadLost: false
         }
       } else if (pendingfollowup === "false") {
         query = {
@@ -285,6 +287,7 @@ export const GetallfollowupList = async (req, res) => {
             }
           },
           leadBranch: branchObjectId,
+          leadLost: false
 
         }
 
@@ -299,26 +302,32 @@ export const GetallfollowupList = async (req, res) => {
     const followupLeads = [];
 
     for (const lead of selectedfollowup) {
-      const matchedallocation = lead.activityLog.filter((item) => item?.taskTo === "followup")
-      if (matchedallocation && matchedallocation.length > 0) {
+      // const matchedallocation = lead.activityLog.filter((item) => item?.taskTo === "followup" && item?.followupClosed === false)
+
+      const matchedAllocations = lead.activityLog
+        .map((item, index) => ({ ...item, index })) // add index inside each item
+        .filter((item) => item.taskTo === "followup" && item.followupClosed === false);
+
+      const nextfollowUpDate = lead.activityLog[lead.activityLog.length - 1]?.nextFollowUpDate ?? null
+      if (matchedAllocations && matchedAllocations.length > 0) {
         if (
           !lead.leadByModel || !mongoose.models[lead.leadByModel] ||
-          !matchedallocation[matchedallocation.length - 1]?.taskallocatedToModel || !mongoose.models[matchedallocation[matchedallocation.length - 1]?.taskallocatedToModel] ||
-          !matchedallocation[matchedallocation.length - 1]?.taskallocatedByModel || !mongoose.models[matchedallocation[matchedallocation.length - 1]?.taskallocatedByModel]
+          !matchedAllocations[matchedAllocations.length - 1]?.taskallocatedToModel || !mongoose.models[matchedAllocations[matchedAllocations.length - 1]?.taskallocatedToModel] ||
+          !matchedAllocations[matchedAllocations.length - 1]?.taskallocatedByModel || !mongoose.models[matchedAllocations[matchedAllocations.length - 1]?.taskallocatedByModel]
         ) {
-          console.error(`Model ${lead.leadByModel}, ${matchedallocation[matchedallocation.length - 1].taskallocatedToModel}, or ${matchedallocation[matchedallocation.length - 1].taskallocatedByModel} is not registered`);
+          console.error(`Model ${lead.leadByModel}, ${matchedAllocations[matchedAllocations.length - 1].taskallocatedToModel}, or ${matchedAllocations[matchedAllocations.length - 1].taskallocatedByModel} is not registered`);
           followupLeads.push(lead);
           continue;
         }
 
         // Populate outer fields
         const leadByModel = mongoose.model(lead.leadByModel);
-        const allocatedToModel = mongoose.model(matchedallocation[matchedallocation.length - 1]?.taskallocatedToModel);
-        const allocatedByModel = mongoose.model(matchedallocation[matchedallocation.length - 1]?.taskallocatedByModel);
+        const allocatedToModel = mongoose.model(matchedAllocations[matchedAllocations.length - 1]?.taskallocatedToModel);
+        const allocatedByModel = mongoose.model(matchedAllocations[matchedAllocations.length - 1]?.taskallocatedByModel);
 
         const populatedLeadBy = await leadByModel.findById(lead.leadBy).select("name").lean();
-        const populatedAllocatedTo = await allocatedToModel.findById(matchedallocation[matchedallocation.length - 1].taskallocatedTo).select("name").lean();
-        const populatedAllocatedBy = await allocatedByModel.findById(matchedallocation[matchedallocation.length - 1].taskallocatedBy).select("name").lean();
+        const populatedAllocatedTo = await allocatedToModel.findById(matchedAllocations[matchedAllocations.length - 1].taskallocatedTo).select("name").lean();
+        const populatedAllocatedBy = await allocatedByModel.findById(matchedAllocations[matchedAllocations.length - 1].taskallocatedBy).select("name").lean();
 
         // Populate activityLog (submittedUser, etc.)
         const populatedActivityLog = await Promise.all(
@@ -349,6 +358,11 @@ export const GetallfollowupList = async (req, res) => {
           allocatedTo: populatedAllocatedTo,
           allocatedBy: populatedAllocatedBy,
           activityLog: populatedActivityLog,
+          nextFollowUpDate: nextfollowUpDate,
+          neverfollowuped: matchedAllocations[matchedAllocations.length - 1].index === lead.activityLog.length - 1,
+          currentdateNextfollowup: lead.activityLog[lead.activityLog.length - 1]?.nextFollowUpDate ? true : false,
+          allocatedfollowup: lead.activityLog[lead.activityLog.length - 1]?.taskfromFollowup,
+          allocatedTaskClosed: lead.activityLog[lead.activityLog.length - 1]?.taskClosed ?? false
         });
       }
 
@@ -1050,7 +1064,7 @@ export const GetallLead = async (req, res) => {
 }
 export const UpdateLeadfollowUpDate = async (req, res) => {
   try {
-    const { formData, closed } = req.body
+    const formData = req.body
     const { selectedleaddocId, loggeduserid } = req.query
 
     let followedByModel
@@ -1076,9 +1090,12 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
     };
 
     // Conditionally add fields only if `closed` is true
-    if (closed) {
+    if (formData.followupType === "closed") {
       activityEntry.taskClosed = true;
       activityEntry.reallocatedTo = true;
+    } else if (formData.followupType === "lost") {
+
+      activityEntry.taskClosed = true
     }
     const updatefollowUpDate = await LeadMaster.findOneAndUpdate(
       { _id: selectedleaddocId },
@@ -1086,7 +1103,8 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         $push: {
           activityLog: activityEntry
         },
-        reallocatedTo: closed
+        reallocatedTo: formData.followupType === "closed",
+        leadLost: formData.followupType === "lost"
       },
 
       { upsert: true }
@@ -1251,7 +1269,23 @@ export const updateReallocation = async (req, res) => {
     }
 
 
-
+    const activityLogEntry = {
+      submissionDate: new Date(),
+      submittedUser: allocatedBy,
+      submissiondoneByModel: allocatedByModel,
+      taskallocatedBy: allocatedBy,
+      taskallocatedByModel: allocatedByModel,
+      taskallocatedTo: selectedItem.allocatedTo,
+      taskallocatedToModel: allocatedToModel,
+      allocationDate: formData?.allocationDate,
+      remarks: formData.allocationDescription,
+      taskBy: "reallocated",
+      taskTo: allocationType
+    }
+    if (allocationType === "followup") {
+      activityLogEntry.followupClosed = false
+    }
+    // return
     const updatedLead = await LeadMaster.findByIdAndUpdate(
       {
         _id: selectedItem._id
@@ -1260,19 +1294,7 @@ export const updateReallocation = async (req, res) => {
       {
 
         $push: {
-          activityLog: {
-            submissionDate: new Date(),
-            submittedUser: allocatedBy,
-            submissiondoneByModel: allocatedByModel,
-            taskallocatedBy: allocatedBy,
-            taskallocatedByModel: allocatedByModel,
-            taskallocatedTo: selectedItem.allocatedTo,
-            taskallocatedToModel: allocatedToModel,
-            allocationDate: formData?.allocationDate,
-            remarks: formData.allocationDescription,
-            taskBy: "reallocated",
-            taskTo: allocationType
-          }
+          activityLog: activityLogEntry
         },
         $set: {
           allocationType: allocationType, // Set outside the activityLog array
@@ -1361,7 +1383,6 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         remarks: formData.allocationDescription,
         taskBy: "allocated",
         taskTo: allocationType,
-        taskfromFollowup: true
 
       };
 
@@ -1369,6 +1390,8 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       if (allocationType !== "followup") {
         activityLogEntry.allocationDate = formData.allocationDate;
         activityLogEntry.taskfromFollowup = false
+      } else if (allocationType === "followup") {
+        activityLogEntry.followupClosed = false
       }
 
       await LeadMaster.findByIdAndUpdate(
@@ -1378,7 +1401,8 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
             activityLog: activityLogEntry
           },
           $set: {
-            allocationType: allocationType
+            allocationType: allocationType,
+            taskfromFollowup: false
           }
         },
         { new: true }
@@ -1510,17 +1534,18 @@ export const UpdateLeadTask = async (req, res) => {
       remarks: taskDetails.taskDescription,
       taskBy: taskDetails.taskName,
       taskClosed: true,
-      reallocatedTo: true
     };
     // Conditionally add `reallocated: true` to the activity log
     if (isReallocated) {
-      activityLogEntry.reallocated = true;
+      activityLogEntry.reallocatedTo = true;
+    } else {
+      activityLogEntry.taskfromFollowup = true
     }
     const updateleadTask = await LeadMaster.findByIdAndUpdate(leadObjectId, {
       $push: {
         activityLog: activityLogEntry
       },
-      $set: { taskfromFollowup: false, reallocatedTo: true, allocationType: "reallocated" }
+      $set: { taskfromFollowup: false, reallocatedTo: isReallocated, allocationType: isReallocated ? "reallocated" : "tasksubmitted" }
 
     })
     if (updateleadTask) {
