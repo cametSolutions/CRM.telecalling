@@ -28,7 +28,7 @@ console.log(dates)
   ))
 
   return (
-    <div className="z-40">
+    <div className="z-50 relative">
       <DatePicker
         // selected={endDate}
         onChange={handleDateRange}

@@ -533,7 +533,7 @@ const LeadFollowUp = () => {
         <div className="grid grid-cols-2 md:flex md:flex-nowrap md:gap-6 gap-3 md:items-center w-full md:w-auto">
           {/* Date Picker */}
           {dates.startDate && (
-            <div className="w-full">
+            <div className="w-full ">
               <MyDatePicker setDates={setDates} dates={dates} />
             </div>
           )}
@@ -641,7 +641,7 @@ const LeadFollowUp = () => {
       {/* Responsive Table Container */}
       <div className="flex-1 overflow-x-auto rounded-lg text-center overflow-y-auto  shadow-xl md:mx-5 mx-3 mb-3">
         <table className=" border-collapse border border-gray-400 w-full text-sm">
-          <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 ">
+          <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
             <tr>
               <th className="border border-r-0 border-gray-400 px-4 ">Name</th>
               <th className="border border-r-0 border-l-0 border-gray-400  px-4 max-w-[200px] min-w-[200px]">
@@ -795,7 +795,7 @@ const LeadFollowUp = () => {
             )}
           </tbody>
         </table>
-        {showModal && (
+        {/* {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40 ">
             <div
               className={`bg-white shadow-xl   text-center w-full ${
@@ -827,7 +827,6 @@ const LeadFollowUp = () => {
                 >
                   History
                 </span>
-                {/* isHaveEditchoice &&  */}
                 {isOwner && !taskClosed && (
                   <span
                     className={`hover:cursor-pointer pb-1 ${
@@ -910,10 +909,7 @@ const LeadFollowUp = () => {
                                         {subItem?.followerDescription || "N/A"}
                                       </td>
                                       <td className="border border-gray-200 p-2">
-                                        {/* {new Date(item.nextfollowUpDate)
-                                          .toLocaleDateString("en-GB")
-                                          .split("/")
-                                          .join("-")} */}
+                                      
                                       </td>
                                     </tr>
                                   ))
@@ -1057,39 +1053,8 @@ const LeadFollowUp = () => {
                               </label>
                             </div>
 
-                            {/* <input
-                              type="checkbox"
-                              disabled={isdemofollownotClosed}
-                              id="close"
-                              className={`w-4 h-4 ${
-                                isdemofollownotClosed
-                                  ? "cursor-not-allowed"
-                                  : ""
-                              }`}
-                              checked={isClosed}
-                              onChange={() => {
-                                if (isAllocated) {
-                                  return
-                                }
-                                setIsClosed(!isClosed)
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  Remarks: "",
-                                  nextfollowUpDate: ""
-                                }))
-                              }}
-                            />
-                            <label htmlFor="allocation" className="text-sm">
-                              Closed
-                            </label> */}
-                            {/* <select
-                              onClick={(e) => setSelectedType(e.target.value)}
-                              className="px-2 border border-gray-200 rounded-md py-0.5 focus:outline-none cursor-pointer shadow-xl"
-                            >
-                              <option value="infollowup">Infollowup</option>
-                              <option value="closed">Closed</option>
-                              <option value="lost">Lost</option>
-                            </select> */}
+                          
+                           
                             <div className="relative inline-block w-32">
                               <select
                                 disabled={isAllocated}
@@ -1400,7 +1365,7 @@ const LeadFollowUp = () => {
               )}
             </div>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   )
