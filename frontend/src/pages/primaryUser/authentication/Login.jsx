@@ -22,7 +22,7 @@ const Login = () => {
       setLoading(true)
       const response = await api.post(`/auth/login`, data)
       const datas = await response.data
-      const { token, User, role } = datas
+      const { token, User} = datas
       if (response.status === 200) {
         toast.success(response.data.message, {
           icon: "🚀",

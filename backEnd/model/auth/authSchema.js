@@ -29,7 +29,7 @@ const staffSchema = new Schema(
     role: {
       type: String
     },
-
+    activeRole: { type: String },
     privilegeleavestartsfrom: {
       type: String
     },
@@ -91,7 +91,7 @@ const staffSchema = new Schema(
     documentUrl: {
       type: [String]
     },
-    attendanceId: { type: Number, unique: true,index:true },
+    attendanceId: { type: Number, unique: true, index: true },
     callstatus: {
       totalCall: { type: Number, default: 0 },
       solvedCalls: { type: Number, default: 0 },
@@ -182,6 +182,7 @@ const adminSchema = new Schema(
       required: [true, "Role is required"],
       enum: ["Staff", "Admin"]
     },
+    activeRole: { type: String },
     verified: {
       type: Boolean,
       default: false

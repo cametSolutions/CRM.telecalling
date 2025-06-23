@@ -187,8 +187,17 @@ const LeadFollowUp = () => {
     return local.toISOString().split("T")[0] // e.g., "2025-06-12"
   }
   useEffect(() => {
-    if (loggedusersallocatedleads && dates.endDate) {
+    if (loggedusersallocatedleads && dates.endDate && loggedUser) {
       if (pending && ownFollowUp) {
+        const ownFollow = loggedusersallocatedleads.followupLeads.filter(
+          (lead) =>
+            lead.activityLog?.some(
+              (log) =>
+                log.taskTo === "followup" &&
+                log.taskallocatedTo._id === loggedUser._id &&
+                log.taskClosed === false
+            )
+        )
         const currentDate = new Date()
         const endDateLocal = getLocalDate(new Date(dates.endDate))
         formatdate(currentDate)
@@ -199,10 +208,10 @@ const LeadFollowUp = () => {
             : endDateLocal
 
         const neverfollowupedLeads =
-          loggedusersallocatedleads.followupLeads.filter(
+          ownFollow.filter(
             (lead) => lead.neverfollowuped
           )
-        const havenextFollowup = loggedusersallocatedleads.followupLeads.filter(
+        const havenextFollowup = ownFollow.filter(
           (lead) => lead.currentdateNextfollowup
         )
         const filteredcurrentdatefollowupLeads = havenextFollowup.filter(
@@ -218,11 +227,11 @@ const LeadFollowUp = () => {
         ]
 
         const taskSubmittedLeads =
-          loggedusersallocatedleads.followupLeads.filter(
+          ownFollow.filter(
             (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
           )
         const nonsubmittedtakleads =
-          loggedusersallocatedleads.followupLeads.filter(
+          ownFollow.filter(
             (lead) =>
               lead.allocatedfollowup && lead.allocatedTaskClosed === false
           )
@@ -238,7 +247,7 @@ const LeadFollowUp = () => {
 
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
     }
-  }, [loggedusersallocatedleads, dates, pending, ownFollowUp])
+  }, [loggedusersallocatedleads, dates, pending, ownFollowUp,loggedUser])
   // useEffect(() => {
   //   if (leads && leads.length && loggedUser) {
   //     const currentDate = new Date()
@@ -378,12 +387,12 @@ const LeadFollowUp = () => {
       setIsEditable(true)
       setIsAllocated(true)
     }
-    const isfollowupclosed = history.some(
-      (item) =>
-        item.submittedUser._id === loggedUser._id &&
-        item.taskBy === "followup" &&
-        item.taskClosed === false
-    )
+    // const isfollowupclosed = history.some(
+    //   (item) =>
+    //     item.submittedUser._id === loggedUser._id &&
+    //     item.taskBy === "followup" &&
+    //     item.taskClosed === false
+    // )
     const userFollowups = history.filter(
       (item) =>
         item.submittedUser._id === loggedUser._id && item.taskBy === "followup"
@@ -478,12 +487,11 @@ const LeadFollowUp = () => {
       if (!formData.followUpDate)
         newErrors.followUpDate = "Follow Up Date is required"
       if (formData.followupType === "infollowup") {
-        if (!formData.nextfollowUpDate )
+        if (!formData.nextfollowUpDate)
           newErrors.nextfollowUpDate = "Next Follow Up Date Is Required"
       }
 
-    
-        if (!formData.Remarks) newErrors.Remarks = "Remarks is Required"
+      if (!formData.Remarks) newErrors.Remarks = "Remarks is Required"
 
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors)
@@ -516,6 +524,7 @@ const LeadFollowUp = () => {
       console.log("error:", error.message)
     }
   }
+
   return (
     <div className="h-full flex flex-col ">
       {loading && (
@@ -795,7 +804,7 @@ const LeadFollowUp = () => {
             )}
           </tbody>
         </table>
-        {/* {showModal && (
+        {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40 ">
             <div
               className={`bg-white shadow-xl   text-center w-full ${
@@ -908,9 +917,7 @@ const LeadFollowUp = () => {
                                       <td className="border border-gray-200 p-2">
                                         {subItem?.followerDescription || "N/A"}
                                       </td>
-                                      <td className="border border-gray-200 p-2">
-                                      
-                                      </td>
+                                      <td className="border border-gray-200 p-2"></td>
                                     </tr>
                                   ))
                                 ) : (
@@ -1034,7 +1041,10 @@ const LeadFollowUp = () => {
                                 }`}
                                 checked={isAllocated}
                                 onChange={() => {
-                                  if (formData.followupType==="closed"||formData.followupType==="lost") {
+                                  if (
+                                    formData.followupType === "closed" ||
+                                    formData.followupType === "lost"
+                                  ) {
                                     return
                                   }
                                   setIsAllocated(!isAllocated)
@@ -1053,8 +1063,6 @@ const LeadFollowUp = () => {
                               </label>
                             </div>
 
-                          
-                           
                             <div className="relative inline-block w-32">
                               <select
                                 disabled={isAllocated}
@@ -1064,7 +1072,6 @@ const LeadFollowUp = () => {
                                     ...prev,
                                     followupType: e.target.value
                                   }))
-                               
                                 }}
                                 onFocus={() => setIsdropdownOpen(true)}
                                 onBlur={() => setIsdropdownOpen(false)}
@@ -1365,7 +1372,7 @@ const LeadFollowUp = () => {
               )}
             </div>
           </div>
-        )} */}
+        )}
       </div>
     </div>
   )
