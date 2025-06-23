@@ -3,7 +3,6 @@ import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
 import { FaCalendarAlt } from "react-icons/fa"
 const MyDatePicker = ({ setDates, dates, onClear, loader }) => {
-console.log(dates)
 
   const handleDateRange = (date) => {
   

@@ -177,6 +177,7 @@ export const StaffRegister = async (req, res) => {
       designation,
       gender,
       role,
+
       department,
       assignedto,
       attendanceId
@@ -195,6 +196,7 @@ export const StaffRegister = async (req, res) => {
         password,
         isVerified,
         role,
+        activeRole: role,
         dateofbirth,
         bloodgroup,
         gender,
@@ -226,7 +228,7 @@ export const StaffRegister = async (req, res) => {
         .json({ message: "staff with this email already exists" })
     }
   } catch (error) {
-    console.log("ERROR:",error.message)
+    console.log("ERROR:", error.message)
     let statusCode = 500
     let message = "Internal Server Error"
     if (error.code === 11000) {
@@ -258,11 +260,11 @@ export const StaffRegister = async (req, res) => {
 export const UpdateUserandAdmin = async (req, res) => {
   const { userId, userData, tabledata, userlevelPermission, imageData } =
     req.body
-console.log(userId)
+  console.log(userId)
   const { profileUrl, documentUrl } = imageData
   const { role } = userData
 
-  const { assignedto, selected, permissionLevel, ...filteredUserData } =
+  const { assignedto, permissionLevel, ...filteredUserData } =
     userData
 
   const { password } = filteredUserData
@@ -279,12 +281,12 @@ console.log(userId)
     assignedtoModel = "Admin"
   }
   try {
-    if (role === "Staff") {
+    
       const updateQuery = {
         $set: {
           assignedtoModel,
           assignedto,
-          ...userData, // Other fields to update
+          ...filteredUserData, // Other fields to update
           permissionLevel: [userlevelPermission] // Wrap in an array as per schema
         }
       }
@@ -306,7 +308,7 @@ console.log(userId)
       if (profileUrl.length > 0) {
         updateQuery.$set.profileUrl = profileUrl
       }
-      // Perform the update with findByIdAndUpdate
+      // Perform the update with findByIdAndUpdate//if the its role admin its saved in the staff collection
       const updateStaff = await Staff.findByIdAndUpdate(
         userId,
         updateQuery,
@@ -314,11 +316,11 @@ console.log(userId)
       )
 
       if (!updateStaff) {
-        return res.status(404).json({ message: "Staff member not found" })
+        return res.status(404).json({ message: "  Not found" })
       }
 
-      return res.status(200).json({ message: "Staff updated succesfully" })
-    }
+      return res.status(200).json({ message: "updated succesfully" })
+    
   } catch (error) {
     console.log("error:", error.message)
     res.status(500).json({ message: "Internal servor error" })
@@ -358,12 +360,7 @@ export const Login = async (req, res) => {
       return res.status(400).json({ message: "Invalid login credentials" })
     }
     const token = generateToken(res, user._id)
-    if (user.role === "Admin") {
-      const allbranches = await Branch.find()
-      const branch = allbranches.map((branch) => branch.branchName)
-
-      user.branchName = branch
-    }
+    
 
     if (token) {
       const { password, ...userwithoutpassword } = user

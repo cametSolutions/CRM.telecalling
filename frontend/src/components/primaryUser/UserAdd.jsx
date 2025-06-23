@@ -364,6 +364,8 @@ const UserAdd = ({
 
   const onSubmit = (data) => {
     if (process === "Registration") {
+const [userId, userRole] = data.assignedto.split("|")
+console.log(userId,userRole)
       if (data) {
         data.name.trim(),
           data.email.trim(),
@@ -373,13 +375,14 @@ const UserAdd = ({
           data.pincode.trim(),
           data.designation.trim()
       }
+ 
       const formattedData = {
         ...data,
         department: data.department || null, // Set to null if empty
         assignedto: data.assignedto || null // Set to null if empty
       }
 
-      handleUserData(formattedData, imageData, tableData)
+      handleUserData(data, imageData, tableData)
     } else if (process === "Edit") {
       handleEditedData(
         data,
@@ -803,7 +806,7 @@ const UserAdd = ({
                 <option value="">-assignedto --</option>
 
                 {users?.map((user) => (
-                  <option key={user._id} value={user._id}>
+                  <option key={user._id}  value={`${user._id}|${user.role}`}>
                     {user.name}
                   </option>
                 ))}
