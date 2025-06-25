@@ -241,6 +241,7 @@ export default function AdminHeader() {
       label: "Leave Summary"
     }
   ]
+console.log(user)
   return (
     <>
       <header className=" bg-gray-3s00 md:bg-white sticky top-0 z-40 h-16 lg:h-20 flex  shadow-md items-center">
@@ -327,7 +328,7 @@ export default function AdminHeader() {
             <span>{user?.role}</span>
           </div>
           <div className="text-black bg-gray-200 py-1 px-4">
-            {user?.branchName.join(" | ")}
+            {user?.branchName?.join(" | ")}
           </div>
           <div className="text-gray-500 mt-3 px-4">Menu</div>
 

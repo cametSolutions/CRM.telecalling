@@ -207,10 +207,9 @@ const LeadFollowUp = () => {
               formatdate(currentDate)
             : endDateLocal
 
-        const neverfollowupedLeads =
-          ownFollow.filter(
-            (lead) => lead.neverfollowuped
-          )
+        const neverfollowupedLeads = ownFollow.filter(
+          (lead) => lead.neverfollowuped
+        )
         const havenextFollowup = ownFollow.filter(
           (lead) => lead.currentdateNextfollowup
         )
@@ -226,15 +225,12 @@ const LeadFollowUp = () => {
           ...new Set([...overdueFollowups, ...filteredcurrentdatefollowupLeads])
         ]
 
-        const taskSubmittedLeads =
-          ownFollow.filter(
-            (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
-          )
-        const nonsubmittedtakleads =
-          ownFollow.filter(
-            (lead) =>
-              lead.allocatedfollowup && lead.allocatedTaskClosed === false
-          )
+        const taskSubmittedLeads = ownFollow.filter(
+          (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
+        )
+        const nonsubmittedtakleads = ownFollow.filter(
+          (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed === false
+        )
         setAllocatedLeads(nonsubmittedtakleads)
 
         const mergedall = [
@@ -243,11 +239,26 @@ const LeadFollowUp = () => {
           ...taskSubmittedLeads
         ]
         setTableData(mergedall)
+      } else if (pending && !ownFollowUp) {
+console.log(loggedusersallocatedleads.followupLeads)
+        const departmentfollowup =
+          loggedusersallocatedleads.followupLeads.filter((lead) =>
+            lead.activityLog?.some(
+              (log) =>
+                log.taskTo === "followup" &&
+                log.taskallocatedBy._id === loggedUser._id &&
+                log.taskClosed === false
+            )
+          )
+console.log(departmentfollowup)
+console.log("h")
+      } else if (!pending && ownFollowUp) {
+      } else if (!pending && !ownFollowUp) {
       }
 
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
     }
-  }, [loggedusersallocatedleads, dates, pending, ownFollowUp,loggedUser])
+  }, [loggedusersallocatedleads, dates, pending, ownFollowUp, loggedUser])
   // useEffect(() => {
   //   if (leads && leads.length && loggedUser) {
   //     const currentDate = new Date()

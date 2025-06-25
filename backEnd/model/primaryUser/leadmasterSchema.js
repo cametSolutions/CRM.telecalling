@@ -1,11 +1,10 @@
-import mongoose, { mongo } from "mongoose"
+import mongoose from "mongoose"
 
 const leadSchema = new mongoose.Schema(
   {
     leadId: { type: String, required: true },
     leadDate: { type: Date },
     customerName: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" },
-
     mobile: { type: String },
     phone: { type: String },
     email: { type: String },
