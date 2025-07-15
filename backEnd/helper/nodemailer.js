@@ -134,7 +134,7 @@ export const sendEmail = async (
       `
   // solutions@camet.in
   try {
-    const info = await transporter.sendMail({
+    const info = await transporter.sendbMail({
       from: notificationemail, // Sender's name and address
       to: `${calldata?.customeremail}`, // Recipient's email address
       cc: `${calldata?.ccMail}`,

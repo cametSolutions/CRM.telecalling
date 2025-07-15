@@ -19,15 +19,15 @@ function UserEdit() {
     userData,
     userId,
     tabledata,
-    userlevelPermission,
+  
     imageData
   ) => {
-console.log(userData)
+
 
     try {
       const response = await api.post(
         "/auth/userEdit",
-        { userData, userId, tabledata, userlevelPermission, imageData },
+        { userData, userId, tabledata, imageData },
         {
           withCredentials: true
         }

@@ -258,13 +258,12 @@ export const StaffRegister = async (req, res) => {
 }
 
 export const UpdateUserandAdmin = async (req, res) => {
-  const { userId, userData, tabledata, userlevelPermission, imageData } =
+  const { userId, userData, tabledata, imageData } =
     req.body
-  console.log(userId)
-  const { profileUrl, documentUrl } = imageData
+  const { profileUrl = "", documentUrl = "" } = imageData
   const { role } = userData
 
-  const { assignedto, permissionLevel, ...filteredUserData } =
+  const { assignedto, ...filteredUserData } =
     userData
 
   const { password } = filteredUserData
@@ -281,46 +280,48 @@ export const UpdateUserandAdmin = async (req, res) => {
     assignedtoModel = "Admin"
   }
   try {
-    
-      const updateQuery = {
-        $set: {
-          assignedtoModel,
-          assignedto,
-          ...filteredUserData, // Other fields to update
-          permissionLevel: [userlevelPermission] // Wrap in an array as per schema
-        }
-      }
 
-      // Check if tableData is empty or not, and update the selected field accordingly
-      if (tabledata.length === 0) {
-        updateQuery.$set.selected = [] // Explicitly set selected to an empty array
-      } else {
-        updateQuery.$set.selected = tabledata // Add items to selected field if not empty
+    const updateQuery = {
+      $set: {
+        assignedtoModel,
+        assignedto,
+        ...filteredUserData, // Other fields to update
       }
+    }
 
-      if (updateQuery.$set.password) {
-        const salt = await bcrypt.genSalt(10)
-        const hashedPassword = await bcrypt.hash(password, salt)
-        updateQuery.$set.password = hashedPassword
-      } else {
-        delete updateQuery.$set.password
-      }
-      if (profileUrl.length > 0) {
-        updateQuery.$set.profileUrl = profileUrl
-      }
-      // Perform the update with findByIdAndUpdate//if the its role admin its saved in the staff collection
-      const updateStaff = await Staff.findByIdAndUpdate(
-        userId,
-        updateQuery,
-        { new: true } // Return the updated document
-      )
+    // Check if tableData is empty or not, and update the selected field accordingly
+    if (tabledata.length === 0) {
+      updateQuery.$set.selected = [] // Explicitly set selected to an empty array
+    } else {
+      updateQuery.$set.selected = tabledata // Add items to selected field if not empty
+    }
 
-      if (!updateStaff) {
-        return res.status(404).json({ message: "  Not found" })
-      }
+    if (updateQuery.$set.password) {
+      const salt = await bcrypt.genSalt(10)
+      const hashedPassword = await bcrypt.hash(password, salt)
+      updateQuery.$set.password = hashedPassword
+    } else {
+      delete updateQuery.$set.password
+    }
+    if (profileUrl.length > 0) {
+      updateQuery.$set.profileUrl = profileUrl
+    }
+    if (documentUrl.length > 0) {
+      updateQuery.$set.documentUrl = documentUrl
+    }
+    // Perform the update with findByIdAndUpdate//if the its role admin its saved in the staff collection
+    const updateStaff = await Staff.findByIdAndUpdate(
+      userId,
+      updateQuery,
+      { new: true } // Return the updated document
+    )
 
-      return res.status(200).json({ message: "updated succesfully" })
-    
+    if (!updateStaff) {
+      return res.status(404).json({ message: "  Not found" })
+    }
+
+    return res.status(200).json({ message: "updated succesfully" })
+
   } catch (error) {
     console.log("error:", error.message)
     res.status(500).json({ message: "Internal servor error" })
@@ -360,7 +361,7 @@ export const Login = async (req, res) => {
       return res.status(400).json({ message: "Invalid login credentials" })
     }
     const token = generateToken(res, user._id)
-    
+
 
     if (token) {
       const { password, ...userwithoutpassword } = user
