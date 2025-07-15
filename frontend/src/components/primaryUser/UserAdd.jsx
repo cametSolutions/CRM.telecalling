@@ -51,11 +51,6 @@ const UserAdd = ({
   const [selectedCountry, setSelectedCountry] = useState(null)
   const [selectedState, setSelectedState] = useState(null)
   const [tableData, setTableData] = useState([])
-  const [userlevelPermission, setUserLevelPermissions] = useState({
-    level1: false,
-    level2: false,
-    level3: false
-  })
 
   const [imageData, setImageData] = useState({
     profileUrl: [],
@@ -217,7 +212,6 @@ const UserAdd = ({
       setValue("country", defaultCountry.value)
     }
   }, [defaultCountry])
-
   useEffect(() => {
     if (
       User &&
@@ -231,8 +225,10 @@ const UserAdd = ({
       users &&
       users.length > 0
     ) {
+      
       setIsEditMode(true)
       setValue("name", User.name)
+      setValue("role", User.role)
       setValue("email", User.email)
       setValue("mobile", User.mobile)
       setValue("privilegeleavestartsfrom", User.privilegeleavestartsfrom)
@@ -309,8 +305,6 @@ const UserAdd = ({
           }
         }
       })
-      // setTableData((prev) => [...prev, tableObject])
-      // setTableData(() => tableObject)
     }
   }, [User, departments, company, selectedCompany, branches, users, setValue])
   const handleEdit = (id) => {
@@ -344,8 +338,6 @@ const UserAdd = ({
     setTableData(filtereddData)
   }
 
-  
-  
   const profileImage = (url) => {
     setImageData((prevData) => ({
       ...prevData,
@@ -364,8 +356,6 @@ const UserAdd = ({
 
   const onSubmit = (data) => {
     if (process === "Registration") {
-const [userId, userRole] = data.assignedto.split("|")
-console.log(userId,userRole)
       if (data) {
         data.name.trim(),
           data.email.trim(),
@@ -375,22 +365,15 @@ console.log(userId,userRole)
           data.pincode.trim(),
           data.designation.trim()
       }
- 
+
       const formattedData = {
         ...data,
-        department: data.department || null, // Set to null if empty
-        assignedto: data.assignedto || null // Set to null if empty
+        department: data.department || null,
       }
-
-      handleUserData(data, imageData, tableData)
+      handleUserData(formattedData, imageData, tableData)
     } else if (process === "Edit") {
-      handleEditedData(
-        data,
-        User?._id,
-        tableData,
-        userlevelPermission,
-        imageData
-      )
+    
+      handleEditedData(data, User?._id, tableData, imageData)
     }
   }
   return (
@@ -688,6 +671,7 @@ console.log(userId,userRole)
               >
                 <option value="Staff">Staff</option>
                 <option value="Admin">Admin</option>
+                <option value="Manager">Manager</option>
               </select>
             </div>
 
@@ -800,17 +784,26 @@ console.log(userId,userRole)
               </label>
 
               <select
-                {...register("assignedto")}
+                {...register("assignedto", {
+                  required: "Assigned to is Required"
+                })}
                 className="w-full mt-1 block border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none max-h-40 overflow-y-auto"
               >
                 <option value="">-assignedto --</option>
 
-                {users?.map((user) => (
-                  <option key={user._id}  value={`${user._id}|${user.role}`}>
-                    {user.name}
-                  </option>
-                ))}
+                {users &&
+                  users.length > 0 &&
+                  users?.map((user) => (
+                    <option key={user._id} value={user._id}>
+                      {user.name}
+                    </option>
+                  ))}
               </select>
+              {errors.assignedto && (
+                <p className="text-red-500 text-sm">
+                  {errors.assignedto.message}
+                </p>
+              )}
             </div>
             {/* Verified Field */}
             <div>
@@ -830,7 +823,7 @@ console.log(userId,userRole)
               <label className="block mb-1 font-semibold">Staff Id</label>
               <input
                 type="Number"
-                {...register("attendanceId")}
+                {...register("attendanceId", { required: "Id is required" })}
                 placeholder="Enter an address"
                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
               />

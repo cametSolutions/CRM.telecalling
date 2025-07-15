@@ -8,8 +8,6 @@ function UserRegistration() {
   const userData = localStorage.getItem("user")
   const user = JSON.parse(userData)
   const handleSubmit = async (userData, image, tabledata) => {
-console.log(userData)
-return
     try {
       const response = await api.post(
         "/auth/userRegistration",
