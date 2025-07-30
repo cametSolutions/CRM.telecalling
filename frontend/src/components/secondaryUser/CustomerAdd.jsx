@@ -70,6 +70,7 @@ const CustomerAdd = ({
   const [licenseAvailable, setLicenseAvailable] = useState(true)
   const [license, setLicense] = useState([])
   const selectedProduct = watch("productName")
+  console.log(selectedProduct)
   const selectedCompany = watch("companyName")
   const [isLicense, setlicenseExist] = useState([])
   const [tableObject, setTableObject] = useState({
@@ -248,6 +249,7 @@ const CustomerAdd = ({
               reasonofStatus: customer?.selected[0]?.reasonofStatus || ""
             }
           ])
+          console.log(customer?.selected[0])
           // setTableData((prev) => [...prev, tableObject])
           if (customer?.selected[0]?.productName)
             handleProductChange(
@@ -264,6 +266,7 @@ const CustomerAdd = ({
                 value: customer?.selected[0]?.company_id
               },
               true
+              
             )
         }
       }
@@ -272,6 +275,87 @@ const CustomerAdd = ({
     // Directly set products to productData
   }, [productData, reset, customer, partners])
 
+  // First effect: handles product + sets value
+  useEffect(() => {
+    if (productData) {
+      setTableObject((prev) => ({
+        ...prev,
+        isActive: "Running"
+      }))
+      setPartner(partners)
+      setProductOptions(
+        productData.map((product) => ({
+          label: product.productName,
+          value: product._id
+        }))
+      )
+
+      if (customer?.selected?.length > 0) {
+        const selectedCustomer = customer.selected[0]
+        setShowTable(true)
+
+        if (selectedCustomer?.productName) {
+          handleProductChange(
+            {
+              label: selectedCustomer.productName,
+              value: selectedCustomer.product_id
+            },
+            true
+          )
+        }
+      }
+    }
+  }, [productData, reset, customer, partners])
+
+  // Second effect: run company handler after product is set
+  useEffect(() => {
+    const selectedCustomer = customer?.selected?.[0]
+    const selectedProduct = watch("productName")
+
+    if (selectedCustomer?.companyName && selectedProduct?.value) {
+      handleCompanyChange(
+        {
+          label: selectedCustomer.companyName,
+          value: selectedCustomer.company_id
+        },
+        true,
+        selectedCustomer
+      )
+    }
+  }, [watch("productName")])
+
+  const handleCompanyChange = (selectedOption, onEdit = false) => {
+    setValue("companyName", selectedOption)
+    setTableObject((prev) => ({
+      ...prev,
+      company_id: selectedOption.value,
+      companyName: selectedOption.label
+    }))
+    console.log(productData)
+    console.log(selectedProduct)
+    const selectedProductData = productData.find(
+      (product) => product._id === selectedProduct?.value
+    )
+console.log(selectedProductData)
+    const selectedCompanyData = selectedProductData?.selected.filter(
+      (company) => company.company_id === selectedOption?.value
+    )
+    console.log(selectedProductData)
+    console.log(selectedCompanyData)
+    if (selectedCompanyData) {
+      console.log("hhh")
+      setBranchOptions(
+        selectedCompanyData.map((branch) => ({
+          label: branch.branchName,
+          value: branch.branch_id
+        }))
+      )
+      if (!onEdit) {
+        setValue("branchName", null)
+      }
+    }
+  }
+  
   useEffect(() => {
     if (licensenumber) {
       setLicense(licensenumber)
@@ -457,6 +541,7 @@ const CustomerAdd = ({
         })
       }
       if (itemToEdit.branch_id) {
+        console.log("h")
         setValue("branchName", {
           value: itemToEdit.branch_id,
           label: itemToEdit.branchName
@@ -506,34 +591,8 @@ const CustomerAdd = ({
       }
     }
   }
+  console.log(branchOptions)
 
-  const handleCompanyChange = (selectedOption, onEdit = false) => {
-    setValue("companyName", selectedOption)
-    setTableObject((prev) => ({
-      ...prev,
-      company_id: selectedOption.value,
-      companyName: selectedOption.label
-    }))
-    const selectedProductData = productData.find(
-      (product) => product._id === selectedProduct?.value
-    )
-
-    const selectedCompanyData = selectedProductData?.selected.filter(
-      (company) => company.company_id === selectedOption?.value
-    )
-
-    if (selectedCompanyData) {
-      setBranchOptions(
-        selectedCompanyData.map((branch) => ({
-          label: branch.branchName,
-          value: branch.branch_id
-        }))
-      )
-      if (!onEdit) {
-        setValue("branch", null)
-      }
-    }
-  }
   ///now created
   const emailDomains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com"]
 
@@ -541,8 +600,9 @@ const CustomerAdd = ({
     const domain = email.split("@")[1]
     return emailDomains.includes(domain) || "Invalid email domain"
   }
-
+  console.log(branchOptions)
   const handleBranchChange = (selectedOption) => {
+    console.log("h")
     setTableObject((prev) => ({
       ...prev,
       branch_id: selectedOption.value,
@@ -923,7 +983,7 @@ const CustomerAdd = ({
                     <Select
                       {...field}
                       options={branchOptions}
-                      value={field.value}
+                      // value={field.value}
                       onChange={(option) => {
                         field.onChange(option)
                         handleBranchChange(option)
@@ -933,7 +993,6 @@ const CustomerAdd = ({
                     />
                   )}
                 />
-
               </div>
               <div>
                 <label

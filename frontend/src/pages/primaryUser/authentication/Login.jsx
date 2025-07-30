@@ -16,7 +16,7 @@ const Login = () => {
     formState: { errors }
   } = useForm()
   const navigate = useNavigate()
-
+console.log("hhh")
   const onSubmit = async (data) => {
     try {
       setLoading(true)
@@ -43,7 +43,7 @@ const Login = () => {
           if (User.role === "Admin") {
             setLoading(false)
             navigate("/admin/dashBoard")
-          } else if (User.role === "Staff") {
+          } else if (User.role === "Staff"||User.role==="Manager") {
             setLoading(false)
             navigate("/staff/dashBoard")
           }

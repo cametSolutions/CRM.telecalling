@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import  { useEffect, useState } from "react"
 import uploadImageToCloudinary from "../../utils/uploadImageToCloudinary.js"
 
 function ImageInput({ onSelect, prevUrl, tag }) {

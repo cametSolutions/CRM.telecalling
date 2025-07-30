@@ -1,20 +1,19 @@
-import React, { useEffect, useState, useRef } from "react"
-
+import { useEffect, useState } from "react"
+import { PropagateLoader } from "react-spinners"
+import MyDatePicker from "../../../components/common/MyDatePicker"
 import BarLoader from "react-spinners/BarLoader"
 import api from "../../../api/api"
 import { formatDate } from "../../../utils/dateUtils"
 import UseFetch from "../../../hooks/useFetch"
 import Tiles from "../../../components/common/Tiles"
-import {
-  formatDistanceStrict,
-  parseISO,
-  differenceInDays,
-  format
-} from "date-fns"
+import { parseISO, differenceInDays } from "date-fns"
 
 const ExpiredCustomer = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null)
+  const [dates, setDates] = useState({ startDate: "", endDate: "" })
   const [noofCalls, setnoofCalls] = useState([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [searchList, setSearchList] = useState([])
   const [hasMounted, setHasMounted] = useState(false)
   const [user, setUser] = useState(null)
   const [Calls, setCalls] = useState([])
@@ -25,42 +24,73 @@ const ExpiredCustomer = () => {
   const [expiredCustomerId, setExpiredCustomerId] = useState([])
   const [expiredCustomerList, setexpiryRegisterList] = useState([])
   const { data: branches } = UseFetch("/branch/getBranch")
+  const [userBranchId, setUserBranchId] = useState([])
   const [isToggled, setIsToggled] = useState(false)
   const [isCallsToggled, setIscallsToggled] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [selectedBranch, setSelectedBranch] = useState("All")
   const [expiredCustomerCalls, setExpiredCustomerCalls] = useState([])
-  const { data: expiryRegisterCustomer, loading: expiryloding } = UseFetch(
-    "/customer/getallExpiryregisterCustomer"
-  )
-  const isFirstRender = useRef(true)
+  console.log(branches)
   useEffect(() => {
-    if (expiryRegisterCustomer) {
+    const now = new Date()
+
+    const startOfMonthUTC = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0)
+    )
+
+    const endOfMonthUTC = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 0, 0, 0, 0)
+    )
+    setDates({
+      startDate: startOfMonthUTC.toISOString(),
+      endDate: endOfMonthUTC.toISOString()
+    })
+  }, [])
+  useEffect(() => {
+    if (branches) {
       const userData = localStorage.getItem("user")
       const user = JSON.parse(userData)
       setUser(user)
-      if (user.role === "Admin") {
-        setexpiryRegisterList(expiryRegisterCustomer)
+      if (user.role !== "Admin") {
+        const branchid = user.selected.map((branch) => branch.branch_id)
+        console.log(branches)
+        setUserBranchId(branchid)
       } else {
-        const userBranchName = new Set(
-          user?.selected?.map((branch) => branch.branchName)
-        )
-
-        const branchNamesArray = Array.from(userBranchName)
-
-        const filtered = expiryRegisterCustomer.filter((customer) =>
-          customer.selected.some((selection) =>
-            branchNamesArray.includes(selection.branchName)
-          )
-        )
-        setexpiryRegisterList(filtered)
+        console.log(branches)
+        const branchid = branches.map((id) => id._id)
+        console.log(branchid)
+        setUserBranchId(branchid)
       }
-      const expiredCustomerIds = expiryRegisterCustomer.map(
-        (customer) => customer._id
-      )
-      setExpiredCustomerId(expiredCustomerIds)
     }
-  }, [expiryRegisterCustomer])
+  }, [branches])
+  console.log(dates)
+  // useEffect(() => {
+  //   if (expiryRegisterCustomer) {
+  //     const userData = localStorage.getItem("user")
+  //     const user = JSON.parse(userData)
+  //     setUser(user)
+  //     if (user.role === "Admin") {
+  //       setexpiryRegisterList(expiryRegisterCustomer)
+  //     } else {
+  //       const userBranchName = new Set(
+  //         user?.selected?.map((branch) => branch.branchName)
+  //       )
+
+  //       const branchNamesArray = Array.from(userBranchName)
+
+  //       const filtered = expiryRegisterCustomer.filter((customer) =>
+  //         customer.selected.some((selection) =>
+  //           branchNamesArray.includes(selection.branchName)
+  //         )
+  //       )
+  //       setexpiryRegisterList(filtered)
+  //     }
+  //     const expiredCustomerIds = expiryRegisterCustomer.map(
+  //       (customer) => customer._id
+  //     )
+  //     setExpiredCustomerId(expiredCustomerIds)
+  //   }
+  // }, [expiryRegisterCustomer])
 
   useEffect(() => {
     if (branches) {
@@ -68,49 +98,51 @@ const ExpiredCustomer = () => {
     }
   }, [branches])
 
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return // Prevent initial API call
-    }
-    const fetchExpiryRegisterList = async () => {
-      try {
-        const endpoint = isToggled
-          ? `/customer/getallExpiryregisterCustomer?nextmonthReport=${isToggled}`
-          : "/customer/getallExpiryregisterCustomer"
+  // useEffect(() => {
+  //   if (isFirstRender.current) {
+  //     isFirstRender.current = false
+  //     return // Prevent initial API call
+  //   }
+  //   const fetchExpiryRegisterList = async () => {
+  //     try {
+  //       const endpoint = isToggled
+  //         ? `/customer/getallExpiryregisterCustomer?nextmonthReport=${isToggled}`
+  //         : `/customer/getallExpiryregisterCustomer?startDate=${dates.startDate}&endDate=${dates.endDate}`
+  //       console.log(endpoint)
+  //       const response = await api.get(endpoint)
+  //       const data = response.data.data
+  //       if (user.role === "Admin") {
+  //         setexpiryRegisterList(data)
+  //       } else {
+  //         const userBranchName = new Set(
+  //           user?.selected?.map((branch) => branch.branchName)
+  //         )
 
-        const response = await api.get(endpoint)
-        const data = response.data.data
-        if (user.role === "Admin") {
-          setexpiryRegisterList(data)
-        } else {
-          const userBranchName = new Set(
-            user?.selected?.map((branch) => branch.branchName)
-          )
+  //         const branchNamesArray = Array.from(userBranchName)
 
-          const branchNamesArray = Array.from(userBranchName)
+  //         const filtered = data.filter((customer) =>
+  //           customer.selected.some((selection) =>
+  //             branchNamesArray.includes(selection.branchName)
+  //           )
+  //         )
+  //         setexpiryRegisterList(filtered)
+  //       }
+  //       const expiredCustomerIds = data.map((customer) => customer._id)
+  //       setExpiredCustomerId(expiredCustomerIds)
 
-          const filtered = data.filter((customer) =>
-            customer.selected.some((selection) =>
-              branchNamesArray.includes(selection.branchName)
-            )
-          )
-          setexpiryRegisterList(filtered)
-        }
-        const expiredCustomerIds = data.map((customer) => customer._id)
-        setExpiredCustomerId(expiredCustomerIds)
-
-        setTimeout(() => setLoading(false), 0)
-      } catch (error) {
-        console.error("Error fetching user list:", error)
-      }
-    }
-
-    fetchExpiryRegisterList()
-  }, [isToggled])
+  //       setTimeout(() => setLoading(false), 0)
+  //     } catch (error) {
+  //       console.error("Error fetching user list:", error)
+  //     }
+  //   }
+  //   if (dates && dates.startDate && dates.endDate) {
+  //     fetchExpiryRegisterList()
+  //   }
+  // }, [isToggled, dates])
 
   useEffect(() => {
     if (callList) {
+      console.log(callList)
       const customerSummaries = callList
         .filter(
           (customer) =>
@@ -134,6 +166,30 @@ const ExpiredCustomer = () => {
                 .toISOString()
                 .split("T")[0] === today
           ).length
+          // Sort calls by start time (latest first)
+          const sortedCalls = [...customer.callregistration].sort(
+            (a, b) =>
+              new Date(b?.timedata?.startTime) -
+              new Date(a?.timedata?.startTime)
+          )
+
+          // Extract unique last 3 mobile numbers (incomingNumber)
+          const uniqueIncomingNumbers = []
+          for (const call of sortedCalls) {
+            const num = call?.formdata?.incomingNumber
+            if (num && !uniqueIncomingNumbers.includes(num)) {
+              uniqueIncomingNumbers.push(num)
+            }
+            if (uniqueIncomingNumbers.length === 3) break
+          }
+          // Extract unique last 3 mobile numbers (incomingNumber)
+          const uniqueSerialNumbers = []
+          for (const call of customer.callregistration) {
+            const license = call?.license
+            if (license && !uniqueSerialNumbers.includes(license)) {
+              uniqueSerialNumbers.push(license)
+            }
+          }
 
           return {
             customerId: customer._id,
@@ -141,7 +197,9 @@ const ExpiredCustomer = () => {
             totalCalls,
             solvedCalls,
             pendingCalls,
-            todaysCalls
+            todaysCalls,
+            mobileNumbers: uniqueIncomingNumbers,
+            serialNumbers: uniqueSerialNumbers
           }
         })
       if (customerSummaries) {
@@ -155,6 +213,25 @@ const ExpiredCustomer = () => {
   }, [])
 
   useEffect(() => {
+    if (searchTerm) {
+      const delay = setTimeout(() => {
+        console.log("h")
+        console.log(expiredCustomerList)
+        const filtered = expiredCustomerList.filter((item) =>
+          String(item.customerName || "")
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())
+        )
+        console.log(filtered)
+        setSearchList(filtered)
+        // setexpiryRegisterList(filtered)
+      }, 300)
+      console.log("H")
+      return () => clearTimeout(delay)
+    }
+  }, [searchTerm])
+
+  useEffect(() => {
     if (!hasMounted) return
 
     const fetchExpiryRegisterList = async () => {
@@ -164,13 +241,25 @@ const ExpiredCustomer = () => {
         let payload = null // Initialize payload as null (for GET request)
 
         if (isCallsToggled) {
+          console.log(dates.startDate)
           // When calls are toggled, use POST request and send expiredCustomerIds as the payload
           endpoint = "/customer/getallExpiredCustomerCalls"
-          payload = { expiredCustomerId } // Send as body in POST request
+          payload = {
+            expiredCustomerId,
+            isAdmin: user.role === "Admin" ? true : false,
+            startDate: dates.startDate,
+            endDate: dates.endDate,
+            userBranchId
+          } // Send as body in POST request
           method = "post" // Change method to POST
+          console.log(endpoint)
         } else {
+          console.log("H")
+          endpoint = isToggled
+            ? `/customer/getallExpiryregisterCustomer?nextmonthReport=${isToggled}`
+            : `/customer/getallExpiryregisterCustomer?startDate=${dates.startDate}&endDate=${dates.endDate}`
           // When calls are not toggled, use GET request without a payload
-          endpoint = "/customer/getallExpiryregisterCustomer"
+          // endpoint = "/customer/getallExpiryregisterCustomer"
         }
 
         // Make the API request using either GET or POST
@@ -178,9 +267,7 @@ const ExpiredCustomer = () => {
 
         const data = response.data
         if (data) {
-          setLoading(false)
           if (isCallsToggled) {
-          
             if (user.role === "Admin") {
               setCallList(data.calls)
             } else {
@@ -236,18 +323,21 @@ const ExpiredCustomer = () => {
             const expiredCustomerIds = data.data.map((customer) => customer._id)
             setExpiredCustomerId(expiredCustomerIds)
           }
+          setLoading(false)
         }
       } catch (error) {
         console.error("Error fetching user list:", error)
       }
     }
-    if (isCallsToggled && expiredCustomerId && !isToggled) {
-      fetchExpiryRegisterList()
-    } else if (!isCallsToggled && !isToggled) {
-      fetchExpiryRegisterList()
-    }
-  }, [isCallsToggled, isToggled])
 
+    if (dates && dates.startDate && dates.endDate) {
+      setLoading(true)
+      fetchExpiryRegisterList()
+      setCallList([])
+      setexpiryRegisterList([])
+    }
+  }, [isCallsToggled, isToggled, dates, userBranchId])
+  console.log(loading)
   useEffect(() => {
     if (isModalOpen && selectedCustomer) {
       const selectedCustomerData = expiredCustomerList.find(
@@ -346,7 +436,6 @@ const ExpiredCustomer = () => {
     setIsModalOpen(false)
     setSelectedCustomer(null)
   }
-
   const calculateRemainingDays = (expiryDate) => {
     if (!expiryDate) return "N/A"
     const expiry = parseISO(expiryDate) // Parse the expiry date
@@ -364,14 +453,10 @@ const ExpiredCustomer = () => {
 
     return result.trim()
   }
+  console.log(searchTerm)
+console.log(loading)
   return (
     <div className="antialiased font-sans container mx-auto px-4 sm:px-8">
-      {expiryloding && (
-        <BarLoader
-          cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
-          color="#4A90E2" // Change color as needed
-        />
-      )}
       {loading && (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
@@ -422,12 +507,20 @@ const ExpiredCustomer = () => {
           </div>
           <div className="block relative">
             <input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search"
               className="appearance-none rounded-r rounded-l sm:rounded-l-none border border-gray-400 border-b block pl-8 pr-6 py-2 w-full bg-white text-sm placeholder-gray-400 text-gray-700 focus:bg-white focus:placeholder-gray-600 focus:text-gray-700 focus:outline-none"
             />
           </div>
 
           <div className="flex justify-end flex-grow">
+            <div className="mr-4">
+              {dates && dates.startDate && (
+                <MyDatePicker setDates={setDates} dates={dates} />
+              )}
+            </div>
+
             <span className="text-gray-600 mr-4 font-bold">
               Upcoming Month Expiry
             </span>
@@ -474,8 +567,14 @@ const ExpiredCustomer = () => {
               <thead className="sticky top-0 z-30 bg-purple-300">
                 {isCallsToggled && (
                   <tr>
-                    <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 w-auto">
                       Customer Name
+                    </th>
+                    <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      Mobile No
+                    </th>
+                    <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider max-w-[130px]">
+                      License No
                     </th>
                     <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
                       Total Calls
@@ -496,7 +595,7 @@ const ExpiredCustomer = () => {
                 )}
                 {!isCallsToggled && (
                   <tr>
-                    <th className="w-1/12 px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                    <th className=" px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-left">
                       Customer Name
                     </th>
                     <th className="w-1/12 px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
@@ -541,30 +640,36 @@ const ExpiredCustomer = () => {
                 {isCallsToggled &&
                   expiredCustomerCalls?.map((item) => (
                     <tr key={item._id || item.customerId}>
-                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm">
+                      <td className="px-5 py-2 border-b border-gray-200 text-sm  bg-white text-wrap max-w-72">
                         {isToggled ? item.name : item.customerName}
                       </td>
-                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                      <td className="px-5 py-2 border-b border-gray-200 bg-white text-sm max-w-[120px]">
+                        {isToggled ? "" : item.mobileNumbers?.join(", ")}
+                      </td>
+                      <td className="px-5 py-2 border-b border-gray-200 bg-white text-sm">
+                        {isToggled ? "" : item.serialNumbers?.join(", ")}
+                      </td>
+                      <td className="px-5 py-2 border-b border-gray-200 bg-white text-center text-sm">
                         {isToggled
                           ? item.callstatus.totalCall
                           : item.totalCalls}
                       </td>
-                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                      <td className="px-5 py-2 border-b border-gray-200 bg-white text-center text-sm">
                         {isToggled
                           ? item.callstatus.solvedCalls
                           : item.solvedCalls}
                       </td>
-                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                      <td className="px-5 py-2 border-b border-gray-200 bg-white text-center text-sm">
                         {isToggled
                           ? item.callstatus.pendingCalls
                           : item.pendingCalls}
                       </td>
 
-                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                      <td className="px-5 py-2 border-b border-gray-200 bg-white text-center text-sm">
                         {item.todaysCalls}
                       </td>
 
-                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                      <td className="px-5 py-2 border-b border-gray-200 bg-white text-center text-sm">
                         <button
                           onClick={() =>
                             openModal(isToggled ? item.name : item.customerId)
@@ -576,16 +681,19 @@ const ExpiredCustomer = () => {
                       </td>
                     </tr>
                   ))}
-                {!isCallsToggled &&
-                Array.isArray(expiredCustomerList) &&
-                expiredCustomerList.length > 0 ? (
-                  expiredCustomerList.map((customer) =>
+                {!isCallsToggled ? (
+                  (searchTerm.trim() !== "" &&
+                  Array.isArray(searchList) &&
+                  searchList.length > 0
+                    ? searchList
+                    : expiredCustomerList
+                  ).map((customer) =>
                     Array.isArray(customer.selected) &&
                     customer.selected.length > 0 ? (
                       customer.selected.map((item) => (
                         <tr key={`${customer._id}-${item._id}`}>
-                          {/* Customer data */}
-                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm text-center">
+                          {/* Customer Data */}
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm text-left max-w-72">
                             {customer?.customerName || "N/A"}
                           </td>
                           <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm text-center">
@@ -594,7 +702,112 @@ const ExpiredCustomer = () => {
                           <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm text-center">
                             {customer?.isActive || "N/A"}
                           </td>
-                          {/* Selected item data */}
+
+                          {/* Selected Item Data */}
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            {item?.licensenumber || "N/A"}
+                          </td>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            {item?.amcstartDate
+                              ? new Date(item.amcstartDate).toLocaleDateString(
+                                  "en-GB",
+                                  {
+                                    timeZone: "UTC",
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric"
+                                  }
+                                )
+                              : "N/A"}
+                          </td>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            {item?.amcendDate
+                              ? new Date(item.amcendDate).toLocaleDateString(
+                                  "en-GB",
+                                  {
+                                    timeZone: "UTC",
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric"
+                                  }
+                                )
+                              : "N/A"}
+                          </td>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            {item?.licenseExpiryDate
+                              ? new Date(
+                                  item.licenseExpiryDate
+                                ).toLocaleDateString()
+                              : "N/A"}
+                          </td>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            {item?.tvuexpiryDate
+                              ? new Date(
+                                  item.tvuexpiryDate
+                                ).toLocaleDateString()
+                              : "N/A"}
+                          </td>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            {customer?.isActive || "N/A"}
+                          </td>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            <button
+                              onClick={() => openModal(customer?._id)}
+                              className="text-blue-500 hover:text-blue-700"
+                            >
+                              View Details
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr key={customer?._id}>
+                        <td
+                          colSpan="11"
+                          className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm"
+                        >
+                          {loading ? (
+                            <div className="justify-center">
+                              <PropagateLoader color="#3b82f6" size={10} />
+                            </div>
+                          ) : (
+                            <div>No data available</div>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  )
+                ) : (
+                  <tr>
+                    <td colSpan="11" className="text-center py-4">
+                      {loading ? (
+                        <div className="justify-center">
+                          <PropagateLoader color="#3b82f6" size={10} />
+                        </div>
+                      ) : (
+                        <div>No data available</div>
+                      )}
+                    </td>
+                  </tr>
+                )}
+
+                {/* {!isCallsToggled &&
+(searchTerm.trim() !=="" && Array.isArray(searchList) && searchList.length >0 ? searchList:expiredCustomerList).map((customer) =>
+                    Array.isArray(customer.selected) &&
+                    customer.selected.length > 0 ? (
+                      customer.selected.map((item) => (
+                        <tr key={`${customer._id}-${item._id}`}>
+                          
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm text-left max-w-72">
+                            {customer?.customerName || "N/A"}
+                          </td>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm text-center">
+                            {customer?.mobile || "N/A"}
+                          </td>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm text-center">
+                            {customer?.isActive || "N/A"}
+                          </td>
+                          
                           <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
                             {item?.licensenumber || "N/A"}
                           </td>
@@ -661,14 +874,20 @@ const ExpiredCustomer = () => {
                         </td>
                       </tr>
                     )
-                  )
+                  
                 ) : (
                   <tr>
                     <td colSpan="11" className="text-center py-4">
-                      {loading ? "Loading..." : ""}
+                      {loading ? (
+                        <div className="justify-center">
+                          <PropagateLoader color="#3b82f6" size={10} />
+                        </div>
+                      ) : (
+                        <div></div>
+                      )}
                     </td>
                   </tr>
-                )}
+                )}  */}
               </tbody>
             </table>
           </div>

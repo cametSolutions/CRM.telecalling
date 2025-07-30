@@ -86,7 +86,8 @@ export const LeadRegister = async (req, res) => {
         remarks: remark,
         taskBy: "allocated",
         taskTo: allocationType,
-        taskfromFollowup: false
+        taskfromFollowup: false,
+        allocationDate: leadDate
       })
     }
     const lead = new LeadMaster({
@@ -370,7 +371,12 @@ export const GetallfollowupList = async (req, res) => {
     }
 
     const ischekCollegueLeads = followupLeads.some((item) => item.allocatedBy._id.equals(userObjectId))
-    return res.status(201).json({ messge: "leadfollowup found", data: { followupLeads, ischekCollegueLeads } })
+    if (followupLeads && followupLeads.length > 0) {
+      return res.status(201).json({ messge: "leadfollowup found", data: { followupLeads, ischekCollegueLeads } })
+    } else {
+      return res.status(404).json({ message: "leadfollowp not found", data: {} })
+    }
+
 
   } catch (error) {
     console.log("error:", error.message)

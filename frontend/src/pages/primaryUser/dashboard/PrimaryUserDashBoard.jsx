@@ -209,7 +209,7 @@ export default function PrimaryUserDashBoard() {
     const wish = true
     localStorage.setItem("wish", JSON.stringify(wish))
   }
-
+console.log(birthdayPerson)
   return (
     <div className="min-h-full bg-[#bfdbf7] ">
       {showBirthdayPopup && (
@@ -236,7 +236,7 @@ export default function PrimaryUserDashBoard() {
 
             <div className="text-center pt-4">
               <div className="flex justify-center mb-4">
-                <div className="w-24 h-24 rounded-full bg-pink-100 flex items-center justify-center">
+                <div className="w-34 h-34 rounded-full bg-pink-100 flex items-center justify-center">
                   {/* This would be replaced with actual profile image if available */}
 
                   {birthdayPerson.map((person, index) =>
@@ -245,7 +245,7 @@ export default function PrimaryUserDashBoard() {
                         key={index}
                         src={person.profileUrl}
                         alt=""
-                        className="w-24 h-24 rounded-full border-2 border-purple-300"
+                        className="w-28 h-28 rounded-full border-2 border-purple-300"
                       />
                     ) : (
                       <div
