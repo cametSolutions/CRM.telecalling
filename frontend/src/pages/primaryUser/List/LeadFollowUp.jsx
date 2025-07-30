@@ -81,10 +81,6 @@ const LeadFollowUp = () => {
     selectedType: ""
   })
   const navigate = useNavigate()
-  const { data: demolead } = UseFetch(
-    loggedUser && `/lead/getrespecteddemolead?userid=${loggedUser._id}`
-  )
-
   const { data: branches } = UseFetch("/branch/getBranch")
   const { data } = UseFetch("/auth/getallUsers")
   const {

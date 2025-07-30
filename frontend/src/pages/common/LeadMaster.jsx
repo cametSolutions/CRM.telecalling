@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo, useRef } from "react"
-// import LoadingBar from "react-top-loading-bar"
 import { Country, State } from "country-state-city"
 import BarLoader from "react-spinners/BarLoader"
 import Select from "react-select"
@@ -8,7 +7,6 @@ import PopUp from "../../components/common/PopUp"
 import { toast } from "react-toastify"
 import UseFetch from "../../hooks/useFetch"
 import api from "../../api/api"
-import { useNavigate } from "react-router-dom"
 
 const LeadMaster = ({
   process,
@@ -106,13 +104,12 @@ const LeadMaster = ({
       selectedBranch &&
       `/customer/getallCustomer?branchSelected=${selectedBranch}`
   )
-  const navigate = useNavigate()
   useEffect(() => {
     const userData = localStorage.getItem("user")
     if (userData) {
       const user = JSON.parse(userData)
       setloggedUser(user)
-      if (user.role === "Staff") {
+      if (user.role === "Staff"||user.role==="Manager") {
         const branch = user.selected.map((branch) => branch.branch_id)
         const branches = JSON.stringify(branch)
 
@@ -687,16 +684,7 @@ const LeadMaster = ({
             <h2 className="text-xl md:text-2xl font-semibold  mb-2 md:mb-1">
               {Data && Data?.length > 0 ? "Lead Edit" : "Lead"}
             </h2>
-            {/* <button
-              onClick={() =>
-                loggeduser.role === "Admin"
-                  ? navigate("/admin/transaction/lead")
-                  : navigate("/staff/transaction/lead")
-              }
-              className="bg-black hover:bg-gray-600 text-white px-2 py-1 rounded-lg shadow-xl"
-            >
-              New Lead
-            </button> */}
+           
           </div>
 
           {showmessage && (

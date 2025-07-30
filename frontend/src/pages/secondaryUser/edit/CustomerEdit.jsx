@@ -17,7 +17,7 @@ function CustomerEdit() {
   const index = location.state?.index
 
   const customerId = customer._id
-
+console.log("h")
   function formatDateString(dateString) {
     const dateObject = new Date(dateString)
     const year = dateObject.getUTCFullYear()

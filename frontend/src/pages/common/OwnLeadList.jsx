@@ -8,11 +8,10 @@ export default function OwnLeadList() {
   const [tableData, setTableData] = useState([])
   const [loggedUser, setLoggedUser] = useState(null)
   const [showFullEmail, setShowFullEmail] = useState(false)
-  const userData = localStorage.getItem("user")
-  const user = JSON.parse(userData)
+
   const navigate = useNavigate()
   const { data: ownedlead, loading } = UseFetch(
-    user && `/lead/ownregisteredLead?userId=${user._id}`
+    loggedUser && `/lead/ownregisteredLead?userId=${loggedUser._id}`
   )
   useEffect(() => {
     const userData = localStorage.getItem("user")
@@ -22,7 +21,6 @@ export default function OwnLeadList() {
   useEffect(() => {
     setTableData(ownedlead)
   }, [ownedlead])
-
   return (
     <div className="h-full flex flex-col">
       <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3">

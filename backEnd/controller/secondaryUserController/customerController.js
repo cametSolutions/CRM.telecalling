@@ -224,7 +224,7 @@ export const DeletepartnerBranch = async (req, res) => {
       }).populate({ path: 'relationBranches.branchName', select: 'branchName' })
       return res.status(201).json({ message: "Delete successfully", data: allpartners })
     }
-  
+
   } catch (error) {
     console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })
@@ -638,7 +638,7 @@ export const PartnerRegistration = async (req, res) => {
     }
 
     // Create partner
-   
+
     await Partner.create({
       partner: formdata.partnerName.toUpperCase(),
       relationBranches: formdata.branchName.map(branchId => ({
@@ -2688,7 +2688,7 @@ export const GetCallRegister = async (req, res) => {
 }
 
 export const GetAllExpiryRegister = async (req, res) => {
-  const { nextmonthReport } = req.query
+  const { nextmonthReport, startDate, endDate } = req.query
 
   try {
     let startOfNextMonth
@@ -2701,7 +2701,7 @@ export const GetAllExpiryRegister = async (req, res) => {
       endOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0)
       endOfNextMonth.setHours(23, 59, 59, 999) // End of the day
     }
-
+    
     const expiredCustomers = await Customer.find({
       selected: {
         $elemMatch: {
@@ -2709,23 +2709,22 @@ export const GetAllExpiryRegister = async (req, res) => {
             {
               licenseExpiryDate: nextmonthReport
                 ? { $gte: startOfNextMonth, $lte: endOfNextMonth }
-                : { $lt: today }
+                : { $gte: startDate, $lte: endDate }
             }, // License expiry in the past
             {
               tvuexpiryDate: nextmonthReport
                 ? { $gte: startOfNextMonth, $lte: endOfNextMonth }
-                : { $lt: today }
+                : { $gte: startDate, $lte: endDate }
             }, // TVU expiry in the past
             {
               amcendDate: nextmonthReport
                 ? { $gte: startOfNextMonth, $lte: endOfNextMonth }
-                : { $lt: today }
+                : { $gte: startDate, $lte: endDate }
             } // AMC end in the past
           ]
         }
       }
     })
-
     if (expiredCustomers.length > 0) {
       return res.status(200).json({
         message: "Customers found with expiry",
@@ -2743,14 +2742,31 @@ export const GetAllExpiryRegister = async (req, res) => {
 }
 export const getallExpiredCustomerCalls = async (req, res) => {
   try {
-    const { expiredCustomerId } = req.body
+    const {startDate,endDate,isAdmin,userBranchId} = req.body
 
-    const validCustomerIds = expiredCustomerId
-      .filter((id) => mongoose.Types.ObjectId.isValid(id))
-      .map((id) => new mongoose.Types.ObjectId(id))
+const userBranchIds=userBranchId.map((id)=>new mongoose.Types.ObjectId(id))
 
+    const expiredCustomers = await Customer.find({
+      selected: {
+        $elemMatch: {
+                ...(isAdmin ? {} : { branch_id: { $in: userBranchIds } }), // only include branch filter if not admin
+          $or: [
+            {
+              licenseExpiryDate: { $gte: startDate, $lte: endDate }
+            }, // License expiry in the past
+            {
+              tvuexpiryDate : { $gte: startDate, $lte: endDate }
+            }, // TVU expiry in the past
+            {
+              amcendDate : { $gte: startDate, $lte: endDate }
+            } // AMC end in the past
+          ]
+        }
+      }
+    })
+    const expiredCustomerIds = expiredCustomers.map((customer) => customer._id)
     const calls = await CallRegistration.find({
-      customerid: { $in: validCustomerIds } // Assuming 'customerId' field in CallRegistration matches customer IDs
+      customerid: { $in: expiredCustomerIds } // Assuming 'customerId' field in CallRegistration matches customer IDs
     })
       .populate([
         {

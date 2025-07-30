@@ -267,14 +267,6 @@ const UserAdd = ({
     ) {
       setShowTable(true)
 
-      // setTableData([
-      //   {
-      //     company_id: User.selected.company_id || "",
-      //     companyName: User.selected.companyName || "",
-      //     branch_id: User.selected.branch_id || "",
-      //     branchName: User.selected.branchName || ""
-      //   }
-      // ])
       const tabledataWithoutId = User.selected.map(({ _id, ...rest }) => rest)
       setTableData(User.selected)
       setTableObject({
@@ -343,6 +335,7 @@ const UserAdd = ({
       ...prevData,
       profileUrl: url
     }))
+console.log(url)
   }
 
   const documentImage = (url) => {
@@ -353,7 +346,7 @@ const UserAdd = ({
         : [...prevData.documentUrl, url] // Add the single URL if it's not an array
     }))
   }
-
+console.log("H")
   const onSubmit = (data) => {
     if (process === "Registration") {
       if (data) {
