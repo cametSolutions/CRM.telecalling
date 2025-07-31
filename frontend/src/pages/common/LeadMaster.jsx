@@ -109,7 +109,7 @@ const LeadMaster = ({
     if (userData) {
       const user = JSON.parse(userData)
       setloggedUser(user)
-      if (user.role === "Staff"||user.role==="Manager") {
+      if (user.role === "Staff" || user.role === "Manager") {
         const branch = user.selected.map((branch) => branch.branch_id)
         const branches = JSON.stringify(branch)
 
@@ -193,8 +193,6 @@ const LeadMaster = ({
       customerOptions.length &&
       loggeduser
     ) {
-     
-
       if (Data[0].activityLog.length === 2) {
         const allocatedtoData =
           Data[0].activityLog[Data[0].activityLog.length - 1]
@@ -203,7 +201,6 @@ const LeadMaster = ({
         } else {
           setselfAllocationChangable(false)
         }
-     
       } else if (Data[0].activityLog.length > 2) {
         setselfAllocationChangable(false)
       }
@@ -646,6 +643,9 @@ const LeadMaster = ({
         setModalLoader(false)
         resetModal()
         toast.success(response.data.message)
+        setModalOpen(false)
+        clearmodalErros()
+        resetModal()
       }
     } catch (error) {
       console.log(error)
@@ -684,7 +684,6 @@ const LeadMaster = ({
             <h2 className="text-xl md:text-2xl font-semibold  mb-2 md:mb-1">
               {Data && Data?.length > 0 ? "Lead Edit" : "Lead"}
             </h2>
-           
           </div>
 
           {showmessage && (
@@ -921,9 +920,12 @@ const LeadMaster = ({
                   </label>
                   <textarea
                     id="description"
-                    disabled
                     {...registerMain("remark")}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm  focus:outline-none  max-h-[100px] bg-gray-100 cursor-not-allowed"
+                    className={`block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm  focus:outline-none  max-h-[100p] ${
+                      isReadOnly
+                        ? "cursor-not-allowed bg-gray-100 text-black"
+                        : ""
+                    }`}
                     placeholder="Remarks..."
                   />
                 </div>
