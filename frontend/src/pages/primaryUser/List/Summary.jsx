@@ -60,7 +60,6 @@ const Summary = () => {
 
     // Last date of the month
   }, [])
-console.log("H")
   useEffect(() => {
     if (dates.startDate) {
       const fetchUserList = async () => {

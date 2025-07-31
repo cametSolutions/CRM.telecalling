@@ -818,7 +818,7 @@ const LeaveApprovalAndPending = () => {
               <div>
                 <select
                   onChange={(e) => handleDropdownSelect(e.target.value)}
-                  className="border rounded px-2 py-2 w-[120px] sm:w-[200px] md:w-auto"
+                  className="border rounded px-2 py-1 w-[120px] sm:w-[200px] md:w-auto"
                 >
                   <option value="pending">Pending</option>
                   <option value="approved">Approved</option>
