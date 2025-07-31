@@ -27,7 +27,7 @@ const MyDatePicker = ({ setDates, dates, onClear, loader }) => {
   ))
 
   return (
-    <div className="z-50 relative">
+    <div className="z-40 relative">
       <DatePicker
         // selected={endDate}
         onChange={handleDateRange}

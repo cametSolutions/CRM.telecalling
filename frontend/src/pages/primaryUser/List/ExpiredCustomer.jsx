@@ -30,7 +30,6 @@ const ExpiredCustomer = () => {
   const [loading, setLoading] = useState(false)
   const [selectedBranch, setSelectedBranch] = useState("All")
   const [expiredCustomerCalls, setExpiredCustomerCalls] = useState([])
-  console.log(branches)
   useEffect(() => {
     const now = new Date()
 
@@ -53,17 +52,13 @@ const ExpiredCustomer = () => {
       setUser(user)
       if (user.role !== "Admin") {
         const branchid = user.selected.map((branch) => branch.branch_id)
-        console.log(branches)
         setUserBranchId(branchid)
       } else {
-        console.log(branches)
         const branchid = branches.map((id) => id._id)
-        console.log(branchid)
         setUserBranchId(branchid)
       }
     }
   }, [branches])
-  console.log(dates)
   // useEffect(() => {
   //   if (expiryRegisterCustomer) {
   //     const userData = localStorage.getItem("user")
@@ -142,7 +137,6 @@ const ExpiredCustomer = () => {
 
   useEffect(() => {
     if (callList) {
-      console.log(callList)
       const customerSummaries = callList
         .filter(
           (customer) =>
@@ -215,18 +209,15 @@ const ExpiredCustomer = () => {
   useEffect(() => {
     if (searchTerm) {
       const delay = setTimeout(() => {
-        console.log("h")
-        console.log(expiredCustomerList)
+      
         const filtered = expiredCustomerList.filter((item) =>
           String(item.customerName || "")
             .toLowerCase()
             .includes(searchTerm.toLowerCase())
         )
-        console.log(filtered)
         setSearchList(filtered)
         // setexpiryRegisterList(filtered)
       }, 300)
-      console.log("H")
       return () => clearTimeout(delay)
     }
   }, [searchTerm])
@@ -241,7 +232,6 @@ const ExpiredCustomer = () => {
         let payload = null // Initialize payload as null (for GET request)
 
         if (isCallsToggled) {
-          console.log(dates.startDate)
           // When calls are toggled, use POST request and send expiredCustomerIds as the payload
           endpoint = "/customer/getallExpiredCustomerCalls"
           payload = {
@@ -252,9 +242,7 @@ const ExpiredCustomer = () => {
             userBranchId
           } // Send as body in POST request
           method = "post" // Change method to POST
-          console.log(endpoint)
         } else {
-          console.log("H")
           endpoint = isToggled
             ? `/customer/getallExpiryregisterCustomer?nextmonthReport=${isToggled}`
             : `/customer/getallExpiryregisterCustomer?startDate=${dates.startDate}&endDate=${dates.endDate}`
@@ -337,7 +325,6 @@ const ExpiredCustomer = () => {
       setexpiryRegisterList([])
     }
   }, [isCallsToggled, isToggled, dates, userBranchId])
-  console.log(loading)
   useEffect(() => {
     if (isModalOpen && selectedCustomer) {
       const selectedCustomerData = expiredCustomerList.find(
@@ -453,8 +440,7 @@ const ExpiredCustomer = () => {
 
     return result.trim()
   }
-  console.log(searchTerm)
-console.log(loading)
+ 
   return (
     <div className="antialiased font-sans container mx-auto px-4 sm:px-8">
       {loading && (
