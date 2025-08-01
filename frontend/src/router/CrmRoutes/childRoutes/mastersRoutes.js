@@ -26,8 +26,7 @@ import UserPermissions from "../../../pages/primaryUser/List/UserPermissions"
 import ComingSoon from "../../../pages/common/ComingSoon"
 import { CallNoteRegistration } from "../../../pages/primaryUser/register/CallNoteRegistration"
 import LeaveMaster from "../../../pages/primaryUser/register/LeaveMaster"
-import LeadRegister from "../../../pages/primaryUser/register/LeadRegister"
-
+import TaskRegistration from "../../../pages/primaryUser/register/TaskRegistration"
 const mastersRoutes = [
   {
     path: "/admin/masters/company",
@@ -55,6 +54,7 @@ const mastersRoutes = [
 
     component: BranchRegistration
   },
+  { path: "/admin/masters/taskRegistration", component: TaskRegistration },
 
   { path: "/admin/masters/branchEdit", component: BranchEdit },
   { path: "/admin/masters/customer", component: CustomerListform },

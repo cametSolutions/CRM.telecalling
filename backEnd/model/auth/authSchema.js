@@ -233,7 +233,6 @@ const ensureIndexes = async () => {
   try {
     await Staff.createIndexes()
     await Admin.createIndexes()
-    // console.log("Indexes created successfully")
   } catch (error) {
     console.error("Error creating indexes:", error)
   }

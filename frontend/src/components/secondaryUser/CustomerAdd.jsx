@@ -70,7 +70,6 @@ const CustomerAdd = ({
   const [licenseAvailable, setLicenseAvailable] = useState(true)
   const [license, setLicense] = useState([])
   const selectedProduct = watch("productName")
-  console.log(selectedProduct)
   const selectedCompany = watch("companyName")
   const [isLicense, setlicenseExist] = useState([])
   const [tableObject, setTableObject] = useState({
@@ -249,7 +248,6 @@ const CustomerAdd = ({
               reasonofStatus: customer?.selected[0]?.reasonofStatus || ""
             }
           ])
-          console.log(customer?.selected[0])
           // setTableData((prev) => [...prev, tableObject])
           if (customer?.selected[0]?.productName)
             handleProductChange(
@@ -331,19 +329,15 @@ const CustomerAdd = ({
       company_id: selectedOption.value,
       companyName: selectedOption.label
     }))
-    console.log(productData)
-    console.log(selectedProduct)
+   
     const selectedProductData = productData.find(
       (product) => product._id === selectedProduct?.value
     )
-console.log(selectedProductData)
     const selectedCompanyData = selectedProductData?.selected.filter(
       (company) => company.company_id === selectedOption?.value
     )
-    console.log(selectedProductData)
-    console.log(selectedCompanyData)
+  
     if (selectedCompanyData) {
-      console.log("hhh")
       setBranchOptions(
         selectedCompanyData.map((branch) => ({
           label: branch.branchName,
@@ -541,7 +535,6 @@ console.log(selectedProductData)
         })
       }
       if (itemToEdit.branch_id) {
-        console.log("h")
         setValue("branchName", {
           value: itemToEdit.branch_id,
           label: itemToEdit.branchName
@@ -591,7 +584,6 @@ console.log(selectedProductData)
       }
     }
   }
-  console.log(branchOptions)
 
   ///now created
   const emailDomains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com"]
@@ -600,9 +592,7 @@ console.log(selectedProductData)
     const domain = email.split("@")[1]
     return emailDomains.includes(domain) || "Invalid email domain"
   }
-  console.log(branchOptions)
   const handleBranchChange = (selectedOption) => {
-    console.log("h")
     setTableObject((prev) => ({
       ...prev,
       branch_id: selectedOption.value,

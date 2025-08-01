@@ -2,6 +2,7 @@ import LeadMaster from "../../model/primaryUser/leadmasterSchema.js"
 import mongoose from "mongoose"
 import models from "../../model/auth/authSchema.js"
 const { Staff, Admin } = models
+import Task from "../../model/primaryUser/taskSchema.js"
 import LeadId from "../../model/primaryUser/leadIdSchema.js"
 import Service from "../../model/primaryUser/servicesSchema.js"
 export const LeadRegister = async (req, res) => {
@@ -137,6 +138,19 @@ export const LeadRegister = async (req, res) => {
     console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })
   }
+}
+export const GetallTask = async (req, res) => {
+  try {
+    const tasks = Task.find({})
+    if (tasks) {
+      return res.status(200).json({ message: "Task found", data: tasks })
+    } else {
+      return res.status(404).json({ message: "NO tasks found" })
+    }
+  } catch (error) {
+    return res.status(500).json({ message: "Internal server error" })
+  }
+
 }
 export const UpdateLeadRegister = async (req, res) => {
   try {

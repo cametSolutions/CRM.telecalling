@@ -101,7 +101,6 @@ const LeadProgramming = () => {
             label: branch.branchName
           }
         })
-        console.log(branch)
         setloggedUserBranches(branch)
         setselectedCompanyBranch(branch[0].value)
       } else {
@@ -111,7 +110,6 @@ const LeadProgramming = () => {
             label: branch.branchName
           }
         })
-        console.log(branches)
         setselectedCompanyBranch(branches[0].value)
         setloggedUserBranches(branches)
       }
@@ -119,7 +117,6 @@ const LeadProgramming = () => {
       setloggedUser(user)
     }
   }, [branches])
-  console.log(selectedCompanyBranch)
 
   //   useEffect(() => {
   //     if (branches) {
@@ -167,16 +164,13 @@ const LeadProgramming = () => {
 
   useEffect(() => {
     if (leadprogramming && leadprogramming.length > 0) {
-      console.log(leadprogramming)
       //   setLeads(loggedusersallocatedleads.followupLeads)
       //   setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
     }
   }, [leadprogramming])
-  console.log(leads)
   useEffect(() => {
     if (leads && leads.length && loggedUser && ownProgramming) {
-      console.log(tableData)
-      console.log("h")
+  
 
       const currentDate = new Date()
 
@@ -214,7 +208,6 @@ const LeadProgramming = () => {
 
       setTableData(finalSortedLeads)
     } else if (leadprogramming && loggedUser) {
-      console.log(leads)
 
       const currentDate = new Date()
 
@@ -249,7 +242,6 @@ const LeadProgramming = () => {
 
       // 3. Combined
       const finalSortedLeads = [...leadsWithFollowUps, ...leadsWithoutFollowUps]
-      console.log(finalSortedLeads)
       setTableData(finalSortedLeads)
     }
   }, [ownProgramming, leads, loggedUser])
@@ -311,10 +303,7 @@ const LeadProgramming = () => {
     leadid,
     docId
   ) => {
-    console.log(num)
-    console.log(task)
-    console.log(leadid)
-    console.log(docId)
+  
     const currentDate = new Date()
     settaskdetails((prev) => ({
       ...prev,
@@ -326,7 +315,6 @@ const LeadProgramming = () => {
       allocationDescription: task.allocationDescription,
       Remarks: task?.taskRemarks || ""
     }))
-    console.log(task)
 
     // const owner = loggedUser._id === allocatedTo
     // setOwner(owner)
@@ -376,7 +364,6 @@ const LeadProgramming = () => {
     // setHistoryList(history)
     // setSelectedLeadId(leadid)
   }
-  console.log(showModal)
   const handlefollowupdate = (Id, docId) => {
     setfollowupDateModal(true)
     setSelectedLeadId(Id)
@@ -450,20 +437,16 @@ const LeadProgramming = () => {
   }
   const handleDemofollowup = async () => {
     try {
-      console.log("h")
       const taskfollowuperror = {}
       if (taskDetails.Remarks === "") {
         taskfollowuperror.descriptionerror =
           "Description is empty please fill it"
       }
-      console.log(taskDetails)
 
-      console.log(taskfollowuperror)
       if (Object.keys(taskfollowuperror).length > 0) {
         setDemofollowersubmitError(taskfollowuperror)
         return
       }
-      console.log(taskDetails)
 
       setLoader(true)
 
@@ -525,8 +508,7 @@ const LeadProgramming = () => {
       console.log("error:", error.message)
     }
   }
-  console.log(selectedCompanyBranch)
-console.log(selectedStatus)
+
   return (
     <div className="h-full flex flex-col ">
       {loading && (

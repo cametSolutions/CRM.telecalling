@@ -209,7 +209,6 @@ const ExpiredCustomer = () => {
   useEffect(() => {
     if (searchTerm) {
       const delay = setTimeout(() => {
-      
         const filtered = expiredCustomerList.filter((item) =>
           String(item.customerName || "")
             .toLowerCase()
@@ -440,7 +439,7 @@ const ExpiredCustomer = () => {
 
     return result.trim()
   }
- 
+
   return (
     <div className="antialiased font-sans container mx-auto px-4 sm:px-8">
       {loading && (
@@ -720,19 +719,20 @@ const ExpiredCustomer = () => {
                               : "N/A"}
                           </td>
                           <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                            {item?.licenseExpiryDate
-                              ? new Date(
-                                  item.licenseExpiryDate
-                                ).toLocaleDateString()
-                              : "N/A"}
-                          </td>
-                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
                             {item?.tvuexpiryDate
                               ? new Date(
                                   item.tvuexpiryDate
                                 ).toLocaleDateString()
                               : "N/A"}
                           </td>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            {item?.licenseExpiryDate
+                              ? new Date(
+                                  item.licenseExpiryDate
+                                ).toLocaleDateString()
+                              : "N/A"}
+                          </td>
+
                           <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
                             {customer?.isActive || "N/A"}
                           </td>

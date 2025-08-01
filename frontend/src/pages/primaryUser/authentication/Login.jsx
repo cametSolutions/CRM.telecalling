@@ -16,7 +16,6 @@ const Login = () => {
     formState: { errors }
   } = useForm()
   const navigate = useNavigate()
-console.log("hhh")
   const onSubmit = async (data) => {
     try {
       setLoading(true)

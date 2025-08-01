@@ -19,12 +19,14 @@ import {
   UpdateOrSubmittaskfollowByfollower,
   GetallReallocatedLead,
   UpdateLeadTask,
-  updateReallocation
+  updateReallocation,
+  GetallTask
 } from "../../controller/primaryUserController/leadController.js"
 const router = express.Router()
 
 router.post("/leadRegister", authMiddleware, LeadRegister)
 router.put("/leadRegisterUpdate", authMiddleware, UpdateLeadRegister)
+router.get("/getallTask", authMiddleware, GetallTask)
 router.put("/followupDateUpdate", authMiddleware, UpdateLeadfollowUpDate)
 router.get("/getSelectedLead", authMiddleware, GetselectedLeadData)
 router.post("/leadAllocation", authMiddleware, UpadateOrLeadAllocationRegister)
