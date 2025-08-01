@@ -92,6 +92,7 @@ const LeadFollowUp = () => {
       selectedCompanyBranch &&
       `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}&pendingfollowup=${pending}`
   )
+
   useEffect(() => {
     const now = new Date()
 
@@ -236,7 +237,6 @@ const LeadFollowUp = () => {
         ]
         setTableData(mergedall)
       } else if (pending && !ownFollowUp) {
-console.log(loggedusersallocatedleads.followupLeads)
         const departmentfollowup =
           loggedusersallocatedleads.followupLeads.filter((lead) =>
             lead.activityLog?.some(
@@ -246,8 +246,7 @@ console.log(loggedusersallocatedleads.followupLeads)
                 log.taskClosed === false
             )
           )
-console.log(departmentfollowup)
-console.log("h")
+
       } else if (!pending && ownFollowUp) {
       } else if (!pending && !ownFollowUp) {
       }

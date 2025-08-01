@@ -161,8 +161,7 @@ const LeadTesting= () => {
   }, [loggedusersallocatedleads])
   useEffect(() => {
     if (leads && leads.length && loggedUser && ownFollowUp) {
-      console.log(tableData)
-      console.log("h")
+   
 
       const currentDate = new Date()
 
@@ -200,7 +199,6 @@ const LeadTesting= () => {
 
       setTableData(finalSortedLeads)
     } else if (loggedusersallocatedleads && loggedUser) {
-      console.log(leads)
 
       const currentDate = new Date()
 
@@ -235,7 +233,6 @@ const LeadTesting= () => {
 
       // 3. Combined
       const finalSortedLeads = [...leadsWithFollowUps, ...leadsWithoutFollowUps]
-      console.log(finalSortedLeads)
       setTableData(finalSortedLeads)
     }
   }, [ownFollowUp, leads, loggedUser])
@@ -338,7 +335,6 @@ const LeadTesting= () => {
     setHistoryList(history)
     setSelectedLeadId(leadid)
   }
-console.log(showModal)
   const handlefollowupdate = (Id, docId) => {
     setfollowupDateModal(true)
     setSelectedLeadId(Id)
@@ -452,7 +448,6 @@ console.log(showModal)
       console.log("error:", error.message)
     }
   }
-  console.log(historyList)
   return (
     <div className="h-full flex flex-col ">
       {loading && (

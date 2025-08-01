@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import DeleteAlert from "../common/DeleteAlert"
 import Edit from "../common/Edit"
 import api from "../../api/api"
@@ -7,11 +7,10 @@ import toast from "react-hot-toast"
 export default function ProductSubDetailsForm({ tab }) {
   const [value, setValue] = useState("")
   const [items, setItems] = useState([])
-  //const [currentPage, setCurrentPage] = useState(1)
-  // const [totalPages, setTotalPages] = useState(1)
+
   const [editState, seteditState] = useState(true)
   const [editId, setEditId] = useState("")
-  const { data, loading, error, refreshHook } = UseFetch(
+  const { data, refreshHook } = UseFetch(
     `/inventory/getproductsubDetails?tab=${tab}`
   )
   useEffect(() => {
@@ -21,9 +20,7 @@ export default function ProductSubDetailsForm({ tab }) {
     }
   }, [data])
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page)
-  }
+ 
   const handleEdit = (id) => {
     seteditState(false)
     const itemToEdit = items.find((item) => item._id === id)
@@ -75,14 +72,9 @@ export default function ProductSubDetailsForm({ tab }) {
 
         toast.success(`${tab.toUpperCase()} created successfully`)
       }
-      // Refresh the list
-      // const response = await api.get(
-      //   `/inventory/getproductsubDetails?tab=${tab}`
-      // )
+     
       refreshHook()
-      //setItems(data.data)
-      // Reset form
-      // setValue("")
+    
       setEditId(null)
     } catch (error) {
       console.error(error)
@@ -99,11 +91,7 @@ export default function ProductSubDetailsForm({ tab }) {
       <div className="flex items-center  w-full px-6  ">
         <input
           type="text"
-          //   onKeyDown={(e) => {
-          //     if (e.key === "Enter") {
-          //       handleSubmit(value)
-          //     }
-          //   }}
+        
           onChange={(e) => {
             handleChange(e)
           }}
@@ -114,11 +102,7 @@ export default function ProductSubDetailsForm({ tab }) {
         />
         <div className="flex justify-between m-4">
           <button
-            // onClick={
-            //   edit?.enabled
-            //     ? () => editSubDetails(edit.id, value)
-            //     : () => handleSubmit(value)
-            // }
+          
             onClick={handleSubmit}
             className="bg-blue-500 hover:bg-blue-700 text-white px-4 py-1 rounded "
           >

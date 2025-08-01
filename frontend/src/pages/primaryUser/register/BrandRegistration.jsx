@@ -1,4 +1,3 @@
-import React from "react"
 import { IoReorderThreeSharp } from "react-icons/io5"
 import ProductSubDetailsForm from "../../../components/primaryUser/ProductSubDetailsForm"
 

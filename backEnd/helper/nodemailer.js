@@ -11,7 +11,7 @@ export const sendEmail = async (
   emailsend
 ) => {
   if (emailsend === "false") {
-  
+
     return false
   }
   const problem = new mongoose.Types.ObjectId(calldata.formdata.callnote)
@@ -100,15 +100,14 @@ export const sendEmail = async (
             </tr>
              <tr>
               <td>Call Status</td>
-              ${
-                calldata.formdata.status === "solved"
-                  ? `
+              ${calldata.formdata.status === "solved"
+      ? `
                 
                   
                   <td>Closed</td>
                 `
-                  : ` <td>${calldata.formdata.status || "N/A"}</td>`
-              }
+      : ` <td>${calldata.formdata.status || "N/A"}</td>`
+    }
              
             </tr>
             <tr>
@@ -134,21 +133,20 @@ export const sendEmail = async (
       `
   // solutions@camet.in
   try {
-    const info = await transporter.sendbMail({
+    const info = await transporter.sendMail({
       from: notificationemail, // Sender's name and address
       to: `${calldata?.customeremail}`, // Recipient's email address
       cc: `${calldata?.ccMail}`,
-      subject: `New Support ticket created-${
-        calldata?.timedata?.token || "N/A"
-      }`, // Subject
+      subject: `New Support ticket created-${calldata?.timedata?.token || "N/A"
+        }`, // Subject
       html: htmlContent // Email content as HTML
     })
 
-    // console.log(`Email sent successfully: ${info.messageId}`)
-    console.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`)
+    console.log(`Email sent successfully: ${info.messageId}`)
 
     return info // Return the response info after the email is sent
   } catch (error) {
+    console.log("eeeee", error)
     console.error("Error sending email: ", error.message)
     if (error.message == "Username and Password not accepted") {
       throw new error(
@@ -163,9 +161,8 @@ export const sendEmail = async (
         from: notificationemail, // Sender's name and address
         to: toEmail,
         // cc: "abhidasabhi1234@gmail.com",
-        subject: `New Support ticket created-${
-          calldata?.timedata?.token || "N/A"
-        }`, // Subject
+        subject: `New Support ticket created-${calldata?.timedata?.token || "N/A"
+          }`, // Subject
         html: htmlContent // Email content as HTML
       })
     }

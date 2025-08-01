@@ -335,7 +335,6 @@ const UserAdd = ({
       ...prevData,
       profileUrl: url
     }))
-console.log(url)
   }
 
   const documentImage = (url) => {
@@ -346,7 +345,6 @@ console.log(url)
         : [...prevData.documentUrl, url] // Add the single URL if it's not an array
     }))
   }
-console.log("H")
   const onSubmit = (data) => {
     if (process === "Registration") {
       if (data) {

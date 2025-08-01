@@ -1,15 +1,12 @@
 import { useEffect, useState, useRef } from "react"
 import { Link, NavLink, useNavigate } from "react-router-dom"
-import { FiMessageCircle } from "react-icons/fi"
 import { FiLogOut } from "react-icons/fi"
-import UseFetch from "../hooks/useFetch"
 import { FaChevronRight, FaChevronDown } from "react-icons/fa"
 import { FaSignOutAlt } from "react-icons/fa"
 import { FaUserCircle } from "react-icons/fa" // Import the icon
 import { toast } from "react-toastify"
 export default function AdminHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  // const [mathcheddemoleadcount, setmathcheddemoleadcount] = useState(0)
   const [user, setUser] = useState(null)
   const [transactionMenuOpen, setTransactionMenuOpen] = useState(false)
   const [masterMenuOpen, setMasterMenuOpen] = useState(false)
@@ -22,14 +19,7 @@ export default function AdminHeader() {
   const [openInnerMenu, setOpenInnerMenu] = useState(null) // Inner submenu state
   const navigate = useNavigate()
   const menuContainerRef = useRef(null)
-  // const { data: demoleadcount } = UseFetch(
-  //   user && `/lead/demoleadcount?loggeduserid=${user._id}`
-  // )
-  // useEffect(() => {
-  //   if (demoleadcount > 0) {
-  //     setmathcheddemoleadcount(demoleadcount)
-  //   }
-  // }, [demoleadcount])
+
   useEffect(() => {
     const storedUser = localStorage.getItem("user")
     if (storedUser) {
@@ -99,6 +89,7 @@ export default function AdminHeader() {
       to: "/admin/masters/branch",
       label: "Branch"
     },
+    { to: "/admin/masters/taskRegistration", label: "Task" },
     {
       to: "/admin/masters/callnotes",
       label: "Call Notes"
@@ -241,7 +232,6 @@ export default function AdminHeader() {
       label: "Leave Summary"
     }
   ]
-console.log(user)
   return (
     <>
       <header className=" bg-gray-3s00 md:bg-white sticky top-0 z-40 h-16 lg:h-20 flex  shadow-md items-center">
