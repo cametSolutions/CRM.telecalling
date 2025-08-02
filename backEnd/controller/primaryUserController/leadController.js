@@ -7,7 +7,7 @@ import LeadId from "../../model/primaryUser/leadIdSchema.js"
 import Service from "../../model/primaryUser/servicesSchema.js"
 export const LeadRegister = async (req, res) => {
   try {
-    const { leadData, selectedtableLeadData, assignedto } = req.body
+    const { leadData, selectedtableLeadData } = req.body
 
     const {
       customerName,
@@ -87,6 +87,7 @@ export const LeadRegister = async (req, res) => {
         remarks: remark,
         taskBy: "allocated",
         taskTo: allocationType,
+        ...(allocationType === "followup" && { followupClosed: false }),
         taskfromFollowup: false,
         allocationDate: leadDate
       })
@@ -269,6 +270,7 @@ export const GetallfollowupList = async (req, res) => {
     let query
     if (role === "Staff") {
       if (pendingfollowup === "true") {
+        console.log("HH")
         query = {
 
           activityLog: {

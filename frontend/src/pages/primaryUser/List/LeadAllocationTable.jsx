@@ -102,6 +102,7 @@ const LeadAllocationTable = () => {
     setShowFullEmail(false)
     setShowFullName(false)
     if (approvedToggleStatus === false) {
+
       setToggleLoading(true)
       const response = await api.get(
         `/lead/getallLead?Status=Approved&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
@@ -109,7 +110,9 @@ const LeadAllocationTable = () => {
 
       if (response.status >= 200 && response.status < 300) {
         const data = response.data.data
-
+console.log(data)
+const a=data.filter((itm)=>itm.leadId==="00057")
+console.log(a)
         setTableData(data)
         data.forEach((item) => {
           setselectedAllocationType((prev) => ({
@@ -133,13 +136,17 @@ const LeadAllocationTable = () => {
         })
 
         setSelectedAllocates(initialSelected)
+console.log(initialSelected)
       }
+
     } else {
       setToggleLoading(true)
       const response = await api.get(
         `/lead/getallLead?Status=Pending&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
       )
       if (response.status >= 200 && response.status < 300) {
+console.log(
+"h")
         setSelectedAllocates({})
         setTableData(response.data.data)
         setapprovedToggleStatus(!approvedToggleStatus)
@@ -205,7 +212,7 @@ const LeadAllocationTable = () => {
       console.log("error:", error.message)
     }
   }
- 
+ console.log(selectedAllocationType)
   return (
     <div className="flex flex-col h-full">
       {loading && (

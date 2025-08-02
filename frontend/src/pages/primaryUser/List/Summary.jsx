@@ -55,7 +55,6 @@ const Summary = () => {
   useEffect(() => {
     const startDate = new Date()
 
-
     setDates({ startDate, endDate: startDate })
 
     // Last date of the month
@@ -152,6 +151,7 @@ const Summary = () => {
         }
       } else {
         if (callList && callList.length > 0) {
+          console.log(callList)
           const customerSummaries = callList
             .filter(
               (customer) =>
@@ -200,7 +200,23 @@ const Summary = () => {
                 const isToday = callDate === today // Check if the call is for today
                 return isInDateRange && isToday // Only include calls that match both criteria
               }).length
-
+              // Extract unique last 3 mobile numbers (incomingNumber)
+              const uniqueIncomingNumbers = []
+              for (const call of customer.callregistration) {
+                const num = call?.formdata?.incomingNumber
+                if (num && !uniqueIncomingNumbers.includes(num)) {
+                  uniqueIncomingNumbers.push(num)
+                }
+                if (uniqueIncomingNumbers.length === 3) break
+              }
+              // Extract unique last 3 mobile numbers (incomingNumber)
+              const uniqueSerialNumbers = []
+              for (const call of customer.callregistration) {
+                const license = call?.license
+                if (license && !uniqueSerialNumbers.includes(license)) {
+                  uniqueSerialNumbers.push(license)
+                }
+              }
               return {
                 customerId: customer._id,
                 customerName: customer.customerName,
@@ -208,7 +224,9 @@ const Summary = () => {
                 solvedCalls,
                 pendingCalls,
                 todaysCalls,
-                dateCalls
+                dateCalls,
+                mobileNumbers: uniqueIncomingNumbers,
+                serialNumbers: uniqueSerialNumbers
               }
             })
           if (customerSummaries) {
@@ -222,6 +240,7 @@ const Summary = () => {
       }
     }
   }, [callList, selectedBranch, isToggled, dates])
+  console.log(customerSummary)
   useEffect(() => {
     if (cachedsummary && cachedsummary.length > 0) {
       if (searchTerm === null) {
@@ -473,7 +492,6 @@ const Summary = () => {
       dates.endDate &&
       loggedusers
     ) {
-     
       setCallList([])
       fetchCalls()
     } else {
@@ -509,7 +527,7 @@ const Summary = () => {
       })
     }
   }
-  
+
   const handleChange = (event) => {
     setUserList(data)
     const selected = event.target.value
@@ -537,6 +555,7 @@ const Summary = () => {
     setSelectedCustomer(null)
     setSelectedUser(null)
   }
+  console.log(customerSummary)
   return (
     <div className="flex flex-col h-full">
       <div className="md:px-5 lg:px-6 ">
@@ -580,11 +599,7 @@ const Summary = () => {
               )}
             </div>
           </div>
-
-        
         </div>
-
-    
 
         <div className="flex justify-between">
           <div className="text-blue-700">
@@ -608,7 +623,12 @@ const Summary = () => {
                   Total Calls
                 </th>
               )}
-
+              <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                Mobile No
+              </th>
+              <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                License No
+              </th>
               <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
                 date Calls
               </th>
@@ -628,7 +648,6 @@ const Summary = () => {
                   Today's Calls
                 </th>
               )}
-
               <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
                 View
               </th>
@@ -647,7 +666,12 @@ const Summary = () => {
                         {isToggled ? item.name : item.totalCalls}
                       </td>
                     )}
-
+                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                      {isToggled ? item.name : item.mobileNumbers?.join(", ")}
+                    </td>
+                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                      {isToggled ? item.name : item.serialNumbers?.join(", ")}
+                    </td>
                     <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
                       {isToggled ? item.datecalls : item.dateCalls}
                     </td>
@@ -667,7 +691,6 @@ const Summary = () => {
                         {item.todaysCalls}
                       </td>
                     )}
-
                     <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
                       <button
                         onClick={() =>
@@ -682,7 +705,7 @@ const Summary = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className="text-center py-4">
+                  <td colSpan="9" className="text-center py-4">
                     {loading || branchLoader ? (
                       <div className="justify center">
                         <PropagateLoader color="#3b82f6" size={10} />

@@ -186,6 +186,10 @@ const LeadFollowUp = () => {
   useEffect(() => {
     if (loggedusersallocatedleads && dates.endDate && loggedUser) {
       if (pending && ownFollowUp) {
+console.log(loggedusersallocatedleads)
+const a=loggedusersallocatedleads.followupLeads.map((item)=>item.leadId)
+console.log(a)
+
         const ownFollow = loggedusersallocatedleads.followupLeads.filter(
           (lead) =>
             lead.activityLog?.some(
