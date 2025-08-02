@@ -1918,6 +1918,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             attendances.some(
               (o) => o.attendanceDate.toISOString().split("T")[0] === onsiteDate
             )
+
           if (
             Array.isArray(onsite.onsiteData) &&
             (onsite.adminverified === true ||
@@ -1947,10 +1948,13 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               stats.attendancedates[onsiteDate].notMarked = ""
               stats.onsite++
             } else if (onsite.onsiteType === "Half Day") {
+
               stats.attendancedates[onsiteDate].present = 0.5
               stats.attendancedates[onsiteDate].notMarked = 0.5
             }
+
           }
+
         })
 
       leaves?.length &&
@@ -2071,11 +2075,13 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                 (stats.attendancedates[leaveDate].privileageLeave || 0) +
                 (stats.attendancedates[leaveDate].compensatoryLeave || 0)
 
-              stats.attendancedates[leaveDate].notMarked = totalLeave > 0.5 ? "" : totalLeave === 0.5 ? 0.5 : totalLeave === 0 ? "" : ""
+              stats.attendancedates[leaveDate].notMarked = (stats.attendancedates[leaveDate]?.onsite?.length > 0 && (stats.attendancedates[leaveDate].onsite[0].onsiteType === "Full Day" || stats.attendancedates[leaveDate].onsite[0].onsiteType === "Half Day") && totalLeave > 0) || totalLeave > 0.5 ? "" : totalLeave === 0.5 ? 0.5 : totalLeave === 0 ? "" : ""
               // stats.attendancedates[leaveDate].notMarked = (stats.attendancedates[leaveDate].casualLeave + stats.attendancedates[leaveDate].otherLeave + stats.attendancedates[leaveDate].privileageLeave + stats.attendancedates[leaveDate].compensatoryLeave) > 0.5 ? "" : 1
             }
           }
         })
+
+
 
 
       const uniqueDates = [...new Set([...sundays, ...holiday])]
@@ -5070,8 +5076,8 @@ export const GetsomeAllsummary = async (
                 (stats.attendancedates[leaveDate].otherLeave || 0) +
                 (stats.attendancedates[leaveDate].privileageLeave || 0) +
                 (stats.attendancedates[leaveDate].compensatoryLeave || 0)
-
-              stats.attendancedates[leaveDate].notMarked = totalLeave > 0.5 ? "" : totalLeave === 0.5 ? 0.5 : totalLeave === 0 ? "" : ""
+              stats.attendancedates[leaveDate].notMarked = (stats.attendancedates[leaveDate]?.onsite?.length > 0 && (stats.attendancedates[leaveDate].onsite[0].onsiteType === "Full Day" || stats.attendancedates[leaveDate].onsite[0].onsiteType === "Half Day") && totalLeave > 0) || totalLeave > 0.5 ? "" : totalLeave === 0.5 ? 0.5 : totalLeave === 0 ? "" : ""
+              // stats.attendancedates[leaveDate].notMarked = totalLeave > 0.5 ? "" : totalLeave === 0.5 ? 0.5 : totalLeave === 0 ? "" : ""
 
 
             }
