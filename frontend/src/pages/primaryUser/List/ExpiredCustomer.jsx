@@ -23,13 +23,14 @@ const ExpiredCustomer = () => {
   const [branch, setBranch] = useState([])
   const [expiredCustomerId, setExpiredCustomerId] = useState([])
   const [expiredCustomerList, setexpiryRegisterList] = useState([])
-  const { data: branches } = UseFetch("/branch/getBranch")
+
   const [userBranchId, setUserBranchId] = useState([])
   const [isToggled, setIsToggled] = useState(false)
   const [isCallsToggled, setIscallsToggled] = useState(false)
   const [loading, setLoading] = useState(false)
   const [selectedBranch, setSelectedBranch] = useState("All")
   const [expiredCustomerCalls, setExpiredCustomerCalls] = useState([])
+  const { data: branches } = UseFetch("/branch/getBranch")
   useEffect(() => {
     const now = new Date()
 
@@ -215,6 +216,7 @@ const ExpiredCustomer = () => {
             .includes(searchTerm.toLowerCase())
         )
         setSearchList(filtered)
+        console.log(filtered)
         // setexpiryRegisterList(filtered)
       }, 300)
       return () => clearTimeout(delay)
@@ -439,7 +441,7 @@ const ExpiredCustomer = () => {
 
     return result.trim()
   }
-
+  console.log(expiredCustomerList)
   return (
     <div className="antialiased font-sans container mx-auto px-4 sm:px-8">
       {loading && (
@@ -666,10 +668,12 @@ const ExpiredCustomer = () => {
                       </td>
                     </tr>
                   ))}
-                {!isCallsToggled ? (
-                  (searchTerm.trim() !== "" &&
-                  Array.isArray(searchList) &&
-                  searchList.length > 0
+                {!isCallsToggled &&
+                (Array.isArray(searchList) && searchTerm.trim() !== ""
+                  ? searchList
+                  : expiredCustomerList
+                ).length > 0 ? (
+                  (Array.isArray(searchList) && searchTerm.trim() !== ""
                     ? searchList
                     : expiredCustomerList
                   ).map((customer) =>
@@ -677,18 +681,115 @@ const ExpiredCustomer = () => {
                     customer.selected.length > 0 ? (
                       customer.selected.map((item) => (
                         <tr key={`${customer._id}-${item._id}`}>
-                          {/* Customer Data */}
                           <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm text-left max-w-72">
                             {customer?.customerName || "N/A"}
                           </td>
                           <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm text-center">
                             {customer?.mobile || "N/A"}
                           </td>
-                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm text-center">
-                            {customer?.isActive || "N/A"}
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm text-center text-nowrap">
+                            {item?.productName || "N/A"}
                           </td>
 
-                          {/* Selected Item Data */}
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            {item?.licensenumber || "N/A"}
+                          </td>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            {item?.amcstartDate
+                              ? new Date(item.amcstartDate).toLocaleDateString(
+                                  "en-GB",
+                                  {
+                                    timeZone: "UTC",
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric"
+                                  }
+                                )
+                              : "N/A"}
+                          </td>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            {item?.amcendDate
+                              ? new Date(item.amcendDate).toLocaleDateString(
+                                  "en-GB",
+                                  {
+                                    timeZone: "UTC",
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric"
+                                  }
+                                )
+                              : "N/A"}
+                          </td>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            {item?.tvuexpiryDate
+                              ? new Date(
+                                  item.tvuexpiryDate
+                                ).toLocaleDateString()
+                              : "N/A"}
+                          </td>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            {item?.licenseExpiryDate
+                              ? new Date(
+                                  item.licenseExpiryDate
+                                ).toLocaleDateString()
+                              : "N/A"}
+                          </td>
+
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            {customer?.isActive || "N/A"}
+                          </td>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            <button
+                              onClick={() => openModal(customer?._id)}
+                              className="text-blue-500 hover:text-blue-700"
+                            >
+                              View Details
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr key={customer?._id}>
+                        <td colSpan="11" className="text-center text-sm py-4">
+                          No products selected
+                        </td>
+                      </tr>
+                    )
+                  )
+                ) : (
+                  <tr>
+                    <td colSpan="11" className="text-center py-4">
+                      {loading ? (
+                        <div className="justify-center">
+                          <PropagateLoader color="#3b82f6" size={10} />
+                        </div>
+                      ) : (
+                        <div>No data available</div>
+                      )}
+                    </td>
+                  </tr>
+                )}
+                {/* 
+                {!isCallsToggled && (
+                  (Array.isArray(searchList) &&
+                  searchTerm.trim() !== ""
+                    ? searchList
+                    : expiredCustomerList
+                  ).map((customer) =>
+                    Array.isArray(customer.selected) &&
+                    customer.selected.length > 0 ? (
+                      customer.selected.map((item) => (
+                        <tr key={`${customer._id}-${item._id}`}>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm text-left max-w-72">
+                            {customer?.customerName || "N/A"}
+                          </td>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm text-center">
+                            {customer?.mobile || "N/A"}
+                          </td>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm text-center text-nowrap">
+                            {item?.productName || "N/A"}
+                          </td>
+
                           <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
                             {item?.licensenumber || "N/A"}
                           </td>
@@ -763,19 +864,7 @@ const ExpiredCustomer = () => {
                       </tr>
                     )
                   )
-                ) : (
-                  <tr>
-                    <td colSpan="11" className="text-center py-4">
-                      {loading ? (
-                        <div className="justify-center">
-                          <PropagateLoader color="#3b82f6" size={10} />
-                        </div>
-                      ) : (
-                        <div>No data available</div>
-                      )}
-                    </td>
-                  </tr>
-                )}
+                ) } */}
 
                 {/* {!isCallsToggled &&
 (searchTerm.trim() !=="" && Array.isArray(searchList) && searchList.length >0 ? searchList:expiredCustomerList).map((customer) =>
