@@ -63,18 +63,19 @@ const Summary = () => {
     if (dates.startDate) {
       const fetchUserList = async () => {
         try {
+console.log(query)
           const query = `startDate=${dates.startDate}&endDate=${dates.endDate}`
           const response = await api.get(`/auth/getStaffCallStatus?${query}`)
           setData(response.data.data)
 
           const a = response.data.data.userCallsCount
-
+         
           // const b = a.map((item) => {})
           const filterByDateRange = (data, startDate, endDate) => {
             // Normalize start and end dates to include the full day
+          
             const start = new Date(`${startDate}T00:00:00.000Z`)
             const end = new Date(`${endDate}T23:59:59.999Z`)
-
             return data.flat().filter((item) => {
               const callDate = new Date(item.callDate)
 
@@ -83,12 +84,12 @@ const Summary = () => {
           }
 
           if (a) {
-            const filteredData = filterByDateRange(
-              a,
-              dates.startDate,
-              dates.endDate
-            )
-
+            // const filteredData = filterByDateRange(
+            //   a,
+            //   dates.startDate,
+            //   dates.endDate
+            // )
+            // console.log(filteredData)
             const processDataAndUpdateList = (data) => {
               setUserList((prevList) => {
                 const updatedList = [...prevList]
@@ -96,26 +97,26 @@ const Summary = () => {
                 data.forEach((item) => {
                   // Check if the callerId exists in the list
                   const existingEntry = updatedList.find(
-                    (entry) => entry._id === item.callerId
+                    (entry) => entry._id === item[0].callerId
                   )
 
                   if (existingEntry) {
                     // Update counts if the entry exists
-                    existingEntry.solvedCalls += item.solvedCalls
-                    existingEntry.pendingCalls += item.pendingCalls
-                    existingEntry.colleagueSolved += item.colleagueSolved
-                    existingEntry.todaysCalls += item.todaysCalls
-                    existingEntry.datecalls += item.datecalls
+                    existingEntry.solvedCalls += item[0].solvedCalls
+                    existingEntry.pendingCalls += item[0].pendingCalls
+                    existingEntry.colleagueSolved += item[0].colleagueSolved
+                    existingEntry.todaysCalls += item[0].todaysCalls
+                    existingEntry.datecalls += item[0].datecalls
                   } else {
                     // Create a new entry if it doesn't exist
                     updatedList.push({
-                      _id: item.callerId,
-                      name: item.callerName,
-                      solvedCalls: item.solvedCalls,
-                      pendingCalls: item.pendingCalls,
-                      colleagueSolved: item.colleagueSolved,
-                      datecalls: item.datecalls,
-                      todaysCalls: item.todaysCalls
+                      _id: item[0].callerId,
+                      name: item[0].callerName,
+                      solvedCalls: item[0].solvedCalls,
+                      pendingCalls: item[0].pendingCalls,
+                      colleagueSolved: item[0].colleagueSolved,
+                      datecalls: item[0].datecalls,
+                      todaysCalls: item[0].todaysCalls
                     })
                   }
                 })
@@ -123,7 +124,7 @@ const Summary = () => {
                 return updatedList
               })
             }
-            processDataAndUpdateList(filteredData)
+            processDataAndUpdateList(a)
           }
         } catch (error) {
           console.error("Error fetching user list:", error)
@@ -151,7 +152,6 @@ const Summary = () => {
         }
       } else {
         if (callList && callList.length > 0) {
-          console.log(callList)
           const customerSummaries = callList
             .filter(
               (customer) =>
@@ -240,7 +240,6 @@ const Summary = () => {
       }
     }
   }, [callList, selectedBranch, isToggled, dates])
-  console.log(customerSummary)
   useEffect(() => {
     if (cachedsummary && cachedsummary.length > 0) {
       if (searchTerm === null) {
@@ -555,7 +554,6 @@ const Summary = () => {
     setSelectedCustomer(null)
     setSelectedUser(null)
   }
-  console.log(customerSummary)
   return (
     <div className="flex flex-col h-full">
       <div className="md:px-5 lg:px-6 ">
@@ -594,9 +592,37 @@ const Summary = () => {
             </div>
 
             <div className=" flex flex-grow justify-end">
+            
+              <button
+                onClick={toggle}
+                className={`${
+                  isToggled ? "bg-green-500" : "bg-gray-300"
+                } w-12 h-6 flex items-center rounded-full p-0 mr-2 transition-colors duration-300`}
+              >
+                <div
+                  className={`${
+                    isToggled ? "translate-x-6" : "translate-x-0"
+                  } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                ></div>
+              </button>
               {dates.startDate && (
                 <MyDatePicker setDates={setDates} dates={dates} />
               )}
+              {/* <span className="text-gray-600 mr-4 font-bold">
+                Expired Customer Calls
+              </span> */}
+              {/* <button
+                onClick={callstoggle}
+                className={`${
+                  isCallsToggled ? "bg-green-500" : "bg-gray-300"
+                } w-14 h-6 flex items-center rounded-full p-0 transition-colors duration-300`}
+              >
+                <div
+                  className={`${
+                    isCallsToggled ? "translate-x-8" : "translate-x-0"
+                  } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                ></div>
+              </button> */}
             </div>
           </div>
         </div>
@@ -623,12 +649,17 @@ const Summary = () => {
                   Total Calls
                 </th>
               )}
-              <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
-                Mobile No
-              </th>
-              <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
-                License No
-              </th>
+              {!isToggled && (
+                <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                  Mobile No
+                </th>
+              )}
+              {!isToggled && (
+                <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                  License No
+                </th>
+              )}
+
               <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
                 date Calls
               </th>
@@ -663,15 +694,20 @@ const Summary = () => {
                     </td>
                     {!isToggled && (
                       <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                        {isToggled ? item.name : item.totalCalls}
+                        {item.totalCalls}
                       </td>
                     )}
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      {isToggled ? item.name : item.mobileNumbers?.join(", ")}
-                    </td>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      {isToggled ? item.name : item.serialNumbers?.join(", ")}
-                    </td>
+                    {!isToggled && (
+                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                        {item.mobileNumbers?.join(", ")}
+                      </td>
+                    )}
+                    {!isToggled && (
+                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                        {item.serialNumbers?.join(", ")}
+                      </td>
+                    )}
+
                     <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
                       {isToggled ? item.datecalls : item.dateCalls}
                     </td>
