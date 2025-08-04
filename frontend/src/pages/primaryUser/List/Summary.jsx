@@ -31,7 +31,10 @@ const Summary = () => {
   const { data: branches, loading: branchLoader } =
     UseFetch("/branch/getBranch")
   const { data: staffCallList, loading: staffLoader } = UseFetch(
-    dates.startDate && `/auth/staffcallList?startDate=${dates.startDate}`
+    isToggled &&
+      dates.startDate &&
+      dates.endDate &&
+      `/auth/staffcallList?startDate=${dates.startDate}`
   )
   useEffect(() => {
     if (branches && branches.length > 0) {
@@ -63,17 +66,16 @@ const Summary = () => {
     if (dates.startDate) {
       const fetchUserList = async () => {
         try {
-console.log(query)
           const query = `startDate=${dates.startDate}&endDate=${dates.endDate}`
           const response = await api.get(`/auth/getStaffCallStatus?${query}`)
           setData(response.data.data)
 
           const a = response.data.data.userCallsCount
-         
+
           // const b = a.map((item) => {})
           const filterByDateRange = (data, startDate, endDate) => {
             // Normalize start and end dates to include the full day
-          
+
             const start = new Date(`${startDate}T00:00:00.000Z`)
             const end = new Date(`${endDate}T23:59:59.999Z`)
             return data.flat().filter((item) => {
@@ -148,6 +150,7 @@ console.log(query)
             setUserList(staffCallStatus)
           }
         } else {
+
           fetchUserList()
         }
       } else {
@@ -489,7 +492,8 @@ console.log(query)
       branch.length > 0 &&
       dates.startDate &&
       dates.endDate &&
-      loggedusers
+      loggedusers &&
+      !isToggled
     ) {
       setCallList([])
       fetchCalls()
@@ -592,7 +596,6 @@ console.log(query)
             </div>
 
             <div className=" flex flex-grow justify-end">
-            
               <button
                 onClick={toggle}
                 className={`${
