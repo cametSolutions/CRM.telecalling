@@ -3528,6 +3528,8 @@ export const GetStaffCallList = async (req, res) => {
   try {
     const { startDate, endDate } = req.query
 
+    const start = new Date(startDate);
+    const end = new Date(endDate)
     // Fetch staff details
     const staff = await Staff.find()
     const a = await Staff.find().select("name _id callstatus.totalCall").lean()
@@ -3535,9 +3537,56 @@ export const GetStaffCallList = async (req, res) => {
     const customerCalls = await CallRegistration.find()
       .populate("callregistration.formdata.attendedBy.callerId") // Populate callerId field
       .exec()
+    // const c = customerCalls.filter((call) => call.formdata.attendedBy.some((call) => {
+    //   const callDate = new Date(call.calldate)
+    //   const filterDate = new Date("2024-12-10")
+    //   return callDate > filterDate))
+    // const c = customerCalls.map((item) =>
+    //   item.callregistration.filter((call) =>
+    //     call.formdata.attendedBy.some((entry) => {
+    //       const callDate = new Date(entry.calldate);
+    //       const filterDate = new Date("2024-12-10");
+    //       return callDate > filterDate;
+    //     }))
 
+    // );
+    const filteredCalls = customerCalls.map((call) => {
+      const filteredCallRegistration = call.callregistration
+        .map((reg) => {
+          // Make sure attendedBy is a valid array
+          const attendedBy = Array.isArray(reg.formdata?.attendedBy)
+            ? reg.formdata.attendedBy
+            : [];
+
+          // Filter attendedBy entries with valid calldate in range
+          const matchedAttendedBy = attendedBy.filter((entry) => {
+            if (!entry.calldate) return false;
+            const callDate = new Date(entry.calldate);
+            return callDate >= start && callDate <= end;
+          });
+
+          // If there are matched attendedBy entries, return updated registration
+          if (matchedAttendedBy.length > 0) {
+            return {
+              ...reg.toObject(), // clone to avoid mutation
+              formdata: {
+                ...reg.formdata,
+                attendedBy: matchedAttendedBy,
+              },
+            };
+          }
+          return null;
+        })
+        .filter(Boolean); // remove nulls
+
+      // Return the full call with filtered callregistration
+      return {
+        ...call.toObject(),
+        callregistration: filteredCallRegistration,
+      };
+    }).filter(call => call.callregistration.length > 0); // Remove calls with no matching entries
     // Process customer calls
-    const userCallsCount = customerCalls
+    const userCallsCount = filteredCalls
       .map((item) => {
         return item.callregistration
           .filter((calls) =>
@@ -3561,9 +3610,8 @@ export const GetStaffCallList = async (req, res) => {
               .map((call) => {
                 // Get today's date in `YYYY-MM-DD` format
                 const today = new Date().toISOString().split("T")[0]
-                const callDate = new Date(call.calldate)
-                  .toISOString()
-                  .split("T")[0]
+                
+                const callDate = new Date(call.calldate).toISOString().split("T")[0]
                 // Check if callerId matches any staff _id and add staff name to callerDetails
                 const matchedStaff = staff.find(
                   (staffMember) =>
@@ -3607,7 +3655,6 @@ export const GetStaffCallList = async (req, res) => {
           })
       })
       .flat() // Flatten nested arrays into a single array
-
     if (staff) {
       return res.status(200).json({
         message: "Staff found",
@@ -3615,6 +3662,7 @@ export const GetStaffCallList = async (req, res) => {
       })
     }
   } catch (error) {
+    console.log("er", error)
     console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })
   }
@@ -3622,9 +3670,9 @@ export const GetStaffCallList = async (req, res) => {
 
 export const GetindividualStaffCall = async (req, res) => {
   try {
-    // const { startDate } = req.query
-    const startDate = new Date("2024-11-16T00:00:00.000Z")
-    return res.status(200).json({ message: "no data", data: [] })
+    const { startDate } = req.query
+    // const startDate = new Date("2024-11-16T00:00:00.000Z")
+    // return res.status(200).json({ message: "no data", data: [] })
     const calls = await CallRegistration.aggregate([
       {
         $project: {
@@ -3697,7 +3745,7 @@ export const GetindividualStaffCall = async (req, res) => {
         return item;
       })
     );
-
+  
 
     if (calls) {
       // Respond with the filtered call data
