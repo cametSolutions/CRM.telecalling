@@ -345,8 +345,6 @@ export const GetselectedDateCalls = async (req, res) => {
     const { startDate, endDate } = req.query
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0); // Start of the day
-
-
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999); // End of the day
 

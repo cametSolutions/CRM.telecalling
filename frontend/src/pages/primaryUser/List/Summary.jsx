@@ -10,6 +10,7 @@ const Summary = () => {
 
   const [selectedUser, setSelectedUser] = useState(null)
   const [cachedsummary, setCachedsummary] = useState([])
+  const [cachedUserlistsummary, setcacheduserSummary] = useState([])
   const [Calls, setCalls] = useState([])
   const [searchTerm, setSearchTerm] = useState(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -34,9 +35,8 @@ const Summary = () => {
     isToggled &&
       dates.startDate &&
       dates.endDate &&
-      `/auth/staffcallList?startDate=${dates.startDate}`
+      `/auth/staffcallList?startDate=${dates.startDate}&endDate=${dates.endDate}`
   )
-console.log(staffCallList)
   useEffect(() => {
     if (branches && branches.length > 0) {
       const userData = localStorage.getItem("user")
@@ -71,28 +71,9 @@ console.log(staffCallList)
           const response = await api.get(`/auth/getStaffCallStatus?${query}`)
           setData(response.data.data)
 
-          const a = response.data.data.userCallsCount
-console.log(a)
-          // const b = a.map((item) => {})
-          const filterByDateRange = (data, startDate, endDate) => {
-            // Normalize start and end dates to include the full day
+          const result = response.data.data
 
-            const start = new Date(`${startDate}T00:00:00.000Z`)
-            const end = new Date(`${endDate}T23:59:59.999Z`)
-            return data.flat().filter((item) => {
-              const callDate = new Date(item.callDate)
-
-              return callDate >= start && callDate <= end
-            })
-          }
-
-          if (a) {
-            // const filteredData = filterByDateRange(
-            //   a,
-            //   dates.startDate,
-            //   dates.endDate
-            // )
-            // console.log(filteredData)
+          if (result) {
             const processDataAndUpdateList = (data) => {
               setUserList((prevList) => {
                 const updatedList = [...prevList]
@@ -126,8 +107,40 @@ console.log(a)
 
                 return updatedList
               })
+              setcacheduserSummary((prevList) => {
+                const updatedList = [...prevList]
+
+                data.forEach((item) => {
+                  // Check if the callerId exists in the list
+                  const existingEntry = updatedList.find(
+                    (entry) => entry._id === item[0].callerId
+                  )
+
+                  if (existingEntry) {
+                    // Update counts if the entry exists
+                    existingEntry.solvedCalls += item[0].solvedCalls
+                    existingEntry.pendingCalls += item[0].pendingCalls
+                    existingEntry.colleagueSolved += item[0].colleagueSolved
+                    existingEntry.todaysCalls += item[0].todaysCalls
+                    existingEntry.datecalls += item[0].datecalls
+                  } else {
+                    // Create a new entry if it doesn't exist
+                    updatedList.push({
+                      _id: item[0].callerId,
+                      name: item[0].callerName,
+                      solvedCalls: item[0].solvedCalls,
+                      pendingCalls: item[0].pendingCalls,
+                      colleagueSolved: item[0].colleagueSolved,
+                      datecalls: item[0].datecalls,
+                      todaysCalls: item[0].todaysCalls
+                    })
+                  }
+                })
+
+                return updatedList
+              })
             }
-            processDataAndUpdateList(a)
+            processDataAndUpdateList(result)
           }
         } catch (error) {
           console.error("Error fetching user list:", error)
@@ -151,7 +164,6 @@ console.log(a)
             setUserList(staffCallStatus)
           }
         } else {
-
           fetchUserList()
         }
       } else {
@@ -244,18 +256,30 @@ console.log(a)
       }
     }
   }, [callList, selectedBranch, isToggled, dates])
-console.log(userList)
   useEffect(() => {
     if (cachedsummary && cachedsummary.length > 0) {
-      if (searchTerm === null) {
-        return
-      } else if (searchTerm === "") {
-        setCustomerSummary(cachedsummary)
-      } else if (searchTerm) {
-        const filteredCalls = cachedsummary.filter((call) =>
-          call.customerName.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-        setCustomerSummary(filteredCalls)
+      if (isToggled) {
+        if (searchTerm === null) {
+          return
+        } else if (searchTerm === "") {
+          setUserList(cachedUserlistsummary)
+        } else if (searchTerm) {
+          const filteredCalls = cachedUserlistsummary.filter((call) =>
+            call.name.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+          setUserList(filteredCalls)
+        }
+      } else {
+        if (searchTerm === null) {
+          return
+        } else if (searchTerm === "") {
+          setCustomerSummary(cachedsummary)
+        } else if (searchTerm) {
+          const filteredCalls = cachedsummary.filter((call) =>
+            call.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+          setCustomerSummary(filteredCalls)
+        }
       }
     }
   }, [searchTerm])
@@ -319,7 +343,6 @@ console.log(userList)
     }
     if (isModalOpen && selectedUser) {
       const today = new Date().toISOString().split("T")[0] // Today's date in 'YYYY-MM-DD' format
-
       const filteredCalls = indiviDualCallList
         .map((item) => {
           const matchedCallregistration = item.callregistration.filter((call) =>
@@ -395,8 +418,9 @@ console.log(userList)
           // Flatten call registrations with their parent
           return call.callregistration.map((registration) => ({
             ...registration,
-            customerName: call.customerid.customerName,
-            customerId: call.customerid._id
+            customerName: call.customerName,
+            customerId: call.customerid._id,
+            productName: call.productDetails[0].productName
           }))
         })
         .flat()
@@ -410,7 +434,6 @@ console.log(userList)
 
           return getPriority(a) - getPriority(b)
         })
-
       // Group back by customer
       const groupedCalls = sortedCalls.reduce((acc, registration) => {
         const customerId = registration.customerId
@@ -747,7 +770,7 @@ console.log(userList)
               ) : (
                 <tr>
                   <td colSpan="9" className="text-center py-4">
-                    {loading || branchLoader ? (
+                    {loading || branchLoader || staffLoader ? (
                       <div className="justify center">
                         <PropagateLoader color="#3b82f6" size={10} />
                       </div>
@@ -961,7 +984,7 @@ console.log(userList)
                                 </td>
 
                                 <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                                  {reg?.product?.productName}
+                                  {reg?.productName}
                                 </td>
                                 <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                                   {reg?.license}
