@@ -1,6 +1,6 @@
 import models from "../model/auth/authSchema.js"
 import Leavemaster from "../model/secondaryUser/leavemasterSchema.js"
-
+import Customer from "../model/secondaryUser/customerSchema.js"
 import QuarterlyAchiever from "../model/primaryUser/quarterlyAchieversSchema.js"
 import YearlyAchiever from "../model/primaryUser/yearylyAchieversSchema.js"
 import { getStaffSolvedCallCounts } from "../helper/staffHighestandlowestsolvedcallscount.js"
@@ -3528,28 +3528,108 @@ export const GetStaffCallList = async (req, res) => {
   try {
     const { startDate, endDate } = req.query
 
-    const start = new Date(startDate);
-    const end = new Date(endDate)
-    // Fetch staff details
-    const staff = await Staff.find({})
-    const a = await Staff.find().select("name _id callstatus.totalCall").lean()
-    // Fetch customer calls and populate callerId in attendedBy array
-    const customerCalls = await CallRegistration.find()
-      .populate("callregistration.formdata.attendedBy.callerId") // Populate callerId field
-      .exec()
-    // const c = customerCalls.filter((call) => call.formdata.attendedBy.some((call) => {
-    //   const callDate = new Date(call.calldate)
-    //   const filterDate = new Date("2024-12-10")
-    //   return callDate > filterDate))
-    // const c = customerCalls.map((item) =>
-    //   item.callregistration.filter((call) =>
-    //     call.formdata.attendedBy.some((entry) => {
-    //       const callDate = new Date(entry.calldate);
-    //       const filterDate = new Date("2024-12-10");
-    //       return callDate > filterDate;
-    //     }))
 
-    // );
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0); // Start of the day
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999); // End of the day
+    const staff = await Staff.find().lean();
+    const customerCalls = await CallRegistration.aggregate([
+      {
+        $match: {
+          callregistration: { $exists: true, $ne: [] } // Ensure callregistration exists and is not empty
+        }
+      },
+      {
+        $match: {
+          "callregistration.formdata.attendedBy": { $type: "array" }
+        }
+      },
+
+      {
+        $addFields: {
+          // Filter callregistration array to include only those with attendedBy matching the date range
+          callregistration: {
+            $filter: {
+              input: "$callregistration", // Iterate through callregistration array
+              as: "call",
+              cond: {
+                $gt: [
+                  {
+                    // Check if any attendedBy.calldate matches the date range
+                    $size: {
+                      $filter: {
+                        input: {
+                          $filter: {
+                            input: { $ifNull: ["$$call.formdata.attendedBy", []] },
+                            as: "att",
+                            cond: { $eq: [{ $type: "$$att" }, "object"] } // only include objects
+                          }
+                        },
+                        // input: { $ifNull: ["$$call.formdata.attendedBy", []] }, // Handle empty attendedBy array
+                        as: "attendee",
+                        cond: {
+                          $and: [
+                            { $ne: ["$$attendee.calldate", null] },
+                            { $ne: ["$$attendee.calldate", ""] },
+                            {
+                              $gte: [
+                                {
+                                  $toDate: {
+                                    $cond: {
+                                      if: { $isArray: "$$attendee.calldate" },
+                                      then: { $arrayElemAt: ["$$attendee.calldate", 0] },
+                                      else: "$$attendee.calldate"
+                                    }
+                                  }
+                                },
+                                start
+                              ]
+                            },
+                            {
+                              $lte: [
+                                {
+                                  $toDate: {
+                                    $cond: {
+                                      if: { $isArray: "$$attendee.calldate" },
+                                      then: { $arrayElemAt: ["$$attendee.calldate", 0] },
+                                      else: "$$attendee.calldate"
+                                    }
+                                  }
+                                },
+                                end
+                              ]
+                            }
+                          ]
+                        }
+
+                      }
+                    }
+                  },
+                  0
+                ]
+              }
+            }
+          }
+        }
+      },
+
+      {
+        $match: {
+          // Ensure callregistration array still contains at least one element after filtering
+          callregistration: { $ne: [] }
+        }
+      },
+      // Lookup for attendedBy details (and directly enrich the existing attendedBy field)
+      {
+        $lookup: {
+          from: "staffs",
+          localField: "callregistration.formdata.attendedBy.callerId",
+          foreignField: "_id",
+          as: "attendedByDetails" // Temporary storage for attendedBy details
+        }
+      }
+    ])
     const filteredCalls = customerCalls.map((call) => {
       const filteredCallRegistration = call.callregistration
         .map((reg) => {
@@ -3568,7 +3648,7 @@ export const GetStaffCallList = async (req, res) => {
           // If there are matched attendedBy entries, return updated registration
           if (matchedAttendedBy.length > 0) {
             return {
-              ...reg.toObject(), // clone to avoid mutation
+              ...reg,
               formdata: {
                 ...reg.formdata,
                 attendedBy: matchedAttendedBy,
@@ -3581,7 +3661,7 @@ export const GetStaffCallList = async (req, res) => {
 
       // Return the full call with filtered callregistration
       return {
-        ...call.toObject(),
+        ...call,
         callregistration: filteredCallRegistration,
       };
     }).filter(call => call.callregistration.length > 0); // Remove calls with no matching entries
@@ -3656,117 +3736,209 @@ export const GetStaffCallList = async (req, res) => {
       })
       .flat() // Flatten nested arrays into a single array
 
-    if (staff) {
+
+    if (userCallsCount && userCallsCount.length) {
       return res.status(200).json({
-        message: "Staff found",
-        data: { staff, userCallsCount, a }
+        message: "usercalls found",
+        data: userCallsCount
+      })
+    } else {
+      return res.status(404).json({
+        message: "user calls not found",
+        data: []
       })
     }
   } catch (error) {
-    console.log("er", error)
     console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })
   }
 }
 
+
 export const GetindividualStaffCall = async (req, res) => {
   try {
-    const { startDate } = req.query
-console.log("YYY")
-    // const startDate = new Date("2024-11-16T00:00:00.000Z")
-    // return res.status(200).json({ message: "no data", data: [] })
+    const { startDate, endDate } = req.query;
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0); // Start of the day
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999); // End of the day
+    if (!startDate) {
+      return res.status(400).json({ message: "startDate is required" });
+    }
+    // Step 1: Aggregate call registrations after filtering by date
     const calls = await CallRegistration.aggregate([
       {
-        $project: {
-          _id: 1, // Include the _id field
-          customerid: 1, // Include the customerid field
+        $match: {
+          callregistration: { $exists: true, $ne: [] } // Ensure callregistration exists and is not empty
+        }
+      },
+      {
+        $match: {
+          "callregistration.formdata.attendedBy": { $type: "array" }
+        }
+      },
+
+      {
+        $addFields: {
+          // Filter callregistration array to include only those with attendedBy matching the date range
           callregistration: {
             $filter: {
-              input: "$callregistration", // The array to filter
-              as: "call", // Alias for each element in the array
-              cond: { $gte: ["$$call.timedata.startTime", startDate] } // Condition to match startTime
+              input: "$callregistration", // Iterate through callregistration array
+              as: "call",
+              cond: {
+                $gt: [
+                  {
+                    // Check if any attendedBy.calldate matches the date range
+                    $size: {
+                      $filter: {
+                        input: {
+                          $filter: {
+                            input: { $ifNull: ["$$call.formdata.attendedBy", []] },
+                            as: "att",
+                            cond: { $eq: [{ $type: "$$att" }, "object"] } // only include objects
+                          }
+                        },
+                        // input: { $ifNull: ["$$call.formdata.attendedBy", []] }, // Handle empty attendedBy array
+                        as: "attendee",
+                        cond: {
+                          $and: [
+                            { $ne: ["$$attendee.calldate", null] },
+                            { $ne: ["$$attendee.calldate", ""] },
+                            {
+                              $gte: [
+                                {
+                                  $toDate: {
+                                    $cond: {
+                                      if: { $isArray: "$$attendee.calldate" },
+                                      then: { $arrayElemAt: ["$$attendee.calldate", 0] },
+                                      else: "$$attendee.calldate"
+                                    }
+                                  }
+                                },
+                                start
+                              ]
+                            },
+                            {
+                              $lte: [
+                                {
+                                  $toDate: {
+                                    $cond: {
+                                      if: { $isArray: "$$attendee.calldate" },
+                                      then: { $arrayElemAt: ["$$attendee.calldate", 0] },
+                                      else: "$$attendee.calldate"
+                                    }
+                                  }
+                                },
+                                end
+                              ]
+                            }
+                          ]
+                        }
+
+                      }
+                    }
+                  },
+                  0
+                ]
+              }
             }
           }
         }
       },
+
       {
-        // Optionally, you can add a match stage to exclude documents without any valid calls in the array
         $match: {
-          "callregistration.0": { $exists: true } // Ensure there is at least one matching call in the array
+          // Ensure callregistration array still contains at least one element after filtering
+          callregistration: { $ne: [] }
         }
-      }
-    ])
-console.log("iiii")
-    // Now use populate to fetch customer details using the customerid
-    const populatedCalls = await CallRegistration.populate(calls, [
-      {
-        path: "customerid", // The field you want to populate
-        select: "customerName " // Fields to include in the populated customer
       },
+      // Lookup for product details (and directly enrich the existing product field)
       {
-        path: "callregistration.product", // Populate the product field inside callregistration array
-        select: "productName" // Optionally select fields from the Product schema you need
-      }
+        $lookup: {
+          from: "products",
+          localField: "callregistration.product",
+          foreignField: "_id",
+          as: "productDetails" // We temporarily store product details here
+        }
+      },
+
     ])
-console.log("oo")
-    const allpopulate = await Promise.all(
-      populatedCalls.map(async (item) => {
-        // Loop over callregistration (async inside map — better use for...of)
-        for (const items of item.callregistration) {
-          try {
-            // Ensure attendedBy is an array
-            if (Array.isArray(items.formdata.attendedBy)) {
-              items.formdata.attendedBy = await Promise.all(
-                items.formdata.attendedBy.map(async (attended) => {
-                  const user = await Staff.findById(attended.callerId).select("name");
-                  return { callerId: user?.name };
-                })
-              );
-            } else {
-              items.formdata.attendedBy = [];
-            }
+   
 
-            // Ensure completedBy is an array
-            if (Array.isArray(items.formdata.completedBy)) {
-              items.formdata.completedBy = await Promise.all(
-                items.formdata.completedBy.map(async (completed) => {
-                  const user = await Staff.findById(completed.callerId).select("name");
-                  return { callerId: user?.name };
-                })
-              );
-            } else {
-              items.formdata.completedBy = [];
-            }
-          } catch (error) {
-            console.log("error:", error)
+    // Step 2: Populate customerid only (can't populate inside aggregated arrays directly)
+    const customerIds = calls.map((c) => c.customerid);
+    const customers = await Customer.find({ _id: { $in: customerIds } }).select("customerName");
+    const customerMap = Object.fromEntries(customers.map((c) => [c._id.toString(), c.customerName]));
 
-          }
+  
+    const userIds = new Set();
 
+    for (const call of calls) {
+      for (const reg of call.callregistration) {
+        const attended = reg.formdata?.attendedBy;
+        if (Array.isArray(attended)) {
+          attended.forEach((a) => {
+            if (a?.callerId) userIds.add(a.callerId);
+          });
         }
 
-        // Return modified item
-        return item;
-      })
-    );
-
-console.log("uuuu")
-    if (calls) {
-console.log("hh")
-      // Respond with the filtered call data
-      return res
-        .status(200)
-        .json({ message: "Matched calls found", data: allpopulate })
-    } else {
-console.log("h")
-      return res.status(404).json({ message: "No data found" })
+        const completed = reg.formdata?.completedBy;
+        if (Array.isArray(completed)) {
+          completed.forEach((c) => {
+            if (c?.callerId) userIds.add(c.callerId);
+          });
+        }
+      }
     }
+
+
+    const staff = await Staff.find({ _id: { $in: [...userIds] } }).select("name");
+    const staffMap = Object.fromEntries(staff.map((s) => [s._id.toString(), s.name]));
+
+    // Step 4: Replace IDs with names in attendedBy and completedBy
+    const transformedCalls = calls.map((call) => {
+      const updatedRegs = call.callregistration.map((reg) => {
+        const attended = Array.isArray(reg.formdata?.attendedBy)
+          ? reg.formdata.attendedBy.map((a) => ({
+            callerId: staffMap[a.callerId?.toString()] || "Unknown",
+          }))
+          : [];
+
+        const completed = Array.isArray(reg.formdata?.completedBy)
+          ? reg.formdata.completedBy.map((c) => ({
+            callerId: staffMap[c.callerId?.toString()] || "Unknown",
+          }))
+          : [];
+
+        return {
+          ...reg,
+          formdata: {
+            ...reg.formdata,
+            attendedBy: attended,
+            completedBy: completed,
+          },
+        };
+      });
+
+      return {
+        ...call,
+        customerid: customerMap[call.customerid.toString()] || "Unknown",
+        callregistration: updatedRegs,
+      };
+    });
+    return res.status(200).json({
+      message: "Matched calls found",
+      data: transformedCalls,
+    });
   } catch (error) {
-    console.error("Error fetching staff call data:", error)
-    return res
-      .status(500)
-      .json({ message: "An error occurred while fetching data." })
+    console.error("Error fetching staff call data:", error);
+    return res.status(500).json({
+      message: "An error occurred while fetching data.",
+      error: error.message,
+    });
   }
-}
+};
+
 export const UpdateLeaveSummary = async (req, res) => {
   try {
     const { userid } = req.query
