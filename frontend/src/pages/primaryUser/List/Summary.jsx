@@ -36,6 +36,7 @@ const Summary = () => {
       dates.endDate &&
       `/auth/staffcallList?startDate=${dates.startDate}`
   )
+console.log(staffCallList)
   useEffect(() => {
     if (branches && branches.length > 0) {
       const userData = localStorage.getItem("user")
@@ -71,7 +72,7 @@ const Summary = () => {
           setData(response.data.data)
 
           const a = response.data.data.userCallsCount
-
+console.log(a)
           // const b = a.map((item) => {})
           const filterByDateRange = (data, startDate, endDate) => {
             // Normalize start and end dates to include the full day
@@ -243,6 +244,7 @@ const Summary = () => {
       }
     }
   }, [callList, selectedBranch, isToggled, dates])
+console.log(userList)
   useEffect(() => {
     if (cachedsummary && cachedsummary.length > 0) {
       if (searchTerm === null) {

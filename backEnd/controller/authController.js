@@ -3531,7 +3531,7 @@ export const GetStaffCallList = async (req, res) => {
     const start = new Date(startDate);
     const end = new Date(endDate)
     // Fetch staff details
-    const staff = await Staff.find()
+    const staff = await Staff.find({})
     const a = await Staff.find().select("name _id callstatus.totalCall").lean()
     // Fetch customer calls and populate callerId in attendedBy array
     const customerCalls = await CallRegistration.find()
@@ -3610,7 +3610,7 @@ export const GetStaffCallList = async (req, res) => {
               .map((call) => {
                 // Get today's date in `YYYY-MM-DD` format
                 const today = new Date().toISOString().split("T")[0]
-                
+
                 const callDate = new Date(call.calldate).toISOString().split("T")[0]
                 // Check if callerId matches any staff _id and add staff name to callerDetails
                 const matchedStaff = staff.find(
@@ -3655,6 +3655,7 @@ export const GetStaffCallList = async (req, res) => {
           })
       })
       .flat() // Flatten nested arrays into a single array
+
     if (staff) {
       return res.status(200).json({
         message: "Staff found",
@@ -3671,6 +3672,7 @@ export const GetStaffCallList = async (req, res) => {
 export const GetindividualStaffCall = async (req, res) => {
   try {
     const { startDate } = req.query
+console.log("YYY")
     // const startDate = new Date("2024-11-16T00:00:00.000Z")
     // return res.status(200).json({ message: "no data", data: [] })
     const calls = await CallRegistration.aggregate([
@@ -3694,6 +3696,7 @@ export const GetindividualStaffCall = async (req, res) => {
         }
       }
     ])
+console.log("iiii")
     // Now use populate to fetch customer details using the customerid
     const populatedCalls = await CallRegistration.populate(calls, [
       {
@@ -3705,7 +3708,7 @@ export const GetindividualStaffCall = async (req, res) => {
         select: "productName" // Optionally select fields from the Product schema you need
       }
     ])
-
+console.log("oo")
     const allpopulate = await Promise.all(
       populatedCalls.map(async (item) => {
         // Loop over callregistration (async inside map — better use for...of)
@@ -3745,13 +3748,17 @@ export const GetindividualStaffCall = async (req, res) => {
         return item;
       })
     );
-  
 
+console.log("uuuu")
     if (calls) {
+console.log("hh")
       // Respond with the filtered call data
       return res
         .status(200)
         .json({ message: "Matched calls found", data: allpopulate })
+    } else {
+console.log("h")
+      return res.status(404).json({ message: "No data found" })
     }
   } catch (error) {
     console.error("Error fetching staff call data:", error)

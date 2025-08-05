@@ -10,7 +10,7 @@ import debounce from "lodash.debounce"
 
 function LeaveApplication() {
   const [events, setEvents] = useState([])
-// const [ownCalander,setOwnCalander]=useState()
+  // const [ownCalander,setOwnCalander]=useState()
   const [edit, setEdit] = useState(null)
   const [isHaveCompensatoryleave, setcompensatoryLeave] = useState(false)
   const [selectedDate, setSelectedDate] = useState(new Date())
@@ -864,7 +864,8 @@ function LeaveApplication() {
           newErrors.halfDayPeriod = "Please select Half Day period"
         if (!formData.onsiteDate)
           newErrors.onsiteDate = "Onsite Date is required"
-
+        if (tableRows.length === 0)
+          newErrors.tabledataError = "Please add table data"
         if (!formData.description)
           newErrors.description = "Description is required"
         if (Object.keys(newErrors).length > 0) {
@@ -1247,7 +1248,7 @@ function LeaveApplication() {
                   ))
               ) : (
                 <p className="text-gray-500 text-sm italic text-center">
-                  "No Upcoming Onsites"
+                  No Upcoming Onsites
                 </p>
               )}
             </div>
@@ -1334,6 +1335,10 @@ function LeaveApplication() {
                               const updatedRows = [...tableRows]
                               updatedRows[index].siteName = e.target.value
                               setTableRows(updatedRows)
+                              setErrors((prev) => ({
+                                ...prev,
+                                tabledataError: ""
+                              }))
                             }}
                             className="border p-1 rounded w-full"
                           />
@@ -1346,6 +1351,10 @@ function LeaveApplication() {
                               const updatedRows = [...tableRows]
                               updatedRows[index].place = e.target.value
                               setTableRows(updatedRows)
+                              setErrors((prev) => ({
+                                ...prev,
+                                tabledataError: ""
+                              }))
                             }}
                             className="border p-1 rounded "
                           />
@@ -1358,6 +1367,10 @@ function LeaveApplication() {
                               const updatedRows = [...tableRows]
                               updatedRows[index].Start = e.target.value
                               setTableRows(updatedRows)
+                              setErrors((prev) => ({
+                                ...prev,
+                                tabledataError: ""
+                              }))
                             }}
                             className="border p-1 rounded w-full"
                           />
@@ -1370,6 +1383,10 @@ function LeaveApplication() {
                               const updatedRows = [...tableRows]
                               updatedRows[index].End = e.target.value
                               setTableRows(updatedRows)
+                              setErrors((prev) => ({
+                                ...prev,
+                                tabledataError: ""
+                              }))
                             }}
                             className="border p-1 rounded w-full"
                           />
@@ -1382,6 +1399,10 @@ function LeaveApplication() {
                               const updatedRows = [...tableRows]
                               updatedRows[index].km = e.target.value
                               setTableRows(updatedRows)
+                              setErrors((prev) => ({
+                                ...prev,
+                                tabledataError: ""
+                              }))
                             }}
                             className="border p-1 rounded w-full"
                           />
@@ -1394,6 +1415,10 @@ function LeaveApplication() {
                               const updatedRows = [...tableRows]
                               updatedRows[index].kmExpense = e.target.value
                               setTableRows(updatedRows)
+                              setErrors((prev) => ({
+                                ...prev,
+                                tabledataError: ""
+                              }))
                             }}
                             className="border p-1 rounded w-full"
                           />
@@ -1406,6 +1431,10 @@ function LeaveApplication() {
                               const updatedRows = [...tableRows]
                               updatedRows[index].foodExpense = e.target.value
                               setTableRows(updatedRows)
+                              setErrors((prev) => ({
+                                ...prev,
+                                tabledataError: ""
+                              }))
                             }}
                             className="border p-1 rounded w-full"
                           />
@@ -1434,6 +1463,9 @@ function LeaveApplication() {
                 Add Row
               </button>
             </div>
+            {errors.tabledataError && (
+              <p className="text-red-500">{errors.tabledataError}</p>
+            )}
             <div className="mb-4">
               <label className="block mb-2">Description</label>
               <textarea
