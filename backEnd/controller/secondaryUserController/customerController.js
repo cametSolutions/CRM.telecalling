@@ -343,81 +343,59 @@ export const UpdateServices = async (req, res) => {
 export const GetselectedDateCalls = async (req, res) => {
   try {
     const { startDate, endDate } = req.query
+
     const start = new Date(startDate);
+
     start.setHours(0, 0, 0, 0); // Start of the day
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999); // End of the day
-
-
+  
+    
     const customerCalls = await CallRegistration.aggregate([
+
       {
         $match: {
-          callregistration: { $exists: true, $ne: [] } // Ensure callregistration exists and is not empty
-        }
-      },
-      {
-        $match: {
+          "callregistration": { $exists: true, $ne: [] },
           "callregistration.formdata.attendedBy": { $type: "array" }
         }
-      },
+      }
+      ,
 
+    
       {
         $addFields: {
-          // Filter callregistration array to include only those with attendedBy matching the date range
           callregistration: {
             $filter: {
-              input: "$callregistration", // Iterate through callregistration array
+              input: "$callregistration",
               as: "call",
               cond: {
                 $gt: [
                   {
-                    // Check if any attendedBy.calldate matches the date range
                     $size: {
                       $filter: {
                         input: {
-                          $filter: {
-                            input: { $ifNull: ["$$call.formdata.attendedBy", []] },
-                            as: "att",
-                            cond: { $eq: [{ $type: "$$att" }, "object"] } // only include objects
-                          }
+                          $ifNull: ["$$call.formdata.attendedBy", []]
                         },
-                        // input: { $ifNull: ["$$call.formdata.attendedBy", []] }, // Handle empty attendedBy array
                         as: "attendee",
                         cond: {
                           $and: [
                             { $ne: ["$$attendee.calldate", null] },
                             { $ne: ["$$attendee.calldate", ""] },
+                            { $in: [{ $type: "$$attendee.calldate" }, ["string","date"]] },
                             {
                               $gte: [
-                                {
-                                  $toDate: {
-                                    $cond: {
-                                      if: { $isArray: "$$attendee.calldate" },
-                                      then: { $arrayElemAt: ["$$attendee.calldate", 0] },
-                                      else: "$$attendee.calldate"
-                                    }
-                                  }
-                                },
+                                { $toDate: "$$attendee.calldate" },
                                 start
                               ]
                             },
                             {
                               $lte: [
-                                {
-                                  $toDate: {
-                                    $cond: {
-                                      if: { $isArray: "$$attendee.calldate" },
-                                      then: { $arrayElemAt: ["$$attendee.calldate", 0] },
-                                      else: "$$attendee.calldate"
-                                    }
-                                  }
-                                },
+                                { $toDate: "$$attendee.calldate" },
                                 end
                               ]
                             }
                           ]
                         }
-
                       }
                     }
                   },
@@ -427,8 +405,9 @@ export const GetselectedDateCalls = async (req, res) => {
             }
           }
         }
-      },
+      }
 
+      ,
       {
         $match: {
           // Ensure callregistration array still contains at least one element after filtering
@@ -585,6 +564,8 @@ export const GetselectedDateCalls = async (req, res) => {
         }
       }
     ])
+   
+
     return res
       .status(200)
       .json({ message: "customercalls found", data: customerCalls })
@@ -2699,7 +2680,7 @@ export const GetAllExpiryRegister = async (req, res) => {
       endOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0)
       endOfNextMonth.setHours(23, 59, 59, 999) // End of the day
     }
-    
+
     const expiredCustomers = await Customer.find({
       selected: {
         $elemMatch: {
@@ -2740,23 +2721,23 @@ export const GetAllExpiryRegister = async (req, res) => {
 }
 export const getallExpiredCustomerCalls = async (req, res) => {
   try {
-    const {startDate,endDate,isAdmin,userBranchId} = req.body
+    const { startDate, endDate, isAdmin, userBranchId } = req.body
 
-const userBranchIds=userBranchId.map((id)=>new mongoose.Types.ObjectId(id))
+    const userBranchIds = userBranchId.map((id) => new mongoose.Types.ObjectId(id))
 
     const expiredCustomers = await Customer.find({
       selected: {
         $elemMatch: {
-                ...(isAdmin ? {} : { branch_id: { $in: userBranchIds } }), // only include branch filter if not admin
+          ...(isAdmin ? {} : { branch_id: { $in: userBranchIds } }), // only include branch filter if not admin
           $or: [
             {
               licenseExpiryDate: { $gte: startDate, $lte: endDate }
             }, // License expiry in the past
             {
-              tvuexpiryDate : { $gte: startDate, $lte: endDate }
+              tvuexpiryDate: { $gte: startDate, $lte: endDate }
             }, // TVU expiry in the past
             {
-              amcendDate : { $gte: startDate, $lte: endDate }
+              amcendDate: { $gte: startDate, $lte: endDate }
             } // AMC end in the past
           ]
         }

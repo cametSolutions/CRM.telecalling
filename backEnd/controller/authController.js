@@ -3528,60 +3528,44 @@ export const GetStaffCallList = async (req, res) => {
   try {
     const { startDate, endDate } = req.query
 
-
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0); // Start of the day
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999); // End of the day
+
     const staff = await Staff.find().lean();
     const customerCalls = await CallRegistration.aggregate([
+
       {
         $match: {
-          callregistration: { $exists: true, $ne: [] } // Ensure callregistration exists and is not empty
-        }
-      },
-      {
-        $match: {
+          "callregistration": { $exists: true, $ne: [] },
           "callregistration.formdata.attendedBy": { $type: "array" }
         }
       },
-
       {
         $addFields: {
-          // Filter callregistration array to include only those with attendedBy matching the date range
           callregistration: {
             $filter: {
-              input: "$callregistration", // Iterate through callregistration array
+              input: "$callregistration",
               as: "call",
               cond: {
                 $gt: [
                   {
-                    // Check if any attendedBy.calldate matches the date range
                     $size: {
                       $filter: {
                         input: {
-                          $filter: {
-                            input: { $ifNull: ["$$call.formdata.attendedBy", []] },
-                            as: "att",
-                            cond: { $eq: [{ $type: "$$att" }, "object"] } // only include objects
-                          }
+                          $ifNull: ["$$call.formdata.attendedBy", []]
                         },
-                        // input: { $ifNull: ["$$call.formdata.attendedBy", []] }, // Handle empty attendedBy array
                         as: "attendee",
                         cond: {
                           $and: [
                             { $ne: ["$$attendee.calldate", null] },
                             { $ne: ["$$attendee.calldate", ""] },
+                            { $in: [{ $type: "$$attendee.calldate" }, ["string", "date"]] },
                             {
                               $gte: [
                                 {
-                                  $toDate: {
-                                    $cond: {
-                                      if: { $isArray: "$$attendee.calldate" },
-                                      then: { $arrayElemAt: ["$$attendee.calldate", 0] },
-                                      else: "$$attendee.calldate"
-                                    }
-                                  }
+                                  $toDate: "$$attendee.calldate"
                                 },
                                 start
                               ]
@@ -3589,20 +3573,13 @@ export const GetStaffCallList = async (req, res) => {
                             {
                               $lte: [
                                 {
-                                  $toDate: {
-                                    $cond: {
-                                      if: { $isArray: "$$attendee.calldate" },
-                                      then: { $arrayElemAt: ["$$attendee.calldate", 0] },
-                                      else: "$$attendee.calldate"
-                                    }
-                                  }
+                                  $toDate: "$$attendee.calldate"
                                 },
                                 end
                               ]
                             }
                           ]
                         }
-
                       }
                     }
                   },
@@ -3612,8 +3589,8 @@ export const GetStaffCallList = async (req, res) => {
             }
           }
         }
-      },
-
+      }
+      ,
       {
         $match: {
           // Ensure callregistration array still contains at least one element after filtering
@@ -3729,7 +3706,8 @@ export const GetStaffCallList = async (req, res) => {
                   pendingCalls: calls.formdata.completedBy[0]
                     ? 0 // No pending calls
                     : 1, // Increment count if `completedBy[0]` is empty
-                  todaysCalls: callDate === today ? 1 : 0 // Count 1 if `call.calldate` matches today's date
+                  todaysCalls: callDate === today ? 1 : 0,// Count 1 if `call.calldate` matches today's date
+                  selected: matchedStaff.selected
                 }
               })
           })
@@ -3749,7 +3727,7 @@ export const GetStaffCallList = async (req, res) => {
       })
     }
   } catch (error) {
-    console.log("error:", error.message)
+    console.log("error:", error)
     return res.status(500).json({ message: "Internal server error" })
   }
 }
@@ -3804,6 +3782,7 @@ export const GetindividualStaffCall = async (req, res) => {
                           $and: [
                             { $ne: ["$$attendee.calldate", null] },
                             { $ne: ["$$attendee.calldate", ""] },
+                            { $in: [{ $type: "$$attendee.calldate" }, ["string", "date"]] },
                             {
                               $gte: [
                                 {
@@ -3863,14 +3842,14 @@ export const GetindividualStaffCall = async (req, res) => {
       },
 
     ])
-   
+
 
     // Step 2: Populate customerid only (can't populate inside aggregated arrays directly)
     const customerIds = calls.map((c) => c.customerid);
     const customers = await Customer.find({ _id: { $in: customerIds } }).select("customerName");
     const customerMap = Object.fromEntries(customers.map((c) => [c._id.toString(), c.customerName]));
 
-  
+
     const userIds = new Set();
 
     for (const call of calls) {

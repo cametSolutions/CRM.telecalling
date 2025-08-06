@@ -7,7 +7,7 @@ import UseFetch from "../../../hooks/useFetch"
 
 const Summary = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null)
-
+  const [totalcalls, setTotalCalls] = useState(0)
   const [selectedUser, setSelectedUser] = useState(null)
   const [cachedsummary, setCachedsummary] = useState([])
   const [cachedUserlistsummary, setcacheduserSummary] = useState([])
@@ -75,32 +75,51 @@ const Summary = () => {
 
           if (result) {
             const processDataAndUpdateList = (data) => {
+            
               setUserList((prevList) => {
-                const updatedList = [...prevList]
+                const updatedList = []
 
-                data.forEach((item) => {
-                  // Check if the callerId exists in the list
+                if (!Array.isArray(data)) {
+                  console.error("Data is not an array", data)
+                  return prevList // keep existing list if something went wrong
+                }
+                // Step 1: Extract all branch_ids from branch array
+                const branchIds = branch.map((b) => b.branch_id)
+
+                // Step 2: Flatten the nested `data` array
+                const flattenedData = data.flat() // Flattens one level deep
+
+                // Step 3: Filter calls that have any selected branch matching `branchIds`
+                const filtered = flattenedData.filter((call) =>
+                  call.selected?.some((sel) =>
+                    branchIds.includes(sel.branch_id)
+                  )
+                )
+
+                filtered.forEach((item) => {
+                
+                  const call = item// first call in the group
+
                   const existingEntry = updatedList.find(
-                    (entry) => entry._id === item[0].callerId
+                    (entry) => entry._id === call.callerId
                   )
 
                   if (existingEntry) {
-                    // Update counts if the entry exists
-                    existingEntry.solvedCalls += item[0].solvedCalls
-                    existingEntry.pendingCalls += item[0].pendingCalls
-                    existingEntry.colleagueSolved += item[0].colleagueSolved
-                    existingEntry.todaysCalls += item[0].todaysCalls
-                    existingEntry.datecalls += item[0].datecalls
+                    existingEntry.solvedCalls += call.solvedCalls || 0
+                    existingEntry.pendingCalls += call.pendingCalls || 0
+                    existingEntry.colleagueSolved += call.colleagueSolved || 0
+                    existingEntry.todaysCalls += call.todaysCalls || 0
+                    existingEntry.datecalls += call.datecalls || 0
                   } else {
-                    // Create a new entry if it doesn't exist
                     updatedList.push({
-                      _id: item[0].callerId,
-                      name: item[0].callerName,
-                      solvedCalls: item[0].solvedCalls,
-                      pendingCalls: item[0].pendingCalls,
-                      colleagueSolved: item[0].colleagueSolved,
-                      datecalls: item[0].datecalls,
-                      todaysCalls: item[0].todaysCalls
+                      _id: call.callerId,
+                      name: call.callerName,
+                      solvedCalls: call.solvedCalls || 0,
+                      pendingCalls: call.pendingCalls || 0,
+                      colleagueSolved: call.colleagueSolved || 0,
+                      datecalls: call.datecalls || 0,
+                      todaysCalls: call.todaysCalls || 0,
+                      selected: call.selected || []
                     })
                   }
                 })
@@ -108,37 +127,86 @@ const Summary = () => {
                 return updatedList
               })
               setcacheduserSummary((prevList) => {
-                const updatedList = [...prevList]
+                const updatedList = []
 
-                data.forEach((item) => {
-                  // Check if the callerId exists in the list
+                if (!Array.isArray(data)) {
+                  console.error("Data is not an array", data)
+                  return prevList // keep existing list if something went wrong
+                }
+                const branchIds = branch.map((b) => b.branch_id)
+
+                // Step 2: Flatten the nested `data` array
+                const flattenedData = data.flat() // Flattens one level deep
+                // Step 3: Filter calls that have any selected branch matching `branchIds`
+                const filtered = flattenedData.filter((call) =>
+                  call.selected?.some((sel) =>
+                    branchIds.includes(sel.branch_id)
+                  )
+                )
+                filtered.forEach((item) => {
+                  
+                  const call = item // first call in the group
+
                   const existingEntry = updatedList.find(
-                    (entry) => entry._id === item[0].callerId
+                    (entry) => entry._id === call.callerId
                   )
 
                   if (existingEntry) {
-                    // Update counts if the entry exists
-                    existingEntry.solvedCalls += item[0].solvedCalls
-                    existingEntry.pendingCalls += item[0].pendingCalls
-                    existingEntry.colleagueSolved += item[0].colleagueSolved
-                    existingEntry.todaysCalls += item[0].todaysCalls
-                    existingEntry.datecalls += item[0].datecalls
+                    existingEntry.solvedCalls += call.solvedCalls || 0
+                    existingEntry.pendingCalls += call.pendingCalls || 0
+                    existingEntry.colleagueSolved += call.colleagueSolved || 0
+                    existingEntry.todaysCalls += call.todaysCalls || 0
+                    existingEntry.datecalls += call.datecalls || 0
                   } else {
-                    // Create a new entry if it doesn't exist
                     updatedList.push({
-                      _id: item[0].callerId,
-                      name: item[0].callerName,
-                      solvedCalls: item[0].solvedCalls,
-                      pendingCalls: item[0].pendingCalls,
-                      colleagueSolved: item[0].colleagueSolved,
-                      datecalls: item[0].datecalls,
-                      todaysCalls: item[0].todaysCalls
+                      _id: call.callerId,
+                      name: call.callerName,
+                      solvedCalls: call.solvedCalls || 0,
+                      pendingCalls: call.pendingCalls || 0,
+                      colleagueSolved: call.colleagueSolved || 0,
+                      datecalls: call.datecalls || 0,
+                      todaysCalls: call.todaysCalls || 0,
+                      selected: call.selected || []
                     })
                   }
                 })
 
                 return updatedList
               })
+
+              // setcacheduserSummary((prevList) => {
+              //   const updatedList = [...prevList]
+
+              //   data.forEach((item) => {
+              //     // Check if the callerId exists in the list
+              //     const existingEntry = updatedList.find(
+              //       (entry) => entry._id === item[0].callerId
+              //     )
+
+              //     if (existingEntry) {
+              //       // Update counts if the entry exists
+              //       existingEntry.solvedCalls += item[0].solvedCalls
+              //       existingEntry.pendingCalls += item[0].pendingCalls
+              //       existingEntry.colleagueSolved += item[0].colleagueSolved
+              //       existingEntry.todaysCalls += item[0].todaysCalls
+              //       existingEntry.datecalls += item[0].datecalls
+              //     } else {
+              //       // Create a new entry if it doesn't exist
+              //       updatedList.push({
+              //         _id: item[0].callerId,
+              //         name: item[0].callerName,
+              //         solvedCalls: item[0].solvedCalls,
+              //         pendingCalls: item[0].pendingCalls,
+              //         colleagueSolved: item[0].colleagueSolved,
+              //         datecalls: item[0].datecalls,
+              //         todaysCalls: item[0].todaysCalls,
+              //         selected: item[0].selected
+              //       })
+              //     }
+              //   })
+
+              //   return updatedList
+              // })
             }
             processDataAndUpdateList(result)
           }
@@ -148,7 +216,9 @@ const Summary = () => {
       }
       if (isToggled) {
         if (userList && userList.length > 0) {
-          const staffCallStatus = userList.filter((user) => {
+          const flattened = cachedUserlistsummary.flat()
+
+          const staffCallStatus = flattened.filter((user) => {
             if (selectedBranch === "All") {
               return true // Include all users if "All" is selected
             }
@@ -160,10 +230,11 @@ const Summary = () => {
             return branchMatch
           })
 
-          if (staffCallStatus) {
+          if (staffCallStatus && staffCallStatus.length) {
             setUserList(staffCallStatus)
           }
         } else {
+          setTotalCalls(0)
           fetchUserList()
         }
       } else {
@@ -256,6 +327,17 @@ const Summary = () => {
       }
     }
   }, [callList, selectedBranch, isToggled, dates])
+ 
+  useEffect(() => {
+    if (isToggled && userList && userList.length) {
+ 
+      userList.forEach((item) => setTotalCalls((prev) => prev + item.datecalls))
+    } else if (customerSummary && customerSummary.length && !isToggled) {
+      customerSummary.forEach((ite) =>
+        setTotalCalls((prev) => prev + ite.totalCalls)
+      )
+    }
+  }, [customerSummary, userList])
   useEffect(() => {
     if (cachedsummary && cachedsummary.length > 0) {
       if (isToggled) {
@@ -283,7 +365,7 @@ const Summary = () => {
       }
     }
   }, [searchTerm])
-
+ 
   useEffect(() => {
     if (isModalOpen && selectedCustomer) {
       const customerData = callList
@@ -468,11 +550,13 @@ const Summary = () => {
           return
         }
         setLoading(true)
+        setTotalCalls(0)
         const query = `startDate=${dates.startDate}&endDate=${dates.endDate}`
         const response = await api.get(
           `/customer/getselectedDateCalls?${query}`
         ) // Replace with your API endpoint
         const data = response.data.data
+       
         setLoading(false)
         if (loggedusers?.role === "Admin") {
           setCallList(data)
@@ -505,7 +589,7 @@ const Summary = () => {
                 return hasMatchingBranch
               })
           )
-
+         
           setCallList(filtered)
         }
       } catch (error) {
@@ -557,7 +641,8 @@ const Summary = () => {
   }
 
   const handleChange = (event) => {
-    setUserList(data)
+    setTotalCalls(0)
+
     const selected = event.target.value
     if (selected === "All") {
       setSelectedBranch("All")
@@ -566,7 +651,10 @@ const Summary = () => {
       setSelectedBranch(branchDetails ? branchDetails.branchName : "All")
     }
   }
-  const toggle = () => setIsToggled(!isToggled)
+  const toggle = () => {
+    setIsToggled(!isToggled)
+    setTotalCalls(0)
+  }
 
   const openModal = (id) => {
     if (isToggled) {
@@ -614,7 +702,10 @@ const Summary = () => {
               </select>
               <input
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value)
+                  setTotalCalls(0)
+                }}
                 className="w-full border border-gray-300 rounded-full py-1 px-4 pl-10 focus:outline-none cursor-pointer"
                 placeholder="Search Name.."
               />
@@ -655,13 +746,15 @@ const Summary = () => {
           </div>
         </div>
 
-        <div className="flex justify-between">
+        <div className="flex justify-between md:flex md:justify-start">
           <div className="text-blue-700">
             {isToggled
               ? `Total Staff-${userList.length}`
               : `Total customer-${customerSummary.length}`}
           </div>
-          <div></div>
+          <div className="text-blue-700 ml-5">
+            {`Total Calls-${totalcalls}`}
+          </div>
         </div>
       </div>
 
