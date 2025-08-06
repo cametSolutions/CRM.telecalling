@@ -22,7 +22,7 @@ const Summary = () => {
   const [userList, setUserList] = useState([])
   const [branch, setBranch] = useState([])
   const [indiviDualCallList, setIndividualCallList] = useState([])
-
+  console.log(branch)
   const [loggedusers, setloggedUsers] = useState(null)
   const [selectedBranch, setSelectedBranch] = useState("All")
   const [isToggled, setIsToggled] = useState(false)
@@ -43,7 +43,12 @@ const Summary = () => {
       const user = JSON.parse(userData)
       setloggedUsers(user)
       if (user.role === "Admin") {
-        const loggeduserbranches = branches.map((item) => item)
+        const loggeduserbranches = branches.map((item) => {
+          return {
+            ...item,
+            branch_id: item._id
+          }
+        })
         setBranch(loggeduserbranches)
       } else {
         const loggeduserbranches = user.selected.map((branches) => branches)
@@ -72,10 +77,9 @@ const Summary = () => {
           setData(response.data.data)
 
           const result = response.data.data
-
+          console.log(result)
           if (result) {
             const processDataAndUpdateList = (data) => {
-            
               setUserList((prevList) => {
                 const updatedList = []
 
@@ -84,7 +88,9 @@ const Summary = () => {
                   return prevList // keep existing list if something went wrong
                 }
                 // Step 1: Extract all branch_ids from branch array
+                console.log(branch)
                 const branchIds = branch.map((b) => b.branch_id)
+                console.log(branchIds)
 
                 // Step 2: Flatten the nested `data` array
                 const flattenedData = data.flat() // Flattens one level deep
@@ -97,8 +103,7 @@ const Summary = () => {
                 )
 
                 filtered.forEach((item) => {
-                
-                  const call = item// first call in the group
+                  const call = item // first call in the group
 
                   const existingEntry = updatedList.find(
                     (entry) => entry._id === call.callerId
@@ -144,7 +149,6 @@ const Summary = () => {
                   )
                 )
                 filtered.forEach((item) => {
-                  
                   const call = item // first call in the group
 
                   const existingEntry = updatedList.find(
@@ -327,10 +331,9 @@ const Summary = () => {
       }
     }
   }, [callList, selectedBranch, isToggled, dates])
- 
+
   useEffect(() => {
     if (isToggled && userList && userList.length) {
- 
       userList.forEach((item) => setTotalCalls((prev) => prev + item.datecalls))
     } else if (customerSummary && customerSummary.length && !isToggled) {
       customerSummary.forEach((ite) =>
@@ -365,7 +368,7 @@ const Summary = () => {
       }
     }
   }, [searchTerm])
- 
+
   useEffect(() => {
     if (isModalOpen && selectedCustomer) {
       const customerData = callList
@@ -556,7 +559,7 @@ const Summary = () => {
           `/customer/getselectedDateCalls?${query}`
         ) // Replace with your API endpoint
         const data = response.data.data
-       
+
         setLoading(false)
         if (loggedusers?.role === "Admin") {
           setCallList(data)
@@ -589,7 +592,7 @@ const Summary = () => {
                 return hasMatchingBranch
               })
           )
-         
+
           setCallList(filtered)
         }
       } catch (error) {
