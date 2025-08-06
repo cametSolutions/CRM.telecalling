@@ -92,7 +92,7 @@ const LeadFollowUp = () => {
       selectedCompanyBranch &&
       `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}&pendingfollowup=${pending}`
   )
-
+console.log(loggedusersallocatedleads)
   useEffect(() => {
     const now = new Date()
 
@@ -186,10 +186,7 @@ const LeadFollowUp = () => {
   useEffect(() => {
     if (loggedusersallocatedleads && dates.endDate && loggedUser) {
       if (pending && ownFollowUp) {
-console.log(loggedusersallocatedleads)
-const a=loggedusersallocatedleads.followupLeads.map((item)=>item.leadId)
-console.log(a)
-
+console.log("H")
         const ownFollow = loggedusersallocatedleads.followupLeads.filter(
           (lead) =>
             lead.activityLog?.some(
@@ -199,6 +196,7 @@ console.log(a)
                 log.taskClosed === false
             )
         )
+console.log(ownFollow)
         const currentDate = new Date()
         const endDateLocal = getLocalDate(new Date(dates.endDate))
         formatdate(currentDate)
@@ -239,6 +237,7 @@ console.log(a)
           ...uniqueoverdueAndcurrentdate,
           ...taskSubmittedLeads
         ]
+console.log(mergedall)
         setTableData(mergedall)
       } else if (pending && !ownFollowUp) {
         const departmentfollowup =
@@ -397,12 +396,7 @@ console.log(a)
       setIsEditable(true)
       setIsAllocated(true)
     }
-    // const isfollowupclosed = history.some(
-    //   (item) =>
-    //     item.submittedUser._id === loggedUser._id &&
-    //     item.taskBy === "followup" &&
-    //     item.taskClosed === false
-    // )
+   
     const userFollowups = history.filter(
       (item) =>
         item.submittedUser._id === loggedUser._id && item.taskBy === "followup"
@@ -596,7 +590,7 @@ console.log(a)
                     }
                   },
                   {
-                    label: ownFollowUp ? "Own Followup" : "Colleague Followup",
+                    label: ownFollowUp ? "Own Followup" : "All Followup",
                     value: ownFollowUp,
                     toggle: () => {
                       setOwnFollowUp(!ownFollowUp)
