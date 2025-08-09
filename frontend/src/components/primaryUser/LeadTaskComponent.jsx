@@ -15,11 +15,26 @@ export default function LeadTaskComponent({
   const [selectedData, setselectedData] = useState({})
   const [showComponent, setShowComponent] = useState(false)
   const navigate = useNavigate()
+  const getRemainingDays = (dueDate) => {
+    const today = new Date()
+    const target = new Date(dueDate)
 
+    // Zero out time to compare only dates
+    today.setHours(0, 0, 0, 0)
+    target.setHours(0, 0, 0, 0)
+
+    const diffTime = target - today // milliseconds
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+    return diffDays
+  }
+  console.log(pending)
+
+  console.log(Data)
   return (
     <div className="flex-1 overflow-x-auto rounded-lg text-center overflow-y-auto  shadow-xl md:mx-5 mx-3 mb-3">
       <table className=" border-collapse border border-gray-400 w-full text-sm">
-        <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
+        <thead className="whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
           <tr>
             <th className="border border-r-0 border-gray-400 px-4 ">SNO.</th>
             <th className="border border-r-0 border-gray-400 px-4 ">Name</th>
@@ -35,6 +50,18 @@ export default function LeadTaskComponent({
             <th className="border border-r-0 border-l-0 border-gray-400 px-4  min-w-[100px]">
               Lead Id
             </th>
+
+            {pending && (
+              <>
+                <th className="border border-r-0 border-l-0 border-gray-400 px-4  min-w-[100px]">
+                  Due Date
+                </th>
+                <th className="border border-r-0 border-l-0 border-gray-400 px-4  min-w-[100px]">
+                  Remaining Days
+                </th>
+              </>
+            )}
+
             <th className="border border-gray-400 px-4 ">Followup Date</th>
             <th className="border border-gray-400 px-4  min-w-[100px]">
               Action
@@ -64,6 +91,12 @@ export default function LeadTaskComponent({
                   <td className="px-4 ">{item.email}</td>
                   <td className=" px-4 ">{item.leadId}</td>
                   <td className="border border-b-0 border-gray-400 px-4 "></td>
+                  {pending && (
+                    <>
+                      <td className="border border-b-0 border-gray-400 px-4 "></td>
+                      <td className="border border-b-0 border-gray-400 px-4 "></td>
+                    </>
+                  )}
 
                   <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
                     <button
@@ -105,6 +138,17 @@ export default function LeadTaskComponent({
                   <td className=" px-4 ">Assignedby</td>
                   <td className="px-4 ">No. of Followups</td>
                   <td className="px-4 min-w-[120px]">Lead Date</td>
+                  {pending && (
+                    <>
+                      <td className="px-4 min-w-[120px] font-medium text-red-500">
+                        {new Date(item.dueDate).toLocaleDateString("en-GB")}
+                      </td>
+                      <td className="px-4 min-w-[120px] font-medium text-red-500">
+                        {getRemainingDays(item.dueDate)} days left
+                      </td>
+                    </>
+                  )}
+
                   <td className=" border border-t-0 border-b-0 border-gray-400 px-4 ">
                     {/* {new Date(
                       item.followUpDatesandRemarks[
@@ -196,6 +240,12 @@ export default function LeadTaskComponent({
                   <td className="border border-t-0 border-gray-400 "></td>
                   <td className="border border-t-0 border-gray-400 "></td>
                   <td className="border border-t-0 border-gray-400 "></td>
+                  {pending && (
+                    <>
+                      <td className="border border-t-0 border-gray-400 "></td>
+                      <td className="border border-t-0 border-gray-400 "></td>
+                    </>
+                  )}
                 </tr>
                 <tr>
                   <td colSpan="100%" className="bg-gray-300">
@@ -206,7 +256,7 @@ export default function LeadTaskComponent({
             ))
           ) : (
             <tr>
-              <td colSpan={9} className="text-center text-gray-500 py-4">
+              <td colSpan={11} className="text-center text-gray-500 py-4">
                 {loading ? (
                   <div className="justify center">
                     <PropagateLoader color="#3b82f6" size={10} />

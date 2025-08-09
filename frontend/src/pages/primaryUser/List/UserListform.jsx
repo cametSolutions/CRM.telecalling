@@ -1,5 +1,6 @@
-import React, { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { CiEdit } from "react-icons/ci"
+import { PropagateLoader } from "react-spinners"
 import { useNavigate } from "react-router-dom"
 import api from "../../../api/api"
 import DeleteAlert from "../../../components/common/DeleteAlert"
@@ -260,7 +261,12 @@ const UserListform = () => {
                     colSpan="11"
                     className="px-4 py-4 text-center text-gray-500"
                   >
-                    {loading ? loading : "No users found."}
+                    {loading && (
+                      <div className="justify center">
+                        <PropagateLoader color="#3b82f6" size={10} />
+                      </div>
+                    ) 
+                    }
                   </td>
                 </tr>
               )}

@@ -16,6 +16,7 @@ const leadSchema = new mongoose.Schema(
     leadClosed: { type: Boolean, default: false },
     leadLost: { type: Boolean, default: false },
     leadBranch: { type: mongoose.Schema.Types.ObjectId, ref: "Branch" },
+    dueDate: { type: Date },
     leadFor: [
       {
         productorServiceId: {

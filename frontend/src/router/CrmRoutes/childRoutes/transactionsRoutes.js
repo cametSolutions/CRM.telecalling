@@ -8,6 +8,8 @@ import LeadFollowUp from "../../../pages/primaryUser/List/LeadFollowUp"
 import OwnLeadList from "../../../pages/common/OwnLeadList"
 import LeadTask from "../../../pages/primaryUser/List/LeadTask"
 import Reallocation from "../../../pages/primaryUser/List/Reallocation"
+import TaskAnalysis from "../../../pages/primaryUser/List/TaskAnalysis"
+import TaskAnalysisTable from "../../../pages/primaryUser/List/TaskAnalysisTable"
 const transactionsRoutes = [
   { path: "/admin/transaction/lead", component: LeadRegister },
   { path: "/admin/transaction/lead/leadEdit", component: LeadEdit },
@@ -15,6 +17,8 @@ const transactionsRoutes = [
   { path: "/admin/transaction/call-registration", component: CallRegistration },
   { path: "/admin/transaction/lead/ownedLeadlist", component: OwnLeadList },
 
+  { path: "/admin/transaction/lead/taskanalysisTable/:label", component: TaskAnalysisTable },
+  { path: "/admin/transaction/lead/taskAnalysis", component: TaskAnalysis },
   { path: "/admin/transaction/leave-application", component: LeaveApplication },
   {
     path: "/admin/transaction/lead/leadAllocation",

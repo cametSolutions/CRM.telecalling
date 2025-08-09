@@ -154,12 +154,13 @@ export default function StaffHeader() {
     }
   ]
   const leads = [
+    { to: "/staff/transaction/lead", label: "New Lead", control: true },
     {
       to: "/staff/transaction/lead/ownedLeadlist",
       label: "Own Lead",
       control: true
     },
-    { to: "/staff/transaction/lead", label: "New Lead", control: true },
+
     {
       to: "/staff/transaction/lead/leadAllocation",
       label: "Lead Allocation",
@@ -179,6 +180,11 @@ export default function StaffHeader() {
     {
       to: "/staff/transaction/lead/leadReallocation",
       label: "Lead Reallocation",
+      control: true
+    },
+    {
+      to: "/staff/transaction/lead/taskAnalysis",
+      label: "Task Analysis",
       control: true
     }
   ]

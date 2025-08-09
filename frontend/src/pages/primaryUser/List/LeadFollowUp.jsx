@@ -21,6 +21,7 @@ const LeadFollowUp = () => {
     demoDescription: ""
   })
   const [isdemofollownotClosed, setisdemofollowedNotClosed] = useState(false)
+  const [isclearedFollowup, setclearedfollowup] = useState(false)
   const [selectedType, setSelectedType] = useState("infollowup")
   const [isdropdownOpen, setIsdropdownOpen] = useState(false)
   const [isClosed, setIsClosed] = useState(false)
@@ -31,7 +32,7 @@ const LeadFollowUp = () => {
     editfollowUpDatesandRemarksEditIndex,
     setfollowUpDatesandRemarksEditIndex
   ] = useState(null)
-
+  const [netTotalAmount, setnetTotalAmount] = useState(0)
   const [filterOpen, setfilterOpen] = useState(false)
   const [statusAll, setstatusAll] = useState(false)
   const [isAllocated, setIsAllocated] = useState(false) //for set allocation or not
@@ -92,10 +93,8 @@ const LeadFollowUp = () => {
       selectedCompanyBranch &&
       `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}&pendingfollowup=${pending}`
   )
-console.log(loggedusersallocatedleads)
   useEffect(() => {
     const now = new Date()
-
     const startDate = new Date(now.getFullYear(), now.getMonth(), 1) // 1st day of current month
     const endDate = new Date() // 0th day of next month = last day of current
 
@@ -183,20 +182,20 @@ console.log(loggedusersallocatedleads)
     local.setMinutes(date.getMinutes() - date.getTimezoneOffset())
     return local.toISOString().split("T")[0] // e.g., "2025-06-12"
   }
+
   useEffect(() => {
     if (loggedusersallocatedleads && dates.endDate && loggedUser) {
       if (pending && ownFollowUp) {
-console.log("H")
+        console.log("H")
         const ownFollow = loggedusersallocatedleads.followupLeads.filter(
           (lead) =>
             lead.activityLog?.some(
               (log) =>
                 log.taskTo === "followup" &&
                 log.taskallocatedTo._id === loggedUser._id &&
-                log.taskClosed === false
+                log.followupClosed === false
             )
         )
-console.log(ownFollow)
         const currentDate = new Date()
         const endDateLocal = getLocalDate(new Date(dates.endDate))
         formatdate(currentDate)
@@ -237,21 +236,89 @@ console.log(ownFollow)
           ...uniqueoverdueAndcurrentdate,
           ...taskSubmittedLeads
         ]
-console.log(mergedall)
+        console.log(mergedall)
+
+        const totalNetAmount = mergedall.reduce((total, lead) => {
+          const leadTotal =
+            lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) || 0
+          return total + leadTotal
+        }, 0)
+
+        // then store it in state
+        setnetTotalAmount(totalNetAmount)
+
+        // mergedall.forEach((item)=>)
         setTableData(mergedall)
       } else if (pending && !ownFollowUp) {
-        const departmentfollowup =
-          loggedusersallocatedleads.followupLeads.filter((lead) =>
-            lead.activityLog?.some(
-              (log) =>
-                log.taskTo === "followup" &&
-                log.taskallocatedBy._id === loggedUser._id &&
-                log.taskClosed === false
-            )
-          )
+        const currentDate = new Date()
+        const endDateLocal = getLocalDate(new Date(dates.endDate))
+        formatdate(currentDate)
+        const fulldatecurrent =
+          formatdate(currentDate) === endDateLocal
+            ? // formatdate(dates.endDate)
+              formatdate(currentDate)
+            : endDateLocal
 
+        const neverfollowupedLeads =
+          loggedusersallocatedleads.followupLeads.filter(
+            (lead) => lead.neverfollowuped
+          )
+        const havenextFollowup = loggedusersallocatedleads.followupLeads.filter(
+          (lead) => lead.currentdateNextfollowup
+        )
+        const filteredcurrentdatefollowupLeads = havenextFollowup.filter(
+          (lead) => formatdate(lead.nextFollowUpDate) === fulldatecurrent
+        )
+        const iscurrent =
+          fulldatecurrent === endDateLocal ? fulldatecurrent : endDateLocal
+        const overdueFollowups = havenextFollowup.filter(
+          (lead) => formatdate(lead.nextFollowUpDate) < iscurrent
+        )
+        const uniqueoverdueAndcurrentdate = [
+          ...new Set([...overdueFollowups, ...filteredcurrentdatefollowupLeads])
+        ]
+
+        const taskSubmittedLeads =
+          loggedusersallocatedleads.followupLeads.filter(
+            (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
+          )
+        const nonsubmittedtakleads =
+          loggedusersallocatedleads.followupLeads.filter(
+            (lead) =>
+              lead.allocatedfollowup && lead.allocatedTaskClosed === false
+          )
+        setAllocatedLeads(nonsubmittedtakleads)
+
+        const mergedall = [
+          ...neverfollowupedLeads,
+          ...uniqueoverdueAndcurrentdate,
+          ...taskSubmittedLeads
+        ]
+        const totalNetAmount = mergedall.reduce((total, lead) => {
+          const leadTotal =
+            lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) || 0
+          return total + leadTotal
+        }, 0)
+
+        // then store it in state
+        setnetTotalAmount(totalNetAmount)
+        setTableData(mergedall)
       } else if (!pending && ownFollowUp) {
+        const totalNetAmount = loggedusersallocatedleads.followupLeads.reduce((total, lead) => {
+          const leadTotal =
+            lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) || 0
+          return total + leadTotal
+        }, 0)
+
+        // then store it in state
+        setnetTotalAmount(totalNetAmount)
+        setTableData(loggedusersallocatedleads.followupLeads)
+        console.log(loggedusersallocatedleads.followupLeads)
       } else if (!pending && !ownFollowUp) {
+        console.log("h")
+        setTableData(loggedusersallocatedleads.followupLeads)
+        console.log(loggedusersallocatedleads.followupLeads)
+        console.log("h")
       }
 
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
@@ -396,7 +463,7 @@ console.log(mergedall)
       setIsEditable(true)
       setIsAllocated(true)
     }
-   
+
     const userFollowups = history.filter(
       (item) =>
         item.submittedUser._id === loggedUser._id && item.taskBy === "followup"
@@ -405,8 +472,8 @@ console.log(mergedall)
     const isAllFollowupsClosed =
       userFollowups.length > 0 &&
       userFollowups.every((item) => item.taskClosed === true)
-
-    setfollowupClosed(isAllFollowupsClosed)
+    console.log(pending)
+    setfollowupClosed(!pending)
 
     setselectedDocid(docId)
     setselectedTab("History")
@@ -494,7 +561,6 @@ console.log(mergedall)
         if (!formData.nextfollowUpDate)
           newErrors.nextfollowUpDate = "Next Follow Up Date Is Required"
       }
-
       if (!formData.Remarks) newErrors.Remarks = "Remarks is Required"
 
       if (Object.keys(newErrors).length > 0) {
@@ -649,6 +715,9 @@ console.log(mergedall)
             </button>
           </div>
         </div>
+      </div>
+      <div className="flex justify-end mr-5">
+        <span className="text-blue-700">{`Total Amount - ${netTotalAmount}`}</span>
       </div>
 
       {/* Responsive Table Container */}

@@ -12,6 +12,7 @@ const LeadTask = () => {
   const [filteredData, setFilteredData] = useState([])
   const [ownFollowUp, setOwnFollowUp] = useState(null)
   const [url, setUrl] = useState("")
+  const [netTotalAmount, setnetTotalAmount] = useState(0)
   const [pending, setPending] = useState(true)
   const navigate = useNavigate()
   const [loggedUserBranches, setloggedUserBranches] = useState(null)
@@ -24,6 +25,7 @@ const LeadTask = () => {
 
     setDates({ startDate, endDate: now })
   }, [])
+  console.log(filteredData)
   useEffect(() => {
     if (branches) {
       const userData = localStorage.getItem("user")
@@ -87,13 +89,38 @@ const LeadTask = () => {
           const filteredownfolowup = filteredpendingFollowup.filter(
             (item) => item.allocatedBy === loggedUser._id
           )
+          const totalNetAmount = filteredownfolowup.reduce((total, lead) => {
+            const leadTotal =
+              lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) ||
+              0
+            return total + leadTotal
+          }, 0)
+
+          // then store it in state
+          setnetTotalAmount(totalNetAmount)
           setFilteredData(filteredownfolowup)
         } else {
+          const totalNetAmount = filteredpendingFollowup.reduce(
+            (total, lead) => {
+              const leadTotal =
+                lead.leadFor?.reduce(
+                  (sum, item) => sum + (item.price || 0),
+                  0
+                ) || 0
+              return total + leadTotal
+            },
+            0
+          )
+
+          // then store it in state
+          setnetTotalAmount(totalNetAmount)
           setFilteredData(filteredpendingFollowup)
         }
       } else if (type === "lead-Task") {
+console.log("h")
         const finalOutput = []
         data.forEach((entry) => {
+console.log(entry.dueDate)
           const activitylog = entry.activityLog
 
           activitylog.forEach((log) => {
@@ -111,6 +138,7 @@ const LeadTask = () => {
                 customerName:
                   entry?.customerName?.customerName || entry?.customerName,
                 leadBy: entry?.leadBy,
+                dueDate: entry?.dueDate,
                 leadFor: entry?.leadFor,
                 netAmount: entry?.netAmount,
                 mobile: entry?.mobile,
@@ -126,7 +154,6 @@ const LeadTask = () => {
           })
         })
 
-
         const filtereddatepending = finalOutput
           .filter(
             (item) =>
@@ -138,7 +165,15 @@ const LeadTask = () => {
               new Date(formatdate(a.matchedlog.allocationDate)) -
               new Date(formatdate(b.matchedlog.allocationDate))
           )
-       
+
+        const totalNetAmount = filtereddatepending.reduce((total, lead) => {
+          const leadTotal =
+            lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) || 0
+          return total + leadTotal
+        }, 0)
+
+        // then store it in state
+        setnetTotalAmount(totalNetAmount)
         setFilteredData(filtereddatepending)
       }
     } else if (data && !pending) {
@@ -151,8 +186,31 @@ const LeadTask = () => {
           const filteredownfolowup = filteredClosedFollowup.filter(
             (item) => item.allocatedBy === loggedUser._id
           )
+          const totalNetAmount = filteredownfolowup.reduce((total, lead) => {
+            const leadTotal =
+              lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) ||
+              0
+            return total + leadTotal
+          }, 0)
+
+          // then store it in state
+          setnetTotalAmount(totalNetAmount)
           setFilteredData(filteredownfolowup)
         } else {
+          const totalNetAmount = filteredClosedFollowup.reduce(
+            (total, lead) => {
+              const leadTotal =
+                lead.leadFor?.reduce(
+                  (sum, item) => sum + (item.price || 0),
+                  0
+                ) || 0
+              return total + leadTotal
+            },
+            0
+          )
+
+          // then store it in state
+          setnetTotalAmount(totalNetAmount)
           setFilteredData(filteredClosedFollowup)
         }
       } else if (type === "lead-Task") {
@@ -188,8 +246,14 @@ const LeadTask = () => {
             new Date(b.matchedlog.taskSubmissionDate) -
             new Date(a.matchedlog.taskSubmissionDate)
         )
+        const totalNetAmount = filteredOutput.reduce((total, lead) => {
+          const leadTotal =
+            lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) || 0
+          return total + leadTotal
+        }, 0)
 
-
+        // then store it in state
+        setnetTotalAmount(totalNetAmount)
         setFilteredData(filteredOutput)
       }
     }
@@ -295,6 +359,10 @@ const LeadTask = () => {
           </div>
         </div>
       </div>
+      <div className="flex justify-end mr-5">
+        <span className="text-blue-700">{`Total Amount - ${netTotalAmount}`}</span>
+      </div>
+
       <LeadTaskComponent
         type={type}
         Data={filteredData}

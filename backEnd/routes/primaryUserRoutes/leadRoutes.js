@@ -20,7 +20,8 @@ import {
   GetallReallocatedLead,
   UpdateLeadTask,
   updateReallocation,
-  GetallTask
+  GetallTask,
+  GetalltaskanalysisLeads
 } from "../../controller/primaryUserController/leadController.js"
 const router = express.Router()
 
@@ -34,6 +35,7 @@ router.post("/leadReallocation", authMiddleware, updateReallocation)
 router.post("/leadAllocationtask", authMiddleware, UpdateOrleadallocationTask)
 router.get("/getallLead", authMiddleware, GetallLead)
 router.get("/getallreallocatedLead", authMiddleware, GetallReallocatedLead)
+router.get("/getalltaskAnalysisLeads", authMiddleware, GetalltaskanalysisLeads)
 router.get("/getallLeadFollowUp", authMiddleware, GetallfollowupList)
 router.get("/getallServices", authMiddleware, GetAllservices)
 router.get("/ownregisteredLead", authMiddleware, GetownLeadList)
