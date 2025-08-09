@@ -19,6 +19,7 @@ export const LeadRegister = async (req, res) => {
       trade,
       leadFor,
       remark,
+      dueDate,
       netAmount,
       partner,
       allocationType = null,
@@ -101,6 +102,7 @@ export const LeadRegister = async (req, res) => {
       email,
       location,
       pincode,
+      dueDate,
       trade,
       leadFor,
       partner,
@@ -270,7 +272,6 @@ export const GetallfollowupList = async (req, res) => {
     let query
     if (role === "Staff") {
       if (pendingfollowup === "true") {
-        console.log("HH")
         query = {
 
           activityLog: {
@@ -327,6 +328,7 @@ export const GetallfollowupList = async (req, res) => {
 
       const nextfollowUpDate = lead.activityLog[lead.activityLog.length - 1]?.nextFollowUpDate ?? null
       if (matchedAllocations && matchedAllocations.length > 0) {
+
         if (
           !lead.leadByModel || !mongoose.models[lead.leadByModel] ||
           !matchedAllocations[matchedAllocations.length - 1]?.taskallocatedToModel || !mongoose.models[matchedAllocations[matchedAllocations.length - 1]?.taskallocatedToModel] ||
@@ -341,7 +343,6 @@ export const GetallfollowupList = async (req, res) => {
         const leadByModel = mongoose.model(lead.leadByModel);
         const allocatedToModel = mongoose.model(matchedAllocations[matchedAllocations.length - 1]?.taskallocatedToModel);
         const allocatedByModel = mongoose.model(matchedAllocations[matchedAllocations.length - 1]?.taskallocatedByModel);
-
         const populatedLeadBy = await leadByModel.findById(lead.leadBy).select("name").lean();
         const populatedAllocatedTo = await allocatedToModel.findById(matchedAllocations[matchedAllocations.length - 1].taskallocatedTo).select("name").lean();
         const populatedAllocatedBy = await allocatedByModel.findById(matchedAllocations[matchedAllocations.length - 1].taskallocatedBy).select("name").lean();
@@ -369,6 +370,15 @@ export const GetallfollowupList = async (req, res) => {
             };
           })
         );
+
+        const lastMatchedIndex =
+          matchedAllocations.length > 0
+            ? matchedAllocations[matchedAllocations.length - 1].index
+            : -1;
+
+        const checkneverFollowuped = !lead.activityLog
+          .slice(lastMatchedIndex + 1) // ✅ gets entries *after* the last matched one
+          .some((log) => !!log.nextFollowUpDate); // ✅ true if *any* has a date
         followupLeads.push({
           ...lead,
           leadBy: populatedLeadBy || lead.leadBy,
@@ -376,7 +386,7 @@ export const GetallfollowupList = async (req, res) => {
           allocatedBy: populatedAllocatedBy,
           activityLog: populatedActivityLog,
           nextFollowUpDate: nextfollowUpDate,
-          neverfollowuped: matchedAllocations[matchedAllocations.length - 1].index === lead.activityLog.length - 1,
+          neverfollowuped: checkneverFollowuped,
           currentdateNextfollowup: lead.activityLog[lead.activityLog.length - 1]?.nextFollowUpDate ? true : false,
           allocatedfollowup: lead.activityLog[lead.activityLog.length - 1]?.taskfromFollowup,
           allocatedTaskClosed: lead.activityLog[lead.activityLog.length - 1]?.taskClosed ?? false
@@ -385,7 +395,6 @@ export const GetallfollowupList = async (req, res) => {
 
 
     }
-
     const ischekCollegueLeads = followupLeads.some((item) => item.allocatedBy._id.equals(userObjectId))
     if (followupLeads && followupLeads.length > 0) {
       return res.status(201).json({ messge: "leadfollowup found", data: { followupLeads, ischekCollegueLeads } })
@@ -920,13 +929,49 @@ export const UpdaeOrSubmitdemofollowByfollower = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+
+export const GetalltaskanalysisLeads = async (req, res) => {
+  try {
+    const { selectedBranch } = req.query
+    const result = await LeadMaster.find({
+      leadBranch: selectedBranch,
+      leadClosed: false,
+      reallocatedTo: false
+    }).populate({ path: "customerName", select: "customerName" }).lean()
+    const alltaskanalysisleads = []
+    const filtered = result.filter((item) => item.activityLog.length > 1)
+    for (const lead of filtered) {
+      const lastActivity = lead.activityLog[lead.activityLog.length - 1]
+      const taskallocatedtoid = lastActivity?.taskallocatedTo ? lastActivity.taskallocatedTo : lastActivity.submittedUser
+      const tasksubmittedmodel = lastActivity?.taskallocatedTo ? lastActivity.taskallocatedToModel : lastActivity.submissiondoneByModel
+
+
+      const taskallocatedModel = mongoose.model(tasksubmittedmodel)
+      const populatedtaskAllocatedTo = await taskallocatedModel.findById(taskallocatedtoid).select("name").lean()
+      alltaskanalysisleads.push({
+        ...lead,
+        allocatedTo: populatedtaskAllocatedTo
+      })
+
+    }
+
+    if (result && result.length) {
+      return res.status(200).json({ message: "lead found", data: alltaskanalysisleads })
+    } else {
+      return res.status(404).json({ message: "no leads founds for match", data: [] })
+    }
+
+  } catch (error) {
+    return res.status(500).json({ message: "Internal server error" })
+
+  }
+
+}
 export const GetallReallocatedLead = async (req, res) => {
   try {
     const { selectedBranch } = req.query
     const branchObjectId = new mongoose.Types.ObjectId(selectedBranch)
     const query = { leadBranch: branchObjectId, reallocatedTo: true };
-
-
 
     const reallocatedLeads = await LeadMaster.find(query)
       .populate({ path: "customerName", select: "customerName" })
@@ -1343,6 +1388,8 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
     const allocatedbyObjectid = new mongoose.Types.ObjectId(allocatedBy)
     const branchObjectId = new mongoose.Types.ObjectId(selectedbranch)
     const { selectedItem, formData } = req.body
+    
+
     let allocatedToModel
     let allocatedByModel
     const isStaffallocatedtomodel = await Staff.findOne({ _id: selectedItem.allocatedTo })
@@ -1424,7 +1471,8 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
           },
           $set: {
             allocationType: allocationType,
-            taskfromFollowup: false
+            taskfromFollowup: false,
+            dueDate: formData.allocationDate
           }
         },
         { new: true }
@@ -1652,7 +1700,6 @@ export const GetrespectedprogrammingLead = async (req, res) => {
 
       });
     }
-
 
     return res.status(201).json({ messge: "leadfollowup found", data: taskLeads })
 

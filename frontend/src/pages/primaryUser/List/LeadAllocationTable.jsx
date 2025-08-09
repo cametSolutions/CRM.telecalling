@@ -110,9 +110,7 @@ const LeadAllocationTable = () => {
 
       if (response.status >= 200 && response.status < 300) {
         const data = response.data.data
-console.log(data)
-const a=data.filter((itm)=>itm.leadId==="00057")
-console.log(a)
+
         setTableData(data)
         data.forEach((item) => {
           setselectedAllocationType((prev) => ({
@@ -136,7 +134,6 @@ console.log(a)
         })
 
         setSelectedAllocates(initialSelected)
-console.log(initialSelected)
       }
 
     } else {
@@ -145,8 +142,7 @@ console.log(initialSelected)
         `/lead/getallLead?Status=Pending&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
       )
       if (response.status >= 200 && response.status < 300) {
-console.log(
-"h")
+
         setSelectedAllocates({})
         setTableData(response.data.data)
         setapprovedToggleStatus(!approvedToggleStatus)
@@ -212,7 +208,6 @@ console.log(
       console.log("error:", error.message)
     }
   }
- console.log(selectedAllocationType)
   return (
     <div className="flex flex-col h-full">
       {loading && (
@@ -320,7 +315,7 @@ console.log(
                     >
                       {item.customerName.customerName}
                     </td>
-                    <td className="  px-4 ">{item.mobile}</td>
+                    <td className="px-4 ">{item.mobile}</td>
                     <td className="px-4 ">0481</td>
                     <td className="px-4 ">{item.email}</td>
                     <td className=" px-4 ">{item.leadId}</td>

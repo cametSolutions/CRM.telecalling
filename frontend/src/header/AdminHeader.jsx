@@ -137,8 +137,9 @@ export default function AdminHeader() {
     }
   ]
   const leads = [
-    { to: "/admin/transaction/lead/ownedLeadlist", label: "Own Lead" },
     { to: "/admin/transaction/lead", label: "New Lead" },
+    { to: "/admin/transaction/lead/ownedLeadlist", label: "Own Lead" },
+
     {
       to: "/admin/transaction/lead/leadAllocation",
       label: "Lead Allocation"
@@ -155,6 +156,11 @@ export default function AdminHeader() {
     {
       to: "/admin/transaction/lead/leadReallocation",
       label: "Lead Reallocation",
+      control: true
+    },
+    {
+      to: "/admin/transaction/lead/taskAnalysis",
+      label: "Task Analysis",
       control: true
     }
   ]

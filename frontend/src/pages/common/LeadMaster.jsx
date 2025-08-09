@@ -961,42 +961,92 @@ const LeadMaster = ({
                   )}
                 </div>
                 {selfAllocation && (
-                  <div>
-                    <label
-                      htmlFor="allocationType"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Allocation Type
-                    </label>
-                    <select
-                      {...registerMain("allocationType", {
-                        required: "Allocation type is required"
-                      })}
-                      className="w-full focus:outline-none rounded-md py-2 border border-gray-300 px-2"
-                    >
-                      <option value="">Select Allocationtype</option>
-                      <option value="followup">Followup</option>
-                      <option value="programming">Programming</option>
-                      <option value="testing-&-implementation">
-                        Testing & Implementation
-                      </option>
-                      <option value="coding-&-testing">Coding & Testing</option>
-                      <option value="software-services">
-                        Software Service
-                      </option>
-                      <option value="customermeet">Customer Meet</option>
-                      <option value="demo">Demo</option>
-                      <option value="training">Training</option>
+                  <>
+                    {" "}
+                    <div>
+                      <label
+                        htmlFor="allocationType"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                        Allocation Type
+                      </label>
+                      <select
+                        {...registerMain("allocationType", {
+                          required: "Allocation type is required"
+                        })}
+                        className="w-full focus:outline-none rounded-md py-1 border border-gray-300 px-2"
+                      >
+                        <option value="">Select Allocationtype</option>
+                        <option value="followup">Followup</option>
+                        <option value="programming">Programming</option>
+                        <option value="testing-&-implementation">
+                          Testing & Implementation
+                        </option>
+                        <option value="coding-&-testing">
+                          Coding & Testing
+                        </option>
+                        <option value="software-services">
+                          Software Service
+                        </option>
+                        <option value="customermeet">Customer Meet</option>
+                        <option value="demo">Demo</option>
+                        <option value="training">Training</option>
 
-                      <option value="onsite">Onsite</option>
-                      <option value="office">Office</option>
-                    </select>
-                    {errorsMain.allocationType && (
-                      <p className="text-red-500 text-sm">
-                        {errorsMain.allocationType.message}
-                      </p>
-                    )}
-                  </div>
+                        <option value="onsite">Onsite</option>
+                        <option value="office">Office</option>
+                      </select>
+                      {errorsMain.allocationType && (
+                        <p className="text-red-500 text-sm">
+                          {errorsMain.allocationType.message}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="dueDate"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                        Due Date
+                      </label>
+                      <input
+                        type="date"
+                        {...registerMain("dueDate", {
+                          required: "Due Date is required"
+                        })}
+                        className="w-full focus:outline-none rounded-md py-1 border border-gray-300 px-2"
+                      />
+                      {/* <select
+                        {...registerMain("allocationType", {
+                          required: "Allocation type is required"
+                        })}
+                        className="w-full focus:outline-none rounded-md py-2 border border-gray-300 px-2"
+                      >
+                        <option value="">Select Allocationtype</option>
+                        <option value="followup">Followup</option>
+                        <option value="programming">Programming</option>
+                        <option value="testing-&-implementation">
+                          Testing & Implementation
+                        </option>
+                        <option value="coding-&-testing">
+                          Coding & Testing
+                        </option>
+                        <option value="software-services">
+                          Software Service
+                        </option>
+                        <option value="customermeet">Customer Meet</option>
+                        <option value="demo">Demo</option>
+                        <option value="training">Training</option>
+
+                        <option value="onsite">Onsite</option>
+                        <option value="office">Office</option>
+                      </select> */}
+                      {errorsMain.dueDate && (
+                        <p className="text-red-500 text-sm">
+                          {errorsMain.dueDate.message}
+                        </p>
+                      )}
+                    </div>
+                  </>
                 )}
               </div>
               <div className="md:ml-2  md:w-1/2">

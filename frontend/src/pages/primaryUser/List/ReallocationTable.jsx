@@ -1,21 +1,17 @@
 import { useState, useEffect } from "react"
-import ReallocationTable from "./ReallocationTable"
-import { FiTag } from "react-icons/fi"
-import { useNavigate } from "react-router-dom"
-
-import { AiOutlineBars } from "react-icons/ai"
-import { AiOutlineProfile } from "react-icons/ai"
+import React from "react"
 import { toast } from "react-toastify"
 import { PropagateLoader } from "react-spinners"
+import { useNavigate, useParams } from "react-router-dom"
 import BarLoader from "react-spinners/BarLoader"
 import api from "../../../api/api"
 import Select from "react-select"
 import UseFetch from "../../../hooks/useFetch"
-const Reallocation = () => {
+const ReallocationTable = () => {
+  const { label } = useParams()
+  console.log(label)
   const [status, setStatus] = useState("Pending")
-  const [selectedLabel, setSelectedLabel] = useState(null)
-  const [showTableList, setshowTableList] = useState(false)
-  const [gridList, setgridList] = useState([])
+
   const [toggleLoading, setToggleLoading] = useState(false)
   const [selectedLeadId, setselectedLeadId] = useState(null)
   const [selectedType, setselectedType] = useState(null)
@@ -49,7 +45,6 @@ const Reallocation = () => {
       selectedCompanyBranch &&
       `/lead/getallreallocatedLead?selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
   )
-  console.log(leadreallocation)
   const { data } = UseFetch("/auth/getallUsers")
   const navigate = useNavigate()
   useEffect(() => {
@@ -57,7 +52,6 @@ const Reallocation = () => {
     const user = JSON.parse(userData)
     setLoggedUser(user)
   }, [])
-  console.log(selectedLabel)
   console.log("h")
   useEffect(() => {
     if (loggedUser && branches && branches.length > 0) {
@@ -106,31 +100,20 @@ const Reallocation = () => {
   useEffect(() => {
     if (leadreallocation && leadreallocation.length > 0) {
       console.log(leadreallocation)
-      const taskByList = leadreallocation.reduce((acc, lead) => {
-        const logs = lead.activityLog
-        if (logs.length === 0) return acc
-
-        const lastTask = logs[logs.length - 1]
-        const taskBy = lastTask.taskBy
-
-        if (taskBy) {
-          acc[taskBy] = (acc[taskBy] || 0) + 1
-        }
-
-        return acc
-      }, {})
-      // Convert to array of objects with label and value
-      const taskByCountArray = Object.entries(taskByList).map(
-        ([label, value]) => ({
-          label,
-          value
-        })
-      )
-      setgridList(taskByCountArray)
-      setTableData(leadreallocation)
+      const filteredLeads = filterLeadsByLastTaskLabel(leadreallocation, label)
+console.log(filteredLeads)
+      setTableData(filteredLeads)
     }
   }, [leadreallocation])
-  console.log(gridList)
+  const filterLeadsByLastTaskLabel = (leads, label) => {
+    return leads.filter((lead) => {
+      const logs = lead.activityLog
+      if (!logs || logs.length === 0) return false
+
+      const lastLog = logs[logs.length - 1]
+      return lastLog.taskBy?.toLowerCase() === label.toLowerCase()
+    })
+  }
 
   const handleSelectedAllocates = (item, value) => {
     setTableData((prevLeads) =>
@@ -181,9 +164,7 @@ const Reallocation = () => {
       setsubmitError({ submissionerror: "something went error" })
     }
   }
-  console.log(loggedUser)
   console.log(tableData)
-  console.log(gridList)
   return (
     <div className="flex flex-col h-full">
       {(submitLoading || loading) && (
@@ -192,42 +173,11 @@ const Reallocation = () => {
           color="#4A90E2" // Change color as needed
         />
       )}
-      <h2 className="text-lg font-bold ml-5 mt-3">ReAllocation List</h2>
 
-      <div className="border border-gray-100 p-3 mx-4 rounded-xl shadow-xl bg-white  ">
-        {gridList &&
-          gridList.length > 0 &&
-          gridList.map((item) => {
-            return (
-              <div className="flex items-center gap-3 bg-slate-100 p-3 rounded-md shadow-sm text-black text-lg cursor-pointer">
-                <div className="bg-blue-500 text-white rounded-full p-2 md:mr-10">
-                  <AiOutlineProfile className="text-xl " />
-                </div>
-                <div
-                  onClick={() =>
-                    navigate(
-                      loggedUser.role === "Admin"
-                        ? `/admin/transaction/lead/reallocationTable/${encodeURIComponent(
-                            item.label
-                          )}`
-                        : `/staff/transaction/lead/reallocationTable/${encodeURIComponent(
-                            item.label
-                          )}`
-                    )
-                  }
-                  className="flex justify-between w-full px-6 py-2 bg-white shadow-xl rounded-md border border-gray-100"
-                >
-                  <span className="font-medium">{item.label}</span>
-                  <span className="text-gray-600">{item.value}</span>
-                </div>
-              </div>
-            )
-          })}
-      </div>
-
-      {/* <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3 ">
-        <h2 className="text-lg font-bold ">ReAllocation List</h2>
+      <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3 ">
+        <h2 className="text-lg font-bold ml-5 mt-3">ReAllocation List</h2>
         <div className="flex justify-end  ml-auto gap-6 items-center">
+          {/* Branch Dropdown */}
           <select
             // value={selectedCompanyBranch || ""}
             onChange={(e) => {
@@ -242,7 +192,20 @@ const Reallocation = () => {
               </option>
             ))}
           </select>
-         
+          {/* <button
+            aria-pressed={approvedToggleStatus}
+            aria-label="Toggle Approval Status"
+            onClick={toggleStatus}
+            className={`${
+              approvedToggleStatus ? "bg-green-500" : "bg-gray-300"
+            } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
+          >
+            <div
+              className={`${
+                approvedToggleStatus ? "translate-x-5" : "translate-x-0"
+              } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+            ></div>
+          </button> */}
           <button
             onClick={() =>
               loggedUser.role === "Admin"
@@ -254,9 +217,10 @@ const Reallocation = () => {
             New Lead
           </button>
         </div>
-      </div> */}
+      </div>
 
-      {/* <div className="flex-1  overflow-x-auto rounded-lg text-center overflow-y-auto border  shadow-xl mx-3 md:mx-5 mb-3">
+      {/* Responsive Table Container */}
+      <div className="flex-1  overflow-x-auto rounded-lg text-center overflow-y-auto border  shadow-xl mx-3 md:mx-5 mb-3">
         <table className="w-full text-sm">
           <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
             <tr>
@@ -315,7 +279,11 @@ const Reallocation = () => {
                     <td className=" px-4 ">{item?.leadId}</td>
                     <td className=" px-4 border border-b-0 border-gray-400 "></td>
                     <td className="border border-b-0 border-gray-400 px-4 ">
-                     
+                      {/* {
+                        item.followUpDatesandRemarks[
+                          item.followUpDatesandRemarks.length - 1
+                        ]?.nextfollowpdate
+                      } */}
                     </td>
 
                     <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
@@ -489,13 +457,16 @@ const Reallocation = () => {
                       </div>
                     </td>
                     <td className="border  border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5">
+                      {/* {item?.allocatedBy?.name} */}
                     </td>
                     <td className="border  border-t-0 border-r-0 border-l-0 border-b-0  border-gray-400  px-4 py-0.5 ">
+                      {/* {item.followUpDatesandRemarks.length} */}
                     </td>
                     <td className="border  border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 ">
                       {new Date(item?.leadDate).toLocaleDateString()}
                     </td>
                     <td className="border  border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5 ">
+                      {/* {item.leadDate?.toString().split("T")[0]} */}
                     </td>
                     <td className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5 "></td>
                     <td
@@ -535,6 +506,7 @@ const Reallocation = () => {
                       className="text-center py-1 font-semibold border border-t-0 border-gray-400"
                     >
                       <div className="flex  w-full">
+                        {/* <span className="min-w-[100px]"></span> */}
                         <span className="mx-2">
                           {item?.submittedUser?.name} -
                         </span>
@@ -661,9 +633,9 @@ const Reallocation = () => {
             </div>
           </div>
         )}
-      </div> */}
+      </div>
     </div>
   )
 }
 
-export default Reallocation
+export default ReallocationTable
