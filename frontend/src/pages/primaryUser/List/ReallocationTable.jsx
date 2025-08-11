@@ -9,10 +9,11 @@ import Select from "react-select"
 import UseFetch from "../../../hooks/useFetch"
 const ReallocationTable = () => {
   const { label } = useParams()
-  console.log(label)
+  console.log("label", label)
   const [status, setStatus] = useState("Pending")
 
   const [toggleLoading, setToggleLoading] = useState(false)
+  const [isClosed, setIsclosed] = useState(false)
   const [selectedLeadId, setselectedLeadId] = useState(null)
   const [selectedType, setselectedType] = useState(null)
   const [showModal, setShowmodal] = useState(false)
@@ -101,7 +102,7 @@ const ReallocationTable = () => {
     if (leadreallocation && leadreallocation.length > 0) {
       console.log(leadreallocation)
       const filteredLeads = filterLeadsByLastTaskLabel(leadreallocation, label)
-console.log(filteredLeads)
+      console.log(filteredLeads)
       setTableData(filteredLeads)
     }
   }, [leadreallocation])
@@ -164,6 +165,35 @@ console.log(filteredLeads)
       setsubmitError({ submissionerror: "something went error" })
     }
   }
+  console.log(selectedLeadId)
+  const handleClosed = async () => {
+    console.log("H")
+    if (!formData.recievedAmount) {
+      console.log("h")
+      setsubmitError((prev) => ({
+        ...prev,
+        recievedAmount: "Plase add closing amount"
+      }))
+      return
+    }
+    // return
+    const allocationType = "lead Closed"
+    const response = await api.post(
+      `/lead/leadClosingAmount?allocationType=${encodeURIComponent(
+        allocationType
+      )}&allocatedBy=${loggedUser._id}&leadId=${selectedLeadId}`,
+      { formData }
+    )
+    toast.success(response.data.message)
+    setsubmitLoading(false)
+    setFormData({
+      netAmount: "",
+      balanceAmount: ""
+    })
+    setIsclosed(false)
+    refreshHook()
+    setTableData([])
+  }
   console.log(tableData)
   return (
     <div className="flex flex-col h-full">
@@ -192,20 +222,7 @@ console.log(filteredLeads)
               </option>
             ))}
           </select>
-          {/* <button
-            aria-pressed={approvedToggleStatus}
-            aria-label="Toggle Approval Status"
-            onClick={toggleStatus}
-            className={`${
-              approvedToggleStatus ? "bg-green-500" : "bg-gray-300"
-            } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
-          >
-            <div
-              className={`${
-                approvedToggleStatus ? "translate-x-5" : "translate-x-0"
-              } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-            ></div>
-          </button> */}
+
           <button
             onClick={() =>
               loggedUser.role === "Admin"
@@ -527,7 +544,43 @@ console.log(filteredLeads)
                     </td>
                     <td className="border border-t-0 border-gray-400 "></td>
                     <td className="border border-t-0 border-gray-400 "></td>
-                    <td className="border border-t-0 border-gray-400 "></td>
+                    <td
+                      onClick={() => {
+                        setIsclosed(true)
+                        setFormData((prev) => ({
+                          ...prev,
+                          netAmount: item?.netAmount,
+                          balanceAmount: item?.balanceAmount
+                        }))
+                        setselectedLeadId(item?._id)
+                      }}
+                      // onClick={() => {
+                      //   if (!selectedAllocates.hasOwnProperty(item._id)) {
+                      //     setValidateError((prev) => ({
+                      //       ...prev,
+                      //       [item._id]: "Allocate to Someone"
+                      //     }))
+                      //     return
+                      //   }
+                      //   if (!selectedAllocationType.hasOwnProperty(item._id)) {
+                      //     setValidatetypeError((prev) => ({
+                      //       ...prev,
+                      //       [item._id]: "please select a Type"
+                      //     }))
+                      //     return
+                      //   }
+                      //   setselectedLeadId(item.leadId)
+                      //   setShowmodal(true)
+                      //   setSelectedItem(item)
+                      //   setFormData((prev) => ({
+                      //     ...prev,
+                      //     allocationDate: new Date()
+                      //   }))
+                      // }}
+                      className="border border-t-0 border-gray-400 text-red-400 hover:text-red-500 font-semibold cursor-pointer"
+                    >
+                      Closed
+                    </td>
                     <td className="border border-t-0 border-gray-400 "></td>
                   </tr>
                   <tr>
@@ -629,6 +682,74 @@ console.log(filteredLeads)
                     SUBMIT
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {isClosed && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40 ">
+            <div className="bg-white md:w-1/4 grid grid-cols-1 rounded-lg shadow-xl p-5">
+              <h1 className="text-xl font-semibold">Lead Closed Amount</h1>
+              <div>
+                <label className="block text-left font-semibold text-gray-500">
+                  Net Amount
+                </label>
+                <input
+                  disabled
+                  type="number"
+                  value={formData?.netAmount}
+                  className="py-1 pl-2 border border-gray-300 w-full rounded-md shadow-xl cursor-not-allowed bg-gray-100"
+                />
+              </div>
+              <div>
+                <label className="block text-left font-semibold text-gray-500">
+                  Balance Amount
+                </label>
+                <input
+                  disabled
+                  type="number"
+                  value={formData?.balanceAmount}
+                  className="py-1 pl-2 border border-gray-300 w-full  rounded-md shadow-xl"
+                />
+              </div>
+              <div>
+                <label className="block text-left font-semibold text-gray-500">
+                  Recieved Amount
+                </label>
+                <input
+                  type="number"
+                  value={formData?.recievedAmount}
+                  onChange={(e) => {
+                    if (submiterror.recievedAmount) {
+                      setsubmitError((prev) => ({
+                        ...prev,
+                        recievedAmount: ""
+                      }))
+                    }
+                    setFormData((prev) => ({
+                      ...prev,
+                      recievedAmount: e.target.value
+                    }))
+                  }}
+                  className="py-1 pl-2 border border-gray-300 w-full  rounded-md shadow-xl focus:outline-none"
+                />
+                {submiterror.recievedAmount && (
+                  <p className="text-red-500">{submiterror.recievedAmount}</p>
+                )}
+              </div>
+              <div className="mt-3 flex space-x-3 justify-center">
+                <button
+                  onClick={() => setIsclosed(false)}
+                  className="bg-gray-600 py-1 px-3 rounded-md hover:bg-gray-700 cursor-pointer text-white"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => handleClosed()}
+                  className="bg-blue-500 py-1 px-3 rounded-md hover:bg-blue-600 cursor-pointer text-white"
+                >
+                  Submit
+                </button>
               </div>
             </div>
           </div>

@@ -34,12 +34,19 @@ const leadSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       refpath: "assignedtoleadByModel"
     },
+    leadClosedModel: {
+      type: String,
+      enum: ["Staff", "Admin"]
+    },
     leadByModel: {
       //this for getting lead done by the user
       type: String,
       enum: ["Staff", "Admin"]
     },
     netAmount: {
+      type: Number
+    },
+    balanceAmount: {
       type: Number
     },
     remark: { type: String },

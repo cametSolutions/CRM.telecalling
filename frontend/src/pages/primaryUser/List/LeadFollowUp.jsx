@@ -21,10 +21,7 @@ const LeadFollowUp = () => {
     demoDescription: ""
   })
   const [isdemofollownotClosed, setisdemofollowedNotClosed] = useState(false)
-  const [isclearedFollowup, setclearedfollowup] = useState(false)
-  const [selectedType, setSelectedType] = useState("infollowup")
   const [isdropdownOpen, setIsdropdownOpen] = useState(false)
-  const [isClosed, setIsClosed] = useState(false)
   const [taskClosed, setfollowupClosed] = useState(false)
   const [dates, setDates] = useState({ startDate: "", endDate: "" })
   const [editdemoIndex, setdemoEditIndex] = useState(null)
@@ -38,9 +35,7 @@ const LeadFollowUp = () => {
   const [isAllocated, setIsAllocated] = useState(false) //for set allocation or not
   const [isOwner, setOwner] = useState(false)
   const [statusAllocated, setstatusAllocated] = useState(false)
-  const [message, setMessage] = useState("")
   const [pending, setPending] = useState(true)
-  const [demofollowerLoader, setdemofollowerLoader] = useState(false)
   const [allocatedLeads, setAllocatedLeads] = useState([])
   const [loader, setLoader] = useState(false)
   const [allocationOptions, setAllocationOptions] = useState([])
@@ -48,7 +43,6 @@ const LeadFollowUp = () => {
   const [isHaveEditchoice, setIsEditable] = useState(false)
   const [selectedDocId, setselectedDocid] = useState(null)
   const [selectedTab, setselectedTab] = useState("")
-  const [leads, setLeads] = useState([])
   const [hasOwnLeads, setHasownLeads] = useState(false)
   const [ownFollowUp, setOwnFollowUp] = useState(true)
   const [historyList, setHistoryList] = useState([])
@@ -304,11 +298,15 @@ const LeadFollowUp = () => {
         setnetTotalAmount(totalNetAmount)
         setTableData(mergedall)
       } else if (!pending && ownFollowUp) {
-        const totalNetAmount = loggedusersallocatedleads.followupLeads.reduce((total, lead) => {
-          const leadTotal =
-            lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) || 0
-          return total + leadTotal
-        }, 0)
+        const totalNetAmount = loggedusersallocatedleads.followupLeads.reduce(
+          (total, lead) => {
+            const leadTotal =
+              lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) ||
+              0
+            return total + leadTotal
+          },
+          0
+        )
 
         // then store it in state
         setnetTotalAmount(totalNetAmount)
@@ -324,61 +322,6 @@ const LeadFollowUp = () => {
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
     }
   }, [loggedusersallocatedleads, dates, pending, ownFollowUp, loggedUser])
-  // useEffect(() => {
-  //   if (leads && leads.length && loggedUser) {
-  //     const currentDate = new Date()
-
-  //     // 1. Leads with follow-ups
-  //     const leadsWithFollowUps = leads
-  //       .filter(
-  //         (lead) =>
-  //           lead.allocatedTo._id === loggedUser._id &&
-  //           Array.isArray(lead.activityLog) &&
-  //           lead.activityLog.some((log) => log.followup && log.nextfollowup)
-  //       )
-  //       .map((lead) => {
-  //         const pendingFollowups = lead.activityLog?.filter((log) => {
-  //           return (
-  //             log.followup && // field exists and has value
-  //             log.nextfollowup && // field exists and has value
-  //             log.taskClosed === false // still pending
-  //           )
-  //         })
-  //         // Get the closest nextfollowUpDate from the followUpDatesandRemarks array
-  //         const nextFollowUp = pendingFollowups.reduce((closest, curr) => {
-  //           const currDate = new Date(curr.nextfollowUpDate)
-  //           const closestDate = new Date(closest.nextfollowUpDate)
-  //           return Math.abs(currDate - currentDate) <
-  //             Math.abs(closestDate - currentDate)
-  //             ? curr
-  //             : closest
-  //         })
-
-  //         return {
-  //           ...lead,
-  //           closestNextFollowUp: new Date(nextFollowUp.nextfollowUpDate)
-  //         }
-  //       })
-  //       .sort((a, b) => a.closestNextFollowUp - b.closestNextFollowUp)
-
-  //     // 2. Leads with empty followUpDatesandRemarks
-  //     const leadsWithoutFollowUps = leads.filter((lead) =>
-  //       ownFollowUp
-  //         ? lead.allocatedTo?._id === loggedUser._id
-  //         : lead?.allocatedTo?._id !== loggedUser?._id &&
-  //           Array.isArray(lead.activityLog) &&
-  //           lead.activityLog.some(
-  //             (log) =>
-  //               log.taskTo === "followup" &&
-  //               (!log.nextfollowup || log.nextfollowup.trim?.() === "")
-  //           )
-  //     )
-
-  //     // 3. Combined
-  //     const finalSortedLeads = [...leadsWithFollowUps, ...leadsWithoutFollowUps]
-  //     setTableData(finalSortedLeads)
-  //   }
-  // }, [ownFollowUp, leads, loggedUser])
 
   useEffect(() => {
     if (loggedUser) {
@@ -436,14 +379,24 @@ const LeadFollowUp = () => {
       }
     }
   }
-
+  console.log(formData)
   const handleHistory = (
     history,
     leadid,
     docId,
     allocatedTo,
-    taskfromFollowup
+    taskfromFollowup,
+    netAmount,
+    balanceAmount
   ) => {
+    console.log(netAmount)
+    console.log(formData)
+    setFormData((prev) => ({
+      ...prev,
+      netAmount,
+      balanceAmount
+    }))
+    console.log("h")
     const owner = loggedUser._id === allocatedTo
     setOwner(owner)
     const isHaveDemo = taskfromFollowup ? history[history.length - 1] : null
@@ -558,15 +511,22 @@ const LeadFollowUp = () => {
       if (!formData.followUpDate)
         newErrors.followUpDate = "Follow Up Date is required"
       if (formData.followupType === "infollowup") {
-        if (!formData.nextfollowUpDate)
+        if (!formData.nextfollowUpDate) {
           newErrors.nextfollowUpDate = "Next Follow Up Date Is Required"
+        }
+      }
+      if (formData.followupType === "closed") {
+        if (!formData.recievedAmount) {
+          newErrors.recievedAmount = "Add recieved Amount"
+        }
       }
       if (!formData.Remarks) newErrors.Remarks = "Remarks is Required"
-
+      console.log(formData)
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors)
         return
       }
+      
       setfollowupDateLoader(!followupDateLoader)
 
       const response = await api.put(
@@ -594,7 +554,7 @@ const LeadFollowUp = () => {
       console.log("error:", error.message)
     }
   }
-
+  console.log(formData)
   return (
     <div className="h-full flex flex-col ">
       {loading && (
@@ -827,7 +787,9 @@ const LeadFollowUp = () => {
                               item.leadId, //like 00001
                               item?._id, //lead doc id
                               item?.allocatedTo?._id,
-                              item?.taskfromFollowup
+                              item?.taskfromFollowup,
+                              item?.netAmount,
+                              item?.balanceAmount
                             )
                           }
                         >
@@ -1140,7 +1102,6 @@ const LeadFollowUp = () => {
                               <select
                                 disabled={isAllocated}
                                 onChange={(e) => {
-                                  setSelectedType(e.target.value)
                                   setFormData((prev) => ({
                                     ...prev,
                                     followupType: e.target.value
@@ -1349,6 +1310,59 @@ const LeadFollowUp = () => {
                                 )}
                               </div>
                             </div>
+                          )}
+                          {formData.followupType === "closed" && (
+                            <>
+                              <div>
+                                <label className="block text-left font-semibold text-gray-500">
+                                  Net Amount
+                                </label>
+                                <input
+                                  disabled
+                                  type="number"
+                                  value={formData?.netAmount}
+                                  className="py-1 pl-2 border border-gray-300 w-full rounded-md shadow-xl cursor-not-allowed bg-gray-100"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-left font-semibold text-gray-500">
+                                  Balance Amount
+                                </label>
+                                <input
+                                  disabled
+                                  type="number"
+                                  value={formData?.balanceAmount}
+                                  className="py-1 pl-2 border border-gray-300 w-full  rounded-md shadow-xl"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-left font-semibold text-gray-500">
+                                  Recieved Amount
+                                </label>
+                                <input
+                                  type="number"
+                                  value={formData.recievedAmount}
+                                  onChange={(e) => {
+                                    if (errors.recievedAmount) {
+                                      setErrors((prev) => ({
+                                        ...prev,
+                                        recievedAmount: ""
+                                      }))
+                                    }
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      recievedAmount: e.target.value
+                                    }))
+                                  }}
+                                  className="py-1 pl-2 border border-gray-300 w-full  rounded-md shadow-xl focus:outline-none"
+                                />
+                                {errors.recievedAmount && (
+                                  <p className="text-red-500">
+                                    {errors.recievedAmount}
+                                  </p>
+                                )}
+                              </div>
+                            </>
                           )}
 
                           <div>
