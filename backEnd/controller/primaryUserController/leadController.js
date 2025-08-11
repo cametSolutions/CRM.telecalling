@@ -1170,8 +1170,12 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         $push: {
           activityLog: activityEntry
         },
+        $inc: {
+          balanceAmount: -Number(formData.recievedAmount || 0) // subtract value
+        },
         reallocatedTo: formData.followupType === "closed",
-        leadLost: formData.followupType === "lost"
+        leadLost: formData.followupType === "lost",
+
       },
 
       { upsert: true }
@@ -1181,6 +1185,48 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
     }
   } catch (error) {
     console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const LeadClosing = async (req, res) => {
+  try {
+    const { leadId, allocationType, allocatedBy } = req.query
+    const { formData } = req.body
+    const isStaff = await Staff.find({ _id: allocatedBy })
+    const isAdmin = await Admin.find({ _id: allocatedBy }
+    )
+    let leadClosedModel
+    if (isStaff) {
+      leadClosedModel = "Staff"
+    } else {
+      if (isAdmin) {
+        leadClosedModel = "Admin"
+      }
+    }
+
+    const result = await LeadMaster.updateOne(
+      { _id: leadId },
+      {
+        $inc: { balanceAmount: -Number(formData.recievedAmount || 0) },
+        leadClosed: true,
+        leaClosedBy: allocatedBy,
+        leadClosedModel,
+        reallocatedTo: false,
+        allocationType:allocationType
+      }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: "No lead found" });
+    }
+
+    if (result.modifiedCount === 0) {
+      return res.status(400).json({ message: "Balance amount not changed" });
+    }
+
+    return res.status(200).json({ message: "Lead closed successfully with payment" })
+
+  } catch (error) {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
@@ -1388,7 +1434,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
     const allocatedbyObjectid = new mongoose.Types.ObjectId(allocatedBy)
     const branchObjectId = new mongoose.Types.ObjectId(selectedbranch)
     const { selectedItem, formData } = req.body
-    
+
 
     let allocatedToModel
     let allocatedByModel

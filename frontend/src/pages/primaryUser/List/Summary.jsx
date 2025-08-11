@@ -26,7 +26,6 @@ const Summary = () => {
   const [loggedusers, setloggedUsers] = useState(null)
   const [selectedBranch, setSelectedBranch] = useState("All")
   const [isToggled, setIsToggled] = useState(false)
-  const [data, setData] = useState([])
   const [dates, setDates] = useState({ startDate: "", endDate: "" })
   const [loading, setLoading] = useState(true)
   const { data: branches, loading: branchLoader } =
@@ -74,10 +73,8 @@ const Summary = () => {
         try {
           const query = `startDate=${dates.startDate}&endDate=${dates.endDate}`
           const response = await api.get(`/auth/getStaffCallStatus?${query}`)
-          setData(response.data.data)
 
           const result = response.data.data
-          console.log(result)
           if (result) {
             const processDataAndUpdateList = (data) => {
               setUserList((prevList) => {
