@@ -177,7 +177,6 @@ export const StaffRegister = async (req, res) => {
       designation,
       gender,
       role,
-
       department,
       assignedto,
       attendanceId

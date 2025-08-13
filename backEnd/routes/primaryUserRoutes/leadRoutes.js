@@ -22,13 +22,19 @@ import {
   updateReallocation,
   GetallTask,
   GetalltaskanalysisLeads,
-  LeadClosing
+  LeadClosing,
+  TaskRegistration,
+  TaskDelete,
+TaskEdit
 } from "../../controller/primaryUserController/leadController.js"
 const router = express.Router()
 
 router.post("/leadRegister", authMiddleware, LeadRegister)
+router.post("/taskRegistration", authMiddleware, TaskRegistration)
 router.put("/leadRegisterUpdate", authMiddleware, UpdateLeadRegister)
 router.get("/getallTask", authMiddleware, GetallTask)
+router.delete("/taskDelete", authMiddleware, TaskDelete)
+router.put("/taskEdit",authMiddleware,TaskEdit)
 router.post("/leadClosingAmount", authMiddleware, LeadClosing)
 router.put("/followupDateUpdate", authMiddleware, UpdateLeadfollowUpDate)
 router.get("/getSelectedLead", authMiddleware, GetselectedLeadData)

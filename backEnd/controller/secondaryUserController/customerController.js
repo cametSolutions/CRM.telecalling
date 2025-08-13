@@ -349,8 +349,8 @@ export const GetselectedDateCalls = async (req, res) => {
     start.setHours(0, 0, 0, 0); // Start of the day
     const end = new Date(endDate);
     end.setHours(23, 59, 59, 999); // End of the day
-  
-    
+
+
     const customerCalls = await CallRegistration.aggregate([
 
       {
@@ -361,7 +361,7 @@ export const GetselectedDateCalls = async (req, res) => {
       }
       ,
 
-    
+
       {
         $addFields: {
           callregistration: {
@@ -381,7 +381,7 @@ export const GetselectedDateCalls = async (req, res) => {
                           $and: [
                             { $ne: ["$$attendee.calldate", null] },
                             { $ne: ["$$attendee.calldate", ""] },
-                            { $in: [{ $type: "$$attendee.calldate" }, ["string","date"]] },
+                            { $in: [{ $type: "$$attendee.calldate" }, ["string", "date"]] },
                             {
                               $gte: [
                                 { $toDate: "$$attendee.calldate" },
@@ -564,7 +564,7 @@ export const GetselectedDateCalls = async (req, res) => {
         }
       }
     ])
-   
+
 
     return res
       .status(200)
@@ -685,7 +685,8 @@ export const CustomerRegister = async (req, res) => {
     mobile,
     landline,
     industry,
-    partner
+    registrationType,
+    gstNo
   } = customerData
   if (tabledata && tabledata?.length > 0) {
     const licenseNumbers = tabledata.map((item) => item.licensenumber)
@@ -719,6 +720,8 @@ export const CustomerRegister = async (req, res) => {
       mobile,
       landline,
       industry,
+      registrationType,
+      gstNo,
       partner: normalizedPartner,
       contactPerson,
       selected: tabledata

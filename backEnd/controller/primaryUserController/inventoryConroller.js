@@ -203,7 +203,7 @@ export const CreateHsn = async (req, res) => {
     if (hsnAlreadyExists) {
       return res.status(400).json({ message: "Hsn already exists" })
     }
-    const newHsn = new Hsn({ owner, hsnSac, description, onValue, onItem })
+    const newHsn = new Hsn({hsnSac, description, onValue, onItem })
     const HsnData = await newHsn.save()
     return res
       .status(201)
@@ -216,7 +216,7 @@ export const CreateHsn = async (req, res) => {
 //function used to get hsn
 export const GetHsnDetails = async (req, res) => {
   try {
-    const hsnData = await Hsn.find({ owner: req.owner.userId }).populate(
+    const hsnData = await Hsn.find({  }).populate(
       "owner"
     )
     res

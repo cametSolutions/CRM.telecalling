@@ -1,9 +1,8 @@
-import React, { useEffect, useState, useMemo } from "react"
-import Select from "react-select"
+import { useEffect, useState, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import UseFetch from "../../hooks/useFetch"
 import { toast } from "react-toastify"
-import { FaTrash, FaEdit } from "react-icons/fa" // Import icons
+import { FaTrash } from "react-icons/fa" // Import icons
 
 const ProductAdd = ({
   process,
@@ -55,8 +54,9 @@ const ProductAdd = ({
   const { data: companyData, error: companyError } = UseFetch(
     "/company/getCompany"
   )
-
+console.log(companyData)
   const { data: hsnData, error: hsnError } = UseFetch(`/inventory/hsnlist`)
+console.log(hsnData)
   const { data: brandData, error: brandError } = UseFetch(
     `/inventory/getproductsubDetails?tab=brand`
   )
@@ -66,7 +66,7 @@ const ProductAdd = ({
 
   useEffect(() => {
     if (selected) {
-    
+    console.log(selected)
 
       setTableObject({
         company_id: selected.company_id || "",
@@ -77,7 +77,7 @@ const ProductAdd = ({
         brandName: selected.brandName || "",
         category_id: selected.category_id || "",
         categoryName: selected.categoryName || "",
-        hsn_id: selected.categoryName || "",
+        hsn_id: selected.hsn_id || "",
         hsnName: selected.hsnName || ""
       })
 
@@ -108,12 +108,12 @@ const ProductAdd = ({
   }, [data])
 
   useEffect(() => {
-    // if (productData) setData((prev) => ({ ...prev, products: productData }))
     if (companyData) setData((prev) => ({ ...prev, companies: companyData }))
     if (hsnData) setData((prev) => ({ ...prev, hsn: hsnData }))
     if (brandData) setData((prev) => ({ ...prev, brands: brandData }))
     if (categoryData) setData((prev) => ({ ...prev, categories: categoryData }))
   }, [companyData, hsnData, brandData, categoryData])
+console.log(data)
 
   useEffect(() => {
     if (
@@ -299,7 +299,7 @@ const ProductAdd = ({
       })) || [],
     [data.categories]
   )
-
+console.log(data.hsn)
   const hsnOptions = useMemo(
     () =>
       data.hsn.map((hsndata) => ({

@@ -43,6 +43,10 @@ const leadSchema = new mongoose.Schema(
       type: String,
       enum: ["Staff", "Admin"]
     },
+    taxableAmount: {
+      type: Number
+    },
+    taxAmount: { type: Number },
     netAmount: {
       type: Number
     },
@@ -50,6 +54,14 @@ const leadSchema = new mongoose.Schema(
       type: Number
     },
     remark: { type: String },
+    paymentHistory: [
+      {
+        paymentDate: { type: Date },
+        receivedAmount: { type: Number },
+        receivedBy: { type: mongoose.Schema.Types.ObjectId, refpath: "recievedModel" },
+        recievedModel: { type: String, enum: ["Staff", "Admin"] }
+      }
+    ],
     reallocatedTo: { type: Boolean, default: false },
     activityLog: [{
       submissionDate: { type: Date },

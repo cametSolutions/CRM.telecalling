@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import UseFetch from "../../../hooks/useFetch"
 import HsnOnValue from "../../../components/TaxRelated/HsnOnValue"
 import HsnOnItem from "../../../components/TaxRelated/HsnOnItem"
 import api from "../../../api/api"
@@ -11,20 +12,34 @@ function HsnCreation() {
     hsnSac: "",
     description: "",
     onValue: {},
-    onItem: [],
+    onItem: []
   })
-
   const [onValue, setOnValue] = useState(true)
+  const [companies, setCompanies] = useState([])
+  const [branches, setBranches] = useState([])
   const [onItemRate, setOnItemRate] = useState(false)
+  const { data, error: companyError } = UseFetch("/company/getCompany")
+  console.log(data)
   // object used to store error
   const errors = {}
-
+  const userData = localStorage.getItem("user")
+  const user = JSON.parse(userData)
+  console.log(user)
+  useEffect(() => {
+    if (data && data.length) {
+      console.log(data)
+// data.array.forEach(element => {
+  
+// });
+    }
+    console.log("h")
+  }, [data])
   // concept used to initialize the value to corresponding form fields
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: value
     }))
   }
 
@@ -37,14 +52,14 @@ function HsnCreation() {
   const handleOnValue = (data) => {
     setFormData((prev) => ({
       ...prev,
-      onValue: data,
+      onValue: data
     }))
   }
 
   const handleOnItem = (data) => {
     setFormData((prev) => ({
       ...prev,
-      onItem: data,
+      onItem: data
     }))
   }
   // function used to handle submit
@@ -59,8 +74,8 @@ function HsnCreation() {
       return toast.error("Please select  On Value or On Item")
     }
     try {
-      const response = await api.post("/inventory/hsnCreation", {
-        hsnData: formData,
+      const response = await api.post("/inventory/hsnCreation?companyId", {
+        hsnData: formData
       })
       toast.success("Hsn created successfully:")
       navigate("/admin/masters/inventory/hsnlist")
@@ -150,6 +165,7 @@ function HsnCreation() {
             {onValue && <HsnOnValue handleOnValue={handleOnValue} />}
             {onItemRate && <HsnOnItem handleOnItem={handleOnItem} />}
           </div>
+          <div>hiii</div>
         </div>
       </div>
     </div>

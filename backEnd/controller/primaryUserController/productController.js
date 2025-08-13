@@ -5,7 +5,6 @@ export const ProductRegistration = async (req, res) => {
   const { productData, tableData } = req.body
 
   // Check if user already exists
-
   const productExists = await Product.findOne({
     productName: productData.productName
   })
@@ -83,7 +82,7 @@ export const GetallProducts = async (req, res) => {
             branch_id: { $in: decodedbranches }
           }
         }
-      })
+      }).populate({path:"selected.hsn_id",select:"onValue"})
 
 
 
