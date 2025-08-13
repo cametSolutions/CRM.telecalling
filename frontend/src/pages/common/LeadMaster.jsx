@@ -76,10 +76,6 @@ const LeadMaster = ({
   const dropdownLicenseRef = useRef(null)
   const dropdownLeadforRef = useRef(null)
   const registrationType = watchModal("registrationType")
-  // State to toggle the table
-
-  // Create a ref for the dropdown container
-  // const dropdownRef = useRef(null)
 
   const { data: productData, loading: productLoading } = UseFetch(
     loggeduser &&
@@ -89,7 +85,6 @@ const LeadMaster = ({
         JSON.stringify(selectedBranch)
       )}`
   )
-  console.log(productData)
   const { data: companybranches } = UseFetch("/branch/getBranch")
   const { data: partners } = UseFetch("/customer/getallpartners")
   const { data: serviceData } = UseFetch(
@@ -154,7 +149,6 @@ const LeadMaster = ({
         )
       )
       setPartner(filteredPartners)
-      console.log("h")
       const combinedlead = [...productData, ...serviceData]
       setLeadList(combinedlead)
     }
@@ -277,7 +271,6 @@ const LeadMaster = ({
       //     return groupedByLicenseNumber
       //   }
       // })
-      console.log("h")
       setProductorServiceSelections(groupedByLicenseNumber)
       const selectedcustomerlicenseandproduct =
         Data[0]?.customerName?.selected?.map((sel) => ({
@@ -340,7 +333,6 @@ const LeadMaster = ({
   }, [selectedleadlist])
   useEffect(() => {
     if (!selectedLicense && leadList && leadList.length > 0 && !Data) {
-      console.log(leadList)
       const initialProductListwithoutlicense = leadList?.map((product) => ({
         ...product,
         selectedArray: product.selected,
@@ -350,7 +342,6 @@ const LeadMaster = ({
       setlicenseWithoutProductSelection(initialProductListwithoutlicense)
     }
   }, [leadList])
-  console.log(licensewithoutProductSelection)
 
   const countryOptions = useMemo(
     () =>
@@ -402,7 +393,6 @@ const LeadMaster = ({
         ...product,
         selected: false
       }))
-      console.log("j")
       setProductorServiceSelections((prev) => ({
         ...prev,
         [license]: initialProductList
@@ -472,11 +462,20 @@ const LeadMaster = ({
   const handlePriceChange = (index, newPrice) => {
     setSelectedLeadList((prevList) =>
       prevList.map((product, i) =>
-        i === index ? { ...product, price: newPrice } : product
+        i === index
+          ? {
+              ...product,
+              productPrice: newPrice,
+              netAmount: (
+                Number(newPrice) +
+                (product.hsn / 100) * Number(newPrice)
+              ).toFixed(2)
+            }
+          : product
       )
     )
   }
-  console.log(productOrserviceSelections)
+
   const handleDeletetableData = (item, indexNum) => {
     if (item.licenseNumber) {
       const updatedProductList = productOrserviceSelections[
@@ -492,7 +491,6 @@ const LeadMaster = ({
         [item.licenseNumber]: updatedProductList
       }))
     } else {
-      console.log("j")
       const updatedProductList = licensewithoutProductSelection.map((product) =>
         product._id === item.productId
           ? { ...product, selected: !product.selected }
@@ -526,16 +524,21 @@ const LeadMaster = ({
     }, 0)
   }
   const calculatetaxAmount = () => {
-    return selectedleadlist.reduce((total, product) => {
-      return total + product.netAmount - product.productPrice
-    }, 0)
+    return (
+      Math.round(
+        selectedleadlist.reduce((total, product) => {
+          return (
+            total + (Number(product.netAmount) - Number(product.productPrice))
+          )
+        }, 0) * 100
+      ) / 100
+    )
   }
   const calculatetaxableAmount = () => {
     return selectedleadlist.reduce((total, product) => {
-      return total + product.productPrice
+      return total + Number(product.productPrice)
     }, 0)
   }
-  console.log(productOrserviceSelections)
   const handleAddProducts = () => {
     setIsleadForOpen(false)
     if (validateError.emptyleadData) {
@@ -552,9 +555,7 @@ const LeadMaster = ({
     }
     setSelectedLeadList((prev) => {
       let updatedList = [...prev]
-      console.log("h")
       if (selectedLicense) {
-        console.log(productOrserviceSelections)
         const selectedProducts = productOrserviceSelections[selectedLicense]
           .filter((items) => items.selected)
           .map((item) => ({
@@ -577,7 +578,6 @@ const LeadMaster = ({
 
         updatedList = [...updatedList, ...newProducts]
       } else {
-        console.log(licensewithoutProductSelection)
         const selectedProducts = licensewithoutProductSelection
           .filter((items) => items.selected)
           .map((item) => ({
@@ -592,7 +592,6 @@ const LeadMaster = ({
               (item?.selectedArray[0]?.hsn_id?.onValue?.igstRate / 100) *
                 (item?.price || item?.productPrice)
           }))
-        console.log(selectedProducts)
 
         // Filter out products that are already added (without license)
         const newProducts = selectedProducts.filter(
@@ -683,7 +682,6 @@ const LeadMaster = ({
       setModalLoader(false)
     }
   }
-
   return (
     <div>
       {(modalloader ||
@@ -853,7 +851,7 @@ const LeadMaster = ({
                         isReadOnly ? "cursor-not-allowed " : ""
                       } `}
                     >
-                      ADD
+                      NEW
                     </button>
                   </div>
                   {errorsMain.customerName && (
@@ -1271,26 +1269,60 @@ const LeadMaster = ({
 
                 {selectedleadlist && selectedleadlist.length > 0 && (
                   <div className=" flex flex-col-1 bg-white border rounded-md  max-h-[200px] overflow-y-auto overflow-x-auto mt-4">
-                    <table className="w-full border-collapse">
-                      <thead className="text-font-semibold">
-                        <tr className="bg-gray-100 border-b sticky top-0">
-                          <th className="p-2 font-semibold">License Number</th>
-                          <th className="p-2">Product/ Service</th>
-                          <th className="p-2">Price</th>
-                          <th className="p-2">Actions</th>
+                   
+                    <table className="w-full border-collapse border border-gray-300">
+                      <thead className="bg-gray-50 ">
+                        <tr className="">
+                          <th
+                            rowSpan="2"
+                            className="border border-gray-300 px-1 py-1 text-left font-normal"
+                          >
+                            License No
+                          </th>
+                          <th
+                            rowSpan="2"
+                            className="border border-gray-300 px-1 py-1 text-left font-normal"
+                          >
+                            Product/Service
+                          </th>
+                          <th
+                            className="border border-gray-300 px-1 py-1 text-center font-normal"
+                            colSpan="3"
+                          >
+                            Price Details
+                          </th>
+                          <th
+                            rowSpan="2"
+                            className="border border-gray-300 px-1 py-1 text-center font-normal"
+                          >
+                            Action
+                          </th>
+                        </tr>
+                        {/* Subheading row */}
+                        <tr>
+                          <th className="border border-gray-300 px-1 py-1 text-center  bg-gray-100 font-normal">
+                            Price
+                          </th>
+                          <th className="border border-gray-300 px-1 py-1 text-center bg-gray-100 font-normal">
+                            Tax
+                          </th>
+                          <th className="border border-gray-300 px-0.5 py-1 text-center  bg-gray-100 font-normal">
+                            Price Incl. Tax
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
                         {selectedleadlist.map((item, index) => (
                           <tr key={index} className="border-b hover:bg-gray-50">
-                            <td className="px-2 py-1">
+                            <td className="border border-gray-300 px-3 py-2">
                               {item.licenseNumber || "Not Selected"}
                             </td>
-                            <td className="px-2 py-1">
+                            <td className="border border-gray-300 px-3 py-2">
                               {item.productorServiceName}
                             </td>
-                            {/* Editable Price Input */}
-                            <td className="pl-2 py-1 flex gap-2">
+
+                            {/* Price Input - First column of Price Details */}
+                            <td className="border border-gray-300 px-2 py-2">
                               <input
                                 type="number"
                                 readOnly={isReadOnly}
@@ -1298,47 +1330,45 @@ const LeadMaster = ({
                                 onChange={(e) =>
                                   handlePriceChange(index, e.target.value)
                                 }
-                                className={`w-[80px] border rounded-md px-2 py-1 text-sm focus:outline-none ${
+                                className={`w-full border rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                                   isReadOnly
-                                    ? "cursor-not-allowed bg-gray-100 text-black"
-                                    : ""
+                                    ? "cursor-not-allowed bg-gray-100 text-gray-700"
+                                    : "bg-white"
                                 }`}
-                              />
-                              <input
-                                type="number"
-                                readOnly={isReadOnly}
-                                value={item.hsn}
-                                onChange={(e) =>
-                                  handlePriceChange(index, e.target.value)
-                                }
-                                className={`w-[80px] border rounded-md px-2 py-1 text-sm focus:outline-none ${
-                                  isReadOnly
-                                    ? "cursor-not-allowed bg-gray-100 text-black"
-                                    : ""
-                                }`}
-                              />
-                              <input
-                                type="text"
-                                readOnly={isReadOnly}
-                                value={item.netAmount}
-                                onChange={(e) =>
-                                  handlePriceChange(index, e.target.value)
-                                }
-                                className={`w-[100px] border rounded-md px-2 py-1 text-sm focus:outline-none ${
-                                  isReadOnly
-                                    ? "cursor-not-allowed bg-gray-100 text-black"
-                                    : ""
-                                }`}
+                                placeholder="0.00"
                               />
                             </td>
 
-                            <td className="px-2 py-1 items-center text-center max-w-[30px]">
+                            {/* HSN/Tax Input - Second column of Price Details */}
+                            <td className="border border-gray-300 px-2 py-2">
+                              <input
+                                type="text"
+                                value={item.hsn}
+                                className="w-full border rounded-md px-2 py-1 text-sm focus:outline-none cursor-not-allowed bg-gray-100 text-gray-700"
+                                placeholder="HSN"
+                                readOnly
+                              />
+                            </td>
+
+                            {/* Net Amount Input - Third column of Price Details */}
+                            <td className="border border-gray-300 px-2 py-2">
+                              <input
+                                type="text"
+                                value={item.netAmount}
+                                className="w-full border rounded-md px-2 py-1 text-sm focus:outline-none cursor-not-allowed bg-gray-100 text-gray-700"
+                                placeholder="0.00"
+                                readOnly
+                              />
+                            </td>
+
+                            {/* Actions */}
+                            <td className="border border-gray-300 px-3 py-2 text-center">
                               <button
                                 type="button"
                                 onClick={() =>
                                   handleDeletetableData(item, index)
                                 }
-                                className="text-red-500 hover:text-red-700 "
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors duration-200"
                                 title="Delete Product"
                               >
                                 <svg
@@ -1347,6 +1377,7 @@ const LeadMaster = ({
                                   viewBox="0 0 24 24"
                                   fill="none"
                                   stroke="currentColor"
+                                  strokeWidth="2"
                                 >
                                   <path d="M3 6h18" />
                                   <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
@@ -1500,17 +1531,11 @@ const LeadMaster = ({
                       </label>
                       <input
                         type="email"
-                        {...registerModal("email", {
-                          required: "Emailid is required"
-                        })}
+                        {...registerModal("email")}
                         className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
                         placeholder="Email"
                       />
-                      {errorsModal.email && (
-                        <p className="text-red-500 text-sm">
-                          {errorsModal.email.message}
-                        </p>
-                      )}
+                     
                     </div>
 
                     {/* Mobile */}
@@ -1567,20 +1592,14 @@ const LeadMaster = ({
                         Address
                       </label>
                       <textarea
-                        {...registerModal("address1", {
-                          required: "Address is Required"
-                        })}
+                        {...registerModal("address1")}
                         onBlur={(e) =>
                           setValueModal("address1", e.target.value.trim())
                         }
                         className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
                         placeholder="Address"
                       />
-                      {errorsModal.address1 && (
-                        <p className="text-red-500 text-sm">
-                          {errorsModal.address1.message}
-                        </p>
-                      )}
+                      
                     </div>
 
                     {/* Country */}
@@ -1786,7 +1805,6 @@ const LeadMaster = ({
                         </option>
                         <option value="regular">Regular</option>
                       </select>
-                     
                     </div>
                     {registrationType === "regular" && (
                       <div>
@@ -1795,7 +1813,9 @@ const LeadMaster = ({
                         </label>
                         <input
                           id="gstNo"
-                          {...registerModal("gstNo",{required:"GST is required"})}
+                          {...registerModal("gstNo", {
+                            required: "GST is required"
+                          })}
                           className="mt-1 block w-full border border-gray-400 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
                           placeholder="Enter GSTIN (e.g., 22AAAAA0000A1Z5)"
                         />
