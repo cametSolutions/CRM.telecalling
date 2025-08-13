@@ -1,34 +1,21 @@
 import { useEffect, useState } from "react"
 import api from "../../../api/api"
-//import Pagination from "../../components/common/Pagination"
-import Edit from "../../../components/common/Edit"
 import DeleteAlert from "../../../components/common/DeleteAlert"
 import { IoReorderThreeSharp } from "react-icons/io5"
 import { CiEdit } from "react-icons/ci"
 import { Link } from "react-router-dom"
-//import { useSelector } from "react-redux"
-import { MdDelete } from "react-icons/md"
 import UseFetch from "../../../hooks/useFetch"
 import { useNavigate } from "react-router-dom"
-//import { removeAll } from "../../../slices/invoice"
-//import { removeAllSales } from "../../../slices/sales"
 
-//import { useDispatch } from "react-redux"
 
 function HsnList() {
   const [hsn, setHsn] = useState([])
-  // const [currentPage, setCurrentPage] = useState(1)
-  //const [postPerPage, setPostPerPage] = useState(6)
-  // const [showSidebar, setShowSidebar] = useState(false)
 
-  //const [refresh, setRefresh] = useState(false)
-  const { data, error, refreshHook } = UseFetch(`/inventory/hsnlist`)
+
+  const { data,  refreshHook } = UseFetch(`/inventory/hsnlist`)
+
   const navigate = useNavigate()
-  //const org = useSelector((state) => state.setSelectedOrganization.selectedOrg)
-
-  // const dispatch = useDispatch()
-
-  //const orgId = org._id
+ 
 
   useEffect(() => {
     if (data) {
@@ -115,7 +102,7 @@ function HsnList() {
         />
         <div className="flex items-center justify-between w-full">
           <p>HSN</p>
-          <Link to="/pUsers/hsn">
+          <Link to="/admin/masters/inventory/hsnCreation">
             <button className=" flex gap-2 bg-green-500 px-2 py-1 rounded-md text-sm hover:scale-105 duration-100 ease-in-out hover:bg-green-600 mr-3">
               Add HSN
             </button>
@@ -165,7 +152,7 @@ function HsnList() {
                           {hsnData.hsnSac}
                         </td>
                         <td className="p-2 whitespace-nowrap">
-                          {hsnData?.description}
+                          {hsnData?.onValue?.igstRate}
                         </td>
                         <td className="p-2 whitespace-nowrap">
                           <CiEdit

@@ -21,6 +21,7 @@ const LeadFollowUp = () => {
     demoDescription: ""
   })
   const [isdemofollownotClosed, setisdemofollowedNotClosed] = useState(false)
+  const [ishavePayment, setishavePayment] = useState(false)
   const [isdropdownOpen, setIsdropdownOpen] = useState(false)
   const [taskClosed, setfollowupClosed] = useState(false)
   const [dates, setDates] = useState({ startDate: "", endDate: "" })
@@ -526,7 +527,7 @@ const LeadFollowUp = () => {
         setErrors(newErrors)
         return
       }
-      
+
       setfollowupDateLoader(!followupDateLoader)
 
       const response = await api.put(
@@ -1063,40 +1064,43 @@ const LeadFollowUp = () => {
                               </p>
                             )}
                           </div>
+
                           <div className="flex justify-between gap-2 items-center mt-2">
-                            <div className="flex items-center">
-                              <input
-                                type="checkbox"
-                                disabled={isdemofollownotClosed}
-                                id="allocation"
-                                className={`w-4 h-4  ${
-                                  isdemofollownotClosed
-                                    ? "cursor-not-allowed"
-                                    : ""
-                                }`}
-                                checked={isAllocated}
-                                onChange={() => {
-                                  if (
-                                    formData.followupType === "closed" ||
-                                    formData.followupType === "lost"
-                                  ) {
-                                    return
-                                  }
-                                  setIsAllocated(!isAllocated)
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    Remarks: "",
-                                    nextfollowUpDate: ""
-                                  }))
-                                }}
-                              />
-                              <label
-                                htmlFor="allocation"
-                                className="text-md ml-2"
-                              >
-                                Allocation
-                              </label>
-                            </div>
+                            {formData.followupType === "infollowup" && (
+                              <div className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  disabled={isdemofollownotClosed}
+                                  id="allocation"
+                                  className={`w-4 h-4  ${
+                                    isdemofollownotClosed
+                                      ? "cursor-not-allowed"
+                                      : ""
+                                  }`}
+                                  checked={isAllocated}
+                                  onChange={() => {
+                                    if (
+                                      formData.followupType === "closed" ||
+                                      formData.followupType === "lost"
+                                    ) {
+                                      return
+                                    }
+                                    setIsAllocated(!isAllocated)
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      Remarks: "",
+                                      nextfollowUpDate: ""
+                                    }))
+                                  }}
+                                />
+                                <label
+                                  htmlFor="allocation"
+                                  className="text-md ml-2"
+                                >
+                                  Allocation
+                                </label>
+                              </div>
+                            )}
 
                             <div className="relative inline-block w-32">
                               <select
@@ -1127,6 +1131,7 @@ const LeadFollowUp = () => {
                               />
                             </div>
                           </div>
+
                           {isAllocated && (
                             <>
                               <div>
@@ -1313,55 +1318,76 @@ const LeadFollowUp = () => {
                           )}
                           {formData.followupType === "closed" && (
                             <>
-                              <div>
-                                <label className="block text-left font-semibold text-gray-500">
-                                  Net Amount
-                                </label>
+                              <div className="flex items-center">
                                 <input
-                                  disabled
-                                  type="number"
-                                  value={formData?.netAmount}
-                                  className="py-1 pl-2 border border-gray-300 w-full rounded-md shadow-xl cursor-not-allowed bg-gray-100"
+                                  type="checkbox"
+                                  checked={ishavePayment}
+                                  onChange={() =>
+                                    setishavePayment(!ishavePayment)
+                                  }
+                                  className="w-4 h-4"
                                 />
-                              </div>
-                              <div>
-                                <label className="block text-left font-semibold text-gray-500">
-                                  Balance Amount
+                                <label
+                                  htmlFor="allocation"
+                                  className="text-md ml-2"
+                                >
+                                  Is Have Payment
                                 </label>
-                                <input
-                                  disabled
-                                  type="number"
-                                  value={formData?.balanceAmount}
-                                  className="py-1 pl-2 border border-gray-300 w-full  rounded-md shadow-xl"
-                                />
                               </div>
-                              <div>
-                                <label className="block text-left font-semibold text-gray-500">
-                                  Recieved Amount
-                                </label>
-                                <input
-                                  type="number"
-                                  value={formData.recievedAmount}
-                                  onChange={(e) => {
-                                    if (errors.recievedAmount) {
-                                      setErrors((prev) => ({
-                                        ...prev,
-                                        recievedAmount: ""
-                                      }))
-                                    }
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      recievedAmount: e.target.value
-                                    }))
-                                  }}
-                                  className="py-1 pl-2 border border-gray-300 w-full  rounded-md shadow-xl focus:outline-none"
-                                />
-                                {errors.recievedAmount && (
-                                  <p className="text-red-500">
-                                    {errors.recievedAmount}
-                                  </p>
-                                )}
-                              </div>
+
+                              {ishavePayment && (
+                                <>
+                                  <div>
+                                    <label className="block text-left font-semibold text-gray-500">
+                                      Net Amount
+                                    </label>
+                                    <input
+                                      disabled
+                                      type="number"
+                                      value={formData?.netAmount}
+                                      className="py-1 pl-2 border border-gray-300 w-full rounded-md shadow-xl cursor-not-allowed bg-gray-100"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-left font-semibold text-gray-500">
+                                      Balance Amount
+                                    </label>
+                                    <input
+                                      disabled
+                                      type="number"
+                                      value={formData?.balanceAmount}
+                                      className="py-1 pl-2 border border-gray-300 w-full  rounded-md shadow-xl"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-left font-semibold text-gray-500">
+                                      Recieved Amount
+                                    </label>
+                                    <input
+                                      type="number"
+                                      value={formData.recievedAmount}
+                                      onChange={(e) => {
+                                        if (errors.recievedAmount) {
+                                          setErrors((prev) => ({
+                                            ...prev,
+                                            recievedAmount: ""
+                                          }))
+                                        }
+                                        setFormData((prev) => ({
+                                          ...prev,
+                                          recievedAmount: e.target.value
+                                        }))
+                                      }}
+                                      className="py-1 pl-2 border border-gray-300 w-full  rounded-md shadow-xl focus:outline-none"
+                                    />
+                                    {errors.recievedAmount && (
+                                      <p className="text-red-500">
+                                        {errors.recievedAmount}
+                                      </p>
+                                    )}
+                                  </div>
+                                </>
+                              )}
                             </>
                           )}
 

@@ -5,6 +5,8 @@ const CustomerSchema = new mongoose.Schema({
   address1: { type: String },
   address2: { type: String },
   country: String,
+  registrationType: { type: String },
+  gstNo: { type: String },
   state: String,
   city: { type: String },
   pincode: {

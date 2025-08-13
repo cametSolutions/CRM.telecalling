@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useMemo } from "react"
-import Select, { components } from "react-select"
+import { useEffect, useState } from "react"
+import Select from "react-select"
 
 import { useForm, Controller } from "react-hook-form"
 import UseFetch from "../../hooks/useFetch"
@@ -72,6 +72,7 @@ const CustomerAdd = ({
   const selectedProduct = watch("productName")
   const selectedCompany = watch("companyName")
   const [isLicense, setlicenseExist] = useState([])
+  const registrationType = watch("registrationType")
   const [tableObject, setTableObject] = useState({
     company_id: "",
     companyName: "",
@@ -264,7 +265,6 @@ const CustomerAdd = ({
                 value: customer?.selected[0]?.company_id
               },
               true
-              
             )
         }
       }
@@ -329,14 +329,14 @@ const CustomerAdd = ({
       company_id: selectedOption.value,
       companyName: selectedOption.label
     }))
-   
+
     const selectedProductData = productData.find(
       (product) => product._id === selectedProduct?.value
     )
     const selectedCompanyData = selectedProductData?.selected.filter(
       (company) => company.company_id === selectedOption?.value
     )
-  
+
     if (selectedCompanyData) {
       setBranchOptions(
         selectedCompanyData.map((branch) => ({
@@ -349,7 +349,7 @@ const CustomerAdd = ({
       }
     }
   }
-  
+
   useEffect(() => {
     if (licensenumber) {
       setLicense(licensenumber)
@@ -875,6 +875,46 @@ const CustomerAdd = ({
                 </span>
               )}
             </div>
+            <div className="">
+              <label className="block text-sm font-medium text-gray-700">
+                RegistrationType
+              </label>
+              <select
+                id="registrationType"
+                {...register("registrationType", {
+                  required: "RegistrationType is required"
+                })}
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm  focus:outline-none cursor-pointer"
+              >
+                <option value="">Select RegistrationType</option>
+                <option value="unregistered">Unregistered/Consumer</option>
+                <option value="regular">Regular</option>
+              </select>
+              {errors.registrationType && (
+                <span className="mt-2 text-sm text-red-600">
+                  {errors.registrationType.message}
+                </span>
+              )}
+            </div>
+            {registrationType === "regular" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  GSTIN/UIN
+                </label>
+                <input
+                  type="text"
+                  {...register("gstNo")}
+                  onBlur={(e) => setValue("gstNo", e.target.value.trim())}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                  placeholder="Enter GSTIN (e.g., 22AAAAA0000A1Z5)"
+                />
+                {errors.gstNo && (
+                  <span className="mt-2 text-sm text-red-600">
+                    {errors.gstNo.message}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           <div>

@@ -20,6 +20,8 @@ export const LeadRegister = async (req, res) => {
       leadFor,
       remark,
       dueDate,
+      taxAmount,
+      taxableAmount,
       netAmount,
       partner,
       allocationType = null,
@@ -110,7 +112,10 @@ export const LeadRegister = async (req, res) => {
       remark,
       leadBy,
       leadByModel, // Now set dynamically
+      taxAmount: Number(taxAmount),
+      taxableAmount: Number(taxableAmount),
       netAmount: Number(netAmount),
+      balanceAmount: Number(netAmount),
       selfAllocation: selfAllocation === "true",
       activityLog
 
@@ -144,8 +149,10 @@ export const LeadRegister = async (req, res) => {
 }
 export const GetallTask = async (req, res) => {
   try {
-    const tasks = Task.find({})
+    const tasks = await Task.find({})
+    console.log("tas", tasks)
     if (tasks) {
+
       return res.status(200).json({ message: "Task found", data: tasks })
     } else {
       return res.status(404).json({ message: "NO tasks found" })
@@ -153,6 +160,66 @@ export const GetallTask = async (req, res) => {
   } catch (error) {
     return res.status(500).json({ message: "Internal server error" })
   }
+
+}
+export const TaskDelete = async (req, res) => {
+  try {
+    console.log("jjjjjjj")
+    const { id } = req.query
+    console.log("id", id)
+    const result = await Task.findByIdAndDelete({ _id: id })
+    console.log("re", result)
+    if (result) {
+      return res.status(200).json({ message: "Deleted successfully" })
+    } else {
+      return res.status(404).json({ message: "cant deletet" })
+
+    }
+
+  } catch (error) {
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const TaskEdit = async (req, res) => {
+  try {
+console.log("iddd")
+    const { id } = req.query
+    const formData = req.body
+    const result = await Task.findByIdAndUpdate(id, { taskName: formData.task }, { new: true })
+    if (result) {
+      return res.status(200).json({ message: "Deleted succesfully" })
+    } else {
+      return res.status(404).json(404).json({ message: "cant find task" })
+    }
+  } catch (error) {
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const TaskRegistration = async (req, res) => {
+  try {
+    const formData = req.body
+    console.log("f", formData)
+    const existingItem = await Task.findOne({ taskName: formData.task })
+    if (existingItem) {
+      return res.status(400).json({ message: "Task is already registere" })
+    }
+
+
+    // Create and save new item
+    const collection = new Task({
+      taskName: formData.task
+    })
+    await collection.save()
+
+    res.status(200).json({
+      status: true,
+      message: "Task created successfully",
+      data: collection
+    })
+  } catch (error) {
+    return res.status(500).json({ message: "internal server error" })
+  }
+
 
 }
 export const UpdateLeadRegister = async (req, res) => {
@@ -1168,7 +1235,15 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       { _id: selectedleaddocId },
       {
         $push: {
-          activityLog: activityEntry
+          activityLog: activityEntry,
+          ...(Number(formData.recievedAmount) > 0 && {
+            paymentHistory: {
+              paymentDate: new Date(),
+              receivedBy: loggeduserid, // change to your actual field name
+              recievedModel: followedByModel,
+              receivedAmount: Number(formData.recievedAmount),
+            }
+          })
         },
         $inc: {
           balanceAmount: -Number(formData.recievedAmount || 0) // subtract value
@@ -1212,7 +1287,7 @@ export const LeadClosing = async (req, res) => {
         leaClosedBy: allocatedBy,
         leadClosedModel,
         reallocatedTo: false,
-        allocationType:allocationType
+        allocationType: allocationType
       }
     );
 

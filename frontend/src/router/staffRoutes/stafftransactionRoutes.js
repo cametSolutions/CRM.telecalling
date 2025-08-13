@@ -11,6 +11,7 @@ import ReallocationTable from "../../pages/primaryUser/List/ReallocationTable"
 import LeadTask from "../../pages/primaryUser/List/LeadTask"
 import TaskAnalysis from "../../pages/primaryUser/List/TaskAnalysis"
 import TaskAnalysisTable from "../../pages/primaryUser/List/TaskAnalysisTable"
+import PaymentHistory from "../../pages/primaryUser/List/PaymentHistory"
 const stafftransactionsRoutes = [
   { path: "/staff/transaction/lead", component: LeadRegister },
   { path: "/staff/transaction/call-registration", component: CallRegistration },
@@ -20,6 +21,7 @@ const stafftransactionsRoutes = [
     component: LeadAllocationTable
   },
   { path: "/staff/transaction/lead/taskanalysisTable/:label", component: TaskAnalysisTable },
+  { path: "/staff/transaction/lead/paymenthistory", component: PaymentHistory },
   { path: "/staff/transaction/lead/taskAnalysis", component: TaskAnalysis },
   { path: "/staff/transaction/lead/ownedLeadlist", component: OwnLeadList },
   { path: "/staff/transaction/lead/leadEdit", component: LeadEdit },

@@ -94,6 +94,11 @@ export default function StaffHeader() {
       label: "Company",
       control: user?.permissions?.[0]?.Company ?? false
     },
+    {
+      to: "/staff/masters/taskRegistration",
+      label: "Task",
+      control: user?.permissions?.[0]?.Task ?? false
+    },
 
     {
       to: "/staff/masters/branch",
@@ -185,8 +190,13 @@ export default function StaffHeader() {
     {
       to: "/staff/transaction/lead/taskAnalysis",
       label: "Task Analysis",
-      control: true
-    }
+      control: user?.permissions?.[0]?.TaskAnalysis ?? false
+    },
+    // {
+    //   to: "/staff/transaction/lead/paymenthistory",
+    //   label: "Payment History",
+    //   control: true
+    // }
   ]
   const inventorys = [
     {

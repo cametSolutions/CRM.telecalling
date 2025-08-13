@@ -5,7 +5,9 @@ const productSchema = new mongoose.Schema({
   productPrice: { type: Number },
   description: { type: String },
 
-  selected: [],
+  selected: [{
+    hsn_id: { type: mongoose.Schema.Types.ObjectId, ref: "Hsn" }
+  }],
   GSTIN: String
 }, { timestamps: true })
 
