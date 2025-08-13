@@ -150,7 +150,6 @@ export const LeadRegister = async (req, res) => {
 export const GetallTask = async (req, res) => {
   try {
     const tasks = await Task.find({})
-    console.log("tas", tasks)
     if (tasks) {
 
       return res.status(200).json({ message: "Task found", data: tasks })
@@ -164,11 +163,8 @@ export const GetallTask = async (req, res) => {
 }
 export const TaskDelete = async (req, res) => {
   try {
-    console.log("jjjjjjj")
     const { id } = req.query
-    console.log("id", id)
     const result = await Task.findByIdAndDelete({ _id: id })
-    console.log("re", result)
     if (result) {
       return res.status(200).json({ message: "Deleted successfully" })
     } else {
@@ -182,7 +178,6 @@ export const TaskDelete = async (req, res) => {
 }
 export const TaskEdit = async (req, res) => {
   try {
-console.log("iddd")
     const { id } = req.query
     const formData = req.body
     const result = await Task.findByIdAndUpdate(id, { taskName: formData.task }, { new: true })
@@ -198,8 +193,7 @@ console.log("iddd")
 export const TaskRegistration = async (req, res) => {
   try {
     const formData = req.body
-    console.log("f", formData)
-    const existingItem = await Task.findOne({ taskName: formData.task })
+    const existingItem = await Task.findOne({ taskName: formData.task, code: formData.task })
     if (existingItem) {
       return res.status(400).json({ message: "Task is already registere" })
     }
@@ -336,7 +330,8 @@ export const GetallfollowupList = async (req, res) => {
 
     const userObjectId = new mongoose.Types.ObjectId(loggeduserid)
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected)
-    let query
+    // const
+      let query
     if (role === "Staff") {
       if (pendingfollowup === "true") {
         query = {
