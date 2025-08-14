@@ -223,6 +223,9 @@ const LeadMaster = ({
           item?.productorServiceId?.serviceName,
         productorServiceId: item?.productorServiceId?._id,
         itemType: item?.productorServicemodel,
+        productPrice: item?.productPrice,
+        hsn: item?.hsn,
+        netAmount: item?.netAmount,
         price: item?.price
       }))
       setSelectedLeadList(leadData)
@@ -563,7 +566,13 @@ const LeadMaster = ({
             productorServiceName: item.productName || item.serviceName,
             productorServiceId: item._id,
             itemType: item.productName ? "Product" : "Service",
-            price: item.productPrice || item.price
+            productPrice: item.productPrice || item.price,
+            hsn: item?.selectedArray[0]?.hsn_id?.onValue?.igstRate || 0,
+            price: item.productPrice || item.price,
+            netAmount:
+              (item?.productPrice || item?.price) +
+              (item?.selectedArray[0]?.hsn_id?.onValue?.igstRate / 100) *
+                (item?.price || item?.productPrice)
           }))
 
         // Filter out products that are already added for the selected license
@@ -620,7 +629,7 @@ const LeadMaster = ({
           return
         }
         setLoadingState(true)
-
+      
         await handleleadData(data, selectedleadlist)
       } else if (process === "edit") {
         if (isReadOnly) {
@@ -683,7 +692,7 @@ const LeadMaster = ({
     }
   }
   return (
-    <div>
+    <div className="bg-gray-100">
       {(modalloader ||
         loadingState ||
         editloadingState ||
@@ -695,9 +704,9 @@ const LeadMaster = ({
           color="#4A90E2" // Change color as needed
         />
       )}
-      <div className="h-full overflow-y-auto container justify-center items-center p-3 md:p-8 shadow-xl">
+      <div className=" h-full overflow-y-auto container justify-center items-center p-3 md:p-8 shadow-xl">
         <div
-          className="shadow-lg rounded p-2 md:p-3 lg:p-8 mx-auto "
+          className="bg-white shadow-xl rounded p-2 md:p-3 lg:p-8 mx-auto "
           style={{
             opacity:
               productLoading || usersLoading || customerLoading ? 0.2 : 1,
@@ -1269,7 +1278,6 @@ const LeadMaster = ({
 
                 {selectedleadlist && selectedleadlist.length > 0 && (
                   <div className=" flex flex-col-1 bg-white border rounded-md  max-h-[200px] overflow-y-auto overflow-x-auto mt-4">
-                   
                     <table className="w-full border-collapse border border-gray-300">
                       <thead className="bg-gray-50 ">
                         <tr className="">
@@ -1535,7 +1543,6 @@ const LeadMaster = ({
                         className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
                         placeholder="Email"
                       />
-                     
                     </div>
 
                     {/* Mobile */}
@@ -1599,7 +1606,6 @@ const LeadMaster = ({
                         className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
                         placeholder="Address"
                       />
-                      
                     </div>
 
                     {/* Country */}

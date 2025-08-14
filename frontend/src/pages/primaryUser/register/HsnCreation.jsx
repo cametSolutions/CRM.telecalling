@@ -18,22 +18,13 @@ function HsnCreation() {
   const [companies, setCompanies] = useState([])
   const [branches, setBranches] = useState([])
   const [onItemRate, setOnItemRate] = useState(false)
-  const { data, error: companyError } = UseFetch("/company/getCompany")
-  console.log(data)
+
   // object used to store error
   const errors = {}
   const userData = localStorage.getItem("user")
   const user = JSON.parse(userData)
   console.log(user)
-  useEffect(() => {
-    if (data && data.length) {
-      console.log(data)
-// data.array.forEach(element => {
   
-// });
-    }
-    console.log("h")
-  }, [data])
   // concept used to initialize the value to corresponding form fields
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -86,7 +77,7 @@ function HsnCreation() {
 
   return (
     <div className="container items-center p-8  bg-gray-100 ">
-      <div className=" bg-white w-auto p-8 ">
+      <div className=" bg-white w-auto p-8 shadow-xl">
         <div className="flex justify-end">
           <button
             className="bg-blue-500 hover:bg-blue-700  text-white font-bold py-2 px-4 rounded"

@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { useLocation } from "react-router-dom"
 import api from "../../../api/api"
 import { toast } from "react-toastify"
 import { useNavigate } from "react-router-dom"
-//import Breadcrumb from "../../../components/Breadcrumb"
 import HsnOnValue from "../../../components/TaxRelated/HsnOnValue"
 import HsnOnItem from "../../../components/TaxRelated/HsnOnItem"
 
@@ -66,12 +65,12 @@ function EditHsn() {
     }
   }
   return (
-    <div>
+    <div className="container items-center p-8 bg-gray-100">
       {/* <Breadcrumb pageName="Edit HSN" /> */}
-      <div className="mt-0 md:m-24">
+      <div className="bg-white w-auto p-8 shadow-xl">
         <div className="flex justify-end">
           <button
-            className="bg-black-2 hover:bg-secondary text-white font-bold py-2 px-4 rounded"
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
             onClick={handleEdit}
           >
             Update

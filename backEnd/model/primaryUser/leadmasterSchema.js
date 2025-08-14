@@ -26,6 +26,9 @@ const leadSchema = new mongoose.Schema(
         },
         productorServicemodel: { type: String, enum: ["Product", "Service"] },
         licenseNumber: { type: Number },
+        productPrice: { type: Number },
+        hsn: { type: Number },
+        netAmount: { type: Number },
         price: { type: Number }
       }
     ],
@@ -52,6 +55,10 @@ const leadSchema = new mongoose.Schema(
     },
     balanceAmount: {
       type: Number
+    },
+    totalPaidAmount: {
+      type: Number,
+      default: 0
     },
     remark: { type: String },
     paymentHistory: [

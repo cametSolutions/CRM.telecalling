@@ -203,7 +203,7 @@ export const CreateHsn = async (req, res) => {
     if (hsnAlreadyExists) {
       return res.status(400).json({ message: "Hsn already exists" })
     }
-    const newHsn = new Hsn({hsnSac, description, onValue, onItem })
+    const newHsn = new Hsn({ hsnSac, description, onValue, onItem })
     const HsnData = await newHsn.save()
     return res
       .status(201)
@@ -216,7 +216,7 @@ export const CreateHsn = async (req, res) => {
 //function used to get hsn
 export const GetHsnDetails = async (req, res) => {
   try {
-    const hsnData = await Hsn.find({  }).populate(
+    const hsnData = await Hsn.find({}).populate(
       "owner"
     )
     res
@@ -231,15 +231,14 @@ export const GetHsnDetails = async (req, res) => {
 // function used to update hsn
 export const UpdateHsn = async (req, res) => {
   const { _id, hsnSac, description, onValue, onItem } = req.body.hsnData
-  const ownerId = req.owner?.userId
 
   try {
     // Check if another user already has this description
-    const nameAlreadyExists = await HsnModel.findOne({
+    const nameAlreadyExists = await Hsn.findOne({
+      _id: { $ne: _id },
       hsnSac,
-      owner: { $ne: ownerId }
-    })
 
+    })
     if (nameAlreadyExists) {
       return res.status(400).json({
         success: false,
@@ -247,8 +246,8 @@ export const UpdateHsn = async (req, res) => {
       })
     } else {
       // Update the user type
-      const updateHsn = await HsnModel.updateOne(
-        { _id, owner: ownerId },
+      const updateHsn = await Hsn.updateOne(
+        { _id },
         {
           hsnSac: hsnSac,
           description: description,
@@ -256,7 +255,6 @@ export const UpdateHsn = async (req, res) => {
           onItem: onItem
         }
       )
-
       if (!updateHsn) {
         return res.status(404).json({
           success: false,

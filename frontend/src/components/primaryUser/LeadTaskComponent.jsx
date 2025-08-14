@@ -28,9 +28,7 @@ export default function LeadTaskComponent({
 
     return diffDays
   }
-  console.log(pending)
 
-  console.log(Data)
   return (
     <div className="flex-1 overflow-x-auto rounded-lg text-center overflow-y-auto  shadow-xl md:mx-5 mx-3 mb-3">
       <table className=" border-collapse border border-gray-400 w-full text-sm">
