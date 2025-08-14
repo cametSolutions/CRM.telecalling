@@ -47,7 +47,6 @@ const Reallocation = () => {
       selectedCompanyBranch &&
       `/lead/getallreallocatedLead?selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
   )
-  console.log(leadreallocation)
   const { data } = UseFetch("/auth/getallUsers")
   const navigate = useNavigate()
   useEffect(() => {
@@ -55,8 +54,7 @@ const Reallocation = () => {
     const user = JSON.parse(userData)
     setLoggedUser(user)
   }, [])
-  console.log(selectedLabel)
-  console.log("h")
+   
   useEffect(() => {
     if (loggedUser && branches && branches.length > 0) {
       if (loggedUser.role === "Admin") {
@@ -103,7 +101,6 @@ const Reallocation = () => {
   }, [data, selectedCompanyBranch])
   useEffect(() => {
     if (leadreallocation && leadreallocation.length > 0) {
-      console.log(leadreallocation)
       const taskByList = leadreallocation.reduce((acc, lead) => {
         const logs = lead.activityLog
         if (logs.length === 0) return acc
@@ -128,7 +125,6 @@ const Reallocation = () => {
       setTableData(leadreallocation)
     }
   }, [leadreallocation])
-  console.log(gridList)
 
   const handleSelectedAllocates = (item, value) => {
     setTableData((prevLeads) =>
@@ -179,9 +175,7 @@ const Reallocation = () => {
       setsubmitError({ submissionerror: "something went error" })
     }
   }
-  console.log(loggedUser)
-  console.log(tableData)
-  console.log(gridList)
+ 
   return (
     <div className="flex flex-col h-full">
       {(submitLoading || loading) && (

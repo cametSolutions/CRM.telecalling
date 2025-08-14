@@ -181,7 +181,6 @@ const LeadFollowUp = () => {
   useEffect(() => {
     if (loggedusersallocatedleads && dates.endDate && loggedUser) {
       if (pending && ownFollowUp) {
-        console.log("H")
         const ownFollow = loggedusersallocatedleads.followupLeads.filter(
           (lead) =>
             lead.activityLog?.some(
@@ -231,7 +230,6 @@ const LeadFollowUp = () => {
           ...uniqueoverdueAndcurrentdate,
           ...taskSubmittedLeads
         ]
-        console.log(mergedall)
 
         const totalNetAmount = mergedall.reduce((total, lead) => {
           const leadTotal =
@@ -312,12 +310,9 @@ const LeadFollowUp = () => {
         // then store it in state
         setnetTotalAmount(totalNetAmount)
         setTableData(loggedusersallocatedleads.followupLeads)
-        console.log(loggedusersallocatedleads.followupLeads)
       } else if (!pending && !ownFollowUp) {
-        console.log("h")
         setTableData(loggedusersallocatedleads.followupLeads)
-        console.log(loggedusersallocatedleads.followupLeads)
-        console.log("h")
+      
       }
 
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
@@ -380,7 +375,6 @@ const LeadFollowUp = () => {
       }
     }
   }
-  console.log(formData)
   const handleHistory = (
     history,
     leadid,
@@ -390,14 +384,12 @@ const LeadFollowUp = () => {
     netAmount,
     balanceAmount
   ) => {
-    console.log(netAmount)
-    console.log(formData)
+  
     setFormData((prev) => ({
       ...prev,
       netAmount,
       balanceAmount
     }))
-    console.log("h")
     const owner = loggedUser._id === allocatedTo
     setOwner(owner)
     const isHaveDemo = taskfromFollowup ? history[history.length - 1] : null
@@ -426,7 +418,6 @@ const LeadFollowUp = () => {
     const isAllFollowupsClosed =
       userFollowups.length > 0 &&
       userFollowups.every((item) => item.taskClosed === true)
-    console.log(pending)
     setfollowupClosed(!pending)
 
     setselectedDocid(docId)
@@ -522,7 +513,6 @@ const LeadFollowUp = () => {
         }
       }
       if (!formData.Remarks) newErrors.Remarks = "Remarks is Required"
-      console.log(formData)
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors)
         return
@@ -555,7 +545,6 @@ const LeadFollowUp = () => {
       console.log("error:", error.message)
     }
   }
-  console.log(formData)
   return (
     <div className="h-full flex flex-col ">
       {loading && (

@@ -82,12 +82,12 @@ export default function LeadTaskComponent({
                     }`}
                     style={{ lineHeight: "1.5em" }} // fine-tune as needed
                   >
-                    {pending ? item.customerName : item?.customerName}
+                    {pending ? item?.customerName : item?.customerName}
                   </td>
-                  <td className="px-4 ">{item.mobile}</td>
-                  <td className="px-4 ">0481</td>
-                  <td className="px-4 ">{item.email}</td>
-                  <td className=" px-4 ">{item.leadId}</td>
+                  <td className="px-4 ">{item?.mobile}</td>
+                  <td className="px-4 ">{item?.phone}</td>
+                  <td className="px-4 ">{item?.email}</td>
+                  <td className=" px-4 ">{item?.leadId}</td>
                   <td className="border border-b-0 border-gray-400 px-4 "></td>
                   {pending && (
                     <>
@@ -148,14 +148,7 @@ export default function LeadTaskComponent({
                   )}
 
                   <td className=" border border-t-0 border-b-0 border-gray-400 px-4 ">
-                    {/* {new Date(
-                      item.followUpDatesandRemarks[
-                        item.followUpDatesandRemarks.length - 1
-                      ]?.nextfollowUpDate
-                    )
-                      .toLocaleDateString("en-GB")
-                      .split("/")
-                      .join("-")} */}
+                    
                   </td>
                   <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer">
                     {type === "followup" ? (

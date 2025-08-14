@@ -9,7 +9,6 @@ import Select from "react-select"
 import UseFetch from "../../../hooks/useFetch"
 const ReallocationTable = () => {
   const { label } = useParams()
-  console.log("label", label)
   const [status, setStatus] = useState("Pending")
 
   const [toggleLoading, setToggleLoading] = useState(false)
@@ -53,7 +52,6 @@ const ReallocationTable = () => {
     const user = JSON.parse(userData)
     setLoggedUser(user)
   }, [])
-  console.log("h")
   useEffect(() => {
     if (loggedUser && branches && branches.length > 0) {
       if (loggedUser.role === "Admin") {
@@ -100,9 +98,7 @@ const ReallocationTable = () => {
   }, [data, selectedCompanyBranch])
   useEffect(() => {
     if (leadreallocation && leadreallocation.length > 0) {
-      console.log(leadreallocation)
       const filteredLeads = filterLeadsByLastTaskLabel(leadreallocation, label)
-      console.log(filteredLeads)
       setTableData(filteredLeads)
     }
   }, [leadreallocation])
@@ -165,11 +161,8 @@ const ReallocationTable = () => {
       setsubmitError({ submissionerror: "something went error" })
     }
   }
-  console.log(selectedLeadId)
   const handleClosed = async () => {
-    console.log("H")
     if (!formData.recievedAmount) {
-      console.log("h")
       setsubmitError((prev) => ({
         ...prev,
         recievedAmount: "Plase add closing amount"
@@ -194,7 +187,6 @@ const ReallocationTable = () => {
     refreshHook()
     setTableData([])
   }
-  console.log(tableData)
   return (
     <div className="flex flex-col h-full">
       {(submitLoading || loading) && (

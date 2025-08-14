@@ -107,9 +107,10 @@ export default function OwnLeadList() {
                       {" "}
                       <button
                         onClick={() => {
+
                           const isAllocatedToeditable = item.activityLog.some(
                             (it) =>
-                              it?.taskallocatedTo === loggedUser.id &&
+                              it?.taskallocatedTo === loggedUser._id &&
                               it?.taskfromFollowup === false &&
                               it?.taskClosed === false
                           )
