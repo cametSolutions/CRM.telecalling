@@ -25,7 +25,6 @@ const LeadTask = () => {
 
     setDates({ startDate, endDate: now })
   }, [])
-  console.log(filteredData)
   useEffect(() => {
     if (branches) {
       const userData = localStorage.getItem("user")
@@ -117,10 +116,9 @@ const LeadTask = () => {
           setFilteredData(filteredpendingFollowup)
         }
       } else if (type === "lead-Task") {
-console.log("h")
+
         const finalOutput = []
         data.forEach((entry) => {
-console.log(entry.dueDate)
           const activitylog = entry.activityLog
 
           activitylog.forEach((log) => {

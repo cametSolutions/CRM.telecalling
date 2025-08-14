@@ -43,54 +43,7 @@ function HsnList() {
       // Store the ID of the brand being edited
     }
   }
-  //   useEffect(() => {
-  //     const fetchHsn = async () => {
-  //       try {
-  //         const res = await api.get(`/inventory/fetchHsn/${orgId}`, {
-  //           withCredentials: true,
-  //         })
-
-  //         setHsn(res.data.data)
-
-  //         // console.log(res.data.organizationData);
-  //       } catch (error) {
-  //         console.log(error)
-  //       }
-  //     }
-  //     fetchHsn()
-  //     dispatch(removeAll())
-  //     dispatch(removeAllSales())
-  //   }, [orgId, refresh])
-
-  //   const { handleToggleSidebar } = useSidebar()
-
-  //   //   const handleDelete = async (hsnId) => {
-
-  //   //       try {
-  //   //         const res = await api.delete(
-  //   //          ` /api/pUsers/deleteHsn/${hsnId}`,
-
-  //   //           {
-  //   //             withCredentials: true,
-  //   //           }
-  //   //         );
-  //   //         console.log(res);
-  //   //         setRefresh(!refresh);
-  //   //         Swal.fire({
-  //   //           title: "Done!",
-  //   //           text: res.data.message,
-  //   //           icon: "success",
-  //   //         });
-  //   //       } catch (error) {
-  //   //         console.error(error);
-  //   //         Swal.fire({
-  //   //           title: "Error!",
-  //   //           text: ${error.response.data.message},
-  //   //           icon: "error",
-  //   //         });
-  //   //       }
-  //   //     }
-  //   //   };
+  
  
 
   return (
@@ -156,7 +109,7 @@ function HsnList() {
                         </td>
                         <td className="p-2 whitespace-nowrap">
                           <CiEdit
-                            className="hover:cursor-pointer"
+                            className="hover:cursor-pointer text-xl"
                             onClick={() =>
                               navigate("/admin/masters/inventory/editHsn", {
                                 state: { hsnData: hsnData },
