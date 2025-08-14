@@ -313,12 +313,12 @@ const LeadAllocationTable = () => {
                       }`}
                       style={{ lineHeight: "1.5em" }} // fine-tune as needed
                     >
-                      {item.customerName.customerName}
+                      {item?.customerName?.customerName}
                     </td>
-                    <td className="px-4 ">{item.mobile}</td>
-                    <td className="px-4 ">0481</td>
-                    <td className="px-4 ">{item.email}</td>
-                    <td className=" px-4 ">{item.leadId}</td>
+                    <td className="px-4 ">{item?.mobile}</td>
+                    <td className="px-4 ">{item?.phone}</td>
+                    <td className="px-4 ">{item?.email}</td>
+                    <td className=" px-4 ">{item?.leadId}</td>
                     <td className="border border-b-0 border-t-0 border-gray-400 px-4 "></td>
 
                     <td className="border border-b-0 border-t-0 border-gray-400 px-1 ">

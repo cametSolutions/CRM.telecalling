@@ -226,7 +226,7 @@ export const TaskRegistration = async (req, res) => {
 export const UpdateLeadRegister = async (req, res) => {
   try {
     const { data, leadData } = req.body
-   
+
     const { docID } = req.query
     const objectId = new mongoose.Types.ObjectId(docID)
 
@@ -241,6 +241,7 @@ export const UpdateLeadRegister = async (req, res) => {
         netAmount: Number(item.netAmount)
       }
     })
+    const matchedDoc = await LeadMaster.findOne({ _id: objectId })
     if (leadData.selfAllocation === "true") {
       let leadByModel
       const isStaff = await Staff.findOne({ _id: leadData.leadBy })
@@ -252,7 +253,7 @@ export const UpdateLeadRegister = async (req, res) => {
           leadByModel = "Admin"
         }
       }
-      const matchedDoc = await LeadMaster.findOne({ _id: objectId })
+
       if (!matchedDoc) {
         return res.status(404).json({ message: "Lead not found" })
       }
@@ -311,11 +312,47 @@ export const UpdateLeadRegister = async (req, res) => {
 
 
     } else {
+      console.log("hhhhh")
+      let updatedLead
       const { allocationType, ...restData } = data
-      const updatedLead = await LeadMaster.findByIdAndUpdate(objectId, {
-        ...restData,
-        leadFor: mappedleadData
-      })
+      if (matchedDoc.activityLog.length > 2) {
+        return res.status(404).json({ message: "Cant change to Allocated To Other this leads makes some tasks" })
+      } else if (matchedDoc.activityLog.length === 2) {
+        // updatedLead = await LeadMaster.findByIdAndUpdate(objectId, {
+        //   ...restData,
+        //   allocationType: "lead",
+        //   leadFor: mappedleadData
+        // })
+        let lead = await LeadMaster.findById(objectId);
+
+        if (!lead) {
+          throw new Error("Lead not found");
+        }
+
+        // Remove the second index from activityLog
+        lead.activityLog.splice(1, 1); // removes index 1
+
+        // Update the rest of the data
+        lead.allocationType = "lead";
+        lead.leadFor = mappedleadData;
+
+        // Add any other fields from restData
+        Object.assign(lead, restData);
+
+        // Save the updated document
+        updatedLead = await lead.save();
+
+        console.log("Updated lead:", updatedLead);
+
+      } else if (matchedDoc.activityLog.length === 1) {
+
+        updatedLead = await LeadMaster.findByIdAndUpdate(objectId, {
+          ...restData,
+
+          leadFor: mappedleadData
+        })
+      }
+
       if (!updatedLead) {
         return res.status(404).json({ message: "Lead not found" })
       }
@@ -1783,7 +1820,7 @@ export const GetrespectedprogrammingLead = async (req, res) => {
     for (const lead of selectedfollowup) {
 
       const matchedallocation = lead.activityLog.filter((item) => item?.taskallocatedTo?.equals(userid) && item?.taskTo !== "followup");
-    
+
       if (matchedallocation && matchedallocation.length > 0) {
         // Populate outer fields
         const leadByModel = mongoose.model(lead.leadByModel);

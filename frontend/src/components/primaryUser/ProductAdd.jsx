@@ -54,9 +54,7 @@ const ProductAdd = ({
   const { data: companyData, error: companyError } = UseFetch(
     "/company/getCompany"
   )
-console.log(companyData)
   const { data: hsnData, error: hsnError } = UseFetch(`/inventory/hsnlist`)
-console.log(hsnData)
   const { data: brandData, error: brandError } = UseFetch(
     `/inventory/getproductsubDetails?tab=brand`
   )
@@ -66,7 +64,6 @@ console.log(hsnData)
 
   useEffect(() => {
     if (selected) {
-    console.log(selected)
 
       setTableObject({
         company_id: selected.company_id || "",
@@ -113,7 +110,6 @@ console.log(hsnData)
     if (brandData) setData((prev) => ({ ...prev, brands: brandData }))
     if (categoryData) setData((prev) => ({ ...prev, categories: categoryData }))
   }, [companyData, hsnData, brandData, categoryData])
-console.log(data)
 
   useEffect(() => {
     if (
@@ -299,7 +295,6 @@ console.log(data)
       })) || [],
     [data.categories]
   )
-console.log(data.hsn)
   const hsnOptions = useMemo(
     () =>
       data.hsn.map((hsndata) => ({

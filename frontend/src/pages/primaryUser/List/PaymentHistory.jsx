@@ -7,11 +7,8 @@ const [historyModal,sethistoryModal]=useState(false)
 const [loggedUser,setloggedUser]=useState(null)
 const [loggedUserBranches,setloggedUserBranches]=useState([])
 const {data:branch}= UseFetch("/branch/getBranch")
-console.log(branch)
-// const {data}=UseFetch()
 useEffect(()=>{
 if(branch&&branch.length>0){
-console.log("h")
 const userData=localStorage.getItem("user")
 if(userData.selected){
 // console.

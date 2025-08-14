@@ -23,7 +23,6 @@ function HsnCreation() {
   const errors = {}
   const userData = localStorage.getItem("user")
   const user = JSON.parse(userData)
-  console.log(user)
   
   // concept used to initialize the value to corresponding form fields
   const handleChange = (e) => {
