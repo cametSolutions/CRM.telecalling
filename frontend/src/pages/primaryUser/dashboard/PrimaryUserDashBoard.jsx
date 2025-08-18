@@ -29,6 +29,7 @@ export default function PrimaryUserDashBoard() {
   const [showBirthdayPopup, setShowBirthdayPopup] = useState(false)
   const [birthdayPerson, setBirthdayPerson] = useState(null)
   const [dashboardHeight, setDashboardHeight] = useState("auto")
+  const [currentyearholydays, setcurrentyearHoliday] = useState([])
   const headerRef = useRef(null)
   const { data: todayleavelist } = UseFetch("/auth/getallUsersLeave?today=true")
   const { data: currrentMonthBirthDays } = UseFetch(
@@ -39,6 +40,9 @@ export default function PrimaryUserDashBoard() {
   const { data: acheivementlist, refreshHook } = UseFetch(
     "/dashboard/getcurrentquarterlyAchiever"
   )
+  const { data: holydata, refreshHook: holyrefresh } = UseFetch(
+    "/customer/getallholy"
+  )
   const { data: announcementlist } = UseFetch(
     "/dashboard/getcurrentAnnouncement"
   )
@@ -48,6 +52,23 @@ export default function PrimaryUserDashBoard() {
       setDashboardHeight(`calc(100vh - ${headerHeight}px)`) // Subtract header height from full viewport height
     }
   }, [])
+  useEffect(() => {
+    if (holydata && holydata.length) {
+    
+      const now = new Date()
+      const currentMonth = now.getMonth() // 0 = Jan, 11 = Dec
+      const currentYear = now.getFullYear()
+
+      const currentMonthHolidays = holydata.filter((item) => {
+        const date = new Date(item.holyDate)
+        return (
+          date.getFullYear() === currentYear && date.getMonth() === currentMonth
+        )
+      })
+
+      setcurrentyearHoliday(currentMonthHolidays)
+    }
+  }, [holydata])
   useEffect(() => {
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
@@ -209,7 +230,7 @@ export default function PrimaryUserDashBoard() {
     const wish = true
     localStorage.setItem("wish", JSON.stringify(wish))
   }
-console.log(birthdayPerson)
+  console.log(birthdayPerson)
   return (
     <div className="min-h-full bg-[#bfdbf7] ">
       {showBirthdayPopup && (
@@ -460,8 +481,35 @@ console.log(birthdayPerson)
             {/* Target & Achievements */}
             <div className="p-4 rounded-lg flex-1 shadow-md bg-white border-l-4 border-green-500">
               <h2 className="font-bold text-lg mb-3 text-green-700">
-                Target & Achievements
+                Monthly Holiday's
               </h2>
+
+              {currentyearholydays && currentyearholydays.length > 0 && (
+                <div className="space-y-2">
+                  {currentyearholydays
+                    .sort((a, b) => new Date(a.holyDate) - new Date(b.holyDate)) // sort by date
+                    .map((holiday) => (
+                      <div
+                        key={holiday._id}
+                        className="flex items-center justify-between border-b pb-1"
+                      >
+                        <span className="font-medium text-red-400">
+                          {holiday.customTextInput}
+                        </span>
+                        <span className=" text-blue-700">
+                          {new Date(holiday.holyDate).toLocaleDateString(
+                            "en-IN",
+                            {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric"
+                            }
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              )}
             </div>
 
             {/* Achievers & Announcements */}
