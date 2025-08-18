@@ -691,6 +691,7 @@ const LeadMaster = ({
       setModalLoader(false)
     }
   }
+console.log(selectedleadlist)
   return (
     <div className="bg-gray-100">
       {(modalloader ||

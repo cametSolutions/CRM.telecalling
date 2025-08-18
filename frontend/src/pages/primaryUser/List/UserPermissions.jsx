@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 
 import UseFetch from "../../../hooks/useFetch"
 import UserPermissionList from "../../../components/primaryUser/UserPermissionList"
@@ -42,7 +42,7 @@ const UserPermissions = () => {
       )
       setUser(filtered)
     }
-  }, [userData,debouncedQuery])
+  }, [userData, debouncedQuery])
   const openModal = (user) => {
     setSelectedUser(user)
     setShowModal(true)
@@ -127,6 +127,7 @@ const UserPermissions = () => {
             user={selectedUser}
             closeModal={closeModal}
             Loader={loading} // Pass the close modal function
+            refresh={refreshHook}
           />
         )}
       </div>

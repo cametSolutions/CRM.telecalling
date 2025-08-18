@@ -185,7 +185,7 @@ export default function StaffHeader() {
     {
       to: "/staff/transaction/lead/leadReallocation",
       label: "Lead Reallocation",
-      control: true
+      control: user?.permissions?.[0]?.LeadReallocation ??false
     },
     {
       to: "/staff/transaction/lead/taskAnalysis",

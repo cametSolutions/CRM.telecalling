@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import api from "../../api/api"
 import { toast } from "react-toastify"
-const UserPermissionList = ({ user, closeModal, Loader }) => {
+const UserPermissionList = ({ user, closeModal, Loader, refresh }) => {
   const [userPermissions, setUserPermissions] = useState({
     Company: false,
     Branch: false,
@@ -36,7 +36,9 @@ const UserPermissionList = ({ user, closeModal, Loader }) => {
     CustomerContacts: false,
     CustomerActionSummary: false,
     AccountSearch: false,
-    LeaveSummary: false
+    LeaveSummary: false,
+    TaskAnalysis: false,
+    LeadReallocation: false
   })
   const [selectAll, setSelectAll] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -116,6 +118,7 @@ const UserPermissionList = ({ user, closeModal, Loader }) => {
         toast.success(response.data.message)
         setLoading(false)
         closeModal()
+        refresh()
       } else {
         // Handle unexpected status codes (other than 200 or 201)
         toast.error("Unexpected response from the server")

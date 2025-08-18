@@ -492,8 +492,8 @@ export const GetallfollowupList = async (req, res) => {
             : -1;
 
         const checkneverFollowuped = !lead.activityLog
-          .slice(lastMatchedIndex + 1) // ✅ gets entries *after* the last matched one
-          .some((log) => !!log.nextFollowUpDate); // ✅ true if *any* has a date
+          .slice(lastMatchedIndex + 1) //gets entries *after* the last matched one
+          .some((log) => !!log.nextFollowUpDate); //true if *any* has a date
         followupLeads.push({
           ...lead,
           leadBy: populatedLeadBy || lead.leadBy,
@@ -1142,8 +1142,6 @@ export const GetallLead = async (req, res) => {
     if (Status === "Pending") {
       const query = { leadBranch: branchObjectId, activityLog: { $size: 1 } };
 
-
-
       const pendingLeads = await LeadMaster.find(query)
         .populate({ path: "customerName", select: "customerName" })
         .lean()
@@ -1180,9 +1178,6 @@ export const GetallLead = async (req, res) => {
         leadBranch: branchObjectId, reallocatedTo: false, activityLog: { $exists: true, $not: { $size: 0 } },
         $expr: { $gte: [{ $size: "$activityLog" }, 2] }
       }
-
-
-
       const approvedAllocatedLeads = await LeadMaster.find(query)
         .populate({ path: "customerName", select: "customerName" })
         .lean()
@@ -1803,8 +1798,6 @@ export const GetrespectedprogrammingLead = async (req, res) => {
     const { userid, branchSelected } = req.query
     const userObjectId = new mongoose.Types.ObjectId(userid)
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected)
-
-
     const query = {
       $and: [
         { "activityLog.taskallocatedTo": userObjectId },
