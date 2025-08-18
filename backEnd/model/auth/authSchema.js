@@ -134,8 +134,11 @@ const staffSchema = new Schema(
         CustomerContacts: Boolean,
         CustomerActionSummary: Boolean,
         AccountSearch: Boolean,
-        LeaveSummary: Boolean
+        LeaveSummary: Boolean,
+        TaskAnalysis: Boolean,
+        LeadReallocation: Boolean,
       }
+
     ],
     permissionLevel: [
       {

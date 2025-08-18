@@ -353,7 +353,7 @@ const LeadFollowUp = () => {
       }))
     }
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" })) // ✅ Clear error
+      setErrors((prev) => ({ ...prev, [name]: "" })) //Clear error
     }
     if (name === "Remarks") {
       if (demoerror.demoDescription) {

@@ -551,22 +551,29 @@ export const UpdateUserPermission = async (req, res) => {
         .json({ message: "User ID and permissions are required." })
     }
 
-    // Find the user by ID
-    const user = await Staff.findById(Userid)
-    if (!user) {
-      return res.status(404).json({ message: "User not found." })
+    // // Find the user by ID
+    // const user = await Staff.findById(Userid)
+    // if (!user) {
+    //   return res.status(404).json({ message: "User not found." })
+    // }
+    // // Update user permissions
+    // user.permissions = userPermissions // Assuming `permissions` is the field in your User schema
+    // await user.save()
+    const updateuser = await Staff.findByIdAndUpdate(Userid, {
+      $set: { permissions: userPermissions }
+    })
+    if (updateuser) {
+      // Respond with the updated user information
+      return res
+        .status(200)
+        .json({ message: "Permissions updated successfully.", updateuser })
+    } else {
+      return res.status(404).json({ message: "Cant save" })
     }
 
-    // Update user permissions
-    user.permissions = userPermissions // Assuming `permissions` is the field in your User schema
-    await user.save()
-
-    // Respond with the updated user information
-    return res
-      .status(200)
-      .json({ message: "Permissions updated successfully.", user })
   } catch (error) {
-    console.log("Error:", error.message)
+    console.log("Error:", error)
+    return res.status(500).json({ message: "Internal server error" })
   }
 }
 export const GetAllstaffs = async (req, res) => {
