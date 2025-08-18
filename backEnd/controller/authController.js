@@ -350,7 +350,7 @@ export const Login = async (req, res) => {
         user = await Staff.findOne({ mobile: emailOrMobile }).lean()
       }
     }
-
+console.log("use,",user)
     if (!user) {
       return res.status(400).json({ message: "Invalid login credentials" })
     }
