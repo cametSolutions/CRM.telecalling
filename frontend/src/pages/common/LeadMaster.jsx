@@ -47,6 +47,11 @@ const LeadMaster = ({
     {}
   )
   const [leadList, setLeadList] = useState([])
+  const [popupOpen, setPopupOpen] = useState(false)
+  const [formData, setFormData] = useState(null)
+  const [restrictionMessage, setrestrictMessage] = useState()
+  const [isEligible, setIseligible] = useState(false)
+  const [popupMessage, setPopupMessage] = useState("")
   const [ispopupModalOpen, setIspopupModalOpen] = useState(false)
   const [isSelfAllocationChangable, setselfAllocationChangable] = useState(true)
   const [modalloader, setModalLoader] = useState(false)
@@ -618,6 +623,51 @@ const LeadMaster = ({
       return updatedList
     })
   }
+  const validateLeadData = async (leadData, selectedleadlist, role) => {
+    const result = await api.get("/lead/checkexistinglead", {
+      params: {
+        leadData,
+        selectedleadlist,
+        role
+      }
+    })
+
+
+    if (
+      result.data.message ===
+        "This customer already has a lead with the same product." &&
+      loggeduser.role === "Staff"
+    ) {
+      return {
+        eligible: false,
+        message: `${result.data.message},You can't make leads`
+      }
+    } else if (
+      result.data.message ===
+        "This customer already has a lead with the same product." &&
+      loggeduser.role !== "Staff"
+    ) {
+      return { eligible: true, message: result.data.message }
+    } else if (
+      result.data.message ===
+      "No existing lead for this customer. Safe to create new lead."
+    ) {
+      return { eligible: true, message: "" }
+    } else if (
+      result.data.message ===
+      "This customer already has a lead, but with different product(s)."
+    ) {
+      return {
+        eligible: true,
+        message:
+          "This customer already has a lead, but with different product(s)."
+      }
+    }
+    setPopupMessage(result.data.message)
+
+    return isEligible
+  }
+  
   const onSubmit = async (data) => {
     try {
       if (process === "Registration") {
@@ -628,9 +678,18 @@ const LeadMaster = ({
           }))
           return
         }
-        setLoadingState(true)
+        const validation = await validateLeadData(
+          data,
+          selectedleadlist,
+          loggeduser.role
+        )
+        setFormData(data)
+        setPopupMessage(validation.message)
+        setPopupOpen(true)
+        setIseligible(validation.eligible)
+
       
-        await handleleadData(data, selectedleadlist)
+
       } else if (process === "edit") {
         if (isReadOnly) {
           setValidateError((prev) => ({
@@ -647,6 +706,12 @@ const LeadMaster = ({
     } catch (error) {
       console.log("error on onsubmit:", error)
       toast.error("Failed to add product!")
+    }
+  }
+  const handlePopupOk = async () => {
+    setPopupOpen(false)
+    if (isEligible) {
+      await handleleadData(formData, selectedleadlist, loggeduser.role)
     }
   }
   const normalizeMobile = (number) => {
@@ -691,7 +756,6 @@ const LeadMaster = ({
       setModalLoader(false)
     }
   }
-console.log(selectedleadlist)
   return (
     <div className="bg-gray-100">
       {(modalloader ||
@@ -1501,6 +1565,20 @@ console.log(selectedleadlist)
               </div>
             </div>
           </form>
+          {popupOpen && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40">
+              <div className="bg-white p-4 rounded shadow-md text-center">
+                <p className="text-orange-500">{popupMessage}</p>
+
+                <button
+                  onClick={handlePopupOk}
+                  className="bg-blue-500 text-white px-4 py-1 rounded mt-3 text-center"
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          )}
           {modalOpen && (
             <div className="fixed top-16 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center px-4">
               <div className="bg-white px-6 pt-2 pb-4 rounded-lg shadow-lg max-w-2xl w-full max-h-[80vh] z-50 overflow-auto">

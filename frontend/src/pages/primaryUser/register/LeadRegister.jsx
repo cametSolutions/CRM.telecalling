@@ -1,9 +1,8 @@
-import  { useState } from "react"
+import { useState } from "react"
 import api from "../../../api/api"
 import { toast } from "react-toastify"
 import { useNavigate } from "react-router-dom"
 import LeadMaster from "../../common/LeadMaster"
-
 
 function LeadRegister() {
   const [loader, setLoader] = useState(false)
@@ -12,11 +11,12 @@ function LeadRegister() {
   const user = JSON.parse(userData)
   const navigate = useNavigate()
 
-  const handleSubmit = async (leadData, selectedtableLeadData) => {
+  const handleSubmit = async (leadData, selectedtableLeadData, role) => {
     try {
       const response = await api.post("/lead/leadRegister", {
         assignedto: user?.assignedto,
         leadData,
+        role,
         selectedtableLeadData
       })
       if (response.status === 200) {

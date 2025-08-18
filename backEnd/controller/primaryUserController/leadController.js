@@ -7,8 +7,8 @@ import LeadId from "../../model/primaryUser/leadIdSchema.js"
 import Service from "../../model/primaryUser/servicesSchema.js"
 export const LeadRegister = async (req, res) => {
   try {
-    const { leadData, selectedtableLeadData } = req.body
-
+    const { leadData, selectedtableLeadData, role } = req.body
+  
     const {
       customerName,
       mobile,
@@ -17,7 +17,6 @@ export const LeadRegister = async (req, res) => {
       location,
       pincode,
       trade,
-
       remark,
       dueDate,
       taxAmount,
@@ -30,18 +29,22 @@ export const LeadRegister = async (req, res) => {
       leadBranch
     } = leadData
 
-    // return
+    // // return
+    // if (role === "Staff") {
+    //   const checkedHavePendingLeads = await LeadMaster.findOne({
+    //     customerName,
+    //     leadConfirmed: false
+    //   })
+    // } else {
 
-    const checkedHavePendingLeads = await LeadMaster.findOne({
-      customerName,
-      leadConfirmed: false
-    })
-    if (checkedHavePendingLeads) {
-      return res.status(201).json({
-        message:
-          "This customer already has pending leads. Please follow up and confirm them."
-      })
-    }
+    // }
+
+    // if (checkedHavePendingLeads) {
+    //   return res.status(201).json({
+    //     message:
+    //       "This customer already has pending leads. Please follow up and confirm them."
+    //   })
+    // }
 
     const leadDate = new Date()
     const lastLead = await LeadId.findOne().sort({ leadId: -1 })
@@ -123,7 +126,6 @@ export const LeadRegister = async (req, res) => {
       activityLog
 
     })
-
     selectedtableLeadData.forEach((item) =>
       lead.leadFor.push({
         productorServiceId: item.productorServiceId,
@@ -152,6 +154,66 @@ export const LeadRegister = async (req, res) => {
   } catch (error) {
     console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const Checkexistinglead = async (req, res) => {
+  try {
+    const { leadData, role, selectedleadlist } = req.query
+    console.log(leadData.customerName)
+    // console.log(role)
+    // console.log(selectedleadlist)
+    const productIds = selectedleadlist.map((item) => item.productorServiceId)
+    // console.log(productIds)
+    // const customerLeads = await LeadMaster.find({
+    //   customerName: leadData.customerName,
+    //   "leadFor.productorServiceId": { $in: productIds }
+    // }, {
+    //   leadFor: 1,
+    //   customerName: 1,
+    //   leadId: 1
+    // }).populate({ path: "customerName", select: "customerName" })
+    const [customerLeads, anyLeads] = await Promise.all([
+      LeadMaster.find(
+        {
+          customerName: leadData.customerName,
+          "leadFor.productorServiceId": { $in: productIds }
+        },
+        { leadFor: 1, customerName: 1, leadId: 1 }
+      ).populate({ path: "customerName", select: "customerName" }),
+
+      LeadMaster.exists({ customerName: leadData.customerName })
+    ]);
+
+   
+    const existingProductIds = customerLeads.flatMap(lead => lead.leadFor.map(item => item.productorServiceId.toString()))
+    const duplicateProducts = productIds.filter(id => existingProductIds.includes(id))
+
+    if (role === "Staff") {
+      if (duplicateProducts.length > 0) {
+        // Same customer + same product
+        return res
+          .status(200)
+          .json({ message: "This customer already has a lead with the same product.", exists: true, eligible: false });
+      } else if (anyLeads) {
+        // Same customer + different products
+        return res
+          .status(200)
+          .json({ message: "This customer already has a lead, but with different product(s).", exists: false});
+      } else {
+        // No lead at all for this customer
+        return res
+          .status(200)
+          .json({ message: "No existing lead for this customer. Safe to create new lead.", exists: false });
+      }
+      // return res.status(2001).json({ message: "Already a lead with same product" })
+
+
+    }
+
+  } catch (error) {
+    console.log("error:", error)
+    return res.status(500).json({ message: "Internal server error" })
+
   }
 }
 export const GetallTask = async (req, res) => {
