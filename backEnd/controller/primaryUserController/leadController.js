@@ -29,22 +29,7 @@ export const LeadRegister = async (req, res) => {
       leadBranch
     } = leadData
 
-    // // return
-    // if (role === "Staff") {
-    //   const checkedHavePendingLeads = await LeadMaster.findOne({
-    //     customerName,
-    //     leadConfirmed: false
-    //   })
-    // } else {
-
-    // }
-
-    // if (checkedHavePendingLeads) {
-    //   return res.status(201).json({
-    //     message:
-    //       "This customer already has pending leads. Please follow up and confirm them."
-    //   })
-    // }
+  
 
     const leadDate = new Date()
     const lastLead = await LeadId.findOne().sort({ leadId: -1 })

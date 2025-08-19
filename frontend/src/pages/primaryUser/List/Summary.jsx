@@ -22,7 +22,6 @@ const Summary = () => {
   const [userList, setUserList] = useState([])
   const [branch, setBranch] = useState([])
   const [indiviDualCallList, setIndividualCallList] = useState([])
-  console.log(branch)
   const [loggedusers, setloggedUsers] = useState(null)
   const [selectedBranch, setSelectedBranch] = useState("All")
   const [isToggled, setIsToggled] = useState(false)
@@ -671,6 +670,8 @@ const Summary = () => {
     setSelectedCustomer(null)
     setSelectedUser(null)
   }
+console.log(customerSummary)
+console.log(userList)
   return (
     <div className="flex flex-col h-full">
       <div className="md:px-5 lg:px-6 ">

@@ -399,6 +399,7 @@ const LeadMaster = ({
     if (!productOrserviceSelections[license]) {
       const initialProductList = leadList.map((product) => ({
         ...product,
+        selectedArray: product.selected,
         selected: false
       }))
       setProductorServiceSelections((prev) => ({
@@ -423,7 +424,11 @@ const LeadMaster = ({
         selectedLicense
       ].map((product) =>
         product._id === productId
-          ? { ...product, selected: !product.selected }
+          ? {
+              ...product,
+              selected: !product.selected,
+              selectedArray: product?.selectedArray
+            }
           : product
       )
       setProductorServiceSelections((prev) => ({
@@ -483,7 +488,6 @@ const LeadMaster = ({
       )
     )
   }
-
   const handleDeletetableData = (item, indexNum) => {
     if (item.licenseNumber) {
       const updatedProductList = productOrserviceSelections[
@@ -571,13 +575,13 @@ const LeadMaster = ({
             productorServiceName: item.productName || item.serviceName,
             productorServiceId: item._id,
             itemType: item.productName ? "Product" : "Service",
-            productPrice: item.productPrice || item.price,
+            productPrice: item.productPrice,
             hsn: item?.selectedArray[0]?.hsn_id?.onValue?.igstRate || 0,
             price: item.productPrice || item.price,
             netAmount:
-              (item?.productPrice || item?.price) +
-              (item?.selectedArray[0]?.hsn_id?.onValue?.igstRate / 100) *
-                (item?.price || item?.productPrice)
+              item?.productPrice +
+              (item?.selectedArray[0]?.hsn_id?.onValue?.igstRate || 0 / 100) *
+                item?.productPrice
           }))
 
         // Filter out products that are already added for the selected license
@@ -632,7 +636,6 @@ const LeadMaster = ({
       }
     })
 
-
     if (
       result.data.message ===
         "This customer already has a lead with the same product." &&
@@ -667,7 +670,7 @@ const LeadMaster = ({
 
     return isEligible
   }
-  
+
   const onSubmit = async (data) => {
     try {
       if (process === "Registration") {
@@ -685,11 +688,12 @@ const LeadMaster = ({
         )
         setFormData(data)
         setPopupMessage(validation.message)
-        setPopupOpen(true)
+        if (validation.message === "") {
+          handlePopupOk(true, data)
+        } else {
+          setPopupOpen(true)
+        }
         setIseligible(validation.eligible)
-
-      
-
       } else if (process === "edit") {
         if (isReadOnly) {
           setValidateError((prev) => ({
@@ -708,10 +712,12 @@ const LeadMaster = ({
       toast.error("Failed to add product!")
     }
   }
-  const handlePopupOk = async () => {
+  const handlePopupOk = async (ischek = false, leadData = null) => {
     setPopupOpen(false)
-    if (isEligible) {
+    if (isEligible && leadData === null) {
       await handleleadData(formData, selectedleadlist, loggeduser.role)
+    } else if (ischek && leadData) {
+      await handleleadData(leadData, selectedleadlist, loggeduser.role)
     }
   }
   const normalizeMobile = (number) => {
