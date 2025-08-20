@@ -85,7 +85,7 @@ const ProductAdd = ({
         } else if (key === "categoryName") {
           setValue(key, selected.category_id)
         } else if (key === "hsnName") {
-          setValue(key, selected.hsn_id)
+          setValue(key, selected.hsn_id._id)
         } else if (key === "companyName") {
           setSelectedCompany(selected.company_id)
           setValue(key, selected.company_id)
@@ -323,7 +323,7 @@ const ProductAdd = ({
       toast.error("Failed to add product!")
     }
   }
-
+console.log(hsnOptions)
   return (
     <div className="container justify-center items-center min-h-screen p-8 bg-gray-100">
       <div className="w-auto bg-white shadow-lg rounded p-8 mx-auto">

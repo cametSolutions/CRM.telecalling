@@ -47,9 +47,12 @@ export const EditProduct = async (req, res) => {
     if (!existingProduct) {
       return res.status(404).json({ message: "Product not found" })
     }
+console.log(existingProduct)
+console.log("ed",editData)
+
 
     // Step 2: Update the existing product with new values
-    existingProduct.selected = editData // Use the updated tableData
+    existingProduct.selected = [editData] // Use the updated tableData
     existingProduct.productName =
       productData.productName || existingProduct.productName
     existingProduct.productPrice =
@@ -75,7 +78,6 @@ export const GetallProducts = async (req, res) => {
     let products
     if (branchselected) {
       const decodedbranches = JSON.parse(decodeURIComponent(branchselected))
-
       products = await Product.find({
         selected: {
           $elemMatch: {

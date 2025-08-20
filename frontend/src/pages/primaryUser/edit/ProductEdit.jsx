@@ -15,6 +15,9 @@ function ProductEdit() {
  
 
   const handleSubmit = async (productData, editData) => {
+console.log(productData)
+console.log(editData)
+
    
     try {
       const response = await api.post(
