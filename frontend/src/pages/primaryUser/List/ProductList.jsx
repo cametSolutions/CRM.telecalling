@@ -5,7 +5,7 @@ import toast from "react-hot-toast"
 function ProductList() {
   const [products, setProducts] = useState([])
   const [loggeduserBranch, setloggeduserBranch] = useState(null)
-
+console.log('H')
   const {
     data: productData,
     loading,
@@ -16,6 +16,7 @@ function ProductList() {
         JSON.stringify(loggeduserBranch)
       )}`
   )
+console.log(loggeduserBranch)
   const { data: companyBranches } = UseFetch("/branch/getBranch")
 
   useEffect(() => {
