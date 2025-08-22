@@ -47,8 +47,7 @@ export const EditProduct = async (req, res) => {
     if (!existingProduct) {
       return res.status(404).json({ message: "Product not found" })
     }
-console.log(existingProduct)
-console.log("ed",editData)
+
 return
 
     // Step 2: Update the existing product with new values

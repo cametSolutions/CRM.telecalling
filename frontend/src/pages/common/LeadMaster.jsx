@@ -234,7 +234,6 @@ const LeadMaster = ({
         price: item?.price
       }))
       setSelectedLeadList(leadData)
-
       const productListwithoutlicenseOnEdit = leadList?.map((product) => {
         const match = Data[0].leadFor?.find((lead) => {
           return (
@@ -245,40 +244,42 @@ const LeadMaster = ({
 
         return {
           ...product,
-          selected: !!match
+          selected: !!match,
+          selectedArray: product.selected
         }
       })
       setlicenseWithoutProductSelection(productListwithoutlicenseOnEdit)
       const groupedByLicenseNumber = {}
-      // const productlistwithlicenseonEdit = Data[0].leadFor.map((lead) => {
-      //   if (lead.licenseNumber) {
-      //     if (!groupedByLicenseNumber[lead.licenseNumber]) {
-      //       groupedByLicenseNumber[lead.licenseNumber] = [] // create array if not exist
-      //     }
-      //     leadList?.forEach((product) => {
-      //       const existingIndex = groupedByLicenseNumber[
-      //         lead.licenseNumber
-      //       ].findIndex((item) => item._id === product._id)
+      Data[0].leadFor.forEach((lead) => {
+        if (lead.licenseNumber) {
+          if (!groupedByLicenseNumber[lead.licenseNumber]) {
+            groupedByLicenseNumber[lead.licenseNumber] = [] // create array if not exist
+          }
+          leadList?.forEach((product) => {
+            const existingIndex = groupedByLicenseNumber[
+              lead.licenseNumber
+            ].findIndex((item) => item._id === product._id)
 
-      //       if (existingIndex !== -1) {
-      //         // If already exists, just update 'selected' flag
-      //         if (lead.productorServiceId._id === product._id) {
-      //           groupedByLicenseNumber[lead.licenseNumber][
-      //             existingIndex
-      //           ].selected = product._id === lead.productorServiceId._id
-      //         }
-      //       } else {
-      //         // If not exists, push new product with correct selected
-      //         const item = {
-      //           ...product,
-      //           selected: product._id === lead.productorServiceId._id
-      //         }
-      //         groupedByLicenseNumber[lead.licenseNumber].push(item)
-      //       }
-      //     })
-      //     return groupedByLicenseNumber
-      //   }
-      // })
+            if (existingIndex !== -1) {
+              // If already exists, just update 'selected' flag
+              if (lead.productorServiceId._id === product._id) {
+                groupedByLicenseNumber[lead.licenseNumber][
+                  existingIndex
+                ].selected = product._id === lead.productorServiceId._id
+              }
+            } else {
+              // If not exists, push new product with correct selected
+              const item = {
+                ...product,
+                selected: product._id === lead.productorServiceId._id,
+                selectedArray: product.selected
+              }
+              groupedByLicenseNumber[lead.licenseNumber].push(item)
+            }
+          })
+          return groupedByLicenseNumber
+        }
+      })
       setProductorServiceSelections(groupedByLicenseNumber)
       const selectedcustomerlicenseandproduct =
         Data[0]?.customerName?.selected?.map((sel) => ({
@@ -289,7 +290,6 @@ const LeadMaster = ({
       setcustomerTableData(selectedcustomerlicenseandproduct)
     }
   }, [customerOptions, Data])
-
   useEffect(() => {
     if (customerData && customerData.length > 0) {
       setallcustomer(customerData)
@@ -490,6 +490,7 @@ const LeadMaster = ({
   }
   const handleDeletetableData = (item, indexNum) => {
     if (item.licenseNumber) {
+    
       const updatedProductList = productOrserviceSelections[
         item.licenseNumber
       ].map((product) =>
@@ -596,6 +597,7 @@ const LeadMaster = ({
 
         updatedList = [...updatedList, ...newProducts]
       } else {
+       
         const selectedProducts = licensewithoutProductSelection
           .filter((items) => items.selected)
           .map((item) => ({
