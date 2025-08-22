@@ -40,7 +40,7 @@ export default function OwnLeadList() {
 
       {/* Responsive Table Container */}
 
-      <div className=" flex-1 overflow-x-auto rounded-lg text-center overflow-y-auto  shadow-xl mx-3 md:mx-5">
+      <div className=" flex-1 overflow-x-auto rounded-lg text-center overflow-y-auto  shadow-xl mx-3 md:mx-5 mb-4">
         <table className=" border-collapse border border-gray-400 w-full text-sm">
           <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
             <tr>

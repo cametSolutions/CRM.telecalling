@@ -8,7 +8,6 @@ import Service from "../../model/primaryUser/servicesSchema.js"
 export const LeadRegister = async (req, res) => {
   try {
     const { leadData, selectedtableLeadData, role } = req.body
-  
     const {
       customerName,
       mobile,
@@ -29,7 +28,6 @@ export const LeadRegister = async (req, res) => {
       leadBranch
     } = leadData
 
-  
 
     const leadDate = new Date()
     const lastLead = await LeadId.findOne().sort({ leadId: -1 })
@@ -144,19 +142,9 @@ export const LeadRegister = async (req, res) => {
 export const Checkexistinglead = async (req, res) => {
   try {
     const { leadData, role, selectedleadlist } = req.query
-    console.log(leadData.customerName)
-    // console.log(role)
-    // console.log(selectedleadlist)
+
     const productIds = selectedleadlist.map((item) => item.productorServiceId)
-    // console.log(productIds)
-    // const customerLeads = await LeadMaster.find({
-    //   customerName: leadData.customerName,
-    //   "leadFor.productorServiceId": { $in: productIds }
-    // }, {
-    //   leadFor: 1,
-    //   customerName: 1,
-    //   leadId: 1
-    // }).populate({ path: "customerName", select: "customerName" })
+   
     const [customerLeads, anyLeads] = await Promise.all([
       LeadMaster.find(
         {
@@ -173,7 +161,7 @@ export const Checkexistinglead = async (req, res) => {
     const existingProductIds = customerLeads.flatMap(lead => lead.leadFor.map(item => item.productorServiceId.toString()))
     const duplicateProducts = productIds.filter(id => existingProductIds.includes(id))
 
-    if (role === "Staff") {
+    
       if (duplicateProducts.length > 0) {
         // Same customer + same product
         return res
@@ -193,7 +181,7 @@ export const Checkexistinglead = async (req, res) => {
       // return res.status(2001).json({ message: "Already a lead with same product" })
 
 
-    }
+    
 
   } catch (error) {
     console.log("error:", error)
