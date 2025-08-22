@@ -347,7 +347,6 @@ export const UpdateLeadRegister = async (req, res) => {
 
 
     } else {
-      console.log("hhhhh")
       let updatedLead
       const { allocationType, ...restData } = data
       if (matchedDoc.activityLog.length > 2) {
@@ -377,7 +376,6 @@ export const UpdateLeadRegister = async (req, res) => {
         // Save the updated document
         updatedLead = await lead.save();
 
-        console.log("Updated lead:", updatedLead);
 
       } else if (matchedDoc.activityLog.length === 1) {
 
