@@ -49,7 +49,7 @@ export const EditProduct = async (req, res) => {
     }
 console.log(existingProduct)
 console.log("ed",editData)
-
+return
 
     // Step 2: Update the existing product with new values
     existingProduct.selected = [editData] // Use the updated tableData
