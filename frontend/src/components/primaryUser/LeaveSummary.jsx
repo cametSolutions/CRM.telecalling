@@ -36,7 +36,7 @@ const LeaveSummary = () => {
 
     loading
   } = UseFetch(apiUrl)
-console.log(data)  useEffect(() => {
+ useEffect(() => {
     if (data) {
       const { staffAttendanceStats, listofHolidays, sundayFulldate } = data
       setnewattendee(staffAttendanceStats)
