@@ -36,7 +36,7 @@ const LeaveSummary = () => {
 
     loading
   } = UseFetch(apiUrl)
-  useEffect(() => {
+console.log(data)  useEffect(() => {
     if (data) {
       const { staffAttendanceStats, listofHolidays, sundayFulldate } = data
       setnewattendee(staffAttendanceStats)
@@ -60,7 +60,7 @@ const LeaveSummary = () => {
         if (user?.role === "Admin") {
           setleaveSummary(staffAttendanceStats)
           // setmonthSelected(selectedMonth)
-        } else if (user?.role === "Staff") {
+        } else if (user?.role === "Staff"||user?.role ==="Manger") {
           const filteredUser = staffAttendanceStats.filter(
             (item) => item.userId === user._id || item.assignedto === user._id
           )
