@@ -60,7 +60,7 @@ const LeaveSummary = () => {
         if (user?.role === "Admin") {
           setleaveSummary(staffAttendanceStats)
           // setmonthSelected(selectedMonth)
-        } else if (user?.role === "Staff"||user?.role ==="Manger") {
+        } else if (user?.role === "Staff"||user?.role ==="Manager") {
           const filteredUser = staffAttendanceStats.filter(
             (item) => item.userId === user._id || item.assignedto === user._id
           )
