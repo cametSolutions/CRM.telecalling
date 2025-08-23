@@ -63,6 +63,8 @@ const UserListform = () => {
     }
   }
 
+  console.log(loggeduser?.role)
+
   return (
     <div className="container  mx-auto  p-8">
       <div className="w-full  bg-white shadow-lg rounded p-10  ">
@@ -173,14 +175,14 @@ const UserListform = () => {
                           <div className="flex justify-center items-center">
                             <CiEdit
                               onClick={() => {
-                                if (loggeduser?.role === "Admin") {
+                                if (loggeduser?.role === "Admin" ) {
                                   navigate("/admin/masters/userEdit", {
                                     state: {
                                       user,
                                       selected: item
                                     }
                                   })
-                                } else if (loggeduser?.role === "Staff") {
+                                } else if (loggeduser?.role === "Staff" || loggeduser?.role === "Manager") {
                                   navigate("/staff/masters/userEdit", {
                                     state: {
                                       user,
