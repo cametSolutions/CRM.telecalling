@@ -569,6 +569,7 @@ const LeadMaster = ({
     setSelectedLeadList((prev) => {
       let updatedList = [...prev]
       if (selectedLicense) {
+
         const selectedProducts = productOrserviceSelections[selectedLicense]
           .filter((items) => items.selected)
           .map((item) => ({
@@ -580,9 +581,8 @@ const LeadMaster = ({
             hsn: item?.selectedArray[0]?.hsn_id?.onValue?.igstRate || 0,
             price: item.productPrice || item.price,
             netAmount:
-              item?.productPrice +
-              (item?.selectedArray[0]?.hsn_id?.onValue?.igstRate || 0 / 100) *
-                item?.productPrice
+              item?.productPrice +((Number(item?.selectedArray[0]?.hsn_id?.onValue?.igstRate ) / 100) *
+                item?.productPrice)
           }))
 
         // Filter out products that are already added for the selected license
@@ -594,6 +594,7 @@ const LeadMaster = ({
                 p.productorServiceId === product.productorServiceId
             )
         )
+
 
         updatedList = [...updatedList, ...newProducts]
       } else {

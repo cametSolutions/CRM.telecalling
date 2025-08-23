@@ -13,6 +13,7 @@ export default function OwnLeadList() {
   const { data: ownedlead, loading } = UseFetch(
     loggedUser && `/lead/ownregisteredLead?userId=${loggedUser._id}`
   )
+console.log(ownedlead)
   useEffect(() => {
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
