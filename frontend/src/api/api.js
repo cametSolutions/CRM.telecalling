@@ -1,8 +1,8 @@
 import axios from "axios"
 
 const api = axios.create({
-  baseURL: "http://localhost:9000/api",
+//  baseURL: "http://localhost:9000/api",
   withCredentials: true,
-  // baseURL: "https://www.crm.camet.in/api"
+   baseURL: "https://www.crm.camet.in/api"
 })
 export default api
