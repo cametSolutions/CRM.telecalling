@@ -36,7 +36,7 @@ function UserEdit() {
         toast.success("User updated successfully:")
         if (parsedlogged.role === "Admin") {
           navigate("/admin/masters/users-&-passwords")
-        } else if (parsedlogged.role === "Staff") {
+        } else if (parsedlogged.role === "Staff"||parsedlogged.role==="Manager") {
           navigate("/staff/masters/users-&-passwords")
         }
       }
