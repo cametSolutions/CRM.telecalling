@@ -187,6 +187,7 @@ const LeadMaster = ({
       setValueMain("leadBy", loggeduser._id) // Manually set the value
     }
   }, [loggeduser, setValueMain])
+
   useEffect(() => {
     if (
       Data &&
@@ -217,6 +218,15 @@ const LeadMaster = ({
         "selfAllocation",
         Data[0]?.selfAllocation === true ? "true" : "false"
       )
+      if (Data[0].selfAllocation === true) {
+        setselfAllocation(true)
+        setValueMain("allocationType", Data[0].selfAllocationType)
+        const formattedDate = Data[0].selfAllocationDueDate
+          ? Data[0].selfAllocationDueDate.split("T")[0]
+          : ""
+        setValueMain("dueDate", formattedDate)
+      }
+
       setValueMain("customerName", Data[0]?.customerName?._id)
       setValueMain("mobile", Data[0]?.customerName?.mobile)
       setValueMain("phone", Data[0]?.customerName?.phone)
@@ -490,7 +500,6 @@ const LeadMaster = ({
   }
   const handleDeletetableData = (item, indexNum) => {
     if (item.licenseNumber) {
-    
       const updatedProductList = productOrserviceSelections[
         item.licenseNumber
       ].map((product) =>
@@ -569,7 +578,6 @@ const LeadMaster = ({
     setSelectedLeadList((prev) => {
       let updatedList = [...prev]
       if (selectedLicense) {
-
         const selectedProducts = productOrserviceSelections[selectedLicense]
           .filter((items) => items.selected)
           .map((item) => ({
@@ -581,8 +589,10 @@ const LeadMaster = ({
             hsn: item?.selectedArray[0]?.hsn_id?.onValue?.igstRate || 0,
             price: item.productPrice || item.price,
             netAmount:
-              item?.productPrice +((Number(item?.selectedArray[0]?.hsn_id?.onValue?.igstRate ) / 100) *
-                item?.productPrice)
+              item?.productPrice +
+              (Number(item?.selectedArray[0]?.hsn_id?.onValue?.igstRate) /
+                100) *
+                item?.productPrice
           }))
 
         // Filter out products that are already added for the selected license
@@ -595,10 +605,8 @@ const LeadMaster = ({
             )
         )
 
-
         updatedList = [...updatedList, ...newProducts]
       } else {
-       
         const selectedProducts = licensewithoutProductSelection
           .filter((items) => items.selected)
           .map((item) => ({
@@ -1045,7 +1053,11 @@ const LeadMaster = ({
                   <select
                     disabled={!isSelfAllocationChangable}
                     {...registerMain("selfAllocation", {
-                      required: "This feild is required",
+                      setValueAs: (value) => value === "true",
+                      validate: (value) =>
+                        value === true || value === false
+                          ? true
+                          : "This field is requireded",
                       onChange: (e) =>
                         setselfAllocation(e.target.value === "true")
                     })}

@@ -94,6 +94,8 @@ const leadSchema = new mongoose.Schema(
 
     }],
     allocationType: { type: String },
+    selfAllocationType: { type: String },
+    selfAllocationDueDate: { type: Date },
     selfAllocation: { type: Boolean },
     taskfromFollowup: { type: Boolean, default: false }
   },

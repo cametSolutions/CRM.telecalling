@@ -257,13 +257,11 @@ export const StaffRegister = async (req, res) => {
 }
 
 export const UpdateUserandAdmin = async (req, res) => {
-  const { userId, userData, tabledata, imageData } =
-    req.body
+  const { userId, userData, tabledata, imageData } = req.body
   const { profileUrl = "", documentUrl = "" } = imageData
   const { role } = userData
 
-  const { assignedto, ...filteredUserData } =
-    userData
+  const { assignedto, ...filteredUserData } = userData
 
   const { password } = filteredUserData
   const assignedtoId = assignedto // Assuming assignedto is coming from userDat

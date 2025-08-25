@@ -8,6 +8,7 @@ import Service from "../../model/primaryUser/servicesSchema.js"
 export const LeadRegister = async (req, res) => {
   try {
     const { leadData, selectedtableLeadData, role } = req.body
+    // return
     const {
       customerName,
       mobile,
@@ -105,7 +106,8 @@ export const LeadRegister = async (req, res) => {
       taxableAmount: Number(taxableAmount),
       netAmount: Number(netAmount),
       balanceAmount: Number(netAmount),
-      selfAllocation: selfAllocation === "true",
+      selfAllocation: selfAllocation,
+      ...(selfAllocation && { selfAllocationType: allocationType, selfAllocationDueDate: dueDate }),
       activityLog
 
     })
@@ -117,7 +119,6 @@ export const LeadRegister = async (req, res) => {
         productPrice: item.productPrice,
         hsn: item.hsn,
         netAmount: item.netAmount,
-
         price: item.price
       })
     )
@@ -144,7 +145,7 @@ export const Checkexistinglead = async (req, res) => {
     const { leadData, role, selectedleadlist } = req.query
 
     const productIds = selectedleadlist.map((item) => item.productorServiceId)
-   
+
     const [customerLeads, anyLeads] = await Promise.all([
       LeadMaster.find(
         {
@@ -157,31 +158,31 @@ export const Checkexistinglead = async (req, res) => {
       LeadMaster.exists({ customerName: leadData.customerName })
     ]);
 
-   
+
     const existingProductIds = customerLeads.flatMap(lead => lead.leadFor.map(item => item.productorServiceId.toString()))
     const duplicateProducts = productIds.filter(id => existingProductIds.includes(id))
 
-    
-      if (duplicateProducts.length > 0) {
-        // Same customer + same product
-        return res
-          .status(200)
-          .json({ message: "This customer already has a lead with the same product.", exists: true, eligible: false });
-      } else if (anyLeads) {
-        // Same customer + different products
-        return res
-          .status(200)
-          .json({ message: "This customer already has a lead, but with different product(s).", exists: false});
-      } else {
-        // No lead at all for this customer
-        return res
-          .status(200)
-          .json({ message: "No existing lead for this customer. Safe to create new lead.", exists: false });
-      }
-      // return res.status(2001).json({ message: "Already a lead with same product" })
+
+    if (duplicateProducts.length > 0) {
+      // Same customer + same product
+      return res
+        .status(200)
+        .json({ message: "This customer already has a lead with the same product.", exists: true, eligible: false });
+    } else if (anyLeads) {
+      // Same customer + different products
+      return res
+        .status(200)
+        .json({ message: "This customer already has a lead, but with different product(s).", exists: false });
+    } else {
+      // No lead at all for this customer
+      return res
+        .status(200)
+        .json({ message: "No existing lead for this customer. Safe to create new lead.", exists: false });
+    }
+    // return res.status(2001).json({ message: "Already a lead with same product" })
 
 
-    
+
 
   } catch (error) {
     console.log("error:", error)
@@ -261,7 +262,8 @@ export const TaskRegistration = async (req, res) => {
 export const UpdateLeadRegister = async (req, res) => {
   try {
     const { data, leadData } = req.body
-
+  
+    // return
     const { docID } = req.query
     const objectId = new mongoose.Types.ObjectId(docID)
 
@@ -277,7 +279,9 @@ export const UpdateLeadRegister = async (req, res) => {
       }
     })
     const matchedDoc = await LeadMaster.findOne({ _id: objectId })
-    if (leadData.selfAllocation === "true") {
+    console.log("che", leadData.selfAllocation, typeof leadData.selfAllocation)
+    if (data.selfAllocation) {
+      console.log("ssssssssssssssss")
       let leadByModel
       const isStaff = await Staff.findOne({ _id: leadData.leadBy })
       if (isStaff) {
@@ -310,6 +314,7 @@ export const UpdateLeadRegister = async (req, res) => {
 
         let updatedLead
         if (matchedDoc.activityLog.length === 1) {
+          console.log("first")
           updatedLead = await LeadMaster.findByIdAndUpdate(objectId,
             {
               ...data,
@@ -317,6 +322,7 @@ export const UpdateLeadRegister = async (req, res) => {
               taxAmount,
               netAmount,
               balanceAmount,
+              // selfAllocationDate:
 
               leadFor: mappedleadData,
               $push: {
@@ -328,6 +334,7 @@ export const UpdateLeadRegister = async (req, res) => {
           )
 
         } else if (matchedDoc.activityLog.length === 2) {
+          console.log("second")
           //update last entry in activitylog
           const lastIndex = matchedDoc.activityLog.length - 1
           //build the path to the last element in the activitylog array
@@ -349,6 +356,7 @@ export const UpdateLeadRegister = async (req, res) => {
     } else {
       let updatedLead
       const { allocationType, ...restData } = data
+
       if (matchedDoc.activityLog.length > 2) {
         return res.status(404).json({ message: "Cant change to Allocated To Other this leads makes some tasks" })
       } else if (matchedDoc.activityLog.length === 2) {
