@@ -389,6 +389,7 @@ const LeadMaster = ({
       setValueModal("country", defaultCountry.value)
     }
   }, [defaultCountry])
+
   useEffect(() => {
     const currentState = getValuesModal("state")
     if (defaultState && !currentState) {
@@ -498,6 +499,31 @@ const LeadMaster = ({
       )
     )
   }
+  const handleHsnChange = (index, newHsn) => {
+
+    setSelectedLeadList((prevList) =>
+      prevList.map((product, i) =>
+        i === index
+          ? {
+              ...product,
+              hsn: newHsn,
+              netAmount: (
+                Number(product?.productPrice) +
+                (Number(newHsn) / 100) * Number(product?.productPrice)
+              ).toFixed(2)
+            }
+          : product
+      )
+    )
+  }
+
+  // const handleHsnChange=(index,newHsn)=>{
+  // selectedleadlist((prevList)=>
+  // prevList.map((product,i)=>
+  // i===index?{
+  // ...product,
+  // hsn:newHsn,
+  // netAmount:(Number(product.productPrice)+(newHsn/100)*Number(product.productPrice).toFixed(2)}:product)}))}
   const handleDeletetableData = (item, indexNum) => {
     if (item.licenseNumber) {
       const updatedProductList = productOrserviceSelections[
@@ -580,20 +606,27 @@ const LeadMaster = ({
       if (selectedLicense) {
         const selectedProducts = productOrserviceSelections[selectedLicense]
           .filter((items) => items.selected)
-          .map((item) => ({
-            licenseNumber: selectedLicense,
-            productorServiceName: item.productName || item.serviceName,
-            productorServiceId: item._id,
-            itemType: item.productName ? "Product" : "Service",
-            productPrice: item.productPrice,
-            hsn: item?.selectedArray[0]?.hsn_id?.onValue?.igstRate || 0,
-            price: item.productPrice || item.price,
-            netAmount:
-              item?.productPrice +
-              (Number(item?.selectedArray[0]?.hsn_id?.onValue?.igstRate) /
-                100) *
-                item?.productPrice
-          }))
+          .map((item) => {
+            const igstRate =
+              item?.selectedArray?.[0]?.hsn_id?.onValue?.igstRate ?? 0
+            return {
+              licenseNumber: selectedLicense,
+              productorServiceName: item.productName || item.serviceName,
+              productorServiceId: item._id,
+              itemType: item.productName ? "Product" : "Service",
+              productPrice: item.productPrice,
+              hsn: item?.selectedArray[0]?.hsn_id?.onValue?.igstRate || 0,
+              price: item?.productPrice,
+              netAmount:
+                (item?.productPrice || 0) +
+                (igstRate / 100) * (item?.productPrice || 0)
+              // netAmount:
+              //   item?.productPrice +
+              //   (Number(item?.selectedArray[0]?.hsn_id?.onValue?.igstRate) /
+              //     100) *
+              //     item?.productPrice
+            }
+          })
 
         // Filter out products that are already added for the selected license
         const newProducts = selectedProducts.filter(
@@ -609,18 +642,25 @@ const LeadMaster = ({
       } else {
         const selectedProducts = licensewithoutProductSelection
           .filter((items) => items.selected)
-          .map((item) => ({
-            productorServiceName: item.productName || item.serviceName,
-            productorServiceId: item._id,
-            itemType: item.productName ? "Product" : "Service",
-            productPrice: item.productPrice || item.price,
-            hsn: item?.selectedArray[0]?.hsn_id?.onValue?.igstRate || 0,
-            price: item.productPrice || item.price,
-            netAmount:
-              (item?.productPrice || item?.price) +
-              (item?.selectedArray[0]?.hsn_id?.onValue?.igstRate / 100) *
-                (item?.price || item?.productPrice)
-          }))
+          .map((item) => {
+            const igstRate =
+              item?.selectedArray?.[0]?.hsn_id?.onValue?.igstRate ?? 0
+            return {
+              productorServiceName: item.productName || item.serviceName,
+              productorServiceId: item._id,
+              itemType: item.productName ? "Product" : "Service",
+              productPrice: item?.productPrice,
+              hsn: item?.selectedArray[0]?.hsn_id?.onValue?.igstRate || 0,
+              price: item.productPrice || item.price,
+              netAmount:
+                (item?.productPrice || 0) +
+                (igstRate / 100) * (item?.productPrice || 0)
+              // netAmount:
+              //   item?.productPrice +
+              //   (item?.selectedArray[0]?.hsn_id?.onValue?.igstRate / 100) *
+              //     item?.productPrice
+            }
+          })
 
         // Filter out products that are already added (without license)
         const newProducts = selectedProducts.filter(
@@ -634,7 +674,6 @@ const LeadMaster = ({
 
         updatedList = [...updatedList, ...newProducts]
       }
-
       return updatedList
     })
   }
@@ -681,7 +720,6 @@ const LeadMaster = ({
 
     return isEligible
   }
-
   const onSubmit = async (data) => {
     try {
       if (process === "Registration") {
@@ -1436,11 +1474,16 @@ const LeadMaster = ({
                             {/* HSN/Tax Input - Second column of Price Details */}
                             <td className="border border-gray-300 px-2 py-2">
                               <input
-                                type="text"
+                                type="number"
                                 value={item.hsn}
-                                className="w-full border rounded-md px-2 py-1 text-sm focus:outline-none cursor-not-allowed bg-gray-100 text-gray-700"
+                                onChange={(e) =>
+                                  handleHsnChange(index, e.target.value)
+                                }
+                                className={`w-full border rounded-md px-2 py-1 text-sm focus:outline-none  bg-gray-100 text-gray-700 ${
+                                  isReadOnly ? "cursor-not-allowed" : ""
+                                }`}
                                 placeholder="HSN"
-                                readOnly
+                                readOnly={isReadOnly}
                               />
                             </td>
 
@@ -1459,10 +1502,13 @@ const LeadMaster = ({
                             <td className="border border-gray-300 px-3 py-2 text-center">
                               <button
                                 type="button"
+                                disabled={isReadOnly}
                                 onClick={() =>
                                   handleDeletetableData(item, index)
                                 }
-                                className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors duration-200"
+                                className={`text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors duration-200 ${
+                                  isReadOnly ? "cursor-not-allowed" : ""
+                                }`}
                                 title="Delete Product"
                               >
                                 <svg

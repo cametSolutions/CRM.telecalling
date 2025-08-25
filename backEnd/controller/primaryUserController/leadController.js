@@ -279,9 +279,7 @@ export const UpdateLeadRegister = async (req, res) => {
       }
     })
     const matchedDoc = await LeadMaster.findOne({ _id: objectId })
-    console.log("che", leadData.selfAllocation, typeof leadData.selfAllocation)
     if (data.selfAllocation) {
-      console.log("ssssssssssssssss")
       let leadByModel
       const isStaff = await Staff.findOne({ _id: leadData.leadBy })
       if (isStaff) {
@@ -314,7 +312,6 @@ export const UpdateLeadRegister = async (req, res) => {
 
         let updatedLead
         if (matchedDoc.activityLog.length === 1) {
-          console.log("first")
           updatedLead = await LeadMaster.findByIdAndUpdate(objectId,
             {
               ...data,
@@ -334,7 +331,6 @@ export const UpdateLeadRegister = async (req, res) => {
           )
 
         } else if (matchedDoc.activityLog.length === 2) {
-          console.log("second")
           //update last entry in activitylog
           const lastIndex = matchedDoc.activityLog.length - 1
           //build the path to the last element in the activitylog array
