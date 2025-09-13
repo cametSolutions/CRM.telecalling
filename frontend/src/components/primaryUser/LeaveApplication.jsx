@@ -6,7 +6,6 @@ import BarLoader from "react-spinners/BarLoader"
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi" // Impo
 import UseFetch from "../../hooks/useFetch"
 import api from "../../api/api"
-import debounce from "lodash.debounce"
 
 function LeaveApplication() {
   const [events, setEvents] = useState([])
@@ -167,8 +166,11 @@ function LeaveApplication() {
       const currentDate = new Date()
       const currentYear = currentDate.getFullYear()
       const currentmonth = currentDate.getMonth() + 1
-      const leaveDate = new Date(formData?.leaveDate)
+      const leaveDate = formData?.leaveDate
+        ? new Date(formData?.leaveDate)
+        : new Date()
       const leaveYear = leaveDate.getFullYear()
+     
       const privileageDate = new Date(user?.privilegeleavestartsfrom)
       const privileagestartYear = privileageDate.getFullYear()
       const privileagestartmonth = privileageDate.getMonth() + 1 // 1-based month
@@ -205,7 +207,7 @@ function LeaveApplication() {
 
       if (privileagestartYear < currentYear) {
         let privilegeCount
-
+      
         if (privileagestartYear < leaveYear && leaveYear < currentYear) {
           privilegeCount = 12 * privilegePerMonth
         } else if (privileagestartYear < leaveYear) {
@@ -274,6 +276,7 @@ function LeaveApplication() {
 
       const balancecasualcount = ownedcasualCount - usedCasualCount
       const balanceprivilege = ownedprivilegeCount - takenPrivilegeCount
+      
 
       setBalanceprivilegeLeaveCount(Math.max(balanceprivilege, 0))
       setBalancecasualLeaveCount(Math.max(balancecasualcount, 0))
@@ -293,8 +296,8 @@ function LeaveApplication() {
       const currentDate = new Date()
       const currentYear = currentDate.getFullYear()
       const currentmonth = currentDate.getMonth() + 1
-      const leaveDate = new Date(formData.leaveDate)
-      const leaveYear = leaveDate.getFullYear()
+      const leaveDate = formData.leaveDate?new Date(formData.leaveDate):new Date()
+      const leaveYear = leaveDate.getFullYear() 
       const privileagestartDate = new Date(user?.privilegeleavestartsfrom)
       const privileagestartYear = privileagestartDate.getFullYear()
       const privileagestartmonth = privileagestartDate.getMonth() + 1 // 1-based month

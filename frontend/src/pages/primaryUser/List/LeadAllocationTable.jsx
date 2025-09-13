@@ -9,7 +9,6 @@ import Select from "react-select"
 import UseFetch from "../../../hooks/useFetch"
 const LeadAllocationTable = () => {
   const [status, setStatus] = useState("Pending")
-console.log("H")
   const [toggleLoading, setToggleLoading] = useState(false)
   const [selectedLeadId, setselectedLeadId] = useState(null)
   const [showModal, setShowmodal] = useState(false)

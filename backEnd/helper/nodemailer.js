@@ -146,7 +146,6 @@ export const sendEmail = async (
 
     return info // Return the response info after the email is sent
   } catch (error) {
-    console.log("eeeee", error)
     console.error("Error sending email: ", error.message)
     if (error.message == "Username and Password not accepted") {
       throw new error(

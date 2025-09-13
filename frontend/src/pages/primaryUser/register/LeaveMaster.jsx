@@ -31,8 +31,7 @@ function LeaveMaster() {
   const { data: holydata, refreshHook: holyrefresh } = UseFetch(
     "/customer/getallholy"
   )
-console.log(leaveData)
-console.log(holydata)
+
   useEffect(() => {
     if (holydata && holydata.length > 0 && year) {
       const filteredByYear = holydata.filter((item) => {

@@ -216,7 +216,6 @@ const ExpiredCustomer = () => {
             .includes(searchTerm.toLowerCase())
         )
         setSearchList(filtered)
-        console.log(filtered)
         // setexpiryRegisterList(filtered)
       }, 300)
       return () => clearTimeout(delay)
@@ -441,7 +440,6 @@ const ExpiredCustomer = () => {
 
     return result.trim()
   }
-  console.log(expiredCustomerList)
   return (
     <div className="antialiased font-sans container mx-auto px-4 sm:px-8">
       {loading && (
