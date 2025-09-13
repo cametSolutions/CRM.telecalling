@@ -84,9 +84,7 @@ const Summary = () => {
                   return prevList // keep existing list if something went wrong
                 }
                 // Step 1: Extract all branch_ids from branch array
-                console.log(branch)
                 const branchIds = branch.map((b) => b.branch_id)
-                console.log(branchIds)
 
                 // Step 2: Flatten the nested `data` array
                 const flattenedData = data.flat() // Flattens one level deep
@@ -670,8 +668,7 @@ const Summary = () => {
     setSelectedCustomer(null)
     setSelectedUser(null)
   }
-console.log(customerSummary)
-console.log(userList)
+
   return (
     <div className="flex flex-col h-full">
       <div className="md:px-5 lg:px-6 ">

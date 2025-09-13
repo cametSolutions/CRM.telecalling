@@ -63,7 +63,6 @@ const UserListform = () => {
     }
   }
 
-  console.log(loggeduser?.role)
 
   return (
     <div className="container  mx-auto  p-8">

@@ -13,7 +13,6 @@ export default function OwnLeadList() {
   const { data: ownedlead, loading } = UseFetch(
     loggedUser && `/lead/ownregisteredLead?userId=${loggedUser._id}`
   )
-console.log(ownedlead)
   useEffect(() => {
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
@@ -108,19 +107,16 @@ console.log(ownedlead)
                       {" "}
                       <button
                         onClick={() => {
-console.log(loggedUser._id)
-console.log(item.activityLog)
+
                           const isAllocatedToeditable = item.activityLog.some(
                             (it) =>
                               it?.taskallocatedTo === loggedUser._id &&
                               it?.taskfromFollowup === false &&
                               it?.taskClosed === false
                           )
-console.log(isAllocatedToeditable)
                           const isleadbyEditable =
                             item.activityLog.length === 1 &&
                             item.leadBy._id === loggedUser._id
-console.log(isleadbyEditable)
                           loggedUser.role === "Admin"
                             ? navigate("/admin/transaction/lead/leadEdit", {
                                 state: {
