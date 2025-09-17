@@ -27,6 +27,7 @@ import ComingSoon from "../../../pages/common/ComingSoon"
 import { CallNoteRegistration } from "../../../pages/primaryUser/register/CallNoteRegistration"
 import LeaveMaster from "../../../pages/primaryUser/register/LeaveMaster"
 import TaskRegistration from "../../../pages/primaryUser/register/TaskRegistration"
+import WithoutProductdetailscustomer from "../../../components/secondaryUser/WithoutProductdetailscustomer"
 const mastersRoutes = [
   {
     path: "/admin/masters/company",
@@ -59,6 +60,7 @@ const mastersRoutes = [
   { path: "/admin/masters/branchEdit", component: BranchEdit },
   { path: "/admin/masters/customer", component: CustomerListform },
   { path: "/admin/masters/pendingCustomer", component: PendingCustomer },
+  { path: "/admin/masters/productmissingCustomer", component: WithoutProductdetailscustomer },
   {
     path: "/admin/masters/customerRegistration",
     component: CustomerRegistration

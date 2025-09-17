@@ -3,32 +3,62 @@ import DeleteAlert from "../common/DeleteAlert"
 import { CiEdit } from "react-icons/ci"
 import { useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
+import { useSelector } from "react-redux"
 import api from "../../api/api"
 import { FaSearch } from "react-icons/fa"
 
 import UseFetch from "../../hooks/useFetch"
 
-const PendingCustomer = () => {
+const WithoutProductdetailscustomer = () => {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
   const [showFullText, setShowFullText] = useState({})
   const [filteredCustomer, setFilteredCustomer] = useState([])
   const [userRole, setUserRole] = useState(null)
-  const { data: pendingCustomerData, loading } = UseFetch(
-    `/customer/getCustomer?pendingCustomerList= ${true}`
+  const [loggeduserbranch, setloggeduserbranch] = useState(null)
+  // const { data: productmissingCustomerData, loading } = UseFetch(
+  //   loggeduserbranch &&
+  //     `/customer/getproductmissingCustomer?branchselected=${loggeduserbranch}`
+  // )
+  const { data: productmissingCustomerData, loading } = UseFetch(
+    loggeduserbranch &&
+      `/customer/getproductmissingCustomer?${loggeduserbranch
+        .map((id) => `branchselected=${encodeURIComponent(id)}`)
+        .join("&")}`
   )
+  useEffect(() => {
+    if (productmissingCustomerData) {
+      setFilteredCustomer(productmissingCustomerData)
+    }
+  }, [productmissingCustomerData])
+
+  const companybranches = useSelector((state) => state.companyBranch.branches)
 
   useEffect(() => {
-    if (pendingCustomerData) {
+    const user = localStorage.getItem("user")
+    const parseuser = JSON.parse(user)
+    if (parseuser.role === "Admin") {
+      if (parseuser?.selected) {
+        setloggeduserbranch(parseuser.selected.map((element) => element._id))
+      } else {
+        setloggeduserbranch(companybranches.map((element) => element._id))
+      }
+    } else if (parseuser.role === "Staff") {
+      setloggeduserbranch(parseuser.selected.map((element) => element._id))
+    }
+  }, [])
+
+  useEffect(() => {
+    if (productmissingCustomerData) {
       const userData = localStorage.getItem("user")
       const user = JSON.parse(userData)
-      setFilteredCustomer(pendingCustomerData)
+      setFilteredCustomer(productmissingCustomerData)
 
       if (user && user.role) {
-        setUserRole(user.role.toLowerCase())
+        setUserRole(user.role)
       }
     }
-  }, [pendingCustomerData])
+  }, [productmissingCustomerData])
   const toggleShowMore = (key) => {
     setShowFullText((prev) => ({
       ...prev,
@@ -52,10 +82,10 @@ const PendingCustomer = () => {
       toast.error("Failed to delete brand")
     }
   }
-
   return (
-    <div className="container mx-auto h-full py-8 bg-gray-100">
-      <div className="w-auto bg-white shadow-lg rounded p-8 h-full mx-8 flex flex-col">
+    <div className="container mx-auto h-full py-5 bg-gray-100">
+      <div className="w-auto bg-white shadow-lg rounded p-5 h-full mx-8 flex flex-col">
+        {/* Sticky Header Section */}
         <div className="flex-shrink-0 bg-white sticky top-0 z-20">
           {/* Title and Search Bar */}
           <div className="flex justify-between items-center mb-4">
@@ -81,10 +111,7 @@ const PendingCustomer = () => {
               <div className="flex justify-end items-center">
                 <div className="bg-blue-100 px-4 py-2 rounded-lg">
                   <span className="text-sm font-medium text-blue-800">
-                    Count:{" "}
-                    {filteredCustomer?.filter(
-                      (customer) => customer.selected.length === 0
-                    ).length || 0}
+                    Count: {filteredCustomer?.length || 0}
                   </span>
                 </div>
               </div>
@@ -256,284 +283,217 @@ const PendingCustomer = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
-                {!loading &&
-                filteredCustomer?.length > 0 &&
-                filteredCustomer.filter(
-                  (customer) => customer.selected.length === 0
-                ).length > 0 ? (
-                  filteredCustomer
-                    .filter((customer) => customer.selected.length === 0)
-                    .map((customer, index) => (
-                      <tr
-                        key={customer._id}
-                        className={`hover:bg-blue-50 transition-all duration-200 ${
-                          index % 2 === 0 ? "bg-gray-50" : "bg-white"
-                        }`}
-                      >
-                        <td className="px-4 py-4 text-sm text-gray-900 font-medium border-r border-gray-100">
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3">
-                              {customer.customerName?.charAt(0)?.toUpperCase()}
-                            </div>
-                            {customer.customerName}
+                {!loading && filteredCustomer?.length > 0 ? (
+                  filteredCustomer.map((customer, index) => (
+                    <tr
+                      key={customer._id}
+                      className={`hover:bg-blue-50 transition-all duration-200 ${
+                        index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                      }`}
+                    >
+                      <td className="px-4 py-4 text-sm text-gray-900 font-medium border-r border-gray-100">
+                        <div className="flex items-center">
+                          <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3">
+                            {customer.customerName?.charAt(0)?.toUpperCase()}
                           </div>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-900 max-w-xs border-r border-gray-100">
-                          {showFullText[`${customer._id}_address1`] ? (
-                            <div className="leading-relaxed">
-                              {customer.address1}
-                              {customer.address1?.length > 30 && (
-                                <button
-                                  onClick={() =>
-                                    toggleShowMore(`${customer._id}_address1`)
-                                  }
-                                  className="ml-2 text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-100 px-2 py-1 rounded-full transition-colors"
-                                >
-                                  ▲ Less
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="leading-relaxed">
-                              {customer.address1?.length > 30
-                                ? `${customer.address1.substring(0, 30)}...`
-                                : customer.address1}
-                              {customer.address1?.length > 30 && (
-                                <button
-                                  onClick={() =>
-                                    toggleShowMore(`${customer._id}_address1`)
-                                  }
-                                  className="ml-2 text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-100 px-2 py-1 rounded-full transition-colors"
-                                >
-                                  ▼ More
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-900 max-w-xs border-r border-gray-100">
-                          {showFullText[`${customer._id}_address2`] ? (
-                            <div className="leading-relaxed">
-                              {customer.address2}
-                              {customer.address2?.length > 30 && (
-                                <button
-                                  onClick={() =>
-                                    toggleShowMore(`${customer._id}_address2`)
-                                  }
-                                  className="ml-2 text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-100 px-2 py-1 rounded-full transition-colors"
-                                >
-                                  ▲ Less
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="leading-relaxed">
-                              {customer.address2?.length > 30
-                                ? `${customer.address2.substring(0, 30)}...`
-                                : customer.address2}
-                              {customer.address2?.length > 30 && (
-                                <button
-                                  onClick={() =>
-                                    toggleShowMore(`${customer._id}_address2`)
-                                  }
-                                  className="ml-2 text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-100 px-2 py-1 rounded-full transition-colors"
-                                >
-                                  ▼ More
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-900 border-r border-gray-100">
-                          <div className="flex items-center">
-                            <svg
-                              className="w-4 h-4 mr-2 text-gray-400"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                              />
-                            </svg>
-                            {customer.city}
+                          {customer.customerName}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-900 max-w-xs border-r border-gray-100">
+                        {showFullText[`${customer._id}_address1`] ? (
+                          <div className="leading-relaxed">
+                            {customer.address1}
+                            {customer.address1?.length > 30 && (
+                              <button
+                                onClick={() =>
+                                  toggleShowMore(`${customer._id}_address1`)
+                                }
+                                className="ml-2 text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-100 px-2 py-1 rounded-full transition-colors"
+                              >
+                                ▲ Less
+                              </button>
+                            )}
                           </div>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-900 border-r border-gray-100">
-                          <span className="bg-gray-100 px-2 py-1 rounded-md font-mono text-xs">
-                            {customer.pincode}
-                          </span>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-900 border-r border-gray-100">
-                          <div className="flex items-center">
-                            <svg
-                              className="w-4 h-4 mr-2 text-green-500"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                              />
-                            </svg>
-                            <span className="font-mono">{customer.mobile}</span>
+                        ) : (
+                          <div className="leading-relaxed">
+                            {customer.address1?.length > 30
+                              ? `${customer.address1.substring(0, 30)}...`
+                              : customer.address1}
+                            {customer.address1?.length > 30 && (
+                              <button
+                                onClick={() =>
+                                  toggleShowMore(`${customer._id}_address1`)
+                                }
+                                className="ml-2 text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-100 px-2 py-1 rounded-full transition-colors"
+                              >
+                                ▼ More
+                              </button>
+                            )}
                           </div>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-900 border-r border-gray-100">
-                          <div className="flex items-center">
-                            <svg
-                              className="w-4 h-4 mr-2 text-blue-500"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                              />
-                            </svg>
-                            <span className="font-mono">
-                              {customer.landline}
-                            </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-900 max-w-xs border-r border-gray-100">
+                        {showFullText[`${customer._id}_address2`] ? (
+                          <div className="leading-relaxed">
+                            {customer.address2}
+                            {customer.address2?.length > 30 && (
+                              <button
+                                onClick={() =>
+                                  toggleShowMore(`${customer._id}_address2`)
+                                }
+                                className="ml-2 text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-100 px-2 py-1 rounded-full transition-colors"
+                              >
+                                ▲ Less
+                              </button>
+                            )}
                           </div>
-                        </td>
-                        <td className="px-4 py-4 text-sm text-gray-900 border-r border-gray-100">
-                          {showFullText[`${customer._id}_email`] ? (
-                            <div className="leading-relaxed">
-                              <div className="flex items-center">
-                                <svg
-                                  className="w-4 h-4 mr-2 text-purple-500"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                                  />
-                                </svg>
-                                {customer.email}
-                              </div>
-                              {customer.email?.length > 25 && (
-                                <button
-                                  onClick={() =>
-                                    toggleShowMore(`${customer._id}_email`)
-                                  }
-                                  className="mt-1 text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-100 px-2 py-1 rounded-full transition-colors"
-                                >
-                                  ▲ Less
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="leading-relaxed">
-                              <div className="flex items-center">
-                                <svg
-                                  className="w-4 h-4 mr-2 text-purple-500"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth="2"
-                                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                                  />
-                                </svg>
-                                <span>
-                                  {customer.email?.length > 25
-                                    ? `${customer.email.substring(0, 25)}...`
-                                    : customer.email}
-                                </span>
-                              </div>
-                              {customer.email?.length > 25 && (
-                                <button
-                                  onClick={() =>
-                                    toggleShowMore(`${customer._id}_email`)
-                                  }
-                                  className="mt-1 text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-100 px-2 py-1 rounded-full transition-colors"
-                                >
-                                  ▼ More
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          {customer.landline}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          {showFullText[`${customer._id}_email`] ? (
-                            <div>
-                              {customer.email}
-                              {customer.email?.length > 25 && (
-                                <button
-                                  onClick={() =>
-                                    toggleShowMore(`${customer._id}_email`)
-                                  }
-                                  className="ml-2 text-blue-600 hover:text-blue-800 font-medium text-xs"
-                                >
-                                  Show less
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            <div>
-                              {customer.email?.length > 25
-                                ? `${customer.email.substring(0, 25)}...`
-                                : customer.email}
-                              {customer.email?.length > 25 && (
-                                <button
-                                  onClick={() =>
-                                    toggleShowMore(`${customer._id}_email`)
-                                  }
-                                  className="ml-2 text-blue-600 hover:text-blue-800 font-medium text-xs"
-                                >
-                                  more
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="flex justify-center gap-2">
-                            {/* Edit Button */}
-                            <button
-                              onClick={() =>
-                                navigate(`/${userRole}/masters/customerEdit`, {
+                        ) : (
+                          <div className="leading-relaxed">
+                            {customer.address2?.length > 30
+                              ? `${customer.address2.substring(0, 30)}...`
+                              : customer.address2}
+                            {customer.address2?.length > 30 && (
+                              <button
+                                onClick={() =>
+                                  toggleShowMore(`${customer._id}_address2`)
+                                }
+                                className="ml-2 text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-100 px-2 py-1 rounded-full transition-colors"
+                              >
+                                ▼ More
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-900 border-r border-gray-100">
+                        <div className="flex items-center">
+                          <svg
+                            className="w-4 h-4 mr-2 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                            />
+                          </svg>
+                          {customer.city}
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-900 border-r border-gray-100">
+                        <span className="bg-gray-100 px-2 py-1 rounded-md font-mono text-xs">
+                          {customer.pincode}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-900 border-r border-gray-100">
+                        <div className="flex items-center">
+                          <svg
+                            className="w-4 h-4 mr-2 text-green-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                            />
+                          </svg>
+                          <span className="font-mono">{customer.mobile}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-900 border-r border-gray-100">
+                        <div className="flex items-center">
+                          <svg
+                            className="w-4 h-4 mr-2 text-blue-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                            />
+                          </svg>
+                          <span className="font-mono">{customer.landline}</span>
+                        </div>
+                      </td>
+
+                      {/* <td className="px-4 py-3 text-sm text-gray-900">
+                        {customer.landline}
+                      </td> */}
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {showFullText[`${customer._id}_email`] ? (
+                          <div>
+                            {customer.email}
+                            {customer.email?.length > 25 && (
+                              <button
+                                onClick={() =>
+                                  toggleShowMore(`${customer._id}_email`)
+                                }
+                                className="ml-2 text-blue-600 hover:text-blue-800 font-medium text-xs"
+                              >
+                                Show less
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div>
+                            {customer.email?.length > 25
+                              ? `${customer.email.substring(0, 25)}...`
+                              : customer.email}
+                            {customer.email?.length > 25 && (
+                              <button
+                                onClick={() =>
+                                  toggleShowMore(`${customer._id}_email`)
+                                }
+                                className="ml-2 text-blue-600 hover:text-blue-800 font-medium text-xs"
+                              >
+                                more
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-center gap-2">
+                          {/* Edit Button */}
+                          <button
+                            onClick={() =>
+                              navigate(
+                                userRole === "Admin" && "Manager"
+                                  ? "/admin/masters/customerEdit"
+                                  : "/staff/masters/customerEdit",
+                                {
                                   state: {
                                     customer: customer
                                   }
-                                })
-                              }
-                              className="text-blue-600 hover:text-blue-800 transition-colors p-1 rounded hover:bg-blue-100"
-                              title="Edit Customer"
-                            >
-                              <CiEdit className="text-xl" />
-                            </button>
+                                }
+                              )
+                            }
+                            className="text-blue-600 hover:text-blue-800 transition-colors p-1 rounded hover:bg-blue-100"
+                            title="Edit Customer"
+                          >
+                            <CiEdit className="text-xl" />
+                          </button>
 
-                            {/* Delete Button */}
-                            <div className="text-red-500 hover:text-red-700 transition-colors p-1 rounded hover:bg-red-100">
-                              <DeleteAlert
-                                onDelete={handleDelete}
-                                Id={customer._id}
-                              />
-                            </div>
+                          {/* Delete Button */}
+                          <div className="text-red-500 hover:text-red-700 transition-colors p-1 rounded hover:bg-red-100">
+                            <DeleteAlert
+                              onDelete={handleDelete}
+                              Id={customer._id}
+                            />
                           </div>
-                        </td>
-                      </tr>
-                    ))
+                        </div>
+                      </td>
+                    </tr>
+                  ))
                 ) : (
                   <tr>
                     <td colSpan="9" className="px-4 py-16 text-center">
@@ -624,4 +584,4 @@ const PendingCustomer = () => {
   )
 }
 
-export default PendingCustomer
+export default WithoutProductdetailscustomer
