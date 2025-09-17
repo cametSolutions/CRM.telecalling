@@ -443,7 +443,7 @@ const ExpiredCustomer = () => {
 
     return result.trim()
   }
- 
+
   return (
     <div className="antialiased font-sans container mx-auto px-4 sm:px-8">
       {loading && (
@@ -748,7 +748,10 @@ const ExpiredCustomer = () => {
                               <CiEdit
                                 onClick={() =>
                                   navigate(
-                                    `/${user?.role}/masters/customerEdit`,
+                                    user.role === "Admin"
+                                      ? "/admin/masters/customerEdit"
+                                      : "/staff/masters/customerEdit",
+
                                     {
                                       state: {
                                         customer: customer,
