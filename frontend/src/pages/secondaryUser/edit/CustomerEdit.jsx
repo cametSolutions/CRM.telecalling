@@ -1,4 +1,3 @@
-import React from "react"
 import CustomerAdd from "../../../components/secondaryUser/CustomerAdd"
 import { useLocation, useNavigate } from "react-router-dom"
 import api from "../../../api/api"
