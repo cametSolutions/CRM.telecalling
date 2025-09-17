@@ -812,6 +812,34 @@ export const DeleteCustomer = async (req, res) => {
     return res.status(500).json({ message: "Server error" })
   }
 }
+export const GetallproductmissingCustomer = async (req, res) => {
+  try {
+    const { branchselected } = req.query
+    const branchIds = Array.isArray(branchselected)
+      ? branchselected
+      : [branchselected];
+
+    // Find customers
+    const customers = await Customer.find({
+      selected: {
+        $elemMatch: {
+          branch_id: { $in: branchIds }, // branch match
+          $or: [
+            { product_id: { $exists: false } }, // product_id missing
+            { product_id: null }                 // or explicitly null
+          ]
+        }
+      }
+    });
+
+    res.status(200).json({ message: "custoemers without productmissing found", data: customers });
+
+
+  } catch (error) {
+    console.log("error", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const GetAllCustomer = async (req, res) => {
   try {
     const { branchSelected } = req.query

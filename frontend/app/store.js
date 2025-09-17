@@ -1,7 +1,9 @@
 import { configureStore } from "@reduxjs/toolkit"
 import searchSlice from "../slices/search.js"
-export const store=configureStore({
+import companyBranchReducer from "../../frontend/slices/companyBranchSlice.js";
+export const store = configureStore({
   reducer: {
-    searchSlice
-  }
+    search: searchSlice,
+    companyBranch: companyBranchReducer,
+  },
 })
