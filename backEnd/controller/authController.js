@@ -348,7 +348,6 @@ export const Login = async (req, res) => {
         user = await Staff.findOne({ mobile: emailOrMobile }).lean()
       }
     }
-console.log("use,",user)
     if (!user) {
       return res.status(400).json({ message: "Invalid login credentials" })
     }
@@ -3877,7 +3876,6 @@ export const GetindividualStaffCall = async (req, res) => {
 
     const staff = await Staff.find({ _id: { $in: [...userIds] } }).select("name");
     const staffMap = Object.fromEntries(staff.map((s) => [s._id.toString(), s.name]));
-
     // Step 4: Replace IDs with names in attendedBy and completedBy
     const transformedCalls = calls.map((call) => {
       const updatedRegs = call.callregistration.map((reg) => {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import MyDatePicker from "../../../components/common/MyDatePicker"
 import { PropagateLoader } from "react-spinners"
+import { BarLoader } from "react-spinners"
 import api from "../../../api/api"
 import Tiles from "../../../components/common/Tiles"
 import UseFetch from "../../../hooks/useFetch"
@@ -67,7 +68,7 @@ const Summary = () => {
     // Last date of the month
   }, [])
   useEffect(() => {
-    if (dates.startDate) {
+    if (dates.startDate&&dates.endDate) {
       const fetchUserList = async () => {
         try {
           const query = `startDate=${dates.startDate}&endDate=${dates.endDate}`
@@ -95,7 +96,6 @@ const Summary = () => {
                     branchIds.includes(sel.branch_id)
                   )
                 )
-
                 filtered.forEach((item) => {
                   const call = item // first call in the group
 
@@ -207,34 +207,38 @@ const Summary = () => {
               // })
             }
             processDataAndUpdateList(result)
+            setLoading(false)
           }
         } catch (error) {
           console.error("Error fetching user list:", error)
         }
       }
       if (isToggled) {
-        if (userList && userList.length > 0) {
-          const flattened = cachedUserlistsummary.flat()
+        // if (userList && userList.length < 0) {
+        //   const flattened = cachedUserlistsummary.flat()
 
-          const staffCallStatus = flattened.filter((user) => {
-            if (selectedBranch === "All") {
-              return true // Include all users if "All" is selected
-            }
+        //   const staffCallStatus = flattened.filter((user) => {
+        //     if (selectedBranch === "All") {
+        //       return true // Include all users if "All" is selected
+        //     }
 
-            const branchMatch = user.selected.some((item) => {
-              return item.branchName === selectedBranch
-            })
+        //     const branchMatch = user.selected.some((item) => {
+        //       return item.branchName === selectedBranch
+        //     })
 
-            return branchMatch
-          })
+        //     return branchMatch
+        //   })
 
-          if (staffCallStatus && staffCallStatus.length) {
-            setUserList(staffCallStatus)
-          }
-        } else {
-          setTotalCalls(0)
-          fetchUserList()
-        }
+        //   if (staffCallStatus && staffCallStatus.length) {
+        //     setUserList(staffCallStatus)
+        //   }
+        // } else {
+        //   setTotalCalls(0)
+        //   fetchUserList()
+        // }
+        setTotalCalls(0)
+        fetchUserList()
+        setLoading(true)
       } else {
         if (callList && callList.length > 0) {
           const customerSummaries = callList
@@ -422,6 +426,7 @@ const Summary = () => {
     }
     if (isModalOpen && selectedUser) {
       const today = new Date().toISOString().split("T")[0] // Today's date in 'YYYY-MM-DD' format
+     
       const filteredCalls = indiviDualCallList
         .map((item) => {
           const matchedCallregistration = item.callregistration.filter((call) =>
@@ -490,7 +495,6 @@ const Summary = () => {
           today.getDate() === date.getDate()
         )
       }
-
       // Sort calls
       const sortedCalls = filteredCalls
         .map((call) => {
@@ -498,7 +502,7 @@ const Summary = () => {
           return call.callregistration.map((registration) => ({
             ...registration,
             customerName: call.customerName,
-            customerId: call.customerid._id,
+            customerId: call.customerid,
             productName: call.productDetails[0].productName
           }))
         })
@@ -607,35 +611,35 @@ const Summary = () => {
       return
     }
   }, [branch, loggedusers, dates])
-  const handleDate = (selectedDate) => {
-    const extractDateAndMonth = (date) => {
-      const year = date.getFullYear()
-      const month = date.getMonth() + 1 // getMonth() is 0-indexed
-      const day = date.getDate()
-      return `${year}-${month.toString().padStart(2, "0")}-${day
-        .toString()
-        .padStart(2, "0")}`
-    }
+  // const handleDate = (selectedDate) => {
+  //   const extractDateAndMonth = (date) => {
+  //     const year = date.getFullYear()
+  //     const month = date.getMonth() + 1 // getMonth() is 0-indexed
+  //     const day = date.getDate()
+  //     return `${year}-${month.toString().padStart(2, "0")}-${day
+  //       .toString()
+  //       .padStart(2, "0")}`
+  //   }
 
-    if (
-      selectedDate.startDate instanceof Date &&
-      !isNaN(selectedDate.startDate.getTime()) &&
-      selectedDate.endDate instanceof Date &&
-      !isNaN(selectedDate.endDate.getTime())
-    ) {
-      // If both startDate and endDate are valid Date objects
-      setDates({
-        startDate: extractDateAndMonth(selectedDate.startDate),
-        endDate: extractDateAndMonth(selectedDate.endDate)
-      })
-    } else {
-      // If dates are not valid Date objects, use them as they are
-      setDates({
-        startDate: selectedDate.startDate,
-        endDate: selectedDate.endDate
-      })
-    }
-  }
+  //   if (
+  //     selectedDate.startDate instanceof Date &&
+  //     !isNaN(selectedDate.startDate.getTime()) &&
+  //     selectedDate.endDate instanceof Date &&
+  //     !isNaN(selectedDate.endDate.getTime())
+  //   ) {
+  //     // If both startDate and endDate are valid Date objects
+  //     setDates({
+  //       startDate: extractDateAndMonth(selectedDate.startDate),
+  //       endDate: extractDateAndMonth(selectedDate.endDate)
+  //     })
+  //   } else {
+  //     // If dates are not valid Date objects, use them as they are
+  //     setDates({
+  //       startDate: selectedDate.startDate,
+  //       endDate: selectedDate.endDate
+  //     })
+  //   }
+  // }
 
   const handleChange = (event) => {
     setTotalCalls(0)
@@ -663,7 +667,7 @@ const Summary = () => {
   }
 
   const closeModal = () => {
-    setLoading(true)
+    // setLoading(true)
     setIsModalOpen(false)
     setSelectedCustomer(null)
     setSelectedUser(null)
@@ -671,6 +675,16 @@ const Summary = () => {
 
   return (
     <div className="flex flex-col h-full">
+      {loading && (
+        <div>
+          <BarLoader
+            cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
+            color="#4A90E2" // Change color as needed
+            // loader={true}
+          />
+        </div>
+      )}
+
       <div className="md:px-5 lg:px-6 ">
         <div className="flex justify-center text-2xl font-semibold ">
           <h1 className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-red-500 to-pink-600">
@@ -956,10 +970,7 @@ const Summary = () => {
                   style={{
                     background: `linear-gradient(135deg, rgba(255, 255, 1, 1), rgba(255, 255, 128, 1))`
                   }}
-                  // onClick={() => {
-                  //   setActiveFilter("Today")
-                  //   setFilteredCalls(applyFilter()) // Update filteredCalls when tile is clicked
-                  // }}
+                
                 />
               )}
               {!isToggled && (

@@ -214,8 +214,7 @@ const CustomerAdd = ({
               customer?.selected[0]?.productamountDescription || "",
             tvuexpiryDate: customer?.selected[0]?.tvuexpiryDate || "",
             tvuAmount: customer?.selected[0]?.tvuAmount || "",
-            tvuamountDescription:
-              customer?.selected[0]?.tvuamountDescription || "",
+            tvuamountDescription:customer?.selected[0]?.tvuamountDescription || "",
             isActive: customer?.selected[0]?.isActive || "",
             reasonofStatus: customer?.selected[0]?.reasonofStatus || ""
           })
@@ -238,12 +237,10 @@ const CustomerAdd = ({
               amcDescription: customer?.selected[0]?.amcDescription || "",
               licenseExpiryDate: customer?.selected[0]?.licenseExpiryDate || "",
               productAmount: customer?.selected[0]?.productAmount || "",
-              productamountDescription:
-                customer?.selected[0]?.productamountDescription || "",
+              productamountDescription:customer?.selected[0]?.productamountDescription || "",
               tvuexpiryDate: customer?.selected[0]?.tvuexpiryDate || "",
               tvuAmount: customer?.selected[0]?.tvuAmount || "",
-              tvuamountDescription:
-                customer?.selected[0]?.tvuamountDescription || "",
+              tvuamountDescription:customer?.selected[0]?.tvuamountDescription || "",
               isActive: customer?.selected[0]?.isActive || "",
               industry: customer?.selected[0]?.industry || "",
               reasonofStatus: customer?.selected[0]?.reasonofStatus || ""

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react"
 import { PropagateLoader } from "react-spinners"
+import { CiEdit } from "react-icons/ci"
 import MyDatePicker from "../../../components/common/MyDatePicker"
 import BarLoader from "react-spinners/BarLoader"
 import api from "../../../api/api"
+import { useNavigate } from "react-router-dom"
 import { formatDate } from "../../../utils/dateUtils"
 import UseFetch from "../../../hooks/useFetch"
 import Tiles from "../../../components/common/Tiles"
@@ -31,6 +33,7 @@ const ExpiredCustomer = () => {
   const [selectedBranch, setSelectedBranch] = useState("All")
   const [expiredCustomerCalls, setExpiredCustomerCalls] = useState([])
   const { data: branches } = UseFetch("/branch/getBranch")
+  const navigate = useNavigate()
   useEffect(() => {
     const now = new Date()
 
@@ -440,6 +443,7 @@ const ExpiredCustomer = () => {
 
     return result.trim()
   }
+ 
   return (
     <div className="antialiased font-sans container mx-auto px-4 sm:px-8">
       {loading && (
@@ -618,6 +622,9 @@ const ExpiredCustomer = () => {
                     <th className="w-1/12 px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
                       View
                     </th>
+                    <th className="w-1/12 px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                      Edit
+                    </th>
                   </tr>
                 )}
               </thead>
@@ -677,7 +684,7 @@ const ExpiredCustomer = () => {
                   ).map((customer) =>
                     Array.isArray(customer.selected) &&
                     customer.selected.length > 0 ? (
-                      customer.selected.map((item) => (
+                      customer.selected.map((item, itemIndex) => (
                         <tr key={`${customer._id}-${item._id}`}>
                           <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm text-left max-w-72">
                             {customer?.customerName || "N/A"}
@@ -736,6 +743,26 @@ const ExpiredCustomer = () => {
                           <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
                             {customer?.isActive || "N/A"}
                           </td>
+                          <td className=" py-3 border-b border-gray-200 bg-white text-center items-center text-xl">
+                            <div className="flex justify-center items-center h-full">
+                              <CiEdit
+                                onClick={() =>
+                                  navigate(
+                                    `/${user?.role}/masters/customerEdit`,
+                                    {
+                                      state: {
+                                        customer: customer,
+                                        selected: item,
+                                        index: itemIndex
+                                      }
+                                    }
+                                  )
+                                }
+                                className="cursor-pointer"
+                              />
+                            </div>
+                          </td>
+
                           <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
                             <button
                               onClick={() => openModal(customer?._id)}
