@@ -21,6 +21,7 @@ export default function OwnLeadList() {
   useEffect(() => {
     setTableData(ownedlead)
   }, [ownedlead])
+console.log(loggedUser)
   return (
     <div className="h-full flex flex-col">
       <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3">
@@ -28,7 +29,7 @@ export default function OwnLeadList() {
 
         <button
           onClick={() =>
-            user?.role === "Admin"
+            loggedUser?.role === "Admin"
               ? navigate("/admin/transaction/lead")
               : navigate("/staff/transaction/lead")
           }

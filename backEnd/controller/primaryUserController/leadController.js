@@ -262,7 +262,7 @@ export const TaskRegistration = async (req, res) => {
 export const UpdateLeadRegister = async (req, res) => {
   try {
     const { data, leadData } = req.body
-  
+
     // return
     const { docID } = req.query
     const objectId = new mongoose.Types.ObjectId(docID)
@@ -1089,23 +1089,65 @@ export const GetalltaskanalysisLeads = async (req, res) => {
       leadBranch: selectedBranch,
       leadClosed: false,
       reallocatedTo: false
-    }).populate({ path: "customerName", select: "customerName" }).lean()
+    })
+      .populate({ path: "customerName", select: "customerName" })
+      .lean()
+
     const alltaskanalysisleads = []
+
+    // filter leads that have more than 1 activity
     const filtered = result.filter((item) => item.activityLog.length > 1)
+
     for (const lead of filtered) {
-      const lastActivity = lead.activityLog[lead.activityLog.length - 1]
-      const taskallocatedtoid = lastActivity?.taskallocatedTo ? lastActivity.taskallocatedTo : lastActivity.submittedUser
-      const tasksubmittedmodel = lastActivity?.taskallocatedTo ? lastActivity.taskallocatedToModel : lastActivity.submissiondoneByModel
+      // ✅ populate all submittedUser in activityLog
+      const populatedActivityLogs = []
+      for (const activity of lead.activityLog) {
+        if (activity.submittedUser && activity.submissiondoneByModel) {
+          const SubmittedModel = mongoose.model(activity.submissiondoneByModel)
+          const populatedSubmittedUser = await SubmittedModel
+            .findById(activity.submittedUser)
+            .select("name")
+            .lean()
 
+          populatedActivityLogs.push({
+            ...activity,
+            submittedUser: populatedSubmittedUser,
+          })
+        } else {
+          populatedActivityLogs.push(activity)
+        }
+      }
 
-      const taskallocatedModel = mongoose.model(tasksubmittedmodel)
-      const populatedtaskAllocatedTo = await taskallocatedModel.findById(taskallocatedtoid).select("name").lean()
+      // ✅ find last activity and resolve allocatedTo
+      const lastActivity = populatedActivityLogs[populatedActivityLogs.length - 1]
+
+      const taskallocatedtoid = lastActivity?.taskallocatedTo
+        ? lastActivity.taskallocatedTo
+        : lastActivity.submittedUser?._id // careful: populated now
+
+      const tasksubmittedmodel = lastActivity?.taskallocatedTo
+        ? lastActivity.taskallocatedToModel
+        : lastActivity.submissiondoneByModel
+
+      let populatedtaskAllocatedTo = null
+      if (taskallocatedtoid && tasksubmittedmodel) {
+        const TaskAllocatedModel = mongoose.model(tasksubmittedmodel)
+        populatedtaskAllocatedTo = await TaskAllocatedModel
+          .findById(taskallocatedtoid)
+          .select("name")
+          .lean()
+      }
+
+      // ✅ push to final array
       alltaskanalysisleads.push({
         ...lead,
-        allocatedTo: populatedtaskAllocatedTo
+        activityLog: populatedActivityLogs,
+        allocatedTo: populatedtaskAllocatedTo,
       })
-
     }
+
+
+
 
     if (result && result.length) {
       return res.status(200).json({ message: "lead found", data: alltaskanalysisleads })
@@ -1114,6 +1156,7 @@ export const GetalltaskanalysisLeads = async (req, res) => {
     }
 
   } catch (error) {
+    console.log("error:", error)
     return res.status(500).json({ message: "Internal server error" })
 
   }

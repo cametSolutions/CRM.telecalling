@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react"
 import api from "../../api/api"
-import { PropagateLoader } from "react-spinners"
 import BarLoader from "react-spinners/BarLoader"
 import { toast } from "react-toastify"
 export default function LeadModal({
@@ -143,35 +142,13 @@ export default function LeadModal({
                 setselectedTab(taskLabel)
 
                 setIsAllocated(false)
-                // setfollowupDateModal(false)
               }}
             >
               {taskLabel}
-              {/* {taskDetails?.taskName === "demo"
-                ? "Demo"
-                : taskDetails?.taskName === "programming"
-                ? "Programming"
-                : taskDetails?.taskName === "testing"
-                ? "Testing"
-                : ""} */}
+             
             </span>
           )}
-          {/* isHaveEditchoice &&  */}
-          {/* {isOwner && (
-            <span
-              className={`hover:cursor-pointer pb-1 ${
-                selectedTab === "Next Follow Up"
-                  ? "border-b-2 border-blue-500 text-blue-600"
-                  : ""
-              }`}
-              onClick={() => {
-                // handlefollowupdate(selectedLeadId, selectedDocId)
-                setselectedTab("Next Follow Up")
-              }}
-            >
-              Next Follow Up
-            </span>
-          )} */}
+       
         </div>
         <h1 className=" font-bold">
           {`${(() => {
@@ -223,11 +200,11 @@ export default function LeadModal({
                       {historyList && historyList.length > 0 ? (
                         historyList.map((item, index) => {
                           const hasFollowerData =
-                            Array.isArray(item.folowerData) &&
+                            Array.isArray(item?.folowerData) &&
                             item.folowerData.length > 0
 
                           return hasFollowerData ? (
-                            item.folowerData.map((subItem, subIndex) => (
+                            item?.folowerData?.map((subItem, subIndex) => (
                               <tr
                                 key={`${index}-${subIndex}`}
                                 className={

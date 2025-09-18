@@ -28,7 +28,6 @@ export default function LeadTaskComponent({
 
     return diffDays
   }
-
   return (
     <div className="flex-1 overflow-x-auto rounded-lg text-center overflow-y-auto  shadow-xl md:mx-5 mx-3 mb-3">
       <table className=" border-collapse border border-gray-400 w-full text-sm">
@@ -69,7 +68,7 @@ export default function LeadTaskComponent({
         </thead>
         <tbody className="">
           {Data && Data.length > 0 ? (
-            Data.map((item, index) => (
+            Data?.map((item, index) => (
               <React.Fragment key={index}>
                 <tr className="bg-white border border-gray-400 border-b-0">
                   <td className="  px-4 border border-b-0 border-gray-400"></td>
