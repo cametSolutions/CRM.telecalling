@@ -276,16 +276,10 @@ const LeadTask = () => {
               : ""
           } ${pending ? "Pending" : "Cleared"}`}
 
-          {/* {`type === "followup"
-            ? "Lead FollowUp"
-            : type === "lead-Task"
-            ? "Task"
-          
-            : "" ${pending?"Pending":"Cleared"}`} */}
+        
         </h2>
 
         {/* Right Section */}
-        {/* <div className="grid grid-cols-2 md:flex md:flex-row md:gap-6 gap-3 items-start md:items-center w-full md:w-auto"> */}
         <div className="flex flex-wrap gap-3 flex-grow justify-start md:justify-end md:gap-6 items-center w-full md:w-auto">
           {dates.startDate && (
             <MyDatePicker setDates={setDates} dates={dates} />
