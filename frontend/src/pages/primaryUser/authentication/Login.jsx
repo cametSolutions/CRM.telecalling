@@ -8,7 +8,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons"
 import { toast } from "react-toastify"
 import { setLocalStorageItem } from "../../../helper/localstorage"
-import {setBranches} from "../../../../slices/companyBranchSlice.js"
+import { setBranches } from "../../../../slices/companyBranchSlice.js"
 console.log("hhh")
 import UseFetch from "../../../hooks/useFetch"
 const Login = () => {
@@ -46,15 +46,12 @@ const Login = () => {
         })
         localStorage.setItem("authToken", token)
         localStorage.setItem("user", JSON.stringify(User))
-        const allcompanybranches = branches.map((b) => ({
-          _id: b._id,
-          branchName: b.branchName
-        }))
+        const allcompanybranches = branches.map((b) => b._id)
         console.log(allcompanybranches)
         // Store in localStorage
         setLocalStorageItem("companybranches", allcompanybranches)
-console.log('H')
-        dispatch(setBranches(branches))
+        console.log("H")
+        dispatch(setBranches(allcompanybranches)) //companies all branches
         console.log("hh")
         setTimeout(() => {
           if (User.role === "Admin") {

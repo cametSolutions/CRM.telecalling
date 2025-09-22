@@ -17,11 +17,27 @@ export const GetscrollCustomer = async (req, res) => {
 
 
   try {
-    const { page = 1, limit = 100, search = "", userBranch } = req.query
+    const { page = 1, limit = 100, search = "", loggeduserBranches } = req.query
     // Pagination setup
     const pageNum = parseInt(page);
     const pageSize = parseInt(limit);
     const skip = (pageNum - 1) * pageSize;
+
+    let branchIds = [];
+
+    if (loggeduserBranches) {
+      try {
+        // If frontend sends JSON.stringify([...]) you need JSON.parse here
+        const parsed = JSON.parse(loggeduserBranches);
+
+        // Convert each id string into ObjectId
+        branchIds = parsed.map((id) => new mongoose.Types.ObjectId(id));
+      } catch (err) {
+        console.log("erorrundo", err)
+        // Fallback: single branch id as string
+        branchIds = [new mongoose.Types.ObjectId(loggeduserBranches)];
+      }
+    }
 
     // Build search query
     let searchQuery = {};
@@ -58,58 +74,65 @@ export const GetscrollCustomer = async (req, res) => {
         ].filter(Boolean), // removes undefined if any
       };
     }
-    const customers = await Customer.aggregate([{ $match: searchQuery },
-    { $skip: skip },
-    { $limit: pageSize },
-    {
-      $match: {
-        selected: { $exists: true, $ne: [] }
+    const customers = await Customer.aggregate([
+      {
+        //match search+branch access at the same time
+        $match: {
+          ...searchQuery,
+          "selected.branch_id": { $in: branchIds }
+        }
+      },
+      { $skip: skip },
+      { $limit: pageSize },
+      {
+        $match: {
+          selected: { $exists: true, $ne: [] }
+        }
+      },
+      {
+        $unwind: "$selected"
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "selected.product_id",
+          foreignField: "_id",
+          as: "productDetails"
+        }
+      },
+      {
+        $unwind: {
+          path: "$productDetails",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $addFields: {
+          "selected.productName": "$productDetails.productName"
+        }
+      },
+      {
+        $group: {
+          _id: "$_id",
+          customerName: { $first: "$customerName" },
+          address1: { $first: "$address1" },
+          address2: { $first: "$address2" },
+          country: { $first: "$country" },
+          city: { $first: "$city" },
+          pincode: { $first: "$pincode" },
+          contactPerson: { $first: "$contactPerson" },
+          landline: { $first: "$landline" },
+          industry: { $first: "$industry" },
+          partner: { $first: "$partner" },
+          state: { $first: "$state" },
+          email: { $first: "$email" },
+          mobile: { $first: "$mobile" },
+          selected: { $push: "$selected" }
+        }
+      },
+      {
+        $sort: { customerName: 1 }
       }
-    },
-    {
-      $unwind: "$selected"
-    },
-    {
-      $lookup: {
-        from: "products",
-        localField: "selected.product_id",
-        foreignField: "_id",
-        as: "productDetails"
-      }
-    },
-    {
-      $unwind: {
-        path: "$productDetails",
-        preserveNullAndEmptyArrays: true
-      }
-    },
-    {
-      $addFields: {
-        "selected.productName": "$productDetails.productName"
-      }
-    },
-    {
-      $group: {
-        _id: "$_id",
-        customerName: { $first: "$customerName" },
-        address1: { $first: "$address1" },
-        address2: { $first: "$address2" },
-        country: { $first: "$country" },
-        city: { $first: "$city" },
-        pincode: { $first: "$pincode" },
-        contactPerson: { $first: "$contactPerson" },
-        landline: { $first: "$landline" },
-        industry: { $first: "$industry" },
-        partner: { $first: "$partner" },
-        state: { $first: "$state" },
-        email: { $first: "$email" },
-        mobile: { $first: "$mobile" },
-        selected: { $push: "$selected" }
-      }
-    },
-    {
-      $sort: { customerName: 1 }
-    }
     ]);
 
     if (customers.length === 0) {
@@ -818,19 +841,25 @@ export const GetallproductmissingCustomer = async (req, res) => {
     const branchIds = Array.isArray(branchselected)
       ? branchselected
       : [branchselected];
+    console.log("ids", branchIds)
 
-    // Find customers
+
     const customers = await Customer.find({
+      // Match documents where the "selected" array has at least one element that satisfies:
       selected: {
         $elemMatch: {
-          branch_id: { $in: branchIds }, // branch match
+          branch_id: { $in: branchIds },     // branch_id must match one of the given branchIds
           $or: [
-            { product_id: { $exists: false } }, // product_id missing
-            { product_id: null }                 // or explicitly null
+            { product_id: { $exists: false } }, // product_id field is missing
+            { product_id: null }                // OR product_id is explicitly null
           ]
         }
       }
-    });
+    })
+      // Use collation to make sorting case-insensitive (so "Apple" and "apple" are treated the same)
+      .collation({ locale: "en", strength: 2 })
+      // Sort results alphabetically by customerName (A → Z)
+      .sort({ customerName: 1 })
 
     res.status(200).json({ message: "custoemers without productmissing found", data: customers });
 

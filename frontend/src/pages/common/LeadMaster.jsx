@@ -492,7 +492,7 @@ const LeadMaster = ({
               productPrice: newPrice,
               netAmount: (
                 Number(newPrice) +
-                (product.hsn / 100) * Number(newPrice)
+                (Number(product.hsn)/ 100) * Number(newPrice)
               ).toFixed(2)
             }
           : product
@@ -500,7 +500,6 @@ const LeadMaster = ({
     )
   }
   const handleHsnChange = (index, newHsn) => {
-
     setSelectedLeadList((prevList) =>
       prevList.map((product, i) =>
         i === index
@@ -601,8 +600,10 @@ const LeadMaster = ({
         readonlyError: ""
       }))
     }
+
     setSelectedLeadList((prev) => {
       let updatedList = [...prev]
+
       if (selectedLicense) {
         const selectedProducts = productOrserviceSelections[selectedLicense]
           .filter((items) => items.selected)
@@ -617,9 +618,11 @@ const LeadMaster = ({
               productPrice: item.productPrice,
               hsn: item?.selectedArray[0]?.hsn_id?.onValue?.igstRate || 0,
               price: item?.productPrice,
-              netAmount:
-                (item?.productPrice || 0) +
-                (igstRate / 100) * (item?.productPrice || 0)
+
+              netAmount: (
+                (Number(item?.productPrice || 0)) +
+                (Number(igstRate) / 100) * (Number(item?.productPrice || 0))
+              ).toFixed(2)
               // netAmount:
               //   item?.productPrice +
               //   (Number(item?.selectedArray[0]?.hsn_id?.onValue?.igstRate) /
@@ -653,8 +656,8 @@ const LeadMaster = ({
               hsn: item?.selectedArray[0]?.hsn_id?.onValue?.igstRate || 0,
               price: item.productPrice || item.price,
               netAmount:
-                (item?.productPrice || 0) +
-                (igstRate / 100) * (item?.productPrice || 0)
+                ((Number(item?.productPrice || 0)) +
+                (Number(igstRate) / 100) * (Number(item?.productPrice || 0))).toFixed(2)
               // netAmount:
               //   item?.productPrice +
               //   (item?.selectedArray[0]?.hsn_id?.onValue?.igstRate / 100) *
