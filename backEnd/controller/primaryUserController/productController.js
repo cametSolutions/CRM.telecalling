@@ -47,8 +47,8 @@ export const EditProduct = async (req, res) => {
     if (!existingProduct) {
       return res.status(404).json({ message: "Product not found" })
     }
+console.log("edit data",editData)
 
-return
 
     // Step 2: Update the existing product with new values
     existingProduct.selected = [editData] // Use the updated tableData
@@ -83,7 +83,7 @@ export const GetallProducts = async (req, res) => {
             branch_id: { $in: decodedbranches }
           }
         }
-      }).populate({path:"selected.hsn_id",select:"onValue"})
+      }).populate({ path: "selected.hsn_id", select: "onValue" })
 
 
 

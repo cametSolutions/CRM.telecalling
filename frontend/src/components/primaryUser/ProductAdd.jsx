@@ -70,7 +70,7 @@ const ProductAdd = ({
         companyName: selected.companyName || "",
         branch_id: selected.branch_id || "",
         branchName: selected.branchName || "",
-        brand_id: selected.branch_id || "",
+        brand_id: selected.brand_id || "",
         brandName: selected.brandName || "",
         category_id: selected.category_id || "",
         categoryName: selected.categoryName || "",
@@ -323,9 +323,8 @@ const ProductAdd = ({
       toast.error("Failed to add product!")
     }
   }
-console.log(hsnOptions)
   return (
-    <div className="container justify-center items-center min-h-screen p-8 bg-gray-100">
+    <div className="container justify-center items-center  p-8 ">
       <div className="w-auto bg-white shadow-lg rounded p-8 mx-auto">
         <h2 className="text-2xl font-semibold mb-6">Product Master</h2>
 

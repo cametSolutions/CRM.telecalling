@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { BarLoader } from "react-spinners"
+import { getLocalStorageItem } from "../../helper/localstorage"
 import { CiEdit } from "react-icons/ci"
 import { PropagateLoader } from "react-spinners"
 import { useNavigate } from "react-router-dom"
@@ -15,61 +16,139 @@ import {
   FaHourglassHalf,
   FaExclamationTriangle
 } from "react-icons/fa"
-import { Link } from "react-router-dom"
+import { useSelector } from "react-redux"
 
 const CustomerListform = () => {
   const navigate = useNavigate()
   // const tableContainerRef = useRef(null) // Ref to track table container scrolling
   const scrollTriggeredRef = useRef(false)
-  const [searchQuery, setSearchQuery] = useState(true)
   const [searchTerm, setsearchTerm] = useState("")
   const [pages, setPages] = useState(1)
   // const [loading, setLoading] = useState(true)
   const [tableHeight, setTableHeight] = useState("auto")
   const [showFullAddress, setShowFullAddress] = useState({})
   const [searchAfterData, setAfterSearchData] = useState([])
+  const [alldata, setalldata] = useState([])
   const [user, setUser] = useState(null)
-  const [branch, setBranches] = useState([])
+  const [userbranches, setuserBranches] = useState(null)
   const [userRole, setUserRole] = useState(null)
+  const [apiSearchTerm, setApiSearchTerm] = useState("") // only when we want API call
   const headerRef = useRef(null)
   const containerRef = useRef(null)
-  const { data: list, loading: scrollLoading } = UseFetch(
-    `/customer/getcust?limit=100&page=${pages}&search=${searchTerm}`
-  )
+  const firstLoad = useRef(true)
+  const hasLoadedEmpty = useRef(false)
+  // const url = useMemo(() => {
+  //   if (!userbranches) return null
+
+  //   // If search term is empty and we've already loaded empty data, don't fetch again
+  //   if (apiSearchTerm === "" && hasLoadedEmpty.current && !firstLoad.current) {
+  //     return null
+  //   }
+
+  //   // Allow fetch if: first load OR search term is not empty OR haven't loaded empty yet
+  //   if (firstLoad.current || apiSearchTerm !== "" || !hasLoadedEmpty.current) {
+  //     return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${JSON.stringify(
+  //       userbranches
+  //     )}`
+  //   }
+
+  //   return null
+  // }, [userbranches, apiSearchTerm, pages])
+  const url = useMemo(() => {
+    if (!userbranches) return null
+
+    // If it's first load, always allow
+    if (firstLoad.current) {
+      return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${JSON.stringify(
+        userbranches
+      )}`
+    }
+
+    // If search term is NOT empty, always allow
+    if (apiSearchTerm !== "") {
+      return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${JSON.stringify(
+        userbranches
+      )}`
+    }
+
+    // If search term IS empty and we've already loaded empty data, block it
+    if (apiSearchTerm === "" && hasLoadedEmpty.current) {
+      return null
+    }
+
+    // If search term is empty but we haven't loaded empty data yet, allow it
+    if (apiSearchTerm === "" && !hasLoadedEmpty.current) {
+      return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${JSON.stringify(
+        userbranches
+      )}`
+    }
+
+    return null
+  }, [userbranches, apiSearchTerm, pages])
+
+
+  const { data: list, loading: scrollLoading } = UseFetch(url)
+  const companybranches = useSelector((state) => state.companyBranch.branches)
+  useEffect(() => {
+    const userData = getLocalStorageItem("user")
+
+    setUser(userData)
+    if (userData.role !== "Admin") {
+      const branch = userData.selected.map((branch) => branch.branch_id)
+      // const branches = JSON.stringify(branch)
+
+      setuserBranches(branch)
+    } else {
+      setuserBranches(companybranches)
+    }
+    if (userData && userData.role) {
+      setUserRole(userData.role.toLowerCase())
+    } else {
+      setUserRole(null) // Handle case where user or role doesn't exist
+    }
+  }, [])
+
+  useEffect(() => {
+    // Mark that we've loaded with empty search term (only when URL is not null and search is empty)
+    if (apiSearchTerm === "" && url !== null) {
+      hasLoadedEmpty.current = true
+    }
+
+    // After first render, mark as loaded
+    if (firstLoad.current) {
+      firstLoad.current = false
+    }
+  }, [apiSearchTerm, url])
+
+  // Reset the hasLoadedEmpty flag when user branches change (if needed)
+  useEffect(() => {
+    hasLoadedEmpty.current = false
+    firstLoad.current = true
+  }, [userbranches])
   useEffect(() => {
     if (headerRef.current) {
       const headerHeight = headerRef.current.getBoundingClientRect().height
       setTableHeight(`calc(60vh - ${headerHeight}px)`) // Subtract header height from full viewport height
     }
   }, [])
-  useEffect(() => {
-    const userData = localStorage.getItem("user")
-    const user = JSON.parse(userData)
-    setUser(user)
-    if (user.role !== "Admin") {
-      const branch = user.selected.map((branch) => branch.branch_id)
-      const branches = JSON.stringify(branch)
 
-      setBranches(branches)
-    }
-    if (user && user.role) {
-      setUserRole(user.role.toLowerCase())
-    } else {
-      setUserRole(null) // Handle case where user or role doesn't exist
-    }
-  }, [])
+
   useEffect(() => {
-    if (list) {
+    if (list && list.length > 0) {
       if (!searchTerm) {
         scrollTriggeredRef.current = false
-
         setAfterSearchData((prev) => [...prev, ...list])
+        setalldata((prev) => [...prev, ...list])
       } else {
         scrollTriggeredRef.current = false
         setAfterSearchData((prev) => [...prev, ...list])
+        setalldata((prev) => [...prev, ...list])
       }
     }
   }, [list])
+ 
+ 
+
 
   const handleScroll = () => {
     const container = containerRef.current
@@ -91,16 +170,37 @@ const CustomerListform = () => {
   }
   //Handle search with lodash debounce to optimize search performance
   const handleSearch = debounce((query) => {
-    if (query.trim() === "") {
-      setsearchTerm(query)
-      setPages(1)
-      setAfterSearchData([])
-    } else {
-      setsearchTerm(query)
-      setAfterSearchData([])
-      setPages(1)
+    const term = query.trim().toLowerCase()
+    setsearchTerm(query)
+
+    setPages(1)
+    if (!query) {
+      setApiSearchTerm("")
+      setAfterSearchData(alldata)
+     
+      return
     }
-  }, 1000)
+
+    // 1️⃣ check locally first
+    const localMatches = alldata.filter(
+      (cust) =>
+        cust.customerName?.toLowerCase().includes(term) ||
+        cust.mobile?.toLowerCase().includes(term) ||
+        cust.selected?.some((sel) =>
+          sel.licensenumber?.toString().toLowerCase().includes(term)
+        )
+    )
+
+    if (localMatches.length > 0) {
+      setAfterSearchData(localMatches)
+    } else {
+      // 2️⃣ only here trigger API
+      setApiSearchTerm(query) // 👈 not searchTerm
+      setAfterSearchData([])
+      // setalldata([])
+    }
+  }, 600)
+
   const handleChange = (e) => handleSearch(e.target.value)
 
   // Function to toggle showing full address
@@ -118,7 +218,6 @@ const CustomerListform = () => {
       : address
   }
   return (
-   
     <div className="h-full overflow-hidden">
       {scrollLoading && (
         <BarLoader
@@ -182,7 +281,11 @@ const CustomerListform = () => {
               <TooltipIcon
                 icon={FaHourglassHalf}
                 tooltip="Pending Customer"
-                to={user?.role==="Admin"?"/admin/masters/pendingCustomer":"/staff/masters/pendingCustomer"}
+                to={
+                  user?.role === "Admin"
+                    ? "/admin/masters/pendingCustomer"
+                    : "/staff/masters/pendingCustomer"
+                }
               />
 
               <TooltipIcon
@@ -195,8 +298,6 @@ const CustomerListform = () => {
                 }
                 className="text-red-500"
               />
-
-             
             </div>
 
             <div className="bg-blue-100 px-4 py-2 rounded-lg">

@@ -15,11 +15,9 @@ const WithoutProductdetailscustomer = () => {
   const [showFullText, setShowFullText] = useState({})
   const [filteredCustomer, setFilteredCustomer] = useState([])
   const [userRole, setUserRole] = useState(null)
+  const [searchedCustomers, setSearchedCustomers] = useState([])
   const [loggeduserbranch, setloggeduserbranch] = useState(null)
-  // const { data: productmissingCustomerData, loading } = UseFetch(
-  //   loggeduserbranch &&
-  //     `/customer/getproductmissingCustomer?branchselected=${loggeduserbranch}`
-  // )
+
   const { data: productmissingCustomerData, loading } = UseFetch(
     loggeduserbranch &&
       `/customer/getproductmissingCustomer?${loggeduserbranch
@@ -31,6 +29,18 @@ const WithoutProductdetailscustomer = () => {
       setFilteredCustomer(productmissingCustomerData)
     }
   }, [productmissingCustomerData])
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setSearchedCustomers(filteredCustomer)
+    } else {
+      const result = filteredCustomer.filter((customer) =>
+        Object.values(customer).some((value) =>
+          value?.toString().toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      )
+      setSearchedCustomers(result)
+    }
+  }, [searchQuery, filteredCustomer])
 
   const companybranches = useSelector((state) => state.companyBranch.branches)
 
@@ -39,12 +49,16 @@ const WithoutProductdetailscustomer = () => {
     const parseuser = JSON.parse(user)
     if (parseuser.role === "Admin") {
       if (parseuser?.selected) {
-        setloggeduserbranch(parseuser.selected.map((element) => element._id))
+        setloggeduserbranch(
+          parseuser.selected.map((element) => element.branch_id)
+        )
       } else {
         setloggeduserbranch(companybranches.map((element) => element._id))
       }
-    } else if (parseuser.role === "Staff") {
-      setloggeduserbranch(parseuser.selected.map((element) => element._id))
+    } else {
+      setloggeduserbranch(
+        parseuser.selected.map((element) => element.branch_id)
+      )
     }
   }, [])
 
@@ -84,7 +98,7 @@ const WithoutProductdetailscustomer = () => {
   }
   return (
     <div className="container mx-auto h-full py-5 bg-gray-100">
-      <div className="w-auto bg-white shadow-lg rounded p-5 h-full mx-8 flex flex-col">
+      <div className="w-auto bg-white shadow-lg rounded p-5 h-full mx-4 flex flex-col">
         {/* Sticky Header Section */}
         <div className="flex-shrink-0 bg-white sticky top-0 z-20">
           {/* Title and Search Bar */}
@@ -283,8 +297,8 @@ const WithoutProductdetailscustomer = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
-                {!loading && filteredCustomer?.length > 0 ? (
-                  filteredCustomer.map((customer, index) => (
+                {!loading && searchedCustomers?.length > 0 ? (
+                  searchedCustomers.map((customer, index) => (
                     <tr
                       key={customer._id}
                       className={`hover:bg-blue-50 transition-all duration-200 ${
