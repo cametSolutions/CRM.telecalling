@@ -23,14 +23,14 @@ const Layout = () => {
  
   return (
     <div className="h-screen flex flex-col ">
-      <div ref={headerRef} className="sticky top-0 z-50">
+      <div ref={headerRef} className="sticky top-0 z-50 flex-shrink-0">
         {/* Conditional Header */}
         {adminHeader ? <AdminHeader /> : null}
         {staffHeader ? <StaffHeader /> : null}
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 ">
+      <main className="flex-1 overflow-hidden ">
         <Mainrouter headerHeight={headerHeight} />
       </main>
     </div>

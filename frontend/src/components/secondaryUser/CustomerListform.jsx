@@ -148,8 +148,6 @@ const CustomerListform = () => {
   }, [list])
  
  
-
-
   const handleScroll = () => {
     const container = containerRef.current
 
@@ -424,7 +422,7 @@ const CustomerListform = () => {
                         <td className="px-4 py-3">
                           <CiEdit
                             onClick={() =>
-                              navigate(`/${userRole}/masters/customerEdit`, {
+                              navigate(userRole === "admin" ? "/admin/masters/customerEdit" : "/staff/masters/customerEdit", {
                                 state: {
                                   customer: customer,
                                   selected: item,
