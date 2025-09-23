@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react"
+import  { useEffect, useState, useMemo } from "react"
 import { toast } from "react-toastify"
 import { useForm, Controller } from "react-hook-form"
 import { Country, State } from "country-state-city"
@@ -34,7 +34,6 @@ const UserAdd = ({
 
   const [formMessage, setFormMessage] = useState("")
 
-  const [permissionOpen, setPermissionOpen] = useState(false)
   const [showTable, setShowTable] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
   const [tableEdit, settableEdit] = useState(false)
@@ -43,7 +42,6 @@ const UserAdd = ({
   const [departments, setDepartment] = useState([])
   const [company, setCompanies] = useState([])
   const [branches, setBranches] = useState([])
-  const [selectedAssignedto, setSelectedAssignedto] = useState(null)
   const [selectedCompany, setSelectedCompany] = useState(null)
   const [selectedBranch, setSelectedBranch] = useState(null)
   const [users, setUsers] = useState([])

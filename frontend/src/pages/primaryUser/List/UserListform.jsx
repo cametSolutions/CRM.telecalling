@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react"
+import { useState,useEffect } from "react"
 import { CiEdit } from "react-icons/ci"
 import { PropagateLoader } from "react-spinners"
 import { useNavigate } from "react-router-dom"
@@ -14,6 +14,7 @@ import {
 import { Link } from "react-router-dom"
 import debounce from "lodash.debounce"
 import UseFetch from "../../../hooks/useFetch"
+import { getLocalStorageItem } from "../../../helper/localstorage"
 
 const UserListform = () => {
   const navigate = useNavigate()
@@ -21,6 +22,7 @@ const UserListform = () => {
   const [users, setUser] = useState([])
   const [loggeduser, setloggeduser] = useState(null)
   const { data, loading } = UseFetch("/auth/getallUsers")
+  const { data: branches } = UseFetch("/branch/getBranch")
   const loggeduserData = localStorage.getItem("user")
   const logged = JSON.parse(loggeduserData)
   useEffect(() => {
@@ -63,216 +65,327 @@ const UserListform = () => {
     }
   }
 
-
   return (
-    <div className="container  mx-auto  p-8">
-      <div className="w-full  bg-white shadow-lg rounded p-10  ">
-        <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
-          <h3 className="text-2xl text-black font-bold">Users List</h3>
-          {/* Search Bar for large screens */}
-          <div className="mx-4 md:block">
-            <div className="relative">
-              <FaSearch className="absolute w-5 h-5 left-2 top-3 text-gray-500" />
+    <div className="h-full flex flex-col bg-gray-50">
+      {/* Header Section - Sticky */}
+      <div className="bg-white shadow-sm border-b sticky top-0 z-20 flex-shrink-0">
+        {/* Title and Search Bar */}
+        <div className="px-3 py-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <h1 className="text-2xl font-bold text-gray-900">Users List</h1>
+
+            {/* Search Bar */}
+            <div className="relative w-full sm:w-80">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <FaSearch className="h-4 w-4 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                onChange={(e) => handleSearch(e.target.value)}
+                className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg 
+                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                         placeholder-gray-400 text-sm transition-colors duration-200"
+                placeholder="Search users..."
+              />
             </div>
-            <input
-              type="text"
-              onChange={(e) => handleSearch(e.target.value)}
-              className=" w-full border border-gray-300 rounded-full py-2 px-4 pl-10 focus:outline-none"
-              placeholder="Search for..."
-            />
           </div>
         </div>
 
-        <hr className="border-t-2 border-gray-300 mb-3" />
-        <div className="flex flex-wrap space-x-4 mb-2">
-          <Link
-            to={
-              loggeduser?.role === "Admin"
-                ? "/admin/masters/userRegistration"
-                : "/staff/masters/userRegistration"
-            }
-            className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center"
-          >
-            <FaUserPlus className="mr-2" />
-          </Link>
-          <button className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center">
-            <FaRegFileExcel className="mr-2" />
-          </button>
-          <button className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center">
-            <FaFilePdf className="mr-2" />
-          </button>
-          <button className="hover:bg-gray-100 text-black font-bold py-2 px-2 rounded inline-flex items-center">
-            <FaPrint className="mr-2" />
-          </button>
+        {/* Action Buttons */}
+        <div className="px-3 pb-2">
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to={
+                loggeduser?.role === "Admin"
+                  ? "/admin/masters/userRegistration"
+                  : "/staff/masters/userRegistration"
+              }
+              className="inline-flex items-center px-3 py-2 border border-gray-300 
+                       rounded-md text-sm font-medium text-gray-700 bg-white 
+                       hover:bg-gray-50 focus:outline-none focus:ring-2 
+                       focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+            >
+              <FaUserPlus className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Add User</span>
+            </Link>
+
+            <button
+              className="inline-flex items-center px-3 py-2 border border-gray-300 
+                             rounded-md text-sm font-medium text-gray-700 bg-white 
+                             hover:bg-gray-50 focus:outline-none focus:ring-2 
+                             focus:ring-offset-2 focus:ring-green-500 transition-colors duration-200"
+            >
+              <FaRegFileExcel className="w-4 h-4 mr-2 text-green-600" />
+              <span className="hidden sm:inline">Excel</span>
+            </button>
+
+            <button
+              className="inline-flex items-center px-3 py-2 border border-gray-300 
+                             rounded-md text-sm font-medium text-gray-700 bg-white 
+                             hover:bg-gray-50 focus:outline-none focus:ring-2 
+                             focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200"
+            >
+              <FaFilePdf className="w-4 h-4 mr-2 text-red-600" />
+              <span className="hidden sm:inline">PDF</span>
+            </button>
+
+            <button
+              className="inline-flex items-center px-3 py-2 border border-gray-300 
+                             rounded-md text-sm font-medium text-gray-700 bg-white 
+                             hover:bg-gray-50 focus:outline-none focus:ring-2 
+                             focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200"
+            >
+              <FaPrint className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Print</span>
+            </button>
+            <select className="w-40 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none  text-gray-700 bg-white"
+              >
+              {branches?.map((branch) => (
+                <option key={branch._id} value={branch._id}>
+                  {branch?.branchName}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-        <div className="max-h-60 sm:max-h-80 md:max-h-96 lg:max-h-[400px]  overflow-x-auto overflow-y-auto">
-          <table className="min-w-full text-center ">
-            <thead className="text-center  sticky top-0 z-10 bg-green-300">
-              <tr>
-                <th className="py-2 px-4 border-b border-gray-300">No</th>
-                <th className="py-2 px-4 border-b border-gray-300">Branch</th>
-
-                <th className="py-2 px-4 border-b border-gray-300">
-                  User Name
-                </th>
-                <th className="py-2 px-4 border-b border-gray-300">id</th>
-                <th className="py-2 px-4 border-b border-gray-300">UserId</th>
-                <th className="py-2 px-4 border-b border-gray-300">Mobile</th>
-                <th className="py-2 px-4 border-b border-gray-300">
-                  Designation
-                </th>
-                <th className="py-2 px-4 border-b border-gray-300">Role</th>
-                <th className="py-2 px-4 border-b border-gray-300">
-                  AssignedTo
-                </th>
-
-                <th className="py-2 px-4 border-b border-gray-300">Edit</th>
-                <th className="py-2 px-4 border-b border-gray-300">Delete</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200 text-center">
-              {users?.length > 0 ? (
-                users.map((user, index) => {
-                  // If user has a 'selected' array, map over it; otherwise, return a single row with user details
-                  if (user?.selected?.length > 0) {
-                    return user.selected.map((item, itemIndex) => (
-                      <tr
-                        key={`${user._id}-${itemIndex}`}
-                        className="text-center"
-                      >
-                        <td className="py-3 text-sm text-black">
-                          {itemIndex === 0 ? index + 1 : ""}
-                        </td>
-                        <td className="py-3 whitespace-nowrap text-sm text-black">
-                          {item?.branchName}
-                        </td>
-                        <td className="py-3 whitespace-nowrap text-sm text-black">
-                          {user?.name}
-                        </td>
-                        <td className="py-3 whitespace-nowrap text-sm text-black">
-                          {user?.attendanceId}
-                        </td>
-                        <td className="py-3 whitespace-nowrap text-sm text-black">
-                          {user?.email}
-                        </td>
-                        <td className="py-3 whitespace-nowrap text-sm text-black">
-                          {user?.mobile}
-                        </td>
-                        <td className="py-3 whitespace-nowrap text-sm text-black">
-                          {user?.designation}
-                        </td>
-                        <td className="py-3 whitespace-nowrap text-sm text-black">
-                          {user?.role}
-                        </td>
-                        <td className="py-3 whitespace-nowrap text-sm text-black">
-                          {user.assignedto
-                            ? user.assignedto?.name
-                            : "Not assigned"}
-                        </td>
-
-                        <td className="py-3 whitespace-nowrap text-xl text-black text-center">
-                          <div className="flex justify-center items-center">
-                            <CiEdit
-                              onClick={() => {
-                                if (loggeduser?.role === "Admin" ) {
-                                  navigate("/admin/masters/userEdit", {
-                                    state: {
-                                      user,
-                                      selected: item
-                                    }
-                                  })
-                                } else if (loggeduser?.role === "Staff" || loggeduser?.role === "Manager") {
-                                  navigate("/staff/masters/userEdit", {
-                                    state: {
-                                      user,
-                                      selected: item
-                                    }
-                                  })
-                                }
-                              }}
-                              className="cursor-pointer"
-                            />
-                          </div>
-                        </td>
-                        <td className="py-3 whitespace-nowrap  text-black">
-                          <DeleteAlert onDelete={handleDelete} Id={user._id} />
-                        </td>
-                      </tr>
-                    ))
-                  } else {
-                    // If user has no 'selected' items, render a single row
-                    return (
-                      <tr key={user._id} className="text-center">
-                        <td className="py-3 text-sm text-black">{index + 1}</td>
-                        <td className="py-3 whitespace-nowrap text-sm text-black">
-                          {/* No branchName if 'selected' is empty */}
-                        </td>
-                        <td className="py-3 whitespace-nowrap text-sm text-black">
-                          {user?.name}
-                        </td>
-                        <td className="py-3 whitespace-nowrap text-sm text-black">
-                          {user?.email}
-                        </td>
-                        <td className="py-3 whitespace-nowrap text-sm text-black">
-                          {user?.mobile}
-                        </td>
-                        <td className="py-3 whitespace-nowrap text-sm text-black">
-                          {user?.designation}
-                        </td>
-                        <td className="py-3 whitespace-nowrap text-sm text-black">
-                          {user?.role}
-                        </td>
-                        <td className="py-3 whitespace-nowrap text-sm text-black">
-                          {user.assignedto
-                            ? user.assignedto.name
-                            : "Not assigned"}
-                        </td>
-                        <td className="py-3 whitespace-nowrap text-xl text-black text-center">
-                          <div className="flex justify-center items-center">
-                            <CiEdit
-                              onClick={() => {
-                                if (loggeduser?.role === "Admin") {
-                                  navigate("/admin/masters/userEdit", {
-                                    state: {
-                                      user
-                                    }
-                                  })
-                                } else if (loggeduser?.role === "Staff") {
-                                  navigate("/staff/masters/userEdit", {
-                                    state: {
-                                      user
-                                    }
-                                  })
-                                }
-                              }}
-                              className="cursor-pointer"
-                            />
-                          </div>
-                        </td>
-                        <td className="py-3 whitespace-nowrap  text-black">
-                          <DeleteAlert onDelete={handleDelete} Id={user._id} />
-                        </td>
-                      </tr>
-                    )
-                  }
-                })
-              ) : (
+      </div>
+      <div className="flex-1 overflow-hidden p-3">
+        <div className="bg-white rounded-xl shadow overflow-hidden h-full flex flex-col">
+          <div className="flex-1 overflow-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-green-300">
                 <tr>
-                  <td
-                    colSpan="11"
-                    className="px-4 py-4 text-center text-gray-500"
-                  >
-                    {loading && (
-                      <div className="justify center">
-                        <PropagateLoader color="#3b82f6" size={10} />
-                      </div>
-                    ) 
-                    }
-                  </td>
+                  <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16 bg-green-300">
+                    No
+                  </th>
+                  <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider min-w-32 bg-green-300">
+                    Branch
+                  </th>
+                  <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider min-w-40 bg-green-300">
+                    User Name
+                  </th>
+                  <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider min-w-24 bg-green-300">
+                    ID
+                  </th>
+                  <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider min-w-48 bg-green-300">
+                    User ID
+                  </th>
+                  <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider min-w-32 bg-green-300">
+                    Mobile
+                  </th>
+                  <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider min-w-32 bg-green-300">
+                    Designation
+                  </th>
+                  <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider min-w-24 bg-green-300">
+                    Role
+                  </th>
+                  <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider min-w-32 bg-green-300">
+                    Assigned To
+                  </th>
+                  <th className="sticky top-0 z-10 px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider min-w-24 bg-green-300">
+                    Actions
+                  </th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody className="bg-white divide-y divide-gray-200">
+                {/* map rows here */}
+                {users?.length > 0 ? (
+                  users.map((user, index) => {
+                    if (user?.selected?.length > 0) {
+                      return user.selected.map((item, itemIndex) => (
+                        <tr
+                          key={`${user._id}-${itemIndex}`}
+                          className="hover:bg-gray-50 transition-colors duration-150"
+                        >
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {itemIndex === 0 ? index + 1 : ""}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {item?.branchName}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {user?.name}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {user?.attendanceId}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {user?.email}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {user?.mobile}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                              {user?.designation}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                user?.role === "Admin"
+                                  ? "bg-purple-100 text-purple-800"
+                                  : user?.role === "Manager"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {user?.role}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {user.assignedto ? (
+                              user.assignedto?.name
+                            ) : (
+                              <span className="text-gray-400 italic">
+                                Not assigned
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-center">
+                            <div className="flex items-center justify-center space-x-2">
+                              <button
+                                onClick={() => {
+                                  if (loggeduser?.role === "Admin") {
+                                    navigate("/admin/masters/userEdit", {
+                                      state: { user, selected: item }
+                                    })
+                                  } else if (
+                                    loggeduser?.role === "Staff" ||
+                                    loggeduser?.role === "Manager"
+                                  ) {
+                                    navigate("/staff/masters/userEdit", {
+                                      state: { user, selected: item }
+                                    })
+                                  }
+                                }}
+                                className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors duration-200"
+                                title="Edit User"
+                              >
+                                <CiEdit className="w-5 h-5" />
+                              </button>
+                              <DeleteAlert
+                                onDelete={handleDelete}
+                                Id={user._id}
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    } else {
+                      return (
+                        <tr
+                          key={user._id}
+                          className="hover:bg-gray-50 transition-colors duration-150"
+                        >
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {index + 1}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-400">
+                            -
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {user?.name}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {user?.attendanceId}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {user?.email}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {user?.mobile}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                              {user?.designation}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                user?.role === "Admin"
+                                  ? "bg-purple-100 text-purple-800"
+                                  : user?.role === "Manager"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {user?.role}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {user.assignedto ? (
+                              user.assignedto.name
+                            ) : (
+                              <span className="text-gray-400 italic">
+                                Not assigned
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-center">
+                            <div className="flex items-center justify-center space-x-2">
+                              <button
+                                onClick={() => {
+                                  if (loggeduser?.role === "Admin") {
+                                    navigate("/admin/masters/userEdit", {
+                                      state: { user }
+                                    })
+                                  } else if (loggeduser?.role === "Staff") {
+                                    navigate("/staff/masters/userEdit", {
+                                      state: { user }
+                                    })
+                                  }
+                                }}
+                                className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors duration-200"
+                                title="Edit User"
+                              >
+                                <CiEdit className="w-5 h-5" />
+                              </button>
+                              <DeleteAlert
+                                onDelete={handleDelete}
+                                Id={user._id}
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    }
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="10" className="px-4 py-12 text-center">
+                      {loading ? (
+                        <div className="flex justify-center items-center">
+                          <PropagateLoader color="#3b82f6" size={10} />
+                        </div>
+                      ) : (
+                        <div className="text-gray-500">
+                          <div className="text-lg font-medium mb-2">
+                            No users found
+                          </div>
+                          <div className="text-sm">
+                            Try adjusting your search criteria
+                          </div>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
