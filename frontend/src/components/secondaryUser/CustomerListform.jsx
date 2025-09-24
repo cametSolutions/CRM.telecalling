@@ -8,6 +8,7 @@ import UseFetch from "../../hooks/useFetch"
 import debounce from "lodash.debounce"
 import ClipLoader from "react-spinners/ClipLoader"
 import TooltipIcon from "../TooltipIcon"
+import BranchDropdown from "../primaryUser/BranchDropdown"
 import {
   FaUserPlus,
   FaRegFileExcel,
@@ -21,19 +22,23 @@ import { useSelector } from "react-redux"
 const CustomerListform = () => {
   const navigate = useNavigate()
   // const tableContainerRef = useRef(null) // Ref to track table container scrolling
-  const scrollTriggeredRef = useRef(false)
+
   const [searchTerm, setsearchTerm] = useState("")
   const [pages, setPages] = useState(1)
   // const [loading, setLoading] = useState(true)
+  const [selectedstatus, setselectedStatus] = useState("All customers")
   const [tableHeight, setTableHeight] = useState("auto")
+  const [statusfilteredCustomer, setstatusfilteredcustomer] = useState([])
   const [showFullAddress, setShowFullAddress] = useState({})
   const [searchAfterData, setAfterSearchData] = useState([])
   const [alldata, setalldata] = useState([])
   const [user, setUser] = useState(null)
-  const [userbranches, setuserBranches] = useState(null)
+  const [selectedBranch, setselectedBranch] = useState(null)
+  const [userBranches, setuserBranches] = useState([])
   const [userRole, setUserRole] = useState(null)
   const [apiSearchTerm, setApiSearchTerm] = useState("") // only when we want API call
   const headerRef = useRef(null)
+  const scrollTriggeredRef = useRef(false)
   const containerRef = useRef(null)
   const firstLoad = useRef(true)
   const hasLoadedEmpty = useRef(false)
@@ -55,19 +60,17 @@ const CustomerListform = () => {
   //   return null
   // }, [userbranches, apiSearchTerm, pages])
   const url = useMemo(() => {
-    if (!userbranches) return null
+    if (!selectedBranch) return null
 
     // If it's first load, always allow
     if (firstLoad.current) {
-      return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${JSON.stringify(
-        userbranches
-      )}`
+      return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${selectedBranch}`
     }
 
     // If search term is NOT empty, always allow
     if (apiSearchTerm !== "") {
       return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${JSON.stringify(
-        userbranches
+        selectedBranch
       )}`
     }
 
@@ -79,28 +82,29 @@ const CustomerListform = () => {
     // If search term is empty but we haven't loaded empty data yet, allow it
     if (apiSearchTerm === "" && !hasLoadedEmpty.current) {
       return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${JSON.stringify(
-        userbranches
+        selectedBranch
       )}`
     }
 
     return null
-  }, [userbranches, apiSearchTerm, pages])
-
+  }, [selectedBranch, apiSearchTerm, pages])
 
   const { data: list, loading: scrollLoading } = UseFetch(url)
-  const companybranches = useSelector((state) => state.companyBranch.branches)
+  // const companybranches = useSelector((state) => state.companyBranch.branches)
   useEffect(() => {
     const userData = getLocalStorageItem("user")
-
+    setselectedBranch(userData.selected[0].branch_id)
+    userData.selected.forEach((branch) => {
+      setuserBranches((prev) => [
+        ...prev,
+        {
+          id: branch.branch_id,
+          branchName: branch.branchName
+        }
+      ])
+    })
     setUser(userData)
-    if (userData.role !== "Admin") {
-      const branch = userData.selected.map((branch) => branch.branch_id)
-      // const branches = JSON.stringify(branch)
 
-      setuserBranches(branch)
-    } else {
-      setuserBranches(companybranches)
-    }
     if (userData && userData.role) {
       setUserRole(userData.role.toLowerCase())
     } else {
@@ -124,21 +128,29 @@ const CustomerListform = () => {
   useEffect(() => {
     hasLoadedEmpty.current = false
     firstLoad.current = true
-  }, [userbranches])
+  }, [selectedBranch])
   useEffect(() => {
     if (headerRef.current) {
       const headerHeight = headerRef.current.getBoundingClientRect().height
       setTableHeight(`calc(60vh - ${headerHeight}px)`) // Subtract header height from full viewport height
     }
   }, [])
-
+  useEffect(() => {
+    setAfterSearchData([])
+    setalldata([])
+    setPages(1)
+    hasLoadedEmpty.current = false
+    firstLoad.current = true
+  }, [selectedBranch])
 
   useEffect(() => {
     if (list && list.length > 0) {
       if (!searchTerm) {
         scrollTriggeredRef.current = false
-        setAfterSearchData((prev) => [...prev, ...list])
-        setalldata((prev) => [...prev, ...list])
+        setAfterSearchData((prev) =>
+          pages === 1 ? [...list] : [...prev, ...list]
+        )
+        setalldata((prev) => (pages === 1 ? [...list] : [...prev, ...list]))
       } else {
         scrollTriggeredRef.current = false
         setAfterSearchData((prev) => [...prev, ...list])
@@ -146,14 +158,13 @@ const CustomerListform = () => {
       }
     }
   }, [list])
- 
- 
+
   const handleScroll = () => {
     const container = containerRef.current
-
     if (!container) return false
 
     const { clientHeight, scrollHeight, scrollTop } = container
+
     const totalScrollableDistance = scrollHeight - clientHeight
 
     // Calculate current scroll position as percentage
@@ -166,6 +177,17 @@ const CustomerListform = () => {
       setPages((prev) => prev + 1)
     }
   }
+  const handlestatus = (e) => {
+    if (e.target.value === "All customers") {
+      setstatusfilteredcustomer(searchAfterData)
+    } else {
+      const filteredcustomer = searchAfterData.filter((customer) =>
+        customer.selected.some((sel) => sel.isActive === e.target.value)
+      )
+      setstatusfilteredcustomer(filteredcustomer)
+    }
+    setselectedStatus(e.target.value)
+  }
   //Handle search with lodash debounce to optimize search performance
   const handleSearch = debounce((query) => {
     const term = query.trim().toLowerCase()
@@ -175,7 +197,7 @@ const CustomerListform = () => {
     if (!query) {
       setApiSearchTerm("")
       setAfterSearchData(alldata)
-     
+
       return
     }
 
@@ -198,6 +220,9 @@ const CustomerListform = () => {
       // setalldata([])
     }
   }, 600)
+  const handleBranchChange = (e) => {
+    setselectedBranch(e)
+  }
 
   const handleChange = (e) => handleSearch(e.target.value)
 
@@ -278,7 +303,7 @@ const CustomerListform = () => {
 
               <TooltipIcon
                 icon={FaHourglassHalf}
-                tooltip="Pending Customer"
+                tooltip="Product missing customer"
                 to={
                   user?.role === "Admin"
                     ? "/admin/masters/pendingCustomer"
@@ -296,11 +321,28 @@ const CustomerListform = () => {
                 }
                 className="text-red-500"
               />
+              <BranchDropdown
+                branches={userBranches}
+                onBranchChange={handleBranchChange}
+                branchSelected={selectedBranch}
+              />
+              <select
+                value={selectedstatus}
+                onChange={(e) => handlestatus(e)}
+                className="w-40 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none text-gray-700 bg-white"
+              >
+                <option value="All customers">All Customer</option>
+                <option value="Running">Running</option>
+                <option value="Deactive">Deactive</option>
+              </select>
             </div>
 
             <div className="bg-blue-100 px-4 py-2 rounded-lg">
               <span className="text-sm font-medium text-blue-800">
-                Total: {searchAfterData?.length || 0}
+                Total:{" "}
+                {selectedstatus === "All customers"
+                  ? searchAfterData?.length
+                  : statusfilteredCustomer?.length}
               </span>
             </div>
           </div>
@@ -352,8 +394,14 @@ const CustomerListform = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {searchAfterData?.length > 0 ? (
-                  searchAfterData?.map((customer, index) =>
+                {(selectedstatus === "All customers"
+                  ? searchAfterData
+                  : statusfilteredCustomer
+                )?.length > 0 ? (
+                  (selectedstatus === "All customers"
+                    ? searchAfterData
+                    : statusfilteredCustomer
+                  ).map((customer, index) =>
                     customer.selected.map((item, itemIndex) => (
                       <tr
                         key={`${customer._id}-${item.licensenumber}-${itemIndex}`}
@@ -411,7 +459,7 @@ const CustomerListform = () => {
                         <td className="px-4 py-3 text-sm">
                           <span
                             className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              item.isActive === "Active"
+                              item.isActive === "Running"
                                 ? "bg-green-100 text-green-800"
                                 : "bg-red-100 text-red-800"
                             }`}
@@ -422,13 +470,133 @@ const CustomerListform = () => {
                         <td className="px-4 py-3">
                           <CiEdit
                             onClick={() =>
-                              navigate(userRole === "admin" ? "/admin/masters/customerEdit" : "/staff/masters/customerEdit", {
-                                state: {
-                                  customer: customer,
-                                  selected: item,
-                                  index: itemIndex
+                              navigate(
+                                userRole === "admin"
+                                  ? "/admin/masters/customerEdit"
+                                  : "/staff/masters/customerEdit",
+                                {
+                                  state: {
+                                    customer: customer,
+                                    selected: item,
+                                    index: itemIndex
+                                  }
                                 }
-                              })
+                              )
+                            }
+                            className="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors text-xl"
+                            title="Edit Customer"
+                          />
+                          {/* <div className="text-red-500 hover:text-red-700 transition-colors p-1 rounded hover:bg-red-100">
+                            <DeleteAlert
+                              onDelete={handleDelete}
+                              Id={customer._id}
+                            />
+                          </div> */}
+                        </td>
+                      </tr>
+                    ))
+                  )
+                ) : (
+                  <tr>
+                    <td
+                      colSpan="11"
+                      className="px-4 py-12 text-center text-gray-500"
+                    >
+                      {scrollLoading ? (
+                        <div className="flex justify-center">
+                          <PropagateLoader color="#3b82f6" size={10} />
+                        </div>
+                      ) : (
+                        <div className="text-lg">No Data Found</div>
+                      )}
+                    </td>
+                  </tr>
+                )}
+
+                {/* {(selectedstatus === "All customers" 
+  ? searchAfterData 
+  : statusfilteredCustomer
+)?.map((customer, index) =>
+  customer.selected.map((item, itemIndex) =>(
+                      <tr
+                        key={`${customer._id}-${item.licensenumber}-${itemIndex}`}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {itemIndex === 0 ? index + 1 : ""}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {item?.branchName}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                          {customer?.customerName}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {item?.productName}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900 font-mono">
+                          {item?.licensenumber}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900 max-w-xs">
+                          {showFullAddress[customer?._id] ? (
+                            <span>
+                              {customer?.address1}{" "}
+                              <button
+                                onClick={() => handleShowMore(customer?._id)}
+                                className="text-blue-600 hover:text-blue-800 font-medium"
+                              >
+                                Show less
+                              </button>
+                            </span>
+                          ) : (
+                            <span>
+                              {truncateAddress(customer?.address1)}{" "}
+                              {customer?.address1?.length > 20 && (
+                                <button
+                                  onClick={() => handleShowMore(customer?._id)}
+                                  className="text-blue-600 hover:text-blue-800 font-medium"
+                                >
+                                  ...more
+                                </button>
+                              )}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {customer?.pincode}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {customer?.mobile}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {customer?.email}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              item.isActive === "Running"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {item.isActive}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <CiEdit
+                            onClick={() =>
+                              navigate(
+                                userRole === "admin"
+                                  ? "/admin/masters/customerEdit"
+                                  : "/staff/masters/customerEdit",
+                                {
+                                  state: {
+                                    customer: customer,
+                                    selected: item,
+                                    index: itemIndex
+                                  }
+                                }
+                              )
                             }
                             className="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors text-xl"
                             title="Edit Customer"
@@ -452,7 +620,7 @@ const CustomerListform = () => {
                       )}
                     </td>
                   </tr>
-                )}
+                )} */}
               </tbody>
             </table>
           </div>

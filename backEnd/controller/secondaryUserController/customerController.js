@@ -23,21 +23,12 @@ export const GetscrollCustomer = async (req, res) => {
     const pageSize = parseInt(limit);
     const skip = (pageNum - 1) * pageSize;
 
-    let branchIds = [];
+    let branchId
 
     if (loggeduserBranches) {
-      try {
-        // If frontend sends JSON.stringify([...]) you need JSON.parse here
-        const parsed = JSON.parse(loggeduserBranches);
-
-        // Convert each id string into ObjectId
-        branchIds = parsed.map((id) => new mongoose.Types.ObjectId(id));
-      } catch (err) {
-        console.log("erorrundo", err)
-        // Fallback: single branch id as string
-        branchIds = [new mongoose.Types.ObjectId(loggeduserBranches)];
-      }
+      branchId = new mongoose.Types.ObjectId(loggeduserBranches);
     }
+
 
     // Build search query
     let searchQuery = {};
@@ -79,7 +70,7 @@ export const GetscrollCustomer = async (req, res) => {
         //match search+branch access at the same time
         $match: {
           ...searchQuery,
-          "selected.branch_id": { $in: branchIds }
+          "selected.branch_id": branchId
         }
       },
       { $skip: skip },
@@ -841,7 +832,6 @@ export const GetallproductmissingCustomer = async (req, res) => {
     const branchIds = Array.isArray(branchselected)
       ? branchselected
       : [branchselected];
-    console.log("ids", branchIds)
 
 
     const customers = await Customer.find({
