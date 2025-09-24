@@ -104,7 +104,7 @@ const WithoutProductdetailscustomer = () => {
           {/* Title and Search Bar */}
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-2xl text-black font-bold">
-              Productmissing Customer List
+              Product Details Missing Customer List
             </h3>
 
             {/* Search Bar */}
@@ -305,7 +305,7 @@ const WithoutProductdetailscustomer = () => {
                         index % 2 === 0 ? "bg-gray-50" : "bg-white"
                       }`}
                     >
-                      <td className="px-4 py-4 text-sm text-gray-900 font-medium border-r border-gray-100">
+                      <td className="px-2 py-4 text-sm text-gray-900 font-medium border-r border-gray-100">
                         <div className="flex items-center">
                           <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3">
                             {customer.customerName?.charAt(0)?.toUpperCase()}
@@ -313,7 +313,7 @@ const WithoutProductdetailscustomer = () => {
                           {customer.customerName}
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-sm text-gray-900 max-w-xs border-r border-gray-100">
+                      <td className="px-2 py-4 text-sm text-gray-900 max-w-xs border-r border-gray-100">
                         {showFullText[`${customer._id}_address1`] ? (
                           <div className="leading-relaxed">
                             {customer.address1}
@@ -346,7 +346,7 @@ const WithoutProductdetailscustomer = () => {
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-4 text-sm text-gray-900 max-w-xs border-r border-gray-100">
+                      <td className="px-2 py-4 text-sm text-gray-900 max-w-xs border-r border-gray-100">
                         {showFullText[`${customer._id}_address2`] ? (
                           <div className="leading-relaxed">
                             {customer.address2}
@@ -379,7 +379,7 @@ const WithoutProductdetailscustomer = () => {
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-4 text-sm text-gray-900 border-r border-gray-100">
+                      <td className="px-2 py-4 text-sm text-gray-900 border-r border-gray-100">
                         <div className="flex items-center">
                           <svg
                             className="w-4 h-4 mr-2 text-gray-400"
@@ -397,12 +397,12 @@ const WithoutProductdetailscustomer = () => {
                           {customer.city}
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-sm text-gray-900 border-r border-gray-100">
+                      <td className="px-2 py-4 text-sm text-gray-900 border-r border-gray-100">
                         <span className="bg-gray-100 px-2 py-1 rounded-md font-mono text-xs">
                           {customer.pincode}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-sm text-gray-900 border-r border-gray-100">
+                      <td className="px-2 py-4 text-sm text-gray-900 border-r border-gray-100">
                         <div className="flex items-center">
                           <svg
                             className="w-4 h-4 mr-2 text-green-500"
@@ -420,7 +420,7 @@ const WithoutProductdetailscustomer = () => {
                           <span className="font-mono">{customer.mobile}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-4 text-sm text-gray-900 border-r border-gray-100">
+                      <td className="px-2 py-4 text-sm text-gray-900 border-r border-gray-100">
                         <div className="flex items-center">
                           <svg
                             className="w-4 h-4 mr-2 text-blue-500"
@@ -442,11 +442,11 @@ const WithoutProductdetailscustomer = () => {
                       {/* <td className="px-4 py-3 text-sm text-gray-900">
                         {customer.landline}
                       </td> */}
-                      <td className="px-4 py-3 text-sm text-gray-900">
+                      <td className="px-2 py-3 text-sm text-gray-900">
                         {showFullText[`${customer._id}_email`] ? (
                           <div>
                             {customer.email}
-                            {customer.email?.length > 25 && (
+                            {customer.email?.length > 20 && (
                               <button
                                 onClick={() =>
                                   toggleShowMore(`${customer._id}_email`)
@@ -475,7 +475,7 @@ const WithoutProductdetailscustomer = () => {
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-3">
                         <div className="flex justify-center gap-2">
                           {/* Edit Button */}
                           <button
@@ -510,7 +510,7 @@ const WithoutProductdetailscustomer = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="9" className="px-4 py-16 text-center">
+                    <td colSpan="9" className="px-2 py-16 text-center">
                       {loading ? (
                         // Loading State - when UseFetch is still fetching data
                         <div className="flex flex-col items-center justify-center py-12">
@@ -561,8 +561,8 @@ const WithoutProductdetailscustomer = () => {
                             No Results Found
                           </h3>
                           <p className="text-gray-500 text-center max-w-sm mb-4">
-                            We couldn't find any pending customers matching "
-                            <span className="font-medium">{searchQuery}</span>".
+                            We couldn't find any product details missing customers"
+                            <span className="font-medium">{searchQuery}</span>
                             Try adjusting your search terms.
                           </p>
                           <button

@@ -1,4 +1,4 @@
-import { useState,useEffect } from "react"
+import { useState, useEffect } from "react"
 import { CiEdit } from "react-icons/ci"
 import { PropagateLoader } from "react-spinners"
 import { useNavigate } from "react-router-dom"
@@ -20,18 +20,27 @@ const UserListform = () => {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
   const [users, setUser] = useState([])
+  const [allusers, setallusers] = useState([])
+  const [selectedBranch, setselectedBranch] = useState(null)
   const [loggeduser, setloggeduser] = useState(null)
   const { data, loading } = UseFetch("/auth/getallUsers")
-  const { data: branches } = UseFetch("/branch/getBranch")
-  const loggeduserData = localStorage.getItem("user")
-  const logged = JSON.parse(loggeduserData)
+
   useEffect(() => {
     if (data) {
+      const logged = getLocalStorageItem("user")
       const { allusers } = data
-      setUser(allusers)
+      setallusers(allusers)
+      const filtereusers = allusers.filter((user) =>
+        user.selected
+          .map((branch) => branch.branch_id)
+          .includes(logged.selected[0].branch_id)
+      )
+      setUser(filtereusers)
       setloggeduser(logged)
+      setselectedBranch(logged.selected[0].branch_id)
     }
   }, [data])
+
   const handleSearch = debounce((query) => {
     const { allusers } = data
     const input = query.trim()
@@ -53,6 +62,14 @@ const UserListform = () => {
 
     // Reset to initial count after filtering
   }, 300)
+  const handlebranchChange = (e) => {
+    const [id, label] = e.target.value.split("||")
+    setselectedBranch(id)
+    const filtereusers = allusers.filter((user) =>
+      user.selected.map((branch) => branch.branch_id).includes(id)
+    )
+    setUser(filtereusers)
+  }
   const handleDelete = async (id) => {
     try {
       await api.delete(`/auth/userDelete?id=${id}`)
@@ -82,8 +99,8 @@ const UserListform = () => {
               <input
                 type="text"
                 onChange={(e) => handleSearch(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg 
-                         focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none
+                         
                          placeholder-gray-400 text-sm transition-colors duration-200"
                 placeholder="Search users..."
               />
@@ -138,13 +155,19 @@ const UserListform = () => {
               <FaPrint className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Print</span>
             </button>
-            <select className="w-40 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none  text-gray-700 bg-white"
-              >
-              {branches?.map((branch) => (
-                <option key={branch._id} value={branch._id}>
-                  {branch?.branchName}
-                </option>
-              ))}
+            <select
+              onChange={(e) => handlebranchChange(e)}
+              className="w-40 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none  text-gray-700 bg-white"
+            >
+              {loggeduser &&
+                loggeduser?.selected?.map((branch) => (
+                  <option
+                    key={branch._id}
+                    value={`${branch.branch_id}||${branch.branchName}`}
+                  >
+                    {branch?.branchName}
+                  </option>
+                ))}
             </select>
           </div>
         </div>

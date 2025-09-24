@@ -54,8 +54,8 @@ const PendingCustomer = () => {
   }
 
   return (
-    <div className="container mx-auto h-full py-8 bg-gray-100">
-      <div className="w-auto bg-white shadow-lg rounded p-8 h-full mx-8 flex flex-col">
+    <div className="container mx-auto h-full py-3 bg-gray-100">
+      <div className="w-auto bg-white shadow-lg rounded p-3 h-full mx-3 flex flex-col">
         <div className="flex-shrink-0 bg-white sticky top-0 z-20">
           {/* Title and Search Bar */}
           <div className="flex justify-between items-center mb-4">
@@ -270,7 +270,7 @@ const PendingCustomer = () => {
                           index % 2 === 0 ? "bg-gray-50" : "bg-white"
                         }`}
                       >
-                        <td className="px-4 py-4 text-sm text-gray-900 font-medium border-r border-gray-100">
+                        <td className="px-2 py-4 text-sm text-gray-900 font-medium border-r border-gray-100">
                           <div className="flex items-center">
                             <div className="w-8 h-8 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-xs font-bold mr-3">
                               {customer.customerName?.charAt(0)?.toUpperCase()}
@@ -278,7 +278,7 @@ const PendingCustomer = () => {
                             {customer.customerName}
                           </div>
                         </td>
-                        <td className="px-4 py-4 text-sm text-gray-900 max-w-xs border-r border-gray-100">
+                        <td className="px-2 py-4 text-sm text-gray-900 max-w-xs border-r border-gray-100">
                           {showFullText[`${customer._id}_address1`] ? (
                             <div className="leading-relaxed">
                               {customer.address1}
@@ -311,7 +311,7 @@ const PendingCustomer = () => {
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-4 text-sm text-gray-900 max-w-xs border-r border-gray-100">
+                        <td className="px-2 py-4 text-sm text-gray-900 max-w-xs border-r border-gray-100">
                           {showFullText[`${customer._id}_address2`] ? (
                             <div className="leading-relaxed">
                               {customer.address2}
@@ -344,7 +344,7 @@ const PendingCustomer = () => {
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-4 text-sm text-gray-900 border-r border-gray-100">
+                        <td className="px-2 py-4 text-sm text-gray-900 border-r border-gray-100">
                           <div className="flex items-center">
                             <svg
                               className="w-4 h-4 mr-2 text-gray-400"
@@ -362,12 +362,12 @@ const PendingCustomer = () => {
                             {customer.city}
                           </div>
                         </td>
-                        <td className="px-4 py-4 text-sm text-gray-900 border-r border-gray-100">
+                        <td className="px-2 py-4 text-sm text-gray-900 border-r border-gray-100">
                           <span className="bg-gray-100 px-2 py-1 rounded-md font-mono text-xs">
                             {customer.pincode}
                           </span>
                         </td>
-                        <td className="px-4 py-4 text-sm text-gray-900 border-r border-gray-100">
+                        <td className="px-2 py-4 text-sm text-gray-900 border-r border-gray-100">
                           <div className="flex items-center">
                             <svg
                               className="w-4 h-4 mr-2 text-green-500"
@@ -385,7 +385,7 @@ const PendingCustomer = () => {
                             <span className="font-mono">{customer.mobile}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-4 text-sm text-gray-900 border-r border-gray-100">
+                        <td className="px-2 py-4 text-sm text-gray-900 border-r border-gray-100">
                           <div className="flex items-center">
                             <svg
                               className="w-4 h-4 mr-2 text-blue-500"
@@ -405,7 +405,7 @@ const PendingCustomer = () => {
                             </span>
                           </div>
                         </td>
-                        <td className="px-4 py-4 text-sm text-gray-900 border-r border-gray-100">
+                        <td className="px-2 py-4 text-sm text-gray-900 border-r border-gray-100">
                           {showFullText[`${customer._id}_email`] ? (
                             <div className="leading-relaxed">
                               <div className="flex items-center">
@@ -470,43 +470,8 @@ const PendingCustomer = () => {
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          {customer.landline}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          {showFullText[`${customer._id}_email`] ? (
-                            <div>
-                              {customer.email}
-                              {customer.email?.length > 25 && (
-                                <button
-                                  onClick={() =>
-                                    toggleShowMore(`${customer._id}_email`)
-                                  }
-                                  className="ml-2 text-blue-600 hover:text-blue-800 font-medium text-xs"
-                                >
-                                  Show less
-                                </button>
-                              )}
-                            </div>
-                          ) : (
-                            <div>
-                              {customer.email?.length > 25
-                                ? `${customer.email.substring(0, 25)}...`
-                                : customer.email}
-                              {customer.email?.length > 25 && (
-                                <button
-                                  onClick={() =>
-                                    toggleShowMore(`${customer._id}_email`)
-                                  }
-                                  className="ml-2 text-blue-600 hover:text-blue-800 font-medium text-xs"
-                                >
-                                  more
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
+                       
+                        <td className="px-2 py-3">
                           <div className="flex justify-center gap-2">
                             {/* Edit Button */}
                             <button
