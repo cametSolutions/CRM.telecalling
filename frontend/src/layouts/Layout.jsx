@@ -30,7 +30,7 @@ const Layout = () => {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden ">
+      <main className="flex-1 overflow-hidden">
         <Mainrouter headerHeight={headerHeight} />
       </main>
     </div>

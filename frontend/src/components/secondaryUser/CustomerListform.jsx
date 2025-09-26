@@ -17,7 +17,6 @@ import {
   FaHourglassHalf,
   FaExclamationTriangle
 } from "react-icons/fa"
-import { useSelector } from "react-redux"
 
 const CustomerListform = () => {
   const navigate = useNavigate()
@@ -88,7 +87,7 @@ const CustomerListform = () => {
 
     return null
   }, [selectedBranch, apiSearchTerm, pages])
-
+console.log
   const { data: list, loading: scrollLoading } = UseFetch(url)
   // const companybranches = useSelector((state) => state.companyBranch.branches)
   useEffect(() => {
@@ -240,6 +239,7 @@ const CustomerListform = () => {
       ? `${address?.slice(0, maxLength)}...`
       : address
   }
+console.log(searchAfterData)
   return (
     <div className="h-full overflow-hidden">
       {scrollLoading && (
@@ -280,7 +280,7 @@ const CustomerListform = () => {
 
           {/* Action Buttons and Counter */}
           <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-4">
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 ">
               <TooltipIcon
                 icon={FaUserPlus}
                 tooltip="Add Customer"
@@ -329,7 +329,7 @@ const CustomerListform = () => {
               <select
                 value={selectedstatus}
                 onChange={(e) => handlestatus(e)}
-                className="w-40 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none text-gray-700 bg-white"
+                className="w-40 px-3 py-1 border border-gray-300 rounded-lg shadow-sm focus:outline-none text-gray-700 bg-white"
               >
                 <option value="All customers">All Customer</option>
                 <option value="Running">Running</option>

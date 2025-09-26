@@ -62,6 +62,7 @@ const TaskAnalysisTable = () => {
       filteredLeads.forEach((lead) => {
         const assignedTo = lead?.allocatedTo?.name
         const amount = lead?.netAmount || 0
+console.log(amount)
         grandTotal += amount
         if (!groupedLeads[assignedTo]) {
           groupedLeads[assignedTo] = []
@@ -69,7 +70,7 @@ const TaskAnalysisTable = () => {
 
         groupedLeads[assignedTo].push(lead)
       })
-      setnetAmount(grandTotal)
+      setnetAmount(parseFloat(grandTotal.toFixed(2)))
       setTableData(groupedLeads)
     }
   }, [taskAnalysisLeads])

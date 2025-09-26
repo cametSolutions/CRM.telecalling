@@ -6,7 +6,8 @@ import Tiles from "../../../components/common/Tiles" // Import the Tile componen
 import { useNavigate } from "react-router-dom"
 import { PropagateLoader } from "react-spinners"
 import UseFetch from "../../../hooks/useFetch"
-
+import BranchDropdown from "../../../components/primaryUser/BranchDropdown"
+import { getLocalStorageItem } from "../../../helper/localstorage"
 const socket = io("https://www.crm.camet.in")
 // const socket = io("http://localhost:9000") // Adjust the URL to your backend
 
@@ -32,16 +33,17 @@ const CallregistrationList = () => {
   const { data: branches } = UseFetch("/branch/getbranch")
   useEffect(() => {
     if (branches && branches.length > 0) {
-      const userData = localStorage.getItem("user")
-      const users = JSON.parse(userData)
-      if (users.role === "Admin") {
+      const userData = getLocalStorageItem("user")
+      // const users = JSON.parse(userData)
+      if (userData.role === "Admin") {
         const userbranch = branches.map((item) => item.branchName)
         setUserBranch(userbranch)
       }
 
-      setUser(users)
+      setUser(userData)
     }
   }, [branches])
+console.log("H")
   const filterCallData = useCallback(
     (calls) => {
       const allCallRegistrations = calls.flatMap(

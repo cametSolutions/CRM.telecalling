@@ -222,7 +222,7 @@ export default function AdminHeader() {
   const reports = [
     {
       to: "/admin/reports/summary",
-      label: "Summary"
+      label: " Call Summary"
     },
     {
       to: "/admin/reports/expiry-register",

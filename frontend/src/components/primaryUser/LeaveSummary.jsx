@@ -5,14 +5,17 @@ import BarLoader from "react-spinners/BarLoader"
 import ResponsiveTable from "./ResponsiveTable"
 import Modal from "./Modal"
 import api from "../../api/api"
+import BranchDropdown from "./BranchDropdown"
 import UseFetch from "../../hooks/useFetch"
 import { toast } from "react-toastify"
+import { getLocalStorageItem } from "../../helper/localstorage"
 const LeaveSummary = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [warningMessage, setWarningMessage] = useState("")
   const [newattende, setnewattendee] = useState([])
   const [selectedName, setSelectedName] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
+  const [userBranches, setuserBranches] = useState([])
   const currentYear = new Date().getFullYear()
   const currentMonth = new Date().getMonth() + 1 // JavaScript months are 0-based, so adding 1
   const [selectedStaff, setselectedStaff] = useState("")
@@ -21,22 +24,40 @@ const LeaveSummary = () => {
   const [formData, setFormData] = useState({})
   const [selectedDate, setselectedDate] = useState(null)
   const [type, setType] = useState("")
+  const [user, setUser] = useState(null)
   const [holiday, setHoly] = useState(null)
   const [currentmonthSundays, setCurrentmonthSundays] = useState(null)
-
+  const [selectedBranch, setselectedBranch] = useState(null)
   const [leavesummaryList, setleaveSummary] = useState([])
   const listRef = useRef(null)
-  const userData = localStorage.getItem("user")
-  const user = JSON.parse(userData)
+  // const userData = localStorage.getItem("user")
+  // const user = JSON.parse(userData)
   // API URL with selected year and month
-  const apiUrl = `/auth/getsomeall?year=${selectedYear}&month=${selectedMonth}`
-  // Use custom useFetch hook
+  const apiUrl = selectedBranch
+    ? `/auth/getsomeall?year=${selectedYear}&month=${selectedMonth}&selectedBranch=${selectedBranch}`
+    : null
+
   const {
     data,
 
     loading
   } = UseFetch(apiUrl)
- useEffect(() => {
+console.log(selectedBranch)
+  useEffect(() => {
+    const userData = getLocalStorageItem("user")
+    setselectedBranch(userData.selected[0].branch_id)
+    userData.selected.forEach((branch) => {
+      setuserBranches((prev) => [
+        ...prev,
+        {
+          id: branch.branch_id,
+          branchName: branch.branchName
+        }
+      ])
+    })
+    setUser(userData)
+  }, [])
+  useEffect(() => {
     if (data) {
       const { staffAttendanceStats, listofHolidays, sundayFulldate } = data
       setnewattendee(staffAttendanceStats)
@@ -60,7 +81,7 @@ const LeaveSummary = () => {
         if (user?.role === "Admin") {
           setleaveSummary(staffAttendanceStats)
           // setmonthSelected(selectedMonth)
-        } else if (user?.role === "Staff"||user?.role ==="Manager") {
+        } else if (user?.role === "Staff" || user?.role === "Manager") {
           const filteredUser = staffAttendanceStats.filter(
             (item) => item.userId === user._id || item.assignedto === user._id
           )
@@ -79,6 +100,9 @@ const LeaveSummary = () => {
       // sessionStorage.removeItem("scrollPosition") // Optional: Clear after restoring
     }
   }, [selectedName]) // Restore when selectedIndex changes
+  const handleBranchChange = (e) => {
+    setselectedBranch(e)
+  }
 
   const years = Array.from({ length: 10 }, (_, i) => currentYear - i)
   const months = [
@@ -366,7 +390,7 @@ const LeaveSummary = () => {
       saveAs(blob, "Attendance_Report.xlsx")
     })
   }
-  
+  console.log(leavesummaryList)
   return (
     <div className="w-full flex flex-col h-full">
       {loading && (
@@ -382,6 +406,11 @@ const LeaveSummary = () => {
           User Leave Summary
         </h1>
         <div className="grid grid-cols-2 md:flex md:flex-row md:items-center md:justify-end gap-2 md:gap-4 mb-3 md:mr-8 mx-5">
+          <BranchDropdown
+            branches={userBranches}
+            onBranchChange={handleBranchChange}
+            branchSelected={selectedBranch}
+          />
           {/* Search Input */}
           <div className="w-full md:w-auto">
             <input

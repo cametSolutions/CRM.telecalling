@@ -11,9 +11,10 @@ function CustomerEdit() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const location = useLocation()
-  const customer = location.state?.customer
-  const selected = location.state?.selected
-  const index = location.state?.index
+  // const customer = location.state?.customer
+  // const selected = location.state?.selected
+  // const index = location.state?.index
+  const { customer, selected, index, navigatebackto } = location.state || {}
 
   const customerId = customer._id
   function formatDateString(dateString) {
@@ -50,16 +51,21 @@ function CustomerEdit() {
       )
       toast.success(response.data.message)
       dispatch(removeSearch(""))
-      if (users?.role === "Admin") {
-        navigate("/admin/masters/customer")
-      } else if (users?.role === "Staff") {
-        navigate("/staff/masters/customer")
+      if (navigatebackto) {
+        navigate(navigatebackto)
+      } else {
+        if (users?.role === "Admin") {
+          navigate("/admin/masters/customer")
+        } else if (users?.role === "Staff") {
+          navigate("/staff/masters/customer")
+        }
       }
     } catch (error) {
       console.error("Error updating branch:", error)
       toast.error(error.response.data.message)
     }
   }
+console.log(updatedCustomer)
   return (
     <div>
       <CustomerAdd

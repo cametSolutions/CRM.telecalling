@@ -54,7 +54,7 @@ const Reallocation = () => {
     const user = JSON.parse(userData)
     setLoggedUser(user)
   }, [])
-   
+
   useEffect(() => {
     if (loggedUser && branches && branches.length > 0) {
       if (loggedUser.role === "Admin") {
@@ -175,7 +175,7 @@ const Reallocation = () => {
       setsubmitError({ submissionerror: "something went error" })
     }
   }
- 
+
   return (
     <div className="flex flex-col h-full">
       {(submitLoading || loading) && (
@@ -189,9 +189,12 @@ const Reallocation = () => {
       <div className="border border-gray-100 p-3 mx-4 rounded-xl shadow-xl bg-white  ">
         {gridList &&
           gridList.length > 0 &&
-          gridList.map((item) => {
+          gridList.map((item, index) => {
             return (
-              <div className="flex items-center gap-3 bg-slate-100 p-3 rounded-md shadow-sm text-black text-lg cursor-pointer">
+              <div
+                key={index}
+                className="flex items-center gap-3 bg-slate-100 p-3 rounded-md shadow-sm text-black text-lg cursor-pointer"
+              >
                 <div className="bg-blue-500 text-white rounded-full p-2 md:mr-10">
                   <AiOutlineProfile className="text-xl " />
                 </div>

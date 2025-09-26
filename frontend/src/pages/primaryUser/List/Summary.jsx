@@ -5,6 +5,7 @@ import { BarLoader } from "react-spinners"
 import api from "../../../api/api"
 import Tiles from "../../../components/common/Tiles"
 import UseFetch from "../../../hooks/useFetch"
+import BranchDropdown from "../../../components/primaryUser/BranchDropdown"
 
 const Summary = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null)
@@ -25,6 +26,7 @@ const Summary = () => {
   const [indiviDualCallList, setIndividualCallList] = useState([])
   const [loggedusers, setloggedUsers] = useState(null)
   const [selectedBranch, setSelectedBranch] = useState("All")
+  const [selectedbranchName, setselectedBranchName] = useState(null)
   const [isToggled, setIsToggled] = useState(false)
   const [dates, setDates] = useState({ startDate: "", endDate: "" })
   const [loading, setLoading] = useState(true)
@@ -36,25 +38,23 @@ const Summary = () => {
       dates.endDate &&
       `/auth/staffcallList?startDate=${dates.startDate}&endDate=${dates.endDate}`
   )
+  console.log(staffCallList)
   useEffect(() => {
     if (branches && branches.length > 0) {
       const userData = localStorage.getItem("user")
       const user = JSON.parse(userData)
       setloggedUsers(user)
-      if (user.role === "Admin") {
-        const loggeduserbranches = branches.map((item) => {
-          return {
-            ...item,
-            branch_id: item._id
-          }
-        })
-        setBranch(loggeduserbranches)
-      } else {
-        const loggeduserbranches = user.selected.map((branches) => branches)
-        setBranch(loggeduserbranches)
-      }
+
+      user.selected.forEach((branches) =>
+        setBranch((prev) => [
+          ...prev,
+          { id: branches.branch_id, branchName: branches.branchName }
+        ])
+      )
     }
+    console.log("dh")
   }, [branches])
+  console.log(branch)
   useEffect(() => {
     if (staffCallList) {
       setIndividualCallList(staffCallList)
@@ -67,14 +67,17 @@ const Summary = () => {
 
     // Last date of the month
   }, [])
+  console.log(userList)
   useEffect(() => {
-    if (dates.startDate&&dates.endDate) {
+    if (dates.startDate && dates.endDate && selectedBranch) {
       const fetchUserList = async () => {
         try {
           const query = `startDate=${dates.startDate}&endDate=${dates.endDate}`
+          console.log(query)
           const response = await api.get(`/auth/getStaffCallStatus?${query}`)
 
           const result = response.data.data
+          console.log(result)
           if (result) {
             const processDataAndUpdateList = (data) => {
               setUserList((prevList) => {
@@ -84,19 +87,20 @@ const Summary = () => {
                   console.error("Data is not an array", data)
                   return prevList // keep existing list if something went wrong
                 }
-                // Step 1: Extract all branch_ids from branch array
-                const branchIds = branch.map((b) => b.branch_id)
 
                 // Step 2: Flatten the nested `data` array
                 const flattenedData = data.flat() // Flattens one level deep
+                // Pick dataset based on branch selection
+                const dataset =
+                  selectedBranch === "All"
+                    ? flattenedData
+                    : flattenedData.filter((call) =>
+                        call.selected?.some(
+                          (sel) => selectedBranch === sel.branch_id
+                        )
+                      )
 
-                // Step 3: Filter calls that have any selected branch matching `branchIds`
-                const filtered = flattenedData.filter((call) =>
-                  call.selected?.some((sel) =>
-                    branchIds.includes(sel.branch_id)
-                  )
-                )
-                filtered.forEach((item) => {
+                dataset.forEach((item) => {
                   const call = item // first call in the group
 
                   const existingEntry = updatedList.find(
@@ -122,7 +126,7 @@ const Summary = () => {
                     })
                   }
                 })
-
+                console.log(updatedList)
                 return updatedList
               })
               setcacheduserSummary((prevList) => {
@@ -171,40 +175,6 @@ const Summary = () => {
 
                 return updatedList
               })
-
-              // setcacheduserSummary((prevList) => {
-              //   const updatedList = [...prevList]
-
-              //   data.forEach((item) => {
-              //     // Check if the callerId exists in the list
-              //     const existingEntry = updatedList.find(
-              //       (entry) => entry._id === item[0].callerId
-              //     )
-
-              //     if (existingEntry) {
-              //       // Update counts if the entry exists
-              //       existingEntry.solvedCalls += item[0].solvedCalls
-              //       existingEntry.pendingCalls += item[0].pendingCalls
-              //       existingEntry.colleagueSolved += item[0].colleagueSolved
-              //       existingEntry.todaysCalls += item[0].todaysCalls
-              //       existingEntry.datecalls += item[0].datecalls
-              //     } else {
-              //       // Create a new entry if it doesn't exist
-              //       updatedList.push({
-              //         _id: item[0].callerId,
-              //         name: item[0].callerName,
-              //         solvedCalls: item[0].solvedCalls,
-              //         pendingCalls: item[0].pendingCalls,
-              //         colleagueSolved: item[0].colleagueSolved,
-              //         datecalls: item[0].datecalls,
-              //         todaysCalls: item[0].todaysCalls,
-              //         selected: item[0].selected
-              //       })
-              //     }
-              //   })
-
-              //   return updatedList
-              // })
             }
             processDataAndUpdateList(result)
             setLoading(false)
@@ -214,39 +184,20 @@ const Summary = () => {
         }
       }
       if (isToggled) {
-        // if (userList && userList.length < 0) {
-        //   const flattened = cachedUserlistsummary.flat()
+        console.log("Hd")
 
-        //   const staffCallStatus = flattened.filter((user) => {
-        //     if (selectedBranch === "All") {
-        //       return true // Include all users if "All" is selected
-        //     }
-
-        //     const branchMatch = user.selected.some((item) => {
-        //       return item.branchName === selectedBranch
-        //     })
-
-        //     return branchMatch
-        //   })
-
-        //   if (staffCallStatus && staffCallStatus.length) {
-        //     setUserList(staffCallStatus)
-        //   }
-        // } else {
-        //   setTotalCalls(0)
-        //   fetchUserList()
-        // }
         setTotalCalls(0)
         fetchUserList()
         setLoading(true)
       } else {
-        if (callList && callList.length > 0) {
+        if (callList && callList.length > 0 && selectedBranch) {
+          console.log(callList)
           const customerSummaries = callList
             .filter(
               (customer) =>
                 selectedBranch === "All" ||
                 customer?.callregistration?.some((call) =>
-                  call?.branchName?.includes(selectedBranch)
+                  call?.branchName?.includes(selectedbranchName)
                 )
             )
             .map((customer) => {
@@ -426,7 +377,7 @@ const Summary = () => {
     }
     if (isModalOpen && selectedUser) {
       const today = new Date().toISOString().split("T")[0] // Today's date in 'YYYY-MM-DD' format
-     
+      console.log(indiviDualCallList)
       const filteredCalls = indiviDualCallList
         .map((item) => {
           const matchedCallregistration = item.callregistration.filter((call) =>
@@ -495,15 +446,16 @@ const Summary = () => {
           today.getDate() === date.getDate()
         )
       }
+      console.log(filteredCalls)
       // Sort calls
       const sortedCalls = filteredCalls
         .map((call) => {
           // Flatten call registrations with their parent
           return call.callregistration.map((registration) => ({
             ...registration,
-            customerName: call.customerName,
-            customerId: call.customerid,
-            productName: call.productDetails[0].productName
+            customerName: call?.customerName,
+            customerId: call?.customerid,
+            productName: call?.productDetails[0]?.productName
           }))
         })
         .flat()
@@ -611,52 +563,18 @@ const Summary = () => {
       return
     }
   }, [branch, loggedusers, dates])
-  // const handleDate = (selectedDate) => {
-  //   const extractDateAndMonth = (date) => {
-  //     const year = date.getFullYear()
-  //     const month = date.getMonth() + 1 // getMonth() is 0-indexed
-  //     const day = date.getDate()
-  //     return `${year}-${month.toString().padStart(2, "0")}-${day
-  //       .toString()
-  //       .padStart(2, "0")}`
-  //   }
 
-  //   if (
-  //     selectedDate.startDate instanceof Date &&
-  //     !isNaN(selectedDate.startDate.getTime()) &&
-  //     selectedDate.endDate instanceof Date &&
-  //     !isNaN(selectedDate.endDate.getTime())
-  //   ) {
-  //     // If both startDate and endDate are valid Date objects
-  //     setDates({
-  //       startDate: extractDateAndMonth(selectedDate.startDate),
-  //       endDate: extractDateAndMonth(selectedDate.endDate)
-  //     })
-  //   } else {
-  //     // If dates are not valid Date objects, use them as they are
-  //     setDates({
-  //       startDate: selectedDate.startDate,
-  //       endDate: selectedDate.endDate
-  //     })
-  //   }
-  // }
-
-  const handleChange = (event) => {
+  const handleBranchChange = (id, branchName) => {
     setTotalCalls(0)
-
-    const selected = event.target.value
-    if (selected === "All") {
-      setSelectedBranch("All")
-    } else {
-      const branchDetails = branch.find((item) => item._id === selected)
-      setSelectedBranch(branchDetails ? branchDetails.branchName : "All")
-    }
+    setselectedBranchName(branchName)
+    setSelectedBranch(id)
   }
+
   const toggle = () => {
     setIsToggled(!isToggled)
     setTotalCalls(0)
   }
-
+  console.log(isToggled)
   const openModal = (id) => {
     if (isToggled) {
       setSelectedUser(id)
@@ -672,7 +590,7 @@ const Summary = () => {
     setSelectedCustomer(null)
     setSelectedUser(null)
   }
-
+  console.log(customerSummary)
   return (
     <div className="flex flex-col h-full">
       {loading && (
@@ -696,22 +614,13 @@ const Summary = () => {
           <h2 className="text-xl font-semibold leading-tight">Branches</h2>
 
           <div className="flex">
-            <div className="flex md:w-1/4">
-              <select
-                onChange={handleChange}
-                className="border border-gray-300 rounded-md px-2  mr-2 focus:outline-none min-w-[120px] cursor-pointer"
-              >
-                {branch && branch.length > 1 ? (
-                  <option value="All">All</option>
-                ) : (
-                  ""
-                )}
-                {branch?.map((branch) => (
-                  <option key={branch._id} value={branch._id}>
-                    {branch.branchName}
-                  </option>
-                ))}
-              </select>
+            <div className="flex md:w-1/4 gap-2">
+              <BranchDropdown
+                branches={branch}
+                onBranchChange={handleBranchChange}
+                branchSelected={selectedBranch}
+              />
+
               <input
                 value={searchTerm}
                 onChange={(e) => {
@@ -723,37 +632,26 @@ const Summary = () => {
               />
             </div>
 
-            <div className=" flex flex-grow justify-end">
-              <button
-                onClick={toggle}
-                className={`${
-                  isToggled ? "bg-green-500" : "bg-gray-300"
-                } w-12 h-6 flex items-center rounded-full p-0 mr-2 transition-colors duration-300`}
-              >
-                <div
+            <div className=" flex flex-grow justify-end items-center">
+              <div className="flex gap-2">
+                <span>{isToggled ? "User" : "Customer"}</span>
+                <button
+                  onClick={toggle}
                   className={`${
-                    isToggled ? "translate-x-6" : "translate-x-0"
-                  } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                ></div>
-              </button>
+                    isToggled ? "bg-green-500" : "bg-gray-300"
+                  } w-12 h-6 flex items-center rounded-full p-0 mr-2 transition-colors duration-300`}
+                >
+                  <div
+                    className={`${
+                      isToggled ? "translate-x-6" : "translate-x-0"
+                    } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                  ></div>
+                </button>
+              </div>
+
               {dates.startDate && (
                 <MyDatePicker setDates={setDates} dates={dates} />
               )}
-              {/* <span className="text-gray-600 mr-4 font-bold">
-                Expired Customer Calls
-              </span> */}
-              {/* <button
-                onClick={callstoggle}
-                className={`${
-                  isCallsToggled ? "bg-green-500" : "bg-gray-300"
-                } w-14 h-6 flex items-center rounded-full p-0 transition-colors duration-300`}
-              >
-                <div
-                  className={`${
-                    isCallsToggled ? "translate-x-8" : "translate-x-0"
-                  } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                ></div>
-              </button> */}
             </div>
           </div>
         </div>
@@ -892,8 +790,12 @@ const Summary = () => {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50  items-center justify-center z-50 h-screen p-8">
           <div className="w-full bg-white shadow-lg rounded md:px-8 md:py-3 flex flex-col  h-full ">
-            <div className="flex justify-center text-indigo-500 text-2xl">
-              {customerCalls.customerName}
+            <div className="flex justify-center text-indigo-500 text-2xl gap-2">
+              {/* {isToggled ? selectedUser : customerCalls.customerName}call summary */}
+              <span>
+                {isToggled ? selectedUser : customerCalls.customerName}
+              </span>
+              <span>Call Summary</span>
             </div>
 
             <hr className="border-t-2 border-gray-300 m-1" />
@@ -970,7 +872,6 @@ const Summary = () => {
                   style={{
                     background: `linear-gradient(135deg, rgba(255, 255, 1, 1), rgba(255, 255, 128, 1))`
                   }}
-                
                 />
               )}
               {!isToggled && (
@@ -1253,33 +1154,9 @@ const Summary = () => {
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {call?.attendeddetails?.name}
-                              {/* {Array.isArray(call?.formdata?.attendedBy)
-                                  ? call?.formdata?.attendedBy
-                                      .map(
-                                        (attendee) =>
-                                          attendee?.callerId?.name ||
-                                          attendee?.name
-                                      )
-                                      .join(", ")
-                                  : call?.formdata?.attendedBy?.callerId
-                                      ?.name ||
-                                    call?.formdata?.attendedBy ||
-                                    call?.formdata?.attendedBy?.name} */}
                             </td>
                             <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                               {call?.completedbydetails?.name}
-                              {/* {call?.formdata?.status === "solved"
-                                  ? Array.isArray(call?.formdata?.completedBy)
-                                    ? call?.formdata?.completedBy.map(
-                                        (attendee) =>
-                                          attendee?.callerId?.name ||
-                                          attendee?.name
-                                      )
-                                    : call?.formdata?.completedBy?.callerId
-                                        ?.name ||
-                                      call?.formdata?.completedBy ||
-                                      call?.formdata?.completedBy?.name
-                                  : ""} */}
                             </td>
                           </tr>
                           <tr
@@ -1298,7 +1175,7 @@ const Summary = () => {
                               colSpan="4"
                               className="py-2 px-8 text-sm text-black text-left"
                             >
-                              <strong>Description:</strong>{" "}
+                              <strong>Descriptions:</strong>{" "}
                               {call?.formdata?.description || "N/A"}
                             </td>
 

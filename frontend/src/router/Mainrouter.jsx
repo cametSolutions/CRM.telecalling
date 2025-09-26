@@ -42,8 +42,7 @@ const Mainrouter = ({ headerHeight }) => {
   ]
   return (
     <div
-      className="overflow-auto h-full"
-    
+      className="overflow-auto h-full " 
     >
       <Routes>
         <Route path="/" element={<Login />} />
