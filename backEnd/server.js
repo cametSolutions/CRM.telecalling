@@ -478,7 +478,7 @@ app.use((err, req, res, next) => {
   res.status(500).send("Something broke!")
 })
 
-if (process.env.VITE_NODE_ENV === "production") {
+if (process.env.NODE_ENV === "production") {
   const __dirname = path.resolve()
   //  const parentDir = path.join(__dirname ,'..');
   const parentDir = path.join(__dirname, "..")
