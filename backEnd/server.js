@@ -29,10 +29,8 @@ const { Staff, Admin } = models
 const app = express()
 dotenv.config()
 const server = http.createServer(app)
-
 // Running port configuration
 const PORT = process.env.PORT
-
 // MongoDB connection getting from config/db.js
 connectDB()
 
@@ -480,7 +478,7 @@ app.use((err, req, res, next) => {
   res.status(500).send("Something broke!")
 })
 
-if (process.env.NODE_ENV === "production") {
+if (process.env.VITE_NODE_ENV === "production") {
   const __dirname = path.resolve()
   //  const parentDir = path.join(__dirname ,'..');
   const parentDir = path.join(__dirname, "..")
