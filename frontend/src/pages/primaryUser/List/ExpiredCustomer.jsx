@@ -925,8 +925,8 @@ const ExpiredCustomer = () => {
                                     : "/staff/masters/customerEdit",
                                   {
                                     state: {
-                                      customer,
-                                      selected: item,
+                                      customerId:customer._id,
+                                      
                                       index,
                                       navigatebackto:
                                         user.role === "Admin"

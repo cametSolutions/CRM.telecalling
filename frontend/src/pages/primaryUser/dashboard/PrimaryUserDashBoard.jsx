@@ -516,7 +516,7 @@ export default function PrimaryUserDashBoard() {
             <div className="p-4 rounded-lg shadow-md flex-1 flex flex-col gap-4 group  border-l-4 border-purple-500 relative min-h-[500px] md:min-h-fit bg-white ">
               {/* Admin Popup */}
               {user?.role === "Admin" && (
-                <div className="md:absolute md:left-1/2 md:top-1/4 md:-translate-x-1/2 md:-translate-y-1/2 md:inset-auto sm:w-[90%] border bg-white border-gray-300 rounded shadow-lg p-4 text-sm hidden group-hover:block z-40 m-4 md:m-0  max-h-[90vh] md:max-h-96">
+                <div className="md:absolute md:left-1/2 md:top-1/4 md:-translate-x-1/2 md:-translate-y-1/2 md:inset-auto sm:w-[90%] border bg-white border-gray-300 rounded shadow-lg p-4 text-sm hidden group-hover:block z-30 m-4 md:m-0  max-h-[90vh] md:max-h-96">
                   <h3 className="font-bold text-center text-purple-700">
                     Update Achievers
                   </h3>

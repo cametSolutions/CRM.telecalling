@@ -1,8 +1,10 @@
+import { useMemo } from "react"
 import CustomerAdd from "../../../components/secondaryUser/CustomerAdd"
 import { useLocation, useNavigate } from "react-router-dom"
 import api from "../../../api/api"
 import { removeSearch } from "../../../../slices/search"
 import { useDispatch } from "react-redux"
+import UseFetch from "../../../hooks/useFetch"
 import { toast } from "react-toastify"
 
 function CustomerEdit() {
@@ -11,12 +13,14 @@ function CustomerEdit() {
   const dispatch = useDispatch()
   const navigate = useNavigate()
   const location = useLocation()
-  // const customer = location.state?.customer
-  // const selected = location.state?.selected
-  // const index = location.state?.index
-  const { customer, selected, index, navigatebackto } = location.state || {}
 
-  const customerId = customer._id
+  const { customerId, index, navigatebackto } = location.state || {}
+  const { data: editedCustomer } = UseFetch(
+    `/customer/geteditedCustomer?customerid=${customerId}`
+  )
+  console.log(editedCustomer)
+  console.log(customerId)
+  console.log(index)
   function formatDateString(dateString) {
     const dateObject = new Date(dateString)
     const year = dateObject.getUTCFullYear()
@@ -25,21 +29,36 @@ function CustomerEdit() {
     return `${year}-${month}-${day}`
   }
 
-  // Iterate over the keys in the selected object
-  for (const key in selected) {
-    if (
-      selected.hasOwnProperty(key) &&
-      key.includes("Date") // Check for date fields
-    ) {
-      // Format the date
-      selected[key] = formatDateString(selected[key])
-    }
-  }
+  const updatedCustomer = useMemo(() => {
+    if (!editedCustomer) return null
 
-  const updatedCustomer = Object.assign({}, customer, {
-    selected: selected ? [selected] : [], // If selected is falsy, fall back to an empty object
-    index: index !== undefined ? index : null
-  })
+    return {
+      ...editedCustomer,
+      index: index !== undefined ? index : null,
+      selected: editedCustomer.selected?.map((item) => {
+        const updatedItem = { ...item }
+        for (const key in updatedItem) {
+          if (
+            Object.prototype.hasOwnProperty.call(updatedItem, key) &&
+            key.toLowerCase().includes("date") &&
+            updatedItem[key]
+          ) {
+            updatedItem[key] = formatDateString(updatedItem[key])
+          }
+        }
+        return updatedItem
+      })
+    }
+  }, [editedCustomer, index])
+
+  // const updatedCustomer = useMemo(() => {
+  //   if (!editedCustomer) return null
+  //   return {
+  //     ...editedCustomer,
+  //     index: index !== undefined ? index : null
+  //   }
+  // }, [editedCustomer, index])
+  console.log(updatedCustomer)
   const handleSubmit = async (customerData, tableData, index) => {
     try {
       const response = await api.post(
@@ -65,14 +84,17 @@ function CustomerEdit() {
       toast.error(error.response.data.message)
     }
   }
-console.log(updatedCustomer)
+  // console.log(updatedCustomer)
   return (
     <div>
-      <CustomerAdd
-        process="edit"
-        handleEditedData={handleSubmit}
-        customer={updatedCustomer}
-      />
+      {updatedCustomer && (
+        <CustomerAdd
+          navigatebackto={navigatebackto}
+          process="edit"
+          handleEditedData={handleSubmit}
+          customer={updatedCustomer}
+        />
+      )}
     </div>
   )
 }

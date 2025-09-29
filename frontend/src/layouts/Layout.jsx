@@ -1,4 +1,3 @@
-//import Footer from "../components/Footer/Footer"
 import { useEffect, useRef, useState } from "react"
 import AdminHeader from "../header/AdminHeader.jsx"
 import StaffHeader from "../header/StaffHeader.jsx"
@@ -20,13 +19,13 @@ const Layout = () => {
       setHeaderHeight(headerRef.current.offsetHeight)
     }
   }, [location.pathname]) // Update height on route change
- 
+ console.log(headerHeight)
   return (
-    <div className="h-screen flex flex-col ">
+    <div className="h-screen flex flex-col">
       <div ref={headerRef} className="sticky top-0 z-50 flex-shrink-0">
         {/* Conditional Header */}
-        {adminHeader ? <AdminHeader /> : null}
-        {staffHeader ? <StaffHeader /> : null}
+        {adminHeader &&<AdminHeader /> }
+        {staffHeader &&<StaffHeader />}
       </div>
 
       {/* Main Content */}

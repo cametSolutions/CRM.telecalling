@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import debounce from "lodash.debounce"
 import io from "socket.io-client" // Import Socket.IO client
 import { FaSearch, FaPhone } from "react-icons/fa"
@@ -8,8 +8,8 @@ import { PropagateLoader } from "react-spinners"
 import UseFetch from "../../../hooks/useFetch"
 import BranchDropdown from "../../../components/primaryUser/BranchDropdown"
 import { getLocalStorageItem } from "../../../helper/localstorage"
-const socket = io("https://www.crm.camet.in")
-// const socket = io("http://localhost:9000") // Adjust the URL to your backend
+// const socket = io("https://www.crm.camet.in")
+const socket = io("http://localhost:9000") // Adjust the URL to your backend
 
 const CallregistrationList = () => {
   const navigate = useNavigate()
@@ -31,6 +31,23 @@ const CallregistrationList = () => {
   // State to track the active filter
   const [activeFilter, setActiveFilter] = useState("All")
   const { data: branches } = UseFetch("/branch/getbranch")
+  const socketRef = useRef(null)
+  useEffect(() => {
+    if (!socketRef.current) {
+      socketRef.current = io("http://localhost:9000", {
+        transports: ["websocket"], //helps avoid polling issues
+        reconnection: true //auto reconnect if dropped
+      })
+    }
+    const socket = socketRef.current
+    socket.on("connect", () => {
+      console.log("Connected", socket.id)
+    })
+    socket.on("disconnect", () => {
+      socket.off("connect")
+      socket.off("disconnect")
+    })
+  }, [])
   useEffect(() => {
     if (branches && branches.length > 0) {
       const userData = getLocalStorageItem("user")
@@ -43,7 +60,7 @@ const CallregistrationList = () => {
       setUser(userData)
     }
   }, [branches])
-console.log("H")
+  console.log("H")
   const filterCallData = useCallback(
     (calls) => {
       const allCallRegistrations = calls.flatMap(
@@ -89,6 +106,7 @@ console.log("H")
       socket.on("updatedCalls", ({ mergedCalls, user }) => {
         if (users.role === "Admin") {
           setCallList(mergedCalls)
+          console.log(mergedCalls)
         } else {
           const userBranchName = new Set(
             users?.selected?.map((branch) => branch.branchName)
@@ -125,10 +143,10 @@ console.log("H")
         }
       })
       //Cleanup the socket connection when the component unmounts
-      return () => {
-        socket.off("updatedCalls")
-        socket.disconnect()
-      }
+      // return () => {
+      //   socket.off("updatedCalls")
+      //   socket.disconnect()
+      // }
     }
   }, [users])
   const handleSearch = debounce((search) => {
@@ -306,9 +324,8 @@ console.log("H")
     return `${hrs} hr ${mins} min ${secs} sec`
   }
 
- 
   return (
-    <div className="container mx-auto p-2  md:p-5 bg-white">
+    <div className="mx-auto p-2  md:p-5 bg-white">
       <div className="w-auto shadow-lg rounded p-4 pt-1 h-full bg-neutral-50 ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
           {/* Search Bar for large screens */}

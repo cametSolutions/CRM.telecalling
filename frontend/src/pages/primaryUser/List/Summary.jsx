@@ -602,7 +602,6 @@ const Summary = () => {
           />
         </div>
       )}
-
       <div className="md:px-5 lg:px-6 ">
         <div className="flex justify-center text-2xl font-semibold ">
           <h1 className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-red-500 to-pink-600">

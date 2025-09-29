@@ -26,45 +26,65 @@ export const GetscrollCustomer = async (req, res) => {
     let branchId
 
     if (loggeduserBranches) {
+console.log("loggeduserBranches:",typeof loggeduserBranches,loggeduserBranches);
       branchId = new mongoose.Types.ObjectId(loggeduserBranches);
+console.log("branchId:", branchId);
     }
 
 
     // Build search query
-    let searchQuery = {};
+    let searchQuery
     if (search) {
       const regex = new RegExp("^" + search, "i");
-
+      // searchQuery = {
+      //   $or: [
+      //     { $text: { $search: search } }, // customerName text index
+      //     { mobile: search },             // mobile index
+      //     { "selected.licensenumber": Number(search) } // selected.licensenumber index
+      //   ]
+      // };
       searchQuery = {
         $or: [
-          { customerName: regex },
-          { mobile: typeof search === "string" ? regex : undefined },
-          {
-            $expr: {
-              $gt: [
-                {
-                  $size: {
-                    $filter: {
-                      input: "$selected",
-                      as: "item",
-                      cond: {
-                        $regexMatch: {
-                          input: { $toString: "$$item.licensenumber" },
-                          regex: regex
-                        }
-                      }
-                    }
-                  }
-                },
-                0
-              ]
-            }
-          }
-
-
-        ].filter(Boolean), // removes undefined if any
+          { $text: { $search: search } }, // text index
+          { mobile: search },             // mobile index
+          ...(!isNaN(Number(search))
+            ? [{ "selected.licensenumber": Number(search) }]
+            : [])                     // only include if valid number
+        ]
       };
+
+
+      // searchQuery = {
+      //   $or: [
+      //     { customerName: regex },
+      //     { mobile: typeof search === "string" ? regex : undefined },
+      //     {
+      //       $expr: {
+      //         $gt: [
+      //           {
+      //             $size: {
+      //               $filter: {
+      //                 input: "$selected",
+      //                 as: "item",
+      //                 cond: {
+      //                   $regexMatch: {
+      //                     input: { $toString: "$$item.licensenumber" },
+      //                     regex: regex
+      //                   }
+      //                 }
+      //               }
+      //             }
+      //           },
+      //           0
+      //         ]
+      //       }
+      //     }
+
+
+      //   ].filter(Boolean), // removes undefined if any
+      // };
     }
+
     const customers = await Customer.aggregate([
       {
         //match search+branch access at the same time
@@ -140,7 +160,7 @@ export const GetscrollCustomer = async (req, res) => {
 
 
   } catch (error) {
-    console.log("error:", error.message)
+    console.log("error:", error)
     return res.status(500).json({ message: "Internal server error" })
   }
 }
@@ -724,6 +744,7 @@ export const CustomerRegister = async (req, res) => {
       customerData.partner && customerData.partner.trim() !== ""
         ? customerData.partner
         : null
+console.log('tabledata',tabledata)
     const customer = new Customer({
       customerName,
       address1,
@@ -760,12 +781,14 @@ export const CustomerRegister = async (req, res) => {
       message: "Customer created successfully"
     })
   } catch (error) {
-    console.log("error:", error.message)
+    console.log("error:", error)
     res.status(500).json({ message: "server error" })
   }
 }
 export const CustomerEdit = async (req, res) => {
   const { customerData, tableData } = req.body
+console.log("customemrda",customerData)
+return
 
   const { customerid, index } = req.query
 
@@ -3153,6 +3176,23 @@ export const Getleavemaster = async (req, res) => {
       return res.status(200).json({ message: "Leave master found", data: leaveMaster })
     }
   } catch (error) {
+    console.log("error", error.message)
+  }
+}
+export const GeteditedCustomer = async (req, res) => {
+  try {
+    const { customerid } = req.query
+    if (!customerid) {
+      return res.status(400).json({ message: "customer id is required" })
+    }
+    const id = new mongoose.Types.ObjectId(customerid)
+    const customer = await Customer.findById(id)
+
+    if (customer) {
+      return res.status(200).json({ message: "customer found", data: customer })
+    }
+  } catch (error) {
+
     console.log("error", error.message)
   }
 }

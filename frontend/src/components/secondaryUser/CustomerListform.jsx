@@ -87,7 +87,7 @@ const CustomerListform = () => {
 
     return null
   }, [selectedBranch, apiSearchTerm, pages])
-console.log
+console.log(selectedBranch)
   const { data: list, loading: scrollLoading } = UseFetch(url)
   // const companybranches = useSelector((state) => state.companyBranch.branches)
   useEffect(() => {
@@ -476,8 +476,8 @@ console.log(searchAfterData)
                                   : "/staff/masters/customerEdit",
                                 {
                                   state: {
-                                    customer: customer,
-                                    selected: item,
+                                    customerId: customer._id,
+                                    
                                     index: itemIndex
                                   }
                                 }

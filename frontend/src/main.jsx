@@ -1,4 +1,3 @@
-
 import ReactDOM from "react-dom/client"
 import { BrowserRouter } from "react-router-dom"
 import { ToastContainer } from "react-toastify"
@@ -10,25 +9,24 @@ import "./tailwind.css"
 import Layout from "./layouts/Layout"
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <>
+  
     <BrowserRouter>
       <Provider store={store}>
         <Layout />
       </Provider>
+      <ToastContainer
+        theme="dark"
+        position="top-right"
+        autoClose={2000}
+        hideProgressBar={false}
+        closeOnClick
+        pauseOnHover
+        draggable
+        pauseOnFocusLoss
+        newestOnTop
+        rtl={false}
+        icon
+      />
     </BrowserRouter>
-    <ToastContainer
-      theme="dark"
-      position="top-right"
-      autoClose={2000}
-      hideProgressBar={false}
-      closeOnClick
-      pauseOnHover
-      draggable
-      pauseOnFocusLoss
-      newestOnTop
-      rtl={false}
-      icon
-    
-    />
-  </>
+  
 )
