@@ -21,6 +21,7 @@ const Login = () => {
   } = useForm()
   const navigate = useNavigate()
   const { data: branches } = UseFetch("/branch/getBranch")
+
   const onSubmit = async (data) => {
     try {
       setLoading(true)
@@ -28,20 +29,8 @@ const Login = () => {
       const datas = await response.data
       const { token, User } = datas
       if (response.status === 200) {
-        toast.success(response.data.message, {
-          icon: "🚀",
-          style: {
-            backgroundColor: "#fff", // White background
-            color: "#000", // Black text for better contrast
-            boxShadow:
-              "0px 4px 10px rgba(0, 0, 0, 0.3), 0px 1px 3px rgba(0, 0, 0, 0.1)", // 3D shadow effect
-            borderRadius: "8px", // Rounded corners for a polished look
-            padding: "10px 15px", // Comfortable padding
-            fontWeight: "bold" // Bold text for prominence
-          }
-        })
         setLocalStorageItem("authToken", token)
-        setLocalStorageItem("user",User)
+        setLocalStorageItem("user", User)
         const allcompanybranches = branches.map((b) => b._id)
         // Store in localStorage
         setLocalStorageItem("companybranches", allcompanybranches)
@@ -55,11 +44,23 @@ const Login = () => {
             navigate("/staff/dashBoard")
           }
         }, 1000)
+        toast.success(response.data.message, {
+          icon: "🚀",
+          style: {
+            backgroundColor: "#fff", // White background
+            color: "#000", // Black text for better contrast
+            boxShadow:
+              "0px 4px 10px rgba(0, 0, 0, 0.3), 0px 1px 3px rgba(0, 0, 0, 0.1)", // 3D shadow effect
+            borderRadius: "8px", // Rounded corners for a polished look
+            padding: "10px 15px", // Comfortable padding
+            fontWeight: "bold" // Bold text for prominence
+          }
+        })
       }
     } catch (error) {
       console.log(error)
       setLoading(false)
-      toast.error("invalid credentials")
+      toast.error("something went wrong")
       console.error(
         "Login failed:",
         error.response?.data?.message || error.message
