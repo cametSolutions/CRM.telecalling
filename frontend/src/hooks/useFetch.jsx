@@ -4,7 +4,8 @@ import { useEffect, useState } from "react"
 import { fetchDataFromApi } from "../api/fetchDataFromApi"
 
 const UseFetch = (url) => {
-console.log("H")
+console.log("url",url)
+
   const [refresh, setRefresh] = useState(false)
   const [data, setData] = useState(null)
   const [fulldateholiday, setfulldateHoliday] = useState(null)
@@ -22,7 +23,7 @@ console.log("H")
       setError(null)
 
       try {
-console.log("h")
+
         const result = await fetchDataFromApi(url)
 
         if (result) {
