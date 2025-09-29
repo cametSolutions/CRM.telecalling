@@ -6,11 +6,12 @@ import CallRegistration from "../model/secondaryUser/CallRegistrationSchema.js";
 const connectDB = async () => {
     try {
         const connect = await mongoose.connect(process.env.MONGO_URI)
-        // await Customer.syncIndexes()
-        await CallRegistration.syncIndexes()
-        console.log("Indexes are now created/updated")
         console.log(`MongoDB is connected ${connect.connection.host}`)
-        // Create indexes after successful connection
+        // await Customer.syncIndexes()
+        // await CallRegistration.syncIndexes()
+        // console.log("Indexes are now created/updated")
+        // console.log(`MongoDB is connected ${connect.connection.host}`)
+        // // Create indexes after successful connection
         await ensureIndexes()
 
     } catch (error) {

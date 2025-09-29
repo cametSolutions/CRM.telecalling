@@ -327,7 +327,7 @@ export const UpdateUserandAdmin = async (req, res) => {
 
 export const Login = async (req, res) => {
   const { emailOrMobile, password } = req.body
-
+console.log(emailOrMobile,password)
   try {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     let user
@@ -342,10 +342,12 @@ export const Login = async (req, res) => {
       }
     } else {
       // If it's a mobile number
-
+console.log("oustside")
       user = await Admin.findOne({ mobile: emailOrMobile }).lean()
+console.log("user",user)
       if (!user) {
         user = await Staff.findOne({ mobile: emailOrMobile }).lean()
+
       }
     }
     if (!user) {
