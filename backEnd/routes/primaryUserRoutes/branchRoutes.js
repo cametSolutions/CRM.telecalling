@@ -9,7 +9,7 @@ import authMiddleware from "../../middleware/authMiddleware.js"
 const router = express.Router()
 
 router.post("/branchRegistration", authMiddleware, BranchRegister)
-router.get("/getBranch", authMiddleware, Getbranch)
+router.get("/getBranch",Getbranch)
 router.post("/branchEdit", authMiddleware, BranchEdit)
 
 export default router
