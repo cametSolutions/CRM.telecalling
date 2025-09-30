@@ -28,6 +28,17 @@ const Login = () => {
       setLoading(true)
       const response = await api.post(`/auth/login`, data)
       const datas = await response.data
+      if (response.status !== 200) {
+        toast.error("Login failed")
+        setLoading(false)
+        return
+      }
+      const allcompanybranches = branches?.map((b) => b._id) || []
+      if (allcompanybranches && allcompanybranches.length === 0) {
+        toast.error("No branches found for your company,cannot login")
+        setLoading(false)
+        return
+      }
       console.log("uuuu")
       const { token, User } = datas
       if (response.status === 200) {
@@ -46,7 +57,7 @@ const Login = () => {
         })
         localStorage.setItem("authToken", token)
         localStorage.setItem("user", JSON.stringify(User))
-        const allcompanybranches = branches.map((b) => b._id)
+
         console.log(allcompanybranches)
         // Store in localStorage
         setLocalStorageItem("companybranches", allcompanybranches)

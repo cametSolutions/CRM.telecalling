@@ -375,6 +375,16 @@ export const Login = async (req, res) => {
     res.status(500).json({ message: "Server error" })
   }
 }
+
+export const Logout = (req, res) => {
+  res.clearCookie("jwt_primary", {
+    httpOnly: true,
+    secure: true,      // use true in production (HTTPS)
+    sameSite: "strict" // must match options when you set cookie
+  });
+
+  res.status(200).json({ message: "Logged out successfully" });
+};
 export const Getadminpanelcount = async (req, res) => {
   try {
     const { quarter, month, year } = req.query
