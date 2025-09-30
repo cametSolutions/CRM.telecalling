@@ -6,7 +6,6 @@ import Tiles from "../../../components/common/Tiles" // Import the Tile componen
 import { useNavigate } from "react-router-dom"
 import { PropagateLoader } from "react-spinners"
 import UseFetch from "../../../hooks/useFetch"
-import { useDispatch } from "react-redux"
 import { setBranches } from "../../../../slices/companyBranchSlice"
 import BranchDropdown from "../../../components/primaryUser/BranchDropdown"
 import { getLocalStorageItem } from "../../../helper/localstorage"
@@ -30,13 +29,14 @@ const CallregistrationList = () => {
   const [todayCallsCount, setTodayCallsCount] = useState(0)
   const [solvedCallsCount, setTodaysSolvedCount] = useState(0)
 
+
   // State to track the active filter
   const [activeFilter, setActiveFilter] = useState("All")
   const { data: branches } = UseFetch("/branch/getbranch")
   useEffect(() => {
     if (branches && branches.length > 0) {
       const userData = getLocalStorageItem("user")
-    
+
       // const users = JSON.parse(userData)
       if (userData.role === "Admin") {
         const userbranch = branches.map((item) => item.branchName)
@@ -67,22 +67,6 @@ const CallregistrationList = () => {
     },
     [users]
   )
-
-  useEffect(() => {
-    if (callList && callList.length > 0 && users) {
-      const today = new Date().toISOString().split("T")[0]
-      setToday(today)
-      const stats = getCallStats(callList, users.name)
-
-      setUserCallstatus(stats)
-
-      setFilteredCalls(callList)
-
-      filterCallData(callList)
-      setLoading(false)
-    }
-  }, [callList])
-
   useEffect(() => {
     if (users) {
       const userId = users._id
@@ -133,6 +117,22 @@ const CallregistrationList = () => {
       }
     }
   }, [users])
+
+  useEffect(() => {
+    if (callList && callList.length > 0 && users) {
+      const today = new Date().toISOString().split("T")[0]
+      setToday(today)
+      const stats = getCallStats(callList, users.name)
+
+      setUserCallstatus(stats)
+
+      setFilteredCalls(callList)
+
+      filterCallData(callList)
+      setLoading(false)
+    }
+  }, [callList])
+
   const handleSearch = debounce((search) => {
     setSearchTerm(search)
     const searchText = search.toString().toLowerCase()
