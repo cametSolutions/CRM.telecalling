@@ -30,18 +30,14 @@ const LeaveSummary = () => {
   const [selectedBranch, setselectedBranch] = useState(null)
   const [leavesummaryList, setleaveSummary] = useState([])
   const listRef = useRef(null)
-  // const userData = localStorage.getItem("user")
-  // const user = JSON.parse(userData)
-  // API URL with selected year and month
-  const apiUrl = selectedBranch
-    ? `/auth/getsomeall?year=${selectedYear}&month=${selectedMonth}&selectedBranch=${selectedBranch}`
-    : null
 
+  // API URL with selected year and month
   const {
     data,
 
     loading
-  } = UseFetch(apiUrl)
+  } = UseFetch(`/auth/getsomeall?year=${selectedYear}&month=${selectedMonth}`
+    )
   useEffect(() => {
     const userData = getLocalStorageItem("user")
     setselectedBranch(userData.selected[0].branch_id)
@@ -404,11 +400,11 @@ const LeaveSummary = () => {
           User Leave Summary
         </h1>
         <div className="grid grid-cols-2 md:flex md:flex-row md:items-center md:justify-end gap-2 md:gap-4 mb-3 md:mr-8 mx-5">
-          <BranchDropdown
+          {/* <BranchDropdown
             branches={userBranches}
             onBranchChange={handleBranchChange}
             branchSelected={selectedBranch}
-          />
+          /> */}
           {/* Search Input */}
           <div className="w-full md:w-auto">
             <input
