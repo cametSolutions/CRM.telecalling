@@ -218,7 +218,7 @@ export default function StaffHeader() {
   const reports = [
     {
       to: "/staff/reports/summary",
-      label: "Summary",
+      label: " Call Summary",
       control: user?.permissions?.[0]?.Summary ?? false
     },
     {

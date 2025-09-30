@@ -116,6 +116,8 @@ export const GetscrollCustomer = async (req, res) => {
           industry: { $first: "$industry" },
           partner: { $first: "$partner" },
           state: { $first: "$state" },
+          registrationType: { $first: "$registrationType" },
+          gstNo: { $first: "$gstNo" },
           email: { $first: "$email" },
           mobile: { $first: "$mobile" },
           selected: { $push: "$selected" }

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react"
 import { Link, NavLink, useNavigate } from "react-router-dom"
 import { FiLogOut } from "react-icons/fi"
+import api from "../api/api"
 import { FaChevronRight, FaChevronDown } from "react-icons/fa"
 import { FaSignOutAlt } from "react-icons/fa"
 import { FaUserCircle } from "react-icons/fa" // Import the icon
@@ -52,16 +53,50 @@ export default function AdminHeader() {
     }
   }
 
-  const logout = () => {
-    // Clear the authentication token from local storage
-    localStorage.removeItem("authToken")
-    localStorage.removeItem("user")
-    localStorage.removeItem("timer")
-    localStorage.removeItem("wish")
-    toast.success("Logout successfully")
-    // Redirect to login page
-    navigate("/")
+  // const logout = async () => {
+  //   try {
+  //     await api.post("/auth/logout") // 🚀 Call backend to clear cookie
+  //     toast.success("Logout successfully")
+  //   } catch (err) {
+  //     console.error("Logout API failed:", err)
+  //   }
+  //   // Clear the authentication token from local storage
+  //   localStorage.removeItem("authToken")
+  //   localStorage.removeItem("user")
+  //   localStorage.removeItem("timer")
+  //   localStorage.removeItem("wish")
+
+  //   // Redirect to login page
+  //   navigate("/")
+  // }
+  const logout = async () => {
+    try {
+      const res = await api.post("/auth/logout") // Call backend
+
+      // ✅ Check if backend returned success
+      if (
+        res.status === 200 &&
+        res.data?.message === "Logged out successfully"
+      ) {
+        // Clear localStorage only after successful logout
+        localStorage.removeItem("authToken")
+        localStorage.removeItem("user")
+        localStorage.removeItem("timer")
+        localStorage.removeItem("wish")
+
+        toast.success("Logout successfully")
+
+        // Redirect to login page
+        navigate("/")
+      } else {
+        toast.error("Logout failed on server")
+      }
+    } catch (err) {
+      console.error("Logout API failed:", err)
+      toast.error("Logout failed, please try again")
+    }
   }
+
   const links = [
     // {to:"/admin/home",label:"Home"},
     { to: "/admin/dashBoard", label: "Dashboard" },
@@ -222,7 +257,7 @@ export default function AdminHeader() {
   const reports = [
     {
       to: "/admin/reports/summary",
-      label: "Summary"
+      label: " Call Summary"
     },
     {
       to: "/admin/reports/expiry-register",

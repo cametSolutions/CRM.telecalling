@@ -375,6 +375,16 @@ export const Login = async (req, res) => {
     res.status(500).json({ message: "Server error" })
   }
 }
+
+export const Logout = (req, res) => {
+  res.clearCookie("jwt_primary", {
+    httpOnly: true,
+    secure: true,      // use true in production (HTTPS)
+    sameSite: "strict" // must match options when you set cookie
+  });
+
+  res.status(200).json({ message: "Logged out successfully" });
+};
 export const Getadminpanelcount = async (req, res) => {
   try {
     const { quarter, month, year } = req.query
@@ -1133,7 +1143,8 @@ export const OnsiteApply = async (req, res) => {
 
 export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
   try {
-    const { year, month } = req.query || { year: yearParam, month: monthParam }
+    const { year, month, selectedBranch } = req.query || { year: yearParam, month: monthParam }
+    console.log("selectedBranch", selectedBranch)
 
     function getSundays(year, month) {
       const sundays = []
@@ -1220,12 +1231,16 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
     const sundayFulldate = createDates(sundays, month, year)
     const startDate = new Date(Date.UTC(year, month - 1, 1))
     const endDate = new Date(Date.UTC(year, month, 0))
-
+    const matchStage = {
+      isVerified: true,
+    };
+    if (selectedBranch) {
+      matchStage["selected.branch_id"] = new mongoose.Types.ObjectId(selectedBranch)
+    }
     const users = await Staff.aggregate([
       {
-        $match: {
-          isVerified: true
-        }
+        $match: matchStage
+
       },
       {
         $project: {
