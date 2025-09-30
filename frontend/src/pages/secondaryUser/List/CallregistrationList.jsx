@@ -6,6 +6,8 @@ import Tiles from "../../../components/common/Tiles" // Import the Tile componen
 import { useNavigate } from "react-router-dom"
 import { PropagateLoader } from "react-spinners"
 import UseFetch from "../../../hooks/useFetch"
+import { useDispatch } from "react-redux"
+import { setBranches } from "../../../../slices/companyBranchSlice"
 import BranchDropdown from "../../../components/primaryUser/BranchDropdown"
 import { getLocalStorageItem } from "../../../helper/localstorage"
 const socket = io("https://www.crm.camet.in")
@@ -34,6 +36,7 @@ const CallregistrationList = () => {
   useEffect(() => {
     if (branches && branches.length > 0) {
       const userData = getLocalStorageItem("user")
+    
       // const users = JSON.parse(userData)
       if (userData.role === "Admin") {
         const userbranch = branches.map((item) => item.branchName)
@@ -43,7 +46,6 @@ const CallregistrationList = () => {
       setUser(userData)
     }
   }, [branches])
-console.log("H")
   const filterCallData = useCallback(
     (calls) => {
       const allCallRegistrations = calls.flatMap(
@@ -306,7 +308,6 @@ console.log("H")
     return `${hrs} hr ${mins} min ${secs} sec`
   }
 
- 
   return (
     <div className="container mx-auto p-2  md:p-5 bg-white">
       <div className="w-auto shadow-lg rounded p-4 pt-1 h-full bg-neutral-50 ">

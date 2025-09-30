@@ -140,7 +140,6 @@ const CustomerAdd = ({
       )
 
       if (customer) {
-console.log(customer)
         if (customer.selected.length > 0) {
           setShowTable(true)
         }

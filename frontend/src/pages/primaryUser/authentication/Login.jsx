@@ -2,27 +2,21 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import api from "../../../api/api"
 import { useNavigate } from "react-router-dom"
-import { useDispatch } from "react-redux"
 import { FaSpinner } from "react-icons/fa"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons"
 import { toast } from "react-toastify"
-import { setLocalStorageItem } from "../../../helper/localstorage"
-import { setBranches } from "../../../../slices/companyBranchSlice.js"
-console.log("hhh")
-import UseFetch from "../../../hooks/useFetch"
+
 const Login = () => {
   const [passwordVisible, setPasswordVisible] = useState(false)
   const [loading, setLoading] = useState(false)
-  const dispatch = useDispatch()
   const {
     register,
     handleSubmit,
     formState: { errors }
   } = useForm()
   const navigate = useNavigate()
-  const { data: branches } = UseFetch("/branch/getBranch")
-  console.log(branches)
+
   const onSubmit = async (data) => {
     try {
       setLoading(true)
@@ -33,16 +27,9 @@ const Login = () => {
         setLoading(false)
         return
       }
-      const allcompanybranches = branches?.map((b) => b._id) || []
-      if (allcompanybranches && allcompanybranches.length === 0) {
-        toast.error("No branches found for your company,cannot login")
-        setLoading(false)
-        return
-      }
-      console.log("uuuu")
+     
       const { token, User } = datas
       if (response.status === 200) {
-        console.log("h")
         toast.success(response.data.message, {
           icon: "🚀",
           style: {
@@ -58,19 +45,11 @@ const Login = () => {
         localStorage.setItem("authToken", token)
         localStorage.setItem("user", JSON.stringify(User))
 
-        console.log(allcompanybranches)
-        // Store in localStorage
-        setLocalStorageItem("companybranches", allcompanybranches)
-        console.log("H")
-        dispatch(setBranches(allcompanybranches)) //companies all branches
-        console.log("hh")
         setTimeout(() => {
           if (User.role === "Admin") {
-            console.log("h")
             setLoading(false)
             navigate("/admin/dashBoard")
           } else if (User.role === "Staff" || User.role === "Manager") {
-            console.log("h")
             setLoading(false)
             navigate("/staff/dashBoard")
           }

@@ -42,7 +42,6 @@ const LeaveSummary = () => {
 
     loading
   } = UseFetch(apiUrl)
-console.log(selectedBranch)
   useEffect(() => {
     const userData = getLocalStorageItem("user")
     setselectedBranch(userData.selected[0].branch_id)
@@ -390,7 +389,6 @@ console.log(selectedBranch)
       saveAs(blob, "Attendance_Report.xlsx")
     })
   }
-  console.log(leavesummaryList)
   return (
     <div className="w-full flex flex-col h-full">
       {loading && (
