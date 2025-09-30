@@ -13,7 +13,6 @@ export default function BranchDropdown({
   // Set the first branch as default when component mounts
   useEffect(() => {
     if (branches?.length > 0) {
-console.log(branchSelected)
       setSelectedBranch(branchSelected)
       // onBranchChange(branchSelected)
     }
@@ -34,21 +33,18 @@ console.log(branchSelected)
   }, [])
 
   const handleOptionClick = (branchId, branchName) => {
-    console.log(branchName)
-    console.log(branchId)
+   
     setSelectedBranch(branchId)
     onBranchChange(branchId, branchName)
     setIsOpen(false)
   }
 
   const getSelectedBranchName = () => {
-console.log(selectedBranch)
     if (selectedBranch === "All") return "All Branches"
     const branch = branches?.find((b) => b.id === selectedBranch)
     return branch?.branchName
   }
 
-  console.log(branches)
   return (
     <div className="relative min-w-48" ref={dropdownRef}>
       {/* Dropdown Button */}

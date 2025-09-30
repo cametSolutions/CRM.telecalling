@@ -38,7 +38,6 @@ const Summary = () => {
       dates.endDate &&
       `/auth/staffcallList?startDate=${dates.startDate}&endDate=${dates.endDate}`
   )
-  console.log(staffCallList)
   useEffect(() => {
     if (branches && branches.length > 0) {
       const userData = localStorage.getItem("user")
@@ -52,9 +51,7 @@ const Summary = () => {
         ])
       )
     }
-    console.log("dh")
   }, [branches])
-  console.log(branch)
   useEffect(() => {
     if (staffCallList) {
       setIndividualCallList(staffCallList)
@@ -67,17 +64,14 @@ const Summary = () => {
 
     // Last date of the month
   }, [])
-  console.log(userList)
   useEffect(() => {
     if (dates.startDate && dates.endDate && selectedBranch) {
       const fetchUserList = async () => {
         try {
           const query = `startDate=${dates.startDate}&endDate=${dates.endDate}`
-          console.log(query)
           const response = await api.get(`/auth/getStaffCallStatus?${query}`)
 
           const result = response.data.data
-          console.log(result)
           if (result) {
             const processDataAndUpdateList = (data) => {
               setUserList((prevList) => {
@@ -126,7 +120,6 @@ const Summary = () => {
                     })
                   }
                 })
-                console.log(updatedList)
                 return updatedList
               })
               setcacheduserSummary((prevList) => {
@@ -184,14 +177,12 @@ const Summary = () => {
         }
       }
       if (isToggled) {
-        console.log("Hd")
 
         setTotalCalls(0)
         fetchUserList()
         setLoading(true)
       } else {
         if (callList && callList.length > 0 && selectedBranch) {
-          console.log(callList)
           const customerSummaries = callList
             .filter(
               (customer) =>
@@ -377,7 +368,6 @@ const Summary = () => {
     }
     if (isModalOpen && selectedUser) {
       const today = new Date().toISOString().split("T")[0] // Today's date in 'YYYY-MM-DD' format
-      console.log(indiviDualCallList)
       const filteredCalls = indiviDualCallList
         .map((item) => {
           const matchedCallregistration = item.callregistration.filter((call) =>
@@ -446,7 +436,6 @@ const Summary = () => {
           today.getDate() === date.getDate()
         )
       }
-      console.log(filteredCalls)
       // Sort calls
       const sortedCalls = filteredCalls
         .map((call) => {
@@ -574,7 +563,6 @@ const Summary = () => {
     setIsToggled(!isToggled)
     setTotalCalls(0)
   }
-  console.log(isToggled)
   const openModal = (id) => {
     if (isToggled) {
       setSelectedUser(id)
@@ -590,7 +578,6 @@ const Summary = () => {
     setSelectedCustomer(null)
     setSelectedUser(null)
   }
-  console.log(customerSummary)
   return (
     <div className="flex flex-col h-full">
       {loading && (

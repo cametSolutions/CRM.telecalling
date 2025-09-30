@@ -52,7 +52,6 @@ const DemoFollowUp = () => {
       selectedCompanyBranch &&
       `/lead/getrespecteddemolead?userid=${loggedUser._id}&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
   )
-  console.log(selectedCompanyBranch)
   const { data: branches } = UseFetch("/branch/getBranch")
 
   useEffect(() => {
@@ -69,11 +68,9 @@ const DemoFollowUp = () => {
           setloggedUserBranch(loggeduserbranches)
           setselectedCompanyBranch(loggeduserbranches[0].value)
         } else {
-          console.log(branches)
           const loggeduserbranches = branches.map((item) => {
             return { value: item._id, label: item.branchName }
           })
-          console.log(loggeduserbranches)
           setloggedUserBranch(loggeduserbranches)
           setselectedCompanyBranch(loggeduserbranches[0].value)
         }
@@ -105,10 +102,8 @@ const DemoFollowUp = () => {
   }, [branches])
   useEffect(() => {
     if (ownFollowUp) {
-      console.log("d")
       refreshHook()
     } else {
-      console.log("g")
       setTableData([])
     }
   }, [ownFollowUp])
@@ -198,9 +193,7 @@ const DemoFollowUp = () => {
       clearTimeout(handler) // cleanup
     }
   }, [input])
-  console.log(demoDetails)
   const handleDemoshow = (demo, item) => {
-    console.log(demo)
     const currentDate = new Date()
 
     setDemodetails((prev) => ({
@@ -217,7 +210,6 @@ const DemoFollowUp = () => {
     }))
     setIsOpen(true)
   }
-  console.log(demolead)
   const handleDemofollowup = async () => {
     try {
       const demofollowuperror = {}
@@ -232,7 +224,6 @@ const DemoFollowUp = () => {
         setDemofollowersubmitError(demofollowuperror)
         return
       }
-      console.log(demoDetails)
 
       setLoader(true)
 
@@ -252,8 +243,7 @@ const DemoFollowUp = () => {
       console.log(error)
     }
   }
-  console.log(demolead)
-  console.log(demoDetails)
+ 
   return (
     <div className="h-full flex flex-col ">
       {loading && (

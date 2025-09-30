@@ -65,7 +65,6 @@ function CustomerEdit() {
       toast.error(error.response.data.message)
     }
   }
-console.log(updatedCustomer)
   return (
     <div>
       <CustomerAdd

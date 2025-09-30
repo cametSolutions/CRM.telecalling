@@ -21,7 +21,6 @@ export default function OwnLeadList() {
   useEffect(() => {
     setTableData(ownedlead)
   }, [ownedlead])
-console.log(loggedUser)
   return (
     <div className="h-full flex flex-col">
       <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3">

@@ -9,7 +9,7 @@ if (ENV === "production") {
 } else if (ENV === "testing") {
   baseURL = "https://www.crmtest.camet.in/api"
 }
-console.log(baseURL)
+
 
 const api = axios.create({
   baseURL,
