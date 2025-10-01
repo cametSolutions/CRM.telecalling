@@ -5,6 +5,7 @@ import BarLoader from "react-spinners/BarLoader"
 import LeadTaskComponent from "../../../components/primaryUser/LeadTaskComponent"
 import { useState, useEffect} from "react"
 const LeadTask = () => {
+console.log("d")
   const location = useLocation()
   const pagePath = location.pathname
   const [loggedUser, setloggedUser] = useState(null)
@@ -71,6 +72,7 @@ const LeadTask = () => {
     }
   }, [selectedCompanyBranch, loggedUser, type])
   const { data, loading, refreshHook } = UseFetch(url)
+console.log(data)
   const formatdate = (date) => new Date(date).toISOString().split("T")[0]
   const getLocalDate = (date) => {
     const local = new Date(date)
@@ -152,29 +154,31 @@ const LeadTask = () => {
           })
         })
 
-        const filtereddatepending = finalOutput
-          .filter(
-            (item) =>
-              formatdate(item.matchedlog.allocationDate) <=
-              getLocalDate(dates.endDate)
-          )
-          .sort(
-            (a, b) =>
-              new Date(formatdate(a.matchedlog.allocationDate)) -
-              new Date(formatdate(b.matchedlog.allocationDate))
-          )
+        // const filtereddatepending = finalOutput
+        //   .filter(
+        //     (item) =>
+        //       formatdate(item.matchedlog.allocationDate) <=
+        //       getLocalDate(dates.endDate)
+        //   )
+        //   .sort(
+        //     (a, b) =>
+        //       new Date(formatdate(a.matchedlog.allocationDate)) -
+        //       new Date(formatdate(b.matchedlog.allocationDate))
+        //   )
 
-        const totalNetAmount = filtereddatepending.reduce((total, lead) => {
-          const leadTotal =
-            lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) || 0
-          return total + leadTotal
-        }, 0)
+        // const totalNetAmount = filtereddatepending.reduce((total, lead) => {
+        //   const leadTotal =
+        //     lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) || 0
+        //   return total + leadTotal
+        // }, 0)
 
         // then store it in state
-        setnetTotalAmount(totalNetAmount)
-        setFilteredData(filtereddatepending)
+        // setnetTotalAmount(totalNetAmount)
+        setFilteredData(finalOutput)
       }
+console.log("H")
     } else if (data && !pending) {
+console.log("h")
       if (type === "followup") {
         const filteredClosedFollowup = data.followupLeads.filter(
           (item) => item.leadFollowupClosed === true

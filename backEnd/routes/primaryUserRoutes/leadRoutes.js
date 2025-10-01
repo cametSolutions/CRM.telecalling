@@ -16,7 +16,7 @@ import {
   GetdemoleadCount,
   GetrespectedprogrammingLead,
   UpdateOrleadallocationTask,
-  UpdateOrSubmittaskfollowByfollower,
+  UpdateOrSubmittaskByfollower,
   GetallReallocatedLead,
   UpdateLeadTask,
   updateReallocation,
@@ -55,6 +55,6 @@ router.get("/getrespectedleadprogramming", authMiddleware, Getrespectedprogrammi
 router.get("/demoleadcount", authMiddleware, GetdemoleadCount)
 router.post("/taskSubmission", authMiddleware, UpdateLeadTask)
 router.post("/demosubmitbyfollower", authMiddleware, UpdaeOrSubmitdemofollowByfollower)
-router.post("/tasksubmitbyfollower", authMiddleware, UpdateOrSubmittaskfollowByfollower)
+router.post("/tasksubmitbyfollower", authMiddleware, UpdateOrSubmittaskByfollower)
 
 export default router

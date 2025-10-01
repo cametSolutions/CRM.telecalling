@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { X, Calendar, FileText, AlertCircle } from "lucide-react"
 import React from "react"
 import { toast } from "react-toastify"
 import { PropagateLoader } from "react-spinners"
@@ -100,7 +101,6 @@ const LeadAllocationTable = () => {
     setShowFullEmail(false)
     setShowFullName(false)
     if (approvedToggleStatus === false) {
-
       setToggleLoading(true)
       const response = await api.get(
         `/lead/getallLead?Status=Approved&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
@@ -133,14 +133,12 @@ const LeadAllocationTable = () => {
 
         setSelectedAllocates(initialSelected)
       }
-
     } else {
       setToggleLoading(true)
       const response = await api.get(
         `/lead/getallLead?Status=Pending&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
       )
       if (response.status >= 200 && response.status < 300) {
-
         setSelectedAllocates({})
         setTableData(response.data.data)
         setapprovedToggleStatus(!approvedToggleStatus)
@@ -155,15 +153,50 @@ const LeadAllocationTable = () => {
       )
     )
   }
+  console.log(formData)
   const handleSubmit = async () => {
-    if (formData.allocationDescription === "") {
+    // sanitize all string fields
+    const cleanedData = Object.fromEntries(
+      Object.entries(formData).map(([key, value]) => [
+        key,
+        typeof value === "string" ? value.trim() : value
+      ])
+    )
+
+    // validate on cleaned data
+    if (!cleanedData.allocationDescription) {
       setValidateError((prev) => ({
         ...prev,
-        descriptionError: "Please fill it "
+        descriptionError: "Please fill it"
       }))
       return
     }
+    if (!cleanedData.allocationDate) {
+      setValidateError((prev) => ({
+        ...prev,
+        allocationDateError: "Please select a date"
+      }))
+      return
+    }
+    // console.log(formData)
+    // const cleanedData = Object.fromEntries(
+    //   Object.entries(formData).map(([key, value]) => [
+    //     key,
+    //     typeof value === "string" ? value.trim() : value
+    //   ])
+    // )
+    // console.log(cleanedData)
+    // if (!formData.allocationDescription.trim()) {
+    //   console.log(formData)
+    //   setValidateError((prev) => ({
+    //     ...prev,
+    //     descriptionError: "Please fill it "
+    //   }))
+    //   return
+    // }
 
+    console.log(cleanedData)
+    // return
     try {
       if (selectedAllocationType) {
         const selected = selectedAllocationType[selectedItem._id]
@@ -175,7 +208,7 @@ const LeadAllocationTable = () => {
             `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationType=${encodeURIComponent(
               selected
             )}&allocatedBy=${loggedUser._id}`,
-            { selectedItem, formData }
+            { selectedItem, cleanedData }
           )
           if (response.status >= 200 && response.status < 300) {
             setTableData(response.data.data)
@@ -186,7 +219,7 @@ const LeadAllocationTable = () => {
             `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationType=${encodeURIComponent(
               selected
             )}&allocatedBy=${loggedUser._id}`,
-            { selectedItem, formData }
+            { selectedItem, cleanedData }
           )
 
           if (response.status >= 200 && response.status < 300) {
@@ -206,6 +239,7 @@ const LeadAllocationTable = () => {
       console.log("error:", error.message)
     }
   }
+  console.log(formData)
   return (
     <div className="flex flex-col h-full">
       {loading && (
@@ -319,9 +353,7 @@ const LeadAllocationTable = () => {
                     <td className=" px-4 ">{item?.leadId}</td>
                     <td className="border border-b-0 border-t-0 border-gray-400 px-4 "></td>
 
-                    <td className="border border-b-0 border-t-0 border-gray-400 px-1 ">
-                    
-                    </td>
+                    <td className="border border-b-0 border-t-0 border-gray-400 px-1 "></td>
                     <td className="border border-b-0 border-t-0 border-gray-400 px-4 "></td>
                   </tr>
 
@@ -377,7 +409,7 @@ const LeadAllocationTable = () => {
                       )}
                     </td>
                     <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer bg-white">
-                        <button
+                      <button
                         onClick={() => {
                           const isAllocatedToeditable = item.activityLog.some(
                             (it) =>
@@ -388,7 +420,7 @@ const LeadAllocationTable = () => {
                           const isleadbyEditable =
                             item.activityLog.length === 1 &&
                             item.leadBy._id === loggedUser._id
-                     
+
                           loggedUser.role === "Admin"
                             ? navigate("/admin/transaction/lead/leadEdit", {
                                 state: {
@@ -598,90 +630,164 @@ const LeadAllocationTable = () => {
           </tbody>
         </table>
         {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40 ">
-            <div className="bg-white rounded-lg shadow-xl">
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg transform transition-all">
+              {/* Loading Bar */}
               {submitLoading && (
-                <BarLoader
-                  cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
-                  color="#4A90E2" // Change color as needed
-                />
+                <div className="h-1 bg-blue-500 rounded-t-2xl animate-pulse" />
               )}
-              <div className=" w-full md:w-72 p-4 grid grid-cols-1">
-                <h2 className="font-semibold text-lg text-gray-700">
+
+              {/* Header */}
+              <div className="relative border-b border-gray-200 px-6 py-5">
+                <button
+                  onClick={() => {
+                    setShowmodal(false)
+                    setFormData((prev) => ({
+                      ...prev,
+                      allocationDate: "",
+                      allocationDescription: ""
+                    }))
+                    setsubmitLoading(false)
+                  }}
+                  className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+                >
+                  <X size={20} />
+                </button>
+                <h2 className="text-2xl font-bold text-gray-800 mb-1">
                   Task Allocation
                 </h2>
-                <h2 className="font-semibold text-md text-gray-700">
-                  {` ${
-                    selectedAllocationType[selectedItem._id] + " of "
-                  }LEAD ID-${selectedLeadId}`}
-                </h2>
-                <div className="p-4 shadow-xl border border-gray-200 rounded-lg">
-                  <div>
-                    <label className="block text-left">Allocated Date</label>
-                    {selectedAllocationType[selectedItem._id] !== "followup" ? (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md font-medium">
+                    {selectedAllocationType[selectedItem._id]}
+                  </span>
+                  <span className="text-gray-500">•</span>
+                  <span className="text-gray-600 font-medium">
+                    LEAD ID-{selectedLeadId}
+                  </span>
+                </div>
+              </div>
+
+              {/* Form Content */}
+              <div className="p-6 space-y-5">
+                {/* Completion Date */}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <Calendar size={16} className="text-blue-500" />
+                    Completion Date
+                  </label>
+                  {selectedAllocationType[selectedItem._id] !== "followup" ? (
+                    <>
                       <input
                         type="date"
-                        className="py-1 border border-gray-300 mt-1 text-xl w-full focus:outline-none rounded-sm px-2 "
-                        onChange={(e) =>
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-gray-700"
+                        onChange={(e) => {
                           setFormData((prev) => ({
                             ...prev,
                             allocationDate: e.target.value
                           }))
-                        }
-                      />
-                    ) : (
-                      <input
-                        readOnly
-                        value={
-                          formData?.allocationDate
-                            ?.toLocaleDateString("en-GB")
-                            .split("/")
-                            .join("-") || ""
-                        }
-                        type="text"
-                        className="py-1 border border-gray-400 mt-1 text-xl  w-full focus:outline-none cursor-not-allowed rounded-sm px-2"
-                      />
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-left">Description</label>
-                    <textarea
-                      value={formData.allocationDescription || ""}
-                      onChange={(e) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          allocationDescription: e.target.value
-                        }))
-                        if (validateError.descriptionError) {
                           setValidateError((prev) => ({
                             ...prev,
-                            descriptionError: ""
+                            allocationDateError: ""
                           }))
-                        }
-                      }}
-                      className="py-1 px-2 border border-gray-400 mt-1 w-full focus:outline-none rounded-md "
-                      placeholder="Type Here...."
-                    ></textarea>
-                  </div>
-                  {validateError.descriptionError && (
-                    <p className="text-red-500 text-sm">
-                      {validateError.descriptionError}
-                    </p>
+                        }}
+                      />{" "}
+                      {validateError.allocationDateError && (
+                        <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 px-3 py-2 rounded-lg">
+                          <AlertCircle size={16} />
+                          <span>{validateError.allocationDateError}</span>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <input
+                      readOnly
+                      value={
+                        formData?.allocationDate
+                          ?.toLocaleDateString("en-GB")
+                          .split("/")
+                          .join("-") || ""
+                      }
+                      type="text"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                    />
                   )}
                 </div>
-                <div className="flex justify-center gap-4 text-white mt-5 md:mt-2">
+
+                {/* Description */}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                    <FileText size={16} className="text-blue-500" />
+                    Description
+                  </label>
+                  <textarea
+                    value={formData.allocationDescription || ""}
+                    onChange={(e) => {
+                      console.log(e.target.value)
+                      setFormData((prev) => ({
+                        ...prev,
+                        allocationDescription: e.target.value
+                      }))
+                      if (validateError.descriptionError) {
+                        setValidateError((prev) => ({
+                          ...prev,
+                          descriptionError: ""
+                        }))
+                      }
+                    }}
+                    rows="4"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none resize-none text-gray-700"
+                    placeholder="Provide detailed task description..."
+                  />
+                  {validateError.descriptionError && (
+                    <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 px-3 py-2 rounded-lg">
+                      <AlertCircle size={16} />
+                      <span>{validateError.descriptionError}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Info Message */}
+                <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                  <p className="text-xs text-blue-700 flex items-start gap-2">
+                    <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
+                    <span>
+                      Please ensure all information is accurate before
+                      submitting. This task will be assigned immediately.
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer Actions */}
+              <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 rounded-b-2xl">
+                <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
                   <button
-                    onClick={() => setShowmodal(false)}
-                    className="bg-gray-600 py-1 px-3 rounded-md hover:bg-gray-700 cursor-pointer"
+                    onClick={() => {
+                      setShowmodal(false)
+                      setFormData((prev) => ({
+                        ...prev,
+                        allocationDate: "",
+                        allocationDescription: ""
+                      }))
+                    }}
+                    disabled={submitLoading}
+                    className="w-full sm:w-auto px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    CLOSE
+                    Cancel
                   </button>
                   <button
                     onClick={handleSubmit}
-                    className="bg-blue-500 py-1 px-3 rounded-md hover:bg-blue-600 cursor-pointer"
+                    disabled={submitLoading}
+                    className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    SUBMIT
+                    {submitLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      "Submit Task"
+                    )}
                   </button>
                 </div>
               </div>
