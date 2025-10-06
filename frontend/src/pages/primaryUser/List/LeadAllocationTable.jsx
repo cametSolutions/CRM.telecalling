@@ -146,13 +146,15 @@ const LeadAllocationTable = () => {
       }
     }
   }
-  const handleSelectedAllocates = (item, value) => {
+  const handleSelectedAllocates = (item, value,label) => {
     setTableData((prevLeads) =>
       prevLeads.map((lead) =>
-        lead._id === item._id ? { ...lead, allocatedTo: value } : lead
+        lead._id === item._id ? { ...lead, allocatedTo: value,allocatedName:label } : lead
       )
     )
   }
+  console.log(tableData)
+  console.log(selectedItem)
   console.log(formData)
   const handleSubmit = async () => {
     // sanitize all string fields
@@ -240,6 +242,7 @@ const LeadAllocationTable = () => {
     }
   }
   console.log(formData)
+  console.log(approvedToggleStatus)
   return (
     <div className="flex flex-col h-full">
       {loading && (
@@ -468,7 +471,8 @@ const LeadAllocationTable = () => {
                               }))
                               handleSelectedAllocates(
                                 item,
-                                selectedOption.value
+                                selectedOption.value,
+                                selectedOption.label
                               )
                               setValidateError((prev) => ({
                                 ...prev,
@@ -629,15 +633,13 @@ const LeadAllocationTable = () => {
             )}
           </tbody>
         </table>
-        {showModal && (
+        {/* {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg transform transition-all">
-              {/* Loading Bar */}
               {submitLoading && (
                 <div className="h-1 bg-blue-500 rounded-t-2xl animate-pulse" />
               )}
 
-              {/* Header */}
               <div className="relative border-b border-gray-200 px-6 py-5">
                 <button
                   onClick={() => {
@@ -667,9 +669,7 @@ const LeadAllocationTable = () => {
                 </div>
               </div>
 
-              {/* Form Content */}
               <div className="p-6 space-y-5">
-                {/* Completion Date */}
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                     <Calendar size={16} className="text-blue-500" />
@@ -679,7 +679,7 @@ const LeadAllocationTable = () => {
                     <>
                       <input
                         type="date"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-gray-700"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-gray-700"
                         onChange={(e) => {
                           setFormData((prev) => ({
                             ...prev,
@@ -708,12 +708,11 @@ const LeadAllocationTable = () => {
                           .join("-") || ""
                       }
                       type="text"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
                     />
                   )}
                 </div>
 
-                {/* Description */}
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
                     <FileText size={16} className="text-blue-500" />
@@ -735,7 +734,7 @@ const LeadAllocationTable = () => {
                       }
                     }}
                     rows="4"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none resize-none text-gray-700"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none resize-none text-gray-700"
                     placeholder="Provide detailed task description..."
                   />
                   {validateError.descriptionError && (
@@ -745,8 +744,40 @@ const LeadAllocationTable = () => {
                     </div>
                   )}
                 </div>
+                {approvedToggleStatus && (
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                      <FileText size={16} className="text-blue-500" />
+                      Reason For Changing
+                    </label>
+                    <textarea
+                      value={formData.reason || ""}
+                      onChange={(e) => {
+                        console.log(e.target.value)
+                        setFormData((prev) => ({
+                          ...prev,
+                          reason: e.target.value
+                        }))
+                        if (validateError.reasonError) {
+                          setValidateError((prev) => ({
+                            ...prev,
+                            reasonError: ""
+                          }))
+                        }
+                      }}
+                      rows="4"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none resize-none text-gray-700"
+                      placeholder="Provide detailed task description..."
+                    />
+                    {validateError.reasonError && (
+                      <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 px-3 py-2 rounded-lg">
+                        <AlertCircle size={16} />
+                        <span>{validateError.reasonError}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-                {/* Info Message */}
                 <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
                   <p className="text-xs text-blue-700 flex items-start gap-2">
                     <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
@@ -758,7 +789,6 @@ const LeadAllocationTable = () => {
                 </div>
               </div>
 
-              {/* Footer Actions */}
               <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 rounded-b-2xl">
                 <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
                   <button
@@ -783,6 +813,217 @@ const LeadAllocationTable = () => {
                     {submitLoading ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      "Submit Task"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )} */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-3 z-50 backdrop-blur-sm">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg transform transition-all max-h-[95vh] flex flex-col">
+              {/* Loading Bar */}
+              {submitLoading && (
+                <div className="h-1 bg-blue-500 rounded-t-xl animate-pulse" />
+              )}
+
+              {/* Header - Compressed */}
+              <div className="relative border-b border-gray-200 px-4 py-3">
+                <button
+                  onClick={() => {
+                    setShowmodal(false)
+                    setFormData((prev) => ({
+                      ...prev,
+                      allocationDate: "",
+                      allocationDescription: ""
+                    }))
+                    setsubmitLoading(false)
+                  }}
+                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+                >
+                  <X size={18} />
+                </button>
+                <h2 className="text-xl font-bold text-gray-800 mb-1.5">
+                  Task Allocation
+                </h2>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md font-medium text-xs">
+                    {selectedAllocationType[selectedItem._id]}
+                  </span>
+                  <span className="text-gray-500">•</span>
+                  <span className="text-gray-600 font-medium text-xs">
+                    LEAD ID-{selectedLeadId}
+                  </span>
+                </div>
+              </div>
+
+              {/* Form Content - Scrollable if needed but compressed */}
+              <div className="p-4 space-y-3 overflow-y-auto flex-1">
+                {/* Allocated To - Read Only */}
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                    <FileText size={14} className="text-blue-500" />
+                    Allocated To
+                  </label>
+                  <input
+                    readOnly
+                    value={selectedItem.allocatedName}
+                    type="text"
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                  />
+                </div>
+                {/* Completion Date */}
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                    <Calendar size={14} className="text-blue-500" />
+                    Completion Date
+                  </label>
+                  {selectedAllocationType[selectedItem._id] !== "followup" ? (
+                    <>
+                      <input
+                        type="date"
+                        className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-gray-700"
+                        onChange={(e) => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            allocationDate: e.target.value
+                          }))
+                          setValidateError((prev) => ({
+                            ...prev,
+                            allocationDateError: ""
+                          }))
+                        }}
+                      />
+                      {validateError.allocationDateError && (
+                        <div className="flex items-center gap-1.5 text-red-600 text-xs bg-red-50 px-2.5 py-1.5 rounded-lg">
+                          <AlertCircle size={14} />
+                          <span>{validateError.allocationDateError}</span>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <input
+                      readOnly
+                      value={
+                        formData?.allocationDate
+                          ?.toLocaleDateString("en-GB")
+                          .split("/")
+                          .join("-") || ""
+                      }
+                      type="text"
+                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                    />
+                  )}
+                </div>
+
+                {/* Description */}
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                    <FileText size={14} className="text-blue-500" />
+                    Description
+                  </label>
+                  <textarea
+                    value={formData.allocationDescription || ""}
+                    onChange={(e) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        allocationDescription: e.target.value
+                      }))
+                      if (validateError.descriptionError) {
+                        setValidateError((prev) => ({
+                          ...prev,
+                          descriptionError: ""
+                        }))
+                      }
+                    }}
+                    rows="3"
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none resize-none text-gray-700"
+                    placeholder="Provide detailed task description..."
+                  />
+                  {validateError.descriptionError && (
+                    <div className="flex items-center gap-1.5 text-red-600 text-xs bg-red-50 px-2.5 py-1.5 rounded-lg">
+                      <AlertCircle size={14} />
+                      <span>{validateError.descriptionError}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Reason For Changing - Conditional */}
+                {approvedToggleStatus && (
+                  <div className="space-y-1.5">
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
+                      <FileText size={14} className="text-blue-500" />
+                      Reason For Changing Staff
+                    </label>
+                    <textarea
+                      value={formData.reason || ""}
+                      onChange={(e) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          reason: e.target.value
+                        }))
+                        if (validateError.reasonError) {
+                          setValidateError((prev) => ({
+                            ...prev,
+                            reasonError: ""
+                          }))
+                        }
+                      }}
+                      rows="3"
+                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none resize-none text-gray-700"
+                      placeholder="Provide reason for changing..."
+                    />
+                    {validateError.reasonError && (
+                      <div className="flex items-center gap-1.5 text-red-600 text-xs bg-red-50 px-2.5 py-1.5 rounded-lg">
+                        <AlertCircle size={14} />
+                        <span>{validateError.reasonError}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Info Message - Compressed */}
+                <div className="bg-blue-50 border border-blue-100 rounded-lg p-2.5">
+                  <p className="text-xs text-blue-700 flex items-start gap-1.5">
+                    <AlertCircle size={12} className="mt-0.5 flex-shrink-0" />
+                    <span>
+                      Please ensure all information is accurate before
+                      submitting. This task will be assigned immediately.
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Footer Actions - Compressed */}
+              <div className="border-t border-gray-200 px-4 py-3 bg-gray-50 rounded-b-xl">
+                <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
+                  <button
+                    onClick={() => {
+                      setShowmodal(false)
+                      setFormData((prev) => ({
+                        ...prev,
+                        allocationDate: "",
+                        allocationDescription: ""
+                      }))
+                    }}
+                    disabled={submitLoading}
+                    className="w-full sm:w-auto px-5 py-2 text-sm border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={submitLoading}
+                    className="w-full sm:w-auto px-5 py-2 text-sm bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {submitLoading ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                         Submitting...
                       </>
                     ) : (

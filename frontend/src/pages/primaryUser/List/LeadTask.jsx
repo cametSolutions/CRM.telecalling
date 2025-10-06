@@ -1,15 +1,17 @@
-import { useLocation, useNavigate } from "react-router-dom"
+import {  useNavigate } from "react-router-dom"
 import UseFetch from "../../../hooks/useFetch"
 import MyDatePicker from "../../../components/common/MyDatePicker"
 import BarLoader from "react-spinners/BarLoader"
 import LeadTaskComponent from "../../../components/primaryUser/LeadTaskComponent"
-import { useState, useEffect} from "react"
+import { useState, useEffect } from "react"
 const LeadTask = () => {
-console.log("d")
-  const location = useLocation()
-  const pagePath = location.pathname
+  console.log("d")
+  // const location = useLocation()
+  // const pagePath = location.pathname
+  // console.log(pagePath)
   const [loggedUser, setloggedUser] = useState(null)
   const [dates, setDates] = useState({ startDate: "", endDate: "" })
+  const [type, settype] = useState("leadTask")
   const [filteredData, setFilteredData] = useState([])
   const [ownFollowUp, setOwnFollowUp] = useState(null)
   const [url, setUrl] = useState("")
@@ -54,25 +56,18 @@ console.log("d")
     }
   }, [branches])
 
-  const type = pagePath.includes("leadFollowUp")
-    ? "followup"
-    : pagePath.includes("leadTask")
-    ? "lead-Task"
-    : ""
-  useEffect(() => {
-    if (loggedUser && selectedCompanyBranch) {
-      let url
-      if (type === "followup") {
-        url = `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}`
-        setUrl(url)
-      } else if (type === "lead-Task") {
-        url = `/lead/getrespectedleadprogramming?userid=${loggedUser._id}&branchSelected=${selectedCompanyBranch}&role=${loggedUser.role}`
-        setUrl(url)
-      }
-    }
-  }, [selectedCompanyBranch, loggedUser, type])
-  const { data, loading, refreshHook } = UseFetch(url)
-console.log(data)
+  // const type = pagePath.includes("leadFollowUp")
+  //   ? "followup"
+  //   : pagePath.includes("leadTask")
+  //   ? "lead-Task"
+  //   : ""
+
+  const { data, loading, refreshHook } = UseFetch(
+    loggedUser &&
+      selectedCompanyBranch &&
+      `/lead/getrespectedleadTask?userid=${loggedUser._id}&branchSelected=${selectedCompanyBranch}&role=${loggedUser.role}`
+  )
+  console.log(data)
   const formatdate = (date) => new Date(date).toISOString().split("T")[0]
   const getLocalDate = (date) => {
     const local = new Date(date)
@@ -81,183 +76,109 @@ console.log(data)
   }
   useEffect(() => {
     if (data && pending && loggedUser && dates && dates.endDate) {
-      if (type === "followup") {
-        const filteredpendingFollowup = data.followupLeads.filter(
-          (item) => item.leadFollowupClosed === false
-        )
-        if (data.ischekCollegueLeads) {
-          setOwnFollowUp(true)
-          const filteredownfolowup = filteredpendingFollowup.filter(
-            (item) => item.allocatedBy === loggedUser._id
-          )
-          const totalNetAmount = filteredownfolowup.reduce((total, lead) => {
-            const leadTotal =
-              lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) ||
-              0
-            return total + leadTotal
-          }, 0)
+console.log(data)
+      const finalOutput = []
+      data.forEach((entry) => {
+        const activitylog = entry.activityLog
 
-          // then store it in state
-          setnetTotalAmount(totalNetAmount)
-          setFilteredData(filteredownfolowup)
-        } else {
-          const totalNetAmount = filteredpendingFollowup.reduce(
-            (total, lead) => {
-              const leadTotal =
-                lead.leadFor?.reduce(
-                  (sum, item) => sum + (item.price || 0),
-                  0
-                ) || 0
-              return total + leadTotal
-            },
-            0
-          )
-
-          // then store it in state
-          setnetTotalAmount(totalNetAmount)
-          setFilteredData(filteredpendingFollowup)
-        }
-      } else if (type === "lead-Task") {
-
-        const finalOutput = []
-        data.forEach((entry) => {
-          const activitylog = entry.activityLog
-
-          activitylog.forEach((log) => {
-            if (
-              log.taskClosed === false &&
-              log?.taskallocatedTo &&
-              log.taskTo &&
-              log.taskTo !== "followup"
-            ) {
-              finalOutput.push({
-                leadId: entry.leadId,
-                leadDocId: entry._id,
-                allocatedTo: entry?.allocatedTo?._id,
-                leadDate: entry.leadDate,
-                customerName:
-                  entry?.customerName?.customerName || entry?.customerName,
-                leadBy: entry?.leadBy,
-                dueDate: entry?.dueDate,
-                leadFor: entry?.leadFor,
-                netAmount: entry?.netAmount,
-                mobile: entry?.mobile,
-                email: entry?.email,
-                taskTo: log?.taskTo,
-                taskBy: log?.taskBy,
-                remarks: log.remarks,
-                closedDate: log?.submissionDate,
-                matchedlog: log,
-                activityLog: activitylog
-              })
-            }
-          })
+        activitylog.forEach((log) => {
+          if (
+            log.taskClosed === false &&
+            log?.taskallocatedTo &&
+            log.taskTo &&
+            log.taskTo !== "followup"
+          ) {
+            finalOutput.push({
+              leadId: entry.leadId,
+              leadDocId: entry._id,
+              allocatedTo: entry?.allocatedTo?._id,
+              leadDate: entry.leadDate,
+              customerName:
+                entry?.customerName?.customerName || entry?.customerName,
+              leadBy: entry?.leadBy,
+              dueDate: entry?.dueDate,
+              leadFor: entry?.leadFor,
+              netAmount: entry?.netAmount,
+              mobile: entry?.mobile,
+              email: entry?.email,
+              taskTo: log?.taskTo,
+              taskBy: log?.taskBy,
+              remarks: log.remarks,
+              closedDate: log?.submissionDate,
+              matchedlog: log,
+              activityLog: activitylog
+            })
+          }
         })
+      })
+console.log(finalOutput)
+      // const filtereddatepending = finalOutput
+      //   .filter(
+      //     (item) =>
+      //       formatdate(item.matchedlog.allocationDate) <=
+      //       getLocalDate(dates.endDate)
+      //   )
+      //   .sort(
+      //     (a, b) =>
+      //       new Date(formatdate(a.matchedlog.allocationDate)) -
+      //       new Date(formatdate(b.matchedlog.allocationDate))
+      //   )
 
-        // const filtereddatepending = finalOutput
-        //   .filter(
-        //     (item) =>
-        //       formatdate(item.matchedlog.allocationDate) <=
-        //       getLocalDate(dates.endDate)
-        //   )
-        //   .sort(
-        //     (a, b) =>
-        //       new Date(formatdate(a.matchedlog.allocationDate)) -
-        //       new Date(formatdate(b.matchedlog.allocationDate))
-        //   )
+      // const totalNetAmount = filtereddatepending.reduce((total, lead) => {
+      //   const leadTotal =
+      //     lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) || 0
+      //   return total + leadTotal
+      // }, 0)
 
-        // const totalNetAmount = filtereddatepending.reduce((total, lead) => {
-        //   const leadTotal =
-        //     lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) || 0
-        //   return total + leadTotal
-        // }, 0)
+      // then store it in state
+      // setnetTotalAmount(totalNetAmount)
+      setFilteredData(finalOutput)
 
-        // then store it in state
-        // setnetTotalAmount(totalNetAmount)
-        setFilteredData(finalOutput)
-      }
-console.log("H")
+      console.log("H")
     } else if (data && !pending) {
-console.log("h")
-      if (type === "followup") {
-        const filteredClosedFollowup = data.followupLeads.filter(
-          (item) => item.leadFollowupClosed === true
-        )
-        if (data.ischekCollegueLeads) {
-          setOwnFollowUp(true)
-          const filteredownfolowup = filteredClosedFollowup.filter(
-            (item) => item.allocatedBy === loggedUser._id
-          )
-          const totalNetAmount = filteredownfolowup.reduce((total, lead) => {
-            const leadTotal =
-              lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) ||
-              0
-            return total + leadTotal
-          }, 0)
+      console.log("h")
 
-          // then store it in state
-          setnetTotalAmount(totalNetAmount)
-          setFilteredData(filteredownfolowup)
-        } else {
-          const totalNetAmount = filteredClosedFollowup.reduce(
-            (total, lead) => {
-              const leadTotal =
-                lead.leadFor?.reduce(
-                  (sum, item) => sum + (item.price || 0),
-                  0
-                ) || 0
-              return total + leadTotal
-            },
-            0
-          )
+      const finalOutput = []
+      data.forEach((entry) => {
+        const activitylog = entry.activityLog
 
-          // then store it in state
-          setnetTotalAmount(totalNetAmount)
-          setFilteredData(filteredClosedFollowup)
-        }
-      } else if (type === "lead-Task") {
-        const finalOutput = []
-        data.forEach((entry) => {
-          const activitylog = entry.activityLog
-
-          activitylog.forEach((log) => {
-            if (log.taskClosed && log?.taskallocatedTo) {
-              finalOutput.push({
-                leadId: entry.leadId,
-                leadDocId: entry._id,
-                leadDate: entry.leadDate,
-                customerName:
-                  entry?.customerName?.customerName || entry?.customerName,
-                leadBy: entry?.leadBy,
-                leadFor: entry?.leadFor,
-                netAmount: entry?.netAmount,
-                mobile: entry?.mobile,
-                email: entry?.email,
-                taskTo: log?.taskTo,
-                taskBy: log?.taskBy,
-                remarks: log.remarks,
-                closedDate: log?.submissionDate,
-                matchedlog: log,
-                activityLog: activitylog
-              })
-            }
-          })
+        activitylog.forEach((log) => {
+          if (log.taskClosed && log?.taskallocatedTo) {
+            finalOutput.push({
+              leadId: entry.leadId,
+              leadDocId: entry._id,
+              leadDate: entry.leadDate,
+              customerName:
+                entry?.customerName?.customerName || entry?.customerName,
+              leadBy: entry?.leadBy,
+              leadFor: entry?.leadFor,
+              netAmount: entry?.netAmount,
+              mobile: entry?.mobile,
+              email: entry?.email,
+              taskTo: log?.taskTo,
+              taskBy: log?.taskBy,
+              remarks: log.remarks,
+              closedDate: log?.submissionDate,
+              matchedlog: log,
+              activityLog: activitylog
+            })
+          }
         })
-        const filteredOutput = finalOutput.sort(
-          (a, b) =>
-            new Date(b.matchedlog.taskSubmissionDate) -
-            new Date(a.matchedlog.taskSubmissionDate)
-        )
-        const totalNetAmount = filteredOutput.reduce((total, lead) => {
-          const leadTotal =
-            lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) || 0
-          return total + leadTotal
-        }, 0)
+      })
+      const filteredOutput = finalOutput.sort(
+        (a, b) =>
+          new Date(b.matchedlog.taskSubmissionDate) -
+          new Date(a.matchedlog.taskSubmissionDate)
+      )
+      const totalNetAmount = filteredOutput.reduce((total, lead) => {
+        const leadTotal =
+          lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) || 0
+        return total + leadTotal
+      }, 0)
 
-        // then store it in state
-        setnetTotalAmount(totalNetAmount)
-        setFilteredData(filteredOutput)
-      }
+      // then store it in state
+      setnetTotalAmount(totalNetAmount)
+      setFilteredData(filteredOutput)
     }
   }, [data, pending, dates])
 
@@ -272,15 +193,7 @@ console.log("h")
       <div className="flex flex-col md:flex-row  items-start md:items-center mx-3 md:mx-5 mt-3 mb-3 gap-4">
         {/* Title */}
         <h2 className="text-lg font-bold">
-          {`${
-            type === "followup"
-              ? "Lead FollowUp"
-              : type === "lead-Task"
-              ? "Task"
-              : ""
-          } ${pending ? "Pending" : "Cleared"}`}
-
-        
+          {`Task ${pending ? "Pending" : "Cleared"}`}
         </h2>
 
         {/* Right Section */}
@@ -318,27 +231,6 @@ console.log("h")
               </option>
             ))}
           </select>
-
-          {/* Toggle Switch */}
-          {type === "followup" && ownFollowUp && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm whitespace-nowrap">
-                {ownFollowUp ? "Own FollowUp" : "Colleague FollowUp"}
-              </span>
-              <button
-                onClick={() => setOwnFollowUp(!ownFollowUp)}
-                className={`${
-                  ownFollowUp ? "bg-green-500" : "bg-gray-300"
-                } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
-              >
-                <div
-                  className={`${
-                    ownFollowUp ? "translate-x-5" : "translate-x-0"
-                  } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                ></div>
-              </button>
-            </div>
-          )}
 
           {/* New Lead Button */}
           <div className="">

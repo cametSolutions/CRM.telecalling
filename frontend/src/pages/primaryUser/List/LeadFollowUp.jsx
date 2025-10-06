@@ -88,7 +88,6 @@ const LeadFollowUp = () => {
       selectedCompanyBranch &&
       `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}&pendingfollowup=${pending}`
   )
-console.log(loggedusersallocatedleads)
   useEffect(() => {
     const now = new Date()
     const startDate = new Date(now.getFullYear(), now.getMonth(), 1) // 1st day of current month

@@ -131,7 +131,7 @@ export default function LeadModal({
           >
             History
           </span>
-          {type === "lead-Task" && (
+          {type === "leadTask" && (
             <span
               className={`hover:cursor-pointer pb-1 ${
                 selectedTab === "Task"
@@ -329,7 +329,7 @@ export default function LeadModal({
                   </div>
                   <div>
                     <label className="block text-sm mb-1 text-gray-700 font-semibold text-left">
-                      Assigned Date
+                      Completion Date
                     </label>
                     <input
                       type="date"
@@ -355,7 +355,7 @@ export default function LeadModal({
                   </div>
                   <div>
                     <label className="block text-sm mb-1 text-gray-700 font-semibold text-left">
-                      Task Date
+                      Task Submission Date
                     </label>
                     <input
                       type="text"

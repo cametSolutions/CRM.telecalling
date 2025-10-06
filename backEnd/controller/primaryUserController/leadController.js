@@ -5,6 +5,7 @@ const { Staff, Admin } = models
 import Task from "../../model/primaryUser/taskSchema.js"
 import LeadId from "../../model/primaryUser/leadIdSchema.js"
 import Service from "../../model/primaryUser/servicesSchema.js"
+import { formatDate } from "../../../frontend/src/utils/dateUtils.js"
 export const LeadRegister = async (req, res) => {
   try {
     const { leadData, selectedtableLeadData, role } = req.body
@@ -107,6 +108,7 @@ export const LeadRegister = async (req, res) => {
       netAmount: Number(netAmount),
       balanceAmount: Number(netAmount),
       selfAllocation: selfAllocation,
+
       ...(selfAllocation && { selfAllocationType: allocationType, selfAllocationDueDate: dueDate }),
       activityLog
 
@@ -442,7 +444,6 @@ export const GetallfollowupList = async (req, res) => {
           reallocatedTo: false,
           leadLost: false
         }
-        console.log("h")
       } else if (pendingfollowup === "false") {
         query = {
 
@@ -468,9 +469,7 @@ export const GetallfollowupList = async (req, res) => {
       query = { leadBranch: branchObjectId }
 
     }
-    console.log(query)
     const selectedfollowup = await LeadMaster.find(query).populate({ path: "customerName", select: "customerName" }).lean()
-    console.log(selectedfollowup)
     const followupLeads = [];
 
     for (const lead of selectedfollowup) {
@@ -479,7 +478,6 @@ export const GetallfollowupList = async (req, res) => {
       const matchedAllocations = lead.activityLog
         .map((item, index) => ({ ...item, index })) // add index inside each item
         .filter((item) => item.taskTo === "followup" && item.followupClosed === false);
-      console.log(matchedAllocations)
       const nextfollowUpDate = lead.activityLog[lead.activityLog.length - 1]?.nextFollowUpDate ?? null
       if (matchedAllocations && matchedAllocations.length > 0) {
 
@@ -1638,7 +1636,6 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
     const branchObjectId = new mongoose.Types.ObjectId(selectedbranch)
     const { selectedItem, cleanedData } = req.body
 
-    // console.log("cleanded", cleanedData)
     let allocatedToModel
     let allocatedByModel
     const isStaffallocatedtomodel = await Staff.findOne({ _id: selectedItem.allocatedTo })
@@ -1677,6 +1674,8 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         taskallocatedTo: selectedItem.allocatedTo,
         taskallocatedToModel: allocatedToModel,
         remarks: cleanedData.allocationDescription,
+        allocationChanged:true,
+        changeReason:formData.reason,
         taskBy: "allocated",
         ...(allocationType === "followup" ? { followupClosed: false } : {}),
         taskTo: allocationType
@@ -1687,11 +1686,10 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       }
       matchLead.allocationType = allocationType
       matchLead.allocatedTo = selectedItem.allocatedTo
-console.log('mated',matchLead)
       // Save the document
       await matchLead.save();
 
-    } else if (matchLead.activityLog.length === 1) {
+    } else if (matchLead.activityLog.length === 1 || matchLead.activityLog.length > 2) {
       // Create base activity log
       const activityLogEntry = {
         submissionDate: new Date(),
@@ -1730,39 +1728,40 @@ console.log('mated',matchLead)
         { new: true }
       );
 
-    } else if (matchLead.activityLog.length > 2) {
-
-      matchLead.activityLog.forEach((log) => {
-        if ("allocatedClosed" in log) {
-          log.allocatedClosed = true;
-        }
-      })
-      // Important for deep changes in arrays
-      matchLead.markModified('activityLog');
-      const activityLogEntry = {
-        submissionDate: new Date(),
-        submittedUser: allocatedBy,
-        submissiondoneByModel: allocatedByModel,
-        taskallocatedBy: allocatedBy,
-        taskallocatedByModel: allocatedByModel,
-        taskallocatedTo: selectedItem.allocatedTo,
-        taskallocatedToModel: allocatedToModel,
-        remarks: cleanedData.allocationDescription,
-        taskBy: "allocated",
-        taskTo: allocationType
-      }
-      if (allocationType !== "followup") {
-        activityLogEntry.allocationDate = cleanedData.allocationDate;
-        activityLogEntry.taskfromFollowup = false
-      }
-
-      // Push new log
-      matchLead.activityLog.push(activityLogEntry);
-
-
-      await matchLead.save();
-
     }
+    // else if (matchLead.activityLog.length > 2) {
+
+    //       matchLead.activityLog.forEach((log) => {
+    //         if ("allocatedClosed" in log) {
+    //           log.allocatedClosed = true;
+    //         }
+    //       })
+    //       // Important for deep changes in arrays
+    //       matchLead.markModified('activityLog');
+    //       const activityLogEntry = {
+    //         submissionDate: new Date(),
+    //         submittedUser: allocatedBy,
+    //         submissiondoneByModel: allocatedByModel,
+    //         taskallocatedBy: allocatedBy,
+    //         taskallocatedByModel: allocatedByModel,
+    //         taskallocatedTo: selectedItem.allocatedTo,
+    //         taskallocatedToModel: allocatedToModel,
+    //         remarks: cleanedData.allocationDescription,
+    //         taskBy: "allocated",
+    //         taskTo: allocationType
+    //       }
+    //       if (allocationType !== "followup") {
+    //         activityLogEntry.allocationDate = cleanedData.allocationDate;
+    //         activityLogEntry.taskfromFollowup = false
+    //       }
+
+    //       // Push new log
+    //       matchLead.activityLog.push(activityLogEntry);
+
+
+    //       await matchLead.save();
+
+    //     }
 
 
     if (allocationpending === "true") {
