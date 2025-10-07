@@ -94,7 +94,7 @@ const LeaveSummary = () => {
   }, [selectedName]) // Restore when selectedIndex changes
   const filterAttendance = (attendance, searchTerm, selectedBranch, user) => {
     let filtered = attendance
-
+console.log(filtered)
     // Role based filtering
     if (user.role === "Admin") {
       if (searchTerm) {
