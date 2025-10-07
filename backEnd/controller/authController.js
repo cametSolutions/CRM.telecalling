@@ -1149,7 +1149,7 @@ export const OnsiteApply = async (req, res) => {
 
 export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
   try {
-    const { year, month} = req.query || { year: yearParam, month: monthParam }
+    const { year, month,selectedBranch} = req.query || { year: yearParam, month: monthParam }
     // console.log("selectedBranch", selectedBranch)
 
     function getSundays(year, month) {
@@ -1237,10 +1237,15 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
     const sundayFulldate = createDates(sundays, month, year)
     const startDate = new Date(Date.UTC(year, month - 1, 1))
     const endDate = new Date(Date.UTC(year, month, 0))
-    
+     const matchStage = {
+      isVerified: true,
+    };
+    if (selectedBranch) {
+      matchStage["selected.branch_id"] = new mongoose.Types.ObjectId(selectedBranch)
+    }
     const users = await Staff.aggregate([
       {
-        $match: { isVerified: true }
+        $match: matchStage
 
       },
       {
