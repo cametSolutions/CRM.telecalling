@@ -28,6 +28,7 @@ export default function LeadTaskComponent({
 
     return diffDays
   }
+console.log(Data)
   return (
     <div className="flex-1 overflow-x-auto rounded-lg text-center overflow-y-auto  shadow-xl md:mx-5 mx-3 mb-3">
       <table className=" border-collapse border border-gray-400 w-full text-sm">
@@ -150,22 +151,8 @@ export default function LeadTaskComponent({
                     
                   </td>
                   <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer">
-                    {type === "followup" ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setselectedData({
-                            activityLog: item?.activityLog,
-                            leadId: item?.leadId,
-                            leadDocId: item?.leadDocId,
-                            allocatedTo: item?.allocatedTo
-                          })
-                          setShowComponent(true)
-                        }}
-                      >
-                        Follow Up
-                      </button>
-                    ) : (
+                   
+                
                       <button
                         type="button"
                         onClick={() => {
@@ -183,7 +170,7 @@ export default function LeadTaskComponent({
                       >
                         Task
                       </button>
-                    )}
+                    
                   </td>
                   <td className=" border border-t-0 border-b-0 border-gray-400 px-4 ">
                     {item.netAmount}{" "}

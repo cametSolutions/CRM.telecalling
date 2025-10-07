@@ -1149,7 +1149,8 @@ export const OnsiteApply = async (req, res) => {
 
 export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
   try {
-    const { year, month} = req.query || { year: yearParam, month: monthParam }
+    const { year, month,selectedBranch} = req.query || { year: yearParam, month: monthParam }
+    // console.log("selectedBranch", selectedBranch)
 
     function getSundays(year, month) {
       const sundays = []
@@ -1236,8 +1237,12 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
     const sundayFulldate = createDates(sundays, month, year)
     const startDate = new Date(Date.UTC(year, month - 1, 1))
     const endDate = new Date(Date.UTC(year, month, 0))
-    
-    
+    const matchStage = {
+      isVerified: true,
+    };
+    if (selectedBranch) {
+      matchStage["selected.branch_id"] = new mongoose.Types.ObjectId(selectedBranch)
+    }
     const users = await Staff.aggregate([
       {
         $match:{isVerified:true}
@@ -1249,6 +1254,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           name: 1,
           attendanceId: 1,
           assignedto: 1,
+          selected: 1,
           casualleavestartsfrom: { $ifNull: ["$casualleavestartsfrom", null] },
           sickleavestartsfrom: { $ifNull: ["$sickleavestartsfrom", null] },
           privilegeleavestartsfrom: {
@@ -1328,16 +1334,17 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
     const holiday = Array.isArray(holidays)
       ? holidays.map((date) => date.holyDate.getDate())
       : []
-
+    // console.log(users)
     for (const user of users) {
-      const userId = user._id
-      const attendanceId = user.attendanceId
-      const userName = user.name
-      const staffId = user.attendanceId
-      const assignedto = user.assignedto
-      const casualleavestartsfrom = user.casualleavestartsfrom
-      const sickleavestartsfrom = user.sickleavestartsfrom
-      const privilegeleavestartsfrom = user.privilegeleavestartsfrom
+      const userId = user?._id
+      const attendanceId = user?.attendanceId
+      const branches = user?.selected
+      const userName = user?.name
+      const staffId = user?.attendanceId
+      const assignedto = user?.assignedto
+      const casualleavestartsfrom = user?.casualleavestartsfrom
+      const sickleavestartsfrom = user?.sickleavestartsfrom
+      const privilegeleavestartsfrom = user?.privilegeleavestartsfrom
 
       // Fetch attendance-related data for the given month
       const results = await Promise.allSettled([
@@ -1358,9 +1365,10 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         results[1].status === "fulfilled" ? results[1].value || [] : []
       const leaves =
         results[2].status === "fulfilled" ? results[2].value || [] : []
-
+      // console.log("branhes",branches)
       let stats = {
         name: userName,
+        branches,
         casualleavestartsfrom,
         sickleavestartsfrom,
         privilegeleavestartsfrom,
