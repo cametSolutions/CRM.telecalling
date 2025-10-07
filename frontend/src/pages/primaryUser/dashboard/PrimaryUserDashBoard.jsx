@@ -10,6 +10,9 @@ import { FaSpinner, FaUserCircle } from "react-icons/fa"
 import { toast } from "react-toastify"
 import { Link } from "react-router-dom"
 import UseFetch from "../../../hooks/useFetch"
+import { setLocalStorageItem } from "../../../helper/localstorage"
+import { useDispatch } from "react-redux"
+import { setBranches } from "../../../../slices/companyBranchSlice"
 import api from "../../../api/api"
 export default function PrimaryUserDashBoard() {
   const [leaveList, setTodayLeaveList] = useState([])
@@ -31,21 +34,30 @@ export default function PrimaryUserDashBoard() {
   const [dashboardHeight, setDashboardHeight] = useState("auto")
   const [currentyearholydays, setcurrentyearHoliday] = useState([])
   const headerRef = useRef(null)
+  const dispatch = useDispatch()
   const { data: todayleavelist } = UseFetch("/auth/getallUsersLeave?today=true")
   const { data: currrentMonthBirthDays } = UseFetch(
     "/auth/getallcurrentmonthBirthdays"
   )
+  const { data: branches } = UseFetch("/branch/getBranch")
   const { data: todayOnsite } = UseFetch("/auth/getallUsersOnsite?today=true")
   const { data: staffs } = UseFetch("/auth/getallStaffs")
   const { data: acheivementlist, refreshHook } = UseFetch(
     "/dashboard/getcurrentquarterlyAchiever"
   )
-  const { data: holydata, refreshHook: holyrefresh } = UseFetch(
+  const { data: holydata } = UseFetch(
     "/customer/getallholy"
   )
   const { data: announcementlist } = UseFetch(
     "/dashboard/getcurrentAnnouncement"
   )
+  useEffect(() => {
+    if (branches && branches.length > 0) {
+      const allcompanybranches = branches?.map((b) => b._id) || []
+      setLocalStorageItem("companybranches", allcompanybranches)
+      dispatch(setBranches(allcompanybranches)) //companies all branches
+    }
+  }, [])
   useEffect(() => {
     if (headerRef.current) {
       const headerHeight = headerRef.current.getBoundingClientRect().height
@@ -54,7 +66,6 @@ export default function PrimaryUserDashBoard() {
   }, [])
   useEffect(() => {
     if (holydata && holydata.length) {
-    
       const now = new Date()
       const currentMonth = now.getMonth() // 0 = Jan, 11 = Dec
       const currentYear = now.getFullYear()
@@ -230,7 +241,6 @@ export default function PrimaryUserDashBoard() {
     const wish = true
     localStorage.setItem("wish", JSON.stringify(wish))
   }
-  console.log(birthdayPerson)
   return (
     <div className="min-h-full bg-[#bfdbf7] ">
       {showBirthdayPopup && (

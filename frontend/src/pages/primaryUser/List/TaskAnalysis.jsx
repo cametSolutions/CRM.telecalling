@@ -72,7 +72,6 @@ const TaskAnalysis = () => {
       setgridList(taskByCountArray)
     }
   }, [analysisleads])
-console.log("h")
   return (
     <div className="flex flex-col h-full bg-white">
       <div>

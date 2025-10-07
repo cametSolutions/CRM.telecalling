@@ -6,6 +6,7 @@ import Tiles from "../../../components/common/Tiles" // Import the Tile componen
 import { useNavigate } from "react-router-dom"
 import { PropagateLoader } from "react-spinners"
 import UseFetch from "../../../hooks/useFetch"
+import { setBranches } from "../../../../slices/companyBranchSlice"
 import BranchDropdown from "../../../components/primaryUser/BranchDropdown"
 import { getLocalStorageItem } from "../../../helper/localstorage"
 const socket = io("https://www.crm.camet.in")
@@ -27,6 +28,7 @@ const CallregistrationList = () => {
   const [pendingCallsCount, setPendingCallsCount] = useState(0)
   const [todayCallsCount, setTodayCallsCount] = useState(0)
   const [solvedCallsCount, setTodaysSolvedCount] = useState(0)
+  const [branchids, setbranchids] = useState(null)
 
   // State to track the active filter
   const [activeFilter, setActiveFilter] = useState("All")
@@ -50,7 +52,11 @@ const CallregistrationList = () => {
   }, [])
   useEffect(() => {
     if (branches && branches.length > 0) {
+      console.log(branches)
+      console.log("hss")
       const userData = getLocalStorageItem("user")
+      setbranchids(userData.selected.map((item) => item.branch_id))
+
       // const users = JSON.parse(userData)
       if (userData.role === "Admin") {
         const userbranch = branches.map((item) => item.branchName)
@@ -60,7 +66,8 @@ const CallregistrationList = () => {
       setUser(userData)
     }
   }, [branches])
-  console.log("H")
+  console.log(branches)
+  console.log(branchids)
   const filterCallData = useCallback(
     (calls) => {
       const allCallRegistrations = calls.flatMap(
@@ -82,24 +89,9 @@ const CallregistrationList = () => {
     },
     [users]
   )
-
-  useEffect(() => {
-    if (callList && callList.length > 0 && users) {
-      const today = new Date().toISOString().split("T")[0]
-      setToday(today)
-      const stats = getCallStats(callList, users.name)
-
-      setUserCallstatus(stats)
-
-      setFilteredCalls(callList)
-
-      filterCallData(callList)
-      setLoading(false)
-    }
-  }, [callList])
-
   useEffect(() => {
     if (users) {
+      console.log(branchids)
       const userId = users._id
       socket.emit("updatedCalls", userId)
       // Listen for initial data from the server
@@ -148,7 +140,23 @@ const CallregistrationList = () => {
       //   socket.disconnect()
       // }
     }
-  }, [users])
+  }, [users, branchids])
+
+  useEffect(() => {
+    if (callList && callList.length > 0 && users) {
+      const today = new Date().toISOString().split("T")[0]
+      setToday(today)
+      const stats = getCallStats(callList, users.name)
+
+      setUserCallstatus(stats)
+
+      setFilteredCalls(callList)
+
+      filterCallData(callList)
+      setLoading(false)
+    }
+  }, [callList])
+
   const handleSearch = debounce((search) => {
     setSearchTerm(search)
     const searchText = search.toString().toLowerCase()
@@ -325,7 +333,7 @@ const CallregistrationList = () => {
   }
 
   return (
-    <div className="mx-auto p-2  md:p-5 bg-white">
+    <div className="container mx-auto p-2  md:p-5 bg-white">
       <div className="w-auto shadow-lg rounded p-4 pt-1 h-full bg-neutral-50 ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
           {/* Search Bar for large screens */}

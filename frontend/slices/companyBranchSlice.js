@@ -58,7 +58,6 @@ const storedBranch = getLocalStorageItem("selectedBranch");
 // Retrieve later with proper typing
 const companybranches = getLocalStorageItem("companybranches");
 
-console.log("storedCompany", storedCompany);
 
 const initialState = {
     selectedCompany: storedCompany ? storedCompany : null,

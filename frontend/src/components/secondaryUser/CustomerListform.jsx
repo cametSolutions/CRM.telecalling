@@ -87,7 +87,6 @@ const CustomerListform = () => {
 
     return null
   }, [selectedBranch, apiSearchTerm, pages])
-console.log(selectedBranch)
   const { data: list, loading: scrollLoading } = UseFetch(url)
   // const companybranches = useSelector((state) => state.companyBranch.branches)
   useEffect(() => {
@@ -239,7 +238,6 @@ console.log(selectedBranch)
       ? `${address?.slice(0, maxLength)}...`
       : address
   }
-console.log(searchAfterData)
   return (
     <div className="h-full overflow-hidden">
       {scrollLoading && (

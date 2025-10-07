@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Link, NavLink, useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
+import api from "../api/api"
 import { FiMessageCircle } from "react-icons/fi"
 import { FiLogOut } from "react-icons/fi"
 import { FaChevronRight, FaChevronDown } from "react-icons/fa"
@@ -64,17 +65,44 @@ export default function StaffHeader() {
       }, 50)
     }
   }
+  const logout = async () => {
+    try {
+      const res = await api.post("/auth/logout") // Call backend
 
-  const logout = () => {
-    // Clear the authentication token from local storage
-    localStorage.removeItem("authToken")
-    localStorage.removeItem("user")
-    localStorage.removeItem("timer")
-    localStorage.removeItem("wish")
-    // Redirect to login page
-    toast.success("Logout successfully")
-    navigate("/")
+      // ✅ Check if backend returned success
+      if (
+        res.status === 200 &&
+        res.data?.message === "Logged out successfully"
+      ) {
+        // Clear localStorage only after successful logout
+        localStorage.removeItem("authToken")
+        localStorage.removeItem("user")
+        localStorage.removeItem("timer")
+        localStorage.removeItem("wish")
+
+        toast.success("Logout successfully")
+
+        // Redirect to login page
+        navigate("/")
+      } else {
+        toast.error("Logout failed on server")
+      }
+    } catch (err) {
+      console.error("Logout API failed:", err)
+      toast.error("Logout failed, please try again")
+    }
   }
+
+  // const logout = () => {
+  //   // Clear the authentication token from local storage
+  //   localStorage.removeItem("authToken")
+  //   localStorage.removeItem("user")
+  //   localStorage.removeItem("timer")
+  //   localStorage.removeItem("wish")
+  //   // Redirect to login page
+  //   toast.success("Logout successfully")
+  //   navigate("/")
+  // }
   const links = [
     { to: "/staff/dashBoard", label: "Dashboard" },
     { label: "Masters" },

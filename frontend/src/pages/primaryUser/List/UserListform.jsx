@@ -44,31 +44,51 @@ const UserListform = () => {
   const handleSearch = debounce((query) => {
     const { allusers } = data
     const input = query.trim()
+    setSearchQuery(input)
 
     const lowerCaseQuery = input.toLowerCase()
 
     const filteredName = allusers.filter((user) =>
-      user.name.toLowerCase().includes(lowerCaseQuery)
+      user.name.toLowerCase().startsWith(lowerCaseQuery)
     )
     const filteredMobile = allusers.filter((user) =>
-      user.mobile.toString().toLowerCase().includes(lowerCaseQuery)
+      user.mobile.toString().toLowerCase().startsWith(lowerCaseQuery)
     )
 
     if (filteredName.length > 0) {
-      setUser(filteredName)
+      const filtereusersbranchwise = filteredName.filter((user) =>
+        user.selected.map((branch) => branch.branch_id).includes(selectedBranch)
+      )
+
+      setUser(filtereusersbranchwise)
     } else if (filteredMobile.length > 0) {
-      setUser(filteredMobile)
+      const filtereusersbranchwise = filteredMobile.filter((user) =>
+        user.selected.map((branch) => branch.branch_id).includes(selectedBranch)
+      )
+
+      setUser(filtereusersbranchwise)
     }
 
     // Reset to initial count after filtering
   }, 300)
   const handlebranchChange = (e) => {
+
     const [id, label] = e.target.value.split("||")
     setselectedBranch(id)
-    const filtereusers = allusers.filter((user) =>
-      user.selected.map((branch) => branch.branch_id).includes(id)
-    )
-    setUser(filtereusers)
+    if (searchQuery) {
+      const filteredbyquery = allusers.filter((user) =>
+        user.name.toLowerCase().startsWith(searchQuery.toLocaleLowerCase())
+      )
+      const filtereusersbranchwise = filteredbyquery.filter((user) =>
+        user.selected.map((branch) => branch.branch_id).includes(id)
+      )
+      setUser(filtereusersbranchwise)
+    } else {
+      const filtereusersbranchwise = allusers.filter((user) =>
+        user.selected.map((branch) => branch.branch_id).includes(id)
+      )
+      setUser(filtereusersbranchwise)
+    }
   }
   const handleDelete = async (id) => {
     try {
@@ -110,7 +130,7 @@ const UserListform = () => {
 
         {/* Action Buttons */}
         <div className="px-3 pb-2">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex md:flex-wrap gap-2 justify-between md:justify-start md:gap-2">
             <Link
               to={
                 loggeduser?.role === "Admin"
@@ -157,7 +177,7 @@ const UserListform = () => {
             </button>
             <select
               onChange={(e) => handlebranchChange(e)}
-              className="w-40 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none  text-gray-700 bg-white"
+              className="w-30 md:w-auto px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none  text-gray-700 bg-white"
             >
               {loggeduser &&
                 loggeduser?.selected?.map((branch) => (

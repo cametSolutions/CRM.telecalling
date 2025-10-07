@@ -4,7 +4,8 @@ import { ChevronDown, ChevronUp } from "lucide-react"
 export default function BranchDropdown({
   branches,
   onBranchChange,
-  branchSelected
+  branchSelected,
+  showallbranchOption = false //if needed option "All" may some pages wont want "all"
 }) {
   const [selectedBranch, setSelectedBranch] = useState(null)
   const [isOpen, setIsOpen] = useState(false)
@@ -13,7 +14,6 @@ export default function BranchDropdown({
   // Set the first branch as default when component mounts
   useEffect(() => {
     if (branches?.length > 0) {
-console.log(branchSelected)
       setSelectedBranch(branchSelected)
       // onBranchChange(branchSelected)
     }
@@ -34,21 +34,17 @@ console.log(branchSelected)
   }, [])
 
   const handleOptionClick = (branchId, branchName) => {
-    console.log(branchName)
-    console.log(branchId)
     setSelectedBranch(branchId)
     onBranchChange(branchId, branchName)
     setIsOpen(false)
   }
 
   const getSelectedBranchName = () => {
-console.log(selectedBranch)
     if (selectedBranch === "All") return "All Branches"
     const branch = branches?.find((b) => b.id === selectedBranch)
     return branch?.branchName
   }
 
-  console.log(branches)
   return (
     <div className="relative min-w-48" ref={dropdownRef}>
       {/* Dropdown Button */}
@@ -84,7 +80,7 @@ console.log(selectedBranch)
       {isOpen && (
         <div className=" absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
           {/* All option (if multiple branches) */}
-          {branches?.length > 1 && (
+          {branches?.length > 1 && showallbranchOption && (
             <div
               onClick={() => handleOptionClick("All")}
               className={`

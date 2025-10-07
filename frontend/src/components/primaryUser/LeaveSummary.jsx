@@ -30,22 +30,22 @@ const LeaveSummary = () => {
   const [selectedBranch, setselectedBranch] = useState(null)
   const [leavesummaryList, setleaveSummary] = useState([])
   const listRef = useRef(null)
-  // const userData = localStorage.getItem("user")
-  // const user = JSON.parse(userData)
-  // API URL with selected year and month
-  const apiUrl = selectedBranch
-    ? `/auth/getsomeall?year=${selectedYear}&month=${selectedMonth}&selectedBranch=${selectedBranch}`
-    : null
+  const isFirstRender = useRef(true)
 
+  // API URL with selected year and month
   const {
     data,
 
     loading
-  } = UseFetch(apiUrl)
-console.log(selectedBranch)
+  } = UseFetch(`/auth/getsomeall?year=${selectedYear}&month=${selectedMonth}`)
   useEffect(() => {
     const userData = getLocalStorageItem("user")
-    setselectedBranch(userData.selected[0].branch_id)
+    if (userData.selected && userData.selected.length > 1) {
+      setselectedBranch("All")
+    } else {
+      setselectedBranch(userData.selected[0]?.branch_id)
+    }
+    // setselectedBranch(userData.selected[0].branch_id)
     userData.selected.forEach((branch) => {
       setuserBranches((prev) => [
         ...prev,
@@ -63,34 +63,26 @@ console.log(selectedBranch)
       setnewattendee(staffAttendanceStats)
       setHoly(listofHolidays)
       setCurrentmonthSundays(sundayFulldate)
-      if (searchTerm) {
-        if (user.role === "Admin") {
-          const filteredStaff = staffAttendanceStats.filter((staff) =>
-            staff.name.toLowerCase().startsWith(searchTerm.toLowerCase())
-          )
-          setleaveSummary(filteredStaff)
-        } else {
-          const filteredStaff = staffAttendanceStats.filter(
-            (staff) =>
-              (staff.userId === user._id || staff.assignedto === user._id) &&
-              staff.name.toLowerCase().startsWith(searchTerm.toLowerCase())
-          )
-          setleaveSummary(filteredStaff)
-        }
-      } else {
-        if (user?.role === "Admin") {
-          setleaveSummary(staffAttendanceStats)
-          // setmonthSelected(selectedMonth)
-        } else if (user?.role === "Staff" || user?.role === "Manager") {
-          const filteredUser = staffAttendanceStats.filter(
-            (item) => item.userId === user._id || item.assignedto === user._id
-          )
-          setleaveSummary(filteredUser)
-          // setmonthSelected(selectedMonth)
-        }
-      }
+      setleaveSummary(
+        filterAttendance(staffAttendanceStats, searchTerm, selectedBranch, user)
+      )
+
+      
     }
   }, [data, searchTerm])
+  useEffect(() => {
+    if (isFirstRender.current) {
+      // 🚀 Skip first render
+      isFirstRender.current = false
+      return
+    }
+    if (newattende && newattende.length > 0) {
+      setleaveSummary(
+        filterAttendance(newattende, searchTerm, selectedBranch, user)
+      )
+     
+    }
+  }, [selectedBranch])
 
   // Restore scroll position after render
   useEffect(() => {
@@ -100,6 +92,37 @@ console.log(selectedBranch)
       // sessionStorage.removeItem("scrollPosition") // Optional: Clear after restoring
     }
   }, [selectedName]) // Restore when selectedIndex changes
+  const filterAttendance = (attendance, searchTerm, selectedBranch, user) => {
+    let filtered = attendance
+    // Role based filtering
+    if (user.role === "Admin") {
+      if (searchTerm) {
+        filtered = filtered.filter((staff) =>
+          staff.name.toLowerCase().startsWith(searchTerm.toLowerCase())
+        )
+      }
+    } else {
+      filtered = filtered.filter(
+        (staff) => staff.userId === user._id || staff.assignedto === user._id
+      )
+
+      if (searchTerm) {
+        filtered = filtered.filter((staff) =>
+          staff.name.toLowerCase().startsWith(searchTerm.toLowerCase())
+        )
+      }
+    }
+
+    // Branch filtering
+    if (selectedBranch !== "All") {
+      filtered = filtered.filter((staff) =>
+        staff.branches.some((b) => b.branch_id === selectedBranch)
+      )
+    }
+
+    return filtered
+  }
+
   const handleBranchChange = (e) => {
     setselectedBranch(e)
   }
@@ -390,7 +413,6 @@ console.log(selectedBranch)
       saveAs(blob, "Attendance_Report.xlsx")
     })
   }
-  console.log(leavesummaryList)
   return (
     <div className="w-full flex flex-col h-full">
       {loading && (
@@ -406,11 +428,17 @@ console.log(selectedBranch)
           User Leave Summary
         </h1>
         <div className="grid grid-cols-2 md:flex md:flex-row md:items-center md:justify-end gap-2 md:gap-4 mb-3 md:mr-8 mx-5">
-          <BranchDropdown
-            branches={userBranches}
-            onBranchChange={handleBranchChange}
-            branchSelected={selectedBranch}
-          />
+          {leavesummaryList && leavesummaryList.length > 0 && (
+            // If more than one leave summary exists,
+            // it means the logged-in user is a manager/super manager
+            // and has staff under them. Show branch dropdown in this case.
+            <BranchDropdown
+              branches={userBranches}
+              onBranchChange={handleBranchChange}
+              branchSelected={selectedBranch}
+            />
+          )}
+
           {/* Search Input */}
           <div className="w-full md:w-auto">
             <input

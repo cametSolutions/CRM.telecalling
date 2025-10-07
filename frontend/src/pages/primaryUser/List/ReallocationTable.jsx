@@ -187,7 +187,6 @@ const ReallocationTable = () => {
     refreshHook()
     setTableData([])
   }
-console.log("h")
   return (
     <div className="flex flex-col h-full">
       {(submitLoading || loading) && (
