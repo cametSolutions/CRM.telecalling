@@ -4,7 +4,8 @@ import { ChevronDown, ChevronUp } from "lucide-react"
 export default function BranchDropdown({
   branches,
   onBranchChange,
-  branchSelected
+  branchSelected,
+  showallbranchOption = false //if needed option "All" may some pages wont want "all"
 }) {
   const [selectedBranch, setSelectedBranch] = useState(null)
   const [isOpen, setIsOpen] = useState(false)
@@ -33,7 +34,6 @@ export default function BranchDropdown({
   }, [])
 
   const handleOptionClick = (branchId, branchName) => {
-   
     setSelectedBranch(branchId)
     onBranchChange(branchId, branchName)
     setIsOpen(false)
@@ -80,7 +80,7 @@ export default function BranchDropdown({
       {isOpen && (
         <div className=" absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
           {/* All option (if multiple branches) */}
-          {branches?.length > 1 && (
+          {branches?.length > 1 && showallbranchOption && (
             <div
               onClick={() => handleOptionClick("All")}
               className={`
