@@ -94,7 +94,6 @@ const LeaveSummary = () => {
   }, [selectedName]) // Restore when selectedIndex changes
   const filterAttendance = (attendance, searchTerm, selectedBranch, user) => {
     let filtered = attendance
-
     // Role based filtering
     if (user.role === "Admin") {
       if (searchTerm) {
@@ -414,6 +413,7 @@ const LeaveSummary = () => {
       saveAs(blob, "Attendance_Report.xlsx")
     })
   }
+console.log(leavesummaryList)
   return (
     <div className="w-full flex flex-col h-full">
       {loading && (
@@ -429,7 +429,7 @@ const LeaveSummary = () => {
           User Leave Summary
         </h1>
         <div className="grid grid-cols-2 md:flex md:flex-row md:items-center md:justify-end gap-2 md:gap-4 mb-3 md:mr-8 mx-5">
-          {leavesummaryList && leavesummaryList.length > 1 && (
+          {leavesummaryList && leavesummaryList.length > 0 && (
             // If more than one leave summary exists,
             // it means the logged-in user is a manager/super manager
             // and has staff under them. Show branch dropdown in this case.
