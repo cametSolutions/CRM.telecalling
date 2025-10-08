@@ -20,7 +20,6 @@ const Login = () => {
     formState: { errors }
   } = useForm()
   const navigate = useNavigate()
-  const { data: branches } = UseFetch("/branch/getBranch")
 
   const onSubmit = async (data) => {
     try {
@@ -28,25 +27,10 @@ const Login = () => {
       const response = await api.post(`/auth/login`, data)
       const datas = await response.data
       const { token, User } = datas
-console.log("branches")
-      const allcompanybranches = branches.map((b) => b._id)
+      console.log("branches")
       if (response.status === 200) {
-console.log("h")
-        setLocalStorageItem("authToken", token)
-        setLocalStorageItem("user", User)
+        console.log("h")
 
-        // Store in localStorage
-        setLocalStorageItem("companybranches", allcompanybranches)
-        dispatch(setBranches(allcompanybranches)) //companies all branches
-        setTimeout(() => {
-          if (User.role === "Admin") {
-            setLoading(false)
-            navigate("/admin/dashBoard")
-          } else if (User.role === "Staff" || User.role === "Manager") {
-            setLoading(false)
-            navigate("/staff/dashBoard")
-          }
-        }, 1000)
         toast.success(response.data.message, {
           icon: "🚀",
           style: {
@@ -59,6 +43,18 @@ console.log("h")
             fontWeight: "bold" // Bold text for prominence
           }
         })
+        localStorage.setItem("authToken", token)
+        localStorage.setItem("user", JSON.stringify(User))
+        console.log("h")
+        setTimeout(() => {
+          if (User.role === "Admin") {
+            setLoading(false)
+            navigate("/admin/dashBoard")
+          } else if (User.role === "Staff" || User.role === "Manager") {
+            setLoading(false)
+            navigate("/staff/dashBoard")
+          }
+        }, 1000)
       }
     } catch (error) {
       console.log(error)
