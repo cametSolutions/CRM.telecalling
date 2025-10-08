@@ -44,7 +44,7 @@ const Login = () => {
         })
         localStorage.setItem("authToken", token)
         localStorage.setItem("user", JSON.stringify(User))
-
+console.log("h")
         setTimeout(() => {
           if (User.role === "Admin") {
             setLoading(false)
