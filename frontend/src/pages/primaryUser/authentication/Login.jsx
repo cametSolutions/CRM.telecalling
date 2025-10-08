@@ -28,8 +28,10 @@ const Login = () => {
       const response = await api.post(`/auth/login`, data)
       const datas = await response.data
       const { token, User } = datas
+console.log("branches")
       const allcompanybranches = branches.map((b) => b._id)
       if (response.status === 200) {
+console.log("h")
         setLocalStorageItem("authToken", token)
         setLocalStorageItem("user", User)
 
