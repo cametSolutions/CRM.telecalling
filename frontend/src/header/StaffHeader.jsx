@@ -307,9 +307,10 @@ export default function StaffHeader() {
     }
   ]
   return (
-    <header className="sticky top-0 z-50 flex bg-white shadow-md py-4 items-center">
+    <header className="sticky top-0 z-50 flex items-center md:justify-between bg-green-600 px-2 md:px-4 lg:px-6 h-16 md:h-18 lg:h-18">
+     {/* <header className="sticky top-0 z-40 flex items-center justify-between bg-white shadow-md px-2 md:px-4 lg:px-6 h-16 md:h-18 lg:h-20 overflow-hidden"> */}
       {/* Mobile menu button */}
-      <div className="md:hidden flex justify-between py-2 px-4">
+      <div className="md:hidden flex justify-between py-2 md:px-4">
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           className="hover:text-red-800 focus:outline-none"
@@ -346,7 +347,7 @@ export default function StaffHeader() {
       >
         <div className="flex items-center space-x-2 p-2">
           <svg
-            className="w-12 h-12 text-green-400"
+            className="w-12 h-12 text-white"
             viewBox="0 0 64 64"
             xmlns="http://www.w3.org/2000/svg"
           >
@@ -376,7 +377,7 @@ export default function StaffHeader() {
               CRm
             </text>
           </svg>
-          <span className="text-md sm:text-2xl md:text-2xl lg:text-3xl font-bold text-green-400">
+          <span className="text-md sm:text-2xl md:text-2xl lg:text-3xl font-bold text-white">
             MANAGEMENT
           </span>
 
@@ -539,7 +540,7 @@ export default function StaffHeader() {
       {/* Logo and links */}
       <div className="flex items-center space-x-2 sm:px-4">
         <svg
-          className="w-12 h-12 text-green-600"
+          className="w-12 h-12 text-white"
           viewBox="0 0 64 64"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -569,14 +570,14 @@ export default function StaffHeader() {
             CRm
           </text>
         </svg>
-        <span className="text-xl sm:text-2xl md:text-2xl lg:text-3xl font-bold text-green-600">
+        <span className="text-xl sm:text-2xl md:text-2xl lg:text-3xl font-bold text-white">
           MANAGEMENT
         </span>
 
         {/* <span className="text-3xl font-bold text-green-600">MANAGEMENT</span> */}
       </div>
-      <div className="flex flex-grow justify-center items-center">
-        <nav className="hidden md:flex  items-center md:gap-2 lg:gap-8 ">
+      
+        <nav className="hidden lg:flex  items-center md:gap-2 lg:gap-8 text-white">
           {links.map((link) => (
             <div
               key={link.to}
@@ -789,55 +790,21 @@ export default function StaffHeader() {
             </div>
           ))}
         </nav>
-      </div>
-      {mathcheddemoleadcount > 0 && (
-        <div
-          onClick={() =>
-            user?.role === "Admin"
-              ? navigate("/admin/transaction/lead/demoFollowup")
-              : navigate("/staff/transaction/lead/demoFollowup")
-          }
-          className="cursor-pointer flex items-center  relative mr-8 md:hidden"
-        >
-          <FiMessageCircle className="text-4xl text-gray-700" />
-          {mathcheddemoleadcount > 0 && (
-            <span className="absolute -top-1 bg-red-600 text-white text-xs px-1.5 py-0.5 rounded-full">
-              {mathcheddemoleadcount}
-            </span>
-          )}
-        </div>
-      )}
+      
 
-      <div className=" hidden md:flex flex-grow justify-center items-center ">
-        <div className="relative flex items-center">
-          {mathcheddemoleadcount > 0 && (
-            <div
-              onClick={() =>
-                user?.role === "Admin"
-                  ? navigate("/admin/transaction/lead/demoFollowup")
-                  : navigate("/staff/transaction/lead/demoFollowup")
-              }
-              className="cursor-pointer flex items-center  relative mr-3"
-            >
-              <FiMessageCircle className="text-4xl text-gray-700" />
-              {mathcheddemoleadcount > 0 && (
-                <span className="absolute -top-1 bg-red-600 text-white text-xs px-1.5 py-0.5 rounded-full">
-                  {mathcheddemoleadcount}
-                </span>
-              )}
-            </div>
-          )}
+      
+        <div className="hidden md:flex items-center flex-shrink-0 space-x-2">
           {user?.profileUrl && user?.profileUrl?.length > 0 ? (
             <img
               src={user?.profileUrl}
               // alt={`${user?.name}'s profile`}
               onMouseEnter={() => setProfileMenuOpen(true)}
               onMouseLeave={() => setProfileMenuOpen(false)}
-              className="w-10 h-10 rounded-full" // Add styling as needed
+              className="w-10 h-10 rounded-full border-2" // Add styling as needed
             />
           ) : (
             <FaUserCircle
-              className="text-3xl text-gray-600 cursor-pointer"
+              className=" text-white text-3xl hover:text-yellow-200 cursor-pointer"
               onMouseEnter={() => setProfileMenuOpen(true)}
               onMouseLeave={() => setProfileMenuOpen(false)}
             />
@@ -845,20 +812,20 @@ export default function StaffHeader() {
           <span
             onMouseEnter={() => setProfileMenuOpen(true)}
             onMouseLeave={() => setProfileMenuOpen(false)}
-            className="text-gray-700 mx-4 rounded-md cursor-pointer"
+            className="text-white mx-4 rounded-md cursor-pointer hover:text-yellow-200"
           >
             {user?.name || "Profile"}
           </span>
 
           <div
             onClick={logout}
-            className="flex  items-center gap-1 p-2  rounded hover:cursor-pointer hover:scale-110 hover:shadow-lg transform transition-transform duration-300"
+            className="bg-white text-green-600 border border-green-600 px-3 py-1 flex  items-center gap-1  rounded hover:cursor-pointer hover:scale-110  hover:shadow-lg shadow-xl transform transition-transform duration-300"
           >
-            <FiLogOut className="text-blue-800" size={20} />
-            <span className="text-blue-800 text-semibold">Logout</span>
+            <FiLogOut className="text-red-500" size={20} />
+            <span className="text-red-500 hover:text-red-600">Logout</span>
           </div>
         </div>
-      </div>
+      
     </header>
   )
 }

@@ -134,12 +134,10 @@ const UserAdd = ({
       toast.error("please select a branch")
       return
     }
-    console.log(tableObject)
-    console.log(tableData)
+  
     const isIncluded = tableData.some(
       (item) => JSON.stringify(item) === JSON.stringify(tableObject)
     )
-    console.log(isIncluded)
     if (isIncluded) {
       toast.error("Branch already exists")
       return

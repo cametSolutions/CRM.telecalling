@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import Select from "react-select"
-
+import { getLocalStorageItem } from "../../helper/localstorage"
+import { useSelector } from "react-redux"
 import { useForm, Controller } from "react-hook-form"
 import UseFetch from "../../hooks/useFetch"
 import useDebounce from "../../hooks/useDebounce"
 import { toast } from "react-toastify"
 import { FaEdit, FaTrash } from "react-icons/fa"
 const CustomerAdd = ({
+  navigatebackto,
   process,
   handleCustomerData,
   handleEditedData,
@@ -59,9 +62,12 @@ const CustomerAdd = ({
   // const [selectedBranch, setSelectedBranch] = useState(false)
   const [productOptions, setProductOptions] = useState([])
   const [loggeduser, setloggedUser] = useState(null)
-  const [loggeduserBranch, setLoggeduserBranches] = useState(null)
+  // const [loggeduserBranch, setLoggeduserBranches] = useState(null)
   const [companyOptions, setCompanyOptions] = useState([])
   const [branchOptions, setBranchOptions] = useState([])
+  const [selectedproductid, setselectedproductId] = useState(null)
+  const [selectedCompanyId, setSelectedCompanyId] = useState(null)
+  const [selectedbranchId, setSelectedBranchId] = useState(null)
   const [showTable, setShowTable] = useState(false)
   const [tableData, setTableData] = useState([])
   const [editState, seteditState] = useState(false)
@@ -94,193 +100,147 @@ const CustomerAdd = ({
     tvuexpiryDate: "",
     tvuAmount: "",
     tvuamountDescription: "",
-    isActive: "",
+    isActive: "Running",
     industry: "",
     reasonofStatus: ""
   })
   //now created
-  const [isChecking, setIsChecking] = useState(false)
+
+  const { data: licensenumber } = UseFetch("/customer/getLicensenumber")
+  const { data: partners } = UseFetch("/customer/getallpartners")
+  const { data: allcompanyBranches } = UseFetch("/branch/getBranch")
+  const loggeduserBranch = useSelector((state) => state.companyBranch.branches)
+
   const { data: productData, error: productError } = UseFetch(
     loggeduserBranch &&
       `/product/getallProducts?branchselected=${encodeURIComponent(
         JSON.stringify(loggeduserBranch)
       )}`
   )
-  const { data: licensenumber, error: licensenumberError } = UseFetch(
-    "/customer/getLicensenumber"
-  )
-  const { data: partners } = UseFetch("/customer/getallpartners")
-  const { data: allcompanyBranches } = UseFetch("/branch/getBranch")
+  const navigate = useNavigate()
   useEffect(() => {
     if (allcompanyBranches && allcompanyBranches.length) {
-      const userData = localStorage.getItem("user")
-      const user = JSON.parse(userData)
+      const user = getLocalStorageItem("user")
       setloggedUser(user)
-      if (user.role === "Admin") {
-        const branches = allcompanyBranches.map((branch) => branch._id)
-        setLoggeduserBranches(branches)
-      } else {
-        const branches = user.selected.map((branch) => branch.branch_id)
-        setLoggeduserBranches(branches)
-      }
     }
   }, [allcompanyBranches])
+
   useEffect(() => {
-    if (productData) {
-      setTableObject({
-        ...tableObject,
-        isActive: "Running"
+    if (customer && partner && partner.length > 0) {
+      setShowTable(true)
+      seteditState(true)
+      setEditIndex(customer.index ?? 0)
+      // Set tableObject using the selected index
+      const selectedIndex = customer.index ?? 0
+      const selectedItem = customer.selected?.[selectedIndex]
+      // setselectedproductId(selectedItem?.product_id)
+      //
+      // Reset the form
+      reset({
+        customerName: customer?.customerName,
+        address1: customer.address1,
+        address2: customer.address2,
+        country: customer.country,
+        state: customer.state,
+        city: customer.city,
+        pincode: customer.pincode,
+        contactPerson: customer.contactPerson,
+        email: customer.email,
+        mobile: customer.mobile,
+        landline: customer.landline,
+        industry: customer.industry,
+        partner: customer.partner,
+        registrationType: customer.registrationType,
+
+        licensenumber: selectedItem?.licensenumber,
+        noofusers: selectedItem?.noofusers,
+        version: selectedItem?.version,
+        customerAddDate: selectedItem?.customerAddDate,
+        amcstartDate: selectedItem?.amcstartDate,
+        amcendDate: selectedItem?.amcendDate,
+        amcAmount: selectedItem?.amcAmount,
+        licenseExpiryDate: selectedItem?.licenseExpiryDate,
+        productAmount: selectedItem?.productAmount,
+        productamountDescription: selectedItem?.productamountDescription,
+        tvuexpiryDate: selectedItem?.tvuexpiryDate,
+        tvuAmount: selectedItem?.tvuAmount,
+        tvuamountDescription: selectedItem?.tvuamountDescription,
+        isActive: selectedItem?.isActive,
+        reasonofStatus: selectedItem?.reasonofStatus
       })
-      setPartner(partners)
-      setProductOptions(
-        productData.map((product) => ({
-          label: product.productName,
-          value: product._id
-        }))
-      )
 
-      if (customer) {
-        if (customer.selected.length > 0) {
-          setShowTable(true)
-        }
-        reset({
-          customerName: customer?.customerName,
-          address1: customer.address1,
-          address2: customer.address2,
-          country: customer.country,
-          state: customer.state,
-          city: customer.city,
-          pincode: customer.pincode,
-          contactPerson: customer.contactPerson,
-          email: customer.email,
-          mobile: customer.mobile,
-          landline: customer.landline,
-          industry: customer.industry,
-          partner: customer.partner,
-          registrationType: customer.registrationType,
-          productName: customer?.selected[0]?.product_id
-            ? {
-                label: customer?.selected[0]?.productName,
-                value: customer?.selected[0]?.product_id
-              }
-            : null,
-          companyName: customer?.selected[0]?.companyName
-            ? {
-                label: customer?.selected[0]?.companyName,
-                value: customer?.selected[0]?.company_id
-              }
-            : null,
-          branchName: customer?.selected[0]?.branch_id
-            ? {
-                label: customer?.selected[0]?.branchName,
-                value: customer?.selected[0]?.branch_id
-              }
-            : null,
-          licensenumber: customer?.selected[0]?.licensenumber,
-          noofusers: customer?.selected[0]?.noofusers,
-          version: customer?.selected[0]?.version,
-          customerAddDate: customer?.selected[0]?.customerAddDate,
-          amcstartDate: customer?.selected[0]?.amcstartDate,
-          amcendDate: customer?.selected[0]?.amcendDate,
-          amcAmount: customer?.selected[0]?.amcAmount,
-          licenseExpiryDate: customer?.selected[0]?.licenseExpiryDate,
-          productAmount: customer?.selected[0]?.productAmount,
-          productamountDescription:
-            customer?.selected[0]?.productamountDescription,
-          tvuexpiryDate: customer?.selected[0]?.tvuexpiryDate,
-          tvuAmount: customer?.selected[0]?.tvuAmount,
-          tvuamountDescription: customer?.selected[0]?.tvuamountDescription,
-          isActive: customer?.selected[0]?.isActive,
-          reasonofStatus: customer?.selected[0]?.reasonofStatus
+      if (selectedItem) {
+        setTableObject({
+          company_id: selectedItem.company_id || "",
+          companyName: selectedItem.companyName || "",
+          branch_id: selectedItem.branch_id || "",
+          branchName: selectedItem.branchName || "",
+          licensenumber: selectedItem.licensenumber || "",
+          noofusers: selectedItem.noofusers || "",
+          version: selectedItem.version || "",
+          customerAddDate: selectedItem.customerAddDate || "",
+          amcstartDate: selectedItem.amcstartDate || "",
+          amcendDate: selectedItem.amcendDate || "",
+          amcAmount: selectedItem.amcAmount || "",
+          amcDescription: selectedItem.amcDescription || "",
+          licenseExpiryDate: selectedItem.licenseExpiryDate || "",
+          productAmount: selectedItem.productAmount || "",
+          productamountDescription: selectedItem.productamountDescription || "",
+          tvuexpiryDate: selectedItem.tvuexpiryDate || "",
+          tvuAmount: selectedItem.tvuAmount || "",
+          tvuamountDescription: selectedItem.tvuamountDescription || "",
+          isActive: selectedItem.isActive || "",
+          reasonofStatus: selectedItem.reasonofStatus || ""
         })
-        if (Array.isArray(customer.selected) && customer.selected.length > 0) {
-          setTableObject({
-            company_id: customer?.selected[0]?.company_id || "",
-            companyName: customer?.selected[0]?.companyName || "",
-            branch_id: customer?.selected[0]?.branch_id || "",
-            branchName: customer?.selected[0]?.branchName || "",
-            product_id: customer?.selected[0]?.product_id || "",
-            productName: customer?.selected[0]?.productName || "",
-            licensenumber: customer?.selected[0]?.licensenumber || "",
-            noofusers: customer?.selected[0]?.noofusers || "",
-            version: customer?.selected[0]?.version || "",
-            customerAddDate: customer?.selected[0]?.customerAddDate || "",
-            amcstartDate: customer?.selected[0]?.amcstartDate || "",
-            amcendDate: customer?.selected[0]?.amcendDate || "",
-            amcAmount: customer?.selected[0]?.amcAmount || "",
-            amcDescription: customer?.selected[0]?.amcDescription || "",
-            licenseExpiryDate: customer?.selected[0]?.licenseExpiryDate || "",
-            productAmount: customer?.selected[0]?.productAmount || "",
-            productamountDescription:
-              customer?.selected[0]?.productamountDescription || "",
-            tvuexpiryDate: customer?.selected[0]?.tvuexpiryDate || "",
-            tvuAmount: customer?.selected[0]?.tvuAmount || "",
-            tvuamountDescription:
-              customer?.selected[0]?.tvuamountDescription || "",
-            isActive: customer?.selected[0]?.isActive || "",
-            reasonofStatus: customer?.selected[0]?.reasonofStatus || ""
-          })
-
-          setTableData([
-            {
-              company_id: customer?.selected[0]?.company_id || "",
-              companyName: customer?.selected[0]?.companyName || "",
-              branch_id: customer?.selected[0]?.branch_id || "",
-              branchName: customer?.selected[0]?.branchName || "",
-              product_id: customer?.selected[0]?.product_id || "",
-              productName: customer?.selected[0]?.productName || "",
-              licensenumber: customer?.selected[0]?.licensenumber || "",
-              noofusers: customer?.selected[0]?.noofusers || "",
-              version: customer?.selected[0]?.version || "",
-              customerAddDate: customer?.selected[0]?.customerAddDate || "",
-              amcstartDate: customer?.selected[0]?.amcstartDate || "",
-              amcendDate: customer?.selected[0]?.amcendDate || "",
-              amcAmount: customer?.selected[0]?.amcAmount || "",
-              amcDescription: customer?.selected[0]?.amcDescription || "",
-              licenseExpiryDate: customer?.selected[0]?.licenseExpiryDate || "",
-              productAmount: customer?.selected[0]?.productAmount || "",
-              productamountDescription:
-                customer?.selected[0]?.productamountDescription || "",
-              tvuexpiryDate: customer?.selected[0]?.tvuexpiryDate || "",
-              tvuAmount: customer?.selected[0]?.tvuAmount || "",
-              tvuamountDescription:
-                customer?.selected[0]?.tvuamountDescription || "",
-              isActive: customer?.selected[0]?.isActive || "",
-              industry: customer?.selected[0]?.industry || "",
-              reasonofStatus: customer?.selected[0]?.reasonofStatus || ""
-            }
-          ])
-          // setTableData((prev) => [...prev, tableObject])
-          if (customer?.selected[0]?.productName)
-            handleProductChange(
-              {
-                label: customer?.selected[0]?.productName,
-                value: customer?.selected[0]?.product_id
-              },
-              true
-            )
-          if (customer?.selected[0]?.companyName)
-            handleCompanyChange(
-              {
-                label: customer?.selected[0]?.companyName,
-                value: customer?.selected[0]?.company_id
-              },
-              true
-            )
-        }
       }
+
+      // Map over customer.selected to setTableData once
+      const tableDataArray = customer.selected.map((sel) => ({
+        company_id: sel.company_id || "",
+        companyName: sel.companyName || "",
+        branch_id: sel.branch_id || "",
+        branchName: sel.branchName || "",
+        product_id: sel.product_id || "",
+        productName: sel.productName || "",
+        licensenumber: sel.licensenumber || "",
+        noofusers: sel.noofusers || "",
+        version: sel.version || "",
+        customerAddDate: sel.customerAddDate || "",
+        amcstartDate: sel.amcstartDate || "",
+        amcendDate: sel.amcendDate || "",
+        amcAmount: sel.amcAmount || "",
+        amcDescription: sel.amcDescription || "",
+        licenseExpiryDate: sel.licenseExpiryDate || "",
+        productAmount: sel.productAmount || "",
+        productamountDescription: sel.productamountDescription || "",
+        tvuexpiryDate: sel.tvuexpiryDate || "",
+        tvuAmount: sel.tvuAmount || "",
+        tvuamountDescription: sel.tvuamountDescription || "",
+        isActive: sel.isActive || "",
+        industry: sel.industry || "",
+        reasonofStatus: sel.reasonofStatus || ""
+      }))
+
+      setTableData(tableDataArray)
     }
-
-    // Directly set products to productData
-  }, [productData, reset, customer, partners])
-
+  }, [productData, reset, customer, partner])
+  useEffect(() => {
+    if (tableData && tableData.length > 0 && tableObject && customer) {
+      if (tableObject.product_id) {
+        return
+      }
+      const selectedIndex = customer.index ?? 0
+      const selectedItem = customer.selected?.[selectedIndex]
+      const editedproductoption = {
+        label: selectedItem.productName,
+        value: selectedItem.product_id
+      }
+      handleProductChange(editedproductoption)
+    }
+  }, [tableData, tableObject])
   // First effect: handles product + sets value
   useEffect(() => {
     if (productData) {
-      setTableObject((prev) => ({
-        ...prev,
-        isActive: "Running"
-      }))
       setPartner(partners)
       setProductOptions(
         productData.map((product) => ({
@@ -288,68 +248,9 @@ const CustomerAdd = ({
           value: product._id
         }))
       )
-
-      if (customer?.selected?.length > 0) {
-        const selectedCustomer = customer.selected[0]
-        setShowTable(true)
-
-        if (selectedCustomer?.productName) {
-          handleProductChange(
-            {
-              label: selectedCustomer.productName,
-              value: selectedCustomer.product_id
-            },
-            true
-          )
-        }
-      }
     }
   }, [productData, reset, customer, partners])
-
   // Second effect: run company handler after product is set
-  useEffect(() => {
-    const selectedCustomer = customer?.selected?.[0]
-    const selectedProduct = watch("productName")
-
-    if (selectedCustomer?.companyName && selectedProduct?.value) {
-      handleCompanyChange(
-        {
-          label: selectedCustomer.companyName,
-          value: selectedCustomer.company_id
-        },
-        true,
-        selectedCustomer
-      )
-    }
-  }, [watch("productName")])
-
-  const handleCompanyChange = (selectedOption, onEdit = false) => {
-    setValue("companyName", selectedOption)
-    setTableObject((prev) => ({
-      ...prev,
-      company_id: selectedOption.value,
-      companyName: selectedOption.label
-    }))
-
-    const selectedProductData = productData.find(
-      (product) => product._id === selectedProduct?.value
-    )
-    const selectedCompanyData = selectedProductData?.selected.filter(
-      (company) => company.company_id === selectedOption?.value
-    )
-
-    if (selectedCompanyData) {
-      setBranchOptions(
-        selectedCompanyData.map((branch) => ({
-          label: branch.branchName,
-          value: branch.branch_id
-        }))
-      )
-      if (!onEdit) {
-        setValue("branchName", null)
-      }
-    }
-  }
 
   useEffect(() => {
     if (licensenumber) {
@@ -453,6 +354,58 @@ const CustomerAdd = ({
       setTableData((prev) => [...prev, tableObject])
     }
   }
+  useEffect(() => {
+    if (selectedproductid) {
+      const options = getCompaniesForProduct(selectedproductid) // mapping function
+      setCompanyOptions(options)
+      if (options.length > 0) {
+        const firstCompany = options[0]
+        setSelectedCompanyId(firstCompany) // auto select company
+
+        if (branchOptions.length > 0) {
+          setSelectedBranchId(branchOptions[0]?.value) // auto select branch
+        } else {
+          setSelectedBranchId(null)
+        }
+      } else {
+        setSelectedCompanyId(null)
+        setBranchOptions([])
+        setSelectedBranchId(null)
+      }
+    } else {
+      setCompanyOptions([])
+      setSelectedCompanyId(null)
+      setBranchOptions([])
+      setSelectedBranchId(null)
+    }
+  }, [selectedproductid])
+  useEffect(() => {
+    if (selectedCompanyId) {
+      setValue("companyName", selectedCompanyId)
+      setTableObject((prev) => ({
+        ...prev,
+        company_id: selectedCompanyId.value,
+        companyName: selectedCompanyId.label
+      }))
+      // also set branches for this company
+      const branchOptions = getBranchesForCompany(
+        selectedproductid,
+        selectedCompanyId.value
+      )
+      setBranchOptions(branchOptions)
+      setSelectedBranchId(branchOptions[0])
+    }
+  }, [selectedCompanyId])
+  useEffect(() => {
+    if (selectedbranchId) {
+      setValue("branchName", selectedbranchId)
+      setTableObject((prev) => ({
+        ...prev,
+        branch_id: selectedbranchId.value,
+        branchName: selectedbranchId.label
+      }))
+    }
+  }, [selectedbranchId])
 
   useEffect(() => {
     if (productError) {
@@ -548,57 +501,90 @@ const CustomerAdd = ({
       setEditIndex(index)
     }
   }
-  const handleProductChange = (selectedOption, onEdit = false) => {
+  const handleProductChange = (selectedOption) => {
     setValue("productName", selectedOption)
+    setselectedproductId(selectedOption.value)
     setShowTable(true)
     setTableObject((prev) => ({
       ...prev,
       product_id: selectedOption.value,
       productName: selectedOption.label
     }))
-
-    const selectedProductData = productData.find(
-      (product) => product._id === selectedOption?.value
-    )
-
-    if (selectedProductData) {
-      const companyMap = new Set()
-      const uniqueCompanyOptions = selectedProductData.selected.reduce(
-        (acc, company) => {
-          // If the company has not been added yet, add it to the accumulator
-          if (!companyMap.has(company.companyName)) {
-            companyMap.add(company.companyName) // Mark this company as added
-            acc.push({
-              label: company.companyName,
-              value: company.company_id
-            })
-          }
-          return acc
-        },
-        []
-      )
-      setCompanyOptions(uniqueCompanyOptions)
-
-      if (!onEdit) {
-        setValue("company", null)
-        setBranchOptions([])
-      }
-    }
   }
 
-  ///now created
+  const handleCompanyChange = (selectedCompanyOption) => {
+    setSelectedCompanyId(selectedCompanyOption.value)
+  }
+  const handleBranchChange = (selectedBranchOption) => {
+    setValue("branchName", selectedBranchOption)
+    setTableObject((prev) => ({
+      ...prev,
+      branch_id: selectedBranchOption.value,
+      branchName: selectedBranchOption.label
+    }))
+  }
   const emailDomains = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com"]
 
   const validateEmailDomain = (email) => {
     const domain = email.split("@")[1]
     return emailDomains.includes(domain) || "Invalid email domain"
   }
-  const handleBranchChange = (selectedOption) => {
-    setTableObject((prev) => ({
-      ...prev,
-      branch_id: selectedOption.value,
-      branchName: selectedOption.label
-    }))
+  const handleAddNewProduct = () => {
+    setTableObject({
+      company_id: "",
+      companyName: "",
+      branch_id: "",
+      branchName: "",
+      product_id: "",
+      productName: "",
+      licensenumber: "",
+      noofusers: "",
+      version: "",
+      customerAddDate: "",
+      amcstartDate: "",
+      amcendDate: "",
+      amcAmount: "",
+      amcDescription: "",
+      licenseExpiryDate: "",
+      productAmount: "",
+      productamountDescription: "",
+      tvuexpiryDate: "",
+      tvuAmount: "",
+      tvuamountDescription: "",
+      isActive: "Running",
+      industry: "",
+      reasonofStatus: ""
+    })
+    seteditState(false)
+    setEditIndex(null)
+  }
+  const getCompaniesForProduct = (productId) => {
+    const product = productData.find((item) => item._id === productId)
+    if (!product) return []
+
+    const seen = new Set()
+    return product.selected.reduce((acc, company) => {
+      if (!seen.has(company.company_id)) {
+        seen.add(company.company_id)
+        acc.push({
+          label: company.companyName,
+          value: company.company_id
+        })
+      }
+      return acc
+    }, [])
+  }
+
+  const getBranchesForCompany = (productId, companyId) => {
+    const product = productData.find((item) => item._id === productId)
+    if (!product) return []
+
+    return product.selected
+      .filter((c) => c.company_id === companyId)
+      .map((branch) => ({
+        label: branch.branchName,
+        value: branch.branch_id
+      }))
   }
 
   const onSubmit = async (data) => {
@@ -619,11 +605,20 @@ const CustomerAdd = ({
   }
 
   return (
-    <div className="container justify-center items-center min-h-screen p-8 bg-gray-100">
-      <div className="w-auto bg-white shadow-lg rounded p-8 mx-auto">
-        <h2 className="text-2xl font-semibold mb-6">Customer Master</h2>
+    <div className="justify-center items-center h-full p-2 md:p-4 bg-[#F5F5DC]">
+      {/* <div className="bg-white rounded-xl p-3 mb-6 shadow-sm border-l-4 border-blue-600">
+        <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          Customer Master
+        </h2>
+        <p className="text-gray-600 text-lg">
+          Create and manage customer information for your CRM database
+        </p>
+      </div> */}
+      <div className="w-auto bg-white shadow-lg rounded p-3 md:p-6 mx-auto">
+        <h2 className="text-lg md:text-2xl font-semibold ">Customer Master</h2>
+        <hr className="my-1 border-gray-200 border-2" />
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 m-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-2">
             {/* Product Select Dropdown */}
 
             {/* Customer Name */}
@@ -919,8 +914,11 @@ const CustomerAdd = ({
           </div>
 
           <div>
-            <h1 className="text-2xl font-semibold mb-6">Product Details</h1>
-            <div className="  grid grid-cols-1 sm:grid-cols-4 gap-6 m-5">
+            <h1 className="text-lg md:text-2xl font-semibold mt-2 md:mt-0">
+              Product Details
+            </h1>
+            <hr className="my-1 border-gray-300 border-2" />
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-6 mt-2 ">
               <div>
                 <label
                   htmlFor="productName"
@@ -944,21 +942,6 @@ const CustomerAdd = ({
                     />
                   )}
                 />
-
-                {/* <select
-                  id="productName"
-                  {...register("productName")}
-                  onChange={handleProductChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
-                >
-                  <option value="">-- Select a product --</option>
-
-                  {products?.map((product) => (
-                    <option key={product._id} value={product._id}>
-                      {product.productName}
-                    </option>
-                  ))}
-                </select> */}
               </div>
               <div>
                 <label
@@ -984,20 +967,6 @@ const CustomerAdd = ({
                     />
                   )}
                 />
-
-                {/* <select
-                  id="companyName"
-                  {...register("companyName")}
-                  onChange={handleCompanyChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
-                >
-                  <option value="">-- Select a company --</option>
-                  {filteredCompanies?.map((company) => (
-                    <option key={company._id} value={company._id}>
-                      {company.companyName}
-                    </option>
-                  ))}
-                </select> */}
               </div>
               {/* Branch Display */}
               <div>
@@ -1539,7 +1508,19 @@ const CustomerAdd = ({
             </div>
             {showTable && (
               <div>
-                <div className="mt-6">
+                <div className="mt-6 flex justify-end gap-2">
+                  {customer && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => handleAddNewProduct()}
+                        className="bg-blue-500 text-white py-1 px-2 rounded hover:bg-blue-600"
+                      >
+                        <span className="mr-1">+</span>
+                        Add New Product
+                      </button>
+                    </>
+                  )}
                   <button
                     type="button"
                     onClick={() => {
@@ -1557,25 +1538,168 @@ const CustomerAdd = ({
 
                       handleTableData()
                     }}
-                    className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                    className="bg-gray-500 text-white py-1 px-2 rounded hover:bg-gray-600"
                   >
-                    {editState ? "UPDATE" : "ADD"}
+                    {editState ? "Update To Table" : "Add To Table"}
                   </button>
                 </div>
 
-                <div className="mt-6 w-lg overflow-x-auto">
+                <div className="mt-3 w-lg overflow-x-auto">
                   <h3 className="text-lg font-medium text-gray-900">
                     Product Details List
                   </h3>
-                  <table className="bg-green-300 m-w-full divide-y divide-gray-200 mt-4">
+                  <table className="m-w-full divide-y divide-gray-200 mt-4">
+                    <thead className="bg-green-400">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider  text-gray-700">
+                          Product Name
+                        </th>
+                        {loggeduser.role === "Admin" && (
+                          <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700">
+                            Company Name
+                          </th>
+                        )}
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700">
+                          Branch Name
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider  text-gray-700">
+                          License No
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700">
+                          No.of Users
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider  text-gray-700">
+                          Version
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-700">
+                          Customer addDate
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider  text-gray-700">
+                          Amc startDate
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider  text-gray-700">
+                          Amc endDate
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider  text-gray-700">
+                          Amc amount
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider  text-gray-700">
+                          License expiry
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider  text-gray-700">
+                          Product Amount
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider  text-gray-700">
+                          Tvu expiry
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider  text-gray-700">
+                          Tvu amount
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider  text-gray-700">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider  text-gray-700">
+                          Edit
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider  text-gray-700">
+                          Delete
+                        </th>
+                      </tr>
+                    </thead>
+
+                    <tbody className="divide-y divide-gray-200">
+                      {tableData && tableData.length > 0 ? (
+                        tableData.map((product, index) => (
+                          <tr key={index}>
+                            <td className="px-6 py-4 text-sm text-gray-700 text-nowrap">
+                              {product?.productName}
+                            </td>
+                            {loggeduser.role === "Admin" && (
+                              <td className="px-6 py-4 text-sm text-gray-700 ">
+                                {product?.companyName}
+                              </td>
+                            )}
+                            <td className="px-6 py-4 text-sm text-gray-700 ">
+                              {product?.branchName}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700 ">
+                              {product?.licensenumber}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700 ">
+                              {product?.noofusers}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700">
+                              {product?.version}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700 text-nowrap">
+                              {product?.customerAddDate}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700 text-nowrap">
+                              {product?.amcstartDate}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700 text-nowrap">
+                              {product?.amcendDate}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700">
+                              {product?.amcAmount}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700 text-nowrap">
+                              {product?.licenseExpiryDate}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700 ">
+                              {product?.productAmount}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700 text-nowrap">
+                              {product?.tvuexpiryDate}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700">
+                              {product?.tvuAmount}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700">
+                              {product?.isActive}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700">
+                              <button
+                                type="button"
+                                className="text-green-600 hover:text-green-900 mr-2"
+                              >
+                                <FaEdit
+                                  onClick={() => handleEdit(product.product_id)}
+                                />
+                              </button>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-700 ">
+                              <button
+                                type="button"
+                                className="text-blue-600 hover:text-blue-900"
+                              >
+                                <FaTrash onClick={() => handleDelete(index)} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan="16" className="text-center py-4">
+                            No data available
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+
+                  {/* <table className="bg-green-300 m-w-full divide-y divide-gray-200 mt-4">
                     <thead>
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Product Name
                         </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Company Name
-                        </th>
+                        {loggeduser.role === "Admin" && (
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Company Name
+                          </th>
+                        )}
+
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Branch Name
                         </th>
@@ -1631,9 +1755,11 @@ const CustomerAdd = ({
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {product?.productName}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {product?.companyName}
-                              </td>
+                              {loggeduser.role === "Admin" && (
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                  {product?.companyName}
+                                </td>
+                              )}
 
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {product?.branchName}
@@ -1702,13 +1828,12 @@ const CustomerAdd = ({
                                   />
                                 </button>
 
-                                {/* Add delete button */}
                               </td>
                             </tr>
                           ))
                         : ""}
                     </tbody>
-                  </table>
+                  </table> */}
                 </div>
               </div>
             )}
@@ -1716,11 +1841,20 @@ const CustomerAdd = ({
             {/* tabledata */}
 
             {/* Submit Button */}
-            <div className="mt-6">
+            <div className="mt-6 flex justify-end gap-4">
+              <button
+                onClick={() =>
+                  navigatebackto ? navigate(navigatebackto) : navigate(-1)
+                }
+                type="button"
+                className="flex items-center justify-center bg-red-500 text-white py-2 px-4 rounded shadow-xl hover:bg-red-600"
+              >
+                Cancel
+              </button>
               <button
                 type="submit"
-                className={`flex items-center justify-center bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 ${
-                  isSubmitting && "bg-blue-400 cursor-not-allowed"
+                className={`flex items-center justify-center bg-green-500 text-white py-2 px-4 rounded shadow-xl hover:bg-green-600 ${
+                  isSubmitting && "bg-green-400 cursor-not-allowed"
                 }`}
                 disabled={isSubmitting}
               >

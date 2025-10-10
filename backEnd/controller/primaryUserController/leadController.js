@@ -108,7 +108,7 @@ export const LeadRegister = async (req, res) => {
       netAmount: Number(netAmount),
       balanceAmount: Number(netAmount),
       selfAllocation: selfAllocation,
-
+      ...(allocationType && { allocationType }),
       ...(selfAllocation && { selfAllocationType: allocationType, selfAllocationDueDate: dueDate }),
       activityLog
 
@@ -424,51 +424,48 @@ export const GetallfollowupList = async (req, res) => {
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected)
     // const
     let query
-    if (role === "Staff") {
-      if (pendingfollowup === "true") {
-        query = {
 
-          activityLog: {
-            $elemMatch: {
-              taskTo: "followup",
-              $or: [
-                { submittedUser: userObjectId },
-                { taskallocatedTo: userObjectId }
-              ],
-              allocatedClosed: false,
-              taskClosed: false,
-              followupClosed: false
-            }
-          },
-          leadBranch: branchObjectId,
-          reallocatedTo: false,
-          leadLost: false
-        }
-      } else if (pendingfollowup === "false") {
-        query = {
+    if (pendingfollowup === "true") {
+      query = {
 
-          activityLog: {
-            $elemMatch: {
-              taskBy: "followup",
-              $or: [
-                { submittedUser: userObjectId },
-                { taskallocatedTo: userObjectId }
-              ],
-              taskClosed: true
+        activityLog: {
+          $elemMatch: {
+            taskTo: "followup",
+            $or: [
+              { submittedUser: userObjectId },
+              { taskallocatedTo: userObjectId }
+            ],
+            allocationChanged: false,
+            allocatedClosed: false,
+            taskClosed: false,
+            followupClosed: false
+          }
+        },
+        leadBranch: branchObjectId,
+        reallocatedTo: false,
+        leadLost: false
+      }
+    } else if (pendingfollowup === "false") {
+      query = {
 
-            }
-          },
-          leadBranch: branchObjectId,
-          leadLost: false
+        activityLog: {
+          $elemMatch: {
+            taskBy: "followup",
+            $or: [
+              { submittedUser: userObjectId },
+              { taskallocatedTo: userObjectId }
+            ],
+            taskClosed: true
 
-        }
+          }
+        },
+        leadBranch: branchObjectId,
+        leadLost: false
 
       }
 
-    } else {
-      query = { leadBranch: branchObjectId }
-
     }
+
     const selectedfollowup = await LeadMaster.find(query).populate({ path: "customerName", select: "customerName" }).lean()
     const followupLeads = [];
 
@@ -1339,6 +1336,25 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
     if (!followedByModel) {
       return res.status(400).json({ message: "Invalid followedid reference" })
     }
+    if (formData.followupType === "closed") {
+      await LeadMaster.updateOne(
+        {
+          _id: selectedleaddocId,
+          "activityLog.taskTo": { $exists: true },
+          "activityLog.reallocatedTo": false,
+          "activityLog.taskClosed": false,
+          "activityLog.followupClosed": false,
+        },
+        {
+          $set: {
+            "activityLog.$.reallocatedTo": true,
+            "activityLog.$.taskClosed": true,
+            "activityLog.$.followupClosed": true,
+          },
+        }
+      );
+    }
+
     const activityEntry = {
       submissionDate: formData.followUpDate,
       submittedUser: loggeduserid,
@@ -1376,6 +1392,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         },
         reallocatedTo: formData.followupType === "closed",
         leadLost: formData.followupType === "lost",
+
 
       },
 
@@ -1557,14 +1574,13 @@ export const updateReallocation = async (req, res) => {
     const allocatedbyObjectid = new mongoose.Types.ObjectId(allocatedBy)
     // const branchObjectId = new mongoose.Types.ObjectId(selectedbranch)
     const { selectedItem, formData } = req.body
-
     let allocatedToModel
     let allocatedByModel
     const isStaffallocatedtomodel = await Staff.findOne({ _id: selectedItem.allocatedTo })
     if (isStaffallocatedtomodel) {
       allocatedToModel = "Staff"
     } else {
-      const isAdminallocatedtomodel = await Admin.findOne({ _id: selectedItem.allocatdTo })
+      const isAdminallocatedtomodel = await Admin.findOne({ _id: selectedItem.allocatedTo })
       if (isAdminallocatedtomodel) {
         allocatedToModel = "Admin"
       }
@@ -1578,6 +1594,7 @@ export const updateReallocation = async (req, res) => {
         allocatedByModel = "Admin"
       }
     }
+
     if (!allocatedToModel || !allocatedByModel) {
       return res.status(400).json({ message: "Invalid allocated/allocatedby reference" })
     }
@@ -1612,7 +1629,8 @@ export const updateReallocation = async (req, res) => {
         },
         $set: {
           allocationType: allocationType, // Set outside the activityLog array
-          reallocatedTo: false
+          reallocatedTo: false,
+          dueDate: formData.allocationDate
         }
       },
 
@@ -1635,14 +1653,14 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
     const allocatedbyObjectid = new mongoose.Types.ObjectId(allocatedBy)
     const branchObjectId = new mongoose.Types.ObjectId(selectedbranch)
     const { selectedItem, cleanedData } = req.body
-
+   
     let allocatedToModel
     let allocatedByModel
     const isStaffallocatedtomodel = await Staff.findOne({ _id: selectedItem.allocatedTo })
     if (isStaffallocatedtomodel) {
       allocatedToModel = "Staff"
     } else {
-      const isAdminallocatedtomodel = await Admin.findOne({ _id: selectedItem.allocatdTo })
+      const isAdminallocatedtomodel = await Admin.findOne({ _id: selectedItem.allocatedTo })
       if (isAdminallocatedtomodel) {
         allocatedToModel = "Admin"
       }
@@ -1674,8 +1692,8 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         taskallocatedTo: selectedItem.allocatedTo,
         taskallocatedToModel: allocatedToModel,
         remarks: cleanedData.allocationDescription,
-        allocationChanged:true,
-        changeReason:formData.reason,
+        allocationChanged: true,
+        changeReason: formData.reason,
         taskBy: "allocated",
         ...(allocationType === "followup" ? { followupClosed: false } : {}),
         taskTo: allocationType
@@ -1689,7 +1707,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       // Save the document
       await matchLead.save();
 
-    } else if (matchLead.activityLog.length === 1 || matchLead.activityLog.length > 2) {
+    } else if (matchLead.activityLog.length === 1) {
       // Create base activity log
       const activityLogEntry = {
         submissionDate: new Date(),
@@ -1712,7 +1730,6 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       } else if (allocationType === "followup") {
         activityLogEntry.followupClosed = false
       }
-
       await LeadMaster.findByIdAndUpdate(
         { _id: selectedItem._id },
         {
@@ -1728,40 +1745,52 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         { new: true }
       );
 
+    } else if (matchLead.activityLog.length > 2) {
+      // Find index in activityLog that matches the criteria
+      const matchingIndex = matchLead.activityLog.findIndex(log =>
+        log.reallocatedTo === false &&
+        log.taskClosed === false &&
+        log.followupClosed === false &&
+        log.allocatedClosed === false &&
+        log.taskTo // ensures the field exists
+      );
+      const task = matchLead.activityLog[matchingIndex].taskTo
+      if (task !== allocationType) {
+        return res.status(409).json({ message: "Cannot change task name. It's already running.only possible to change the user" })
+      }
+
+      if (matchingIndex !== -1) {
+        // ✅ Update the matched log
+        matchLead.activityLog[matchingIndex].allocationChanged = true;
+      }
+
+      // Important for deep changes in arrays
+      // matchLead.markModified('activityLog');
+      const activityLogEntry = {
+        submissionDate: new Date(),
+        submittedUser: allocatedBy,
+        submissiondoneByModel: allocatedByModel,
+        taskallocatedBy: allocatedBy,
+        taskallocatedByModel: allocatedByModel,
+        taskallocatedTo: selectedItem.allocatedTo,
+        taskallocatedToModel: allocatedToModel,
+        remarks: cleanedData.allocationDescription,
+        taskBy: "allocated",
+        taskTo: allocationType
+      }
+      if (allocationType !== "followup") {
+        activityLogEntry.allocationDate = cleanedData.allocationDate;
+        activityLogEntry.taskfromFollowup = false
+      }
+      matchLead.dueDate = cleanedData.allocationDate
+
+      // Push new log
+      matchLead.activityLog.push(activityLogEntry);
+
+
+      await matchLead.save();
+
     }
-    // else if (matchLead.activityLog.length > 2) {
-
-    //       matchLead.activityLog.forEach((log) => {
-    //         if ("allocatedClosed" in log) {
-    //           log.allocatedClosed = true;
-    //         }
-    //       })
-    //       // Important for deep changes in arrays
-    //       matchLead.markModified('activityLog');
-    //       const activityLogEntry = {
-    //         submissionDate: new Date(),
-    //         submittedUser: allocatedBy,
-    //         submissiondoneByModel: allocatedByModel,
-    //         taskallocatedBy: allocatedBy,
-    //         taskallocatedByModel: allocatedByModel,
-    //         taskallocatedTo: selectedItem.allocatedTo,
-    //         taskallocatedToModel: allocatedToModel,
-    //         remarks: cleanedData.allocationDescription,
-    //         taskBy: "allocated",
-    //         taskTo: allocationType
-    //       }
-    //       if (allocationType !== "followup") {
-    //         activityLogEntry.allocationDate = cleanedData.allocationDate;
-    //         activityLogEntry.taskfromFollowup = false
-    //       }
-
-    //       // Push new log
-    //       matchLead.activityLog.push(activityLogEntry);
-
-
-    //       await matchLead.save();
-
-    //     }
 
 
     if (allocationpending === "true") {

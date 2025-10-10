@@ -1,15 +1,19 @@
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import api from "../../../api/api"
+import { useDispatch } from "react-redux"
 import { useNavigate } from "react-router-dom"
 import { FaSpinner } from "react-icons/fa"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons"
 import { toast } from "react-toastify"
-
+import { setLocalStorageItem } from "../../../helper/localstorage"
+import { setBranches } from "../../../../slices/companyBranchSlice.js"
+import UseFetch from "../../../hooks/useFetch"
 const Login = () => {
   const [passwordVisible, setPasswordVisible] = useState(false)
   const [loading, setLoading] = useState(false)
+  const dispatch = useDispatch()
   const {
     register,
     handleSubmit,
@@ -22,14 +26,9 @@ const Login = () => {
       setLoading(true)
       const response = await api.post(`/auth/login`, data)
       const datas = await response.data
-      if (response.status !== 200) {
-        toast.error("Login failed")
-        setLoading(false)
-        return
-      }
-     
       const { token, User } = datas
       if (response.status === 200) {
+
         toast.success(response.data.message, {
           icon: "🚀",
           style: {
@@ -44,7 +43,6 @@ const Login = () => {
         })
         localStorage.setItem("authToken", token)
         localStorage.setItem("user", JSON.stringify(User))
-
         setTimeout(() => {
           if (User.role === "Admin") {
             setLoading(false)
@@ -58,7 +56,7 @@ const Login = () => {
     } catch (error) {
       console.log(error)
       setLoading(false)
-      toast.error("invalid credentials")
+      toast.error("something went wrong")
       console.error(
         "Login failed:",
         error.response?.data?.message || error.message

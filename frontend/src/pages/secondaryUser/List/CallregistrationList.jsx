@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import debounce from "lodash.debounce"
 import io from "socket.io-client" // Import Socket.IO client
 import { FaSearch, FaPhone } from "react-icons/fa"
@@ -33,10 +33,26 @@ const CallregistrationList = () => {
   // State to track the active filter
   const [activeFilter, setActiveFilter] = useState("All")
   const { data: branches } = UseFetch("/branch/getbranch")
+  const socketRef = useRef(null)
+  useEffect(() => {
+    if (!socketRef.current) {
+      socketRef.current = io("http://localhost:9000", {
+        transports: ["websocket"], //helps avoid polling issues
+        reconnection: true //auto reconnect if dropped
+      })
+    }
+    const socket = socketRef.current
+    socket.on("connect", () => {
+      console.log("Connected", socket.id)
+    })
+    socket.on("disconnect", () => {
+      socket.off("connect")
+      socket.off("disconnect")
+    })
+  }, [])
   useEffect(() => {
     if (branches && branches.length > 0) {
-      console.log(branches)
-      console.log("hss")
+    
       const userData = getLocalStorageItem("user")
       setbranchids(userData.selected.map((item) => item.branch_id))
 
@@ -49,8 +65,6 @@ const CallregistrationList = () => {
       setUser(userData)
     }
   }, [branches])
-  console.log(branches)
-  console.log(branchids)
   const filterCallData = useCallback(
     (calls) => {
       const allCallRegistrations = calls.flatMap(
@@ -74,7 +88,6 @@ const CallregistrationList = () => {
   )
   useEffect(() => {
     if (users) {
-      console.log(branchids)
       const userId = users._id
       socket.emit("updatedCalls", userId)
       // Listen for initial data from the server
@@ -117,10 +130,10 @@ const CallregistrationList = () => {
         }
       })
       //Cleanup the socket connection when the component unmounts
-      return () => {
-        socket.off("updatedCalls")
-        socket.disconnect()
-      }
+      // return () => {
+      //   socket.off("updatedCalls")
+      //   socket.disconnect()
+      // }
     }
   }, [users, branchids])
 
