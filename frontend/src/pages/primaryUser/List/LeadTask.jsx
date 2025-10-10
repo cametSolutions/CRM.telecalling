@@ -5,10 +5,8 @@ import BarLoader from "react-spinners/BarLoader"
 import LeadTaskComponent from "../../../components/primaryUser/LeadTaskComponent"
 import { useState, useEffect } from "react"
 const LeadTask = () => {
-  console.log("d")
   // const location = useLocation()
   // const pagePath = location.pathname
-  // console.log(pagePath)
   const [loggedUser, setloggedUser] = useState(null)
   const [dates, setDates] = useState({ startDate: "", endDate: "" })
   const [type, settype] = useState("leadTask")
@@ -67,7 +65,6 @@ const LeadTask = () => {
       selectedCompanyBranch &&
       `/lead/getrespectedleadTask?userid=${loggedUser._id}&branchSelected=${selectedCompanyBranch}&role=${loggedUser.role}`
   )
-  console.log(data)
   const formatdate = (date) => new Date(date).toISOString().split("T")[0]
   const getLocalDate = (date) => {
     const local = new Date(date)
@@ -76,7 +73,6 @@ const LeadTask = () => {
   }
   useEffect(() => {
     if (data && pending && loggedUser && dates && dates.endDate) {
-console.log(data)
       const finalOutput = []
       data.forEach((entry) => {
         const activitylog = entry.activityLog
@@ -111,7 +107,6 @@ console.log(data)
           }
         })
       })
-console.log(finalOutput)
       // const filtereddatepending = finalOutput
       //   .filter(
       //     (item) =>
@@ -134,9 +129,7 @@ console.log(finalOutput)
       // setnetTotalAmount(totalNetAmount)
       setFilteredData(finalOutput)
 
-      console.log("H")
     } else if (data && !pending) {
-      console.log("h")
 
       const finalOutput = []
       data.forEach((entry) => {

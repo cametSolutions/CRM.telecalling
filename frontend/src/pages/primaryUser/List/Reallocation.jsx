@@ -121,6 +121,7 @@ const Reallocation = () => {
           value
         })
       )
+   
       setgridList(taskByCountArray)
       setTableData(leadreallocation)
     }
@@ -184,7 +185,22 @@ const Reallocation = () => {
           color="#4A90E2" // Change color as needed
         />
       )}
-      <h2 className="text-lg font-bold ml-5 mt-3">ReAllocation List</h2>
+      <div className="flex justify-between mt-2 mb-2 mx-5">
+        <h2 className="text-lg font-bold ">ReAllocation List</h2>
+        <select
+          onChange={(e) => {
+            setSelectedCompanyBranch(e.target.value)
+            setStatus(approvedToggleStatus ? "Approved" : "Pending")
+          }}
+          className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px] cursor-pointer"
+        >
+          {loggedUserBranches?.map((branch) => (
+            <option key={branch._id} value={branch.value}>
+              {branch.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div className="border border-gray-100 p-3 mx-4 rounded-xl shadow-xl bg-white  ">
         {gridList &&
@@ -207,7 +223,10 @@ const Reallocation = () => {
                           )}`
                         : `/staff/transaction/lead/reallocationTable/${encodeURIComponent(
                             item.label
-                          )}`
+                          )}`,
+                      {
+                        state: { id:selectedCompanyBranch } // 👈 only pass one value
+                      }
                     )
                   }
                   className="flex justify-between w-full px-6 py-2 bg-white shadow-xl rounded-md border border-gray-100"

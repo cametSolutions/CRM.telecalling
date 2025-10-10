@@ -15,7 +15,6 @@ const CustomerAdd = ({
   handleEditedData,
   customer
 }) => {
-  console.log(customer)
   const {
     register,
     handleSubmit,
@@ -131,12 +130,10 @@ const CustomerAdd = ({
       setShowTable(true)
       seteditState(true)
       setEditIndex(customer.index ?? 0)
-      console.log(customer)
       // Set tableObject using the selected index
       const selectedIndex = customer.index ?? 0
       const selectedItem = customer.selected?.[selectedIndex]
       // setselectedproductId(selectedItem?.product_id)
-      console.log(selectedItem)
       //
       // Reset the form
       reset({
@@ -239,12 +236,8 @@ const CustomerAdd = ({
         value: selectedItem.product_id
       }
       handleProductChange(editedproductoption)
-      console.log("H")
     }
-    console.log(tableData)
   }, [tableData, tableObject])
-  console.log(tableObject)
-  console.log(tableData)
   // First effect: handles product + sets value
   useEffect(() => {
     if (productData) {
@@ -257,7 +250,6 @@ const CustomerAdd = ({
       )
     }
   }, [productData, reset, customer, partners])
-  console.log(tableObject)
   // Second effect: run company handler after product is set
 
   useEffect(() => {
@@ -362,13 +354,10 @@ const CustomerAdd = ({
       setTableData((prev) => [...prev, tableObject])
     }
   }
-  console.log("h")
   useEffect(() => {
     if (selectedproductid) {
-      console.log(selectedproductid)
       const options = getCompaniesForProduct(selectedproductid) // mapping function
       setCompanyOptions(options)
-      console.log(options)
       if (options.length > 0) {
         const firstCompany = options[0]
         setSelectedCompanyId(firstCompany) // auto select company
@@ -403,10 +392,8 @@ const CustomerAdd = ({
         selectedproductid,
         selectedCompanyId.value
       )
-      console.log(branchOptions)
       setBranchOptions(branchOptions)
       setSelectedBranchId(branchOptions[0])
-      console.log(selectedCompanyId)
     }
   }, [selectedCompanyId])
   useEffect(() => {
@@ -417,7 +404,6 @@ const CustomerAdd = ({
         branch_id: selectedbranchId.value,
         branchName: selectedbranchId.label
       }))
-      console.log(selectedbranchId)
     }
   }, [selectedbranchId])
 
@@ -515,10 +501,8 @@ const CustomerAdd = ({
       setEditIndex(index)
     }
   }
-  console.log("H")
   const handleProductChange = (selectedOption) => {
     setValue("productName", selectedOption)
-    console.log(selectedOption)
     setselectedproductId(selectedOption.value)
     setShowTable(true)
     setTableObject((prev) => ({
@@ -531,10 +515,8 @@ const CustomerAdd = ({
   const handleCompanyChange = (selectedCompanyOption) => {
     setSelectedCompanyId(selectedCompanyOption.value)
   }
-  console.log(tableObject)
   const handleBranchChange = (selectedBranchOption) => {
     setValue("branchName", selectedBranchOption)
-    console.log(selectedBranchOption)
     setTableObject((prev) => ({
       ...prev,
       branch_id: selectedBranchOption.value,
@@ -577,9 +559,7 @@ const CustomerAdd = ({
     setEditIndex(null)
   }
   const getCompaniesForProduct = (productId) => {
-    console.log(productId)
     const product = productData.find((item) => item._id === productId)
-    console.log(product)
     if (!product) return []
 
     const seen = new Set()

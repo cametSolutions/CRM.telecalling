@@ -27,9 +27,7 @@ const Login = () => {
       const response = await api.post(`/auth/login`, data)
       const datas = await response.data
       const { token, User } = datas
-      console.log("branches")
       if (response.status === 200) {
-        console.log("h")
 
         toast.success(response.data.message, {
           icon: "🚀",
@@ -45,7 +43,6 @@ const Login = () => {
         })
         localStorage.setItem("authToken", token)
         localStorage.setItem("user", JSON.stringify(User))
-        console.log("h")
         setTimeout(() => {
           if (User.role === "Admin") {
             setLoading(false)

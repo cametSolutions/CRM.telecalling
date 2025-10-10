@@ -52,8 +52,7 @@ const CallregistrationList = () => {
   }, [])
   useEffect(() => {
     if (branches && branches.length > 0) {
-      console.log(branches)
-      console.log("hss")
+    
       const userData = getLocalStorageItem("user")
       setbranchids(userData.selected.map((item) => item.branch_id))
 
@@ -66,7 +65,6 @@ const CallregistrationList = () => {
       setUser(userData)
     }
   }, [branches])
-console.log("H")
   const filterCallData = useCallback(
     (calls) => {
       const allCallRegistrations = calls.flatMap(
@@ -90,14 +88,12 @@ console.log("H")
   )
   useEffect(() => {
     if (users) {
-      console.log(branchids)
       const userId = users._id
       socket.emit("updatedCalls", userId)
       // Listen for initial data from the server
       socket.on("updatedCalls", ({ mergedCalls, user }) => {
         if (users.role === "Admin") {
           setCallList(mergedCalls)
-          console.log(mergedCalls)
         } else {
           const userBranchName = new Set(
             users?.selected?.map((branch) => branch.branchName)

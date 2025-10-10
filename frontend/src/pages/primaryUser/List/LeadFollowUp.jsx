@@ -312,7 +312,6 @@ const LeadFollowUp = () => {
         setTableData(loggedusersallocatedleads.followupLeads)
       } else if (!pending && !ownFollowUp) {
         setTableData(loggedusersallocatedleads.followupLeads)
-      
       }
 
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
@@ -384,7 +383,6 @@ const LeadFollowUp = () => {
     netAmount,
     balanceAmount
   ) => {
-  
     setFormData((prev) => ({
       ...prev,
       netAmount,
@@ -507,39 +505,43 @@ const LeadFollowUp = () => {
           newErrors.nextfollowUpDate = "Next Follow Up Date Is Required"
         }
       }
-      if (formData.followupType === "closed") {
+      if (formData.followupType === "closed" && ishavePayment) {
         if (!formData.recievedAmount) {
           newErrors.recievedAmount = "Add recieved Amount"
         }
       }
       if (!formData.Remarks) newErrors.Remarks = "Remarks is Required"
+      
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors)
         return
       }
-
       setfollowupDateLoader(!followupDateLoader)
 
       const response = await api.put(
         `/lead/followupDateUpdate?selectedleaddocId=${selectedDocId}&loggeduserid=${loggedUser._id}`,
         formData
       )
+      if (response.status === 200) {
+        toast.success(response.data.message)
+        setIsEditable(false)
 
-      toast.success(response.data.message)
-      setIsEditable(false)
+        setselectedDocid(null)
+        setSelectedLeadId(null)
+        setHistoryList([])
+        setShowModal(false)
+        setfollowupDateModal(false)
+        setFormData({
+          followUpDate: "",
+          nextfollowUpDate: "",
+
+          Remarks: ""
+        })
+        refreshHook()
+      } else {
+        toast.error("something went wrong")
+      }
       setfollowupDateLoader(false)
-      setselectedDocid(null)
-      setSelectedLeadId(null)
-      setHistoryList([])
-      setShowModal(false)
-      setfollowupDateModal(false)
-      setFormData({
-        followUpDate: "",
-        nextfollowUpDate: "",
-
-        Remarks: ""
-      })
-      refreshHook()
     } catch (error) {
       setIsEditable(false)
       console.log("error:", error.message)
@@ -712,10 +714,10 @@ const LeadFollowUp = () => {
                       >
                         {item.customerName.customerName}
                       </td>
-                      <td className="  px-4 ">{item.mobile}</td>
-                      <td className="px-4 ">0481</td>
-                      <td className="px-4 ">{item.email}</td>
-                      <td className=" px-4 ">{item.leadId}</td>
+                      <td className="  px-4 ">{item?.mobile}</td>
+                      <td className="px-4 ">{item?.phone}</td>
+                      <td className="px-4 ">{item?.email}</td>
+                      <td className=" px-4 ">{item?.leadId}</td>
                       <td className="border border-b-0 border-gray-400 px-4 "></td>
 
                       <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
@@ -801,9 +803,7 @@ const LeadFollowUp = () => {
                       <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5">
                         {item.allocatedBy?.name}
                       </td>
-                      <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400  px-4 py-0.5 ">
-                        {/* {item.followUpDatesandRemarks.length} */}
-                      </td>
+                      <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400  px-4 py-0.5 "></td>
                       <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
                         {item.leadDate?.toString().split("T")[0]}
                       </td>
@@ -963,7 +963,7 @@ const LeadFollowUp = () => {
                                     <td className="border border-gray-200 p-2">
                                       {item?.submittedUser?.name}
                                     </td>
-                                    <td className="border border-gray-200 p-2 min-w-[160px]">
+                                    <td className="border border-gray-200 p-2 min-w-[160px] text-nowrap">
                                       <div className="flex justify-center">
                                         {item.taskTo ? (
                                           <>
