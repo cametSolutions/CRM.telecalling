@@ -474,8 +474,8 @@ const CustomerListform = () => {
                                   : "/staff/masters/customerEdit",
                                 {
                                   state: {
-                                    customer: customer,
-                                    selected: item,
+                                    customerId: customer._id,
+                                    
                                     index: itemIndex
                                   }
                                 }

@@ -31,11 +31,13 @@ import {
   loggeduserCallsCurrentDateCalls,
   GetscrollCustomer,
   DeletepartnerBranch,
-  GetallproductmissingCustomer
+  GetallproductmissingCustomer,
+  GeteditedCustomer
 } from "../../controller/secondaryUserController/customerController.js"
 
 const router = express.Router()
 router.get("/getcust", authMiddleware, GetscrollCustomer)
+router.get("/geteditedCustomer", authMiddleware, GeteditedCustomer)
 router.get("/getproductmissingCustomer", authMiddleware, GetallproductmissingCustomer)
 router.post("/customerRegistration", authMiddleware, CustomerRegister)
 router.delete("/callnoteDelete", authMiddleware, DeleteCallnotes)

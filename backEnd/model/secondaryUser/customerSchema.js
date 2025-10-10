@@ -67,4 +67,29 @@ const CustomerSchema = new mongoose.Schema({
   }
 }, { timestamps: true })
 
+
+
+// Customer identity
+CustomerSchema.index({ mobile: 1, email: 1 })
+CustomerSchema.index({ gstNo: 1 })
+
+CustomerSchema.index({ customerName: "text" })
+
+// References
+CustomerSchema.index({ partner: 1 })
+CustomerSchema.index({ callregistration: 1 })
+CustomerSchema.index({ "selected.licensenumber": 1 })
+CustomerSchema.index({ "selected.company_id": 1 })
+CustomerSchema.index({ "selected.branch_id": 1 })
+CustomerSchema.index({ "selected.product_id": 1 })
+
+// Status + expiry
+CustomerSchema.index({ "selected.isActive": 1, "selected.licenseExpiryDate": 1 })
+
+// AMC dates
+CustomerSchema.index({ "selected.amcstartDate": 1, "selected.amcendDate": 1 })
+
+// TVU expiry
+CustomerSchema.index({ "selected.tvuexpiryDate": 1 })
+
 export default mongoose.model("Customer", CustomerSchema)

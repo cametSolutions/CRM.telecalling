@@ -87,27 +87,27 @@ const leadSchema = new mongoose.Schema(
     reallocatedTo: { type: Boolean, default: false },
     //to track all activities of the lead
     activityLog: [{
-      submissionDate: { type: Date },
-      submittedUser: { type: mongoose.Schema.Types.ObjectId, refpath: "submissiondoneByModel", default: null },
-      submissiondoneByModel: { type: String, enum: ["Staff", "Admin"] },
-      taskallocatedBy: { type: mongoose.Schema.Types.ObjectId, refpath: "taskallocatedByModel" },
-      taskallocatedByModel: { type: String, enum: ["Staff", "Admin"] },
-      taskallocatedTo: { type: mongoose.Schema.Types.ObjectId, refpath: "taskallocatedToModel", default: null },
+      submissionDate: { type: Date },//date by which when a task assigning or lead created
+      submittedUser: { type: mongoose.Schema.Types.ObjectId, refpath: "submissiondoneByModel", default: null },//id of user when lead or task is submitted
+      submissiondoneByModel: { type: String, enum: ["Staff", "Admin"] },//its a dynamic model ,who the user is admin or staff.i have two staff and admin
+      taskallocatedBy: { type: mongoose.Schema.Types.ObjectId, refpath: "taskallocatedByModel" },//for lead 1 is creted by user 1 and but this lead is assigned to user 2 by user 3 so the user 3 is the task allocated by
+      taskallocatedByModel: { type: String, enum: ["Staff", "Admin"] },//dynamic model
+      taskallocatedTo: { type: mongoose.Schema.Types.ObjectId, refpath: "taskallocatedToModel", default: null },//its the task get by the user.user 1 is assigned a task to user 2 ,user 2 is the taskallocatedto
       taskallocatedToModel: { type: String, enum: ["Staff", "Admin"] },
       remarks: { type: String },
-      taskBy: { type: String },
-      taskTo: { type: String },
-      taskDescription: { type: String },
-      reallocatedTo: { type: Boolean, default: false },
-      taskClosed: { type: Boolean, default: false },
-      followupClosed: { type: Boolean },
+      taskBy: { type: String },//name of task done by the submitter user its are lead,allocated,followup,implementation when a lead is created taskby by is lead and when assign to someone its become allocated and later its name of the given task
+      taskTo: { type: String },//name of task given to the assigned user they are followup,implementation,coding etc..
+      taskDescription: { type: String },//description given by the assigned user while in the task submission
+      reallocatedTo: { type: Boolean, default: false },//if its true then its gone through the reallocation page
+      taskClosed: { type: Boolean, default: false },//if the user submitted the task completion then only its true ,to check the task is completed or pending
+      followupClosed: { type: Boolean },//to check the followup is closed or its in running 
       allocatedClosed: { type: Boolean, default: false },//block for previously allocated user 
-      followUpDate: { type: Date },
-      nextFollowUpDate: { type: Date },
-      allocationDate: { type: Date },
-      taskSubmissionDate: { type: Date },
-      taskfromFollowup: { type: Boolean },
-      allocationChanged: { type: Boolean },
+      followUpDate: { type: Date },//date by the followup happens
+      nextFollowUpDate: { type: Date },//set the date for next followup date
+      allocationDate: { type: Date },//its the completion date given to the user to complete the task
+      taskSubmissionDate: { type: Date },///its the date by which task completion done by the user 
+      taskfromFollowup: { type: Boolean },//in followup phase have a possible to allocate some task to user,so to check the alloation is come from followup ,already have another allocation directly in allocation page so distinguish between them this field is neccessary,for example allocation given to a user is coding in allocation page their allocationtype is coding but allocation given to a user is coding from followup thier allocationtype is followup ,its from followp its always allocation type is followup
+      allocationChanged: { type: Boolean },//allocation can be reassinged to another,but i have the history of reassingnig.for example if assigned a user named 1 to a task coding and later its reassigned to  user 2.in lead task page when the user 1 login wont see the task but user 2 have .so for this createria add this field to extract or filter out respective task in the lead task page 
       changeReason: { type: String }
     }],
     //to know what type of allocation currently goin on,like implemention,programming ,followup to track current allocation status

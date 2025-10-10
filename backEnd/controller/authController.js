@@ -327,7 +327,7 @@ export const UpdateUserandAdmin = async (req, res) => {
 
 export const Login = async (req, res) => {
   const { emailOrMobile, password } = req.body
-
+console.log(emailOrMobile,password)
   try {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     let user
@@ -342,10 +342,12 @@ export const Login = async (req, res) => {
       }
     } else {
       // If it's a mobile number
-
+console.log("oustside")
       user = await Admin.findOne({ mobile: emailOrMobile }).lean()
+console.log("user",user)
       if (!user) {
         user = await Staff.findOne({ mobile: emailOrMobile }).lean()
+
       }
     }
     if (!user) {
@@ -1149,7 +1151,8 @@ export const OnsiteApply = async (req, res) => {
 
 export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
   try {
-    const { year, month } = req.query || { year: yearParam, month: monthParam }
+    const { year, month,selectedBranch} = req.query || { year: yearParam, month: monthParam }
+    // console.log("selectedBranch", selectedBranch)
 
     function getSundays(year, month) {
       const sundays = []
@@ -1236,10 +1239,15 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
     const sundayFulldate = createDates(sundays, month, year)
     const startDate = new Date(Date.UTC(year, month - 1, 1))
     const endDate = new Date(Date.UTC(year, month, 0))
-
+     const matchStage = {
+      isVerified: true,
+    };
+    if (selectedBranch) {
+      matchStage["selected.branch_id"] = new mongoose.Types.ObjectId(selectedBranch)
+    }
     const users = await Staff.aggregate([
       {
-        $match: { isVerified: true }
+        $match: matchStage
 
       },
       {
@@ -1330,15 +1338,15 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       : []
 
     for (const user of users) {
-      const userId = user._id
-      const attendanceId = user.attendanceId
-      const branches = user.selected
-      const userName = user.name
-      const staffId = user.attendanceId
-      const assignedto = user.assignedto
-      const casualleavestartsfrom = user.casualleavestartsfrom
-      const sickleavestartsfrom = user.sickleavestartsfrom
-      const privilegeleavestartsfrom = user.privilegeleavestartsfrom
+      const userId = user?._id
+      const attendanceId = user?.attendanceId
+      const branches = user?.selected
+      const userName = user?.name
+      const staffId = user?.attendanceId
+      const assignedto = user?.assignedto
+      const casualleavestartsfrom = user?.casualleavestartsfrom
+      const sickleavestartsfrom = user?.sickleavestartsfrom
+      const privilegeleavestartsfrom = user?.privilegeleavestartsfrom
 
       // Fetch attendance-related data for the given month
       const results = await Promise.allSettled([

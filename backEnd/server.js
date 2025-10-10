@@ -29,10 +29,8 @@ const { Staff, Admin } = models
 const app = express()
 dotenv.config()
 const server = http.createServer(app)
-
 // Running port configuration
 const PORT = process.env.PORT
-
 // MongoDB connection getting from config/db.js
 connectDB()
 
@@ -82,7 +80,9 @@ io.on("connection", (socket) => {
             as: "productDetails"
           }
         }
-      ])
+      ],
+
+      )
 
       const todayscalls = await CallRegistration.aggregate([
         // Filter the callregistration array to keep only entries with today's attendance
@@ -236,7 +236,7 @@ io.on("connection", (socket) => {
       ])
       // Step 1: Use a Map to store unique merged entries by _id
       const mergedMap = new Map();
-    
+
       pendingcalls.forEach((call) => {
         mergedMap.set(call._id, { ...call })
       })

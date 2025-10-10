@@ -10,6 +10,7 @@ import Select from "react-select"
 import UseFetch from "../../../hooks/useFetch"
 const LeadAllocationTable = () => {
   const [status, setStatus] = useState("Pending")
+  const [submiterror, setsubmitError] = useState("")
   const [toggleLoading, setToggleLoading] = useState(false)
   const [selectedLeadId, setselectedLeadId] = useState(null)
   const [showModal, setShowmodal] = useState(false)
@@ -101,13 +102,14 @@ const LeadAllocationTable = () => {
     setShowFullEmail(false)
     setShowFullName(false)
     if (approvedToggleStatus === false) {
+      //for getting approved allocation,
       setToggleLoading(true)
       const response = await api.get(
         `/lead/getallLead?Status=Approved&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
       )
 
       if (response.status >= 200 && response.status < 300) {
-        const data = response.data.data
+        const data = response.data.data //gets only allocated leads with reallocatedto field false which means reallocatedto true are in the reallocation page not need to display here
 
         setTableData(data)
         data.forEach((item) => {
@@ -134,6 +136,7 @@ const LeadAllocationTable = () => {
         setSelectedAllocates(initialSelected)
       }
     } else {
+      //for getting pending allocation
       setToggleLoading(true)
       const response = await api.get(
         `/lead/getallLead?Status=Pending&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
@@ -146,16 +149,16 @@ const LeadAllocationTable = () => {
       }
     }
   }
-  const handleSelectedAllocates = (item, value,label) => {
+  const handleSelectedAllocates = (item, value, label) => {
     setTableData((prevLeads) =>
       prevLeads.map((lead) =>
-        lead._id === item._id ? { ...lead, allocatedTo: value,allocatedName:label } : lead
+        lead._id === item._id
+          ? { ...lead, allocatedTo: value, allocatedName: label }
+          : lead
       )
     )
   }
-  console.log(tableData)
-  console.log(selectedItem)
-  console.log(formData)
+ 
   const handleSubmit = async () => {
     // sanitize all string fields
     const cleanedData = Object.fromEntries(
@@ -180,24 +183,7 @@ const LeadAllocationTable = () => {
       }))
       return
     }
-    // console.log(formData)
-    // const cleanedData = Object.fromEntries(
-    //   Object.entries(formData).map(([key, value]) => [
-    //     key,
-    //     typeof value === "string" ? value.trim() : value
-    //   ])
-    // )
-    // console.log(cleanedData)
-    // if (!formData.allocationDescription.trim()) {
-    //   console.log(formData)
-    //   setValidateError((prev) => ({
-    //     ...prev,
-    //     descriptionError: "Please fill it "
-    //   }))
-    //   return
-    // }
 
-    console.log(cleanedData)
     // return
     try {
       if (selectedAllocationType) {
@@ -207,6 +193,7 @@ const LeadAllocationTable = () => {
         let response
         if (approvedToggleStatus) {
           response = await api.post(
+            //change allocation to another staff means reassigning to another one
             `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationType=${encodeURIComponent(
               selected
             )}&allocatedBy=${loggedUser._id}`,
@@ -217,6 +204,7 @@ const LeadAllocationTable = () => {
             setsubmitLoading(false)
           }
         } else {
+          //set allocation to respected staff from allocation pending page
           response = await api.post(
             `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationType=${encodeURIComponent(
               selected
@@ -236,13 +224,73 @@ const LeadAllocationTable = () => {
         }
         setShowmodal(false)
         toast.success(response.data.message)
+        setsubmitLoading(false)
       }
     } catch (error) {
+      if (error.response) {
+        const { status, data } = error.response
+
+        if (status === 409) {
+          // ⚠️ custom business-rule warning
+          toast.warning(
+            data.message ||
+              "Cannot change task name. It's already running.only possible to change the user"
+          )
+          setsubmitError({ submissionerror: data.message })
+        } else if (status === 400) {
+          toast.error(data.message || "Invalid request")
+        } else if (status === 500) {
+          toast.error("Internal Server Error. Please try again later.")
+        } else {
+          toast.error(data.message || "Something went wrong")
+        }
+      } else {
+        // if error.response doesn’t exist (like network failure)
+        toast.error("Network error. Please check your connection.")
+      }
+
+      setsubmitLoading(false)
       console.log("error:", error.message)
     }
   }
-  console.log(formData)
-  console.log(approvedToggleStatus)
+  const handleAllocate = (item) => {
+    if (!selectedAllocates.hasOwnProperty(item._id)) {
+      setValidateError((prev) => ({
+        ...prev,
+        [item._id]: "Allocate to Someone"
+      }))
+      return
+    }
+    if (!selectedAllocationType.hasOwnProperty(item._id)) {
+      setValidatetypeError((prev) => ({
+        ...prev,
+        [item._id]: "please select a Type"
+      }))
+      return
+    }
+    setselectedLeadId(item.leadId)
+    setShowmodal(true)
+    setSelectedItem(item)
+    if (selectedAllocationType[item._id] === "followup") {
+      setFormData((prev) => ({
+        ...prev,
+        allocationDate: new Date()
+      }))
+    }
+
+    // if (approvedToggleStatus) {
+    //   console.log("h")
+    // } else {
+    //   if (selectedAllocationType[item._id] === "followup") {
+    //     console.log("hh")
+    //     setFormData((prev) => ({
+    //       ...prev,
+    //       allocationDate: new Date()
+    //     }))
+    //   }
+    // }
+  }
+
   return (
     <div className="flex flex-col h-full">
       {loading && (
@@ -548,31 +596,7 @@ const LeadAllocationTable = () => {
                     <td className="border border-t-0 border-gray-400 border-b-0  px-4 py-0.5 "></td>
                     <td
                       className="border border-t-0 border-gray-400 border-b-0  px-4 py-0.5 text-red-400 hover:text-red-500 hover:cursor-pointer font-semibold"
-                      onClick={() => {
-                        if (!selectedAllocates.hasOwnProperty(item._id)) {
-                          setValidateError((prev) => ({
-                            ...prev,
-                            [item._id]: "Allocate to Someone"
-                          }))
-                          return
-                        }
-                        if (!selectedAllocationType.hasOwnProperty(item._id)) {
-                          setValidatetypeError((prev) => ({
-                            ...prev,
-                            [item._id]: "please select a Type"
-                          }))
-                          return
-                        }
-                        setselectedLeadId(item.leadId)
-                        setShowmodal(true)
-                        setSelectedItem(item)
-                        if (selectedAllocationType[item._id] === "followup") {
-                          setFormData((prev) => ({
-                            ...prev,
-                            allocationDate: new Date()
-                          }))
-                        }
-                      }}
+                      onClick={() => handleAllocate(item)}
                     >
                       Allocate
                     </td>
@@ -840,8 +864,12 @@ const LeadAllocationTable = () => {
                     setFormData((prev) => ({
                       ...prev,
                       allocationDate: "",
-                      allocationDescription: ""
+                      allocationDescription: "",
+                      reason: ""
                     }))
+                    setsubmitError({
+                      submissionerror: ""
+                    })
                     setsubmitLoading(false)
                   }}
                   className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
@@ -872,7 +900,10 @@ const LeadAllocationTable = () => {
                   </label>
                   <input
                     readOnly
-                    value={selectedItem.allocatedName}
+                    value={
+                      selectedItem.allocatedName ||
+                      selectedItem?.allocatedTo?.name
+                    }
                     type="text"
                     className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
                   />
@@ -883,41 +914,26 @@ const LeadAllocationTable = () => {
                     <Calendar size={14} className="text-blue-500" />
                     Completion Date
                   </label>
-                  {selectedAllocationType[selectedItem._id] !== "followup" ? (
-                    <>
-                      <input
-                        type="date"
-                        className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-gray-700"
-                        onChange={(e) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            allocationDate: e.target.value
-                          }))
-                          setValidateError((prev) => ({
-                            ...prev,
-                            allocationDateError: ""
-                          }))
-                        }}
-                      />
-                      {validateError.allocationDateError && (
-                        <div className="flex items-center gap-1.5 text-red-600 text-xs bg-red-50 px-2.5 py-1.5 rounded-lg">
-                          <AlertCircle size={14} />
-                          <span>{validateError.allocationDateError}</span>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <input
-                      readOnly
-                      value={
-                        formData?.allocationDate
-                          ?.toLocaleDateString("en-GB")
-                          .split("/")
-                          .join("-") || ""
-                      }
-                      type="text"
-                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
-                    />
+
+                  <input
+                    type="date"
+                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-gray-700"
+                    onChange={(e) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        allocationDate: e.target.value
+                      }))
+                      setValidateError((prev) => ({
+                        ...prev,
+                        allocationDateError: ""
+                      }))
+                    }}
+                  />
+                  {validateError.allocationDateError && (
+                    <div className="flex items-center gap-1.5 text-red-600 text-xs bg-red-50 px-2.5 py-1.5 rounded-lg">
+                      <AlertCircle size={14} />
+                      <span>{validateError.allocationDateError}</span>
+                    </div>
                   )}
                 </div>
 
@@ -986,6 +1002,14 @@ const LeadAllocationTable = () => {
                     )}
                   </div>
                 )}
+                <div className="flex justify-center">
+                  {" "}
+                  {submiterror.submissionerror && (
+                    <p className="text-red-500 text-sm">
+                      {submiterror.submissionerror}
+                    </p>
+                  )}
+                </div>
 
                 {/* Info Message - Compressed */}
                 <div className="bg-blue-50 border border-blue-100 rounded-lg p-2.5">
@@ -1008,8 +1032,12 @@ const LeadAllocationTable = () => {
                       setFormData((prev) => ({
                         ...prev,
                         allocationDate: "",
-                        allocationDescription: ""
+                        allocationDescription: "",
+                        reason: ""
                       }))
+                      setsubmitError({
+                        submiterror: ""
+                      })
                     }}
                     disabled={submitLoading}
                     className="w-full sm:w-auto px-5 py-2 text-sm border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

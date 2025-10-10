@@ -46,5 +46,15 @@ const CallRegistrationSchema = new mongoose.Schema(
     timestamps: true
   }
 )
+// References
+CallRegistrationSchema.index({ customerid: 1 });
+CallRegistrationSchema.index({ customerName: "text" });
+
+// callregistration array fields
+CallRegistrationSchema.index({ "callregistration.product": 1 });
+CallRegistrationSchema.index({ "callregistration.branchName": 1 });
+CallRegistrationSchema.index({ "callregistration.formdata.status": 1 });
+CallRegistrationSchema.index({ "callregistration.formdata.attendedBy": 1 });
+CallRegistrationSchema.index({ "callregistration.formdata.completedBy": 1 });
 
 export default mongoose.model("CallRegistration", CallRegistrationSchema)

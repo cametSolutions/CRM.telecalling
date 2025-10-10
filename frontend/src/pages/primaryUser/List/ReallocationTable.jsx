@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useLocation } from "react-router-dom"
 import React from "react"
 import { toast } from "react-toastify"
 import { PropagateLoader } from "react-spinners"
@@ -32,6 +33,8 @@ const ReallocationTable = () => {
   const [selectedItem, setSelectedItem] = useState(null)
   const [tableData, setTableData] = useState([])
   const { data: branches } = UseFetch("/branch/getBranch")
+  const location = useLocation()
+  const { id } = location.state || {}
   const [formData, setFormData] = useState({
     allocationDate: "",
     allocationDescription: ""
@@ -61,20 +64,20 @@ const ReallocationTable = () => {
             return { value: item.branch_id, label: item.branchName }
           })
           setLoggeduserBranches(loggeduserBranches)
-          setSelectedCompanyBranch(loggeduserBranches[0].value)
+          setSelectedCompanyBranch(id)
         } else {
           const loggeduserBranches = branches.map((item) => {
             return { value: item._id, label: item.branchName }
           })
           setLoggeduserBranches(loggeduserBranches)
-          setSelectedCompanyBranch(loggeduserBranches[0].value)
+          setSelectedCompanyBranch(id)
         }
       } else {
         const loggeduserBranches = loggedUser.selected.map((item) => {
           return { value: item.branch_id, label: item.branchName }
         })
         setLoggeduserBranches(loggeduserBranches)
-        setSelectedCompanyBranch(loggeduserBranches[0].value)
+        setSelectedCompanyBranch(id)
       }
     }
   }, [loggedUser, branches])
@@ -138,6 +141,8 @@ const ReallocationTable = () => {
       }
       const selected = selectedAllocationType[selectedItem._id]
       setsubmitLoading(true)
+      
+
       // return
       // const selected = selectedAllocationType[selectedItem._id]
       const response = await api.post(
@@ -156,9 +161,10 @@ const ReallocationTable = () => {
       refreshHook()
       setTableData([])
     } catch (error) {
+      
+      setsubmitError({ submissionerror: "something went wrong" })
       setsubmitLoading(false)
       console.log(error)
-      setsubmitError({ submissionerror: "something went error" })
     }
   }
   const handleClosed = async () => {
@@ -201,7 +207,7 @@ const ReallocationTable = () => {
         <div className="flex justify-end  ml-auto gap-6 items-center">
           {/* Branch Dropdown */}
           <select
-            // value={selectedCompanyBranch || ""}
+            value={selectedCompanyBranch || ""}
             onChange={(e) => {
               setSelectedCompanyBranch(e.target.value)
               setStatus(approvedToggleStatus ? "Approved" : "Pending")
@@ -287,13 +293,7 @@ const ReallocationTable = () => {
                     <td className="px-4 ">{item?.email}</td>
                     <td className=" px-4 ">{item?.leadId}</td>
                     <td className=" px-4 border border-b-0 border-gray-400 "></td>
-                    <td className="border border-b-0 border-gray-400 px-4 ">
-                      {/* {
-                        item.followUpDatesandRemarks[
-                          item.followUpDatesandRemarks.length - 1
-                        ]?.nextfollowpdate
-                      } */}
-                    </td>
+                    <td className="border border-b-0 border-gray-400 px-4 "></td>
 
                     <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
                       <button
@@ -376,8 +376,33 @@ const ReallocationTable = () => {
                         </p>
                       )}
                     </td>
-                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer bg-white">
-                      Follow Up
+                    <td
+                      className=" border border-t-0 border-b-0 border-gray-400 px-4  text-red-500 hover:cursor-pointer bg-white"
+                      onClick={() => {
+                        if (!selectedAllocates.hasOwnProperty(item._id)) {
+                          setValidateError((prev) => ({
+                            ...prev,
+                            [item._id]: "Allocate to Someone"
+                          }))
+                          return
+                        }
+                        if (!selectedAllocationType.hasOwnProperty(item._id)) {
+                          setValidatetypeError((prev) => ({
+                            ...prev,
+                            [item._id]: "please select a Type"
+                          }))
+                          return
+                        }
+                        setselectedLeadId(item.leadId)
+                        setShowmodal(true)
+                        setSelectedItem(item)
+                        setFormData((prev) => ({
+                          ...prev,
+                          allocationDate: new Date()
+                        }))
+                      }}
+                    >
+                      Allocate
                     </td>
                     <td className=" border border-t-0 border-b-0 border-gray-400 px-4 bg-white ">
                       {" "}
@@ -465,46 +490,26 @@ const ReallocationTable = () => {
                         </div>
                       </div>
                     </td>
-                    <td className="border  border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5">
-                      {/* {item?.allocatedBy?.name} */}
-                    </td>
-                    <td className="border  border-t-0 border-r-0 border-l-0 border-b-0  border-gray-400  px-4 py-0.5 ">
-                      {/* {item.followUpDatesandRemarks.length} */}
-                    </td>
+                    <td className="border  border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5"></td>
+                    <td className="border  border-t-0 border-r-0 border-l-0 border-b-0  border-gray-400  px-4 py-0.5 "></td>
                     <td className="border  border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 ">
                       {new Date(item?.leadDate).toLocaleDateString()}
                     </td>
-                    <td className="border  border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5 ">
-                      {/* {item.leadDate?.toString().split("T")[0]} */}
-                    </td>
+                    <td className="border  border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5 "></td>
                     <td className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5 "></td>
                     <td
                       className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5 text-red-400 hover:text-red-500 hover:cursor-pointer font-semibold"
                       onClick={() => {
-                        if (!selectedAllocates.hasOwnProperty(item._id)) {
-                          setValidateError((prev) => ({
-                            ...prev,
-                            [item._id]: "Allocate to Someone"
-                          }))
-                          return
-                        }
-                        if (!selectedAllocationType.hasOwnProperty(item._id)) {
-                          setValidatetypeError((prev) => ({
-                            ...prev,
-                            [item._id]: "please select a Type"
-                          }))
-                          return
-                        }
-                        setselectedLeadId(item.leadId)
-                        setShowmodal(true)
-                        setSelectedItem(item)
+                        setIsclosed(true)
                         setFormData((prev) => ({
                           ...prev,
-                          allocationDate: new Date()
+                          netAmount: item?.netAmount,
+                          balanceAmount: item?.balanceAmount
                         }))
+                        setselectedLeadId(item?._id)
                       }}
                     >
-                      Allocate
+                      Closed
                     </td>
                     <td className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5"></td>
                   </tr>
@@ -537,15 +542,6 @@ const ReallocationTable = () => {
                     <td className="border border-t-0 border-gray-400 "></td>
                     <td className="border border-t-0 border-gray-400 "></td>
                     <td
-                      onClick={() => {
-                        setIsclosed(true)
-                        setFormData((prev) => ({
-                          ...prev,
-                          netAmount: item?.netAmount,
-                          balanceAmount: item?.balanceAmount
-                        }))
-                        setselectedLeadId(item?._id)
-                      }}
                       // onClick={() => {
                       //   if (!selectedAllocates.hasOwnProperty(item._id)) {
                       //     setValidateError((prev) => ({
@@ -569,10 +565,8 @@ const ReallocationTable = () => {
                       //     allocationDate: new Date()
                       //   }))
                       // }}
-                      className="border border-t-0 border-gray-400 text-red-400 hover:text-red-500 font-semibold cursor-pointer"
-                    >
-                      Closed
-                    </td>
+                      className="border border-t-0 border-gray-400"
+                    ></td>
                     <td className="border border-t-0 border-gray-400 "></td>
                   </tr>
                   <tr>
