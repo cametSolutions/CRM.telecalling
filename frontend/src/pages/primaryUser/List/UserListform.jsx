@@ -24,11 +24,11 @@ const UserListform = () => {
   const [selectedBranch, setselectedBranch] = useState(null)
   const [loggeduser, setloggeduser] = useState(null)
   const { data, loading } = UseFetch("/auth/getallUsers")
-
   useEffect(() => {
     if (data) {
       const logged = getLocalStorageItem("user")
       const { allusers } = data
+
       setallusers(allusers)
       const filtereusers = allusers.filter((user) =>
         user.selected
@@ -101,7 +101,7 @@ const UserListform = () => {
       // toast.error("Failed to delete item. Please try again.")
     }
   }
-
+console.log()
   return (
     <div className="h-full flex flex-col bg-gray-50">
       {/* Header Section - Sticky */}

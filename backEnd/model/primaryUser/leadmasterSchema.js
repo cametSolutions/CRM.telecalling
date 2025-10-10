@@ -100,7 +100,7 @@ const leadSchema = new mongoose.Schema(
       taskDescription: { type: String },//description given by the assigned user while in the task submission
       reallocatedTo: { type: Boolean, default: false },//if its true then its gone through the reallocation page
       taskClosed: { type: Boolean, default: false },//if the user submitted the task completion then only its true ,to check the task is completed or pending
-      followupClosed: { type: Boolean },//to check the followup is closed or its in running 
+      followupClosed: { type: Boolean,default:false },//to check the followup is closed or its in running 
       allocatedClosed: { type: Boolean, default: false },//block for previously allocated user 
       followUpDate: { type: Date },//date by the followup happens
       nextFollowUpDate: { type: Date },//set the date for next followup date
