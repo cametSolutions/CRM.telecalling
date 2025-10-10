@@ -14,7 +14,7 @@ const socket = io("https://www.crm.camet.in")
 
 const CallregistrationList = () => {
   const navigate = useNavigate()
-
+  const [loggedUserBranches, setLoggeduserBranches] = useState([])
   const [today, setToday] = useState(null)
   const [userBranch, setUserBranch] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -22,8 +22,8 @@ const CallregistrationList = () => {
   const [userCallStatus, setUserCallstatus] = useState([])
   const [callList, setCallList] = useState([])
   const [filteredCalls, setFilteredCalls] = useState([])
-  const [loading, setLoading] = useState(true)
-
+  const [loading, setLoading] = useState(false)
+  const [selectedCompanyBranch, setSelectedCompanyBranch] = useState(null)
   // Define states for filtered call counts
   const [pendingCallsCount, setPendingCallsCount] = useState(0)
   const [todayCallsCount, setTodayCallsCount] = useState(0)
@@ -52,8 +52,29 @@ const CallregistrationList = () => {
   }, [])
   useEffect(() => {
     if (branches && branches.length > 0) {
-    
       const userData = getLocalStorageItem("user")
+      if (userData.role === "Admin") {
+        const isselctedArray = userData?.selected
+        if (isselctedArray) {
+          const loggeduserBranches = userData.selected.map((item) => {
+            return { value: item.branch_id, label: item.branchName }
+          })
+          setLoggeduserBranches(loggeduserBranches)
+          setSelectedCompanyBranch(loggeduserBranches[0].label)
+        } else {
+          const loggeduserBranches = branches.map((item) => {
+            return { value: item._id, label: item.branchName }
+          })
+          setLoggeduserBranches(loggeduserBranches)
+          setSelectedCompanyBranch(loggeduserBranches[0].label)
+        }
+      } else {
+        const loggeduserBranches = userData.selected.map((item) => {
+          return { value: item.branch_id, label: item.branchName }
+        })
+        setLoggeduserBranches(loggeduserBranches)
+        setSelectedCompanyBranch(loggeduserBranches[0].label)
+      }
       setbranchids(userData.selected.map((item) => item.branch_id))
 
       // const users = JSON.parse(userData)
@@ -65,6 +86,7 @@ const CallregistrationList = () => {
       setUser(userData)
     }
   }, [branches])
+  console.log(selectedCompanyBranch)
   const filterCallData = useCallback(
     (calls) => {
       const allCallRegistrations = calls.flatMap(
@@ -87,47 +109,47 @@ const CallregistrationList = () => {
     [users]
   )
   useEffect(() => {
-    if (users) {
+    if (users && selectedCompanyBranch) {
+      setLoading(true)
       const userId = users._id
       socket.emit("updatedCalls", userId)
+      const brancharray = [selectedCompanyBranch]
+      console.log(brancharray)
       // Listen for initial data from the server
       socket.on("updatedCalls", ({ mergedCalls, user }) => {
-        if (users.role === "Admin") {
-          setCallList(mergedCalls)
-        } else {
-          const userBranchName = new Set(
-            users?.selected?.map((branch) => branch.branchName)
-          )
+        // const userBranchName = new Set(
+        //   users?.selected?.map((branch) => branch.branchName)
+        // )
 
-          const branchNamesArray = Array.from(userBranchName)
-          setUserBranch(branchNamesArray)
+        // const branchNamesArray = Array.from(userBranchName)
+        // console.log(branchNamesArray)
+        // setUserBranch(brancharray)
 
-          const filtered = mergedCalls.filter(
-            (call) =>
-              Array.isArray(call?.callregistration) && // Check if callregistration is an array
-              call.callregistration.some((registration) => {
-                const hasMatchingBranch =
-                  Array.isArray(registration?.branchName) && // Check if branchName is an array
-                  registration.branchName.some(
-                    (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
-                  )
+        const filtered = mergedCalls.filter(
+          (call) =>
+            Array.isArray(call?.callregistration) && // Check if callregistration is an array
+            call.callregistration.some((registration) => {
+              const hasMatchingBranch =
+                Array.isArray(registration?.branchName) && // Check if branchName is an array
+                registration.branchName.some(
+                  (branch) => brancharray.includes(branch) // Check if any branch matches user's branches
+                )
 
-                // If user has only one branch, ensure it matches exactly and no extra branches
-                if (branchNamesArray.length === 1) {
-                  return (
-                    hasMatchingBranch &&
-                    registration.branchName.length === 1 &&
-                    registration.branchName[0] === branchNamesArray[0]
-                  )
-                }
+              // If user has only one branch, ensure it matches exactly and no extra branches
+              if (brancharray.length === 1) {
+                return (
+                  hasMatchingBranch &&
+                  registration.branchName.length === 1 &&
+                  registration.branchName[0] === brancharray[0]
+                )
+              }
 
-                // If user has more than one branch, just check for any match
-                return hasMatchingBranch
-              })
-          )
-
-          setCallList(filtered)
-        }
+              // If user has more than one branch, just check for any match
+              return hasMatchingBranch
+            })
+        )
+        setLoading(false)
+        setCallList(filtered)
       })
       //Cleanup the socket connection when the component unmounts
       // return () => {
@@ -135,7 +157,7 @@ const CallregistrationList = () => {
       //   socket.disconnect()
       // }
     }
-  }, [users, branchids])
+  }, [users, branchids, selectedCompanyBranch])
 
   useEffect(() => {
     if (callList && callList.length > 0 && users) {
@@ -357,11 +379,21 @@ const CallregistrationList = () => {
             >
               Call
             </label>
-            {/* <div>
-              <button className="bg-blue-800" onClick={handlemerge}>
-                merge
-              </button>
-            </div> */}
+            <select
+              // value={selectedCompanyBranch || ""}
+              onChange={(e) => {
+                setLoading(true)
+                setFilteredCalls([])
+                setSelectedCompanyBranch(e.target.value)
+              }}
+              className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px] cursor-pointer"
+            >
+              {loggedUserBranches?.map((branch) => (
+                <option key={branch._id} value={branch.label}>
+                  {branch.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

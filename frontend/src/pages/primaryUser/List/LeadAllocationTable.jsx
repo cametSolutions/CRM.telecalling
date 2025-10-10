@@ -315,7 +315,7 @@ const LeadAllocationTable = () => {
             className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px]"
           >
             {loggedUserBranches?.map((branch) => (
-              <option key={branch._id} value={branch.value}>
+              <option key={branch._id} value={branch.label}>
                 {branch.label}
               </option>
             ))}

@@ -241,6 +241,7 @@ export default function PrimaryUserDashBoard() {
     const wish = true
     localStorage.setItem("wish", JSON.stringify(wish))
   }
+
   return (
     <div className="min-h-full bg-[#bfdbf7] ">
       {showBirthdayPopup && (
