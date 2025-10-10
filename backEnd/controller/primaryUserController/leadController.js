@@ -1750,7 +1750,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       const matchingIndex = matchLead.activityLog.findIndex(log =>
         log.reallocatedTo === false &&
         log.taskClosed === false &&
-        log.followupClosed === false &&
+        // log.followupClosed === false &&
         log.allocatedClosed === false &&
         log.taskTo // ensures the field exists
       );
