@@ -10,9 +10,13 @@ import { FaSpinner, FaUserCircle } from "react-icons/fa"
 import { toast } from "react-toastify"
 import { Link } from "react-router-dom"
 import UseFetch from "../../../hooks/useFetch"
+import { getLocalStorageItem } from "../../../helper/localstorage"
 import { setLocalStorageItem } from "../../../helper/localstorage"
 import { useDispatch } from "react-redux"
-import { setBranches } from "../../../../slices/companyBranchSlice"
+import {
+  setBranches,
+  loggeduserBranches
+} from "../../../../slices/companyBranchSlice"
 import api from "../../../api/api"
 export default function PrimaryUserDashBoard() {
   const [leaveList, setTodayLeaveList] = useState([])
@@ -45,16 +49,24 @@ export default function PrimaryUserDashBoard() {
   const { data: acheivementlist, refreshHook } = UseFetch(
     "/dashboard/getcurrentquarterlyAchiever"
   )
-  const { data: holydata } = UseFetch(
-    "/customer/getallholy"
-  )
+  const { data: holydata } = UseFetch("/customer/getallholy")
   const { data: announcementlist } = UseFetch(
     "/dashboard/getcurrentAnnouncement"
   )
   useEffect(() => {
-    if (branches && branches.length > 0) {
+    const userData = getLocalStorageItem("user")
+
+    setUser(userData)
+  }, [])
+
+  useEffect(() => {
+    if (branches && branches.length > 0 && user) {
       const allcompanybranches = branches?.map((b) => b._id) || []
+      const loggeduserbranches = user.selected?.map((a) => a.branch_id)
+    
+      setLocalStorageItem("loggeduserbranches", loggeduserbranches)
       setLocalStorageItem("companybranches", allcompanybranches)
+      dispatch(loggeduserBranches(loggeduserBranches))
       dispatch(setBranches(allcompanybranches)) //companies all branches
     }
   }, [])
@@ -80,11 +92,7 @@ export default function PrimaryUserDashBoard() {
       setcurrentyearHoliday(currentMonthHolidays)
     }
   }, [holydata])
-  useEffect(() => {
-    const userData = localStorage.getItem("user")
-    const user = JSON.parse(userData)
-    setUser(user)
-  }, [])
+
   useEffect(() => {
     const wishValue = JSON.parse(localStorage.getItem("wish"))
     if (wishValue) {

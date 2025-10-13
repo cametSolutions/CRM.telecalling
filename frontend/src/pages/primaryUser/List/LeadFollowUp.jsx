@@ -177,7 +177,6 @@ const LeadFollowUp = () => {
     local.setMinutes(date.getMinutes() - date.getTimezoneOffset())
     return local.toISOString().split("T")[0] // e.g., "2025-06-12"
   }
-
   useEffect(() => {
     if (loggedusersallocatedleads && dates.endDate && loggedUser) {
       if (pending && ownFollowUp) {
@@ -547,6 +546,7 @@ const LeadFollowUp = () => {
       console.log("error:", error.message)
     }
   }
+
   return (
     <div className="h-full flex flex-col ">
       {loading && (

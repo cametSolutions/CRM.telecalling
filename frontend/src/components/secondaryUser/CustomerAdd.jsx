@@ -25,6 +25,7 @@ const CustomerAdd = ({
     getValues,
     setValue,
     watch,
+
     formState: { errors, isSubmitting }
   } = useForm({
     defaultValues: {
@@ -109,7 +110,9 @@ const CustomerAdd = ({
   const { data: licensenumber } = UseFetch("/customer/getLicensenumber")
   const { data: partners } = UseFetch("/customer/getallpartners")
   const { data: allcompanyBranches } = UseFetch("/branch/getBranch")
-  const loggeduserBranch = useSelector((state) => state.companyBranch.branches)
+  const loggeduserBranch = useSelector(
+    (state) => state.companyBranch.loggeduserbranches
+  )
 
   const { data: productData, error: productError } = UseFetch(
     loggeduserBranch &&
@@ -117,6 +120,7 @@ const CustomerAdd = ({
         JSON.stringify(loggeduserBranch)
       )}`
   )
+
   const navigate = useNavigate()
   useEffect(() => {
     if (allcompanyBranches && allcompanyBranches.length) {
@@ -153,6 +157,7 @@ const CustomerAdd = ({
         registrationType: customer.registrationType,
 
         licensenumber: selectedItem?.licensenumber,
+        softwareTrade: selectedItem?.softwareTrade,
         noofusers: selectedItem?.noofusers,
         version: selectedItem?.version,
         customerAddDate: selectedItem?.customerAddDate,
@@ -557,6 +562,27 @@ const CustomerAdd = ({
     })
     seteditState(false)
     setEditIndex(null)
+    reset({
+      productName: "",
+      companyName: "",
+      branchName: "",
+      licensenumber: "",
+      softwareTrade: "",
+      noofusers: "",
+      version: "",
+      customerAddDate: "",
+      amcstartDate: "",
+      amcendDate: "",
+      amcAmount: "",
+      licenseExpiryDate: "",
+      productAmount: "",
+      productamountDescription: "",
+      tvuexpiryDate: "",
+      tvuAmount: "",
+      tvuamountDescription: "",
+      
+      reasonofStatus: ""
+    })
   }
   const getCompaniesForProduct = (productId) => {
     const product = productData.find((item) => item._id === productId)
@@ -1452,13 +1478,13 @@ const CustomerAdd = ({
                       {...register("isActive", {
                         required: "Status is Required"
                       })}
-                      onChange={
-                        (e) =>
-                          setTableObject({
-                            ...tableObject,
-                            isActive: e.target.value
-                          }) // Update state on change
-                      }
+                      onChange={(e) => {
+                        setTableObject({
+                          ...tableObject,
+                          isActive: e.target.value
+                        }) // Update state on
+                        clearErrors("isActive") // ✅ clears the error instantly when a value is selected
+                      }}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
                     >
                       <option>select a status</option>
