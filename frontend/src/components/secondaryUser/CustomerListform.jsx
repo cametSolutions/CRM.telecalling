@@ -83,11 +83,8 @@ const CustomerListform = () => {
 
     return null
   }, [selectedBranch, apiSearchTerm, pages])
-  console.log(selectedBranch)
   const { data: list, loading: scrollLoading } = UseFetch(url)
-  // const companybranches = useSelector((state) => state.companyBranch.branches)
   useEffect(() => {
-    console.log("Hhh")
     const userData = getLocalStorageItem("user")
     setselectedBranch(userData.selected[0].branch_id)
     userData.selected.forEach((branch) => {

@@ -50,7 +50,6 @@ export default function PrimaryUserDashBoard() {
     "/dashboard/getcurrentquarterlyAchiever"
   )
   const { data: holydata } = UseFetch("/customer/getallholy")
-  console.log("h")
   const { data: announcementlist } = UseFetch(
     "/dashboard/getcurrentAnnouncement"
   )
@@ -59,16 +58,12 @@ export default function PrimaryUserDashBoard() {
 
     setUser(userData)
   }, [])
-  console.log(branches)
-  console.log(user)
-console.log(branches && branches.length > 0 && user)
+
   useEffect(() => {
     if (branches && branches.length > 0 && user) {
-      console.log("HJ")
       const allcompanybranches = branches?.map((b) => b._id) || []
       const loggeduserbranches = user.selected?.map((a) => a.branch_id)
-      console.log(loggeduserbranches)
-      console.log(allcompanybranches)
+    
       setLocalStorageItem("loggeduserbranches", loggeduserbranches)
       setLocalStorageItem("companybranches", allcompanybranches)
       dispatch(loggeduserBranches(loggeduserBranches))
