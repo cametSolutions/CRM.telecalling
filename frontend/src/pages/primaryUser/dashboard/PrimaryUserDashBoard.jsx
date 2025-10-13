@@ -143,8 +143,8 @@ export default function PrimaryUserDashBoard() {
           acheivementlist.yearlyachiever[0].achieverId))
     ) {
       const title =
-        acheivementlist.quarterlyachiever[0].title ||
-        acheivementlist.yearlyachiever[0].title
+        acheivementlist.quarterlyachiever[0]?.title ||
+        acheivementlist.yearlyachiever[0]?.title
       setQuarterlyTitle(title)
       const quarterlyIds = acheivementlist.quarterlyachiever.map(
         (item) => item.achieverId._id
