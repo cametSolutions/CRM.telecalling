@@ -1219,6 +1219,7 @@ export const GetallLead = async (req, res) => {
     }
 
     if (Status === "Pending") {
+
       const query = { leadBranch: branchObjectId, activityLog: { $size: 1 } };
 
       const pendingLeads = await LeadMaster.find(query)
@@ -1314,6 +1315,7 @@ export const GetallLead = async (req, res) => {
       }
     }
   } catch (error) {
+console.log(error)
     console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })
   }

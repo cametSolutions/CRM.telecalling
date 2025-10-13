@@ -280,7 +280,6 @@ const LeadAllocationTable = () => {
 
  
   }
-
   return (
     <div className="flex flex-col h-full">
       {loading && (
@@ -302,10 +301,10 @@ const LeadAllocationTable = () => {
               setSelectedCompanyBranch(e.target.value)
               setStatus(approvedToggleStatus ? "Approved" : "Pending")
             }}
-            className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px]"
+            className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px] cursor-pointer"
           >
             {loggedUserBranches?.map((branch) => (
-              <option key={branch._id} value={branch.label}>
+              <option key={branch._id} value={branch.value}>
                 {branch.label}
               </option>
             ))}
