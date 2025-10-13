@@ -30,6 +30,7 @@ export const ProductRegistration = async (req, res) => {
       message: "Products created successfully"
     })
   } catch (error) {
+console.log(error)
     res.status(500).json({ message: "server error" })
   }
 }
@@ -50,7 +51,7 @@ export const EditProduct = async (req, res) => {
 
 
     // Step 2: Update the existing product with new values
-    existingProduct.selected = [editData] // Use the updated tableData
+    existingProduct.selected = editData// Use the updated tableData
     existingProduct.productName =
       productData.productName || existingProduct.productName
     existingProduct.productPrice =

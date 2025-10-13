@@ -21,7 +21,6 @@ export default function OwnLeadList() {
   useEffect(() => {
     setTableData(ownedlead)
   }, [ownedlead])
-  console.log(tableData)
   return (
     <div className="h-full flex flex-col">
       <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3">
@@ -146,14 +145,13 @@ export default function OwnLeadList() {
                     </td>
                     <td className="border border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
                       {/*currently who is assigned the last task to the user*/}
-                      {"abhi"}
+                      {item?.taskallocatedTo?.name||"-"}
                     </td>
                     <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5">
-                      {item.allocatedBy?.name || "bau"}
+                      {item.taskallocatedBy?.name||"-"}
                     </td>
                     <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400  px-4 py-0.5 ">
                       {/*number of followups */}
-                      ggg{" "}
                     </td>
                     <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
                       {item.leadDate?.toString().split("T")[0]}

@@ -125,7 +125,10 @@ const TaskAnalysis = () => {
                           )}`
                         : `/staff/transaction/lead/taskanalysisTable/${encodeURIComponent(
                             item.label
-                          )}`
+                          )}`,
+                      {
+                        state: { branchid: selectedCompanyBranch }
+                      }
                     )
                   }
                   className="flex justify-between w-full px-6 py-2 bg-white shadow-xl rounded-md border border-gray-100"

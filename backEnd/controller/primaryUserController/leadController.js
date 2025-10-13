@@ -1653,7 +1653,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
     const allocatedbyObjectid = new mongoose.Types.ObjectId(allocatedBy)
     const branchObjectId = new mongoose.Types.ObjectId(selectedbranch)
     const { selectedItem, cleanedData } = req.body
-   
+
     let allocatedToModel
     let allocatedByModel
     const isStaffallocatedtomodel = await Staff.findOne({ _id: selectedItem.allocatedTo })
@@ -1693,7 +1693,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         taskallocatedToModel: allocatedToModel,
         remarks: cleanedData.allocationDescription,
         allocationChanged: true,
-        changeReason: formData.reason,
+        changeReason: cleanedData.reason,
         taskBy: "allocated",
         ...(allocationType === "followup" ? { followupClosed: false } : {}),
         taskTo: allocationType
@@ -2085,8 +2085,35 @@ export const GetownLeadList = async (req, res) => {
         const populatedLeadBy = await assignedModel
           .findById(lead.leadBy)
           .select("name")
+        // ✅ Fix: Use lead.activityLog, not matchedLead.activityLog
+        const lastActivity = lead.activityLog?.[lead.activityLog.length - 1];
+        let populatedLastAllocatedTo = null;
+        let populatedLastAllocatedBy = null
 
-        return { ...lead, leadBy: populatedLeadBy } // Merge populated data
+        if (lastActivity?.taskallocatedToModel && lastActivity?.taskallocatedTo) {
+          const lastAssignedModel = mongoose.model(lastActivity.taskallocatedToModel);
+          populatedLastAllocatedTo = await lastAssignedModel
+            .findById(lastActivity.taskallocatedTo)
+            .select("name")
+            .lean();
+        } else {
+          populatedLastAllocatedTo=null
+
+        }
+        if (lastActivity?.taskallocatedByModel && lastActivity?.taskallocatedBy) {
+          console.log(
+            "hhhh")
+          const lastAssignedModel = mongoose.model(lastActivity.taskallocatedByModel);
+          populatedLastAllocatedBy = await lastAssignedModel
+            .findById(lastActivity.taskallocatedBy)
+            .select("name")
+            .lean();
+        } else {
+          populatedLastAllocatedBy = null
+        }
+
+
+        return { ...lead, taskallocatedTo: populatedLastAllocatedTo, taskallocatedBy: populatedLastAllocatedBy, leadBy: populatedLeadBy } // Merge populated data
       }))
     return res.status(200).json({ message: "lead found", data: populatedOwnLeads })
 

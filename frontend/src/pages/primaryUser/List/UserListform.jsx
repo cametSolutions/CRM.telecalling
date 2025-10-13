@@ -101,7 +101,6 @@ const UserListform = () => {
       // toast.error("Failed to delete item. Please try again.")
     }
   }
-console.log()
   return (
     <div className="h-full flex flex-col bg-gray-50">
       {/* Header Section - Sticky */}
