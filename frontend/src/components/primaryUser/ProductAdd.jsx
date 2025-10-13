@@ -3,7 +3,6 @@ import { useForm } from "react-hook-form"
 import UseFetch from "../../hooks/useFetch"
 import { toast } from "react-toastify"
 import { Trash2, Building2, MapPin, Edit2 } from "lucide-react"
-import { FaTrash } from "react-icons/fa" // Import icons
 
 const ProductAdd = ({
   process,

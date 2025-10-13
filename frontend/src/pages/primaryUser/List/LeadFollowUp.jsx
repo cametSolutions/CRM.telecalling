@@ -177,10 +177,11 @@ const LeadFollowUp = () => {
     local.setMinutes(date.getMinutes() - date.getTimezoneOffset())
     return local.toISOString().split("T")[0] // e.g., "2025-06-12"
   }
-
+console.log(loggedusersallocatedleads)
   useEffect(() => {
     if (loggedusersallocatedleads && dates.endDate && loggedUser) {
       if (pending && ownFollowUp) {
+console.log("hhh")
         const ownFollow = loggedusersallocatedleads.followupLeads.filter(
           (lead) =>
             lead.activityLog?.some(
@@ -547,6 +548,8 @@ const LeadFollowUp = () => {
       console.log("error:", error.message)
     }
   }
+console.log(allocatedLeads)
+console.log(tableData)
   return (
     <div className="h-full flex flex-col ">
       {loading && (

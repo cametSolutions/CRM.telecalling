@@ -109,7 +109,9 @@ const CustomerAdd = ({
   const { data: licensenumber } = UseFetch("/customer/getLicensenumber")
   const { data: partners } = UseFetch("/customer/getallpartners")
   const { data: allcompanyBranches } = UseFetch("/branch/getBranch")
-  const loggeduserBranch = useSelector((state) => state.companyBranch.branches)
+  // const loggeduserBranch = useSelector((state) => state.companyBranch.branches)
+  const loggeduserBranch = useSelector((state) => state.companyBranch.loggeduserbranches)
+  console.log(loggeduserBranch)
 
   const { data: productData, error: productError } = UseFetch(
     loggeduserBranch &&
@@ -117,6 +119,8 @@ const CustomerAdd = ({
         JSON.stringify(loggeduserBranch)
       )}`
   )
+  console.log(loggeduserBranch)
+  console.log(productData)
   const navigate = useNavigate()
   useEffect(() => {
     if (allcompanyBranches && allcompanyBranches.length) {

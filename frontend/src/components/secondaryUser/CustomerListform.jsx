@@ -68,9 +68,7 @@ const CustomerListform = () => {
 
     // If search term is NOT empty, always allow
     if (apiSearchTerm !== "") {
-      return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${JSON.stringify(
-        selectedBranch
-      )}`
+      return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${selectedBranch}`
     }
 
     // If search term IS empty and we've already loaded empty data, block it
@@ -80,16 +78,16 @@ const CustomerListform = () => {
 
     // If search term is empty but we haven't loaded empty data yet, allow it
     if (apiSearchTerm === "" && !hasLoadedEmpty.current) {
-      return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${JSON.stringify(
-        selectedBranch
-      )}`
+      return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${selectedBranch}`
     }
 
     return null
   }, [selectedBranch, apiSearchTerm, pages])
+  console.log(selectedBranch)
   const { data: list, loading: scrollLoading } = UseFetch(url)
   // const companybranches = useSelector((state) => state.companyBranch.branches)
   useEffect(() => {
+    console.log("Hhh")
     const userData = getLocalStorageItem("user")
     setselectedBranch(userData.selected[0].branch_id)
     userData.selected.forEach((branch) => {
@@ -475,7 +473,7 @@ const CustomerListform = () => {
                                 {
                                   state: {
                                     customerId: customer._id,
-                                    
+
                                     index: itemIndex
                                   }
                                 }

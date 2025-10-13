@@ -24,7 +24,7 @@ export const GetscrollCustomer = async (req, res) => {
     const skip = (pageNum - 1) * pageSize;
 
     let branchId
-
+console.log("loggeduserbeanches",loggeduserBranches)
     if (loggeduserBranches) {
 console.log("loggeduserBranches:",typeof loggeduserBranches,loggeduserBranches);
       branchId = new mongoose.Types.ObjectId(loggeduserBranches);
@@ -33,7 +33,7 @@ console.log("branchId:", branchId);
 
 
     // Build search query
-    let searchQuery
+    let searchQuery={}
     if (search) {
       const regex = new RegExp("^" + search, "i");
       // searchQuery = {
