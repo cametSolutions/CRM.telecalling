@@ -59,6 +59,7 @@ const CallregistrationList = () => {
           const loggeduserBranches = userData.selected.map((item) => {
             return { value: item.branch_id, label: item.branchName }
           })
+
           setLoggeduserBranches(loggeduserBranches)
           setSelectedCompanyBranch(loggeduserBranches[0].label)
         } else {
@@ -78,15 +79,16 @@ const CallregistrationList = () => {
       setbranchids(userData.selected.map((item) => item.branch_id))
 
       // const users = JSON.parse(userData)
-      if (userData.role === "Admin") {
-        const userbranch = branches.map((item) => item.branchName)
-        setUserBranch(userbranch)
-      }
+      // if (userData.role === "Admin") {
+      //   const userbranch = branches.map((item) => item.branchName)
+      //   setUserBranch(userbranch)
+      // }
+      const a = userData.selected.map((item) => item.branchName)
+      setUserBranch(a)
 
       setUser(userData)
     }
   }, [branches])
-  console.log(selectedCompanyBranch)
   const filterCallData = useCallback(
     (calls) => {
       const allCallRegistrations = calls.flatMap(
@@ -114,16 +116,9 @@ const CallregistrationList = () => {
       const userId = users._id
       socket.emit("updatedCalls", userId)
       const brancharray = [selectedCompanyBranch]
-      console.log(brancharray)
       // Listen for initial data from the server
-      socket.on("updatedCalls", ({ mergedCalls, user }) => {
-        // const userBranchName = new Set(
-        //   users?.selected?.map((branch) => branch.branchName)
-        // )
-
-        // const branchNamesArray = Array.from(userBranchName)
-        // console.log(branchNamesArray)
-        // setUserBranch(brancharray)
+      socket.on("updatedCalls", ({ mergedCalls }) => {
+        
 
         const filtered = mergedCalls.filter(
           (call) =>

@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from "react"
 import UseFetch from "../../../hooks/useFetch"
+import { useLocation } from "react-router-dom"
 import { useNavigate, useParams } from "react-router-dom"
 const TaskAnalysisTable = () => {
   const { label } = useParams()
@@ -19,7 +19,8 @@ const TaskAnalysisTable = () => {
       selectedCompanyBranch &&
       `/lead/getalltaskAnalysisLeads?selectedBranch=${selectedCompanyBranch}`
   )
-
+  const location = useLocation()
+const {branchid}=location.state||{}
   const navigate = useNavigate()
   useEffect(() => {
     const userData = localStorage.getItem("user")
@@ -35,20 +36,20 @@ const TaskAnalysisTable = () => {
             return { value: item.branch_id, label: item.branchName }
           })
           setLoggeduserBranches(loggeduserBranches)
-          setSelectedCompanyBranch(loggeduserBranches[0].value)
+          setSelectedCompanyBranch(branchid)
         } else {
           const loggeduserBranches = branches.map((item) => {
             return { value: item._id, label: item.branchName }
           })
           setLoggeduserBranches(loggeduserBranches)
-          setSelectedCompanyBranch(loggeduserBranches[0].value)
+          setSelectedCompanyBranch(branchid)
         }
       } else {
         const loggeduserBranches = loggedUser.selected.map((item) => {
           return { value: item.branch_id, label: item.branchName }
         })
         setLoggeduserBranches(loggeduserBranches)
-        setSelectedCompanyBranch(loggeduserBranches[0].value)
+        setSelectedCompanyBranch(branchid)
       }
     }
   }, [loggedUser, branches])
@@ -82,8 +83,6 @@ const TaskAnalysisTable = () => {
       return lastLog.taskTo?.toLowerCase() === label.toLowerCase()
     })
   }
-
- 
 
   const getRemainingDays = (dueDate) => {
     const today = new Date()
@@ -186,7 +185,7 @@ const TaskAnalysisTable = () => {
                           <th className="border border-r-0 border-l-0 border-gray-400 px-4 py-2 min-w-[100px]">
                             B.Amount
                           </th>
-                        
+
                           <th className="border border-gray-400 px-4 py-2 min-w-[100px]">
                             Action
                           </th>
@@ -221,7 +220,7 @@ const TaskAnalysisTable = () => {
                                 {item?.leadId}
                               </td>
                               <td className="border border-b-0 border-gray-400 px-4"></td>
-                            
+
                               <td className="border border-b-0 border-gray-400 px-1 text-blue-400 font-semibold">
                                 <button
                                   onClick={() =>
@@ -250,9 +249,7 @@ const TaskAnalysisTable = () => {
                                   View
                                 </button>
                               </td>
-                              <td className="border border-b-0 border-gray-400 px-4">
-
-                              </td>
+                              <td className="border border-b-0 border-gray-400 px-4"></td>
                             </tr>
 
                             <tr className="font-semibold bg-gray-200 text-center">
@@ -263,10 +260,8 @@ const TaskAnalysisTable = () => {
                               <td className="px-4 text-black">Due Date</td>
                               <td className="px-4 text-black">Remaing Day's</td>
                               <td className="px-4 text-black">Last Comment</td>
-                            
-                              <td className="px-4 font-medium">
-                               
-                              </td>
+
+                              <td className="px-4 font-medium"></td>
 
                               <td className="border border-t-0 border-b-0 border-gray-400 px-4">
                                 {item?.balanceAmount}
@@ -308,12 +303,10 @@ const TaskAnalysisTable = () => {
                                   item?.activityLog?.length - 1
                                 ]?.remarks || "No comments"}
                               </td>
-                              <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 text-black">
-                              
-                              </td>
+                              <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 text-black"></td>
                               <td className="border border-t-0 border-b-0 border-gray-400 px-4 py-0.5"></td>
                               <td className="border border-t-0 border-b-0 border-gray-400 px-4 py-0.5"></td>
-                   
+
                               <td className="border border-t-0 border-b-0 border-gray-400 px-4 py-0.5"></td>
                             </tr>
                           </React.Fragment>
@@ -508,7 +501,6 @@ const TaskAnalysisTable = () => {
               </table>
             </div>
           </div>
-
         )}
       </div>
     </div>

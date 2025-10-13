@@ -6,8 +6,7 @@ function ProductList() {
   const [products, setProducts] = useState([])
   const [loggeduserBranch, setloggeduserBranch] = useState(null)
   const {
-    data: productData,
-  
+    data: productData,loading,
     error
   } = UseFetch(
     loggeduserBranch &&
@@ -65,7 +64,7 @@ function ProductList() {
 
   return (
     <div>
-      <ProductListform productlist={products} />
+      <ProductListform productlist={products} loading={loading}/>
     </div>
   )
 }

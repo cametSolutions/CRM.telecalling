@@ -80,17 +80,11 @@ export default function OwnLeadList() {
                     >
                       {item.customerName.customerName}
                     </td>
-                    <td className="  px-4 ">{item.mobile}</td>
-                    <td className="px-4 ">0481</td>
-                    <td className="px-4 ">{item.email}</td>
-                    <td className=" px-4 ">{item.leadId}</td>
-                    <td className="border border-b-0 border-gray-400 px-4 ">
-                      {/* {
-                        item.followUpDatesandRemarks[
-                          item.followUpDatesandRemarks.length - 1
-                        ]?.nextfollowpdate
-                      } */}
-                    </td>
+                    <td className="  px-4 ">{item?.mobile}</td>
+                    <td className="px-4 ">{item?.phone}</td>
+                    <td className="px-4 ">{item?.email}</td>
+                    <td className=" px-4 ">{item?.leadId}</td>
+                    <td className="border border-b-0 border-gray-400 px-4 "></td>
 
                     <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold"></td>
                     <td className="borrder border-b-0 border-gray-400 px-4 "></td>
@@ -107,7 +101,6 @@ export default function OwnLeadList() {
                       {" "}
                       <button
                         onClick={() => {
-
                           const isAllocatedToeditable = item.activityLog.some(
                             (it) =>
                               it?.taskallocatedTo === loggedUser._id &&
@@ -122,7 +115,7 @@ export default function OwnLeadList() {
                                 state: {
                                   leadId: item._id,
                                   isReadOnly: !(
-                                    isAllocatedToeditable||isleadbyEditable
+                                    isAllocatedToeditable || isleadbyEditable
                                   )
                                 }
                               })
@@ -130,7 +123,7 @@ export default function OwnLeadList() {
                                 state: {
                                   leadId: item._id,
                                   isReadOnly: !(
-                                    isAllocatedToeditable||isleadbyEditable
+                                    isAllocatedToeditable || isleadbyEditable
                                   )
                                 }
                               })
@@ -150,12 +143,15 @@ export default function OwnLeadList() {
                     <td className="border border-t-0 border-r-0  border-gray-400 px-4 py-0.5 ">
                       {item?.leadBy?.name}
                     </td>
-                    <td className="border border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 "></td>
+                    <td className="border border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
+                      {/*currently who is assigned the last task to the user*/}
+                      {item?.taskallocatedTo?.name||"-"}
+                    </td>
                     <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5">
-                      {item.allocatedBy?.name}
+                      {item.taskallocatedBy?.name||"-"}
                     </td>
                     <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400  px-4 py-0.5 ">
-                      {/* {item.followUpDatesandRemarks.length} */}
+                      {/*number of followups */}
                     </td>
                     <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
                       {item.leadDate?.toString().split("T")[0]}

@@ -403,17 +403,9 @@ io.on("connection", (socket) => {
           }
         })
       )
-      let user
-      if (userId) {
-        const objectId = new mongoose.Types.ObjectId(userId)
-        user = await Staff.findOne({ _id: objectId })
+      
 
-        if (!user) {
-          user = await Admin.findOne({ _id: objectId })
-        }
-      }
-
-      io.emit("updatedCalls", { mergedCalls, user })
+      io.emit("updatedCalls", { mergedCalls})
     } catch (error) {
       console.error("Error fetching call data:", error)
       socket.emit("error", "Error fetching data")

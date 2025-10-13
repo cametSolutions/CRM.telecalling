@@ -278,17 +278,7 @@ const LeadAllocationTable = () => {
       }))
     }
 
-    // if (approvedToggleStatus) {
-    //   console.log("h")
-    // } else {
-    //   if (selectedAllocationType[item._id] === "followup") {
-    //     console.log("hh")
-    //     setFormData((prev) => ({
-    //       ...prev,
-    //       allocationDate: new Date()
-    //     }))
-    //   }
-    // }
+ 
   }
 
   return (
