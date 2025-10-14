@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
-import { X, Calendar, FileText, AlertCircle } from "lucide-react"
+import { X, Calendar, FileText, AlertCircle, IndianRupee } from "lucide-react"
+
 import React from "react"
 import { toast } from "react-toastify"
 import { PropagateLoader } from "react-spinners"
@@ -28,6 +29,7 @@ const LeadAllocationTable = () => {
   const [loggedUser, setLoggedUser] = useState(null)
   const [selectedItem, setSelectedItem] = useState(null)
   const [tableData, setTableData] = useState([])
+  const [selectedData, setselectedData] = useState([])
   const { data: branches } = UseFetch("/branch/getBranch")
   const [formData, setFormData] = useState({
     allocationDate: "",
@@ -92,11 +94,29 @@ const LeadAllocationTable = () => {
       )
     }
   }, [data, selectedCompanyBranch])
+  console.log(leadPendinglist)
   useEffect(() => {
     if (leadPendinglist) {
-      setTableData(leadPendinglist)
+      getgroupingData(leadPendinglist)
     }
   }, [leadPendinglist])
+  const getgroupingData = (data) => {
+    const groupedLeads = {}
+    let grandTotal = 0
+    data.forEach((lead) => {
+      const leadBy = lead?.leadBy?.name
+      const amount = lead?.netAmount || 0
+      grandTotal += amount
+      if (!groupedLeads[leadBy]) {
+        groupedLeads[leadBy] = []
+      }
+
+      groupedLeads[leadBy].push(lead)
+    })
+
+    console.log(groupedLeads)
+    setTableData(groupedLeads)
+  }
   const toggleStatus = async () => {
     setTableData([])
     setShowFullEmail(false)
@@ -110,8 +130,8 @@ const LeadAllocationTable = () => {
 
       if (response.status >= 200 && response.status < 300) {
         const data = response.data.data //gets only allocated leads with reallocatedto field false which means reallocatedto true are in the reallocation page not need to display here
-
-        setTableData(data)
+        getgroupingData(data)
+        // setTableData(data)
         data.forEach((item) => {
           setselectedAllocationType((prev) => ({
             ...prev,
@@ -143,7 +163,8 @@ const LeadAllocationTable = () => {
       )
       if (response.status >= 200 && response.status < 300) {
         setSelectedAllocates({})
-        setTableData(response.data.data)
+        getgroupingData(response.data.data)
+        // setTableData(response.data.data)
         setapprovedToggleStatus(!approvedToggleStatus)
         setToggleLoading(false)
       }
@@ -158,7 +179,15 @@ const LeadAllocationTable = () => {
       )
     )
   }
- 
+  const getRemainingDays = (dueDate) => {
+    const today = new Date()
+    const target = new Date(dueDate)
+    today.setHours(0, 0, 0, 0)
+    target.setHours(0, 0, 0, 0)
+    const diffTime = target - today
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays
+  }
   const handleSubmit = async () => {
     // sanitize all string fields
     const cleanedData = Object.fromEntries(
@@ -277,8 +306,6 @@ const LeadAllocationTable = () => {
         allocationDate: new Date()
       }))
     }
-
- 
   }
   return (
     <div className="flex flex-col h-full">
@@ -335,720 +362,379 @@ const LeadAllocationTable = () => {
           </button>
         </div>
       </div>
-
-      {/* Responsive Table Container */}
-      <div className="flex-1  overflow-x-auto rounded-lg text-center overflow-y-auto border  shadow-xl mx-3 md:mx-5 mb-3">
-        <table className="w-full text-sm">
-          <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
-            <tr>
-              <th className="border border-r-0 border-t-0 border-gray-400 px-4 ">
-                SNO.
-              </th>
-              <th className="border border-r-0 border-t-0 border-gray-400 px-4 ">
-                Name
-              </th>
-              <th className="border border-r-0 border-t-0 border-l-0 border-gray-400  px-4 max-w-[200px] min-w-[200px]">
-                Mobile
-              </th>
-              <th className="border border-r-0 border-l-0 border-t-0 border-gray-400 px-4 ">
-                Phone
-              </th>
-              <th className="border border-r-0 border-l-0 border-t-0 border-gray-400 px-4 ">
-                Email
-              </th>
-              <th className="border  border-l-0 border-t-0 border-gray-400 px-4  min-w-[100px]">
-                Lead Id
-              </th>
-              <th className="border border-t-0   border-blue-500 px-4 ">
-                Allocation Type
-              </th>
-              <th className="border border-t-0 border-gray-400 px-4  min-w-[100px]">
-                Action
-              </th>
-              <th className="border border-t-0 border-gray-400 px-4 py-2">
-                Net Amount
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-gray-300">
-            {tableData && tableData.length > 0 ? (
-              tableData.map((item, index) => (
-                <React.Fragment key={index}>
-                  <tr className="bg-white border border-gray-400 border-b-0 ">
-                    <td className="border border-l-1 border-b-0 border-t-0 border-gray-400  px-4"></td>
-                    <td
-                      onClick={() => setShowFullName(!showFullName)}
-                      className={`px-4 cursor-pointer overflow-hidden border border-r-0 border-b-0 border-t-0 border-gray-400 ${
-                        showFullName
-                          ? "whitespace-normal max-h-[3em]" // ≈2 lines of text (1.5em line-height)
-                          : "truncate whitespace-nowrap max-w-[120px]"
-                      }`}
-                      style={{ lineHeight: "1.5em" }} // fine-tune as needed
-                    >
-                      {item?.customerName?.customerName}
-                    </td>
-                    <td className="px-4 ">{item?.mobile}</td>
-                    <td className="px-4 ">{item?.phone}</td>
-                    <td className="px-4 ">{item?.email}</td>
-                    <td className=" px-4 ">{item?.leadId}</td>
-                    <td className="border border-b-0 border-t-0 border-gray-400 px-4 "></td>
-
-                    <td className="border border-b-0 border-t-0 border-gray-400 px-1 "></td>
-                    <td className="border border-b-0 border-t-0 border-gray-400 px-4 "></td>
-                  </tr>
-
-                  <tr className=" font-semibold bg-gray-100">
-                    <td className=" px-4 border border-b-0 border-t-0 border-r-0 border-gray-400 ">
-                      {index + 1}
-                    </td>
-                    <td className=" px-4 border border-b-0 border-t-0 border-r-0 border-gray-400 ">
-                      Leadby
-                    </td>
-                    <td className=" px-4">Assignedto</td>
-                    <td className=" px-4 ">Assignedby</td>
-                    <td className="px-4 ">No. of Followups</td>
-                    <td className="px-4 min-w-[120px]">Lead Date</td>
-                    <td className=" border border-t-0 border-b-0 border-gray-400 px-1 bg-white ">
-                      <select
-                        value={selectedAllocationType?.[item._id]}
-                        onChange={(e) => {
-                          setselectedAllocationType((prev) => ({
-                            ...prev,
-                            [item._id]: e.target.value
-                          }))
-                          setValidatetypeError((prev) => ({
-                            ...prev,
-                            [item._id]: ""
-                          }))
-                        }}
-                        className="py-0.5 border border-gray-400 rounded-md  w-full focus:outline-none cursor-pointer"
-                      >
-                        <option>Select Type</option>
-                        <option value="followup">Followup</option>
-                        <option value="programming">Programming</option>
-                        <option value="testing-&-implementation">
-                          Testing & Implementation
-                        </option>
-                        <option value="coding-&-testing">
-                          Coding & Testing
-                        </option>
-                        <option value="software-services">
-                          Software Service
-                        </option>
-                        <option value="customermeet">Customer Meet</option>
-                        <option value="demo">Demo</option>
-                        <option value="training">Training</option>
-
-                        <option value="onsite">Onsite</option>
-                        <option value="office">Office</option>
-                      </select>
-                      {validatetypeError[item._id] && (
-                        <p className="text-red-500 text-sm">
-                          {validatetypeError[item._id]}
-                        </p>
-                      )}
-                    </td>
-                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer bg-white">
-                      <button
-                        onClick={() => {
-                          const isAllocatedToeditable = item.activityLog.some(
-                            (it) =>
-                              it?.taskallocatedTo === loggedUser._id &&
-                              it?.taskfromFollowup === false &&
-                              it?.taskClosed === false
-                          )
-                          const isleadbyEditable =
-                            item.activityLog.length === 1 &&
-                            item.leadBy._id === loggedUser._id
-
-                          loggedUser.role === "Admin"
-                            ? navigate("/admin/transaction/lead/leadEdit", {
-                                state: {
-                                  leadId: item._id,
-                                  isReadOnly: !(
-                                    isAllocatedToeditable || isleadbyEditable
-                                  )
-                                }
-                              })
-                            : navigate("/staff/transaction/lead/leadEdit", {
-                                state: {
-                                  leadId: item._id,
-                                  isReadOnly: !(
-                                    isAllocatedToeditable || isleadbyEditable
-                                  )
-                                }
-                              })
-                        }}
-                        className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer"
-                      >
-                        View / Modify
-                      </button>
-                    </td>
-                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4 bg-white ">
-                      {" "}
-                      {item.netAmount}
-                    </td>
-                  </tr>
-
-                  <tr className="bg-white ">
-                    <td className="border border-t-0 border-r-0 border-b-0  border-gray-400 px-4 py-0.5 "></td>
-                    <td className="border border-t-0 border-r-0 border-b-0  border-gray-400 px-4 py-0.5 ">
-                      {item?.leadBy?.name}
-                    </td>
-                    <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 ">
-                      <div className="text-center">
-                        <div className="inline-block">
-                          <Select
-                            options={allocationOptions}
-                            value={selectedAllocates[item._id] || null}
-                            onChange={(selectedOption) => {
-                              setSelectedAllocates((prev) => ({
-                                ...prev,
-                                [item._id]: selectedOption
-                              }))
-                              handleSelectedAllocates(
-                                item,
-                                selectedOption.value,
-                                selectedOption.label
-                              )
-                              setValidateError((prev) => ({
-                                ...prev,
-                                [item._id]: ""
-                              }))
-                            }}
-                            className="w-44 focus:outline-red-500 "
-                            styles={{
-                              control: (base) => ({
-                                ...base,
-                                minHeight: "28px", // control height
-                                height: "28px",
-                                boxShadow: "none", // removes blue glow
-                                borderColor: "red",
-                                paddingTop: "0px", // Tailwind py-0.5 = 2px top and bottom
-                                paddingBottom: "0px",
-                                cursor: "pointer",
-                                "&:hover": {
-                                  borderColor: "red" // optional hover styling
-                                }
-                              }),
-                              option: (base, state) => ({
-                                ...base,
-                                cursor: "pointer", // 👈 ensures pointer on option hover
-                                backgroundColor: state.isFocused
-                                  ? "#f0f0f0"
-                                  : "white", // optional styling
-                                color: "black"
-                              }),
-                              valueContainer: (base) => ({
-                                ...base,
-                                paddingTop: "2px", // Reduce vertical padding
-                                paddingBottom: "2px"
-                              }),
-                              indicatorsContainer: (base) => ({
-                                ...base,
-                                height: "30px"
-                              }),
-                              menu: (provided) => ({
-                                ...provided,
-                                maxHeight: "200px", // Set dropdown max height
-                                overflowY: "auto" // Enable scrolling
-                              }),
-                              menuList: (provided) => ({
-                                ...provided,
-                                maxHeight: "200px", // Ensures dropdown scrolls internally
-                                overflowY: "auto"
-                              })
-                            }}
-                            menuPlacement="auto"
-                            menuPosition="absolute"
-                            menuPortalTarget={document.body} // Prevents nested scrolling issues
-                            menuShouldScrollIntoView={false}
-                          />
-
-                          {validateError[item._id] && (
-                            <p className="text-red-500 text-sm">
-                              {validateError[item._id]}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="border  border-t-0 border-r-0 border-l-0 border-b-0  border-gray-400 px-4 py-0.5">
-                      {item.allocatedBy?.name}
-                    </td>
-                    <td className="border  border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400  px-4 py-0.5 ">
-                      {/* {item.followUpDatesandRemarks.length} */}
-                    </td>
-                    <td className="border  border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 ">
-                      {item.leadDate?.toString().split("T")[0]}
-                    </td>
-                    <td className="border border-t-0 border-gray-400 border-b-0  px-4 py-0.5 "></td>
-                    <td
-                      className="border border-t-0 border-gray-400 border-b-0  px-4 py-0.5 text-red-400 hover:text-red-500 hover:cursor-pointer font-semibold"
-                      onClick={() => handleAllocate(item)}
-                    >
-                      Allocate
-                    </td>
-                    <td className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5"></td>
-                  </tr>
-                  <tr className="bg-gray-100 ">
-                    <td className="border border-l-1 border-t-0 border-gray-400"></td>
-                    <td
-                      colSpan={5}
-                      className="text-center py-1 font-semibold border border-t-0 border-gray-400"
-                    >
-                      <div className="flex  w-full">
-                        <span className="min-w-[100px]"></span>
-                        <span className="mr-2">Description : </span>
-                        <span>
-                          {" "}
-                          {approvedToggleStatus
-                            ? item?.activityLog[1]?.remarks
-                            : item?.remark}{" "}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="border border-t-0 border-gray-400 bg-white"></td>
-                    <td className="border border-t-0 border-gray-400 bg-white"></td>
-                    <td className="border border-t-0 border-gray-400 bg-white"></td>
-                  </tr>
-                  <tr>
-                    <td colSpan="100%">
-                      <div className="h-1"></div>
-                    </td>
-                  </tr>
-                </React.Fragment>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={9} className="text-center text-gray-500 py-4">
-                  {approvedToggleStatus ? (
-                    toggleLoading ? (
-                      <div className="flex justify-center">
-                        <PropagateLoader color="#3b82f6" size={10} />
-                      </div>
-                    ) : (
-                      <div>No Allocated Leads</div>
-                    )
-                  ) : loading ? (
-                    <div className="flex justify-center">
-                      <PropagateLoader color="#3b82f6" size={10} />
-                    </div>
-                  ) : toggleLoading ? (
-                    <div className="flex justify-center">
-                      <PropagateLoader color="#3b82f6" size={10} />
-                    </div>
-                  ) : (
-                    <div>No Pending Leads</div>
-                  )}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-        {/* {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg transform transition-all">
-              {submitLoading && (
-                <div className="h-1 bg-blue-500 rounded-t-2xl animate-pulse" />
-              )}
-
-              <div className="relative border-b border-gray-200 px-6 py-5">
-                <button
-                  onClick={() => {
-                    setShowmodal(false)
-                    setFormData((prev) => ({
-                      ...prev,
-                      allocationDate: "",
-                      allocationDescription: ""
-                    }))
-                    setsubmitLoading(false)
-                  }}
-                  className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
+      <div className="flex-1 overflow-y-auto">
+        <div className="w-full mx-auto px-4 py-3">
+          {tableData && Object.keys(tableData).length > 0 ? (
+            <div className="space-y-4">
+              {Object.entries(tableData).map(([staffName, leads]) => (
+                <div
+                  key={staffName}
+                  className="bg-white rounded-lg border border-gray-200 overflow-hidden"
                 >
-                  <X size={20} />
-                </button>
-                <h2 className="text-2xl font-bold text-gray-800 mb-1">
-                  Task Allocation
-                </h2>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md font-medium">
-                    {selectedAllocationType[selectedItem._id]}
-                  </span>
-                  <span className="text-gray-500">•</span>
-                  <span className="text-gray-600 font-medium">
-                    LEAD ID-{selectedLeadId}
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-6 space-y-5">
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                    <Calendar size={16} className="text-blue-500" />
-                    Completion Date
-                  </label>
-                  {selectedAllocationType[selectedItem._id] !== "followup" ? (
-                    <>
-                      <input
-                        type="date"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-gray-700"
-                        onChange={(e) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            allocationDate: e.target.value
-                          }))
-                          setValidateError((prev) => ({
-                            ...prev,
-                            allocationDateError: ""
-                          }))
-                        }}
-                      />{" "}
-                      {validateError.allocationDateError && (
-                        <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 px-3 py-2 rounded-lg">
-                          <AlertCircle size={16} />
-                          <span>{validateError.allocationDateError}</span>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <input
-                      readOnly
-                      value={
-                        formData?.allocationDate
-                          ?.toLocaleDateString("en-GB")
-                          .split("/")
-                          .join("-") || ""
-                      }
-                      type="text"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
-                    />
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                    <FileText size={16} className="text-blue-500" />
-                    Description
-                  </label>
-                  <textarea
-                    value={formData.allocationDescription || ""}
-                    onChange={(e) => {
-                      console.log(e.target.value)
-                      setFormData((prev) => ({
-                        ...prev,
-                        allocationDescription: e.target.value
-                      }))
-                      if (validateError.descriptionError) {
-                        setValidateError((prev) => ({
-                          ...prev,
-                          descriptionError: ""
-                        }))
-                      }
-                    }}
-                    rows="4"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none resize-none text-gray-700"
-                    placeholder="Provide detailed task description..."
-                  />
-                  {validateError.descriptionError && (
-                    <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 px-3 py-2 rounded-lg">
-                      <AlertCircle size={16} />
-                      <span>{validateError.descriptionError}</span>
+                  <div className="bg-gray-50 px-4 py-1 border-b">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-blue-600">
+                        {staffName}
+                      </h3>
+                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium">
+                        {leads.length} Lead{leads.length !== 1 ? "s" : ""}
+                      </span>
                     </div>
-                  )}
-                </div>
-                {approvedToggleStatus && (
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                      <FileText size={16} className="text-blue-500" />
-                      Reason For Changing
-                    </label>
-                    <textarea
-                      value={formData.reason || ""}
-                      onChange={(e) => {
-                        console.log(e.target.value)
-                        setFormData((prev) => ({
-                          ...prev,
-                          reason: e.target.value
-                        }))
-                        if (validateError.reasonError) {
-                          setValidateError((prev) => ({
-                            ...prev,
-                            reasonError: ""
-                          }))
-                        }
-                      }}
-                      rows="4"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none resize-none text-gray-700"
-                      placeholder="Provide detailed task description..."
-                    />
-                    {validateError.reasonError && (
-                      <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 px-3 py-2 rounded-lg">
-                        <AlertCircle size={16} />
-                        <span>{validateError.reasonError}</span>
-                      </div>
-                    )}
                   </div>
-                )}
 
-                <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
-                  <p className="text-xs text-blue-700 flex items-start gap-2">
-                    <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
-                    <span>
-                      Please ensure all information is accurate before
-                      submitting. This task will be assigned immediately.
-                    </span>
-                  </p>
-                </div>
-              </div>
+                  <div className="overflow-x-auto">
+                    <table className="border-collapse border border-gray-400 w-full text-sm ">
+                      <thead className="whitespace-nowrap bg-blue-900 text-white sticky top-0 z-30">
+                        <tr>
+                          <th className="border border-r-0 border-gray-400 px-4 py-2">
+                            SNO.
+                          </th>
+                          <th className="border border-r-0 border-gray-400 px-4 py-2">
+                            Name
+                          </th>
+                          <th className="border border-r-0 border-l-0 border-gray-400 px-4 py-2 max-w-[200px] min-w-[200px]">
+                            Mobile
+                          </th>
+                          <th className="border border-r-0 border-l-0 border-gray-400 px-4 py-2">
+                            Phone
+                          </th>
+                          <th className="border border-r-0 border-l-0 border-gray-400 px-4 py-2">
+                            Email
+                          </th>
+                          <th className="border border-r-0 border-l-0 border-gray-400 px-4 py-2 min-w-[100px]">
+                            Lead Id
+                          </th>
+                          <th className="border border-r-0 border-l-0 border-gray-400 px-4 py-2 min-w-[100px]">
+                            B.Amount
+                          </th>
 
-              <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 rounded-b-2xl">
-                <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
-                  <button
-                    onClick={() => {
-                      setShowmodal(false)
-                      setFormData((prev) => ({
-                        ...prev,
-                        allocationDate: "",
-                        allocationDescription: ""
-                      }))
-                    }}
-                    disabled={submitLoading}
-                    className="w-full sm:w-auto px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSubmit}
-                    disabled={submitLoading}
-                    className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {submitLoading ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      "Submit Task"
-                    )}
-                  </button>
+                          <th className="border border-gray-400 px-4 py-2 min-w-[100px]">
+                            Action
+                          </th>
+                          <th className="border border-gray-400 px-4 py-2">
+                            Net Amount
+                          </th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {leads.map((item, index) => (
+                          <React.Fragment key={item._id}>
+                            <tr className="bg-white border border-gray-400 border-b-0 hover:bg-gray-50 transition-colors text-center ">
+                              <td className="px-4 border border-b-0 border-gray-400"></td>
+                              <td
+                                onClick={() => setShowFullName(!showFullName)}
+                                className={`px-4 cursor-pointer overflow-hidden text-black ${
+                                  showFullName
+                                    ? "whitespace-normal max-h-[3em]"
+                                    : "truncate whitespace-nowrap max-w-[120px]"
+                                }`}
+                                style={{ lineHeight: "1.5em" }}
+                              >
+                                {item?.customerName?.customerName}
+                              </td>
+                              <td className="px-4 text-black">
+                                {item?.mobile}
+                              </td>
+                              <td className="px-4 text-black">{item?.phone}</td>
+                              <td className="px-4 text-black">{item?.email}</td>
+                              <td className="px-4 text-black">
+                                {item?.leadId}
+                              </td>
+                              <td className="border border-b-0 border-gray-400 px-4"></td>
+
+                              <td className="border border-b-0 border-gray-400 px-1 text-yellow-500 font-semibold text-md">
+                                <button
+                                  onClick={() =>
+                                    loggedUser.role === "Admin"
+                                      ? navigate(
+                                          "/admin/transaction/lead/leadEdit",
+                                          {
+                                            state: {
+                                              leadId: item._id,
+                                              isReadOnly: true
+                                            }
+                                          }
+                                        )
+                                      : navigate(
+                                          "/staff/transaction/lead/leadEdit",
+                                          {
+                                            state: {
+                                              leadId: item._id,
+                                              isReadOnly: true
+                                            }
+                                          }
+                                        )
+                                  }
+                                  className="hover:text-blue-500 cursor-pointer transition-colors"
+                                >
+                                  View
+                                </button>
+                              </td>
+                              <td className="border border-b-0 border-gray-400 px-4"></td>
+                            </tr>
+
+                            <tr className="font-semibold bg-gray-200 text-center">
+                              <td className="px-4 border border-b-0 border-t-0 border-gray-400 text-black">
+                                {index + 1}
+                              </td>
+                              <td className="px-4 text-black">LeadDate</td>
+                              <td className="px-4 text-black">Due Date</td>
+                              <td className="px-4 text-black">Remaing Day's</td>
+                              <td className="px-4 text-black">Last Comment</td>
+
+                              <td className="px-4 font-medium"></td>
+
+                              <td className="border border-t-0 border-b-0 border-gray-400 px-4">
+                                <div className="flex items-center justify-center">
+                                  <IndianRupee className="w-3 h-3 text-red-600 mr-1" />
+                                  <span> {item?.balanceAmount}</span>
+                                </div>
+                              </td>
+                              <td className="border border-t-0 border-b-0 border-gray-400 px-4 text-blue-400 hover:text-blue-500 hover:cursor-pointer">
+                                {approvedToggleStatus && (
+                                  <button
+                                    onClick={() => {
+                                      setselectedData(item?.activityLog)
+                                      setselectedLeadId(item?.leadId)
+                                      setShowmodal(true)
+                                    }}
+                                    type="button"
+                                  >
+                                    Event Log
+                                  </button>
+                                )}
+                              </td>
+                              <td className="border border-t-0 border-b-0 border-gray-400 px-4 text-black">
+                                <div className="flex items-center justify-center">
+                                  <IndianRupee className="w-3 h-3 text-green-600 mr-1" />
+                                  <span>
+                                    {item.netAmount?.toLocaleString()}
+                                  </span>
+                                </div>
+                              </td>
+                            </tr>
+
+                            <tr className="bg-white text-center">
+                              <td className="border border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5"></td>
+                              <td className="border border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5 text-black">
+                                {new Date(item.leadDate).toLocaleDateString(
+                                  "en-GB"
+                                )}
+                              </td>
+                              <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 text-md text-red-400 font-bold">
+                                {item.dueDate
+                                  ? new Date(item.dueDate).toLocaleDateString(
+                                      "en-GB"
+                                    )
+                                  : "-"}
+                              </td>
+                              <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 text-red-400 text-md font-bold">
+                                {item.dueDate
+                                  ? `${getRemainingDays(
+                                      item.dueDate
+                                    )} days left`
+                                  : "-"}
+                              </td>
+                              <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 text-black">
+                                {item?.activityLog[
+                                  item?.activityLog?.length - 1
+                                ]?.remarks || "No comments"}
+                              </td>
+                              <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 text-black"></td>
+                              <td className="border border-t-0 border-b-0 border-gray-400 px-4 py-0.5"></td>
+                              <td className="border border-t-0 border-b-0 border-gray-400 px-4 py-0.5"></td>
+
+                              <td className="border border-t-0 border-b-0 border-gray-400 px-4 py-0.5"></td>
+                            </tr>
+                          </React.Fragment>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
-          </div>
-        )} */}
-        {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-3 z-50 backdrop-blur-sm">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg transform transition-all max-h-[95vh] flex flex-col">
-              {/* Loading Bar */}
-              {submitLoading && (
-                <div className="h-1 bg-blue-500 rounded-t-xl animate-pulse" />
-              )}
-
-              {/* Header - Compressed */}
-              <div className="relative border-b border-gray-200 px-4 py-3">
-                <button
-                  onClick={() => {
-                    setShowmodal(false)
-                    setFormData((prev) => ({
-                      ...prev,
-                      allocationDate: "",
-                      allocationDescription: "",
-                      reason: ""
-                    }))
-                    setsubmitError({
-                      submissionerror: ""
-                    })
-                    setsubmitLoading(false)
-                  }}
-                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
-                >
-                  <X size={18} />
-                </button>
-                <h2 className="text-xl font-bold text-gray-800 mb-1.5">
-                  Task Allocation
-                </h2>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md font-medium text-xs">
-                    {selectedAllocationType[selectedItem._id]}
-                  </span>
-                  <span className="text-gray-500">•</span>
-                  <span className="text-gray-600 font-medium text-xs">
-                    LEAD ID-{selectedLeadId}
-                  </span>
+          ) : (
+            <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
+              {loading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-3 text-gray-600">Loading...</span>
                 </div>
-              </div>
-
-              {/* Form Content - Scrollable if needed but compressed */}
-              <div className="p-4 space-y-3 overflow-y-auto flex-1">
-                {/* Allocated To - Read Only */}
-                <div className="space-y-1.5">
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
-                    <FileText size={14} className="text-blue-500" />
-                    Allocated To
-                  </label>
-                  <input
-                    readOnly
-                    value={
-                      selectedItem.allocatedName ||
-                      selectedItem?.allocatedTo?.name
-                    }
-                    type="text"
-                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
-                  />
-                </div>
-                {/* Completion Date */}
-                <div className="space-y-1.5">
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
-                    <Calendar size={14} className="text-blue-500" />
-                    Completion Date
-                  </label>
-
-                  <input
-                    type="date"
-                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-gray-700"
-                    onChange={(e) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        allocationDate: e.target.value
-                      }))
-                      setValidateError((prev) => ({
-                        ...prev,
-                        allocationDateError: ""
-                      }))
-                    }}
-                  />
-                  {validateError.allocationDateError && (
-                    <div className="flex items-center gap-1.5 text-red-600 text-xs bg-red-50 px-2.5 py-1.5 rounded-lg">
-                      <AlertCircle size={14} />
-                      <span>{validateError.allocationDateError}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Description */}
-                <div className="space-y-1.5">
-                  <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
-                    <FileText size={14} className="text-blue-500" />
-                    Description
-                  </label>
-                  <textarea
-                    value={formData.allocationDescription || ""}
-                    onChange={(e) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        allocationDescription: e.target.value
-                      }))
-                      if (validateError.descriptionError) {
-                        setValidateError((prev) => ({
-                          ...prev,
-                          descriptionError: ""
-                        }))
-                      }
-                    }}
-                    rows="3"
-                    className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none resize-none text-gray-700"
-                    placeholder="Provide detailed task description..."
-                  />
-                  {validateError.descriptionError && (
-                    <div className="flex items-center gap-1.5 text-red-600 text-xs bg-red-50 px-2.5 py-1.5 rounded-lg">
-                      <AlertCircle size={14} />
-                      <span>{validateError.descriptionError}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Reason For Changing - Conditional */}
-                {approvedToggleStatus && (
-                  <div className="space-y-1.5">
-                    <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-700">
-                      <FileText size={14} className="text-blue-500" />
-                      Reason For Changing Staff
-                    </label>
-                    <textarea
-                      value={formData.reason || ""}
-                      onChange={(e) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          reason: e.target.value
-                        }))
-                        if (validateError.reasonError) {
-                          setValidateError((prev) => ({
-                            ...prev,
-                            reasonError: ""
-                          }))
-                        }
-                      }}
-                      rows="3"
-                      className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none resize-none text-gray-700"
-                      placeholder="Provide reason for changing..."
+              ) : (
+                <div className="text-gray-500">
+                  <svg
+                    className="mx-auto h-12 w-12 text-gray-400 mb-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                     />
-                    {validateError.reasonError && (
-                      <div className="flex items-center gap-1.5 text-red-600 text-xs bg-red-50 px-2.5 py-1.5 rounded-lg">
-                        <AlertCircle size={14} />
-                        <span>{validateError.reasonError}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-                <div className="flex justify-center">
-                  {" "}
-                  {submiterror.submissionerror && (
-                    <p className="text-red-500 text-sm">
-                      {submiterror.submissionerror}
-                    </p>
-                  )}
-                </div>
-
-                {/* Info Message - Compressed */}
-                <div className="bg-blue-50 border border-blue-100 rounded-lg p-2.5">
-                  <p className="text-xs text-blue-700 flex items-start gap-1.5">
-                    <AlertCircle size={12} className="mt-0.5 flex-shrink-0" />
-                    <span>
-                      Please ensure all information is accurate before
-                      submitting. This task will be assigned immediately.
-                    </span>
+                  </svg>
+                  <p className="text-lg font-medium">No data available</p>
+                  <p className="text-sm">
+                    There are no leads to display at the moment.
                   </p>
                 </div>
+              )}
+            </div>
+          )}
+        </div>
+        {showModal && selectedData && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40">
+            <div className="relative overflow-x-auto overflow-y-auto md:max-h-64 lg:max-h-96 shadow-xl rounded-lg mx-3 md:mx-5 px-7 p-3 bg-white w-full max-w-4xl">
+              {/* Close Button */}
+              <button
+                onClick={() => {
+                  setselectedLeadId(null)
+                  setselectedData([])
+                  setShowmodal(false)
+                }}
+                className="absolute top-2 right-2  text-red-500 font-bold hover:text-red-600 text-lg"
+              >
+                ✕
+              </button>
+
+              {/* Header */}
+              <div className="flex justify-center text-xl font-bold gap-2 mb-3">
+                <span>Lead Id:</span>
+                <span className="text-indigo-600">{selectedLeadId}</span>
               </div>
 
-              {/* Footer Actions - Compressed */}
-              <div className="border-t border-gray-200 px-4 py-3 bg-gray-50 rounded-b-xl">
-                <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
-                  <button
-                    onClick={() => {
-                      setShowmodal(false)
-                      setFormData((prev) => ({
-                        ...prev,
-                        allocationDate: "",
-                        allocationDescription: "",
-                        reason: ""
-                      }))
-                      setsubmitError({
-                        submiterror: ""
-                      })
-                    }}
-                    disabled={submitLoading}
-                    className="w-full sm:w-auto px-5 py-2 text-sm border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSubmit}
-                    disabled={submitLoading}
-                    className="w-full sm:w-auto px-5 py-2 text-sm bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {submitLoading ? (
-                      <>
-                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      "Submit Task"
-                    )}
-                  </button>
-                </div>
-              </div>
+              {/* Table */}
+              <table className="w-full text-sm border-collapse text-center">
+                <thead className="text-center sticky top-0 z-10">
+                  <tr className="bg-indigo-100">
+                    <th className="border border-indigo-200 p-2 min-w-[100px]">
+                      Date
+                    </th>
+                    <th className="border border-indigo-200 p-2 min-w-[100px]">
+                      User
+                    </th>
+                    <th className="border border-indigo-200 p-2 min-w-[100px]">
+                      Task
+                    </th>
+                    <th className="border border-indigo-200 p-2 w-fit min-w-[200px]">
+                      Remark
+                    </th>
+
+                    <th className="border border-indigo-200 p-2 min-w-[100px]">
+                      Next Follow Up Date
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedData && selectedData.length > 0 ? (
+                    selectedData.map((item, index) => {
+                      const hasFollowerData =
+                        Array.isArray(item.folowerData) &&
+                        item.folowerData.length > 0
+
+                      return hasFollowerData ? (
+                        item.folowerData.map((subItem, subIndex) => (
+                          <tr
+                            key={`${index}-${subIndex}`}
+                            className={
+                              (index + subIndex) % 2 === 0
+                                ? "bg-gray-50"
+                                : "bg-white"
+                            }
+                          >
+                            {loggedUser?.role === "Admin" && (
+                              <td className="border border-gray-200 p-2">
+                                {item?.followedId?.name}
+                              </td>
+                            )}
+                            <td className="border border-gray-200 p-2">
+                              {new Date(subItem.followerDate)
+                                .toLocaleDateString("en-GB")
+                                .split("/")
+                                .join("-")}
+                            </td>
+                            <td className="border border-gray-200 p-2">
+                              {subItem?.followerDescription || "N/A"}
+                            </td>
+                            <td className="border border-gray-200 p-2"></td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr
+                          key={index}
+                          className={
+                            index % 2 === 0 ? "bg-gray-50" : "bg-white"
+                          }
+                        >
+                          <td className="border border-gray-200 p-2">
+                            {new Date(item.submissionDate)
+                              .toLocaleDateString("en-GB")
+                              .split("/")
+                              .join("-")}
+                          </td>
+                          <td className="border border-gray-200 p-2">
+                            {item?.submittedUser?.name}
+                          </td>
+                          <td className="border border-gray-200 p-2 min-w-[160px]">
+                            <div>
+                              {item?.taskallocatedTo ? (
+                                <>
+                                  <span>{item?.taskBy || "N/A"}</span>
+                                  <span className="text-red-500">
+                                    {" "}
+                                    - {item?.taskallocatedTo?.name || ""}
+                                  </span>
+                                  <br />
+                                  <span className="text-red-500">
+                                    {item.taskTo}
+                                  </span>
+                                  {item.allocationDate && (
+                                    <span>
+                                      {" "}
+                                      - on(
+                                      {new Date(
+                                        item.allocationDate
+                                      ).toLocaleDateString("en-GB")}
+                                      )
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <span>{item.taskBy}</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="border border-gray-200 p-2">
+                            {item?.remarks || "N/A"}
+                          </td>
+
+                          <td className="border border-gray-200 p-2">
+                            {item?.nextfollowUpDate
+                              ? new Date(item.nextfollowUpDate)
+                                  .toLocaleDateString("en-GB")
+                                  .split("/")
+                                  .join("-")
+                              : "-"}
+                          </td>
+                        </tr>
+                      )
+                    })
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="text-center bg-white p-3 text-gray-500 italic"
+                      >
+                        No followUps
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

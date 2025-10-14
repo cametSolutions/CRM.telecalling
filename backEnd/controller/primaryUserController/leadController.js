@@ -1315,7 +1315,7 @@ export const GetallLead = async (req, res) => {
       }
     }
   } catch (error) {
-console.log(error)
+    console.log(error)
     console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })
   }
@@ -2070,53 +2070,114 @@ export const GetownLeadList = async (req, res) => {
     const matchedLead = await LeadMaster.find(
       { leadBy: objectId }
     ).populate({ path: "customerName", select: "customerName" }).lean()
+    // const populatedOwnLeads = await Promise.all(
+    //   matchedLead.map(async (lead) => {
+    //     if (
+    //       !lead.leadByModel ||
+    //       !mongoose.models[lead.leadByModel]
+    //     ) {
+    //       console.error(
+    //         `Model ${lead.leadByModel} is not registered`
+    //       )
+    //       return lead // Return lead as-is if model is invalid
+    //     }
+
+    //     // Fetch the referenced document manually
+    //     const assignedModel = mongoose.model(lead.leadByModel)
+    //     const populatedLeadBy = await assignedModel
+    //       .findById(lead.leadBy)
+    //       .select("name")
+    //     // ✅ Fix: Use lead.activityLog, not matchedLead.activityLog
+    //     const lastActivity = lead.activityLog?.[lead.activityLog.length - 1];
+    //     let populatedLastAllocatedTo = null;
+    //     let populatedLastAllocatedBy = null
+
+    //     if (lastActivity?.taskallocatedToModel && lastActivity?.taskallocatedTo) {
+    //       const lastAssignedModel = mongoose.model(lastActivity.taskallocatedToModel);
+    //       populatedLastAllocatedTo = await lastAssignedModel
+    //         .findById(lastActivity.taskallocatedTo)
+    //         .select("name")
+    //         .lean();
+    //     } else {
+    //       populatedLastAllocatedTo=null
+
+    //     }
+    //     if (lastActivity?.taskallocatedByModel && lastActivity?.taskallocatedBy) {
+
+    //       const lastAssignedModel = mongoose.model(lastActivity.taskallocatedByModel);
+    //       populatedLastAllocatedBy = await lastAssignedModel
+    //         .findById(lastActivity.taskallocatedBy)
+    //         .select("name")
+    //         .lean();
+    //     } else {
+    //       populatedLastAllocatedBy = null
+    //     }
+
+
+    //     return { ...lead, taskallocatedTo: populatedLastAllocatedTo, taskallocatedBy: populatedLastAllocatedBy, leadBy: populatedLeadBy } // Merge populated data
+    //   }))
     const populatedOwnLeads = await Promise.all(
       matchedLead.map(async (lead) => {
-        if (
-          !lead.leadByModel ||
-          !mongoose.models[lead.leadByModel]
-        ) {
-          console.error(
-            `Model ${lead.leadByModel} is not registered`
-          )
-          return lead // Return lead as-is if model is invalid
+        if (!lead.leadByModel || !mongoose.models[lead.leadByModel]) {
+          console.error(`Model ${lead.leadByModel} is not registered`);
+          return lead;
         }
 
-        // Fetch the referenced document manually
-        const assignedModel = mongoose.model(lead.leadByModel)
+        // Fetch leadBy name
+        const assignedModel = mongoose.model(lead.leadByModel);
         const populatedLeadBy = await assignedModel
           .findById(lead.leadBy)
           .select("name")
-        // ✅ Fix: Use lead.activityLog, not matchedLead.activityLog
-        const lastActivity = lead.activityLog?.[lead.activityLog.length - 1];
-        let populatedLastAllocatedTo = null;
-        let populatedLastAllocatedBy = null
+          .lean();
 
-        if (lastActivity?.taskallocatedToModel && lastActivity?.taskallocatedTo) {
-          const lastAssignedModel = mongoose.model(lastActivity.taskallocatedToModel);
-          populatedLastAllocatedTo = await lastAssignedModel
-            .findById(lastActivity.taskallocatedTo)
-            .select("name")
-            .lean();
-        } else {
-          populatedLastAllocatedTo=null
+        // ✅ Populate activityLog fields
+        const populatedActivityLog = await Promise.all(
+          (lead.activityLog || []).map(async (activity) => {
+            const populatedActivity = { ...activity };
 
-        }
-        if (lastActivity?.taskallocatedByModel && lastActivity?.taskallocatedBy) {
-          console.log(
-            "hhhh")
-          const lastAssignedModel = mongoose.model(lastActivity.taskallocatedByModel);
-          populatedLastAllocatedBy = await lastAssignedModel
-            .findById(lastActivity.taskallocatedBy)
-            .select("name")
-            .lean();
-        } else {
-          populatedLastAllocatedBy = null
-        }
+            // Populate taskallocatedTo
+            if (activity.submissiondoneByModel && activity.submittedUser) {
+              const model = mongoose.model(activity.submissiondoneByModel);
+              populatedActivity.submittedUser = await model
+                .findById(activity.submittedUser)
+                .select("name")
+                .lean();
+            }
 
+            // // Populate taskallocatedBy
+            if (activity.taskallocatedByModel && activity.taskallocatedBy) {
+              const model = mongoose.model(activity.taskallocatedByModel);
+              populatedActivity.taskallocatedBy = await model
+                .findById(activity.taskallocatedBy)
+                .select("name")
+                .lean();
+            }
 
-        return { ...lead, taskallocatedTo: populatedLastAllocatedTo, taskallocatedBy: populatedLastAllocatedBy, leadBy: populatedLeadBy } // Merge populated data
-      }))
+            // ✅ Populate submissionDoneBy
+            if (activity.taskallocatedToModel && activity.taskallocatedTo) {
+              const model = mongoose.model(activity.taskallocatedToModel);
+              populatedActivity.taskallocatedTo = await model
+                .findById(activity.taskallocatedTo)
+                .select("name")
+                .lean();
+            }
+
+            return populatedActivity;
+          })
+        );
+
+        // ✅ Get last activity
+        const lastActivity = populatedActivityLog[populatedActivityLog.length - 1];
+
+        return {
+          ...lead,
+          leadBy: populatedLeadBy,
+          activityLog: populatedActivityLog, // include fully populated activity logs
+          taskallocatedTo: lastActivity?.taskallocatedTo || null,
+          taskallocatedBy: lastActivity?.taskallocatedBy || null,
+        };
+      })
+    );
     return res.status(200).json({ message: "lead found", data: populatedOwnLeads })
 
   } catch (error) {

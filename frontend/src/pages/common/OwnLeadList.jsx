@@ -2,12 +2,16 @@ import React, { useEffect, useState } from "react"
 import UseFetch from "../../hooks/useFetch"
 import { useNavigate } from "react-router-dom"
 import { PropagateLoader } from "react-spinners"
+import { Eye, Phone, Mail, User, Calendar, ArrowRight } from "lucide-react"
 
 export default function OwnLeadList() {
   const [showFullName, setShowFullName] = useState(false)
   const [tableData, setTableData] = useState([])
   const [loggedUser, setLoggedUser] = useState(null)
   const [showFullEmail, setShowFullEmail] = useState(false)
+  const [showModal, setShowModal] = useState(false)
+  const [selectedData, setselectedData] = useState([])
+  const [selectedLeadId, setselectedLeadId] = useState(null)
 
   const navigate = useNavigate()
   const { data: ownedlead, loading } = UseFetch(
@@ -22,7 +26,7 @@ export default function OwnLeadList() {
     setTableData(ownedlead)
   }, [ownedlead])
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full ">
       <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3">
         <h2 className="text-lg font-bold">Owned Lead List</h2>
 
@@ -37,7 +41,6 @@ export default function OwnLeadList() {
           New Lead
         </button>
       </div>
-
       {/* Responsive Table Container */}
 
       <div className=" flex-1 overflow-x-auto rounded-lg text-center overflow-y-auto  shadow-xl mx-3 md:mx-5 mb-4">
@@ -64,7 +67,7 @@ export default function OwnLeadList() {
               <th className="border border-gray-400 px-4 py-2">Net Amount</th>
             </tr>
           </thead>
-          <tbody className="bg-gray-200">
+          <tbody>
             {tableData && tableData.length > 0 ? (
               tableData.map((item, index) => (
                 <React.Fragment key={index}>
@@ -86,7 +89,17 @@ export default function OwnLeadList() {
                     <td className=" px-4 ">{item?.leadId}</td>
                     <td className="border border-b-0 border-gray-400 px-4 "></td>
 
-                    <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold"></td>
+                    <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
+                      <button
+                        onClick={() => {
+                          setselectedData(item?.activityLog)
+                          setselectedLeadId(item?.leadId)
+                          setShowModal(true)
+                        }}
+                      >
+                        Event Log
+                      </button>
+                    </td>
                     <td className="borrder border-b-0 border-gray-400 px-4 "></td>
                   </tr>
 
@@ -144,29 +157,26 @@ export default function OwnLeadList() {
                       {item?.leadBy?.name}
                     </td>
                     <td className="border border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
-                      {/*currently who is assigned the last task to the user*/}
-                      {item?.taskallocatedTo?.name||"-"}
+                      {item?.taskallocatedTo?.name || "-"}
                     </td>
                     <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5">
-                      {item.taskallocatedBy?.name||"-"}
+                      {item.taskallocatedBy?.name || "-"}
                     </td>
-                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400  px-4 py-0.5 ">
-                      {/*number of followups */}
-                    </td>
+                    <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400  px-4 py-0.5 "></td>
                     <td className="border  border-t-0 border-r-0 border-l-0  border-gray-400 px-4 py-0.5 ">
                       {item.leadDate?.toString().split("T")[0]}
                     </td>
                     <td className="border border-t-0 border-gray-400   px-4 py-0.5 "></td>
-                    <td className="border border-t-0 border-gray-400   px-4 py-0.5">
-                      {" "}
-                    </td>
+                    <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
                     <td className="border border-t-0 border-gray-400   px-4 py-0.5"></td>
                   </tr>
-                  <tr>
-                    <td colSpan="100%" className="bg-gray-300">
-                      <div className="h-1"></div>
-                    </td>
-                  </tr>
+                  {index !== tableData.length - 1 && (
+                    <tr>
+                      <td colSpan="100%" className="bg-gray-400">
+                        <div className="h-0.5"></div>
+                      </td>
+                    </tr>
+                  )}
                 </React.Fragment>
               ))
             ) : (
@@ -177,7 +187,7 @@ export default function OwnLeadList() {
                       <PropagateLoader color="#3b82f6" size={10} />
                     </div>
                   ) : (
-                    <div>No Own Leads</div>
+                    <div>!No Own Leads</div>
                   )}
                 </td>
               </tr>
@@ -185,6 +195,155 @@ export default function OwnLeadList() {
           </tbody>
         </table>
       </div>
+      {showModal && selectedData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40">
+          <div className="relative overflow-x-auto overflow-y-auto md:max-h-64 lg:max-h-96 shadow-xl rounded-lg mx-3 md:mx-5 px-7 p-3 bg-white w-full max-w-4xl">
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setselectedLeadId(null)
+                setselectedData([])
+                setShowModal(false)
+              }}
+              className="absolute top-2 right-2  text-red-500 font-bold hover:text-red-600 text-lg"
+            >
+              ✕
+            </button>
+
+            {/* Header */}
+            <div className="flex justify-center text-xl font-bold gap-2 mb-3">
+              <span>Lead Id:</span>
+              <span className="text-indigo-600">{selectedLeadId}</span>
+            </div>
+
+            {/* Table */}
+            <table className="w-full text-sm border-collapse text-center">
+              <thead className="text-center sticky top-0 z-10">
+                <tr className="bg-indigo-100">
+                  <th className="border border-indigo-200 p-2 min-w-[100px]">
+                    Date
+                  </th>
+                  <th className="border border-indigo-200 p-2 min-w-[100px]">
+                    User
+                  </th>
+                  <th className="border border-indigo-200 p-2 min-w-[100px]">
+                    Task
+                  </th>
+                  <th className="border border-indigo-200 p-2 w-fit min-w-[200px]">
+                    Remark
+                  </th>
+                  
+                
+                </tr>
+              </thead>
+              <tbody>
+                {selectedData && selectedData.length > 0 ? (
+                  selectedData.map((item, index) => {
+                    const hasFollowerData =
+                      Array.isArray(item.folowerData) &&
+                      item.folowerData.length > 0
+
+                    return hasFollowerData ? (
+                      item.folowerData.map((subItem, subIndex) => (
+                        <tr
+                          key={`${index}-${subIndex}`}
+                          className={
+                            (index + subIndex) % 2 === 0
+                              ? "bg-gray-50"
+                              : "bg-white"
+                          }
+                        >
+                          {loggedUser?.role === "Admin" && (
+                            <td className="border border-gray-200 p-2">
+                              {item?.followedId?.name}
+                            </td>
+                          )}
+                          <td className="border border-gray-200 p-2">
+                            {new Date(subItem.followerDate)
+                              .toLocaleDateString("en-GB")
+                              .split("/")
+                              .join("-")}
+                          </td>
+                          <td className="border border-gray-200 p-2">
+                            {subItem?.followerDescription || "N/A"}
+                          </td>
+                          <td className="border border-gray-200 p-2"></td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr
+                        key={index}
+                        className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}
+                      >
+                        <td className="border border-gray-200 p-2">
+                          {new Date(item.submissionDate)
+                            .toLocaleDateString("en-GB")
+                            .split("/")
+                            .join("-")}
+                        </td>
+                        <td className="border border-gray-200 p-2">
+                          {item?.submittedUser?.name}
+                        </td>
+                        <td className="border border-gray-200 p-2 min-w-[160px]">
+                          <div>
+                            {item?.taskallocatedTo ? (
+                              <>
+                                <span>{item?.taskBy || "N/A"}</span>
+                                <span className="text-red-500">
+                                  {" "}
+                                  - {item?.taskallocatedTo?.name || ""}
+                                </span>
+                                <br />
+                                <span className="text-red-500">
+                                  {item.taskTo}
+                                </span>
+                                {item.allocationDate && (
+                                  <span>
+                                    {" "}
+                                    - on(
+                                    {new Date(
+                                      item.allocationDate
+                                    ).toLocaleDateString("en-GB")}
+                                    )
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <span>{item.taskBy}</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="border border-gray-200 p-2">
+                          {item?.remarks || "N/A"}
+                        </td>
+                        {/* {label === "followup" && (
+                          <td className="border border-gray-200 p-2">
+                            {item?.nextfollowUpDate
+                              ? new Date(item.nextfollowUpDate)
+                                  .toLocaleDateString("en-GB")
+                                  .split("/")
+                                  .join("-")
+                              : "-"}
+                          </td>
+                        )} */}
+                      </tr>
+                    )
+                  })
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="text-center bg-white p-3 text-gray-500 italic"
+                    >
+                      No followUps
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
