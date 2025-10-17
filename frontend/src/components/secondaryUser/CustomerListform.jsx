@@ -41,23 +41,7 @@ const CustomerListform = () => {
   const containerRef = useRef(null)
   const firstLoad = useRef(true)
   const hasLoadedEmpty = useRef(false)
-  // const url = useMemo(() => {
-  //   if (!userbranches) return null
 
-  //   // If search term is empty and we've already loaded empty data, don't fetch again
-  //   if (apiSearchTerm === "" && hasLoadedEmpty.current && !firstLoad.current) {
-  //     return null
-  //   }
-
-  //   // Allow fetch if: first load OR search term is not empty OR haven't loaded empty yet
-  //   if (firstLoad.current || apiSearchTerm !== "" || !hasLoadedEmpty.current) {
-  //     return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${JSON.stringify(
-  //       userbranches
-  //     )}`
-  //   }
-
-  //   return null
-  // }, [userbranches, apiSearchTerm, pages])
   const url = useMemo(() => {
     if (!selectedBranch) return null
 
@@ -84,6 +68,7 @@ const CustomerListform = () => {
     return null
   }, [selectedBranch, apiSearchTerm, pages])
   const { data: list, loading: scrollLoading } = UseFetch(url)
+  console.log(list?.selectedbranchCustomercount)
   useEffect(() => {
     const userData = getLocalStorageItem("user")
     setselectedBranch(userData.selected[0].branch_id)
@@ -137,17 +122,19 @@ const CustomerListform = () => {
   }, [selectedBranch])
 
   useEffect(() => {
-    if (list && list.length > 0) {
+    if (list?.customers && list?.customers.length > 0) {
       if (!searchTerm) {
         scrollTriggeredRef.current = false
         setAfterSearchData((prev) =>
-          pages === 1 ? [...list] : [...prev, ...list]
+          pages === 1 ? [...list.customers] : [...prev, ...list.customers]
         )
-        setalldata((prev) => (pages === 1 ? [...list] : [...prev, ...list]))
+        setalldata((prev) =>
+          pages === 1 ? [...list.customers] : [...prev, ...list.customers]
+        )
       } else {
         scrollTriggeredRef.current = false
-        setAfterSearchData((prev) => [...prev, ...list])
-        setalldata((prev) => [...prev, ...list])
+        setAfterSearchData((prev) => [...prev, ...list.customers])
+        setalldata((prev) => [...prev, ...list.customers])
       }
     }
   }, [list])
@@ -330,13 +317,14 @@ const CustomerListform = () => {
               </select>
             </div>
 
-            <div className="bg-blue-100 px-4 py-2 rounded-lg">
-              <span className="text-sm font-medium text-blue-800">
-                Total:{" "}
-                {selectedstatus === "All customers"
+            <div className="bg-blue-100 px-4 py-2 rounded-lg text-blue-800">
+              <span className="text-sm font-medium mr-1">
+                Total:
+                {/* {selectedstatus === "All customers"
                   ? searchAfterData?.length
-                  : statusfilteredCustomer?.length}
+                  : statusfilteredCustomer?.length} */}
               </span>
+              <span>{list?.selectedbranchCustomercount}</span>
             </div>
           </div>
         </div>

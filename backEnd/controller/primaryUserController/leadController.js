@@ -301,9 +301,9 @@ export const UpdateLeadRegister = async (req, res) => {
           submissionDate: leadData.leadDate,
           submittedUser: leadData.leadBy,
           submissiondoneByModel: leadByModel,
-          taskallocatedBy: leadBy,
+          taskallocatedBy: leadData.leadBy,
           taskallocatedByModel: leadByModel,
-          taskallocatedTo: leadBy,
+          taskallocatedTo: leadData.leadBy,
           taskallocatedToModel: leadByModel,
           remarks: leadData.remark,
           taskBy: "allocated",
@@ -358,11 +358,7 @@ export const UpdateLeadRegister = async (req, res) => {
       if (matchedDoc.activityLog.length > 2) {
         return res.status(404).json({ message: "Cant change to Allocated To Other this leads makes some tasks" })
       } else if (matchedDoc.activityLog.length === 2) {
-        // updatedLead = await LeadMaster.findByIdAndUpdate(objectId, {
-        //   ...restData,
-        //   allocationType: "lead",
-        //   leadFor: mappedleadData
-        // })
+       
         let lead = await LeadMaster.findById(objectId);
 
         if (!lead) {

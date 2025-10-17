@@ -258,6 +258,7 @@ const LeadMaster = ({
           selectedArray: product.selected
         }
       })
+console.log(productListwithoutlicenseOnEdit)
       setlicenseWithoutProductSelection(productListwithoutlicenseOnEdit)
       const groupedByLicenseNumber = {}
       Data[0].leadFor.forEach((lead) => {
@@ -643,6 +644,7 @@ const LeadMaster = ({
 
         updatedList = [...updatedList, ...newProducts]
       } else {
+console.log(licensewithoutProductSelection)
         const selectedProducts = licensewithoutProductSelection
           .filter((items) => items.selected)
           .map((item) => {
@@ -659,10 +661,7 @@ const LeadMaster = ({
                 Number(item?.productPrice || 0) +
                 (Number(igstRate) / 100) * Number(item?.productPrice || 0)
               ).toFixed(2)
-              // netAmount:
-              //   item?.productPrice +
-              //   (item?.selectedArray[0]?.hsn_id?.onValue?.igstRate / 100) *
-              //     item?.productPrice
+             
             }
           })
 

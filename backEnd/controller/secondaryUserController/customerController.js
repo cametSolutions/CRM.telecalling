@@ -34,54 +34,53 @@ export const GetscrollCustomer = async (req, res) => {
     let searchQuery = {}
     if (search) {
       const regex = new RegExp("^" + search, "i");
+
       // searchQuery = {
       //   $or: [
-      //     { $text: { $search: search } }, // customerName text index
+      //     { $text: { $search: search } }, // text index
       //     { mobile: search },             // mobile index
-      //     { "selected.licensenumber": Number(search) } // selected.licensenumber index
+      //     ...(!isNaN(Number(search))
+      //       ? [{ "selected.licensenumber": Number(search) }]
+      //       : [])                     // only include if valid number
       //   ]
       // };
+
+
       searchQuery = {
         $or: [
-          { $text: { $search: search } }, // text index
-          { mobile: search },             // mobile index
-          ...(!isNaN(Number(search))
-            ? [{ "selected.licensenumber": Number(search) }]
-            : [])                     // only include if valid number
-        ]
+          { customerName: regex },
+          { mobile: typeof search === "string" ? regex : undefined },
+          {
+            $expr: {
+              $gt: [
+                {
+                  $size: {
+                    $filter: {
+                      input: "$selected",
+                      as: "item",
+                      cond: {
+                        $regexMatch: {
+                          input: { $toString: "$$item.licensenumber" },
+                          regex: regex
+                        }
+                      }
+                    }
+                  }
+                },
+                0
+              ]
+            }
+          }
+
+
+        ].filter(Boolean), // removes undefined if any
       };
-
-
-      // searchQuery = {
-      //   $or: [
-      //     { customerName: regex },
-      //     { mobile: typeof search === "string" ? regex : undefined },
-      //     {
-      //       $expr: {
-      //         $gt: [
-      //           {
-      //             $size: {
-      //               $filter: {
-      //                 input: "$selected",
-      //                 as: "item",
-      //                 cond: {
-      //                   $regexMatch: {
-      //                     input: { $toString: "$$item.licensenumber" },
-      //                     regex: regex
-      //                   }
-      //                 }
-      //               }
-      //             }
-      //           },
-      //           0
-      //         ]
-      //       }
-      //     }
-
-
-      //   ].filter(Boolean), // removes undefined if any
-      // };
     }
+    const selectedbranchCustomercount = await Customer.countDocuments({
+      "selected.branch_id": branchId,
+      ...(searchQuery.$or ? searchQuery : {})//apply search if present
+    })
+    console.log(selectedbranchCustomercount)
 
     const customers = await Customer.aggregate([
       {
@@ -153,7 +152,12 @@ export const GetscrollCustomer = async (req, res) => {
     }
     return res
       .status(200)
-      .json({ message: "Customer(s) found", data: customers })
+      .json({
+        message: "Customer(s) found", data: {
+          selectedbranchCustomercount,
+          customers
+        }
+      })
 
 
 
@@ -784,7 +788,7 @@ export const CustomerRegister = async (req, res) => {
 }
 export const CustomerEdit = async (req, res) => {
   const { customerData, tableData } = req.body
-  
+
 
   const { customerid, index } = req.query
 
