@@ -180,6 +180,7 @@ const LeadFollowUp = () => {
   useEffect(() => {
     if (loggedusersallocatedleads && dates.endDate && loggedUser) {
       if (pending && ownFollowUp) {
+     
         const ownFollow = loggedusersallocatedleads.followupLeads.filter(
           (lead) =>
             lead.activityLog?.some(
@@ -199,7 +200,7 @@ const LeadFollowUp = () => {
             : endDateLocal
 
         const neverfollowupedLeads = ownFollow.filter(
-          (lead) => lead.neverfollowuped
+          (lead) => lead.neverfollowuped && lead.allocatedfollowup == false
         )
         const havenextFollowup = ownFollow.filter(
           (lead) => lead.currentdateNextfollowup
@@ -212,6 +213,9 @@ const LeadFollowUp = () => {
         const overdueFollowups = havenextFollowup.filter(
           (lead) => formatdate(lead.nextFollowUpDate) < iscurrent
         )
+        const postdatefollowup = havenextFollowup.filter(
+          (lead) => formatdate(lead.nextFollowUpDate) > iscurrent
+        )
         const uniqueoverdueAndcurrentdate = [
           ...new Set([...overdueFollowups, ...filteredcurrentdatefollowupLeads])
         ]
@@ -223,19 +227,23 @@ const LeadFollowUp = () => {
           (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed === false
         )
         setAllocatedLeads(nonsubmittedtakleads)
-
+        
         const mergedall = [
           ...neverfollowupedLeads,
           ...uniqueoverdueAndcurrentdate,
+          ...postdatefollowup,
           ...taskSubmittedLeads
         ]
-
-        const totalNetAmount = mergedall.reduce((total, lead) => {
-          const leadTotal =
-            lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) || 0
-          return total + leadTotal
-        }, 0)
-
+        const totalNetAmount = mergedall
+          .reduce((total, lead) => {
+            const leadTotal =
+              lead.leadFor?.reduce(
+                (sum, item) => sum + (item.netAmount || 0),
+                0
+              ) || 0
+            return total + leadTotal
+          }, 0)
+          .toFixed(2)
         // then store it in state
         setnetTotalAmount(totalNetAmount)
 
@@ -261,10 +269,14 @@ const LeadFollowUp = () => {
         const filteredcurrentdatefollowupLeads = havenextFollowup.filter(
           (lead) => formatdate(lead.nextFollowUpDate) === fulldatecurrent
         )
+
         const iscurrent =
           fulldatecurrent === endDateLocal ? fulldatecurrent : endDateLocal
         const overdueFollowups = havenextFollowup.filter(
           (lead) => formatdate(lead.nextFollowUpDate) < iscurrent
+        )
+        const postdatefollowup = havenextFollowup.filter(
+          (lead) => formatdate(lead.nextFollowUpDate) > iscurrent
         )
         const uniqueoverdueAndcurrentdate = [
           ...new Set([...overdueFollowups, ...filteredcurrentdatefollowupLeads])
@@ -280,43 +292,162 @@ const LeadFollowUp = () => {
               lead.allocatedfollowup && lead.allocatedTaskClosed === false
           )
         setAllocatedLeads(nonsubmittedtakleads)
-
+       
         const mergedall = [
           ...neverfollowupedLeads,
           ...uniqueoverdueAndcurrentdate,
+          ...postdatefollowup,
           ...taskSubmittedLeads
         ]
-        const totalNetAmount = mergedall.reduce((total, lead) => {
-          const leadTotal =
-            lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) || 0
-          return total + leadTotal
-        }, 0)
+        const totalNetAmount = mergedall
+          .reduce((total, lead) => {
+            const leadTotal =
+              lead.leadFor?.reduce(
+                (sum, item) => sum + (item.netAmount || 0),
+                0
+              ) || 0
+            return total + leadTotal
+          }, 0)
+          .toFixed(2)
 
         // then store it in state
         setnetTotalAmount(totalNetAmount)
         setTableData(mergedall)
       } else if (!pending && ownFollowUp) {
-        const totalNetAmount = loggedusersallocatedleads.followupLeads.reduce(
-          (total, lead) => {
-            const leadTotal =
-              lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) ||
-              0
-            return total + leadTotal
-          },
-          0
+        const ownFollow = loggedusersallocatedleads.followupLeads.filter(
+          (lead) =>
+            lead.activityLog?.some(
+              (log) =>
+                log.taskTo === "followup" &&
+                log.taskallocatedTo._id === loggedUser._id &&
+                log.followupClosed === false
+            )
         )
+        const currentDate = new Date()
+        const endDateLocal = getLocalDate(new Date(dates.endDate))
+        formatdate(currentDate)
+        const fulldatecurrent =
+          formatdate(currentDate) === endDateLocal
+            ? // formatdate(dates.endDate)
+              formatdate(currentDate)
+            : endDateLocal
+
+        const neverfollowupedLeads = ownFollow.filter(
+          (lead) => lead.neverfollowuped && lead.allocatedfollowup == false
+        )
+        const havenextFollowup = ownFollow.filter(
+          (lead) => lead.currentdateNextfollowup
+        )
+        const filteredcurrentdatefollowupLeads = havenextFollowup.filter(
+          (lead) => formatdate(lead.nextFollowUpDate) === fulldatecurrent
+        )
+        const iscurrent =
+          fulldatecurrent === endDateLocal ? fulldatecurrent : endDateLocal
+        const overdueFollowups = havenextFollowup.filter(
+          (lead) => formatdate(lead.nextFollowUpDate) < iscurrent
+        )
+        const postdatefollowup = havenextFollowup.filter(
+          (lead) => formatdate(lead.nextFollowUpDate) > iscurrent
+        )
+        const uniqueoverdueAndcurrentdate = [
+          ...new Set([...overdueFollowups, ...filteredcurrentdatefollowupLeads])
+        ]
+
+        const taskSubmittedLeads = ownFollow.filter(
+          (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
+        )
+        const nonsubmittedtakleads = ownFollow.filter(
+          (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed === false
+        )
+        setAllocatedLeads(nonsubmittedtakleads)
+       
+        const mergedall = [
+          ...neverfollowupedLeads,
+          ...uniqueoverdueAndcurrentdate,
+          ...postdatefollowup,
+          ...taskSubmittedLeads
+        ]
+
+        const totalNetAmount = mergedall
+          .reduce((total, lead) => {
+            const leadTotal =
+              lead.leadFor?.reduce(
+                (sum, item) => sum + (item.netAmount || 0),
+                0
+              ) || 0
+            return total + leadTotal
+          }, 0)
+          .toFixed(2)
 
         // then store it in state
         setnetTotalAmount(totalNetAmount)
-        setTableData(loggedusersallocatedleads.followupLeads)
+        setTableData(mergedall)
       } else if (!pending && !ownFollowUp) {
+        const currentDate = new Date()
+        const endDateLocal = getLocalDate(new Date(dates.endDate))
+        formatdate(currentDate)
+        const fulldatecurrent =
+          formatdate(currentDate) === endDateLocal
+            ? // formatdate(dates.endDate)
+              formatdate(currentDate)
+            : endDateLocal
+
+        const neverfollowupedLeads = loggedusersallocatedleads.followupLeads.filter(
+          (lead) => lead.neverfollowuped && lead.allocatedfollowup == false
+        )
+        const havenextFollowup = loggedusersallocatedleads.followupLeads.filter(
+          (lead) => lead.currentdateNextfollowup
+        )
+        const filteredcurrentdatefollowupLeads = havenextFollowup.filter(
+          (lead) => formatdate(lead.nextFollowUpDate) === fulldatecurrent
+        )
+        const iscurrent =
+          fulldatecurrent === endDateLocal ? fulldatecurrent : endDateLocal
+        const overdueFollowups = havenextFollowup.filter(
+          (lead) => formatdate(lead.nextFollowUpDate) < iscurrent
+        )
+        const postdatefollowup = havenextFollowup.filter(
+          (lead) => formatdate(lead.nextFollowUpDate) > iscurrent
+        )
+        const uniqueoverdueAndcurrentdate = [
+          ...new Set([...overdueFollowups, ...filteredcurrentdatefollowupLeads])
+        ]
+
+        const taskSubmittedLeads = loggedusersallocatedleads.followupLeads.filter(
+          (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
+        )
+        const nonsubmittedtakleads = loggedusersallocatedleads.followupLeads.filter(
+          (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed === false
+        )
+        setAllocatedLeads(nonsubmittedtakleads)
+        
+        const mergedall = [
+          ...neverfollowupedLeads,
+          ...uniqueoverdueAndcurrentdate,
+          ...postdatefollowup,
+          ...taskSubmittedLeads
+        ]
+
+        const totalNetAmount = mergedall
+          .reduce((total, lead) => {
+            const leadTotal =
+              lead.leadFor?.reduce(
+                (sum, item) => sum + (item.netAmount || 0),
+                0
+              ) || 0
+            return total + leadTotal
+          }, 0)
+          .toFixed(2)
+
+        // then store it in state
+        setnetTotalAmount(totalNetAmount)
         setTableData(loggedusersallocatedleads.followupLeads)
       }
 
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
     }
   }, [loggedusersallocatedleads, dates, pending, ownFollowUp, loggedUser])
-
+  
   useEffect(() => {
     if (loggedUser) {
       setFormData((prev) => ({
@@ -510,7 +641,7 @@ const LeadFollowUp = () => {
         }
       }
       if (!formData.Remarks) newErrors.Remarks = "Remarks is Required"
-      
+
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors)
         return
@@ -590,14 +721,23 @@ const LeadFollowUp = () => {
                   {
                     label: statusAll ? "All Leads" : "Filtered Leads",
                     value: statusAll,
-                    toggle: () => setstatusAll(!statusAll)
+                    toggle: () => {
+                      setstatusAll(!statusAll)
+                      setTableData([])
+                      setAllocatedLeads([])
+                    },
+                    show: false
                   },
                   {
-                    label: statusAllocated
-                      ? "Allocated Leads"
-                      : "Unallocated Leads",
+                    label: "Allocated Followups",
+
                     value: statusAllocated,
-                    toggle: () => setstatusAllocated(!statusAllocated)
+                    toggle: () => {
+                      setstatusAllocated(!statusAllocated)
+                      setTableData([])
+                      setAllocatedLeads([])
+                    },
+                    show: true
                   },
                   {
                     label: pending ? "Pending Followup" : "Cleared Followup",
@@ -605,7 +745,9 @@ const LeadFollowUp = () => {
                     toggle: () => {
                       setPending(!pending)
                       setTableData([])
-                    }
+                      setAllocatedLeads([])
+                    },
+                    show: true
                   },
                   {
                     label: ownFollowUp ? "Own Followup" : "All Followup",
@@ -613,30 +755,41 @@ const LeadFollowUp = () => {
                     toggle: () => {
                       setOwnFollowUp(!ownFollowUp)
                       setTableData([])
-                    }
+                      setAllocatedLeads([])
+                    },
+                    show: loggedUser?.role !== "Staff" //hide for staff
                   }
-                ].map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between text-sm font-medium text-gray-700 group"
-                  >
-                    <span className="group-hover:text-black transition">
-                      {item.label}
-                    </span>
-                    <button
-                      onClick={item.toggle}
-                      className={`${
-                        item.value ? "bg-emerald-400" : "bg-gray-300"
-                      } w-8 h-5 flex items-center rounded-full transition-colors duration-300`}
+                ]
+                  .filter((item) => item.show) //only show allowed toggles
+                  .map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between text-sm font-medium text-gray-700 group"
                     >
-                      <div
+                      <span
+                        className={`transition ${
+                          // Apply blur ONLY for Allocated Leads when inactive
+                          item.label === "Allocated Leads" && !item.value
+                            ? "text-gray-400 opacity-60 blur-[1px]"
+                            : "text-gray-700 group-hover:text-black"
+                        }`}
+                      >
+                        {item.label}
+                      </span>
+                      <button
+                        onClick={item.toggle}
                         className={`${
-                          item.value ? "translate-x-3" : "translate-x-0"
-                        } w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                      />
-                    </button>
-                  </div>
-                ))}
+                          item.value ? "bg-emerald-400" : "bg-gray-300"
+                        } w-8 h-5 flex items-center rounded-full transition-colors duration-300`}
+                      >
+                        <div
+                          className={`${
+                            item.value ? "translate-x-3" : "translate-x-0"
+                          } w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                        />
+                      </button>
+                    </div>
+                  ))}
               </div>
             )}
           </div>
@@ -644,7 +797,7 @@ const LeadFollowUp = () => {
           <select
             value={selectedCompanyBranch || ""}
             onChange={(e) => setselectedCompanyBranch(e.target.value)}
-            className="border border-gray-300 py-0.5 rounded-md px-2 focus:outline-none w-36 md:min-w-[120px]"
+            className="border border-gray-300 py-0.5 rounded-md px-2 focus:outline-none w-36 md:min-w-[120px] cursor-pointer"
           >
             {loggedUserBranches?.map((branch) => (
               <option key={branch.value} value={branch.value}>
@@ -677,6 +830,7 @@ const LeadFollowUp = () => {
         <table className=" border-collapse border border-gray-400 w-full text-sm">
           <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
             <tr>
+              <th className="border border-r-0 border-gray-400 px-4 ">No.</th>
               <th className="border border-r-0 border-gray-400 px-4 ">Name</th>
               <th className="border border-r-0 border-l-0 border-gray-400  px-4 max-w-[200px] min-w-[200px]">
                 Mobile
@@ -703,6 +857,7 @@ const LeadFollowUp = () => {
                 (item, index) => (
                   <React.Fragment key={index}>
                     <tr className="bg-white ">
+                      <td className="border border-gray-400 border-b-0 border-t-0"></td>
                       <td
                         onClick={() => setShowFullName(!showFullName)}
                         className={`px-4 cursor-pointer overflow-hidden ${
@@ -752,13 +907,17 @@ const LeadFollowUp = () => {
                     </tr>
 
                     <tr className=" font-semibold bg-gray-200">
+                      <td className="border border-t-0 border-b-0 border-gray-400">
+                        {index + 1}
+                      </td>
                       <td className=" px-4 ">Leadby</td>
                       <td className=" px-4">Assignedto</td>
                       <td className=" px-4 ">Assignedby</td>
                       <td className="px-4 ">No. of Followups</td>
                       <td className="px-4 min-w-[120px]">Lead Date</td>
                       <td className=" border border-t-0 border-b-0 border-gray-400 px-4 ">
-                        {item.activityLog[item.activityLog.length - 1]
+                        {pending &&
+                        item.activityLog[item.activityLog.length - 1]
                           ?.nextFollowUpDate
                           ? new Date(
                               item.activityLog[
@@ -794,6 +953,7 @@ const LeadFollowUp = () => {
                     </tr>
 
                     <tr className="bg-white">
+                      <td className="border border-t-0 border-r-0  border-gray-400 px-4 py-0.5 "></td>
                       <td className="border border-t-0 border-r-0  border-gray-400 px-4 py-0.5 ">
                         {item?.leadBy?.name}
                       </td>
@@ -816,7 +976,7 @@ const LeadFollowUp = () => {
               )
             ) : (
               <tr>
-                <td colSpan={8} className="text-center text-gray-500 py-4">
+                <td colSpan={9} className="text-center text-gray-500 py-4">
                   {loading ? (
                     <div className="justify center">
                       <PropagateLoader color="#3b82f6" size={10} />
@@ -1214,10 +1374,12 @@ const LeadFollowUp = () => {
                                       backgroundColor: state.isDisabled
                                         ? "#f3f4f6"
                                         : "white",
-                                      color: state.isDisabled
-                                        ? "#6b7280"
-                                        : "black", // Tailwind's text-gray-500
+
                                       opacity: state.isDisabled ? 0.7 : 1
+                                    }),
+                                    singleValue: (base, state) => ({
+                                      ...base,
+                                      color: state.isDisabled ? "black" : "red" // 👈 This controls text color
                                     }),
                                     option: (base, state) => ({
                                       ...base,
@@ -1272,7 +1434,7 @@ const LeadFollowUp = () => {
                             <div>
                               <label className="block text-left font-semibold text-gray-500">
                                 {isAllocated
-                                  ? "Allocation Date"
+                                  ? "Completion Date"
                                   : "Next Follow Up"}
                               </label>
                               <input

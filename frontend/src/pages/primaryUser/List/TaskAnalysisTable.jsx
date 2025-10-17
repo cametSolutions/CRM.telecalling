@@ -102,69 +102,10 @@ const TaskAnalysisTable = () => {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     return diffDays
   }
-console.log(tableData)
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {loading && <div className="w-full h-1 bg-blue-500 animate-pulse"></div>}
-      {/* <div className="bg-white border-b sticky top-0 z-40">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-6">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 flex-1">
-            <div className="flex items-center gap-3">
-              <div className="flex w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg items-center justify-center shadow-md flex-shrink-0">
-                <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-              </div>
-              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 tracking-tight whitespace-nowrap">
-                Task Analysis
-              </h1>
-            </div>
-
-            <div className="inline-flex items-center self-start sm:self-auto">
-              <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-md">
-                <span className="text-xs sm:text-sm font-bold text-white uppercase tracking-wide">
-                  {label || "FOLLOWUP"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 sm:gap-3 md:flex-shrink-0">
-            <div className="relative w-full xs:w-auto">
-              <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none z-10" />
-                <select
-                  onChange={(e) => setSelectedCompanyBranch(e.target.value)}
-                  className="w-full xs:w-auto min-w-[180px] lg:min-w-[200px] appearance-none bg-white border border-gray-300 pl-9 pr-9 py-2 sm:py-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium text-gray-700 cursor-pointer shadow-sm hover:border-gray-400 transition-all"
-                  value={selectedCompanyBranch}
-                >
-                  {loggedUserBranches?.map((branch) => (
-                    <option key={branch.value} value={branch.value}>
-                      {branch.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              </div>
-            </div>
-
-            <button
-              onClick={() =>
-                loggedUser.role === "Admin"
-                  ? navigate("/admin/transaction/lead")
-                  : navigate("/staff/transaction/lead")
-              }
-              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-2 sm:py-2.5 px-4 sm:px-5 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 whitespace-nowrap"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="text-sm">New Lead</span>
-            </button>
-          </div>
-        </div>
-      
-      </div>
-      <div className="flex justify-end text-blue-600 text-md font-bold pr-4 gap-2">
-        <span>Total Amount: </span>
-        <span> {netAmount}</span>
-      </div> */}
+     
 
       <div className="mx-auto px-3 sm:px-6 lg:px-8 py-2 bg-blue-100 w-full">
         {/* Header Row */}

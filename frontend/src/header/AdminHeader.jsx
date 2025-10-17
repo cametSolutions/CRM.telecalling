@@ -185,7 +185,7 @@ export default function AdminHeader() {
     },
     {
       to: "/admin/transaction/lead/leadTask",
-      label: "Task",
+      label: "Task Pending",
       control: true
     },
     {

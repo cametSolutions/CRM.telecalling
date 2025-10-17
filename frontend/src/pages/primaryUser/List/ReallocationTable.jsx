@@ -143,8 +143,6 @@ const ReallocationTable = () => {
       setsubmitLoading(true)
       
 
-      // return
-      // const selected = selectedAllocationType[selectedItem._id]
       const response = await api.post(
         `/lead/leadReallocation?allocationType=${encodeURIComponent(
           selected
@@ -615,7 +613,7 @@ const ReallocationTable = () => {
               <div className="md:px-6 md:py-4 py-2 px-3">
                 <h1 className="font-semibold text-xl">{`Lead Reallocation for ${selectedType}-LeadId:${selectedLeadId}`}</h1>
                 <div>
-                  <label className="block text-left">Allocated Date</label>
+                  <label className="block text-left">Completion Date</label>
                   <input
                     value={formData.allocationDate || ""}
                     type="date"
