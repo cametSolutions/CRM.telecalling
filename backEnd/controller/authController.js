@@ -1149,7 +1149,6 @@ export const OnsiteApply = async (req, res) => {
 export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
   try {
     const { year, month, selectedBranch } = req.query || { year: yearParam, month: monthParam }
-    // console.log("selectedBranch", selectedBranch)
 
     function getSundays(year, month) {
       const sundays = []

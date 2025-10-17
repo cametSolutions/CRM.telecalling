@@ -184,7 +184,7 @@ export default function LeadModal({
                         <th className="border border-indigo-200 p-2 min-w-[100px] ">
                           User
                         </th>
-                        <th className="border border-indigo-200 p-2 min-w-[100px] ">
+                        <th className="border border-indigo-200 p-2 min-w-[100px] text-nowrap">
                           Task
                         </th>
 
@@ -252,7 +252,7 @@ export default function LeadModal({
                               <td className="border border-gray-200 p-2">
                                 {item?.submittedUser?.name}
                               </td>
-                              <td className="border border-gray-200 p-2 min-w-[160px]">
+                              <td className="border border-gray-200 p-2 min-w-[160px] text-nowrap">
                                 <div>
                                   {item?.taskallocatedTo ? (
                                     <>

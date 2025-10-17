@@ -426,43 +426,84 @@ export const GetallfollowupList = async (req, res) => {
     let query
 
     if (pendingfollowup === "true") {
-      query = {
+      if (role === "Admin") {
+        query = {
 
-        activityLog: {
-          $elemMatch: {
-            taskTo: "followup",
-            $or: [
-              { submittedUser: userObjectId },
-              { taskallocatedTo: userObjectId }
-            ],
-            allocationChanged: false,
-            allocatedClosed: false,
-            taskClosed: false,
-            followupClosed: false
-          }
-        },
-        leadBranch: branchObjectId,
-        reallocatedTo: false,
-        leadLost: false
+          activityLog: {
+            $elemMatch: {
+              taskTo: "followup",
+
+              allocationChanged: false,
+              allocatedClosed: false,
+              taskClosed: false,
+              followupClosed: false
+            }
+          },
+          leadBranch: branchObjectId,
+          reallocatedTo: false,
+          leadLost: false,
+        }
+      } else {
+
+        query = {
+
+          activityLog: {
+            $elemMatch: {
+              taskTo: "followup",
+              $or: [
+                { submittedUser: userObjectId },
+                { taskallocatedTo: userObjectId }
+              ],
+              allocationChanged: false,
+              allocatedClosed: false,
+              taskClosed: false,
+              followupClosed: false
+            }
+          },
+          leadBranch: branchObjectId,
+          reallocatedTo: false,
+          leadLost: false,
+        }
       }
+
     } else if (pendingfollowup === "false") {
-      query = {
+      if (role === "Admin") {
+        query = {
 
-        activityLog: {
-          $elemMatch: {
-            taskBy: "followup",
-            $or: [
-              { submittedUser: userObjectId },
-              { taskallocatedTo: userObjectId }
-            ],
-            taskClosed: true
+          activityLog: {
+            $elemMatch: {
+              taskTo: "followup",
+              allocationChanged: false,
+              allocatedClosed: false,
+              taskClosed: true,
+              followupClosed: true
+            }
+          },
+          leadBranch: branchObjectId,
+          
+          leadLost: false,
+        }
+      } else {
+        query = {
 
-          }
-        },
-        leadBranch: branchObjectId,
-        leadLost: false
+          activityLog: {
+            $elemMatch: {
+              taskTo: "followup",
+              $or: [
+                { submittedUser: userObjectId },
+                { taskallocatedTo: userObjectId }
+              ],
+              taskClosed: true
 
+            }
+          },
+          leadBranch: branchObjectId,
+          leadLost: false,
+
+
+        }
       }
+
 
     }
 
@@ -474,7 +515,7 @@ export const GetallfollowupList = async (req, res) => {
 
       const matchedAllocations = lead.activityLog
         .map((item, index) => ({ ...item, index })) // add index inside each item
-        .filter((item) => item.taskTo === "followup" && item.followupClosed === false);
+        .filter((item) => item.taskTo === "followup" && (pendingfollowup === "false" ? item.followupClosed === true : item.followupClosed === false));
       const nextfollowUpDate = lead.activityLog[lead.activityLog.length - 1]?.nextFollowUpDate ?? null
       if (matchedAllocations && matchedAllocations.length > 0) {
 
@@ -537,9 +578,9 @@ export const GetallfollowupList = async (req, res) => {
           activityLog: populatedActivityLog,
           nextFollowUpDate: nextfollowUpDate,
           neverfollowuped: checkneverFollowuped,
-          currentdateNextfollowup: lead.activityLog[lead.activityLog.length - 1]?.nextFollowUpDate ? true : false,
-          allocatedfollowup: lead.activityLog[lead.activityLog.length - 1]?.taskfromFollowup,
-          allocatedTaskClosed: lead.activityLog[lead.activityLog.length - 1]?.taskClosed ?? false
+          currentdateNextfollowup: lead.activityLog[lead.activityLog.length - 1]?.nextFollowUpDate ? true : false,//check have nextfollowupdate
+          allocatedfollowup: lead.activityLog[lead.activityLog.length - 1]?.taskfromFollowup ?? false,//to know whether the followp has task from followup
+          allocatedTaskClosed: lead.activityLog[lead.activityLog.length - 1]?.allocatedClosed ?? false//to know taskfrom followp is closed or not
         });
       }
 
@@ -1219,7 +1260,7 @@ export const GetallLead = async (req, res) => {
     }
 
     if (Status === "Pending") {
-
+      //for getting pending leads means leads not to be allocated to someone
       const query = { leadBranch: branchObjectId, activityLog: { $size: 1 } };
 
       const pendingLeads = await LeadMaster.find(query)
@@ -1253,14 +1294,62 @@ export const GetallLead = async (req, res) => {
           .json({ message: "pending leads found", data: populatedPendingLeads })
       }
     } else if (Status === "Approved") {
-
       const query = {
-        leadBranch: branchObjectId, reallocatedTo: false, activityLog: { $exists: true, $not: { $size: 0 } },
+        leadBranch: branchObjectId, reallocatedTo: false, $and: [
+          { leadLost: { $ne: true } },
+          { leadClosed: { $ne: true } }
+        ], activityLog: { $exists: true, $not: { $size: 0 } },
         $expr: { $gte: [{ $size: "$activityLog" }, 2] }
       }
       const approvedAllocatedLeads = await LeadMaster.find(query)
         .populate({ path: "customerName", select: "customerName" })
         .lean()
+      // const populatedApprovedLeads = await Promise.all(
+      //   approvedAllocatedLeads.map(async (lead) => {
+      //     const lastMatchingActivity = [...(lead.activityLog || [])]
+      //       .reverse()
+      //       .find(log => log.taskallocatedTo && log.taskallocatedBy);
+
+      //     if (
+      //       !lead.leadByModel ||
+      //       !mongoose.models[lead.leadByModel] ||
+      //       !lastMatchingActivity.taskallocatedBy || !lastMatchingActivity.taskallocatedByModel ||
+      //       !lastMatchingActivity.taskallocatedTo || !lastMatchingActivity.taskallocatedToModel
+
+      //     ) {
+      //       console.error(
+      //         `Model ${lead.leadByModel} is not registered`
+      //       )
+      //       console.error(`Model ${lastMatchingActivity.taskallocatedByModel} is not registered`)
+      //       console.error(`Model ${lastMatchingActivity.taskallocatedToModel} is not registered`)
+
+      //       return lead // Return lead as-is if model is invalid
+      //     }
+
+      //     // Fetch the referenced document manually
+
+      //     const leadByModel = mongoose.model(lead.leadByModel)
+      //     const allocatedToModel = mongoose.model(lastMatchingActivity.taskallocatedToModel)
+      //     const allocatedByModel = mongoose.model(lastMatchingActivity.taskallocatedByModel)
+
+      //     const populatedLeadBy = await leadByModel
+      //       .findById(lead.leadBy)
+      //       .select("name")
+      //     const populatedAllocates = await allocatedToModel
+      //       .findById(lastMatchingActivity.taskallocatedTo)
+      //       .select("name")
+      //     const populatedAllocatedBy = await allocatedByModel.findById(lastMatchingActivity.taskallocatedBy).select("name")
+
+
+      //     return {
+      //       ...lead,
+      //       leadBy: populatedLeadBy,
+      //       allocatedTo: populatedAllocates,
+      //       allocatedBy: populatedAllocatedBy,
+      //     }
+      //   }
+      //   )
+      // )
       const populatedApprovedLeads = await Promise.all(
         approvedAllocatedLeads.map(async (lead) => {
           const lastMatchingActivity = [...(lead.activityLog || [])]
@@ -1270,43 +1359,60 @@ export const GetallLead = async (req, res) => {
           if (
             !lead.leadByModel ||
             !mongoose.models[lead.leadByModel] ||
-            !lastMatchingActivity.taskallocatedBy || !lastMatchingActivity.taskallocatedByModel ||
-            !lastMatchingActivity.taskallocatedTo || !lastMatchingActivity.taskallocatedToModel
-
+            !lastMatchingActivity?.taskallocatedBy ||
+            !lastMatchingActivity?.taskallocatedByModel ||
+            !lastMatchingActivity?.taskallocatedTo ||
+            !lastMatchingActivity?.taskallocatedToModel
           ) {
-            console.error(
-              `Model ${lead.leadByModel} is not registered`
-            )
-            console.error(`Model ${lastMatchingActivity.taskallocatedByModel} is not registered`)
-            console.error(`Model ${lastMatchingActivity.taskallocatedToModel} is not registered`)
-
-            return lead // Return lead as-is if model is invalid
+            console.error(`Model ${lead.leadByModel} is not registered`);
+            console.error(`Model ${lastMatchingActivity?.taskallocatedByModel} is not registered`);
+            console.error(`Model ${lastMatchingActivity?.taskallocatedToModel} is not registered`);
+            return lead;
           }
 
-          // Fetch the referenced document manually
+          // Fetch the referenced documents
+          const leadByModel = mongoose.model(lead.leadByModel);
+          const allocatedToModel = mongoose.model(lastMatchingActivity.taskallocatedToModel);
+          const allocatedByModel = mongoose.model(lastMatchingActivity.taskallocatedByModel);
 
-          const leadByModel = mongoose.model(lead.leadByModel)
-          const allocatedToModel = mongoose.model(lastMatchingActivity.taskallocatedToModel)
-          const allocatedByModel = mongoose.model(lastMatchingActivity.taskallocatedByModel)
+          const populatedLeadBy = await leadByModel.findById(lead.leadBy).select("name");
+          const populatedAllocatedTo = await allocatedToModel.findById(lastMatchingActivity.taskallocatedTo).select("name");
+          const populatedAllocatedBy = await allocatedByModel.findById(lastMatchingActivity.taskallocatedBy).select("name");
 
-          const populatedLeadBy = await leadByModel
-            .findById(lead.leadBy)
-            .select("name")
-          const populatedAllocates = await allocatedToModel
-            .findById(lastMatchingActivity.taskallocatedTo)
-            .select("name")
-          const populatedAllocatedBy = await allocatedByModel.findById(lastMatchingActivity.taskallocatedBy).select("name")
+          // 🔹 Now populate every `submissiondonebyuser` in activityLog
+          const populatedActivityLog = await Promise.all(
+            (lead.activityLog || []).map(async (log) => {
+              if (!log.submissiondoneByModel || !log.submissiondoneByModel) {
+                return log; // skip if missing
+              }
 
+              // Make sure the model exists before querying
+              if (!mongoose.models[log.submissiondoneByModel]) {
+                console.error(`Model ${log.submissiondoneByModel} not registered`);
+                return log;
+              }
+
+              const submissionUserModel = mongoose.model(log.submissiondoneByModel);
+              const populatedSubmissionUser = await submissionUserModel
+                .findById(log.submittedUser)
+                .select("name");
+
+              return {
+                ...log,
+                submittedUser: populatedSubmissionUser,
+              };
+            })
+          );
 
           return {
             ...lead,
             leadBy: populatedLeadBy,
-            allocatedTo: populatedAllocates,
+            allocatedTo: populatedAllocatedTo,
             allocatedBy: populatedAllocatedBy,
-          }
-        }
-        )
-      )
+            activityLog: populatedActivityLog, // updated log with populated submission users
+          };
+        })
+      );
       if (populatedApprovedLeads) {
         return res.status(200).json({
           message: "Approved leads found",
@@ -1315,7 +1421,7 @@ export const GetallLead = async (req, res) => {
       }
     }
   } catch (error) {
-console.log(error)
+    console.log(error)
     console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })
   }
@@ -1340,19 +1446,24 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
     }
     if (formData.followupType === "closed") {
       await LeadMaster.updateOne(
-        {
-          _id: selectedleaddocId,
-          "activityLog.taskTo": { $exists: true },
-          "activityLog.reallocatedTo": false,
-          "activityLog.taskClosed": false,
-          "activityLog.followupClosed": false,
-        },
+        { _id: selectedleaddocId },
+       
         {
           $set: {
-            "activityLog.$.reallocatedTo": true,
-            "activityLog.$.taskClosed": true,
-            "activityLog.$.followupClosed": true,
+            "activityLog.$[elem].reallocatedTo": true,
+            "activityLog.$[elem].taskClosed": true,
+            "activityLog.$[elem].followupClosed": true,
           },
+        },
+        {
+          arrayFilters: [
+            {
+              "elem.taskTo": { $exists: true },
+              "elem.reallocatedTo": false,
+              "elem.taskClosed": false,
+              "elem.followupClosed": false,
+            },
+          ],
         }
       );
     }
@@ -1363,12 +1474,14 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       submissiondoneByModel: followedByModel,
       taskBy: "followup",
       nextFollowUpDate: formData.nextfollowUpDate,
-      remarks: formData.Remarks
+      remarks: formData.Remarks,
+      taskfromFollowup: false
     };
 
     // Conditionally add fields only if `closed` is true
     if (formData.followupType === "closed") {
       activityEntry.taskClosed = true;
+      activityEntry.followupClosed = true
       activityEntry.reallocatedTo = true;
     } else if (formData.followupType === "lost") {
 
@@ -1613,7 +1726,9 @@ export const updateReallocation = async (req, res) => {
       allocationDate: formData?.allocationDate,
       remarks: formData.allocationDescription,
       taskBy: "reallocated",
-      taskTo: allocationType
+      taskTo: allocationType,
+      allocationChanged: false,
+      taskfromFollowup: false
     }
     if (allocationType === "followup") {
       activityLogEntry.followupClosed = false
@@ -1698,7 +1813,8 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         changeReason: cleanedData.reason,
         taskBy: "allocated",
         ...(allocationType === "followup" ? { followupClosed: false } : {}),
-        taskTo: allocationType
+        taskTo: allocationType,
+        taskfromFollowup: false
       };
       // Conditionally add allocationDate
       if (allocationType !== "followup") {
@@ -1722,13 +1838,15 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         remarks: cleanedData.allocationDescription,
         taskBy: "allocated",
         taskTo: allocationType,
+        allocationChanged: false,
+        taskfromFollowup: false
 
       };
 
       // Conditionally add allocationDate
       if (allocationType !== "followup") {
         activityLogEntry.allocationDate = cleanedData.allocationDate;
-        activityLogEntry.taskfromFollowup = false
+        // activityLogEntry.taskfromFollowup = false
       } else if (allocationType === "followup") {
         activityLogEntry.followupClosed = false
       }
@@ -1778,11 +1896,17 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         taskallocatedToModel: allocatedToModel,
         remarks: cleanedData.allocationDescription,
         taskBy: "allocated",
-        taskTo: allocationType
+        taskTo: allocationType,
+        taskfromFollowup: false,
+        taskClosed: false,
+        followupClosed: false,
+        allocatedClosed: false,
+        allocationChanged: false
+
       }
       if (allocationType !== "followup") {
         activityLogEntry.allocationDate = cleanedData.allocationDate;
-        activityLogEntry.taskfromFollowup = false
+        // activityLogEntry.taskfromFollowup = false
       }
       matchLead.dueDate = cleanedData.allocationDate
 
@@ -2066,57 +2190,117 @@ export const GetownLeadList = async (req, res) => {
   try {
     const { userId } = req.query
     const objectId = new mongoose.Types.ObjectId(userId)
-    // const matchedLead=await LeadMaster.find({leadBy:objectId,allocatedTo:null})
     const matchedLead = await LeadMaster.find(
       { leadBy: objectId }
     ).populate({ path: "customerName", select: "customerName" }).lean()
+    // const populatedOwnLeads = await Promise.all(
+    //   matchedLead.map(async (lead) => {
+    //     if (
+    //       !lead.leadByModel ||
+    //       !mongoose.models[lead.leadByModel]
+    //     ) {
+    //       console.error(
+    //         `Model ${lead.leadByModel} is not registered`
+    //       )
+    //       return lead // Return lead as-is if model is invalid
+    //     }
+
+    //     // Fetch the referenced document manually
+    //     const assignedModel = mongoose.model(lead.leadByModel)
+    //     const populatedLeadBy = await assignedModel
+    //       .findById(lead.leadBy)
+    //       .select("name")
+    //     // ✅ Fix: Use lead.activityLog, not matchedLead.activityLog
+    //     const lastActivity = lead.activityLog?.[lead.activityLog.length - 1];
+    //     let populatedLastAllocatedTo = null;
+    //     let populatedLastAllocatedBy = null
+
+    //     if (lastActivity?.taskallocatedToModel && lastActivity?.taskallocatedTo) {
+    //       const lastAssignedModel = mongoose.model(lastActivity.taskallocatedToModel);
+    //       populatedLastAllocatedTo = await lastAssignedModel
+    //         .findById(lastActivity.taskallocatedTo)
+    //         .select("name")
+    //         .lean();
+    //     } else {
+    //       populatedLastAllocatedTo=null
+
+    //     }
+    //     if (lastActivity?.taskallocatedByModel && lastActivity?.taskallocatedBy) {
+
+    //       const lastAssignedModel = mongoose.model(lastActivity.taskallocatedByModel);
+    //       populatedLastAllocatedBy = await lastAssignedModel
+    //         .findById(lastActivity.taskallocatedBy)
+    //         .select("name")
+    //         .lean();
+    //     } else {
+    //       populatedLastAllocatedBy = null
+    //     }
+
+
+    //     return { ...lead, taskallocatedTo: populatedLastAllocatedTo, taskallocatedBy: populatedLastAllocatedBy, leadBy: populatedLeadBy } // Merge populated data
+    //   }))
     const populatedOwnLeads = await Promise.all(
       matchedLead.map(async (lead) => {
-        if (
-          !lead.leadByModel ||
-          !mongoose.models[lead.leadByModel]
-        ) {
-          console.error(
-            `Model ${lead.leadByModel} is not registered`
-          )
-          return lead // Return lead as-is if model is invalid
+        if (!lead.leadByModel || !mongoose.models[lead.leadByModel]) {
+          console.error(`Model ${lead.leadByModel} is not registered`);
+          return lead;
         }
 
-        // Fetch the referenced document manually
-        const assignedModel = mongoose.model(lead.leadByModel)
+        // Fetch leadBy name
+        const assignedModel = mongoose.model(lead.leadByModel);
         const populatedLeadBy = await assignedModel
           .findById(lead.leadBy)
           .select("name")
-        // ✅ Fix: Use lead.activityLog, not matchedLead.activityLog
-        const lastActivity = lead.activityLog?.[lead.activityLog.length - 1];
-        let populatedLastAllocatedTo = null;
-        let populatedLastAllocatedBy = null
+          .lean();
 
-        if (lastActivity?.taskallocatedToModel && lastActivity?.taskallocatedTo) {
-          const lastAssignedModel = mongoose.model(lastActivity.taskallocatedToModel);
-          populatedLastAllocatedTo = await lastAssignedModel
-            .findById(lastActivity.taskallocatedTo)
-            .select("name")
-            .lean();
-        } else {
-          populatedLastAllocatedTo=null
+        // ✅ Populate activityLog fields
+        const populatedActivityLog = await Promise.all(
+          (lead.activityLog || []).map(async (activity) => {
+            const populatedActivity = { ...activity };
 
-        }
-        if (lastActivity?.taskallocatedByModel && lastActivity?.taskallocatedBy) {
-          console.log(
-            "hhhh")
-          const lastAssignedModel = mongoose.model(lastActivity.taskallocatedByModel);
-          populatedLastAllocatedBy = await lastAssignedModel
-            .findById(lastActivity.taskallocatedBy)
-            .select("name")
-            .lean();
-        } else {
-          populatedLastAllocatedBy = null
-        }
+            // Populate taskallocatedTo
+            if (activity.submissiondoneByModel && activity.submittedUser) {
+              const model = mongoose.model(activity.submissiondoneByModel);
+              populatedActivity.submittedUser = await model
+                .findById(activity.submittedUser)
+                .select("name")
+                .lean();
+            }
 
+            // // Populate taskallocatedBy
+            if (activity.taskallocatedByModel && activity.taskallocatedBy) {
+              const model = mongoose.model(activity.taskallocatedByModel);
+              populatedActivity.taskallocatedBy = await model
+                .findById(activity.taskallocatedBy)
+                .select("name")
+                .lean();
+            }
 
-        return { ...lead, taskallocatedTo: populatedLastAllocatedTo, taskallocatedBy: populatedLastAllocatedBy, leadBy: populatedLeadBy } // Merge populated data
-      }))
+            // ✅ Populate submissionDoneBy
+            if (activity.taskallocatedToModel && activity.taskallocatedTo) {
+              const model = mongoose.model(activity.taskallocatedToModel);
+              populatedActivity.taskallocatedTo = await model
+                .findById(activity.taskallocatedTo)
+                .select("name")
+                .lean();
+            }
+
+            return populatedActivity;
+          })
+        );
+
+        // ✅ Get last activity
+        const lastActivity = populatedActivityLog[populatedActivityLog.length - 1];
+
+        return {
+          ...lead,
+          leadBy: populatedLeadBy,
+          activityLog: populatedActivityLog, // include fully populated activity logs
+          taskallocatedTo: lastActivity?.taskallocatedTo || null,
+          taskallocatedBy: lastActivity?.taskallocatedBy || null,
+        };
+      })
+    );
     return res.status(200).json({ message: "lead found", data: populatedOwnLeads })
 
   } catch (error) {

@@ -206,7 +206,7 @@ export default function StaffHeader() {
     },
     {
       to: "/staff/transaction/lead/leadTask",
-      label: "Task",
+      label: "Task Pending",
       control: true
     },
 

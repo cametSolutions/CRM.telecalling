@@ -53,12 +53,21 @@ const TaskAnalysis = () => {
         const logs = lead.activityLog
         if (logs.length === 0) return acc
 
-        const lastTask = logs[logs.length - 1]
-        const taskBy = lastTask.taskTo
+        logs.forEach((log) => {
+          // Only include logs that are not closed and have a taskTo field
+          if (
+            log.taskTo &&
+            (log.taskClosed === false || log.followupClosed === false)
+          ) {
+            acc[log.taskTo] = (acc[log.taskTo] || 0) + 1
+          }
+        })
+        // const lastTask = logs[logs.length - 1]
+        // const taskBy = lastTask.taskTo
 
-        if (taskBy) {
-          acc[taskBy] = (acc[taskBy] || 0) + 1
-        }
+        // if (taskBy) {
+        //   acc[taskBy] = (acc[taskBy] || 0) + 1
+        // }
 
         return acc
       }, {})
