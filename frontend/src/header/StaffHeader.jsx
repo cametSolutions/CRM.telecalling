@@ -577,7 +577,7 @@ export default function StaffHeader() {
         {/* <span className="text-3xl font-bold text-green-600">MANAGEMENT</span> */}
       </div>
       
-        <nav className="hidden lg:flex  items-center md:gap-2 lg:gap-8 text-white">
+        <nav className="hidden lg:flex  items-center md:gap-3 lg:gap-8 xl:gap-8 text-white">
           {links.map((link) => (
             <div
               key={link.to}

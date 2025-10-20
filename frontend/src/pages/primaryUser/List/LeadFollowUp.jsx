@@ -180,7 +180,7 @@ const LeadFollowUp = () => {
   useEffect(() => {
     if (loggedusersallocatedleads && dates.endDate && loggedUser) {
       if (pending && ownFollowUp) {
-     
+     console.log(loggedusersallocatedleads.followupLeads)
         const ownFollow = loggedusersallocatedleads.followupLeads.filter(
           (lead) =>
             lead.activityLog?.some(
@@ -202,6 +202,7 @@ const LeadFollowUp = () => {
         const neverfollowupedLeads = ownFollow.filter(
           (lead) => lead.neverfollowuped && lead.allocatedfollowup == false
         )
+console.log(ownFollow)
         const havenextFollowup = ownFollow.filter(
           (lead) => lead.currentdateNextfollowup
         )
@@ -210,9 +211,11 @@ const LeadFollowUp = () => {
         )
         const iscurrent =
           fulldatecurrent === endDateLocal ? fulldatecurrent : endDateLocal
+console.log(havenextFollowup)
         const overdueFollowups = havenextFollowup.filter(
           (lead) => formatdate(lead.nextFollowUpDate) < iscurrent
         )
+console.log(overdueFollowups)
         const postdatefollowup = havenextFollowup.filter(
           (lead) => formatdate(lead.nextFollowUpDate) > iscurrent
         )
@@ -227,7 +230,10 @@ const LeadFollowUp = () => {
           (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed === false
         )
         setAllocatedLeads(nonsubmittedtakleads)
-        
+        console.log(neverfollowupedLeads)
+console.log(uniqueoverdueAndcurrentdate)
+console.log(postdatefollowup)
+console.log(taskSubmittedLeads)
         const mergedall = [
           ...neverfollowupedLeads,
           ...uniqueoverdueAndcurrentdate,
@@ -1114,13 +1120,13 @@ const LeadFollowUp = () => {
                                         : "bg-white"
                                     }
                                   >
-                                    <td className="border border-gray-200 p-2">
+                                    <td className="border border-gray-200 p-2 text-nowrap">
                                       {new Date(item.submissionDate)
                                         .toLocaleDateString("en-GB")
                                         .split("/")
                                         .join("-")}
                                     </td>
-                                    <td className="border border-gray-200 p-2">
+                                    <td className="border border-gray-200 p-2 text-nowrap">
                                       {item?.submittedUser?.name}
                                     </td>
                                     <td className="border border-gray-200 p-2 min-w-[160px] text-nowrap">

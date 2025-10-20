@@ -120,7 +120,6 @@ const CustomerAdd = ({
         JSON.stringify(loggeduserBranch)
       )}`
   )
-
   const navigate = useNavigate()
   useEffect(() => {
     if (allcompanyBranches && allcompanyBranches.length) {

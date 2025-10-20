@@ -24,11 +24,12 @@ const CustomerListform = () => {
 
   const [searchTerm, setsearchTerm] = useState("")
   const [pages, setPages] = useState(1)
-  // const [loading, setLoading] = useState(true)
-  const [selectedstatus, setselectedStatus] = useState("All customers")
+  const [selectedstatus, setselectedStatus] = useState("Allcustomers")
   const [tableHeight, setTableHeight] = useState("auto")
+  const [customerCount, setcustomerCount] = useState(0)
   const [statusfilteredCustomer, setstatusfilteredcustomer] = useState([])
   const [showFullAddress, setShowFullAddress] = useState({})
+  const [showFullEmail, setShowFullEmail] = useState({})
   const [searchAfterData, setAfterSearchData] = useState([])
   const [alldata, setalldata] = useState([])
   const [user, setUser] = useState(null)
@@ -47,46 +48,52 @@ const CustomerListform = () => {
 
     // If it's first load, always allow
     if (firstLoad.current) {
-      return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${selectedBranch}`
+      console.log("y")
+      return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${selectedBranch}&customerType=${selectedstatus}`
     }
 
     // If search term is NOT empty, always allow
     if (apiSearchTerm !== "") {
+      console.log("h")
       return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${selectedBranch}`
     }
 
     // If search term IS empty and we've already loaded empty data, block it
     if (apiSearchTerm === "" && hasLoadedEmpty.current) {
+      console.log("u")
       return null
     }
 
     // If search term is empty but we haven't loaded empty data yet, allow it
     if (apiSearchTerm === "" && !hasLoadedEmpty.current) {
+      console.log("h")
       return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${selectedBranch}`
     }
 
     return null
-  }, [selectedBranch, apiSearchTerm, pages])
+  }, [selectedBranch, apiSearchTerm, pages, selectedstatus])
   const { data: list, loading: scrollLoading } = UseFetch(url)
-  console.log(list?.selectedbranchCustomercount)
+  //intialize user
   useEffect(() => {
     const userData = getLocalStorageItem("user")
-    setselectedBranch(userData.selected[0].branch_id)
-    userData.selected.forEach((branch) => {
-      setuserBranches((prev) => [
-        ...prev,
-        {
-          id: branch.branch_id,
-          branchName: branch.branchName
-        }
-      ])
-    })
-    setUser(userData)
+    if (userData?.selected?.[0]) {
+      setselectedBranch(userData.selected[0].branch_id)
+      userData.selected.forEach((branch) => {
+        setuserBranches((prev) => [
+          ...prev,
+          {
+            id: branch.branch_id,
+            branchName: branch.branchName
+          }
+        ])
+      })
+      setUser(userData)
 
-    if (userData && userData.role) {
-      setUserRole(userData.role.toLowerCase())
-    } else {
-      setUserRole(null) // Handle case where user or role doesn't exist
+      if (userData && userData.role) {
+        setUserRole(userData.role.toLowerCase())
+      } else {
+        setUserRole(null) // Handle case where user or role doesn't exist
+      }
     }
   }, [])
 
@@ -102,11 +109,6 @@ const CustomerListform = () => {
     }
   }, [apiSearchTerm, url])
 
-  // Reset the hasLoadedEmpty flag when user branches change (if needed)
-  useEffect(() => {
-    hasLoadedEmpty.current = false
-    firstLoad.current = true
-  }, [selectedBranch])
   useEffect(() => {
     if (headerRef.current) {
       const headerHeight = headerRef.current.getBoundingClientRect().height
@@ -123,6 +125,7 @@ const CustomerListform = () => {
 
   useEffect(() => {
     if (list?.customers && list?.customers.length > 0) {
+      console.log("h")
       if (!searchTerm) {
         scrollTriggeredRef.current = false
         setAfterSearchData((prev) =>
@@ -131,8 +134,11 @@ const CustomerListform = () => {
         setalldata((prev) =>
           pages === 1 ? [...list.customers] : [...prev, ...list.customers]
         )
+        setcustomerCount(list.selectedbranchCustomercount)
       } else {
         scrollTriggeredRef.current = false
+
+        setcustomerCount(list.selectedbranchCustomercount)
         setAfterSearchData((prev) => [...prev, ...list.customers])
         setalldata((prev) => [...prev, ...list.customers])
       }
@@ -158,13 +164,14 @@ const CustomerListform = () => {
     }
   }
   const handlestatus = (e) => {
-    if (e.target.value === "All customers") {
+    if (e.target.value === "Allcustomers") {
       setstatusfilteredcustomer(searchAfterData)
     } else {
       const filteredcustomer = searchAfterData.filter((customer) =>
         customer.selected.some((sel) => sel.isActive === e.target.value)
       )
       setstatusfilteredcustomer(filteredcustomer)
+      setcustomerCount(filteredcustomer.length)
     }
     setselectedStatus(e.target.value)
   }
@@ -193,6 +200,7 @@ const CustomerListform = () => {
 
     if (localMatches.length > 0) {
       setAfterSearchData(localMatches)
+      setcustomerCount(localMatches.length)
     } else {
       // 2️⃣ only here trigger API
       setApiSearchTerm(query) // 👈 not searchTerm
@@ -207,10 +215,17 @@ const CustomerListform = () => {
   const handleChange = (e) => handleSearch(e.target.value)
 
   // Function to toggle showing full address
-  const handleShowMore = (customerId) => {
+  const handleShowMoreAddress = (customerId) => {
     setShowFullAddress((prevState) => ({
       ...prevState,
       [customerId]: !prevState[customerId] // Toggle the state for the specific customer
+    }))
+  }
+  //Function to toggle showing full email
+  const handleShowMoreEmail = (customerId) => {
+    setShowFullEmail((prevState) => ({
+      ...prevState,
+      [customerId]: !prevState[customerId] //Toggle the state for the specific customer
     }))
   }
 
@@ -308,23 +323,21 @@ const CustomerListform = () => {
               />
               <select
                 value={selectedstatus}
-                onChange={(e) => handlestatus(e)}
+                onChange={(e) => {
+                  setselectedStatus(e.target.value)
+                  setAfterSearchData([])
+                }}
                 className="w-40 px-3 py-1 border border-gray-300 rounded-lg shadow-sm focus:outline-none text-gray-700 bg-white"
               >
-                <option value="All customers">All Customer</option>
+                <option value="Allcustomers">All Customer</option>
                 <option value="Running">Running</option>
                 <option value="Deactive">Deactive</option>
               </select>
             </div>
 
             <div className="bg-blue-100 px-4 py-2 rounded-lg text-blue-800">
-              <span className="text-sm font-medium mr-1">
-                Total:
-                {/* {selectedstatus === "All customers"
-                  ? searchAfterData?.length
-                  : statusfilteredCustomer?.length} */}
-              </span>
-              <span>{list?.selectedbranchCustomercount}</span>
+              <span className="text-sm font-medium mr-1">Total:</span>
+              <span>{customerCount}</span>
             </div>
           </div>
         </div>
@@ -338,17 +351,17 @@ const CustomerListform = () => {
           >
             <table className="min-w-full bg-white">
               <thead className="bg-gray-50 sticky top-0 z-10">
-                <tr>
+                <tr className="text-nowrap">
                   <th className="py-3 px-4 border-b border-gray-300 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     S.NO
                   </th>
-                  <th className="py-3 px-4 border-b border-gray-300 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="py-3 px-4 border-b border-gray-300 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-nowrap">
                     Branch Name
                   </th>
                   <th className="py-3 px-4 border-b border-gray-300 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Customer Name
                   </th>
-                  <th className="py-3 px-4 border-b border-gray-300 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="py-3 px-4 border-b border-gray-300 text-left text-xs font-medium text-gray-500 uppercase tracking-wider text-nowrap">
                     Product Name
                   </th>
                   <th className="py-3 px-4 border-b border-gray-300 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -366,23 +379,17 @@ const CustomerListform = () => {
                   <th className="py-3 px-4 border-b border-gray-300 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Email
                   </th>
-                  <th className="py-3 px-4 border-b border-gray-300 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="py-3 px-4 border-b border-gray-300 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="py-3 px-4 border-b border-gray-300 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="py-3 px-4 border-b border-gray-300 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {(selectedstatus === "All customers"
-                  ? searchAfterData
-                  : statusfilteredCustomer
-                )?.length > 0 ? (
-                  (selectedstatus === "All customers"
-                    ? searchAfterData
-                    : statusfilteredCustomer
-                  ).map((customer, index) =>
+                {searchAfterData && searchAfterData.length > 0 ? (
+                  searchAfterData.map((customer, index) =>
                     customer.selected.map((item, itemIndex) => (
                       <tr
                         key={`${customer._id}-${item.licensenumber}-${itemIndex}`}
@@ -394,7 +401,7 @@ const CustomerListform = () => {
                         <td className="px-4 py-3 text-sm text-gray-900">
                           {item?.branchName}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                        <td className="px-4 py-3 text-sm text-gray-900 font-medium uppercase">
                           {customer?.customerName}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
@@ -408,7 +415,9 @@ const CustomerListform = () => {
                             <span>
                               {customer?.address1}{" "}
                               <button
-                                onClick={() => handleShowMore(customer?._id)}
+                                onClick={() =>
+                                  handleShowMoreAddress(customer?._id)
+                                }
                                 className="text-blue-600 hover:text-blue-800 font-medium"
                               >
                                 Show less
@@ -419,7 +428,9 @@ const CustomerListform = () => {
                               {truncateAddress(customer?.address1)}{" "}
                               {customer?.address1?.length > 20 && (
                                 <button
-                                  onClick={() => handleShowMore(customer?._id)}
+                                  onClick={() =>
+                                    handleShowMoreAddress(customer?._id)
+                                  }
                                   className="text-blue-600 hover:text-blue-800 font-medium"
                                 >
                                   ...more
@@ -435,7 +446,34 @@ const CustomerListform = () => {
                           {customer?.mobile}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          {customer?.email}
+                          {/* {customer?.email} */}
+                          {showFullEmail[customer?._id] ? (
+                            <span>
+                              {customer?.email}{" "}
+                              <button
+                                onClick={() =>
+                                  handleShowMoreEmail(customer?._id)
+                                }
+                                className="text-blue-600 hover:text-blue-800 font-medium"
+                              >
+                                Show less
+                              </button>
+                            </span>
+                          ) : (
+                            <span>
+                              {truncateAddress(customer?.email)}{" "}
+                              {customer?.email?.length > 20 && (
+                                <button
+                                  onClick={() =>
+                                    handleShowMoreEmail(customer?._id)
+                                  }
+                                  className="text-blue-600 hover:text-blue-800 font-medium"
+                                >
+                                  ...more
+                                </button>
+                              )}
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-sm">
                           <span
@@ -449,30 +487,32 @@ const CustomerListform = () => {
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <CiEdit
-                            onClick={() =>
-                              navigate(
-                                userRole === "admin"
-                                  ? "/admin/masters/customerEdit"
-                                  : "/staff/masters/customerEdit",
-                                {
-                                  state: {
-                                    customerId: customer._id,
+                          <div className="items-center flex justify-center">
+                            <CiEdit
+                              onClick={() =>
+                                navigate(
+                                  userRole === "admin"
+                                    ? "/admin/masters/customerEdit"
+                                    : "/staff/masters/customerEdit",
+                                  {
+                                    state: {
+                                      customerId: customer._id,
 
-                                    index: itemIndex
+                                      index: itemIndex
+                                    }
                                   }
-                                }
-                              )
-                            }
-                            className="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors text-xl"
-                            title="Edit Customer"
-                          />
-                          {/* <div className="text-red-500 hover:text-red-700 transition-colors p-1 rounded hover:bg-red-100">
+                                )
+                              }
+                              className="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors text-xl md:text-2xl"
+                              title="Edit Customer"
+                            />
+                            {/* <div className="text-red-500 hover:text-red-700 transition-colors p-1 rounded hover:bg-red-100">
                             <DeleteAlert
                               onDelete={handleDelete}
                               Id={customer._id}
                             />
                           </div> */}
+                          </div>
                         </td>
                       </tr>
                     ))

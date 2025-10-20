@@ -283,6 +283,7 @@ export const UpdateLeadRegister = async (req, res) => {
     const matchedDoc = await LeadMaster.findOne({ _id: objectId })
     if (data.selfAllocation) {
       let leadByModel
+      let updatedLead
       const isStaff = await Staff.findOne({ _id: leadData.leadBy })
       if (isStaff) {
         leadByModel = "Staff"
@@ -312,7 +313,7 @@ export const UpdateLeadRegister = async (req, res) => {
         }
 
 
-        let updatedLead
+
         if (matchedDoc.activityLog.length === 1) {
           updatedLead = await LeadMaster.findByIdAndUpdate(objectId,
             {
@@ -344,6 +345,7 @@ export const UpdateLeadRegister = async (req, res) => {
           return res.status(404).json({ message: "Lead not found" })
         }
       } else if (matchedDoc.activityLog.length > 2) {
+        console.log('hhhhhh')
         updatedLead = await LeadMaster.findByIdAndUpdate(objectId, { ...data, leadFor: mappedleadData })
         if (!updatedLead) {
           return res.status(404).json({ message: "Lead not found" });
@@ -358,7 +360,7 @@ export const UpdateLeadRegister = async (req, res) => {
       if (matchedDoc.activityLog.length > 2) {
         return res.status(404).json({ message: "Cant change to Allocated To Other this leads makes some tasks" })
       } else if (matchedDoc.activityLog.length === 2) {
-       
+
         let lead = await LeadMaster.findById(objectId);
 
         if (!lead) {
@@ -476,7 +478,7 @@ export const GetallfollowupList = async (req, res) => {
             }
           },
           leadBranch: branchObjectId,
-          
+
           leadLost: false,
         }
       } else {
@@ -1443,7 +1445,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
     if (formData.followupType === "closed") {
       await LeadMaster.updateOne(
         { _id: selectedleaddocId },
-       
+
         {
           $set: {
             "activityLog.$[elem].reallocatedTo": true,
