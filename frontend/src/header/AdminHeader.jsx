@@ -526,7 +526,7 @@ export default function AdminHeader() {
           MANAGEMENT
         </span>
       </div>
-        <nav className="hidden lg:flex items-center md:gap-2 lg:gap-8 text-white">
+        <nav className="hidden lg:flex items-center md:gap-2 lg:gap-3 xl:gap-8 text-white">
           {links.map((link) => (
             <div
               key={link.to}

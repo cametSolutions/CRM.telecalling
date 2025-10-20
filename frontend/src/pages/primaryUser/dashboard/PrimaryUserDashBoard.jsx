@@ -66,7 +66,7 @@ export default function PrimaryUserDashBoard() {
     
       setLocalStorageItem("loggeduserbranches", loggeduserbranches)
       setLocalStorageItem("companybranches", allcompanybranches)
-      dispatch(loggeduserBranches(loggeduserBranches))
+      dispatch(loggeduserBranches(loggeduserbranches))
       dispatch(setBranches(allcompanybranches)) //companies all branches
     }
   }, [])

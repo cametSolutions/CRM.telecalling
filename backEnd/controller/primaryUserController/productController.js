@@ -30,7 +30,7 @@ export const ProductRegistration = async (req, res) => {
       message: "Products created successfully"
     })
   } catch (error) {
-console.log(error)
+    console.log(error)
     res.status(500).json({ message: "server error" })
   }
 }
@@ -86,12 +86,11 @@ export const GetallProducts = async (req, res) => {
       }).populate({ path: "selected.hsn_id", select: "onValue" })
 
 
-
     } else {
       products = await Product.find()
     }
 
-    if (!products && products.length < 0) {
+    if (!products && products.length === 0) {
       res.status(404).json({ messsge: "products not found" })
     }
     res.status(200).json({ message: "productsfound", data: products })

@@ -3,6 +3,7 @@ import Leavemaster from "../../model/secondaryUser/leavemasterSchema.js"
 import { generateUniqueNumericToken } from "../../helper/callTokenGeneration.js"
 import { sendWhatapp } from "../../helper/whatapp.js"
 import moment from "moment" // You can use moment.js to handle date manipulation easily
+import { escapeRegExp } from "../../helper/escapeRegExp.js"
 import License from "../../model/secondaryUser/licenseSchema.js"
 import CallRegistration from "../../model/secondaryUser/CallRegistrationSchema.js"
 import Partner from "../../model/secondaryUser/partnerSchema.js"
@@ -13,96 +14,228 @@ import { sendEmail } from "../../helper/nodemailer.js"
 const { Staff, Admin } = models
 import mongoose from "mongoose"
 import Holymaster from "../../model/secondaryUser/holydaymasterSchema.js"
+// export const GetscrollCustomer = async (req, res) => {
+
+
+//   try {
+//     const { page = 1, limit = 100, search = "", loggeduserBranches } = req.query
+//     // Pagination setup
+//     const pageNum = parseInt(page);
+//     const pageSize = parseInt(limit);
+//     const skip = (pageNum - 1) * pageSize;
+
+//     let branchId
+//     if (loggeduserBranches) {
+//       console.log("loggeduserBranches:", typeof loggeduserBranches, loggeduserBranches);
+//       branchId = new mongoose.Types.ObjectId(loggeduserBranches);
+//     }
+
+
+//     // Build search query
+//     let searchQuery = {}
+//     if (search) {
+//       const regex = new RegExp("^" + search, "i");
+
+//       // searchQuery = {
+//       //   $or: [
+//       //     { $text: { $search: search } }, // text index
+//       //     { mobile: search },             // mobile index
+//       //     ...(!isNaN(Number(search))
+//       //       ? [{ "selected.licensenumber": Number(search) }]
+//       //       : [])                     // only include if valid number
+//       //   ]
+//       // };
+
+
+//       searchQuery = {
+//         $or: [
+//           { customerName: regex },
+//           { mobile: typeof search === "string" ? regex : undefined },
+//           {
+//             $expr: {
+//               $gt: [
+//                 {
+//                   $size: {
+//                     $filter: {
+//                       input: "$selected",
+//                       as: "item",
+//                       cond: {
+//                         $regexMatch: {
+//                           input: { $toString: "$$item.licensenumber" },
+//                           regex: regex
+//                         }
+//                       }
+//                     }
+//                   }
+//                 },
+//                 0
+//               ]
+//             }
+//           }
+
+
+//         ].filter(Boolean), // removes undefined if any
+//       };
+//     }
+//     const selectedbranchCustomercount = await Customer.countDocuments({
+//       "selected.branch_id": branchId,
+//       ...(searchQuery.$or ? searchQuery : {})//apply search if present
+//     })
+//     console.log(selectedbranchCustomercount)
+
+//     const customers = await Customer.aggregate([
+//       {
+//         //match search+branch access at the same time
+//         $match: {
+//           ...searchQuery,
+//           "selected.branch_id": branchId
+//         }
+//       },
+//       { $skip: skip },
+//       { $limit: pageSize },
+//       {
+//         $match: {
+//           selected: { $exists: true, $ne: [] }
+//         }
+//       },
+//       {
+//         $unwind: "$selected"
+//       },
+//       {
+//         $lookup: {
+//           from: "products",
+//           localField: "selected.product_id",
+//           foreignField: "_id",
+//           as: "productDetails"
+//         }
+//       },
+//       {
+//         $unwind: {
+//           path: "$productDetails",
+//           preserveNullAndEmptyArrays: true
+//         }
+//       },
+//       {
+//         $addFields: {
+//           "selected.productName": "$productDetails.productName"
+//         }
+//       },
+//       {
+//         $group: {
+//           _id: "$_id",
+//           customerName: { $first: "$customerName" },
+//           address1: { $first: "$address1" },
+//           address2: { $first: "$address2" },
+//           country: { $first: "$country" },
+//           city: { $first: "$city" },
+//           pincode: { $first: "$pincode" },
+//           contactPerson: { $first: "$contactPerson" },
+//           landline: { $first: "$landline" },
+//           industry: { $first: "$industry" },
+//           partner: { $first: "$partner" },
+//           state: { $first: "$state" },
+//           registrationType: { $first: "$registrationType" },
+//           gstNo: { $first: "$gstNo" },
+//           email: { $first: "$email" },
+//           mobile: { $first: "$mobile" },
+//           selected: { $push: "$selected" }
+//         }
+//       },
+//       {
+//         $sort: { customerName: 1 }
+//       }
+//     ]);
+
+//     if (customers.length === 0) {
+//       return res
+//         .status(200)
+//         .json({ message: "No customer found", data: [] })
+//     }
+//     return res
+//       .status(200)
+//       .json({
+//         message: "Customer(s) found", data: {
+//           selectedbranchCustomercount,
+//           customers
+//         }
+//       })
+
+
+
+//   } catch (error) {
+//     console.log("error:", error)
+//     return res.status(500).json({ message: "Internal server error" })
+//   }
+// }
 export const GetscrollCustomer = async (req, res) => {
-
-
   try {
-    const { page = 1, limit = 100, search = "", loggeduserBranches } = req.query
-    // Pagination setup
-    const pageNum = parseInt(page);
-    const pageSize = parseInt(limit);
+    const { page = 1, limit = 100, search = "", loggeduserBranches, customerType } = req.query;
+    const pageNum = Math.max(1, parseInt(page));
+    const pageSize = Math.max(1, parseInt(limit));
     const skip = (pageNum - 1) * pageSize;
 
-    let branchId
+    let branchId;
     if (loggeduserBranches) {
-      console.log("loggeduserBranches:", typeof loggeduserBranches, loggeduserBranches);
       branchId = new mongoose.Types.ObjectId(loggeduserBranches);
+    } else {
+      return res.status(400).json({ message: "loggeduserBranches (branch id) is required" });
     }
 
+    // Build search $or if search provided
+    const matchConditions = {
+      "selected.branch_id": branchId,
+      selected: { $exists: true, $ne: [] },
+      ...(customerType !== "Allcustomers" && { isActive: customerType }) // only include this if not 'allcustomers'
+    };
 
-    // Build search query
-    let searchQuery = {}
-    if (search) {
-      const regex = new RegExp("^" + search, "i");
-      // searchQuery = {
-      //   $or: [
-      //     { $text: { $search: search } }, // customerName text index
-      //     { mobile: search },             // mobile index
-      //     { "selected.licensenumber": Number(search) } // selected.licensenumber index
-      //   ]
-      // };
-      searchQuery = {
-        $or: [
-          { $text: { $search: search } }, // text index
-          { mobile: search },             // mobile index
-          ...(!isNaN(Number(search))
-            ? [{ "selected.licensenumber": Number(search) }]
-            : [])                     // only include if valid number
-        ]
-      };
+    if (search && String(search).trim() !== "") {
+      const safe = escapeRegExp(String(search).trim());
+      const regex = new RegExp(safe, "i"); // substring, case-insensitive
 
-
-      // searchQuery = {
-      //   $or: [
-      //     { customerName: regex },
-      //     { mobile: typeof search === "string" ? regex : undefined },
-      //     {
-      //       $expr: {
-      //         $gt: [
-      //           {
-      //             $size: {
-      //               $filter: {
-      //                 input: "$selected",
-      //                 as: "item",
-      //                 cond: {
-      //                   $regexMatch: {
-      //                     input: { $toString: "$$item.licensenumber" },
-      //                     regex: regex
-      //                   }
-      //                 }
-      //               }
-      //             }
-      //           },
-      //           0
-      //         ]
-      //       }
-      //     }
-
-
-      //   ].filter(Boolean), // removes undefined if any
-      // };
+      matchConditions.$or = [
+        { customerName: { $regex: regex } },
+        { mobile: { $regex: regex } },
+        // For licensenumber inside selected array:
+        {
+          $expr: {
+            $gt: [
+              {
+                $size: {
+                  $filter: {
+                    input: "$selected",
+                    as: "item",
+                    cond: {
+                      $regexMatch: {
+                        input: { $toString: "$$item.licensenumber" },
+                        regex: regex
+                      }
+                    }
+                  }
+                }
+              },
+              0
+            ]
+          }
+        }
+      ];
     }
 
-    const customers = await Customer.aggregate([
+    // 1) Get count of distinct customers matching the same criteria
+    const countPipeline = [
+      { $match: matchConditions },
+      { $group: { _id: "$_id" } },
+      { $count: "count" }
+    ];
+
+    const countResult = await Customer.aggregate(countPipeline);
+    const selectedbranchCustomercount = countResult[0]?.count || 0;
+
+    // 2) Fetch paginated customers with lookup + grouping
+    const pipeline = [
+      { $match: matchConditions },        // filter documents first
+      { $unwind: "$selected" },           // expand selected array (for lookup)
       {
-        //match search+branch access at the same time
-        $match: {
-          ...searchQuery,
-          "selected.branch_id": branchId
-        }
-      },
-      { $skip: skip },
-      { $limit: pageSize },
-      {
-        $match: {
-          selected: { $exists: true, $ne: [] }
-        }
-      },
-      {
-        $unwind: "$selected"
-      },
-      {
-        $lookup: {
+        $lookup: {                        // populate product
           from: "products",
           localField: "selected.product_id",
           foreignField: "_id",
@@ -121,7 +254,7 @@ export const GetscrollCustomer = async (req, res) => {
         }
       },
       {
-        $group: {
+        $group: {                         // group back by customer
           _id: "$_id",
           customerName: { $first: "$customerName" },
           address1: { $first: "$address1" },
@@ -141,27 +274,27 @@ export const GetscrollCustomer = async (req, res) => {
           selected: { $push: "$selected" }
         }
       },
-      {
-        $sort: { customerName: 1 }
+      { $sort: { customerName: 1 } },
+      { $skip: skip },
+      { $limit: pageSize }
+    ];
+
+    const customers = await Customer.aggregate(pipeline);
+    console.log("customers", customers.length)
+
+    return res.status(200).json({
+      message: customers.length ? "Customer(s) found" : "No customer found",
+      data: {
+        selectedbranchCustomercount,
+        customers
       }
-    ]);
-
-    if (customers.length === 0) {
-      return res
-        .status(200)
-        .json({ message: "No customer found", data: [] })
-    }
-    return res
-      .status(200)
-      .json({ message: "Customer(s) found", data: customers })
-
-
+    });
 
   } catch (error) {
-    console.log("error:", error)
-    return res.status(500).json({ message: "Internal server error" })
+    console.error("error:", error);
+    return res.status(500).json({ message: "Internal server error", error: error.message });
   }
-}
+};
 export const GetallCallnotes = async (req, res) => {
   try {
     const callnotes = await CallNote.find({})
@@ -784,7 +917,7 @@ export const CustomerRegister = async (req, res) => {
 }
 export const CustomerEdit = async (req, res) => {
   const { customerData, tableData } = req.body
-  
+
 
   const { customerid, index } = req.query
 
