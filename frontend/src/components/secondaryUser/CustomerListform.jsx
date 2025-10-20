@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react"
 import { BarLoader } from "react-spinners"
+import api from "../../api/api"
 import { getLocalStorageItem } from "../../helper/localstorage"
 import { CiEdit } from "react-icons/ci"
 import { PropagateLoader } from "react-spinners"
@@ -9,6 +10,7 @@ import debounce from "lodash.debounce"
 import ClipLoader from "react-spinners/ClipLoader"
 import TooltipIcon from "../TooltipIcon"
 import BranchDropdown from "../primaryUser/BranchDropdown"
+import { useInfiniteQuery } from "@tanstack/react-query"
 import {
   FaUserPlus,
   FaRegFileExcel,
@@ -43,36 +45,29 @@ const CustomerListform = () => {
   const firstLoad = useRef(true)
   const hasLoadedEmpty = useRef(false)
 
-  const url = useMemo(() => {
-    if (!selectedBranch) return null
+  const fetchCustomers = async ({ pageParam = 1, queryKey }) => {
+    const [_key, { branch, search, status }] = queryKey
+    const res = await api.get(
+      `/customer/getcust?limit=100&page=${pageParam}&search=${search}&loggeduserBranches=${branch}&customerType=${status}`
+    )
+    return res.data.data
+  }
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isFetching } =
+    useInfiniteQuery({
+      queryKey: [
+        "customers",
+        {
+          branch: selectedBranch,
+          search: apiSearchTerm,
+          status: selectedstatus
+        }
+      ],
+      queryFn: fetchCustomers,
+      getNextPageParam: (lastPage, allPages) =>
+        lastPage.customers.length === 100 ? allPages.length + 1 : undefined,
+      enabled: !!selectedBranch
+    })
 
-    // If it's first load, always allow
-    if (firstLoad.current) {
-      console.log("y")
-      return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${selectedBranch}&customerType=${selectedstatus}`
-    }
-
-    // If search term is NOT empty, always allow
-    if (apiSearchTerm !== "") {
-      console.log("h")
-      return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${selectedBranch}`
-    }
-
-    // If search term IS empty and we've already loaded empty data, block it
-    if (apiSearchTerm === "" && hasLoadedEmpty.current) {
-      console.log("u")
-      return null
-    }
-
-    // If search term is empty but we haven't loaded empty data yet, allow it
-    if (apiSearchTerm === "" && !hasLoadedEmpty.current) {
-      console.log("h")
-      return `/customer/getcust?limit=100&page=${pages}&search=${apiSearchTerm}&loggeduserBranches=${selectedBranch}`
-    }
-
-    return null
-  }, [selectedBranch, apiSearchTerm, pages, selectedstatus])
-  const { data: list, loading: scrollLoading } = UseFetch(url)
   //intialize user
   useEffect(() => {
     const userData = getLocalStorageItem("user")
@@ -98,83 +93,80 @@ const CustomerListform = () => {
   }, [])
 
   useEffect(() => {
-    // Mark that we've loaded with empty search term (only when URL is not null and search is empty)
-    if (apiSearchTerm === "" && url !== null) {
-      hasLoadedEmpty.current = true
-    }
-
-    // After first render, mark as loaded
-    if (firstLoad.current) {
-      firstLoad.current = false
-    }
-  }, [apiSearchTerm, url])
-
-  useEffect(() => {
     if (headerRef.current) {
       const headerHeight = headerRef.current.getBoundingClientRect().height
       setTableHeight(`calc(60vh - ${headerHeight}px)`) // Subtract header height from full viewport height
     }
   }, [])
-  useEffect(() => {
-    setAfterSearchData([])
-    setalldata([])
-    setPages(1)
-    hasLoadedEmpty.current = false
-    firstLoad.current = true
-  }, [selectedBranch])
 
   useEffect(() => {
-    if (list?.customers && list?.customers.length > 0) {
-      console.log("h")
-      if (!searchTerm) {
-        scrollTriggeredRef.current = false
-        setAfterSearchData((prev) =>
-          pages === 1 ? [...list.customers] : [...prev, ...list.customers]
-        )
-        setalldata((prev) =>
-          pages === 1 ? [...list.customers] : [...prev, ...list.customers]
-        )
-        setcustomerCount(list.selectedbranchCustomercount)
-      } else {
-        scrollTriggeredRef.current = false
+    if (data?.pages?.length) {
+      // all pages combined
+      const allCustomers = data.pages.flatMap((page) => page.customers)
 
-        setcustomerCount(list.selectedbranchCustomercount)
-        setAfterSearchData((prev) => [...prev, ...list.customers])
-        setalldata((prev) => [...prev, ...list.customers])
-      }
+      setAfterSearchData(allCustomers)
+      setcustomerCount(data.pages[0].selectedbranchCustomercount || 0)
+      // if (!searchTerm) {
+      //   scrollTriggeredRef.current = false
+      //   setAfterSearchData((prev) =>
+      //     pages === 1 ? [...data.customers] : [...prev, ...data.customers]
+      //   )
+      //   setalldata((prev) =>
+      //     pages === 1 ? [...data.customers] : [...prev, ...data.customers]
+      //   )
+      //   setcustomerCount(data.selectedbranchCustomercount)
+      // } else {
+      //   scrollTriggeredRef.current = false
+
+      //   setcustomerCount(data.selectedbranchCustomercount)
+      //   setAfterSearchData((prev) => [...prev, ...data.customers])
+      //   setalldata((prev) => [...prev, ...data.customers])
+      // }
     }
-  }, [list])
-
+  }, [data])
   const handleScroll = () => {
     const container = containerRef.current
-    if (!container) return false
-
+    if (!container) return
     const { clientHeight, scrollHeight, scrollTop } = container
-
-    const totalScrollableDistance = scrollHeight - clientHeight
-
-    // Calculate current scroll position as percentage
-    const scrollPercentage = (scrollTop / totalScrollableDistance) * 100
-
-    // Trigger when scroll reaches 80%
-    if (scrollPercentage >= 90 && !scrollTriggeredRef.current) {
-      scrollTriggeredRef.current = true
-
-      setPages((prev) => prev + 1)
+    if (
+      scrollTop / (scrollHeight - clientHeight) >= 0.9 &&
+      hasNextPage &&
+      !isFetchingNextPage
+    ) {
+      fetchNextPage()
     }
   }
-  const handlestatus = (e) => {
-    if (e.target.value === "Allcustomers") {
-      setstatusfilteredcustomer(searchAfterData)
-    } else {
-      const filteredcustomer = searchAfterData.filter((customer) =>
-        customer.selected.some((sel) => sel.isActive === e.target.value)
-      )
-      setstatusfilteredcustomer(filteredcustomer)
-      setcustomerCount(filteredcustomer.length)
-    }
-    setselectedStatus(e.target.value)
-  }
+
+  // const handleScroll = () => {
+  //   const container = containerRef.current
+  //   if (!container) return false
+
+  //   const { clientHeight, scrollHeight, scrollTop } = container
+
+  //   const totalScrollableDistance = scrollHeight - clientHeight
+
+  //   // Calculate current scroll position as percentage
+  //   const scrollPercentage = (scrollTop / totalScrollableDistance) * 100
+
+  //   // Trigger when scroll reaches 80%
+  //   if (scrollPercentage >= 90 && !scrollTriggeredRef.current) {
+  //     scrollTriggeredRef.current = true
+
+  //     setPages((prev) => prev + 1)
+  //   }
+  // }
+  // const handlestatus = (e) => {
+  //   if (e.target.value === "Allcustomers") {
+  //     setstatusfilteredcustomer(searchAfterData)
+  //   } else {
+  //     const filteredcustomer = searchAfterData.filter((customer) =>
+  //       customer.selected.some((sel) => sel.isActive === e.target.value)
+  //     )
+  //     setstatusfilteredcustomer(filteredcustomer)
+  //     setcustomerCount(filteredcustomer.length)
+  //   }
+  //   setselectedStatus(e.target.value)
+  // }
   //Handle search with lodash debounce to optimize search performance
   const handleSearch = debounce((query) => {
     const term = query.trim().toLowerCase()
@@ -237,19 +229,29 @@ const CustomerListform = () => {
   }
   return (
     <div className="h-full overflow-hidden">
-      {scrollLoading && (
+      {/* {scrollLoading && (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }}
           color="#4A90E2"
         />
-      )}
+      )} */}
 
       <div className="w-full shadow-lg rounded p-8 h-full flex flex-col">
         {/* Sticky Header Section */}
         <div className="flex-shrink-0 bg-white">
           {/* Title and Search Bar */}
           <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-4">
-            <h3 className="text-2xl text-black font-bold">Customer List</h3>
+            <h3 className="text-2xl text-black font-bold">
+              {selectedstatus === "ProductinfoMissing"
+                ? " Product Details Missing Customer List"
+                : selectedstatus === "ProductMissing"
+                ? "Product Missing Customer List"
+                : selectedstatus === "Deactive"
+                ? "Deactive Customer List"
+                : selectedstatus === "Running"
+                ? "Active Customer List"
+                : "Customer List"}
+            </h3>
 
             {/* Search Bar */}
             <div className="mx-4 relative flex-1 max-w-md">
@@ -259,7 +261,7 @@ const CustomerListform = () => {
                 className="w-full border border-gray-300 rounded-full py-2 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Search for..."
               />
-              {scrollLoading && (
+              {/* {scrollLoading && (
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                   <ClipLoader
                     color="#36D7B7"
@@ -267,7 +269,7 @@ const CustomerListform = () => {
                     size={20}
                   />
                 </div>
-              )}
+              )} */}
             </div>
           </div>
 
@@ -296,7 +298,7 @@ const CustomerListform = () => {
 
               <TooltipIcon icon={FaPrint} tooltip="Print" button />
 
-              <TooltipIcon
+              {/* <TooltipIcon
                 icon={FaHourglassHalf}
                 tooltip="Product missing customer"
                 to={
@@ -304,9 +306,9 @@ const CustomerListform = () => {
                     ? "/admin/masters/pendingCustomer"
                     : "/staff/masters/pendingCustomer"
                 }
-              />
+              /> */}
 
-              <TooltipIcon
+              {/* <TooltipIcon
                 icon={FaExclamationTriangle}
                 tooltip="Product details missing customer"
                 to={
@@ -315,7 +317,7 @@ const CustomerListform = () => {
                     : "/staff/masters/productmissingCustomer"
                 }
                 className="text-red-500"
-              />
+              /> */}
               <BranchDropdown
                 branches={userBranches}
                 onBranchChange={handleBranchChange}
@@ -327,11 +329,16 @@ const CustomerListform = () => {
                   setselectedStatus(e.target.value)
                   setAfterSearchData([])
                 }}
-                className="w-40 px-3 py-1 border border-gray-300 rounded-lg shadow-sm focus:outline-none text-gray-700 bg-white"
+                className="w-auto px-2 py-1 border border-gray-300 rounded-lg shadow-sm focus:outline-none text-gray-700 bg-white cursor-pointer font-semibold"
               >
                 <option value="Allcustomers">All Customer</option>
                 <option value="Running">Running</option>
                 <option value="Deactive">Deactive</option>
+                {/*some customers have missing or product ids */}
+                <option value="ProductinfoMissing">Product Info.Missing</option>
+
+                {/*some customers wont buy products*/}
+                <option value="ProductMissing">Product Missing</option>
               </select>
             </div>
 
@@ -389,8 +396,118 @@ const CustomerListform = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {searchAfterData && searchAfterData.length > 0 ? (
-                  searchAfterData.map((customer, index) =>
-                    customer.selected.map((item, itemIndex) => (
+                  searchAfterData.map((customer, index) => {
+                    //listing of productmissing customers
+                    if (!customer.selected || customer.selected.length === 0) {
+                      return (
+                        <tr
+                          key={customer._id}
+                          className="hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {index + 1}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">-</td>
+                          <td className="px-4 py-3 text-sm text-gray-900 font-medium uppercase">
+                            {customer?.customerName}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900 text-red-600">
+                            Missing Product
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900 font-mono">
+                            -
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900 max-w-xs">
+                            {showFullAddress[customer?._id] ? (
+                              <span>
+                                {customer?.address1}{" "}
+                                <button
+                                  onClick={() =>
+                                    handleShowMoreAddress(customer?._id)
+                                  }
+                                  className="text-blue-600 hover:text-blue-800 font-medium"
+                                >
+                                  Show less
+                                </button>
+                              </span>
+                            ) : (
+                              <span>
+                                {truncateAddress(customer?.address1)}{" "}
+                                {customer?.address1?.length > 20 && (
+                                  <button
+                                    onClick={() =>
+                                      handleShowMoreAddress(customer?._id)
+                                    }
+                                    className="text-blue-600 hover:text-blue-800 font-medium"
+                                  >
+                                    ...more
+                                  </button>
+                                )}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {customer?.pincode}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {customer?.mobile}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {showFullEmail[customer?._id] ? (
+                              <span>
+                                {customer?.email}{" "}
+                                <button
+                                  onClick={() =>
+                                    handleShowMoreEmail(customer?._id)
+                                  }
+                                  className="text-blue-600 hover:text-blue-800 font-medium"
+                                >
+                                  Show less
+                                </button>
+                              </span>
+                            ) : (
+                              <span>
+                                {truncateAddress(customer?.email)}{" "}
+                                {customer?.email?.length > 20 && (
+                                  <button
+                                    onClick={() =>
+                                      handleShowMoreEmail(customer?._id)
+                                    }
+                                    className="text-blue-600 hover:text-blue-800 font-medium"
+                                  >
+                                    ...more
+                                  </button>
+                                )}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">
+                              No Status
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex justify-center items-center">
+                              <CiEdit
+                                onClick={() =>
+                                  navigate(
+                                    userRole === "admin"
+                                      ? "/admin/masters/customerEdit"
+                                      : "/staff/masters/customerEdit",
+                                    {
+                                      state: { customerId: customer._id }
+                                    }
+                                  )
+                                }
+                                className="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors text-xl md:text-2xl"
+                                title="Edit Customer"
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    }
+                    return customer.selected.map((item, itemIndex) => (
                       <tr
                         key={`${customer._id}-${item.licensenumber}-${itemIndex}`}
                         className="hover:bg-gray-50 transition-colors"
@@ -516,14 +633,14 @@ const CustomerListform = () => {
                         </td>
                       </tr>
                     ))
-                  )
+                  })
                 ) : (
                   <tr>
                     <td
                       colSpan="11"
                       className="px-4 py-12 text-center text-gray-500"
                     >
-                      {scrollLoading ? (
+                      {isFetching ? (
                         <div className="flex justify-center">
                           <PropagateLoader color="#3b82f6" size={10} />
                         </div>
@@ -533,115 +650,6 @@ const CustomerListform = () => {
                     </td>
                   </tr>
                 )}
-
-                {/* {(selectedstatus === "All customers" 
-  ? searchAfterData 
-  : statusfilteredCustomer
-)?.map((customer, index) =>
-  customer.selected.map((item, itemIndex) =>(
-                      <tr
-                        key={`${customer._id}-${item.licensenumber}-${itemIndex}`}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          {itemIndex === 0 ? index + 1 : ""}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          {item?.branchName}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900 font-medium">
-                          {customer?.customerName}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          {item?.productName}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900 font-mono">
-                          {item?.licensenumber}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900 max-w-xs">
-                          {showFullAddress[customer?._id] ? (
-                            <span>
-                              {customer?.address1}{" "}
-                              <button
-                                onClick={() => handleShowMore(customer?._id)}
-                                className="text-blue-600 hover:text-blue-800 font-medium"
-                              >
-                                Show less
-                              </button>
-                            </span>
-                          ) : (
-                            <span>
-                              {truncateAddress(customer?.address1)}{" "}
-                              {customer?.address1?.length > 20 && (
-                                <button
-                                  onClick={() => handleShowMore(customer?._id)}
-                                  className="text-blue-600 hover:text-blue-800 font-medium"
-                                >
-                                  ...more
-                                </button>
-                              )}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          {customer?.pincode}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          {customer?.mobile}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">
-                          {customer?.email}
-                        </td>
-                        <td className="px-4 py-3 text-sm">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              item.isActive === "Running"
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {item.isActive}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <CiEdit
-                            onClick={() =>
-                              navigate(
-                                userRole === "admin"
-                                  ? "/admin/masters/customerEdit"
-                                  : "/staff/masters/customerEdit",
-                                {
-                                  state: {
-                                    customer: customer,
-                                    selected: item,
-                                    index: itemIndex
-                                  }
-                                }
-                              )
-                            }
-                            className="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors text-xl"
-                            title="Edit Customer"
-                          />
-                        </td>
-                      </tr>
-                    ))
-                  )
-                ) : (
-                  <tr>
-                    <td
-                      colSpan="11"
-                      className="px-4 py-12 text-center text-gray-500"
-                    >
-                      {scrollLoading ? (
-                        <div className="flex justify-center">
-                          <PropagateLoader color="#3b82f6" size={10} />
-                        </div>
-                      ) : (
-                        <div className="text-lg">No Data Found</div>
-                      )}
-                    </td>
-                  </tr>
-                )} */}
               </tbody>
             </table>
           </div>
