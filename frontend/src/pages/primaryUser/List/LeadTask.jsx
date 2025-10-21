@@ -4,6 +4,7 @@ import MyDatePicker from "../../../components/common/MyDatePicker"
 import BarLoader from "react-spinners/BarLoader"
 import LeadTaskComponent from "../../../components/primaryUser/LeadTaskComponent"
 import { useState, useEffect } from "react"
+import { getLocalStorageItem } from "../../../helper/localstorage"
 const LeadTask = () => {
   // const location = useLocation()
   // const pagePath = location.pathname
@@ -28,38 +29,22 @@ const LeadTask = () => {
   }, [])
   useEffect(() => {
     if (branches) {
-      const userData = localStorage.getItem("user")
-      const user = JSON.parse(userData)
-      if (user.role === "Admin") {
-        const branch = branches.map((branch) => {
-          return {
-            value: branch._id,
-            label: branch.branchName
-          }
-        })
-        setloggedUserBranches(branch)
-        setselectedCompanyBranch(branch[0].value)
-      } else {
-        const branches = user.selected.map((branch) => {
+      const userData = getLocalStorageItem("user")
+        const branch = userData?.selected?.map((branch) => {
           return {
             value: branch.branch_id,
             label: branch.branchName
           }
         })
-        setselectedCompanyBranch(branches[0].value)
-        setloggedUserBranches(branches)
-      }
+        setloggedUserBranches(branch)
+        setselectedCompanyBranch(branch[0].value)
+      
 
-      setloggedUser(user)
+      setloggedUser(userData)
     }
   }, [branches])
 
-  // const type = pagePath.includes("leadFollowUp")
-  //   ? "followup"
-  //   : pagePath.includes("leadTask")
-  //   ? "lead-Task"
-  //   : ""
-
+ 
   const { data, loading, refreshHook } = UseFetch(
     loggedUser &&
       selectedCompanyBranch &&
