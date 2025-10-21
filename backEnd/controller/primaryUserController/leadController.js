@@ -81,6 +81,7 @@ export const LeadRegister = async (req, res) => {
         remarks: remark,
         taskBy: "allocated",
         taskTo: allocationType,
+        allocationChanged: false,
         ...(allocationType === "followup" && { followupClosed: false }),
         taskfromFollowup: false,
         allocationDate: leadDate
