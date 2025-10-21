@@ -197,7 +197,6 @@ const LeadFollowUp = () => {
             ? // formatdate(dates.endDate)
               formatdate(currentDate)
             : endDateLocal
-
         const neverfollowupedLeads = ownFollow.filter(
           (lead) => lead.neverfollowuped && lead.allocatedfollowup == false
         )
@@ -216,7 +215,6 @@ const LeadFollowUp = () => {
         const uniqueoverdueAndcurrentdate = [
           ...new Set([...overdueFollowups, ...filteredcurrentdatefollowupLeads])
         ]
-
         const taskSubmittedLeads = ownFollow.filter(
           (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
         )
@@ -224,14 +222,14 @@ const LeadFollowUp = () => {
           (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed === false
         )
         setAllocatedLeads(nonsubmittedtakleads)
-        
+
         const mergedall = [
           ...neverfollowupedLeads,
           ...uniqueoverdueAndcurrentdate,
           ...postdatefollowup,
           ...taskSubmittedLeads
         ]
-
+     
         // then store it in state
         setnetTotalAmount(TotalAmount(mergedall))
 
@@ -286,8 +284,7 @@ const LeadFollowUp = () => {
           ...postdatefollowup,
           ...taskSubmittedLeads
         ]
-       
-     
+
         // then store it in state
         setnetTotalAmount(TotalAmount(mergedall))
         setTableData(mergedall)
@@ -301,54 +298,19 @@ const LeadFollowUp = () => {
                 log.followupClosed === false
             )
         )
-        const currentDate = new Date()
-        const endDateLocal = getLocalDate(new Date(dates.endDate))
-        formatdate(currentDate)
-        const fulldatecurrent =
-          formatdate(currentDate) === endDateLocal
-            ? // formatdate(dates.endDate)
-              formatdate(currentDate)
-            : endDateLocal
-
-        const neverfollowupedLeads = ownFollow.filter(
-          (lead) => lead.neverfollowuped && lead.allocatedfollowup == false
+        const clearedLeads = ownFollow.filter(
+          (lead) =>
+            Array.isArray(lead.activityLog) &&
+            lead.activityLog.some(
+              (entry) =>
+                entry.taskTo === "followup" && entry.followupClosed === true
+            )
         )
-        const havenextFollowup = ownFollow.filter((lead) => lead.Nextfollowup)
-        const filteredcurrentdatefollowupLeads = havenextFollowup.filter(
-          (lead) => formatdate(lead.nextFollowUpDate) === fulldatecurrent
-        )
-        const iscurrent =
-          fulldatecurrent === endDateLocal ? fulldatecurrent : endDateLocal
-        const overdueFollowups = havenextFollowup.filter(
-          (lead) => formatdate(lead.nextFollowUpDate) < iscurrent
-        )
-        const postdatefollowup = havenextFollowup.filter(
-          (lead) => formatdate(lead.nextFollowUpDate) > iscurrent
-        )
-        const uniqueoverdueAndcurrentdate = [
-          ...new Set([...overdueFollowups, ...filteredcurrentdatefollowupLeads])
-        ]
-
-        const taskSubmittedLeads = ownFollow.filter(
-          (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
-        )
-        const nonsubmittedtakleads = ownFollow.filter(
-          (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed === false
-        )
-        setAllocatedLeads(nonsubmittedtakleads)
-
-        const mergedall = [
-          ...neverfollowupedLeads,
-          ...uniqueoverdueAndcurrentdate,
-          ...postdatefollowup,
-          ...taskSubmittedLeads
-        ]
 
         // then store it in state
-        setnetTotalAmount(TotalAmount(mergedall))
-        setTableData(mergedall)
+        setnetTotalAmount(TotalAmount(clearedLeads))
+        setTableData(clearedLeads)
       } else if (!pending && !ownFollowUp) {
-        // `leads` is your array of lead objects (the big array you pasted)
         const clearedLeads = loggedusersallocatedleads.followupLeads.filter(
           (lead) =>
             Array.isArray(lead.activityLog) &&
@@ -357,7 +319,7 @@ const LeadFollowUp = () => {
                 entry.taskTo === "followup" && entry.followupClosed === true
             )
         )
-        
+
         // then store it in state
         setnetTotalAmount(TotalAmount(clearedLeads))
         setTableData(clearedLeads)
@@ -365,7 +327,14 @@ const LeadFollowUp = () => {
 
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
     }
-  }, [loggedusersallocatedleads, dates, pending, ownFollowUp, loggedUser,statusAllocated])
+  }, [
+    loggedusersallocatedleads,
+    dates,
+    pending,
+    ownFollowUp,
+    loggedUser,
+    statusAllocated
+  ])
 
   useEffect(() => {
     if (loggedUser) {
@@ -670,7 +639,7 @@ const LeadFollowUp = () => {
                       setTableData([])
                       setAllocatedLeads([])
                     },
-                     show: pending === true, // 👈 show only when pending is true
+                    show: pending === true // 👈 show only when pending is true
                   },
                   {
                     label: pending ? "Pending Followup" : "Cleared Followup",

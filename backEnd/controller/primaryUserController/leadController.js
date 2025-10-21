@@ -615,11 +615,11 @@ export const GetallfollowupList = async (req, res) => {
         allocatedTo: popAllocatedTo,
         allocatedBy: popAllocatedBy,
         activityLog: populatedActivityLog,
-        nextFollowUpDate: lastActivity.nextFollowUpDate ?? null,
-        neverfollowuped,
+        nextFollowUpDate: lastActivity.nextFollowUpDate ?? null,//to show the nextfollowupdate in the list
+        neverfollowuped,//to check whether the lead is ever followuped
         Nextfollowup,
-        allocatedfollowup,
-        allocatedTaskClosed
+        allocatedfollowup,//to know whether the lead have any task from followup
+        allocatedTaskClosed//to know the the task from followup is closed or not
       });
     }
 
@@ -2124,18 +2124,15 @@ export const UpdateLeadTask = async (req, res) => {
       remarks: taskDetails.taskDescription,
       taskBy: taskDetails.taskName,
       taskClosed: true,
+      taskfromFollowup: true,
+      allocatedClosed: true
     };
-    // Conditionally add `reallocated: true` to the activity log
-    if (isReallocated) {
-      activityLogEntry.reallocatedTo = true;
-    } else {
-      activityLogEntry.taskfromFollowup = true
-    }
+
     const updateleadTask = await LeadMaster.findByIdAndUpdate(leadObjectId, {
       $push: {
         activityLog: activityLogEntry
       },
-      $set: { taskfromFollowup: false, reallocatedTo: isReallocated, allocationType: isReallocated ? "reallocated" : "tasksubmitted" }
+      $set: { taskfromFollowup: false }
 
     })
     if (updateleadTask) {
@@ -2306,7 +2303,7 @@ export const GetownLeadList = async (req, res) => {
     const matchedLead = await LeadMaster.find(
       { leadBy: objectId }
     ).populate({ path: "customerName", select: "customerName" }).lean()
-   
+
     const populatedOwnLeads = await Promise.all(
       matchedLead.map(async (lead) => {
         if (!lead.leadByModel || !mongoose.models[lead.leadByModel]) {
