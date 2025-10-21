@@ -180,6 +180,7 @@ const LeadFollowUp = () => {
   useEffect(() => {
     if (loggedusersallocatedleads && dates.endDate && loggedUser) {
       if (pending && ownFollowUp) {
+console.log(loggedusersallocatedleads.followupLeads)
         const ownFollow = loggedusersallocatedleads.followupLeads.filter(
           (lead) =>
             lead.activityLog?.some(
@@ -189,6 +190,7 @@ const LeadFollowUp = () => {
                 log.followupClosed === false
             )
         )
+console.log(ownFollow)
         const currentDate = new Date()
         const endDateLocal = getLocalDate(new Date(dates.endDate))
         formatdate(currentDate)
