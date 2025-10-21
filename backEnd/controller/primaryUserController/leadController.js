@@ -265,6 +265,7 @@ export const TaskRegistration = async (req, res) => {
 export const UpdateLeadRegister = async (req, res) => {
   try {
     const { data, leadData } = req.body
+    console.log("data", data.selfAllocation)
 
     // return
     const { docID } = req.query
@@ -283,6 +284,8 @@ export const UpdateLeadRegister = async (req, res) => {
     })
     const matchedDoc = await LeadMaster.findOne({ _id: objectId })
     if (data.selfAllocation) {
+      console.log(
+        "i")
       let leadByModel
       let updatedLead
       const isStaff = await Staff.findOne({ _id: leadData.leadBy })
@@ -298,31 +301,33 @@ export const UpdateLeadRegister = async (req, res) => {
       if (!matchedDoc) {
         return res.status(404).json({ message: "Lead not found" })
       }
+      console.log("tt")
       if (matchedDoc.activityLog.length === 1 || matchedDoc.activityLog.length === 2) {
         const newActivityData = {
-          submissionDate: leadData.leadDate,
-          submittedUser: leadData.leadBy,
+          submissionDate: data.leadDate,
+          submittedUser: data.leadBy,
           submissiondoneByModel: leadByModel,
-          taskallocatedBy: leadData.leadBy,
+          taskallocatedBy: data.leadBy,
           taskallocatedByModel: leadByModel,
-          taskallocatedTo: leadData.leadBy,
+          taskallocatedTo: data.leadBy,
           taskallocatedToModel: leadByModel,
-          remarks: leadData.remark,
+          remarks: data.remark,
           taskBy: "allocated",
-          taskTo: leadData.allocationType,
+          taskTo: data.allocationType,
           taskfromFollowup: false
         }
 
 
 
         if (matchedDoc.activityLog.length === 1) {
+          const newbalance = data.netAmount - matchedDoc.totalPaidAmount
           updatedLead = await LeadMaster.findByIdAndUpdate(objectId,
             {
               ...data,
-              taxableAmount,
-              taxAmount,
-              netAmount,
-              balanceAmount,
+              taxableAmount: data.taxableAmount,
+              taxAmount: data.taxAmount,
+              netAmount: data.netAmount,
+              balanceAmount: newbalance,
               // selfAllocationDate:
 
               leadFor: mappedleadData,
@@ -335,11 +340,12 @@ export const UpdateLeadRegister = async (req, res) => {
           )
 
         } else if (matchedDoc.activityLog.length === 2) {
+          const newbalance = data.netAmount - matchedDoc.totalPaidAmount
           //update last entry in activitylog
           const lastIndex = matchedDoc.activityLog.length - 1
           //build the path to the last element in the activitylog array
           const updatedPath = `activityLog.${lastIndex}`
-          updatedLead = await LeadMaster.findByIdAndUpdate(objectId, { ...data, leadFor: mappedleadData, $set: { [updatedPath]: newActivityData } })
+          updatedLead = await LeadMaster.findByIdAndUpdate(objectId, { ...data, balanceAmount:newbalance, leadFor: mappedleadData, $set: { [updatedPath]: newActivityData } })
         }
 
         if (!updatedLead) {
