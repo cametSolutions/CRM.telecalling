@@ -8,8 +8,10 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons"
 import { toast } from "react-toastify"
 import { setLocalStorageItem } from "../../../helper/localstorage"
-import { setBranches } from "../../../../slices/companyBranchSlice.js"
-import UseFetch from "../../../hooks/useFetch"
+import {
+  setBranches,
+  loggeduserBranches
+} from "../../../../slices/companyBranchSlice.js"
 const Login = () => {
   const [passwordVisible, setPasswordVisible] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -28,30 +30,41 @@ const Login = () => {
       const datas = await response.data
       const { token, User } = datas
       if (response.status === 200) {
+        const res = await api.get("/branch/getBranch")
+        if (res.status === 200) {
+          const allcompanybranches = res.data?.data?.map((b) => b._id) || []
+          const loggeduserbranches = User.selected?.map((a) => a.branch_id)
 
-        toast.success(response.data.message, {
-          icon: "🚀",
-          style: {
-            backgroundColor: "#fff", // White background
-            color: "#000", // Black text for better contrast
-            boxShadow:
-              "0px 4px 10px rgba(0, 0, 0, 0.3), 0px 1px 3px rgba(0, 0, 0, 0.1)", // 3D shadow effect
-            borderRadius: "8px", // Rounded corners for a polished look
-            padding: "10px 15px", // Comfortable padding
-            fontWeight: "bold" // Bold text for prominence
-          }
-        })
-        localStorage.setItem("authToken", token)
-        localStorage.setItem("user", JSON.stringify(User))
-        setTimeout(() => {
-          if (User.role === "Admin") {
-            setLoading(false)
-            navigate("/admin/dashBoard")
-          } else if (User.role === "Staff" || User.role === "Manager") {
-            setLoading(false)
-            navigate("/staff/dashBoard")
-          }
-        }, 1000)
+          setLocalStorageItem("loggeduserbranches", loggeduserbranches)
+          setLocalStorageItem("companybranches", allcompanybranches)
+          console.log(loggeduserbranches)
+          dispatch(loggeduserBranches(loggeduserbranches))
+          dispatch(setBranches(allcompanybranches))
+
+          toast.success(response.data.message, {
+            icon: "🚀",
+            style: {
+              backgroundColor: "#fff", // White background
+              color: "#000", // Black text for better contrast
+              boxShadow:
+                "0px 4px 10px rgba(0, 0, 0, 0.3), 0px 1px 3px rgba(0, 0, 0, 0.1)", // 3D shadow effect
+              borderRadius: "8px", // Rounded corners for a polished look
+              padding: "10px 15px", // Comfortable padding
+              fontWeight: "bold" // Bold text for prominence
+            }
+          })
+          localStorage.setItem("authToken", token)
+          localStorage.setItem("user", JSON.stringify(User))
+          setTimeout(() => {
+            if (User.role === "Admin") {
+              setLoading(false)
+              navigate("/admin/dashBoard")
+            } else if (User.role === "Staff" || User.role === "Manager") {
+              setLoading(false)
+              navigate("/staff/dashBoard")
+            }
+          }, 1000)
+        }
       }
     } catch (error) {
       console.log(error)

@@ -11,12 +11,7 @@ import { toast } from "react-toastify"
 import { Link } from "react-router-dom"
 import UseFetch from "../../../hooks/useFetch"
 import { getLocalStorageItem } from "../../../helper/localstorage"
-import { setLocalStorageItem } from "../../../helper/localstorage"
-import { useDispatch } from "react-redux"
-import {
-  setBranches,
-  loggeduserBranches
-} from "../../../../slices/companyBranchSlice"
+
 import api from "../../../api/api"
 export default function PrimaryUserDashBoard() {
   const [leaveList, setTodayLeaveList] = useState([])
@@ -38,12 +33,10 @@ export default function PrimaryUserDashBoard() {
   const [dashboardHeight, setDashboardHeight] = useState("auto")
   const [currentyearholydays, setcurrentyearHoliday] = useState([])
   const headerRef = useRef(null)
-  const dispatch = useDispatch()
   const { data: todayleavelist } = UseFetch("/auth/getallUsersLeave?today=true")
   const { data: currrentMonthBirthDays } = UseFetch(
     "/auth/getallcurrentmonthBirthdays"
   )
-  const { data: branches } = UseFetch("/branch/getBranch")
   const { data: todayOnsite } = UseFetch("/auth/getallUsersOnsite?today=true")
   const { data: staffs } = UseFetch("/auth/getallStaffs")
   const { data: acheivementlist, refreshHook } = UseFetch(
@@ -59,17 +52,6 @@ export default function PrimaryUserDashBoard() {
     setUser(userData)
   }, [])
 
-  useEffect(() => {
-    if (branches && branches.length > 0 && user) {
-      const allcompanybranches = branches?.map((b) => b._id) || []
-      const loggeduserbranches = user.selected?.map((a) => a.branch_id)
-    
-      setLocalStorageItem("loggeduserbranches", loggeduserbranches)
-      setLocalStorageItem("companybranches", allcompanybranches)
-      dispatch(loggeduserBranches(loggeduserbranches))
-      dispatch(setBranches(allcompanybranches)) //companies all branches
-    }
-  }, [])
   useEffect(() => {
     if (headerRef.current) {
       const headerHeight = headerRef.current.getBoundingClientRect().height
