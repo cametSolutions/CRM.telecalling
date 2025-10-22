@@ -2015,8 +2015,13 @@ export const UpdateLeadTask = async (req, res) => {
       [`activityLog.${Index}.taskDescription`]: taskDetails.taskDescription,
       [`activityLog.${Index}.taskClosed`]: true
     };
+
+    // Conditionally add a field
+    if (!taskDetails.taskfromFollowup) {
+      updateFields[`activityLog.${Index}.reallocatedTo`] = true;
+    }
     await LeadMaster.updateOne({ _id: leadObjectId }, { $set: updateFields })
-    const isReallocated = taskDetails.taskfromFollowup ? false : true
+    const isTaskfromFollowup = taskDetails.taskfromFollowup ? true : false
     // Build the activity log entry
     const activityLogEntry = {
       submissionDate: taskDetails.submissionDate,
@@ -2025,15 +2030,19 @@ export const UpdateLeadTask = async (req, res) => {
       remarks: taskDetails.taskDescription,
       taskBy: taskDetails.taskName,
       taskClosed: true,
-      taskfromFollowup: true,
-      allocatedClosed: true
+      taskfromFollowup: isTaskfromFollowup,
+      allocatedClosed: isTaskfromFollowup,
+      reallocatedTo: !isTaskfromFollowup
     };
 
     const updateleadTask = await LeadMaster.findByIdAndUpdate(leadObjectId, {
       $push: {
         activityLog: activityLogEntry
       },
-      $set: { taskfromFollowup: false }
+      $set: {
+        taskfromFollowup: false,
+        reallocatedTo: !isTaskfromFollowup
+      }
 
     })
     if (updateleadTask) {
