@@ -101,7 +101,6 @@ const LeadAllocationTable = () => {
     }
   }, [leadPendinglist])
   const getgroupingData = (data) => {
-
     const groupedLeads = {}
     let grandTotal = 0
     data.forEach((lead) => {
@@ -324,6 +323,9 @@ const LeadAllocationTable = () => {
       }))
     }
   }
+  console.log(selectedItem)
+  console.log(selectedData)
+  console.log(selectedAllocationType)
   return (
     <div className="flex flex-col h-full">
       {loading && (
@@ -558,7 +560,7 @@ const LeadAllocationTable = () => {
                                     onClick={() => {
                                       setselectedData(item?.activityLog)
                                       setselectedLeadId(item?.leadId)
-                                      setShowmodal(true)
+                                      setshoweventLog(true)
                                     }}
                                     type="button"
                                   >
@@ -696,7 +698,7 @@ const LeadAllocationTable = () => {
             </div>
           ) : (
             <div className="bg-white rounded-lg shadow-sm border p-12 text-center">
-              {(loading ||toggleLoading)? (
+              {loading || toggleLoading ? (
                 <div className="flex items-center justify-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                   <span className="ml-3 text-gray-600">Loading...</span>
@@ -725,7 +727,7 @@ const LeadAllocationTable = () => {
             </div>
           )}
         </div>
-        {showModal&&selectedData && (
+        {showModal && selectedData && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 z-50 backdrop-blur-sm">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg transform transition-all max-h-[95vh] flex flex-col">
               {/* Loading Bar */}
@@ -940,7 +942,7 @@ const LeadAllocationTable = () => {
             </div>
           </div>
         )}
-        {showeventLog  && (
+        {showeventLog && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40">
             <div className="relative overflow-x-auto overflow-y-auto md:max-h-64 lg:max-h-96 shadow-xl rounded-lg mx-3 md:mx-5 px-7 p-3 bg-white w-full max-w-4xl">
               {/* Close Button */}
