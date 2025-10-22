@@ -265,11 +265,13 @@ export const TaskRegistration = async (req, res) => {
 export const UpdateLeadRegister = async (req, res) => {
   try {
     const { data, leadData } = req.body
-    console.log("data", data.selfAllocation)
+
 
     // return
     const { docID } = req.query
     const objectId = new mongoose.Types.ObjectId(docID)
+    const matchedDoc = await LeadMaster.findById(objectId)
+
 
     const mappedleadData = leadData.map((item) => {
       return {
@@ -282,127 +284,18 @@ export const UpdateLeadRegister = async (req, res) => {
         netAmount: Number(item.netAmount)
       }
     })
-    const matchedDoc = await LeadMaster.findOne({ _id: objectId })
-    if (data.selfAllocation) {
-      console.log(
-        "i")
-      let leadByModel
-      let updatedLead
-      const isStaff = await Staff.findOne({ _id: leadData.leadBy })
-      if (isStaff) {
-        leadByModel = "Staff"
-      } else {
-        const isAdmin = await Admin.findOne({ _id: leadData.leadBy })
-        if (isAdmin) {
-          leadByModel = "Admin"
-        }
-      }
 
-      if (!matchedDoc) {
-        return res.status(404).json({ message: "Lead not found" })
-      }
-      console.log("tt")
-      if (matchedDoc.activityLog.length === 1 || matchedDoc.activityLog.length === 2) {
-        const newActivityData = {
-          submissionDate: data.leadDate,
-          submittedUser: data.leadBy,
-          submissiondoneByModel: leadByModel,
-          taskallocatedBy: data.leadBy,
-          taskallocatedByModel: leadByModel,
-          taskallocatedTo: data.leadBy,
-          taskallocatedToModel: leadByModel,
-          remarks: data.remark,
-          taskBy: "allocated",
-          taskTo: data.allocationType,
-          taskfromFollowup: false
-        }
+    const newbalance = data.netAmount - matchedDoc.totalPaidAmount
+
+    const updatedLead = await LeadMaster.findByIdAndUpdate(objectId, { ...data, balanceAmount: newbalance, leadFor: mappedleadData })
 
 
-
-        if (matchedDoc.activityLog.length === 1) {
-          const newbalance = data.netAmount - matchedDoc.totalPaidAmount
-          updatedLead = await LeadMaster.findByIdAndUpdate(objectId,
-            {
-              ...data,
-              taxableAmount: data.taxableAmount,
-              taxAmount: data.taxAmount,
-              netAmount: data.netAmount,
-              balanceAmount: newbalance,
-              // selfAllocationDate:
-
-              leadFor: mappedleadData,
-              $push: {
-                activityLog: {
-                  newActivityData
-                }
-              }
-            }
-          )
-
-        } else if (matchedDoc.activityLog.length === 2) {
-          const newbalance = data.netAmount - matchedDoc.totalPaidAmount
-          //update last entry in activitylog
-          const lastIndex = matchedDoc.activityLog.length - 1
-          //build the path to the last element in the activitylog array
-          const updatedPath = `activityLog.${lastIndex}`
-          updatedLead = await LeadMaster.findByIdAndUpdate(objectId, { ...data, balanceAmount:newbalance, leadFor: mappedleadData, $set: { [updatedPath]: newActivityData } })
-        }
-
-        if (!updatedLead) {
-          return res.status(404).json({ message: "Lead not found" })
-        }
-      } else if (matchedDoc.activityLog.length > 2) {
-        updatedLead = await LeadMaster.findByIdAndUpdate(objectId, { ...data, leadFor: mappedleadData })
-        if (!updatedLead) {
-          return res.status(404).json({ message: "Lead not found" });
-        }
-      }
-
-
+    if (!updatedLead) {
+      return res.status(404).json({ message: "Lead not found" })
     } else {
-      let updatedLead
-      const { allocationType, ...restData } = data
-
-      if (matchedDoc.activityLog.length > 2) {
-        return res.status(404).json({ message: "Cant change to Allocated To Other this leads makes some tasks" })
-      } else if (matchedDoc.activityLog.length === 2) {
-
-        let lead = await LeadMaster.findById(objectId);
-
-        if (!lead) {
-          throw new Error("Lead not found");
-        }
-
-        // Remove the second index from activityLog
-        lead.activityLog.splice(1, 1); // removes index 1
-
-        // Update the rest of the data
-        lead.allocationType = "lead";
-        lead.leadFor = mappedleadData;
-
-        // Add any other fields from restData
-        Object.assign(lead, restData);
-
-        // Save the updated document
-        updatedLead = await lead.save();
-
-
-      } else if (matchedDoc.activityLog.length === 1) {
-
-        updatedLead = await LeadMaster.findByIdAndUpdate(objectId, {
-          ...restData,
-
-          leadFor: mappedleadData
-        })
-      }
-
-      if (!updatedLead) {
-        return res.status(404).json({ message: "Lead not found" })
-      }
+      return res.status(200).json({ message: "Lead Updated Successfully" })
     }
 
-
-    return res.status(200).json({ message: "Lead Updated Successfully" })
   } catch (error) {
     console.log("error:", error.message)
     return res.status(500).json({ message: "Internal server error" })

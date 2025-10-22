@@ -187,7 +187,6 @@ const LeadMaster = ({
       setValueMain("leadBy", loggeduser._id) // Manually set the value
     }
   }, [loggeduser, setValueMain])
-console.log(isSelfAllocationChangable)
   useEffect(() => {
     if (
       Data &&
@@ -196,9 +195,7 @@ console.log(isSelfAllocationChangable)
       customerOptions.length &&
       loggeduser
     ) {
-console.log(Data[0]?.selfAllocation)
       if (Data[0]?.selfAllocation) {
-console.log("h")
         setselfAllocationChangable(false)
       }
       // if (Data[0].activityLog.length === 2) {
@@ -263,7 +260,6 @@ console.log("h")
           selectedArray: product.selected
         }
       })
-      console.log(productListwithoutlicenseOnEdit)
       setlicenseWithoutProductSelection(productListwithoutlicenseOnEdit)
       const groupedByLicenseNumber = {}
       Data[0].leadFor.forEach((lead) => {
@@ -651,7 +647,6 @@ console.log("h")
 
         updatedList = [...updatedList, ...newProducts]
       } else {
-        console.log(licensewithoutProductSelection)
         const selectedProducts = licensewithoutProductSelection
           .filter((items) => items.selected)
           .map((item) => {
@@ -761,8 +756,7 @@ console.log("h")
           }))
           return
         }
-        console.log(data)
-        return
+      
         seteditLoadingState(true)
         await handleEditData(data, selectedleadlist, Data[0]?._id)
       }
@@ -1092,105 +1086,115 @@ console.log("h")
                     placeholder="Remarks..."
                   />
                 </div>
-                <div>
-                  <label
-                    htmlFor="selfAllocation"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Self Allocation/Other
-                  </label>
-                  <select
-                    disabled={!isSelfAllocationChangable}
-                    {...registerMain("selfAllocation", {
-                      setValueAs: (value) => value === "true",
-                      validate: (value) =>
-                        value === true || value === false
-                          ? true
-                          : "This field is requireded",
-                      onChange: (e) =>
-                        setselfAllocation(e.target.value === "true")
-                    })}
-                    className={`w-full border border-gray-300 rounded-md p-2 focus:outline-none ${
-                      isSelfAllocationChangable
-                        ? "cursor-pointer"
-                        : "bg-gray-200 cursor-not-allowed"
-                    }
-                    `}
-                  >
-                    <option value="">Select</option>
-                    <option value="true">Self Allocate</option>
-                    <option value="false">Allocate To Other</option>
-                  </select>
-                  {errorsMain.selfAllocation && (
-                    <p className="text-red-500 text-sm">
-                      {errorsMain.selfAllocation.message}
-                    </p>
-                  )}
-                </div>
-                {selfAllocation && (
+                {process !== "edit" && (
                   <>
-                    {" "}
                     <div>
                       <label
-                        htmlFor="allocationType"
+                        htmlFor="selfAllocation"
                         className="block text-sm font-medium text-gray-700 mb-2"
                       >
-                        Allocation Type
+                        Self Allocation/Other
                       </label>
                       <select
-                        {...registerMain("allocationType", {
-                          required: "Allocation type is required"
+                        disabled={!isSelfAllocationChangable}
+                        {...registerMain("selfAllocation", {
+                          setValueAs: (value) => value === "true",
+                          validate: (value) =>
+                            value === true || value === false
+                              ? true
+                              : "This field is requireded",
+                          onChange: (e) =>
+                            setselfAllocation(e.target.value === "true")
                         })}
-                        className="w-full focus:outline-none rounded-md py-1 border border-gray-300 px-2"
+                        className={`w-full border border-gray-300 rounded-md p-2 focus:outline-none ${
+                          isSelfAllocationChangable
+                            ? "cursor-pointer"
+                            : "bg-gray-200 cursor-not-allowed"
+                        }
+                    `}
                       >
-                        <option value="">Select Allocationtype</option>
-                        <option value="followup">Followup</option>
-                        <option value="programming">Programming</option>
-                        <option value="testing-&-implementation">
-                          Testing & Implementation
-                        </option>
-                        <option value="coding-&-testing">
-                          Coding & Testing
-                        </option>
-                        <option value="software-services">
-                          Software Service
-                        </option>
-                        <option value="customermeet">Customer Meet</option>
-                        <option value="demo">Demo</option>
-                        <option value="training">Training</option>
-
-                        <option value="onsite">Onsite</option>
-                        <option value="office">Office</option>
+                        <option value="">Select</option>
+                        <option value="true">Self Allocate</option>
+                        <option value="false">Allocate To Other</option>
                       </select>
-                      {errorsMain.allocationType && (
+                      {errorsMain.selfAllocation && (
                         <p className="text-red-500 text-sm">
-                          {errorsMain.allocationType.message}
+                          {errorsMain.selfAllocation.message}
                         </p>
                       )}
                     </div>
-                    <div>
-                      <label
-                        htmlFor="dueDate"
-                        className="block text-sm font-medium text-gray-700 mb-2"
-                      >
-                        Due Date
-                      </label>
-                      <input
-                        type="date"
-                        {...registerMain("dueDate", {
-                          required: "Due Date is required"
-                        })}
-                        className="w-full focus:outline-none rounded-md py-1 border border-gray-300 px-2"
-                      />
+                    {selfAllocation && (
+                      <>
+                        {" "}
+                        <div>
+                          <label
+                            htmlFor="allocationType"
+                            className="block text-sm font-medium text-gray-700 mb-2"
+                          >
+                            Allocation Type
+                          </label>
+                          <select
+                            disabled={!isSelfAllocationChangable}
+                            {...registerMain("allocationType", {
+                              required: "Allocation type is required"
+                            })}
+                            className={`w-full focus:outline-none rounded-md py-1 border border-gray-300 px-2 ${
+                              isSelfAllocationChangable
+                                ? ""
+                                : "bg-gray-200 cursor-not-allowed"
+                            }`}
+                          >
+                            <option value="">Select Allocationtype</option>
+                            <option value="followup">Followup</option>
+                            <option value="programming">Programming</option>
+                            <option value="testing-&-implementation">
+                              Testing & Implementation
+                            </option>
+                            <option value="coding-&-testing">
+                              Coding & Testing
+                            </option>
+                            <option value="software-services">
+                              Software Service
+                            </option>
+                            <option value="customermeet">Customer Meet</option>
+                            <option value="demo">Demo</option>
+                            <option value="training">Training</option>
 
-                      {errorsMain.dueDate && (
-                        <p className="text-red-500 text-sm">
-                          {errorsMain.dueDate.message}
-                        </p>
-                      )}
-                    </div>
+                            <option value="onsite">Onsite</option>
+                            <option value="office">Office</option>
+                          </select>
+                          {errorsMain.allocationType && (
+                            <p className="text-red-500 text-sm">
+                              {errorsMain.allocationType.message}
+                            </p>
+                          )}
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="dueDate"
+                            className="block text-sm font-medium text-gray-700 mb-2"
+                          >
+                            Due Date
+                          </label>
+                          <input
+                            type="date"
+                            {...registerMain("dueDate", {
+                              required: "Due Date is required"
+                            })}
+                            className="w-full focus:outline-none rounded-md py-1 border border-gray-300 px-2"
+                          />
+
+                          {errorsMain.dueDate && (
+                            <p className="text-red-500 text-sm">
+                              {errorsMain.dueDate.message}
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
+
                 <div className="">
                   <label
                     htmlFor="partner"

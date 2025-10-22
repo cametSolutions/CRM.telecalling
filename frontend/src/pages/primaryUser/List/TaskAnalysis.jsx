@@ -62,12 +62,7 @@ const TaskAnalysis = () => {
             acc[log.taskTo] = (acc[log.taskTo] || 0) + 1
           }
         })
-        // const lastTask = logs[logs.length - 1]
-        // const taskBy = lastTask.taskTo
-
-        // if (taskBy) {
-        //   acc[taskBy] = (acc[taskBy] || 0) + 1
-        // }
+        
 
         return acc
       }, {})
