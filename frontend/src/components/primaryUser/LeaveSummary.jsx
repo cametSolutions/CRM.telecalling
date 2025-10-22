@@ -306,6 +306,7 @@ const LeaveSummary = () => {
   }
 
   const handleDownload = (data) => {
+console.log(data)
     // Using ExcelJS instead of XLSX for better styling control
     const workbook = new ExcelJS.Workbook()
     const worksheet = workbook.addWorksheet("Attendance")

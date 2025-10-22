@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react"
 import { BarLoader } from "react-spinners"
+import ExcelJS from "exceljs"
+import { saveAs } from "file-saver"
 import api from "../../api/api"
 import { getLocalStorageItem } from "../../helper/localstorage"
 import { CiEdit } from "react-icons/ci"
@@ -106,22 +108,6 @@ const CustomerListform = () => {
 
       setAfterSearchData(allCustomers)
       setcustomerCount(data.pages[0].selectedbranchCustomercount || 0)
-      // if (!searchTerm) {
-      //   scrollTriggeredRef.current = false
-      //   setAfterSearchData((prev) =>
-      //     pages === 1 ? [...data.customers] : [...prev, ...data.customers]
-      //   )
-      //   setalldata((prev) =>
-      //     pages === 1 ? [...data.customers] : [...prev, ...data.customers]
-      //   )
-      //   setcustomerCount(data.selectedbranchCustomercount)
-      // } else {
-      //   scrollTriggeredRef.current = false
-
-      //   setcustomerCount(data.selectedbranchCustomercount)
-      //   setAfterSearchData((prev) => [...prev, ...data.customers])
-      //   setalldata((prev) => [...prev, ...data.customers])
-      // }
     }
   }, [data])
   const handleScroll = () => {
@@ -137,36 +123,6 @@ const CustomerListform = () => {
     }
   }
 
-  // const handleScroll = () => {
-  //   const container = containerRef.current
-  //   if (!container) return false
-
-  //   const { clientHeight, scrollHeight, scrollTop } = container
-
-  //   const totalScrollableDistance = scrollHeight - clientHeight
-
-  //   // Calculate current scroll position as percentage
-  //   const scrollPercentage = (scrollTop / totalScrollableDistance) * 100
-
-  //   // Trigger when scroll reaches 80%
-  //   if (scrollPercentage >= 90 && !scrollTriggeredRef.current) {
-  //     scrollTriggeredRef.current = true
-
-  //     setPages((prev) => prev + 1)
-  //   }
-  // }
-  // const handlestatus = (e) => {
-  //   if (e.target.value === "Allcustomers") {
-  //     setstatusfilteredcustomer(searchAfterData)
-  //   } else {
-  //     const filteredcustomer = searchAfterData.filter((customer) =>
-  //       customer.selected.some((sel) => sel.isActive === e.target.value)
-  //     )
-  //     setstatusfilteredcustomer(filteredcustomer)
-  //     setcustomerCount(filteredcustomer.length)
-  //   }
-  //   setselectedStatus(e.target.value)
-  // }
   //Handle search with lodash debounce to optimize search performance
   const handleSearch = debounce((query) => {
     const term = query.trim().toLowerCase()
@@ -227,6 +183,490 @@ const CustomerListform = () => {
       ? `${address?.slice(0, maxLength)}...`
       : address
   }
+  // const handleDownload = async () => {
+  //   const response = await api.get(
+  //     `/customer/downloadcustomerlistexcel?customerType=${selectedstatus}&branchselected=${selectedBranch}&searchTerm=${apiSearchTerm}`
+  //   )
+  //   const data = response.data.data
+  //   console.log("h")
+  //   // console.log(response.data.data)
+
+  //   // Using ExcelJS instead of XLSX for better styling control
+  //   const workbook = new ExcelJS.Workbook()
+  //   const worksheet = workbook.addWorksheet("Attendance")
+
+  //   // Define column structure with widths
+  //   worksheet.columns = [
+  //     { header: "BRANCH NAME", key: "branchName", width: 25 },
+  //     { header: "CUSTOMER NAME", key: "customerName", width: 25 },
+  //     { header: "PRODUCT NAME", key: "productName", width: 15 },
+  //     { header: "LICENSE NO", key: "licenseNo", width: 15 },
+  //     { header: "ADDRESS", key: "address", width: 15 },
+  //     { header: "PINCODE", key: "pincode", width: 15 },
+  //     { header: "MOBILE", key: "mobile", width: 15 },
+  //     { header: "EMAIL", key: "email", width: 15 },
+  //     { header: "STATUS", key: "status", width: 15 }
+  //   ]
+
+  //   // Style the header row
+  //   worksheet.getRow(1).eachCell((cell) => {
+  //     cell.fill = {
+  //       type: "pattern",
+  //       pattern: "solid",
+  //       fgColor: { argb: "FFFF0000" } // Light grey background
+  //     }
+  //     cell.font = { bold: true, color: { argb: "FFFFFFFF" } } // Black bold text
+  //     cell.alignment = { horizontal: "center", vertical: "middle" }
+  //     cell.border = {
+  //       top: { style: "thin" },
+  //       left: { style: "thin" },
+  //       bottom: { style: "thin" },
+  //       right: { style: "thin" }
+  //     }
+  //   })
+
+  //   // Add data rows
+  //   data.forEach((customer) => {
+  //     const row = worksheet.addRow({
+  //       branchName: customer.branchName,
+  //       customerName: customer.customerName,
+  //       productName: customer.productName,
+  //       licenseNo: customer.licenseNo,
+  //       address: customer.address,
+  //       pincode: customer.pincode,
+  //       mobile: customer.mobile,
+  //       email: customer.email,
+  //       status: customer.status
+  //     })
+
+  //     // Style data cells
+  //     row.eachCell((cell, colNumber) => {
+  //       // Center-align all cells except the name column (first column)
+  //       if (colNumber > 1) {
+  //         cell.alignment = { horizontal: "center", vertical: "middle" }
+  //       }
+
+  //       // Add borders to all cells
+  //       cell.border = {
+  //         top: { style: "thin" },
+  //         left: { style: "thin" },
+  //         bottom: { style: "thin" },
+  //         right: { style: "thin" }
+  //       }
+
+  //       // Apply zebra striping for better readability
+  //       if (row.number % 2 === 0) {
+  //         cell.fill = {
+  //           type: "pattern",
+  //           pattern: "solid",
+  //           fgColor: { argb: "FFFAFAFA" } // Very light grey for even rows
+  //         }
+  //       }
+  //     })
+  //   })
+
+  //   // Write to buffer and download
+  //   workbook.xlsx.writeBuffer().then((buffer) => {
+  //     const blob = new Blob([buffer], {
+  //       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  //     })
+  //     saveAs(blob, "Customerlist_Report.xlsx")
+  //   })
+  // }
+  // const handleDownload = async () => {
+  //   const response = await api.get(
+  //     `/customer/downloadcustomerlistexcel?customerType=${selectedstatus}&branchselected=${selectedBranch}&searchTerm=${apiSearchTerm}`
+  //   )
+  //   const data = response.data.data
+
+  //   const workbook = new ExcelJS.Workbook()
+  //   const worksheet = workbook.addWorksheet("Customer List")
+
+  //   // Define column structure with initial widths
+  //   worksheet.columns = [
+  //     { header: "BRANCH NAME", key: "branchName", width: 20 },
+  //     { header: "CUSTOMER NAME", key: "customerName", width: 25 },
+  //     { header: "PRODUCT NAME", key: "productName", width: 20 },
+  //     { header: "LICENSE NO", key: "licenseNo", width: 18 },
+  //     { header: "ADDRESS", key: "address", width: 40 },
+  //     { header: "PINCODE", key: "pincode", width: 10 },
+  //     { header: "MOBILE", key: "mobile", width: 15 },
+  //     { header: "EMAIL", key: "email", width: 35 },
+  //     { header: "STATUS", key: "status", width: 12 }
+  //   ]
+
+  //   // Style header row
+  //   worksheet.getRow(1).eachCell((cell) => {
+  //     cell.fill = {
+  //       type: "pattern",
+  //       pattern: "solid",
+  //       fgColor: { argb: "FF4472C4" } // Blue header
+  //     }
+  //     cell.font = { bold: true, color: { argb: "FFFFFFFF" } }
+  //     cell.alignment = {
+  //       horizontal: "center",
+  //       vertical: "middle",
+  //       wrapText: true
+  //     }
+  //     cell.border = {
+  //       top: { style: "thin" },
+  //       left: { style: "thin" },
+  //       bottom: { style: "thin" },
+  //       right: { style: "thin" }
+  //     }
+  //   })
+
+  //   // Add data rows
+  //   data.forEach((customer) => {
+  //     const row = worksheet.addRow({
+  //       branchName: customer.branchName,
+  //       customerName: customer.customerName,
+  //       productName: customer.productName,
+  //       licenseNo: customer.licenseNo,
+  //       address: customer.address,
+  //       pincode: customer.pincode,
+  //       mobile: customer.mobile,
+  //       email: customer.email,
+  //       status: customer.status
+  //     })
+
+  //     row.eachCell((cell, colNumber) => {
+  //       // Wrap long text for columns like address/email/name
+  //       if (
+  //         ["address", "email", "customerName"].includes(
+  //           worksheet.columns[colNumber - 1].key
+  //         )
+  //       ) {
+  //         cell.alignment = { wrapText: true, vertical: "top" }
+  //       } else {
+  //         cell.alignment = { horizontal: "center", vertical: "middle" }
+  //       }
+
+  //       // Add borders
+  //       cell.border = {
+  //         top: { style: "thin" },
+  //         left: { style: "thin" },
+  //         bottom: { style: "thin" },
+  //         right: { style: "thin" }
+  //       }
+
+  //       // Zebra stripe (light gray on even rows)
+  //       if (row.number % 2 === 0) {
+  //         cell.fill = {
+  //           type: "pattern",
+  //           pattern: "solid",
+  //           fgColor: { argb: "FFF2F2F2" }
+  //         }
+  //       }
+  //     })
+  //   })
+
+  //   // Auto-adjust row height for wrapped text
+  //   worksheet.eachRow((row, rowNumber) => {
+  //     if (rowNumber > 1) {
+  //       row.height = 30 // increase row height for better readability
+  //     }
+  //   })
+
+  //   // Export file
+  //   const buffer = await workbook.xlsx.writeBuffer()
+  //   const blob = new Blob([buffer], {
+  //     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  //   })
+  //   saveAs(blob, "Customerlist_Report.xlsx")
+  // }
+  //   const handleDownload = async () => {
+  //     const response = await api.get(
+  //       `/customer/downloadcustomerlistexcel?customerType=${selectedstatus}&branchselected=${selectedBranch}&searchTerm=${apiSearchTerm}`
+  //     )
+  //     const data = response.data.data
+
+  //     const workbook = new ExcelJS.Workbook()
+  //     const worksheet = workbook.addWorksheet("Customer List")
+
+  //     // Determine heading and filename based on selectedstatus
+  //     let headingText = ""
+  //     let fileName = ""
+
+  //     switch (selectedstatus) {
+  //       case "Allcustomers":
+  //         headingText = "All Customers"
+  //         fileName = "AllCustomers_Report.xlsx"
+  //         break
+  //       case "ProductMissing":
+  //         headingText = "Product Missing Customers"
+  //         fileName = "ProductMissing_Customers.xlsx"
+  //         break
+  //       case "ProductinfoMissing":
+  //         headingText = "Product Info Missing Customers"
+  //         fileName = "ProductInfoMissing_Customers.xlsx"
+  //         break
+  //       case "Running":
+  //         headingText = "Running Customers"
+  //         fileName = "Running_Customers.xlsx"
+  //         break
+  //       case "Deactive":
+  //         headingText = "Deactive Customer List"
+  //         fileName = "DeactiveCustomerList_Report.xlsx"
+  //         break
+  //       default:
+  //         headingText = "Customer Report"
+  //         fileName = "Customer_Report.xlsx"
+  //     }
+
+  //     // Add heading row
+  //     worksheet.mergeCells("A1:I1")
+  //     const headingCell = worksheet.getCell("A1")
+  //     headingCell.value = headingText
+  // console.log(headingCell.value)
+  //     headingCell.font = { size: 16, bold: true, color: { argb: "FFFFFFFF" } }
+  //     headingCell.alignment = { horizontal: "center", vertical: "middle" }
+  //     headingCell.fill = {
+  //       type: "pattern",
+  //       pattern: "solid",
+  //       fgColor: { argb: "FF305496" } // Dark blue background
+  //     }
+  //     worksheet.getRow(1).height = 30
+
+  //     // Define column structure (start from row 2)
+  //     worksheet.columns = [
+  //       { header: "BRANCH NAME", key: "branchName", width: 20 },
+  //       { header: "CUSTOMER NAME", key: "customerName", width: 25 },
+  //       { header: "PRODUCT NAME", key: "productName", width: 20 },
+  //       { header: "LICENSE NO", key: "licenseNo", width: 18 },
+  //       { header: "ADDRESS", key: "address", width: 40 },
+  //       { header: "PINCODE", key: "pincode", width: 10 },
+  //       { header: "MOBILE", key: "mobile", width: 15 },
+  //       { header: "EMAIL", key: "email", width: 35 },
+  //       { header: "STATUS", key: "status", width: 12 }
+  //     ]
+
+  //     // Style header row (now row 2)
+  //     worksheet.getRow(2).eachCell((cell) => {
+  //       cell.fill = {
+  //         type: "pattern",
+  //         pattern: "solid",
+  //         fgColor: { argb: "FF4472C4" }
+  //       }
+  //       cell.font = { bold: true, color: { argb: "FFFFFFFF" } }
+  //       cell.alignment = {
+  //         horizontal: "center",
+  //         vertical: "middle",
+  //         wrapText: true
+  //       }
+  //       cell.border = {
+  //         top: { style: "thin" },
+  //         left: { style: "thin" },
+  //         bottom: { style: "thin" },
+  //         right: { style: "thin" }
+  //       }
+  //     })
+
+  //     // Add data rows starting from row 3
+  //     data.forEach((customer) => {
+  //       const row = worksheet.addRow({
+  //         branchName: customer.branchName,
+  //         customerName: customer.customerName,
+  //         productName: customer.productName,
+  //         licenseNo: customer.licenseNo,
+  //         address: customer.address,
+  //         pincode: customer.pincode,
+  //         mobile: customer.mobile,
+  //         email: customer.email,
+  //         status: customer.status
+  //       })
+
+  //       row.eachCell((cell, colNumber) => {
+  //         const key = worksheet.columns[colNumber - 1].key
+  //         if (["address", "email", "customerName"].includes(key)) {
+  //           cell.alignment = { wrapText: true, vertical: "top" }
+  //         } else {
+  //           cell.alignment = { horizontal: "center", vertical: "middle" }
+  //         }
+
+  //         // Add borders
+  //         cell.border = {
+  //           top: { style: "thin" },
+  //           left: { style: "thin" },
+  //           bottom: { style: "thin" },
+  //           right: { style: "thin" }
+  //         }
+
+  //         // Zebra stripe
+  //         if (row.number % 2 === 1) {
+  //           // Since first data row is 3 (odd)
+  //           cell.fill = {
+  //             type: "pattern",
+  //             pattern: "solid",
+  //             fgColor: { argb: "FFF2F2F2" }
+  //           }
+  //         }
+  //       })
+  //     })
+
+  //     // Auto-adjust row height for readability
+  //     worksheet.eachRow((row, rowNumber) => {
+  //       if (rowNumber > 2) {
+  //         row.height = 30
+  //       }
+  //     })
+
+  //     // Export Excel file
+  //     const buffer = await workbook.xlsx.writeBuffer()
+  //     const blob = new Blob([buffer], {
+  //       type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  //     })
+  //     saveAs(blob, fileName)
+  //   }
+  const handleDownload = async () => {
+    const response = await api.get(
+      `/customer/downloadcustomerlistexcel?customerType=${selectedstatus}&branchselected=${selectedBranch}&searchTerm=${apiSearchTerm}`
+    )
+    const data = response.data.data
+
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet("Customer List")
+
+    // Determine heading and filename based on selectedstatus
+    let headingText = ""
+    let fileName = ""
+
+    switch (selectedstatus) {
+      case "Allcustomers":
+        headingText = "All Customers"
+        fileName = "AllCustomers_Report.xlsx"
+        break
+      case "ProductMissing":
+        headingText = "Product Missing Customers"
+        fileName = "ProductMissing_Customers.xlsx"
+        break
+      case "ProductinfoMissing":
+        headingText = "Product Info Missing Customers"
+        fileName = "ProductInfoMissing_Customers.xlsx"
+        break
+      case "Running":
+        headingText = "Running Customers"
+        fileName = "Running_Customers.xlsx"
+        break
+      case "Deactive":
+        headingText = "Deactive Customer List"
+        fileName = "DeactiveCustomerList_Report.xlsx"
+        break
+      default:
+        headingText = "Customer Report"
+        fileName = "Customer_Report.xlsx"
+    }
+
+    // --- Add heading row (Row 1) ---
+    worksheet.mergeCells("A1:I1")
+    const headingCell = worksheet.getCell("A1")
+    headingCell.value = headingText
+    headingCell.font = { size: 18, bold: true, color: { argb: "FFFFFFFF" } }
+    headingCell.alignment = { horizontal: "center", vertical: "middle" }
+    headingCell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF305496" } // Dark blue background
+    }
+    worksheet.getRow(1).height = 30
+
+    // --- Add a blank row for spacing (Row 2) ---
+    worksheet.addRow([])
+
+    // --- Define columns (Header Row = Row 3) ---
+    worksheet.columns = [
+      { header: "BRANCH NAME", key: "branchName", width: 20 },
+      { header: "CUSTOMER NAME", key: "customerName", width: 25 },
+      { header: "PRODUCT NAME", key: "productName", width: 20 },
+      { header: "LICENSE NO", key: "licenseNo", width: 18 },
+      { header: "ADDRESS", key: "address", width: 40 },
+      { header: "PINCODE", key: "pincode", width: 10 },
+      { header: "MOBILE", key: "mobile", width: 15 },
+      { header: "EMAIL", key: "email", width: 35 },
+      { header: "STATUS", key: "status", width: 12 }
+    ]
+
+    // --- Style header row (Row 3) ---
+    const headerRow = worksheet.getRow(3)
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF4472C4" } // Medium blue
+      }
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } }
+      cell.alignment = {
+        horizontal: "center",
+        vertical: "middle",
+        wrapText: true
+      }
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" }
+      }
+    })
+    headerRow.height = 22
+
+    // --- Add data rows (start from Row 4) ---
+    data.forEach((customer) => {
+      const row = worksheet.addRow({
+        branchName: customer.branchName,
+        customerName: customer.customerName,
+        productName: customer.productName,
+        licenseNo: customer.licenseNo,
+        address: customer.address,
+        pincode: customer.pincode,
+        mobile: customer.mobile,
+        email: customer.email,
+        status: customer.status
+      })
+
+      row.eachCell((cell, colNumber) => {
+        const key = worksheet.columns[colNumber - 1].key
+
+        // Wrap long text for address/email/name
+        if (["address", "email", "customerName"].includes(key)) {
+          cell.alignment = { wrapText: true, vertical: "top" }
+        } else {
+          cell.alignment = { horizontal: "center", vertical: "middle" }
+        }
+
+        // Border
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" }
+        }
+
+        // Zebra stripe
+        if (row.number % 2 === 0) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFF2F2F2" }
+          }
+        }
+      })
+    })
+
+    // --- Adjust row height for readability ---
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 3) {
+        row.height = 30
+      }
+    })
+
+    // --- Export file ---
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    })
+    saveAs(blob, fileName)
+  }
+
   return (
     <div className="h-full overflow-hidden">
       {/* {scrollLoading && (
@@ -287,37 +727,19 @@ const CustomerListform = () => {
                     : "/staff/masters/customerRegistration"
                 }
               />
-
-              <TooltipIcon
-                icon={FaRegFileExcel}
-                tooltip="Excel Download"
-                button
-              />
+              {userRole === "admin" && (
+                <TooltipIcon
+                  icon={FaRegFileExcel}
+                  tooltip="Excel Download"
+                  button
+                  onClick={handleDownload}
+                />
+              )}
 
               <TooltipIcon icon={FaFilePdf} tooltip="PDF Download" button />
 
               <TooltipIcon icon={FaPrint} tooltip="Print" button />
 
-              {/* <TooltipIcon
-                icon={FaHourglassHalf}
-                tooltip="Product missing customer"
-                to={
-                  user?.role === "Admin"
-                    ? "/admin/masters/pendingCustomer"
-                    : "/staff/masters/pendingCustomer"
-                }
-              /> */}
-
-              {/* <TooltipIcon
-                icon={FaExclamationTriangle}
-                tooltip="Product details missing customer"
-                to={
-                  user?.role === "Admin"
-                    ? "/admin/masters/productmissingCustomer"
-                    : "/staff/masters/productmissingCustomer"
-                }
-                className="text-red-500"
-              /> */}
               <BranchDropdown
                 branches={userBranches}
                 onBranchChange={handleBranchChange}
