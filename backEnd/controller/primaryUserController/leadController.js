@@ -2016,7 +2016,7 @@ export const UpdateLeadTask = async (req, res) => {
       [`activityLog.${Index}.taskClosed`]: true
     };
     await LeadMaster.updateOne({ _id: leadObjectId }, { $set: updateFields })
-    const isReallocated = taskDetails.taskfromFollowup ? false : true
+    const isTaskfromFollowup = taskDetails.taskfromFollowup ? false : true
     // Build the activity log entry
     const activityLogEntry = {
       submissionDate: taskDetails.submissionDate,
@@ -2025,8 +2025,8 @@ export const UpdateLeadTask = async (req, res) => {
       remarks: taskDetails.taskDescription,
       taskBy: taskDetails.taskName,
       taskClosed: true,
-      taskfromFollowup: true,
-      allocatedClosed: true
+      taskfromFollowup: isTaskfromFollowup,
+      allocatedClosed: isTaskfromFollowup 
     };
 
     const updateleadTask = await LeadMaster.findByIdAndUpdate(leadObjectId, {
