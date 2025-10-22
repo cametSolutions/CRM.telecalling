@@ -2,9 +2,9 @@ import { Link } from "react-router-dom";
 
 
 // Reusable component
-const TooltipIcon = ({ icon: Icon, tooltip, to, button = false, className = "" }) => {
+const TooltipIcon = ({ icon: Icon, tooltip, to, button = false,onClick, className = "" }) => {
   const Wrapper = button ? "button" : Link;
-  const props = button ? {} : { to };
+  const props = button ? {onClick} : { to };
 
   return (
     <Wrapper

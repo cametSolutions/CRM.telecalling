@@ -32,10 +32,12 @@ import {
   GetscrollCustomer,
   DeletepartnerBranch,
   GetallproductmissingCustomer,
-  GeteditedCustomer
+  GeteditedCustomer,
+  Downloadcustomerlist
 } from "../../controller/secondaryUserController/customerController.js"
 
 const router = express.Router()
+router.get("/downloadcustomerlistexcel", authMiddleware, Downloadcustomerlist)
 router.get("/getcust", authMiddleware, GetscrollCustomer)
 router.get("/geteditedCustomer", authMiddleware, GeteditedCustomer)
 router.get("/getproductmissingCustomer", authMiddleware, GetallproductmissingCustomer)
