@@ -101,6 +101,7 @@ const LeadAllocationTable = () => {
     }
   }, [leadPendinglist])
   const getgroupingData = (data) => {
+
     const groupedLeads = {}
     let grandTotal = 0
     data.forEach((lead) => {

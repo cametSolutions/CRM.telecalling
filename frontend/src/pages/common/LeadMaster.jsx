@@ -187,7 +187,6 @@ const LeadMaster = ({
       setValueMain("leadBy", loggeduser._id) // Manually set the value
     }
   }, [loggeduser, setValueMain])
-
   useEffect(() => {
     if (
       Data &&
@@ -196,17 +195,20 @@ const LeadMaster = ({
       customerOptions.length &&
       loggeduser
     ) {
-      if (Data[0].activityLog.length === 2) {
-        const allocatedtoData =
-          Data[0].activityLog[Data[0].activityLog.length - 1]
-        if (allocatedtoData.taskallocatedBy === loggeduser._id) {
-          setselfAllocationChangable(true)
-        } else {
-          setselfAllocationChangable(false)
-        }
-      } else if (Data[0].activityLog.length > 2) {
+      if (Data[0]?.selfAllocation) {
         setselfAllocationChangable(false)
       }
+      // if (Data[0].activityLog.length === 2) {
+      //   const allocatedtoData =
+      //     Data[0].activityLog[Data[0].activityLog.length - 1]
+      //   if (allocatedtoData.taskallocatedBy === loggeduser._id) {
+      //     setselfAllocationChangable(true)
+      //   } else {
+      //     setselfAllocationChangable(false)
+      //   }
+      // } else if (Data[0].activityLog.length > 2) {
+      //   setselfAllocationChangable(false)
+      // }
       if (Data[0].activityLog.length === 1) {
         setcutomerchangeandbranch(true)
       } else if (Data[0].activityLog.length > 1) {
@@ -258,7 +260,6 @@ const LeadMaster = ({
           selectedArray: product.selected
         }
       })
-console.log(productListwithoutlicenseOnEdit)
       setlicenseWithoutProductSelection(productListwithoutlicenseOnEdit)
       const groupedByLicenseNumber = {}
       Data[0].leadFor.forEach((lead) => {
@@ -567,9 +568,11 @@ console.log(productListwithoutlicenseOnEdit)
     )
   }
   const calculateTotalAmount = () => {
-    return selectedleadlist.reduce((total, product) => {
-      return total + (Number(product.netAmount) || 0) // Ensure price is a number and handle null values
-    }, 0)
+    return selectedleadlist
+      .reduce((total, product) => {
+        return total + (Number(product.netAmount) || 0) // Ensure price is a number and handle null values
+      }, 0)
+      .toFixed(2)
   }
   const calculatetaxAmount = () => {
     return (
@@ -644,7 +647,6 @@ console.log(productListwithoutlicenseOnEdit)
 
         updatedList = [...updatedList, ...newProducts]
       } else {
-console.log(licensewithoutProductSelection)
         const selectedProducts = licensewithoutProductSelection
           .filter((items) => items.selected)
           .map((item) => {
@@ -661,7 +663,6 @@ console.log(licensewithoutProductSelection)
                 Number(item?.productPrice || 0) +
                 (Number(igstRate) / 100) * Number(item?.productPrice || 0)
               ).toFixed(2)
-             
             }
           })
 
@@ -755,6 +756,7 @@ console.log(licensewithoutProductSelection)
           }))
           return
         }
+      
         seteditLoadingState(true)
         await handleEditData(data, selectedleadlist, Data[0]?._id)
       }
@@ -1084,105 +1086,115 @@ console.log(licensewithoutProductSelection)
                     placeholder="Remarks..."
                   />
                 </div>
-                <div>
-                  <label
-                    htmlFor="selfAllocation"
-                    className="block text-sm font-medium text-gray-700 mb-2"
-                  >
-                    Self Allocation/Other
-                  </label>
-                  <select
-                    disabled={!isSelfAllocationChangable}
-                    {...registerMain("selfAllocation", {
-                      setValueAs: (value) => value === "true",
-                      validate: (value) =>
-                        value === true || value === false
-                          ? true
-                          : "This field is requireded",
-                      onChange: (e) =>
-                        setselfAllocation(e.target.value === "true")
-                    })}
-                    className={`w-full border border-gray-300 rounded-md p-2 focus:outline-none ${
-                      isSelfAllocationChangable
-                        ? "cursor-pointer"
-                        : "bg-gray-200 cursor-not-allowed"
-                    }
-                    `}
-                  >
-                    <option value="">Select</option>
-                    <option value="true">Self Allocate</option>
-                    <option value="false">Allocate To Other</option>
-                  </select>
-                  {errorsMain.selfAllocation && (
-                    <p className="text-red-500 text-sm">
-                      {errorsMain.selfAllocation.message}
-                    </p>
-                  )}
-                </div>
-                {selfAllocation && (
+                {process !== "edit" && (
                   <>
-                    {" "}
                     <div>
                       <label
-                        htmlFor="allocationType"
+                        htmlFor="selfAllocation"
                         className="block text-sm font-medium text-gray-700 mb-2"
                       >
-                        Allocation Type
+                        Self Allocation/Other
                       </label>
                       <select
-                        {...registerMain("allocationType", {
-                          required: "Allocation type is required"
+                        disabled={!isSelfAllocationChangable}
+                        {...registerMain("selfAllocation", {
+                          setValueAs: (value) => value === "true",
+                          validate: (value) =>
+                            value === true || value === false
+                              ? true
+                              : "This field is requireded",
+                          onChange: (e) =>
+                            setselfAllocation(e.target.value === "true")
                         })}
-                        className="w-full focus:outline-none rounded-md py-1 border border-gray-300 px-2"
+                        className={`w-full border border-gray-300 rounded-md p-2 focus:outline-none ${
+                          isSelfAllocationChangable
+                            ? "cursor-pointer"
+                            : "bg-gray-200 cursor-not-allowed"
+                        }
+                    `}
                       >
-                        <option value="">Select Allocationtype</option>
-                        <option value="followup">Followup</option>
-                        <option value="programming">Programming</option>
-                        <option value="testing-&-implementation">
-                          Testing & Implementation
-                        </option>
-                        <option value="coding-&-testing">
-                          Coding & Testing
-                        </option>
-                        <option value="software-services">
-                          Software Service
-                        </option>
-                        <option value="customermeet">Customer Meet</option>
-                        <option value="demo">Demo</option>
-                        <option value="training">Training</option>
-
-                        <option value="onsite">Onsite</option>
-                        <option value="office">Office</option>
+                        <option value="">Select</option>
+                        <option value="true">Self Allocate</option>
+                        <option value="false">Allocate To Other</option>
                       </select>
-                      {errorsMain.allocationType && (
+                      {errorsMain.selfAllocation && (
                         <p className="text-red-500 text-sm">
-                          {errorsMain.allocationType.message}
+                          {errorsMain.selfAllocation.message}
                         </p>
                       )}
                     </div>
-                    <div>
-                      <label
-                        htmlFor="dueDate"
-                        className="block text-sm font-medium text-gray-700 mb-2"
-                      >
-                        Due Date
-                      </label>
-                      <input
-                        type="date"
-                        {...registerMain("dueDate", {
-                          required: "Due Date is required"
-                        })}
-                        className="w-full focus:outline-none rounded-md py-1 border border-gray-300 px-2"
-                      />
+                    {selfAllocation && (
+                      <>
+                        {" "}
+                        <div>
+                          <label
+                            htmlFor="allocationType"
+                            className="block text-sm font-medium text-gray-700 mb-2"
+                          >
+                            Allocation Type
+                          </label>
+                          <select
+                            disabled={!isSelfAllocationChangable}
+                            {...registerMain("allocationType", {
+                              required: "Allocation type is required"
+                            })}
+                            className={`w-full focus:outline-none rounded-md py-1 border border-gray-300 px-2 ${
+                              isSelfAllocationChangable
+                                ? ""
+                                : "bg-gray-200 cursor-not-allowed"
+                            }`}
+                          >
+                            <option value="">Select Allocationtype</option>
+                            <option value="followup">Followup</option>
+                            <option value="programming">Programming</option>
+                            <option value="testing-&-implementation">
+                              Testing & Implementation
+                            </option>
+                            <option value="coding-&-testing">
+                              Coding & Testing
+                            </option>
+                            <option value="software-services">
+                              Software Service
+                            </option>
+                            <option value="customermeet">Customer Meet</option>
+                            <option value="demo">Demo</option>
+                            <option value="training">Training</option>
 
-                      {errorsMain.dueDate && (
-                        <p className="text-red-500 text-sm">
-                          {errorsMain.dueDate.message}
-                        </p>
-                      )}
-                    </div>
+                            <option value="onsite">Onsite</option>
+                            <option value="office">Office</option>
+                          </select>
+                          {errorsMain.allocationType && (
+                            <p className="text-red-500 text-sm">
+                              {errorsMain.allocationType.message}
+                            </p>
+                          )}
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="dueDate"
+                            className="block text-sm font-medium text-gray-700 mb-2"
+                          >
+                            Due Date
+                          </label>
+                          <input
+                            type="date"
+                            {...registerMain("dueDate", {
+                              required: "Due Date is required"
+                            })}
+                            className="w-full focus:outline-none rounded-md py-1 border border-gray-300 px-2"
+                          />
+
+                          {errorsMain.dueDate && (
+                            <p className="text-red-500 text-sm">
+                              {errorsMain.dueDate.message}
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
+
                 <div className="">
                   <label
                     htmlFor="partner"
@@ -1404,141 +1416,15 @@ console.log(licensewithoutProductSelection)
                 </div>
 
                 {selectedleadlist && selectedleadlist.length > 0 && (
-                  // <div className=" flex flex-col-1 bg-white border rounded-md  max-h-[200px] overflow-y-auto overflow-x-auto mt-4">
-                  //   <table className="w-full border-collapse border border-gray-300">
-                  //     <thead className="bg-gray-50 ">
-                  //       <tr className="">
-                  //         <th
-                  //           rowSpan="2"
-                  //           className="border border-gray-300 px-2 py-1 text-left font-normal text-nowrap"
-                  //         >
-                  //           License No
-                  //         </th>
-                  //         <th
-                  //           rowSpan="2"
-                  //           className="border border-gray-300 px-2 py-1 text-left font-normal text-nowrap"
-                  //         >
-                  //           Product/Service
-                  //         </th>
-                  //         <th
-                  //           className="border border-gray-300 px-2 py-1 text-center font-normal text-nowrap"
-                  //           colSpan="3"
-                  //         >
-                  //           Price Details
-                  //         </th>
-                  //         <th
-                  //           rowSpan="2"
-                  //           className="border border-gray-300 px-2 py-1 text-center font-normal"
-                  //         >
-                  //           Action
-                  //         </th>
-                  //       </tr>
-                  //       {/* Subheading row */}
-                  //       <tr>
-                  //         <th className="border border-gray-300 px-2 py-1 text-center  bg-gray-100 font-normal text-nowrap">
-                  //           Price
-                  //         </th>
-                  //         <th className="border border-gray-300 px-2 py-1 text-center bg-gray-100 font-normal text-nowrap">
-                  //           Tax
-                  //         </th>
-                  //         <th className="border border-gray-300 px-2 py-1 text-center  bg-gray-100 font-normal text-nowrap">
-                  //           Price Incl. Tax
-                  //         </th>
-                  //       </tr>
-                  //     </thead>
-                  //     <tbody>
-                  //       {selectedleadlist.map((item, index) => (
-                  //         <tr key={index} className="border-b hover:bg-gray-50">
-                  //           <td className="border border-gray-300 px-3 py-2 text-nowrap">
-                  //             {item.licenseNumber || "Not Selected"}
-                  //           </td>
-                  //           <td className="border border-gray-300 px-3 py-2 text-nowrap">
-                  //             {item.productorServiceName}
-                  //           </td>
-
-                  //           {/* Price Input - First column of Price Details */}
-                  //           <td className="border border-gray-300 px-2 py-2 text-nowrap">
-                  //             <input
-                  //               type="number"
-                  //               readOnly={isReadOnly}
-                  //               value={item.productPrice}
-                  //               onChange={(e) =>
-                  //                 handlePriceChange(index, e.target.value)
-                  //               }
-                  //               className={`w-full pl-1 text-nowrap border rounded-md  py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  //                 isReadOnly
-                  //                   ? "cursor-not-allowed bg-gray-100 text-gray-700"
-                  //                   : "bg-white"
-                  //               }`}
-                  //               placeholder="0.00"
-                  //             />
-                  //           </td>
-
-                  //           {/* HSN/Tax Input - Second column of Price Details */}
-                  //           <td className="border border-gray-300 px-2 py-2 text-nowrap">
-                  //             <input
-                  //               type="number"
-                  //               value={item.hsn}
-                  //               onChange={(e) =>
-                  //                 handleHsnChange(index, e.target.value)
-                  //               }
-                  //               className={`w-full pl-1  text-nowrap border rounded-md  py-1 text-sm focus:outline-none  bg-gray-100 text-gray-700 ${
-                  //                 isReadOnly ? "cursor-not-allowed" : ""
-                  //               }`}
-                  //               placeholder="HSN"
-                  //               readOnly={isReadOnly}
-                  //             />
-                  //           </td>
-
-                  //           {/* Net Amount Input - Third column of Price Details */}
-                  //           <td className="border border-gray-300 px-2 py-2 text-nowrap">
-                  //             <input
-                  //               type="text"
-                  //               value={item.netAmount}
-                  //               className="w-full pl-1 border rounded-md  py-1 text-sm focus:outline-none cursor-not-allowed bg-gray-100 text-gray-700"
-                  //               placeholder="0.00"
-                  //               readOnly
-                  //             />
-                  //           </td>
-
-                  //           {/* Actions */}
-                  //           <td className="border border-gray-300 px-3 py-2 text-center text-nowrap">
-                  //             <button
-                  //               type="button"
-                  //               disabled={isReadOnly}
-                  //               onClick={() =>
-                  //                 handleDeletetableData(item, index)
-                  //               }
-                  //               className={`text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors duration-200 ${
-                  //                 isReadOnly ? "cursor-not-allowed" : ""
-                  //               }`}
-                  //               title="Delete Product"
-                  //             >
-                  //               <svg
-                  //                 xmlns="http://www.w3.org/2000/svg"
-                  //                 className="h-5 w-5"
-                  //                 viewBox="0 0 24 24"
-                  //                 fill="none"
-                  //                 stroke="currentColor"
-                  //                 strokeWidth="2"
-                  //               >
-                  //                 <path d="M3 6h18" />
-                  //                 <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                  //                 <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                  //               </svg>
-                  //             </button>
-                  //           </td>
-                  //         </tr>
-                  //       ))}
-                  //     </tbody>
-                  //   </table>
-                  // </div>
-
                   <div className="mt-4 bg-white border rounded-md overflow-hidden">
                     <div className="max-h-[200px] overflow-y-auto">
                       <div className="overflow-x-auto">
                         <table className="w-full border-collapse text-sm">
-                          <thead className="bg-gray-100 sticky top-0 z-10">
+                          <thead
+                            className={`bg-gray-100 ${
+                              popupOpen ? "" : "sticky top-0 z-10"
+                            }`}
+                          >
                             <tr>
                               <th
                                 rowSpan="2"

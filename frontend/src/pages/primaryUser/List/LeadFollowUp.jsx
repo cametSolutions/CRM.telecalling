@@ -180,7 +180,6 @@ const LeadFollowUp = () => {
   useEffect(() => {
     if (loggedusersallocatedleads && dates.endDate && loggedUser) {
       if (pending && ownFollowUp) {
-console.log(loggedusersallocatedleads.followupLeads)
         const ownFollow = loggedusersallocatedleads.followupLeads.filter(
           (lead) =>
             lead.activityLog?.some(
@@ -190,7 +189,6 @@ console.log(loggedusersallocatedleads.followupLeads)
                 log.followupClosed === false
             )
         )
-console.log(ownFollow)
         const currentDate = new Date()
         const endDateLocal = getLocalDate(new Date(dates.endDate))
         formatdate(currentDate)
@@ -231,7 +229,7 @@ console.log(ownFollow)
           ...postdatefollowup,
           ...taskSubmittedLeads
         ]
-     
+
         // then store it in state
         setnetTotalAmount(TotalAmount(mergedall))
 
@@ -1495,6 +1493,7 @@ console.log(ownFollow)
                         Remarks: ""
                       })
                       setDemodata({
+                        selectedType: "",
                         demoallocatedTo: "",
                         demoallocatedDate: "",
                         demoDescription: ""
@@ -1530,6 +1529,12 @@ console.log(ownFollow)
                     setSelectedLeadId(null)
                     setselectedDocid(null)
                     setHistoryList([])
+                    setDemodata({
+                      demoallocatedTo: "",
+                      demoallocatedDate: "",
+                      demoDescription: "",
+                      selectedType: ""
+                    })
                   }}
                   className="bg-gray-500 hover:bg-gray-600 rounded-lg px-3 py-1 mt-3 text-white "
                 >
