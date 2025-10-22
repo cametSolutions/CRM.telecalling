@@ -1809,36 +1809,37 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
     }
 
     const matchLead = await LeadMaster.findOne({ _id: selectedItem._id })
-    if (matchLead.activityLog.length === 2) {
-      const lastIndex = matchLead.activityLog.length - 1
-      // Update specific fields of the last activityLog entry
-      matchLead.activityLog[lastIndex] = {
-        ...matchLead.activityLog[lastIndex], // keep existing fields
-        submissionDate: new Date(),
-        submittedUser: allocatedBy,
-        submissiondoneByModel: allocatedByModel,
-        taskallocatedBy: allocatedBy,
-        taskallocatedByModel: allocatedByModel,
-        taskallocatedTo: selectedItem.allocatedTo,
-        taskallocatedToModel: allocatedToModel,
-        remarks: cleanedData.allocationDescription,
-        allocationChanged: true,
-        changeReason: cleanedData.reason,
-        taskBy: "allocated",
-        ...(allocationType === "followup" ? { followupClosed: false } : {}),
-        taskTo: allocationType,
-        taskfromFollowup: false
-      };
-      // Conditionally add allocationDate
-      if (allocationType !== "followup") {
-        matchLead.activityLog[lastIndex].allocationDate = cleanedData.allocationDate;
-      }
-      matchLead.allocationType = allocationType
-      matchLead.allocatedTo = selectedItem.allocatedTo
-      // Save the document
-      await matchLead.save();
+    // if (matchLead.activityLog.length === 2) {
+    //   const lastIndex = matchLead.activityLog.length - 1
+    //   // Update specific fields of the last activityLog entry
+    //   matchLead.activityLog[lastIndex] = {
+    //     ...matchLead.activityLog[lastIndex], // keep existing fields
+    //     submissionDate: new Date(),
+    //     submittedUser: allocatedBy,
+    //     submissiondoneByModel: allocatedByModel,
+    //     taskallocatedBy: allocatedBy,
+    //     taskallocatedByModel: allocatedByModel,
+    //     taskallocatedTo: selectedItem.allocatedTo,
+    //     taskallocatedToModel: allocatedToModel,
+    //     remarks: cleanedData.allocationDescription,
+    //     allocationChanged: true,
+    //     changeReason: cleanedData.reason,
+    //     taskBy: "allocated",
+    //     ...(allocationType === "followup" ? { followupClosed: false } : {}),
+    //     taskTo: allocationType,
+    //     taskfromFollowup: false
+    //   };
+    //   // Conditionally add allocationDate
+    //   if (allocationType !== "followup") {
+    //     matchLead.activityLog[lastIndex].allocationDate = cleanedData.allocationDate;
+    //   }
+    //   matchLead.allocationType = allocationType
+    //   matchLead.allocatedTo = selectedItem.allocatedTo
+    //   // Save the document
+    //   await matchLead.save();
 
-    } else if (matchLead.activityLog.length === 1) {
+    // } else 
+    if (matchLead.activityLog.length === 1) {
       // Create base activity log
       const activityLogEntry = {
         submissionDate: new Date(),
@@ -1878,7 +1879,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         { new: true }
       );
 
-    } else if (matchLead.activityLog.length > 2) {
+    } else if (matchLead.activityLog.length >= 2) {
       // Find index in activityLog that matches the criteria
       const matchingIndex = matchLead.activityLog.findIndex(log =>
         log.reallocatedTo === false &&
