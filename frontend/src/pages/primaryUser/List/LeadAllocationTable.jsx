@@ -129,6 +129,7 @@ const LeadAllocationTable = () => {
 
       if (response.status >= 200 && response.status < 300) {
         const data = response.data.data //gets only allocated leads with reallocatedto field false which means reallocatedto true are in the reallocation page not need to display here
+console.log(data)
         getgroupingData(data)
         // setTableData(data)
         data.forEach((item) => {

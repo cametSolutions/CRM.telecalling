@@ -1317,52 +1317,7 @@ export const GetallLead = async (req, res) => {
       const approvedAllocatedLeads = await LeadMaster.find(query)
         .populate({ path: "customerName", select: "customerName" })
         .lean()
-      // const populatedApprovedLeads = await Promise.all(
-      //   approvedAllocatedLeads.map(async (lead) => {
-      //     const lastMatchingActivity = [...(lead.activityLog || [])]
-      //       .reverse()
-      //       .find(log => log.taskallocatedTo && log.taskallocatedBy);
-
-      //     if (
-      //       !lead.leadByModel ||
-      //       !mongoose.models[lead.leadByModel] ||
-      //       !lastMatchingActivity.taskallocatedBy || !lastMatchingActivity.taskallocatedByModel ||
-      //       !lastMatchingActivity.taskallocatedTo || !lastMatchingActivity.taskallocatedToModel
-
-      //     ) {
-      //       console.error(
-      //         `Model ${lead.leadByModel} is not registered`
-      //       )
-      //       console.error(`Model ${lastMatchingActivity.taskallocatedByModel} is not registered`)
-      //       console.error(`Model ${lastMatchingActivity.taskallocatedToModel} is not registered`)
-
-      //       return lead // Return lead as-is if model is invalid
-      //     }
-
-      //     // Fetch the referenced document manually
-
-      //     const leadByModel = mongoose.model(lead.leadByModel)
-      //     const allocatedToModel = mongoose.model(lastMatchingActivity.taskallocatedToModel)
-      //     const allocatedByModel = mongoose.model(lastMatchingActivity.taskallocatedByModel)
-
-      //     const populatedLeadBy = await leadByModel
-      //       .findById(lead.leadBy)
-      //       .select("name")
-      //     const populatedAllocates = await allocatedToModel
-      //       .findById(lastMatchingActivity.taskallocatedTo)
-      //       .select("name")
-      //     const populatedAllocatedBy = await allocatedByModel.findById(lastMatchingActivity.taskallocatedBy).select("name")
-
-
-      //     return {
-      //       ...lead,
-      //       leadBy: populatedLeadBy,
-      //       allocatedTo: populatedAllocates,
-      //       allocatedBy: populatedAllocatedBy,
-      //     }
-      //   }
-      //   )
-      // )
+      
       const populatedApprovedLeads = await Promise.all(
         approvedAllocatedLeads.map(async (lead) => {
           const lastMatchingActivity = [...(lead.activityLog || [])]
@@ -1890,7 +1845,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
       );
       const task = matchLead.activityLog[matchingIndex].taskTo
       if (task !== allocationType) {
-        return res.status(409).json({ message: "Cannot change task name. It's already running.only possible to change the user" })
+        return res.status(409).json({ message: "Cannot change task name. It's already running.only possible to change the allocatedUser" })
       }
 
       if (matchingIndex !== -1) {
