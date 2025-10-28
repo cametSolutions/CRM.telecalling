@@ -1,5 +1,6 @@
 
 export const LeadhistoryModal = ({ selectedLeadId,historyList,handlecloseModal }) => {
+console.log(historyList)
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40 ">
       <div className="bg-white shadow-xl   text-center md:w-auto  w-full px-2 md:px-5 rounded-lg pb-3 ">

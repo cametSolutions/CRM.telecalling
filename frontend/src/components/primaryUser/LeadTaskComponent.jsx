@@ -254,10 +254,10 @@ export default function LeadTaskComponent({
                   {item?.leadBy?.name}
                 </td>
                 <td className="border border-t-0 border-gray-300 px-3 py-1 text-gray-700">
-                  {item?.matchedlog?.taskallocatedTo?.name||item?.taskallocatedTo||"-"}
+                  {item?.taskallocatedTo?.name||"-"}
                 </td>
                 <td className="border border-t-0 border-gray-300 px-3 py-1 text-gray-700">
-                  {item?.matchedlog?.submittedUser?.name||item?.taskallocatedBy||"-"}
+                  {item?.taskallocatedBy?.name||"-"}
                 </td>
                 <td className="border border-t-0 border-gray-300 px-3 py-1 text-gray-700"></td>
                 <td className="border border-t-0 border-gray-300 px-3 py-1 text-gray-900">
@@ -272,7 +272,7 @@ export default function LeadTaskComponent({
 
                 <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1">
                   {" "}
-                  {pending && (
+                  {pending &&item.sameUser&& (
                     <button
                       onClick={() => {
                         console.log("h")
@@ -331,13 +331,13 @@ export default function LeadTaskComponent({
       </tbody>
     </table>
   )
-  console.log(showComponent)
-  console.log(selectedData)
-  console.log(Data)
-  console.log(Data[0].leads)
-  const a = Data[0]?.leads
-  const b = a.filter((lead) => lead.leadId === "00102")
-  console.log(b)
+  // console.log(showComponent)
+  // console.log(selectedData)
+  // console.log(Data)
+  // console.log(Data[0].leads)
+  // const a = Data[0]?.leads
+  // const b = a.filter((lead) => lead.leadId === "00102")
+  // console.log(b)
   return (
     <div className="flex-1 overflow-x-auto rounded-lg  overflow-y-auto  shadow-xl md:mx-5 mx-3 mb-3">
       <>
@@ -623,16 +623,7 @@ export default function LeadTaskComponent({
           setShowComponent={setShowComponent}
         />
       )}
-      {/* {showComponent && selectedData && (
-        <LeadModal
-          refresh={refresh}
-          Data={selectedData}
-          loggedUser={loggedUser}
-          type={type}
-          setShowComponent={setShowComponent}
-          pending={pending}
-        />
-      )} */}
+      
     </div>
   )
 }

@@ -8,13 +8,13 @@ import { getLocalStorageItem } from "../../../helper/localstorage"
 import { FaFileInvoiceDollar } from "react-icons/fa"
 import { PropagateLoader } from "react-spinners"
 const LeadTask = () => {
- 
   const [loggedUser, setloggedUser] = useState(null)
   const [dates, setDates] = useState({ startDate: "", endDate: "" })
   const [type, settype] = useState("leadTask")
   const [filteredData, setFilteredData] = useState([])
   const [netTotalAmount, setnetTotalAmount] = useState(0)
   const [pending, setPending] = useState(true)
+  const [ownTask, setownTask] = useState(true)
   const navigate = useNavigate()
   const [loggedUserBranches, setloggedUserBranches] = useState(null)
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
@@ -45,7 +45,7 @@ const LeadTask = () => {
   const { data, error, loading, refreshHook } = UseFetch(
     loggedUser &&
       selectedCompanyBranch &&
-      `/lead/getrespectedleadTask?userid=${loggedUser._id}&branchSelected=${selectedCompanyBranch}&role=${loggedUser.role}`
+      `/lead/getrespectedleadTask?userid=${loggedUser._id}&branchSelected=${selectedCompanyBranch}&role=${loggedUser.role}&ownTask=${ownTask}`
   )
   const formatdate = (date) => new Date(date).toISOString().split("T")[0]
   const getLocalDate = (date) => {
@@ -55,6 +55,9 @@ const LeadTask = () => {
   }
   useEffect(() => {
     if (data && pending && loggedUser && dates && dates.endDate) {
+      console.log(data)
+      const a = data.filter((item) => item.leadId === "00096")
+      console.log(a)
       const finalOutput = []
       data.forEach((entry) => {
         const activitylog = entry.activityLog
@@ -84,7 +87,10 @@ const LeadTask = () => {
               remarks: log.remarks,
               closedDate: log?.submissionDate,
               matchedlog: log,
-              activityLog: activitylog
+              activityLog: activitylog,
+              taskallocatedTo: entry.taskallocatedTo,
+              taskallocatedBy: entry.taskallocatedBy,
+              sameUser: loggedUser?._id === entry.taskallocatedTo?._id
             })
           }
         })
@@ -100,49 +106,100 @@ const LeadTask = () => {
         }, 0)
         .toFixed(2)
       setnetTotalAmount(totalNetAmount)
-      const Data = normalizeTableData(finalOutput)
-      console.log(finalOutput)
+      let Data
+      if (ownTask) {
+        Data = normalizeTableData(finalOutput)
+      } else {
+        console.log(finalOutput)
+        const groupedLeads = {}
+        let grandTotal = 0
+        finalOutput.forEach((lead) => {
+          const assignedTo = lead?.taskallocatedTo?.name
+          const amount = lead?.netAmount || 0
+          grandTotal += amount
+          if (!groupedLeads[assignedTo]) {
+            groupedLeads[assignedTo] = []
+          }
+          groupedLeads[assignedTo].push(lead)
+        })
+        Data = normalizeTableData(groupedLeads)
+      }
 
+      console.log(finalOutput)
+      console.log(Data)
       setFilteredData(Data)
     } else if (data && !pending) {
       console.log(data)
       console.log("h")
       const finalOutput = []
+      // data.forEach((entry) => {
+      //   const activitylog = entry.activityLog
+
+      //   activitylog.some((log) => {
+      //     if (
+      //       log.taskClosed &&
+      //       log?.taskallocatedTo &&
+      //       log.taskTo !== "followup"
+      //     ) {
+      //       finalOutput.push({
+      //         leadId: entry.leadId,
+      //         leadDocId: entry._id,
+      //         leadDate: entry.leadDate,
+      //         customerName:
+      //           entry?.customerName?.customerName || entry?.customerName,
+      //         leadBy: entry?.leadBy,
+      //         leadFor: entry?.leadFor,
+      //         netAmount: entry?.netAmount,
+      //         mobile: entry?.mobile,
+      //         email: entry?.email,
+      //         // taskTo: log?.taskTo,
+      //         // taskBy: log?.taskBy,
+      //         // remarks: log.remarks,
+      //         // closedDate: log?.submissionDate,
+      //         // matchedlog: log,
+      //         activityLog: activitylog,
+      //         taskallocatedTo: entry?.taskallocatedTo,
+      //         taskallocatedBy: entry?.taskallocatedBy,
+      //         sameUser: loggedUser?._id === entry.taskallocatedTo?._id
+      //       })
+      //     }
+      //   })
+      // })
       data.forEach((entry) => {
         const activitylog = entry.activityLog
 
-        activitylog.forEach((log) => {
-          if (
-            log.taskClosed &&
-            log?.taskallocatedTo && (log.taskTo !== "followup")
-          ) {
-            finalOutput.push({
-              leadId: entry.leadId,
-              leadDocId: entry._id,
-              leadDate: entry.leadDate,
-              customerName:
-                entry?.customerName?.customerName || entry?.customerName,
-              leadBy: entry?.leadBy,
-              leadFor: entry?.leadFor,
-              netAmount: entry?.netAmount,
-              mobile: entry?.mobile,
-              email: entry?.email,
-              taskTo: log?.taskTo,
-              taskBy: log?.taskBy,
-              remarks: log.remarks,
-              closedDate: log?.submissionDate,
-              matchedlog: log,
-              activityLog: activitylog
-            })
-          }
-        })
+        const matchedLog = activitylog.find(
+          (log) =>
+            log.taskClosed && log?.taskallocatedTo && log.taskTo !== "followup"
+        )
+
+        if (matchedLog) {
+          finalOutput.push({
+            leadId: entry.leadId,
+            leadDocId: entry._id,
+            leadDate: entry.leadDate,
+            customerName:
+              entry?.customerName?.customerName || entry?.customerName,
+            leadBy: entry?.leadBy,
+            leadFor: entry?.leadFor,
+            netAmount: entry?.netAmount,
+            mobile: entry?.mobile,
+            email: entry?.email,
+            activityLog: activitylog,
+            taskallocatedTo: entry?.taskallocatedTo,
+            taskallocatedBy: entry?.taskallocatedBy,
+            sameUser: loggedUser?._id === entry.taskallocatedTo?._id
+          })
+        }
       })
-      const filteredOutput = finalOutput.sort(
-        (a, b) =>
-          new Date(b.matchedlog.taskSubmissionDate) -
-          new Date(a.matchedlog.taskSubmissionDate)
-      )
-      console.log(filteredOutput)
+
+      console.log(finalOutput)
+      // const filteredOutput = finalOutput.sort(
+      //   (a, b) =>
+      //     new Date(b.matchedlog.taskSubmissionDate) -
+      //     new Date(a.matchedlog.taskSubmissionDate)
+      // )
+      // console.log(filteredOutput)
       const totalNetAmount = data
         .reduce((total, lead) => {
           const leadTotal =
@@ -156,8 +213,24 @@ const LeadTask = () => {
 
       // then store it in state
       setnetTotalAmount(totalNetAmount)
-      const Data = normalizeTableData(data)
-      console.log(Data)
+      let Data
+      if (ownTask) {
+        Data = normalizeTableData(finalOutput)
+      } else {
+        console.log(finalOutput)
+        const groupedLeads = {}
+        let grandTotal = 0
+        finalOutput.forEach((lead) => {
+          const assignedTo = lead?.taskallocatedTo?.name
+          const amount = lead?.netAmount || 0
+          grandTotal += amount
+          if (!groupedLeads[assignedTo]) {
+            groupedLeads[assignedTo] = []
+          }
+          groupedLeads[assignedTo].push(lead)
+        })
+        Data = normalizeTableData(groupedLeads)
+      }
 
       setFilteredData(Data)
     }
@@ -174,7 +247,7 @@ const LeadTask = () => {
     }
     return []
   }
-console.log(type)
+  console.log(type)
   return (
     <div className="h-full flex flex-col ">
       {loading && (
@@ -196,7 +269,7 @@ console.log(type)
           )}
           {/* Message Icon with Badge and Popup */}
           <div className="flex flex-grow md:flex-grow-0 items-center justify-end gap-2">
-            <span className="text-sm whitespace-nowrap">
+            <span className="text-sm whitespace-nowrap font-semibold">
               {pending ? "Pending" : "Cleared"}
             </span>
             <button
@@ -211,6 +284,25 @@ console.log(type)
                 } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
               ></div>
             </button>
+            {loggedUser?.role !== "Staff" && (
+              <>
+                <span className="text-sm whitespace-nowrap font-semibold">
+                  {ownTask ? "Own Task" : "All Task"}
+                </span>
+                <button
+                  onClick={() => setownTask(!ownTask)}
+                  className={`${
+                    ownTask ? "bg-green-500" : "bg-gray-300"
+                  } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
+                >
+                  <div
+                    className={`${
+                      ownTask ? "translate-x-5" : "translate-x-0"
+                    } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                  ></div>
+                </button>
+              </>
+            )}
           </div>
           {/* Branch Dropdown */}
           <select

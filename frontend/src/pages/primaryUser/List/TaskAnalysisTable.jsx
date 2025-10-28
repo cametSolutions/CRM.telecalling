@@ -9,7 +9,7 @@ import {
   ChevronDown,
   BarChart3,
   DollarSign,
-IndianRupee
+  IndianRupee
 } from "lucide-react"
 const TaskAnalysisTable = () => {
   const { label } = useParams()
@@ -105,7 +105,6 @@ const TaskAnalysisTable = () => {
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {loading && <div className="w-full h-1 bg-blue-500 animate-pulse"></div>}
-     
 
       <div className="mx-auto px-3 sm:px-6 lg:px-8 py-2 bg-blue-100 w-full">
         {/* Header Row */}
@@ -127,23 +126,6 @@ const TaskAnalysisTable = () => {
               {label || "FOLLOWUP"}
             </span>
 
-            {/* Branch Selector */}
-            <div className="relative">
-              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              <select
-                onChange={(e) => setSelectedCompanyBranch(e.target.value)}
-                className="pl-9 pr-8 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer"
-                value={selectedCompanyBranch}
-              >
-                {loggedUserBranches?.map((branch) => (
-                  <option key={branch.value} value={branch.value}>
-                    {branch.label}
-                  </option>
-                ))}
-              </select>
-              {/* <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" /> */}
-            </div>
-
             {/* New Lead Button */}
             <button
               onClick={() =>
@@ -160,6 +142,21 @@ const TaskAnalysisTable = () => {
 
           {/* Right Section: Total Amount */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Branch Selector */}
+            <div className="relative">
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <select
+                onChange={(e) => setSelectedCompanyBranch(e.target.value)}
+                className="pl-9 pr-8 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer"
+                value={selectedCompanyBranch}
+              >
+                {loggedUserBranches?.map((branch) => (
+                  <option key={branch.value} value={branch.value}>
+                    {branch.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-md">
               <IndianRupee className="w-4 h-4 text-green-600" />
             </div>

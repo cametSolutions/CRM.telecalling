@@ -617,7 +617,6 @@ export const GetallfollowupList = async (req, res) => {
 export const SetDemoallocation = async (req, res) => {
   try {
     const { demoallocatedBy, leaddocId, editIndex } = req.query
-    console.log("editindex", editIndex)
     const demoData = req.body
     const { demoallocatedTo, ...balanceData } = demoData
     const allocatedToObjectId = new mongoose.Types.ObjectId(demoallocatedTo)
@@ -2082,11 +2081,10 @@ export const UpdateLeadTask = async (req, res) => {
 }
 export const GetrespectedleadTask = async (req, res) => {
   try {
-    const { userid, branchSelected, role } = req.query
-    console.log("role", role)
+    const { userid, branchSelected, role, ownTask } = req.query
+
     const userObjectId = new mongoose.Types.ObjectId(userid)
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected)
-    console.log("userobjectid", userObjectId)
     const isAdminOrManager = role === "Admin" || role === "Manager"
     const query = {
       leadBranch: branchObjectId,
@@ -2105,63 +2103,164 @@ export const GetrespectedleadTask = async (req, res) => {
     }
 
     const selectedfollowup = await LeadMaster.find(query).populate({ path: "customerName", select: "customerName" }).lean()
-    // console.log(selectedfollowup) 
-    // console.log(JSON.stringify(selectedfollowup, null, 2))
+    
 
 
     const taskLeads = []
-    for (const lead of selectedfollowup) {
+    if (ownTask === "false") {
 
-      const matchedallocation = lead.activityLog.filter((item) => item?.taskallocatedTo?.equals(userid) && item?.taskTo !== "followup");
+      for (const lead of selectedfollowup) {
+        let lastAllocatedItem = null;
 
-      if (matchedallocation && matchedallocation.length > 0) {
-        // Populate outer fields
-        const leadByModel = mongoose.model(lead.leadByModel);
-        const allocatedToModel = mongoose.model(matchedallocation[0].taskallocatedToModel);
-        const allocatedByModel = mongoose.model(matchedallocation[0].taskallocatedByModel);
-
-        const populatedLeadBy = await leadByModel.findById(lead.leadBy).select("name").lean();
-        const populatedAllocatedTo = await allocatedToModel.findById(matchedallocation[0].taskallocatedTo).select("name").lean();
-        const populatedAllocatedBy = await allocatedByModel.findById(matchedallocation[0].taskallocatedBy).select("name").lean();
-
-        // Populate activityLog (submittedUser, etc.)
-        const populatedActivityLog = await Promise.all(
-          lead.activityLog.map(async (log) => {
-            let populatedSubmittedUser = null;
-            let populatedTaskAllocatedTo = null;
-
-            if (log.submittedUser && log.submissiondoneByModel && mongoose.models[log.submissiondoneByModel]) {
-              const model = mongoose.model(log.submissiondoneByModel);
-              populatedSubmittedUser = await model.findById(log.submittedUser).select("name").lean();
+        // Populate activityLog
+        lead.activityLog = await Promise.all(
+          lead.activityLog.map(async (item) => {
+            // ✅ Track latest allocation (even followup)
+            if (item?.taskallocatedTo) {
+              lastAllocatedItem = item;
             }
 
-            if (log.taskallocatedTo && log.taskallocatedToModel && mongoose.models[log.taskallocatedToModel]) {
-              const model = mongoose.model(log.taskallocatedToModel);
-              populatedTaskAllocatedTo = await model.findById(log.taskallocatedTo).select("name").lean();
-            }
+            // ✅ Populate for non-followup logs only
+            if (item?.taskallocatedTo && item?.taskTo !== "followup") {
+              let populatedSubmittedUser = null;
+              let populatedTaskAllocatedTo = null;
 
-            return {
-              ...log,
-              submittedUser: populatedSubmittedUser || log.submittedUser,
-              taskallocatedTo: populatedTaskAllocatedTo || log.taskallocatedTo,
-            };
+              if (
+                item.submittedUser &&
+                item.submissiondoneByModel &&
+                mongoose.models[item.submissiondoneByModel]
+              ) {
+                const model = mongoose.model(item.submissiondoneByModel);
+                populatedSubmittedUser = await model
+                  .findById(item.submittedUser)
+                  .select("name")
+                  .lean();
+              }
+
+              if (
+                item.taskallocatedTo &&
+                item.taskallocatedToModel &&
+                mongoose.models[item.taskallocatedToModel]
+              ) {
+                const model = mongoose.model(item.taskallocatedToModel);
+                populatedTaskAllocatedTo = await model
+                  .findById(item.taskallocatedTo)
+                  .select("name")
+                  .lean();
+              }
+
+              return {
+                ...item,
+                submittedUser: populatedSubmittedUser || item.submittedUser,
+                taskallocatedTo: populatedTaskAllocatedTo || item.taskallocatedTo,
+              };
+            } else {
+              return item;
+            }
           })
         );
-        taskLeads.push({
-          ...lead,
-          leadBy: populatedLeadBy || lead.leadBy,
-          allocatedTo: populatedAllocatedTo,
-          allocatedBy: populatedAllocatedBy,
-          activityLog: populatedActivityLog,
 
-        });
+        // ✅ Populate top-level allocatedTo / allocatedBy (even if followup)
+        if (lastAllocatedItem) {
+          let populatedAllocatedTo = null;
+          let populatedAllocatedBy = null;
+
+          if (
+            lastAllocatedItem.taskallocatedTo &&
+            lastAllocatedItem.taskallocatedToModel &&
+            mongoose.models[lastAllocatedItem.taskallocatedToModel]
+          ) {
+            const model = mongoose.model(lastAllocatedItem.taskallocatedToModel);
+            populatedAllocatedTo = await model
+              .findById(lastAllocatedItem.taskallocatedTo)
+              .select("name")
+              .lean();
+          }
+
+          if (
+            lastAllocatedItem.taskallocatedBy &&
+            lastAllocatedItem.taskallocatedByModel &&
+            mongoose.models[lastAllocatedItem.taskallocatedByModel]
+          ) {
+            const model = mongoose.model(lastAllocatedItem.taskallocatedByModel);
+            populatedAllocatedBy = await model
+              .findById(lastAllocatedItem.taskallocatedBy)
+              .select("name")
+              .lean();
+          }
+          const leadByModel = mongoose.model(lead.leadByModel);
+          const populatedLeadBy = await leadByModel.findById(lead.leadBy).select("name").lean()
+          lead.leadBy = populatedLeadBy
+          lead.taskallocatedTo = populatedAllocatedTo
+          lead.taskallocatedBy = populatedAllocatedBy
+        }
+
+        // ✅ Finally, push the fully populated lead to taskLeads
+        taskLeads.push(lead);
+      }
+      console.log(taskLeads)
+    } else {
+      console.log("owntask")
+      for (const lead of selectedfollowup) {
+
+        const matchedallocation = lead.activityLog.filter((item) => item?.taskallocatedTo?.equals(userid) && item?.taskTo !== "followup" && !item?.allocationChanged);
+
+        if (matchedallocation && matchedallocation.length > 0) {
+          // Populate outer fields
+          const leadByModel = mongoose.model(lead.leadByModel);
+          const allocatedToModel = mongoose.model(matchedallocation[0].taskallocatedToModel);
+          const allocatedByModel = mongoose.model(matchedallocation[0].taskallocatedByModel);
+
+          const populatedLeadBy = await leadByModel.findById(lead.leadBy).select("name").lean();
+          const populatedAllocatedTo = await allocatedToModel.findById(matchedallocation[0].taskallocatedTo).select("name").lean();
+          const populatedAllocatedBy = await allocatedByModel.findById(matchedallocation[0].taskallocatedBy).select("name").lean();
+
+          // Populate activityLog (submittedUser, etc.)
+          const populatedActivityLog = await Promise.all(
+            lead.activityLog.map(async (log) => {
+              let populatedSubmittedUser = null;
+              let populatedTaskAllocatedTo = null;
+
+              if (log.submittedUser && log.submissiondoneByModel && mongoose.models[log.submissiondoneByModel]) {
+                const model = mongoose.model(log.submissiondoneByModel);
+                populatedSubmittedUser = await model.findById(log.submittedUser).select("name").lean();
+              }
+
+              if (log.taskallocatedTo && log.taskallocatedToModel && mongoose.models[log.taskallocatedToModel]) {
+                const model = mongoose.model(log.taskallocatedToModel);
+                populatedTaskAllocatedTo = await model.findById(log.taskallocatedTo).select("name").lean();
+              }
+
+              return {
+                ...log,
+                submittedUser: populatedSubmittedUser || log.submittedUser,
+                taskallocatedTo: populatedTaskAllocatedTo || log.taskallocatedTo,
+              };
+            })
+          );
+          taskLeads.push({
+            ...lead,
+            leadBy: populatedLeadBy || lead.leadBy,
+            taskallocatedTo: populatedAllocatedTo,
+            taskallocatedBy: populatedAllocatedBy,
+            activityLog: populatedActivityLog,
+
+          });
+        }
       }
     }
 
+    if (taskLeads && taskLeads.length === 0) {
+      return res.status(200).json({ message: "No Task found", data: taskLeads })
+    } else {
+      return res.status(201).json({ messge: "Task found", data: taskLeads })
+    }
 
-    return res.status(201).json({ messge: "leadfollowup found", data: taskLeads })
+
 
   } catch (error) {
+    console.log("error", error.message)
+    return res.status(500).json({ message: "Internal server error" })
   }
 }
 export const GetselectedLeadData = async (req, res) => {
