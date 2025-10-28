@@ -14,7 +14,7 @@ import {
   GetrepecteduserDemo,
   UpdaeOrSubmitdemofollowByfollower,
   GetdemoleadCount,
-  GetrespectedprogrammingLead,
+  GetrespectedleadTask,
   UpdateOrleadallocationTask,
   UpdateOrSubmittaskByfollower,
   GetallReallocatedLead,
@@ -51,7 +51,7 @@ router.get("/getallServices", authMiddleware, GetAllservices)
 router.get("/ownregisteredLead", authMiddleware, GetownLeadList)
 router.post("/setdemolead", authMiddleware, SetDemoallocation)
 router.get("/getrespecteddemolead", authMiddleware, GetrepecteduserDemo)
-router.get("/getrespectedleadTask", authMiddleware, GetrespectedprogrammingLead)
+router.get("/getrespectedleadTask", authMiddleware, GetrespectedleadTask)
 router.get("/demoleadcount", authMiddleware, GetdemoleadCount)
 router.post("/taskSubmission", authMiddleware, UpdateLeadTask)
 router.post("/demosubmitbyfollower", authMiddleware, UpdaeOrSubmitdemofollowByfollower)

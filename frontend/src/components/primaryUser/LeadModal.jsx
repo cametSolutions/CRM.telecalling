@@ -10,6 +10,7 @@ export default function LeadModal({
   setShowComponent,
   pending
 }) {
+console.log(Data)
   const [selectedTab, setselectedTab] = useState("History")
   const [error, setError] = useState({})
   const [loading, setLoading] = useState(false)
@@ -103,6 +104,7 @@ export default function LeadModal({
       console.log("error:", error.message)
     }
   }
+console.log(Data)
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40 ">
       <div
@@ -283,8 +285,8 @@ export default function LeadModal({
                                 {item?.remarks || "N/A"}
                               </td>
                               <td className="border border-gray-200 p-2">
-                                {item?.nextfollowUpDate
-                                  ? new Date(item.nextfollowUpDate)
+                                {item?.nextFollowUpDate
+                                  ? new Date(item.nextFollowUpDate)
                                       .toLocaleDateString("en-GB")
                                       .split("/")
                                       .join("-")

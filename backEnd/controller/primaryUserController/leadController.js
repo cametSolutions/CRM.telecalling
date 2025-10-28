@@ -84,7 +84,7 @@ export const LeadRegister = async (req, res) => {
         allocationChanged: false,
         ...(allocationType === "followup" && { followupClosed: false }),
         taskfromFollowup: false,
-        allocationDate: leadDate
+        allocationDate: dueDate
       })
     }
     const lead = new LeadMaster({
@@ -362,6 +362,7 @@ export const GetallfollowupList = async (req, res) => {
           leadLost: false,
         }
       }
+      console.log("uuuuu")
 
     } else if (pendingfollowup === "false") {
       if (role === "Admin") {
@@ -615,7 +616,8 @@ export const GetallfollowupList = async (req, res) => {
 }
 export const SetDemoallocation = async (req, res) => {
   try {
-    const { demoallocatedBy, leaddocId } = req.query
+    const { demoallocatedBy, leaddocId, editIndex } = req.query
+    console.log("editindex", editIndex)
     const demoData = req.body
     const { demoallocatedTo, ...balanceData } = demoData
     const allocatedToObjectId = new mongoose.Types.ObjectId(demoallocatedTo)
@@ -638,40 +640,108 @@ export const SetDemoallocation = async (req, res) => {
     if (isallocatedtoStaff) {
       taskallocatedtoModel = "Staff"
     } else {
-      isallocatedtoAdmin = await Admin.findOne({ _id: allocatedToObjectId })
+      const isallocatedtoAdmin = await Admin.findOne({ _id: allocatedToObjectId })
       if (isallocatedtoAdmin) {
         taskallocatedtoModel = "Admin"
       }
 
     }
-    await LeadMaster.findByIdAndUpdate({ _id: leaddocId }, {
-      $push: {
-        activityLog: {
-          submissionDate: new Date(),
-          allocationDate: demoData.demoallocatedDate,
-          submittedUser: demoallocatedBy,
-          submissiondoneByModel: taskallocatedByModel,
-          taskallocatedBy: demoallocatedBy,
-          taskallocatedByModel: taskallocatedByModel,
-          taskallocatedTo: demoallocatedTo,
-          taskallocatedToModel: taskallocatedtoModel,
-          remarks: demoData.demoDescription,
-          taskBy: "allocated",
-          taskTo: demoData?.selectedType,
-          taskfromFollowup: true
+    // await LeadMaster.findByIdAndUpdate({ _id: leaddocId }, {
+    //   $push: {
+    //     activityLog: {
+    //       submissionDate: new Date(),
+    //       allocationDate: demoData.demoallocatedDate,
+    //       submittedUser: demoallocatedBy,
+    //       submissiondoneByModel: taskallocatedByModel,
+    //       taskallocatedBy: demoallocatedBy,
+    //       taskallocatedByModel: taskallocatedByModel,
+    //       taskallocatedTo: demoallocatedTo,
+    //       taskallocatedToModel: taskallocatedtoModel,
+    //       remarks: demoData.demoDescription,
+    //       taskBy: "allocated",
+    //       taskTo: demoData?.selectedType,
+    //       taskfromFollowup: true,
+    //       allocationChanged: false
 
+    //     }
+    //   },
+    //   $set: { taskfromFollowup: true }
+    // }
+    // )
+    // const updateQuery = {
+    //   $push: {
+    //     activityLog: {
+    //       submissionDate: new Date(),
+    //       allocationDate: demoData.demoallocatedDate,
+    //       submittedUser: demoallocatedBy,
+    //       submissiondoneByModel: taskallocatedByModel,
+    //       taskallocatedBy: demoallocatedBy,
+    //       taskallocatedByModel: taskallocatedByModel,
+    //       taskallocatedTo: demoallocatedTo,
+    //       taskallocatedToModel: taskallocatedtoModel,
+    //       remarks: demoData.demoDescription,
+    //       taskBy: "allocated",
+    //       taskTo: demoData?.selectedType,
+    //       taskfromFollowup: true,
+    //       allocationChanged: false
+    //     }
+    //   },
+    //   $set: { taskfromFollowup: true }
+    // };
+
+    // // Add allocationChanged update only if editIndex exists
+    // if (editIndex !== undefined && editIndex !== null) {
+    //   const index = Number(editIndex);
+    //   if (!isNaN(index)) {
+    //     updateQuery.$set[`activityLog.${index}.allocationChanged`] = true;
+    //   }
+    // }
+
+    // await LeadMaster.findByIdAndUpdate({ _id: leaddocId }, updateQuery);
+    await LeadMaster.bulkWrite([
+      {
+        updateOne: {
+          filter: { _id: leaddocId },
+          update: editIndex !== undefined && editIndex !== null
+            ? { $set: { [`activityLog.${Number(editIndex)}.allocationChanged`]: true } }
+            : {}
         }
       },
-      $set: { taskfromFollowup: true }
-    }
-    )
+      {
+        updateOne: {
+          filter: { _id: leaddocId },
+          update: {
+            $push: {
+              activityLog: {
+                submissionDate: new Date(),
+                allocationDate: demoData.demoallocatedDate,
+                submittedUser: demoallocatedBy,
+                submissiondoneByModel: taskallocatedByModel,
+                taskallocatedBy: demoallocatedBy,
+                taskallocatedByModel: taskallocatedByModel,
+                taskallocatedTo: demoallocatedTo,
+                taskallocatedToModel: taskallocatedtoModel,
+                remarks: demoData.demoDescription,
+                taskBy: "allocated",
+                taskTo: demoData?.selectedType,
+                taskfromFollowup: true,
+                allocationChanged: false
+              }
+            },
+            $set: { taskfromFollowup: true }
+          }
+        }
+      }
+    ]);
+
+
 
 
 
 
     return res.status(200).json({ message: "Demo added succesfully" })
   } catch (error) {
-    console.log("error:", error.message)
+    console.log("error:", error)
     return res.status(500).json({ message: "Internal server error" })
   }
 }
@@ -1317,7 +1387,7 @@ export const GetallLead = async (req, res) => {
       const approvedAllocatedLeads = await LeadMaster.find(query)
         .populate({ path: "customerName", select: "customerName" })
         .lean()
-      
+
       const populatedApprovedLeads = await Promise.all(
         approvedAllocatedLeads.map(async (lead) => {
           const lastMatchingActivity = [...(lead.activityLog || [])]
@@ -2010,20 +2080,33 @@ export const UpdateLeadTask = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
-export const GetrespectedprogrammingLead = async (req, res) => {
+export const GetrespectedleadTask = async (req, res) => {
   try {
-    const { userid, branchSelected } = req.query
+    const { userid, branchSelected, role } = req.query
+    console.log("role", role)
     const userObjectId = new mongoose.Types.ObjectId(userid)
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected)
+    console.log("userobjectid", userObjectId)
+    const isAdminOrManager = role === "Admin" || role === "Manager"
     const query = {
-      $and: [
-        { "activityLog.taskallocatedTo": userObjectId },
-        { "activityLog.taskTo": { $in: ["demo", "programming", "testing-&-implementation", "coding-&-testing", "software-services", "customermeet", "training"] } }
-      ],
-      leadBranch: branchObjectId
+      leadBranch: branchObjectId,
+      activityLog: {
+        $elemMatch: {
+          ...(isAdminOrManager ? {} : { taskallocatedTo: userObjectId }),//conditionally include 
+          allocationChanged: false,
+          taskTo: {
+            $in: [
+              "demo", "programming", "testing-&-implementation", "coding-&-testing", "software-services", "customermeet", "training", "onsite", "office"
+            ]
+          }
+        }
+
+      }
     }
 
     const selectedfollowup = await LeadMaster.find(query).populate({ path: "customerName", select: "customerName" }).lean()
+    // console.log(selectedfollowup) 
+    // console.log(JSON.stringify(selectedfollowup, null, 2))
 
 
     const taskLeads = []

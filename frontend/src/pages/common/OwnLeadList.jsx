@@ -42,7 +42,7 @@ export default function OwnLeadList() {
         </button>
       </div>
       {/* Responsive Table Container this is the newest design*/}
-      {/* <div className="flex-1 overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3">
+      <div className="flex-1 overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3">
         <table className="border-collapse border border-gray-300 w-full text-sm">
           <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30">
             <tr>
@@ -207,7 +207,7 @@ export default function OwnLeadList() {
             )}
           </tbody>
         </table>
-      </div> */}
+      </div>
       {/* <div className="flex-1 overflow-x-auto rounded-xl overflow-y-auto shadow-2xl mx-2 md:mx-3 mb-3 border border-gray-200">
         <table className="w-full text-sm">
           <thead className="bg-slate-800 text-white sticky top-0 z-30">
@@ -329,7 +329,7 @@ export default function OwnLeadList() {
         
       </div> */}
 
-      <div className=" flex-1 overflow-x-auto rounded-lg text-center overflow-y-auto  shadow-xl mx-3 md:mx-5 mb-4">
+      {/* <div className=" flex-1 overflow-x-auto rounded-lg text-center overflow-y-auto  shadow-xl mx-3 md:mx-5 mb-4">
         <table className=" border-collapse border border-gray-400 w-full text-sm">
           <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
             <tr>
@@ -480,7 +480,7 @@ export default function OwnLeadList() {
             )}
           </tbody>
         </table>
-      </div>
+      </div> */}
       {showModal && selectedData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40">
           <div className="relative overflow-x-auto overflow-y-auto md:max-h-64 lg:max-h-96 shadow-xl rounded-lg mx-3 md:mx-5 px-7 p-3 bg-white w-full max-w-4xl">
