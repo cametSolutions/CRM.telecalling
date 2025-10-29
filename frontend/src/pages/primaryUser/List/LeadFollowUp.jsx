@@ -106,7 +106,6 @@ const LeadFollowUp = () => {
       selectedCompanyBranch &&
       `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}&pendingfollowup=${pending}`
   )
-  console.log(loggedusersallocatedleads)
   useEffect(() => {
     const now = new Date()
     const startDate = new Date(now.getFullYear(), now.getMonth(), 1) // 1st day of current month
@@ -306,7 +305,6 @@ const LeadFollowUp = () => {
         ]
         const groupedLeads = {}
         let grandTotal = 0
-        console.log(mergedall)
         mergedall.forEach((lead) => {
           const assignedTo = lead?.allocatedTo?.name
           const amount = lead?.netAmount || 0
@@ -317,9 +315,7 @@ const LeadFollowUp = () => {
           groupedLeads[assignedTo].push(lead)
         })
         const groupedData = normalizeTableData(groupedLeads)
-        console.log(groupedLeads)
-        console.log(groupedData)
-        // then store it in state
+        
         setnetTotalAmount(TotalAmount(mergedall))
         setTableData(groupedData)
       } else if (!pending && ownFollowUp) {
@@ -501,9 +497,7 @@ const LeadFollowUp = () => {
       }))
     }
   }
-  console.log(isdemofollownotClosed)
   const handleDemoSubmit = async () => {
-    console.log("h")
     if (isdemofollownotClosed) {
       setDemoError((prev) => ({
         ...prev,
@@ -618,8 +612,7 @@ const LeadFollowUp = () => {
       console.log("error:", error.message)
     }
   }
-  console.log(formData)
-  console.log(editdemoIndex)
+ 
   const handleFollowUp = (Item) => {
     setshowFollowupModal(true)
     setFormData((prev) => ({
@@ -632,7 +625,6 @@ const LeadFollowUp = () => {
     const ishaveAllocation = Item.taskfromFollowup
       ? Item.activityLog[Item.activityLog.length - 1]
       : null
-    console.log(ishaveAllocation)
     if (ishaveAllocation) {
       setdemoEditIndex(Item.activityLog.length - 1)
       setDemodata({
@@ -651,13 +643,11 @@ const LeadFollowUp = () => {
     setfollowupClosed(!pending)
     setselectedDocid(Item._id)
     setSelectedLeadId(Item.leadId)
-    console.log("h")
   }
   const normalizeTableData = (data) => {
     if (Array.isArray(data)) {
       return [{ staffName: null, leads: data }]
     } else if (typeof data === "object" && data !== null) {
-      console.log()
       return Object.entries(data).map(([staffName, leads]) => ({
         staffName,
         leads
@@ -670,9 +660,7 @@ const LeadFollowUp = () => {
     setShowModal(false)
     setHistoryList([])
   }
-console.log(historyList)
-console.log(showModal)
-console.log(selectedLeadId)
+
   const renderTable = (data) => (
     <table className="border-collapse border border-gray-300 w-full text-sm">
       <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30 text-xs">
@@ -931,8 +919,7 @@ console.log(selectedLeadId)
       </tbody>
     </table>
   )
-  console.log(tableData)
-  console.log
+
   return (
     <div className="h-full flex flex-col ">
       {loading && (

@@ -10,7 +10,6 @@ export default function LeadModal({
   setShowComponent,
   pending
 }) {
-console.log(Data)
   const [selectedTab, setselectedTab] = useState("History")
   const [error, setError] = useState({})
   const [loading, setLoading] = useState(false)
@@ -104,7 +103,6 @@ console.log(Data)
       console.log("error:", error.message)
     }
   }
-console.log(Data)
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40 ">
       <div

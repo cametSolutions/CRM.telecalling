@@ -19,7 +19,6 @@ const LeadTask = () => {
   const [loggedUserBranches, setloggedUserBranches] = useState(null)
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
 
-  const { data: branches } = UseFetch("/branch/getBranch")
   useEffect(() => {
     const now = new Date()
     const startDate = new Date(now.getFullYear(), now.getMonth(), 1) // 1st day of current month
@@ -27,7 +26,6 @@ const LeadTask = () => {
     setDates({ startDate, endDate: now })
   }, [])
   useEffect(() => {
-    if (branches) {
       const userData = getLocalStorageItem("user")
       const branch = userData?.selected?.map((branch) => {
         return {
@@ -39,8 +37,8 @@ const LeadTask = () => {
       setselectedCompanyBranch(branch[0].value)
 
       setloggedUser(userData)
-    }
-  }, [branches])
+    
+  },[] )
 
   const { data, error, loading, refreshHook } = UseFetch(
     loggedUser &&
@@ -55,9 +53,7 @@ const LeadTask = () => {
   }
   useEffect(() => {
     if (data && pending && loggedUser && dates && dates.endDate) {
-      console.log(data)
-      const a = data.filter((item) => item.leadId === "00096")
-      console.log(a)
+      
       const finalOutput = []
       data.forEach((entry) => {
         const activitylog = entry.activityLog
@@ -110,7 +106,6 @@ const LeadTask = () => {
       if (ownTask) {
         Data = normalizeTableData(finalOutput)
       } else {
-        console.log(finalOutput)
         const groupedLeads = {}
         let grandTotal = 0
         finalOutput.forEach((lead) => {
@@ -125,46 +120,12 @@ const LeadTask = () => {
         Data = normalizeTableData(groupedLeads)
       }
 
-      console.log(finalOutput)
-      console.log(Data)
+    
       setFilteredData(Data)
     } else if (data && !pending) {
-      console.log(data)
-      console.log("h")
+     
       const finalOutput = []
-      // data.forEach((entry) => {
-      //   const activitylog = entry.activityLog
-
-      //   activitylog.some((log) => {
-      //     if (
-      //       log.taskClosed &&
-      //       log?.taskallocatedTo &&
-      //       log.taskTo !== "followup"
-      //     ) {
-      //       finalOutput.push({
-      //         leadId: entry.leadId,
-      //         leadDocId: entry._id,
-      //         leadDate: entry.leadDate,
-      //         customerName:
-      //           entry?.customerName?.customerName || entry?.customerName,
-      //         leadBy: entry?.leadBy,
-      //         leadFor: entry?.leadFor,
-      //         netAmount: entry?.netAmount,
-      //         mobile: entry?.mobile,
-      //         email: entry?.email,
-      //         // taskTo: log?.taskTo,
-      //         // taskBy: log?.taskBy,
-      //         // remarks: log.remarks,
-      //         // closedDate: log?.submissionDate,
-      //         // matchedlog: log,
-      //         activityLog: activitylog,
-      //         taskallocatedTo: entry?.taskallocatedTo,
-      //         taskallocatedBy: entry?.taskallocatedBy,
-      //         sameUser: loggedUser?._id === entry.taskallocatedTo?._id
-      //       })
-      //     }
-      //   })
-      // })
+      
       data.forEach((entry) => {
         const activitylog = entry.activityLog
 
@@ -193,13 +154,7 @@ const LeadTask = () => {
         }
       })
 
-      console.log(finalOutput)
-      // const filteredOutput = finalOutput.sort(
-      //   (a, b) =>
-      //     new Date(b.matchedlog.taskSubmissionDate) -
-      //     new Date(a.matchedlog.taskSubmissionDate)
-      // )
-      // console.log(filteredOutput)
+    
       const totalNetAmount = data
         .reduce((total, lead) => {
           const leadTotal =
@@ -217,7 +172,6 @@ const LeadTask = () => {
       if (ownTask) {
         Data = normalizeTableData(finalOutput)
       } else {
-        console.log(finalOutput)
         const groupedLeads = {}
         let grandTotal = 0
         finalOutput.forEach((lead) => {
@@ -235,7 +189,6 @@ const LeadTask = () => {
       setFilteredData(Data)
     }
   }, [data, pending, dates])
-  console.log(filteredData)
   const normalizeTableData = (data) => {
     if (Array.isArray(data)) {
       return [{ staffName: null, leads: data }]
@@ -247,7 +200,6 @@ const LeadTask = () => {
     }
     return []
   }
-  console.log(type)
   return (
     <div className="h-full flex flex-col ">
       {loading && (

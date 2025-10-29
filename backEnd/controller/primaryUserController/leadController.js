@@ -362,7 +362,6 @@ export const GetallfollowupList = async (req, res) => {
           leadLost: false,
         }
       }
-      console.log("uuuuu")
 
     } else if (pendingfollowup === "false") {
       if (role === "Admin") {
@@ -1332,6 +1331,14 @@ export const GetallReallocatedLead = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+export const GetallleadOwned = async (req, res) => {
+  try {
+    const { selectedBranch } = req.query
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const GetallLead = async (req, res) => {
   try {
     const { Status, selectedBranch, role } = req.query
@@ -2103,7 +2110,7 @@ export const GetrespectedleadTask = async (req, res) => {
     }
 
     const selectedfollowup = await LeadMaster.find(query).populate({ path: "customerName", select: "customerName" }).lean()
-    
+
 
 
     const taskLeads = []
@@ -2198,9 +2205,7 @@ export const GetrespectedleadTask = async (req, res) => {
         // ✅ Finally, push the fully populated lead to taskLeads
         taskLeads.push(lead);
       }
-      console.log(taskLeads)
     } else {
-      console.log("owntask")
       for (const lead of selectedfollowup) {
 
         const matchedallocation = lead.activityLog.filter((item) => item?.taskallocatedTo?.equals(userid) && item?.taskTo !== "followup" && !item?.allocationChanged);
@@ -2345,10 +2350,20 @@ export const GetselectedLeadData = async (req, res) => {
 export const GetownLeadList = async (req, res) => {
 
   try {
-    const { userId } = req.query
+    const { userId, selectedBranch, role, ownlead } = req.query
     const objectId = new mongoose.Types.ObjectId(userId)
+    let query
+    if (ownlead === "true") {
+      query = {
+        leadBranch: new mongoose.Types.ObjectId(selectedBranch),
+        leadBy: objectId
+      }
+    } else if (ownlead === "false" && role !== "Staff") {
+      query = { leadBranch: new mongoose.Types.ObjectId(selectedBranch) }
+    }
+
     const matchedLead = await LeadMaster.find(
-      { leadBy: objectId }
+      query
     ).populate({ path: "customerName", select: "customerName" }).lean()
 
     const populatedOwnLeads = await Promise.all(
