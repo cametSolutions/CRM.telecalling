@@ -283,8 +283,8 @@ export default function LeadModal({
                                 {item?.remarks || "N/A"}
                               </td>
                               <td className="border border-gray-200 p-2">
-                                {item?.nextfollowUpDate
-                                  ? new Date(item.nextfollowUpDate)
+                                {item?.nextFollowUpDate
+                                  ? new Date(item.nextFollowUpDate)
                                       .toLocaleDateString("en-GB")
                                       .split("/")
                                       .join("-")

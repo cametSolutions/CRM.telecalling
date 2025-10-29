@@ -1,26 +1,24 @@
-import {  useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import UseFetch from "../../../hooks/useFetch"
 import MyDatePicker from "../../../components/common/MyDatePicker"
 import BarLoader from "react-spinners/BarLoader"
 import LeadTaskComponent from "../../../components/primaryUser/LeadTaskComponent"
 import { useState, useEffect } from "react"
 import { getLocalStorageItem } from "../../../helper/localstorage"
+import { FaFileInvoiceDollar } from "react-icons/fa"
+import { PropagateLoader } from "react-spinners"
 const LeadTask = () => {
-  // const location = useLocation()
-  // const pagePath = location.pathname
   const [loggedUser, setloggedUser] = useState(null)
   const [dates, setDates] = useState({ startDate: "", endDate: "" })
   const [type, settype] = useState("leadTask")
   const [filteredData, setFilteredData] = useState([])
-  const [ownFollowUp, setOwnFollowUp] = useState(null)
-  const [url, setUrl] = useState("")
   const [netTotalAmount, setnetTotalAmount] = useState(0)
   const [pending, setPending] = useState(true)
+  const [ownTask, setownTask] = useState(true)
   const navigate = useNavigate()
   const [loggedUserBranches, setloggedUserBranches] = useState(null)
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
 
-  const { data: branches } = UseFetch("/branch/getBranch")
   useEffect(() => {
     const now = new Date()
     const startDate = new Date(now.getFullYear(), now.getMonth(), 1) // 1st day of current month
@@ -28,27 +26,24 @@ const LeadTask = () => {
     setDates({ startDate, endDate: now })
   }, [])
   useEffect(() => {
-    if (branches) {
       const userData = getLocalStorageItem("user")
-        const branch = userData?.selected?.map((branch) => {
-          return {
-            value: branch.branch_id,
-            label: branch.branchName
-          }
-        })
-        setloggedUserBranches(branch)
-        setselectedCompanyBranch(branch[0].value)
-      
+      const branch = userData?.selected?.map((branch) => {
+        return {
+          value: branch.branch_id,
+          label: branch.branchName
+        }
+      })
+      setloggedUserBranches(branch)
+      setselectedCompanyBranch(branch[0].value)
 
       setloggedUser(userData)
-    }
-  }, [branches])
+    
+  },[] )
 
- 
-  const { data, loading, refreshHook } = UseFetch(
+  const { data, error, loading, refreshHook } = UseFetch(
     loggedUser &&
       selectedCompanyBranch &&
-      `/lead/getrespectedleadTask?userid=${loggedUser._id}&branchSelected=${selectedCompanyBranch}&role=${loggedUser.role}`
+      `/lead/getrespectedleadTask?userid=${loggedUser._id}&branchSelected=${selectedCompanyBranch}&role=${loggedUser.role}&ownTask=${ownTask}`
   )
   const formatdate = (date) => new Date(date).toISOString().split("T")[0]
   const getLocalDate = (date) => {
@@ -58,6 +53,7 @@ const LeadTask = () => {
   }
   useEffect(() => {
     if (data && pending && loggedUser && dates && dates.endDate) {
+      
       const finalOutput = []
       data.forEach((entry) => {
         const activitylog = entry.activityLog
@@ -87,79 +83,123 @@ const LeadTask = () => {
               remarks: log.remarks,
               closedDate: log?.submissionDate,
               matchedlog: log,
-              activityLog: activitylog
+              activityLog: activitylog,
+              taskallocatedTo: entry.taskallocatedTo,
+              taskallocatedBy: entry.taskallocatedBy,
+              sameUser: loggedUser?._id === entry.taskallocatedTo?._id
             })
           }
         })
       })
-      // const filtereddatepending = finalOutput
-      //   .filter(
-      //     (item) =>
-      //       formatdate(item.matchedlog.allocationDate) <=
-      //       getLocalDate(dates.endDate)
-      //   )
-      //   .sort(
-      //     (a, b) =>
-      //       new Date(formatdate(a.matchedlog.allocationDate)) -
-      //       new Date(formatdate(b.matchedlog.allocationDate))
-      //   )
+      const totalNetAmount = finalOutput
+        .reduce((total, lead) => {
+          const leadTotal =
+            lead.leadFor?.reduce(
+              (sum, item) => sum + (item?.netAmount || 0),
+              0
+            ) || 0
+          return total + leadTotal
+        }, 0)
+        .toFixed(2)
+      setnetTotalAmount(totalNetAmount)
+      let Data
+      if (ownTask) {
+        Data = normalizeTableData(finalOutput)
+      } else {
+        const groupedLeads = {}
+        let grandTotal = 0
+        finalOutput.forEach((lead) => {
+          const assignedTo = lead?.taskallocatedTo?.name
+          const amount = lead?.netAmount || 0
+          grandTotal += amount
+          if (!groupedLeads[assignedTo]) {
+            groupedLeads[assignedTo] = []
+          }
+          groupedLeads[assignedTo].push(lead)
+        })
+        Data = normalizeTableData(groupedLeads)
+      }
 
-      // const totalNetAmount = filtereddatepending.reduce((total, lead) => {
-      //   const leadTotal =
-      //     lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) || 0
-      //   return total + leadTotal
-      // }, 0)
-
-      // then store it in state
-      // setnetTotalAmount(totalNetAmount)
-      setFilteredData(finalOutput)
-
+    
+      setFilteredData(Data)
     } else if (data && !pending) {
-
+     
       const finalOutput = []
+      
       data.forEach((entry) => {
         const activitylog = entry.activityLog
 
-        activitylog.forEach((log) => {
-          if (log.taskClosed && log?.taskallocatedTo) {
-            finalOutput.push({
-              leadId: entry.leadId,
-              leadDocId: entry._id,
-              leadDate: entry.leadDate,
-              customerName:
-                entry?.customerName?.customerName || entry?.customerName,
-              leadBy: entry?.leadBy,
-              leadFor: entry?.leadFor,
-              netAmount: entry?.netAmount,
-              mobile: entry?.mobile,
-              email: entry?.email,
-              taskTo: log?.taskTo,
-              taskBy: log?.taskBy,
-              remarks: log.remarks,
-              closedDate: log?.submissionDate,
-              matchedlog: log,
-              activityLog: activitylog
-            })
-          }
-        })
+        const matchedLog = activitylog.find(
+          (log) =>
+            log.taskClosed && log?.taskallocatedTo && log.taskTo !== "followup"
+        )
+
+        if (matchedLog) {
+          finalOutput.push({
+            leadId: entry.leadId,
+            leadDocId: entry._id,
+            leadDate: entry.leadDate,
+            customerName:
+              entry?.customerName?.customerName || entry?.customerName,
+            leadBy: entry?.leadBy,
+            leadFor: entry?.leadFor,
+            netAmount: entry?.netAmount,
+            mobile: entry?.mobile,
+            email: entry?.email,
+            activityLog: activitylog,
+            taskallocatedTo: entry?.taskallocatedTo,
+            taskallocatedBy: entry?.taskallocatedBy,
+            sameUser: loggedUser?._id === entry.taskallocatedTo?._id
+          })
+        }
       })
-      const filteredOutput = finalOutput.sort(
-        (a, b) =>
-          new Date(b.matchedlog.taskSubmissionDate) -
-          new Date(a.matchedlog.taskSubmissionDate)
-      )
-      const totalNetAmount = filteredOutput.reduce((total, lead) => {
-        const leadTotal =
-          lead.leadFor?.reduce((sum, item) => sum + (item.price || 0), 0) || 0
-        return total + leadTotal
-      }, 0)
+
+    
+      const totalNetAmount = data
+        .reduce((total, lead) => {
+          const leadTotal =
+            lead.leadFor?.reduce(
+              (sum, item) => sum + (item?.netAmount || 0),
+              0
+            ) || 0
+          return total + leadTotal
+        }, 0)
+        .toFixed(2)
 
       // then store it in state
       setnetTotalAmount(totalNetAmount)
-      setFilteredData(filteredOutput)
+      let Data
+      if (ownTask) {
+        Data = normalizeTableData(finalOutput)
+      } else {
+        const groupedLeads = {}
+        let grandTotal = 0
+        finalOutput.forEach((lead) => {
+          const assignedTo = lead?.taskallocatedTo?.name
+          const amount = lead?.netAmount || 0
+          grandTotal += amount
+          if (!groupedLeads[assignedTo]) {
+            groupedLeads[assignedTo] = []
+          }
+          groupedLeads[assignedTo].push(lead)
+        })
+        Data = normalizeTableData(groupedLeads)
+      }
+
+      setFilteredData(Data)
     }
   }, [data, pending, dates])
-
+  const normalizeTableData = (data) => {
+    if (Array.isArray(data)) {
+      return [{ staffName: null, leads: data }]
+    } else if (typeof data === "object" && data !== null) {
+      return Object.entries(data).map(([staffName, leads]) => ({
+        staffName,
+        leads
+      }))
+    }
+    return []
+  }
   return (
     <div className="h-full flex flex-col ">
       {loading && (
@@ -181,7 +221,7 @@ const LeadTask = () => {
           )}
           {/* Message Icon with Badge and Popup */}
           <div className="flex flex-grow md:flex-grow-0 items-center justify-end gap-2">
-            <span className="text-sm whitespace-nowrap">
+            <span className="text-sm whitespace-nowrap font-semibold">
               {pending ? "Pending" : "Cleared"}
             </span>
             <button
@@ -196,6 +236,25 @@ const LeadTask = () => {
                 } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
               ></div>
             </button>
+            {loggedUser?.role !== "Staff" && (
+              <>
+                <span className="text-sm whitespace-nowrap font-semibold">
+                  {ownTask ? "Own Task" : "All Task"}
+                </span>
+                <button
+                  onClick={() => setownTask(!ownTask)}
+                  className={`${
+                    ownTask ? "bg-green-500" : "bg-gray-300"
+                  } w-11 h-6 flex items-center rounded-full transition-colors duration-300`}
+                >
+                  <div
+                    className={`${
+                      ownTask ? "translate-x-5" : "translate-x-0"
+                    } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                  ></div>
+                </button>
+              </>
+            )}
           </div>
           {/* Branch Dropdown */}
           <select
@@ -229,14 +288,51 @@ const LeadTask = () => {
         <span className="text-blue-700">{`Total Amount - ${netTotalAmount}`}</span>
       </div>
 
-      <LeadTaskComponent
-        type={type}
-        Data={filteredData}
-        loading={loading}
-        loggedUser={loggedUser}
-        refresh={refreshHook}
-        pending={pending}
-      />
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-16 space-y-4">
+          <PropagateLoader color="#3b82f6" size={12} />
+          <p className="text-gray-500 text-sm font-medium">Loading tasks...</p>
+        </div>
+      ) : error ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md">
+            <p className="text-red-600 text-sm">{error}</p>
+          </div>
+        </div>
+      ) : data?.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 space-y-3">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+            <svg
+              className="w-8 h-8 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+          </div>
+          <h3 className="text-gray-700 font-semibold text-lg">
+            No Tasks Available
+          </h3>
+        </div>
+      ) : filteredData?.length > 0 ? (
+        <LeadTaskComponent
+          type={type}
+          Data={filteredData}
+          loggedUser={loggedUser}
+          refresh={refreshHook}
+          pending={pending}
+        />
+      ) : (
+        <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+          <p className="text-sm"></p>
+        </div>
+      )}
     </div>
   )
 }

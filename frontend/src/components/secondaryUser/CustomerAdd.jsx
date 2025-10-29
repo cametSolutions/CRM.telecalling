@@ -137,8 +137,7 @@ const CustomerAdd = ({
       // Set tableObject using the selected index
       const selectedIndex = customer.index ?? 0
       const selectedItem = customer.selected?.[selectedIndex]
-      // setselectedproductId(selectedItem?.product_id)
-      //
+      
       // Reset the form
       reset({
         customerName: customer?.customerName,

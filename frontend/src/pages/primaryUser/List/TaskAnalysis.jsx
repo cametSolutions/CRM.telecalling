@@ -91,7 +91,7 @@ const TaskAnalysis = () => {
         <CurrentDate />
       </div>
 
-      <div className="m-2 mx-4">
+      <div className="m-2 mx-4 flex justify-end">
         <select
           // value={selectedCompanyBranch || ""}
           onChange={(e) => {

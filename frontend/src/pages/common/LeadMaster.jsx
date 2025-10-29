@@ -756,7 +756,7 @@ const LeadMaster = ({
           }))
           return
         }
-      
+
         seteditLoadingState(true)
         await handleEditData(data, selectedleadlist, Data[0]?._id)
       }
@@ -957,8 +957,16 @@ const LeadMaster = ({
                           backgroundColor: state.isDisabled
                             ? "#f3f4f6"
                             : "white",
-                          color: state.isDisabled ? "black" : "black", // Tailwind's text-gray-500
+
                           opacity: state.isDisabled ? 0.7 : 1
+                        }),
+                        singleValue: (base, state) => ({
+                          ...base,
+                          color: state.isDisabled ? "#4b5563" : "#111827",
+                          cursor: state.isDisabled ? "not-allowed" : "pointer",
+                          userSelect: state.isDisabled ? "none" : "auto",
+                          // ensure text doesn't show caret on hover
+                          WebkitUserSelect: state.isDisabled ? "none" : "auto"
                         }),
                         menu: (provided) => ({
                           ...provided,

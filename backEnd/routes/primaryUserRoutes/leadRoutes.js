@@ -14,7 +14,7 @@ import {
   GetrepecteduserDemo,
   UpdaeOrSubmitdemofollowByfollower,
   GetdemoleadCount,
-  GetrespectedprogrammingLead,
+  GetrespectedleadTask,
   UpdateOrleadallocationTask,
   UpdateOrSubmittaskByfollower,
   GetallReallocatedLead,
@@ -26,7 +26,9 @@ import {
   TaskRegistration,
   TaskDelete,
   TaskEdit,
-  Checkexistinglead
+  Checkexistinglead,
+  GetallleadOwned
+
 } from "../../controller/primaryUserController/leadController.js"
 const router = express.Router()
 
@@ -44,6 +46,7 @@ router.post("/leadAllocation", authMiddleware, UpadateOrLeadAllocationRegister)
 router.post("/leadReallocation", authMiddleware, updateReallocation)
 router.post("/leadAllocationtask", authMiddleware, UpdateOrleadallocationTask)
 router.get("/getallLead", authMiddleware, GetallLead)
+router.get("/getAllleadowned", authMiddleware, GetallleadOwned)//for getting allleads in own lead page
 router.get("/getallreallocatedLead", authMiddleware, GetallReallocatedLead)
 router.get("/getalltaskAnalysisLeads", authMiddleware, GetalltaskanalysisLeads)
 router.get("/getallLeadFollowUp", authMiddleware, GetallfollowupList)
@@ -51,7 +54,7 @@ router.get("/getallServices", authMiddleware, GetAllservices)
 router.get("/ownregisteredLead", authMiddleware, GetownLeadList)
 router.post("/setdemolead", authMiddleware, SetDemoallocation)
 router.get("/getrespecteddemolead", authMiddleware, GetrepecteduserDemo)
-router.get("/getrespectedleadTask", authMiddleware, GetrespectedprogrammingLead)
+router.get("/getrespectedleadTask", authMiddleware, GetrespectedleadTask)
 router.get("/demoleadcount", authMiddleware, GetdemoleadCount)
 router.post("/taskSubmission", authMiddleware, UpdateLeadTask)
 router.post("/demosubmitbyfollower", authMiddleware, UpdaeOrSubmitdemofollowByfollower)
