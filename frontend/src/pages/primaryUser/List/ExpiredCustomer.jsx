@@ -115,7 +115,7 @@ const ExpiredCustomer = () => {
   //       const endpoint = isToggled
   //         ? `/customer/getallExpiryregisterCustomer?nextmonthReport=${isToggled}`
   //         : `/customer/getallExpiryregisterCustomer?startDate=${dates.startDate}&endDate=${dates.endDate}`
-  //       console.log(endpoint)
+  
   //       const response = await api.get(endpoint)
   //       const data = response.data.data
   //       if (user.role === "Admin") {

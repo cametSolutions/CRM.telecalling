@@ -1476,11 +1476,11 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
     const { selectedleaddocId, loggeduserid } = req.query
 
     let followedByModel
-    const isStaff = await Staff.find({ _id: loggeduserid })
+    const isStaff = await Staff.findOne({ _id: loggeduserid })
     if (isStaff) {
       followedByModel = "Staff"
     } else {
-      const isAdmin = await Admin.find({ _id: loggeduserid })
+      const isAdmin = await Admin.findOne({ _id: loggeduserid })
       if (isAdmin) {
         followedByModel = "Admin"
       }
@@ -1569,8 +1569,8 @@ export const LeadClosing = async (req, res) => {
   try {
     const { leadId, allocationType, allocatedBy } = req.query
     const { formData } = req.body
-    const isStaff = await Staff.find({ _id: allocatedBy })
-    const isAdmin = await Admin.find({ _id: allocatedBy }
+    const isStaff = await Staff.findOne({ _id: allocatedBy })
+    const isAdmin = await Admin.findOne({ _id: allocatedBy }
     )
     let leadClosedModel
     if (isStaff) {
@@ -2347,6 +2347,84 @@ export const GetselectedLeadData = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+export const GetlostLeads = async (req, res) => {
+  try {
+    const { selectedBranch } = req.query
+    const matchedlostLead = await LeadMaster.find({ leadBranch: new mongoose.Types.ObjectId(selectedBranch), leadLost: true }).populate({ path: "customerName", select: "customerName" }).lean()
+    const populatedlostLeads = await Promise.all(
+      matchedlostLead.map(async (lead) => {
+        if (!lead.leadByModel || !mongoose.models[lead.leadByModel]) {
+          console.error(`Model ${lead.leadByModel} is not registered`);
+          return lead;
+        }
+
+        // Fetch leadBy name
+        const assignedModel = mongoose.model(lead.leadByModel);
+        const populatedLeadBy = await assignedModel
+          .findById(lead.leadBy)
+          .select("name")
+          .lean();
+        let lasttaskallocatedto
+        let lasttaskallocatedBy
+        // ✅ Populate activityLog fields
+        const populatedActivityLog = await Promise.all(
+          (lead.activityLog || []).map(async (activity) => {
+            const populatedActivity = { ...activity };
+
+            // Populate taskallocatedTo
+            if (activity.submissiondoneByModel && activity.submittedUser) {
+              const model = mongoose.model(activity.submissiondoneByModel);
+              populatedActivity.submittedUser = await model
+                .findById(activity.submittedUser)
+                .select("name")
+                .lean();
+            }
+
+            // // Populate taskallocatedBy
+            if (activity.taskallocatedByModel && activity.taskallocatedBy) {
+              const model = mongoose.model(activity.taskallocatedByModel);
+              lasttaskallocatedBy = populatedActivity.taskallocatedBy = await model
+                .findById(activity.taskallocatedBy)
+                .select("name")
+                .lean();
+            }
+
+            // ✅ Populate submissionDoneBy
+            if (activity.taskallocatedToModel && activity.taskallocatedTo) {
+              const model = mongoose.model(activity.taskallocatedToModel);
+              lasttaskallocatedto = populatedActivity.taskallocatedTo = await model
+                .findById(activity.taskallocatedTo)
+                .select("name")
+                .lean();
+            }
+
+            return populatedActivity;
+          })
+        );
+
+        // ✅ Get last activity
+        const lastActivity = populatedActivityLog[populatedActivityLog.length - 1];
+
+        return {
+          ...lead,
+          leadBy: populatedLeadBy,
+          activityLog: populatedActivityLog, // include fully populated activity logs
+          taskallocatedTo: lasttaskallocatedto || null,
+          taskallocatedBy: lasttaskallocatedBy || null,
+          leadclosedBy: lastActivity?.submittedUser
+        };
+      })
+    );
+    if (populatedlostLeads && populatedlostLeads.length > 0) {
+      return res.status(201).json({ message: "lead found", data: populatedlostLeads })
+    } else {
+      return res.status(200).json({ message: "lead  not found", data: populatedlostLeads })
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const GetownLeadList = async (req, res) => {
 
   try {
@@ -2428,7 +2506,12 @@ export const GetownLeadList = async (req, res) => {
         };
       })
     );
-    return res.status(200).json({ message: "lead found", data: populatedOwnLeads })
+    if (populatedOwnLeads && populatedOwnLeads.length > 0) {
+      return res.status(201).json({ message: "lead found", data: populatedOwnLeads })
+    } else {
+      return res.status(200).json({ message: "lead  not found", data: populatedOwnLeads })
+    }
+
 
   } catch (error) {
     console.log("error:", error.message)

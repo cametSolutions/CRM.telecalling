@@ -27,7 +27,8 @@ import {
   TaskDelete,
   TaskEdit,
   Checkexistinglead,
-  GetallleadOwned
+  GetallleadOwned,
+GetlostLeads
 
 } from "../../controller/primaryUserController/leadController.js"
 const router = express.Router()
@@ -52,6 +53,7 @@ router.get("/getalltaskAnalysisLeads", authMiddleware, GetalltaskanalysisLeads)
 router.get("/getallLeadFollowUp", authMiddleware, GetallfollowupList)
 router.get("/getallServices", authMiddleware, GetAllservices)
 router.get("/ownregisteredLead", authMiddleware, GetownLeadList)
+router.get("/lostlead",authMiddleware,GetlostLeads)
 router.post("/setdemolead", authMiddleware, SetDemoallocation)
 router.get("/getrespecteddemolead", authMiddleware, GetrepecteduserDemo)
 router.get("/getrespectedleadTask", authMiddleware, GetrespectedleadTask)

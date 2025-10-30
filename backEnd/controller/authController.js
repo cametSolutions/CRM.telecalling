@@ -553,6 +553,7 @@ export const getYearlyStaffPerformance = async (year, frame, month, quarter) => 
 export const UpdateUserPermission = async (req, res) => {
   try {
     const userPermissions = req.body
+console.log("userpsermissison",userPermissions)
 
     const { Userid } = req.query
 
@@ -563,14 +564,7 @@ export const UpdateUserPermission = async (req, res) => {
         .json({ message: "User ID and permissions are required." })
     }
 
-    // // Find the user by ID
-    // const user = await Staff.findById(Userid)
-    // if (!user) {
-    //   return res.status(404).json({ message: "User not found." })
-    // }
-    // // Update user permissions
-    // user.permissions = userPermissions // Assuming `permissions` is the field in your User schema
-    // await user.save()
+   
     const updateuser = await Staff.findByIdAndUpdate(Userid, {
       $set: { permissions: userPermissions }
     })
