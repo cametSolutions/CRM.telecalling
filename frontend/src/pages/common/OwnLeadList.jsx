@@ -1,25 +1,19 @@
 import React, { useEffect, useState } from "react"
 import UseFetch from "../../hooks/useFetch"
 import { useNavigate } from "react-router-dom"
-import api from "../../api/api"
 import { LeadhistoryModal } from "../../components/primaryUser/LeadhistoryModal"
-import { PropagateLoader } from "react-spinners"
 import {
   Eye,
   Phone,
   Mail,
   User,
   Calendar,
-  ArrowRight,
   Clock,
   UserPlus,
   UserCheck,
   IndianRupee,
   BellRing, // Follow-up
-  History, // Event Log
-  CalendarDays, // For Due Date
-  Hourglass, //Remaining days
-  RefreshCcw //Update icon
+  History // Event Log
 } from "lucide-react"
 import { getLocalStorageItem } from "../../helper/localstorage"
 
@@ -67,7 +61,7 @@ export default function OwnLeadList() {
         const groupedLeads = {}
         let grandTotal = 0
         ownedlead.forEach((lead) => {
-          const assignedTo = lead?.taskallocatedTo?.name
+          const assignedTo = lead?.leadBy?.name
           const amount = lead?.netAmount || 0
           grandTotal += amount
           if (!groupedLeads[assignedTo]) {
@@ -97,7 +91,6 @@ export default function OwnLeadList() {
     setselectedLeadId(null)
   }
   const handleHistory = (Item) => {
-   
     setselectedData(Item.activityLog)
     setHistoryList(Item.activityLog)
     setselectedLeadId(Item.leadId)
@@ -134,22 +127,7 @@ export default function OwnLeadList() {
           <th className="border border-gray-300 px-3 py-1 min-w-[90px] text-left">
             Lead Id
           </th>
-          {/* {pending && (
-            <>
-              <th className="border border-gray-300 px-3 py-1">
-                <div className="flex items-center gap-1.5 justify-center">
-                  <CalendarDays className="w-3 h-3" />
-                  <span>Due Date</span>
-                </div>
-              </th>
-              <th className="border border-gray-300 px-3 py-1">
-                <div className="flex items-center gap-1.5 justify-center">
-                  <Hourglass className="w-3 h-3" />
-                  <span>Remaining Days</span>
-                </div>
-              </th>
-            </>
-          )} */}
+         
 
           <th className="border border-gray-300 px-3 py-1 min-w-[90px]">
             Action
@@ -181,12 +159,7 @@ export default function OwnLeadList() {
                 <td className="px-3 py-1 font-medium text-blue-700">
                   {item?.leadId}
                 </td>
-                {/* {pending && (
-                  <>
-                    <td className="border border-b-0 border-gray-300 px-3 py-1"></td>
-                    <td className="border border-b-0 border-gray-300 px-3 py-1"></td>
-                  </>
-                )} */}
+               
 
                 <td className="border border-b-0 border-gray-300 px-2 py-1 text-center">
                   <button
@@ -232,16 +205,7 @@ export default function OwnLeadList() {
                     <span>Lead Date</span>
                   </div>
                 </td>
-                {/* {pending && (
-                  <>
-                    <td className="border border-t-0 border-b-0 border-gray-300 px-3  bg-white text-center text-lg font-semibold text-red-500">
-                      {new Date(item.dueDate).toLocaleDateString("en-GB")}
-                    </td>
-                    <td className="border border-t-0 border-b-0 border-gray-300 px-3 bg-white text-center text-lg font-semibold text-red-500">
-                      {getRemainingDays(item.dueDate)} days left
-                    </td>
-                  </>
-                )} */}
+               
 
                 <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1 bg-white">
                   <button
@@ -297,47 +261,15 @@ export default function OwnLeadList() {
                 <td className="border border-t-0 border-gray-300 px-3 py-1 text-gray-900">
                   {item.leadDate?.toString().split("T")[0]}
                 </td>
-                {/* {pending && (
-                  <>
-                    <td className="border border-t-0 border-b-0 border-gray-300 px-3 py-1"></td>
-                    <td className="border border-t-0 border-b-0 border-gray-300 px-3 py-1"></td>
-                  </>
-                )} */}
+               
 
                 <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1">
                   {" "}
-                  {/* {pending && item.sameUser && (
-                    <button
-                      onClick={() => {
-                        setShowComponent(true)
-                        setselectedData(item)
-                      }}
-                      className="inline-flex items-center gap-1 px-2  py-1 text-xs font-semibold text-white bg-amber-500 rounded hover:bg-amber-600 transition-colors w-full justify-center"
-                    >
-                      <RefreshCcw className="w-3.5 h-3.5" />
-                      Update
-                    </button>
-                  )} */}
+                 
                 </td>
                 <td className="border border-t-0 border-b-0 border-gray-300 px-3 py-1"></td>
               </tr>
-              {/* {pending && (
-                <tr className="font-medium bg-gradient-to-r from-gray-100 to-gray-50 text-xs text-gray-600">
-                  <td
-                    colSpan={5}
-                    className="px-3 py-1 border-t border-gray-200"
-                  >
-                    <span>Remark :</span>
-                    <span className="ml-2 text-red-600">
-                      {item?.matchedlog?.remarks}
-                    </span>
-                  </td>
-
-                  <td className="border border-t-0 border-b-0 border-gray-300 px-3 bg-white"></td>
-                  <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1 bg-white"></td>
-                  <td className="border border-t-0 border-b-0 border-gray-300 px-3 bg-white"></td>
-                </tr>
-              )} */}
+             
 
               {index !== data.length - 1 && (
                 <tr>
@@ -393,7 +325,10 @@ export default function OwnLeadList() {
           )}
           <select
             value={selectedCompanyBranch || ""}
-            onChange={(e) => setselectedCompanyBranch(e.target.value)}
+            onChange={(e) => {
+              setTableData([])
+              setselectedCompanyBranch(e.target.value)
+            }}
             className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[150px] mr-2 cursor-pointer"
           >
             {companyBranches?.map((branch) => (
@@ -456,9 +391,8 @@ export default function OwnLeadList() {
             ))
           })()}
         </>
-        
       </div>
-      
+
       {showhistoryModal && historyList && historyList.length > 0 && (
         <LeadhistoryModal
           selectedLeadId={selectedLeadId}

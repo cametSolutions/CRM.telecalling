@@ -37,7 +37,6 @@ const Login = () => {
 
           setLocalStorageItem("loggeduserbranches", loggeduserbranches)
           setLocalStorageItem("companybranches", allcompanybranches)
-          console.log(loggeduserbranches)
           dispatch(loggeduserBranches(loggeduserbranches))
           dispatch(setBranches(allcompanybranches))
 

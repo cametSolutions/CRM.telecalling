@@ -107,6 +107,7 @@ const staffSchema = new Schema(
         CallNotes: Boolean,
         UsersAndPasswords: Boolean,
         MenuRights: Boolean,
+        Services: Boolean,
         VoucherMaster: Boolean,
         Target: Boolean,
         Product: Boolean,
@@ -136,7 +137,11 @@ const staffSchema = new Schema(
         AccountSearch: Boolean,
         LeaveSummary: Boolean,
         TaskAnalysis: Boolean,
+        TaskLevel: Boolean,
         LeadReallocation: Boolean,
+        Employee: Boolean,
+        ProductandServices: Boolean
+
       }
 
     ],
