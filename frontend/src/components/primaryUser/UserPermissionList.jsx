@@ -171,7 +171,7 @@ const UserPermissionList = ({ user, closeModal,refresh}) => {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50 p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full relative overflow-hidden transform transition-all">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-full overflow-y-auto relative overflow-hidden transform transition-all">
         {/* Success Overlay */}
         {showSuccess && (
           <div className="absolute inset-0 bg-green-500 z-50 flex items-center justify-center">
@@ -242,7 +242,7 @@ const UserPermissionList = ({ user, closeModal,refresh}) => {
           </label>
 
           {/* Permissions List */}
-          <div className="max-h-96 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+          <div className=" md:max-h-80 lg:max-h-96 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
             {filteredPermissions.map((key) => (
               <div
                 key={key}

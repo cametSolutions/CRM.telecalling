@@ -35,11 +35,17 @@ const UserListform = () => {
           .map((branch) => branch.branch_id)
           .includes(logged.selected[0].branch_id)
       )
-      setUser(filtereusers)
+      console.log(filtereusers)
+      
+
+      setUser(sortByVerified(filtereusers))
       setloggeduser(logged)
       setselectedBranch(logged.selected[0].branch_id)
     }
   }, [data])
+  const sortByVerified=(arr)=>{
+    return arr.sort((a, b) => (b.isVerified === true) - (a.isVerified === true))
+  }
 
   const handleSearch = debounce((query) => {
     const { allusers } = data
@@ -60,19 +66,18 @@ const UserListform = () => {
         user.selected.map((branch) => branch.branch_id).includes(selectedBranch)
       )
 
-      setUser(filtereusersbranchwise)
+      setUser(sortByVerified(filtereusersbranchwise))
     } else if (filteredMobile.length > 0) {
       const filtereusersbranchwise = filteredMobile.filter((user) =>
         user.selected.map((branch) => branch.branch_id).includes(selectedBranch)
       )
 
-      setUser(filtereusersbranchwise)
+      setUser(sortByVerified(filtereusersbranchwise))
     }
 
     // Reset to initial count after filtering
   }, 300)
   const handlebranchChange = (e) => {
-
     const [id, label] = e.target.value.split("||")
     setselectedBranch(id)
     if (searchQuery) {
@@ -82,12 +87,12 @@ const UserListform = () => {
       const filtereusersbranchwise = filteredbyquery.filter((user) =>
         user.selected.map((branch) => branch.branch_id).includes(id)
       )
-      setUser(filtereusersbranchwise)
+      setUser(sortByVerified(filtereusersbranchwise))
     } else {
       const filtereusersbranchwise = allusers.filter((user) =>
         user.selected.map((branch) => branch.branch_id).includes(id)
       )
-      setUser(filtereusersbranchwise)
+      setUser(sortByVerified(filtereusersbranchwise))
     }
   }
   const handleDelete = async (id) => {
@@ -95,12 +100,13 @@ const UserListform = () => {
       await api.delete(`/auth/userDelete?id=${id}`)
 
       // Remove the deleted item from the items array
-      setUser((prevItems) => prevItems.filter((item) => item._id !== id))
+      setUser((prevItems) => sortByVerified(prevItems.filter((item) => item._id !== id)))
     } catch (error) {
       console.error("Failed to delete item", error)
       // toast.error("Failed to delete item. Please try again.")
     }
   }
+  console.log(users)
   return (
     <div className="h-full flex flex-col bg-gray-50">
       {/* Header Section - Sticky */}
@@ -218,11 +224,15 @@ const UserListform = () => {
                   <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider min-w-32 bg-green-300">
                     Designation
                   </th>
+
                   <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider min-w-24 bg-green-300">
                     Role
                   </th>
                   <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider min-w-32 bg-green-300">
                     Assigned To
+                  </th>
+                  <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider min-w-32 bg-green-300">
+                    Status
                   </th>
                   <th className="sticky top-0 z-10 px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider min-w-24 bg-green-300">
                     Actions
@@ -290,6 +300,17 @@ const UserListform = () => {
                                 Not assigned
                               </span>
                             )}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <span
+                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                user?.isVerified
+                                  ? "bg-green-100 text-green-500"
+                                  : "bg-red-100 text-red-500"
+                              }`}
+                            >
+                              {user.isVerified ? "Active" : "Deactive"}
+                            </span>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
                             <div className="flex items-center justify-center space-x-2">
