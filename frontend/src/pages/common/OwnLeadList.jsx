@@ -16,6 +16,7 @@ import {
   History // Event Log
 } from "lucide-react"
 import { getLocalStorageItem } from "../../helper/localstorage"
+import { PropagateLoader } from "react-spinners"
 
 export default function OwnLeadList() {
   const [showFullName, setShowFullName] = useState(false)
@@ -52,6 +53,7 @@ export default function OwnLeadList() {
       setLoggedUser(userData)
     }
   }, [companybranches])
+
   useEffect(() => {
     if (ownedlead && ownedlead.length > 0) {
       if (ownLead) {
@@ -73,7 +75,7 @@ export default function OwnLeadList() {
         setTableData(Data)
       }
     }
-  }, [ownedlead, ownLead])
+  }, [ownedlead])
   const normalizeTableData = (data) => {
     if (Array.isArray(data)) {
       return [{ staffName: null, leads: data }]
@@ -127,7 +129,6 @@ export default function OwnLeadList() {
           <th className="border border-gray-300 px-3 py-1 min-w-[90px] text-left">
             Lead Id
           </th>
-         
 
           <th className="border border-gray-300 px-3 py-1 min-w-[90px]">
             Action
@@ -159,7 +160,6 @@ export default function OwnLeadList() {
                 <td className="px-3 py-1 font-medium text-blue-700">
                   {item?.leadId}
                 </td>
-               
 
                 <td className="border border-b-0 border-gray-300 px-2 py-1 text-center">
                   <button
@@ -205,7 +205,6 @@ export default function OwnLeadList() {
                     <span>Lead Date</span>
                   </div>
                 </td>
-               
 
                 <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1 bg-white">
                   <button
@@ -261,15 +260,12 @@ export default function OwnLeadList() {
                 <td className="border border-t-0 border-gray-300 px-3 py-1 text-gray-900">
                   {item.leadDate?.toString().split("T")[0]}
                 </td>
-               
 
                 <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1">
                   {" "}
-                 
                 </td>
                 <td className="border border-t-0 border-b-0 border-gray-300 px-3 py-1"></td>
               </tr>
-             
 
               {index !== data.length - 1 && (
                 <tr>
@@ -296,7 +292,6 @@ export default function OwnLeadList() {
       </tbody>
     </table>
   )
-
   return (
     <div className="h-full ">
       <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3">
@@ -310,7 +305,10 @@ export default function OwnLeadList() {
                 {ownLead ? "Own Lead" : "All Lead"}
               </span>
               <button
-                onClick={() => setownLead(!ownLead)}
+                onClick={() => {
+                  setTableData([])
+                  setownLead(!ownLead)
+                }}
                 className={`${
                   ownLead ? "bg-green-500" : "bg-gray-300"
                 } w-11 h-6 flex items-center rounded-full transition-colors duration-300 mx-2`}
@@ -360,8 +358,13 @@ export default function OwnLeadList() {
                 (group) => Array.isArray(group.leads) && group.leads.length > 0
               )
 
+           
             if (!hasLeads || tableData.length === 0) {
-              return (
+              return loading ? (
+                <div className="flex justify-center py-6">
+                  <PropagateLoader color="#3b82f6" size={10} />
+                </div>
+              ) : (
                 <div className="text-center text-gray-500 py-6">
                   No Lead Available
                 </div>
