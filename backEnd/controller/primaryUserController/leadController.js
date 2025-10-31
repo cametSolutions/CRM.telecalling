@@ -2457,7 +2457,8 @@ export const GetownLeadList = async (req, res) => {
           .findById(lead.leadBy)
           .select("name")
           .lean();
-
+        let taskallocatedTo
+        let taskallocatedBy
         // ✅ Populate activityLog fields
         const populatedActivityLog = await Promise.all(
           (lead.activityLog || []).map(async (activity) => {
@@ -2466,7 +2467,7 @@ export const GetownLeadList = async (req, res) => {
             // Populate taskallocatedTo
             if (activity.submissiondoneByModel && activity.submittedUser) {
               const model = mongoose.model(activity.submissiondoneByModel);
-              populatedActivity.submittedUser = await model
+              taskallocatedTo = populatedActivity.submittedUser = await model
                 .findById(activity.submittedUser)
                 .select("name")
                 .lean();
@@ -2475,7 +2476,7 @@ export const GetownLeadList = async (req, res) => {
             // // Populate taskallocatedBy
             if (activity.taskallocatedByModel && activity.taskallocatedBy) {
               const model = mongoose.model(activity.taskallocatedByModel);
-              populatedActivity.taskallocatedBy = await model
+              taskallocatedBy = populatedActivity.taskallocatedBy = await model
                 .findById(activity.taskallocatedBy)
                 .select("name")
                 .lean();
@@ -2501,8 +2502,8 @@ export const GetownLeadList = async (req, res) => {
           ...lead,
           leadBy: populatedLeadBy,
           activityLog: populatedActivityLog, // include fully populated activity logs
-          taskallocatedTo: lastActivity?.taskallocatedTo || null,
-          taskallocatedBy: lastActivity?.taskallocatedBy || null,
+          taskallocatedTo: taskallocatedTo || null,
+          taskallocatedBy: taskallocatedBy || null,
         };
       })
     );
