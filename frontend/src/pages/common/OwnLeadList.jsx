@@ -16,6 +16,7 @@ import {
   History // Event Log
 } from "lucide-react"
 import { getLocalStorageItem } from "../../helper/localstorage"
+import { PropagateLoader } from "react-spinners"
 
 export default function OwnLeadList() {
   const [showFullName, setShowFullName] = useState(false)
@@ -357,8 +358,13 @@ export default function OwnLeadList() {
                 (group) => Array.isArray(group.leads) && group.leads.length > 0
               )
 
+           
             if (!hasLeads || tableData.length === 0) {
-              return (
+              return loading ? (
+                <div className="flex justify-center py-6">
+                  <PropagateLoader color="#3b82f6" size={10} />
+                </div>
+              ) : (
                 <div className="text-center text-gray-500 py-6">
                   No Lead Available
                 </div>
