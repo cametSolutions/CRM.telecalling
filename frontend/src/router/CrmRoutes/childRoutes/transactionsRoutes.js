@@ -12,6 +12,7 @@ import TaskAnalysis from "../../../pages/primaryUser/List/TaskAnalysis"
 import TaskAnalysisTable from "../../../pages/primaryUser/List/TaskAnalysisTable"
 import ReallocationTable from "../../../pages/primaryUser/List/ReallocationTable"
 import LostLeads from "../../../pages/common/LostLeads"
+import CollectionUpdate from "../../../pages/primaryUser/List/CollectionUpdate"
 const transactionsRoutes = [
   { path: "/admin/transaction/lead", component: LeadRegister },
   { path: "/admin/transaction/lead/leadEdit", component: LeadEdit },
@@ -31,7 +32,8 @@ const transactionsRoutes = [
   { path: "/admin/transaction/lead/reallocationTable/:label", component: ReallocationTable },
 
   { path: "/admin/transaction/lead/leadFollowUp", component: LeadFollowUp },
-{path:"/admin/transaction/lead/lostLeads",component:LostLeads}
+  { path: "/admin/transaction/lead/lostLeads", component: LostLeads },
+  { path: "/admin/transaction/lead/collectionUpdate", component: CollectionUpdate }
 ]
 
 export default transactionsRoutes

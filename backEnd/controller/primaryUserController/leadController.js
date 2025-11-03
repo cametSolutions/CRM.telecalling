@@ -2347,6 +2347,93 @@ export const GetselectedLeadData = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+export const GetcollectionLeads = async (req, res) => {
+  try {
+    const { selectedBranch, varified } = req.query
+    console.log(varified)
+    console.log("selectedbranch", selectedBranch)
+    const query = { leadBranch: new mongoose.Types.ObjectId(selectedBranch), leadVarified: varified === "true" ? true : false }
+    const matchedCollectionlead = await LeadMaster.find(query).populate({path:"customerName"}).populate({path:"partner"}).lean()
+    const populatedcollectionLeads = await Promise.all(
+      matchedCollectionlead.map(async (lead) => {
+        if (!lead.leadByModel || !mongoose.models[lead.leadByModel]) {
+          console.error(`Model ${lead.leadByModel} is not registered`);
+          return lead;
+        }
+
+        // Fetch leadBy name
+        const assignedModel = mongoose.model(lead.leadByModel);
+        const populatedLeadBy = await assignedModel
+          .findById(lead.leadBy)
+          .select("name")
+          .lean();
+        let lasttaskallocatedto
+        let lasttaskallocatedBy
+        // ✅ Populate activityLog fields
+        const populatedActivityLog = await Promise.all(
+          (lead.activityLog || []).map(async (activity) => {
+            const populatedActivity = { ...activity };
+
+            // Populate taskallocatedTo
+            if (activity.submissiondoneByModel && activity.submittedUser) {
+              const model = mongoose.model(activity.submissiondoneByModel);
+              populatedActivity.submittedUser = await model
+                .findById(activity.submittedUser)
+                .select("name")
+                .lean();
+            }
+
+            // // Populate taskallocatedBy
+            if (activity.taskallocatedByModel && activity.taskallocatedBy) {
+              const model = mongoose.model(activity.taskallocatedByModel);
+              lasttaskallocatedBy = populatedActivity.taskallocatedBy = await model
+                .findById(activity.taskallocatedBy)
+                .select("name")
+                .lean();
+            }
+
+            // ✅ Populate submissionDoneBy
+            if (activity.taskallocatedToModel && activity.taskallocatedTo) {
+              const model = mongoose.model(activity.taskallocatedToModel);
+              lasttaskallocatedto = populatedActivity.taskallocatedTo = await model
+                .findById(activity.taskallocatedTo)
+                .select("name")
+                .lean();
+            }
+
+            return populatedActivity;
+          })
+        );
+
+        // ✅ Get last activity
+        const lastActivity = populatedActivityLog[populatedActivityLog.length - 1];
+
+        return {
+          ...lead,
+          leadBy: populatedLeadBy,
+          activityLog: populatedActivityLog, // include fully populated activity logs
+          taskallocatedTo: lasttaskallocatedto || null,
+          taskallocatedBy: lasttaskallocatedBy || null,
+          leadclosedBy: lastActivity?.submittedUser
+        };
+      })
+    );
+    if (populatedcollectionLeads && populatedcollectionLeads.length > 0) {
+      return res.status(201).json({ message: "lead found", data: populatedcollectionLeads })
+    } else {
+      return res.status(200).json({ message: "lead  not found", data: populatedcollectionLeads })
+    }
+
+    // if (matchedCollectionlead && matchedCollectionlead.length > 0) {
+    //   return res.status(201).json({ message: "collection leads found", data: matchedCollectionlead })
+    // } else {
+    //   return res.status(200).json({ message: "collection leads not found", data: matchedCollectionlead })
+    // }
+  } catch (error) {
+    console.log("error", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const GetlostLeads = async (req, res) => {
   try {
     const { selectedBranch } = req.query
