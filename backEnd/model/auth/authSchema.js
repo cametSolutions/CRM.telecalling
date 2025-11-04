@@ -181,6 +181,12 @@ const adminSchema = new Schema(
 
       match: /^[0-9]{10}$/ // Example for a 10-digit Indian number
     },
+    department: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+      required: false, // This makes it optional
+      default: null
+    },
     password: {
       type: String,
       required: [true, "Password is required"]

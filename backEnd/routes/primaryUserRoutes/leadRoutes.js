@@ -28,12 +28,17 @@ import {
   TaskEdit,
   Checkexistinglead,
   GetallleadOwned,
-GetlostLeads
+  GetlostLeads,
+  GetcollectionLeads,
+  UpdateCollection,
+  UpdatereceivedAmount
 
 } from "../../controller/primaryUserController/leadController.js"
 const router = express.Router()
 
 router.post("/leadRegister", authMiddleware, LeadRegister)
+router.post("/collectionUpdate", authMiddleware, UpdateCollection)
+router.post("/updatereceivedAmount", authMiddleware, UpdatereceivedAmount)
 router.post("/taskRegistration", authMiddleware, TaskRegistration)
 router.get("/checkexistinglead", authMiddleware, Checkexistinglead)
 router.put("/leadRegisterUpdate", authMiddleware, UpdateLeadRegister)
@@ -53,11 +58,12 @@ router.get("/getalltaskAnalysisLeads", authMiddleware, GetalltaskanalysisLeads)
 router.get("/getallLeadFollowUp", authMiddleware, GetallfollowupList)
 router.get("/getallServices", authMiddleware, GetAllservices)
 router.get("/ownregisteredLead", authMiddleware, GetownLeadList)
-router.get("/lostlead",authMiddleware,GetlostLeads)
+router.get("/lostlead", authMiddleware, GetlostLeads)
 router.post("/setdemolead", authMiddleware, SetDemoallocation)
 router.get("/getrespecteddemolead", authMiddleware, GetrepecteduserDemo)
 router.get("/getrespectedleadTask", authMiddleware, GetrespectedleadTask)
 router.get("/demoleadcount", authMiddleware, GetdemoleadCount)
+router.get("/collectionLeads", authMiddleware, GetcollectionLeads)
 router.post("/taskSubmission", authMiddleware, UpdateLeadTask)
 router.post("/demosubmitbyfollower", authMiddleware, UpdaeOrSubmitdemofollowByfollower)
 router.post("/tasksubmitbyfollower", authMiddleware, UpdateOrSubmittaskByfollower)

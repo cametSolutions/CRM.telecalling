@@ -164,7 +164,7 @@ const ProductListform = ({ productlist, loading }) => {
                     className="px-6 py-4 text-center text-sm text-gray-500"
                   >
                     {loading && (
-                      <div className="justify center">
+                      <div className="flex justify-center">
                         <PropagateLoader color="#3b82f6" size={10} />
                       </div>
                     )}

@@ -1122,7 +1122,14 @@ const LeadMaster = ({
                     `}
                       >
                         <option value="">Select</option>
-                        <option value="true">Self Allocate</option>
+                        {/*only for admin and marketing teams*/}
+                        {(loggeduser?.department?._id ===
+                          "670c866552847bbebbd35748" ||
+                          loggeduser?.department?._id ===
+                            "670c867352847bbebbd35750") && (
+                          <option value="true">Self Allocate</option>
+                        )}
+
                         <option value="false">Allocate To Other</option>
                       </select>
                       {errorsMain.selfAllocation && (
@@ -1152,24 +1159,8 @@ const LeadMaster = ({
                                 : "bg-gray-200 cursor-not-allowed"
                             }`}
                           >
-                            <option value="">Select Allocationtype</option>
+                            {/* <option value="">Select Allocationtype</option> */}
                             <option value="followup">Followup</option>
-                            <option value="programming">Programming</option>
-                            <option value="testing-&-implementation">
-                              Testing & Implementation
-                            </option>
-                            <option value="coding-&-testing">
-                              Coding & Testing
-                            </option>
-                            <option value="software-services">
-                              Software Service
-                            </option>
-                            <option value="customermeet">Customer Meet</option>
-                            <option value="demo">Demo</option>
-                            <option value="training">Training</option>
-
-                            <option value="onsite">Onsite</option>
-                            <option value="office">Office</option>
                           </select>
                           {errorsMain.allocationType && (
                             <p className="text-red-500 text-sm">

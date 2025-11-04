@@ -334,16 +334,16 @@ export const Login = async (req, res) => {
     // Determine if the input is an email or a mobile number
     if (emailRegex.test(emailOrMobile)) {
       // If it's an email
-      user = await Admin.findOne({ email: emailOrMobile }).lean()
+      user = await Admin.findOne({ email: emailOrMobile }).populate({path:"department",select:"department"}).lean()
 
       if (!user) {
-        user = await Staff.findOne({ email: emailOrMobile }).lean()
+        user = await Staff.findOne({ email: emailOrMobile }).populate({path:"department",select:"department"}).lean()
       }
     } else {
       // If it's a mobile number
-      user = await Admin.findOne({ mobile: emailOrMobile }).lean()
+      user = await Admin.findOne({ mobile: emailOrMobile }).populate({path:"department",select:"department"}).lean()
       if (!user) {
-        user = await Staff.findOne({ mobile: emailOrMobile }).lean()
+        user = await Staff.findOne({ mobile: emailOrMobile }).populate({path:"department",select:"department"}).lean()
 
       }
     }

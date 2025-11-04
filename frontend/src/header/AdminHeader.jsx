@@ -259,7 +259,11 @@ export default function AdminHeader() {
       to: "/admin/transaction/lead/taskAnalysis",
       label: "Task Analysis"
     },
-    { to: "/admin/transaction/lead/lostLeads", label: "Lost Leads" }
+    { to: "/admin/transaction/lead/lostLeads", label: "Lost Leads" },
+    {
+      to: "/admin/transaction/lead/collectionUpdate",
+      label: "Collection Update"
+    }
   ]
   // const inventorys = [
   //   {

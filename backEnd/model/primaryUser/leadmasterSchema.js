@@ -11,7 +11,7 @@ const leadSchema = new mongoose.Schema(
     location: { type: String },
     pincode: { type: String },
     trade: { type: String },
-    partner: { type: mongoose.Schema.Types.ObjectId, ref: " Partner" },
+    partner: { type: mongoose.Schema.Types.ObjectId, ref: "Partner" },
     //to know lead is confirmed or reject initially its false 
     leadConfirmed: { type: Boolean, default: false },
     //to show closed lead list 
@@ -22,6 +22,8 @@ const leadSchema = new mongoose.Schema(
     leadBranch: { type: mongoose.Schema.Types.ObjectId, ref: "Branch" },
     //task completion date given by the authority
     dueDate: { type: Date },
+    //for checking payment is completely due
+    leadVerified: { type: Boolean, default: false },
     //product tagged in the individual leads
     leadFor: [
       {
@@ -80,7 +82,9 @@ const leadSchema = new mongoose.Schema(
         paymentDate: { type: Date },
         receivedAmount: { type: Number },
         receivedBy: { type: mongoose.Schema.Types.ObjectId, refpath: "recievedModel" },
-        recievedModel: { type: String, enum: ["Staff", "Admin"] }
+        receivedModel: { type: String, enum: ["Staff", "Admin"] },
+        bankRemarks: { type: String },
+        remarks: { type: String }
       }
     ],
     //to know whether its reallocated list or currently task mode
@@ -100,7 +104,7 @@ const leadSchema = new mongoose.Schema(
       taskDescription: { type: String },//description given by the assigned user while in the task submission
       reallocatedTo: { type: Boolean, default: false },//if its true then its gone through the reallocation page
       taskClosed: { type: Boolean, default: false },//if the user submitted the task completion then only its true ,to check the task is completed or pending
-      followupClosed: { type: Boolean,default:false },//to check the followup is closed or its in running 
+      followupClosed: { type: Boolean, default: false },//to check the followup is closed or its in running 
       allocatedClosed: { type: Boolean, default: false },//block for previously allocated user 
       followUpDate: { type: Date },//date by the followup happens
       nextFollowUpDate: { type: Date },//set the date for next followup date

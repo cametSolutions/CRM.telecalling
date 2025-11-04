@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from "react"
 import React from "react"
 
-import { ChevronDown, X } from "lucide-react"
+import {} from "lucide-react"
 import { formatDate } from "../../../utils/dateUtils"
 import MyDatePicker from "../../../components/common/MyDatePicker"
 import { FaSpinner } from "react-icons/fa"
 import { LeadhistoryModal } from "../../../components/primaryUser/LeadhistoryModal"
-import Select from "react-select"
 import { FaChevronDown } from "react-icons/fa" // You can use any icon
 import { BsFilterLeft } from "react-icons/bs"
 import { PropagateLoader } from "react-spinners"
@@ -22,7 +21,9 @@ import {
   UserCheck,
   IndianRupee,
   BellRing, // Follow-up
-  History // Event Log
+  History, // Event Log,
+  ChevronDown,
+  X
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import BarLoader from "react-spinners/BarLoader"
@@ -315,7 +316,7 @@ const LeadFollowUp = () => {
           groupedLeads[assignedTo].push(lead)
         })
         const groupedData = normalizeTableData(groupedLeads)
-        
+
         setnetTotalAmount(TotalAmount(mergedall))
         setTableData(groupedData)
       } else if (!pending && ownFollowUp) {
@@ -612,7 +613,7 @@ const LeadFollowUp = () => {
       console.log("error:", error.message)
     }
   }
- 
+
   const handleFollowUp = (Item) => {
     setshowFollowupModal(true)
     setFormData((prev) => ({
@@ -1121,7 +1122,6 @@ const LeadFollowUp = () => {
         />
       )}
 
-     
       {showfollowupModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
