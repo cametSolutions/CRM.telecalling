@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom"
 import { PaymentHistoryModal } from "../../../components/primaryUser/PaymentHistoryModal"
 import { LeadhistoryModal } from "../../../components/primaryUser/LeadhistoryModal"
 import { CollectionupdateModal } from "../../../components/primaryUser/CollectionupdateModal"
+import api from "../../../api/api"
 import {
   Eye,
   Phone,
@@ -20,6 +21,7 @@ import {
 } from "lucide-react"
 import { getLocalStorageItem } from "../../../helper/localstorage"
 import { PropagateLoader } from "react-spinners"
+import { toast } from "react-toastify"
 
 export default function CollectionUpdate() {
   const [showFullName, setShowFullName] = useState(false)
@@ -74,6 +76,8 @@ export default function CollectionUpdate() {
       partners &&
       partners.length > 0
     ) {
+const a=collectionlead.filter((item)=>item.paymentHistory&&item.paymentHistory.length)
+console.log(a)
       setTableData(normalizeTableData(collectionlead))
       setPartner(partners)
     }
@@ -89,6 +93,7 @@ export default function CollectionUpdate() {
     }
     return []
   }
+ 
   const handleCollection = (item) => {
     setcollectionUpdateModal(true)
     setselectedData(item)
@@ -213,7 +218,6 @@ export default function CollectionUpdate() {
                 <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1 bg-white w-20">
                   <button
                     onClick={() => {
-                     
                       setpaymentHistoryList(item.paymentHistory)
                       setpaymentHistoryModal(true)
                       setleadId(item.leadId)
@@ -254,9 +258,7 @@ export default function CollectionUpdate() {
                 <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1 w-20">
                   {!verifiedLead && (
                     <button
-                      onClick={() => 
-                        handleCollection(item)
-                      }
+                      onClick={() => handleCollection(item)}
                       className="inline-flex items-center gap-1  py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600 transition-colors w-full justify-center"
                     >
                       <ClipboardCheck className="w-3.5 h-3.5" />
@@ -298,6 +300,7 @@ export default function CollectionUpdate() {
         <h2 className="text-lg font-bold">
           {verifiedLead ? "Verified Collection" : "Pending Collection"}
         </h2>
+       
         <div className="flex justify-end items-center">
           {loggedUser?.role !== "Staff" && (
             <>
