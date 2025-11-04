@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react"
 import UseFetch from "../../../hooks/useFetch"
 import { useNavigate } from "react-router-dom"
+import { PaymentHistoryModal } from "../../../components/primaryUser/PaymentHistoryModal"
 import { LeadhistoryModal } from "../../../components/primaryUser/LeadhistoryModal"
 import { CollectionupdateModal } from "../../../components/primaryUser/CollectionupdateModal"
 import {
@@ -24,6 +25,8 @@ export default function CollectionUpdate() {
   const [showFullName, setShowFullName] = useState(false)
   const [tableData, setTableData] = useState([])
   const [loggedUser, setLoggedUser] = useState(null)
+  const [leadId, setleadId] = useState(null)
+  const [leadDocId, setleadDocId] = useState(null)
   const [partner, setPartner] = useState([])
   const [showFullEmail, setShowFullEmail] = useState(false)
   const [paymenthistoryModal, setpaymentHistoryModal] = useState(false)
@@ -31,19 +34,23 @@ export default function CollectionUpdate() {
   const [showModal, setShowModal] = useState(false)
   const [selectedData, setselectedData] = useState(null)
   const [selectedLeadId, setselectedLeadId] = useState(null)
-  const [varifiedLead, setvarifiedLead] = useState(false)
+  const [verifiedLead, setverifiedLead] = useState(false)
   const [companyBranches, setcompanyBranches] = useState(null)
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
   const [showhistoryModal, sethistoryModal] = useState(false)
+  const [paymentHistoryList, setpaymentHistoryList] = useState([])
   const [historyList, setHistoryList] = useState([])
   const navigate = useNavigate()
   const { data: companybranches } = UseFetch("/branch/getBranch")
-  const { data: collectionlead, loading } = UseFetch(
+  const {
+    data: collectionlead,
+    loading,
+    refreshHook
+  } = UseFetch(
     selectedCompanyBranch &&
-      `/lead/collectionLeads?selectedBranch=${selectedCompanyBranch}&varified=${varifiedLead}`
+      `/lead/collectionLeads?selectedBranch=${selectedCompanyBranch}&verified=${verifiedLead}`
   )
   const { data: partners } = UseFetch("/customer/getallpartners")
-  console.log(collectionlead)
 
   useEffect(() => {
     if (companybranches && companybranches.length > 0) {
@@ -82,9 +89,7 @@ export default function CollectionUpdate() {
     }
     return []
   }
-  console.log(selectedData)
   const handleCollection = (item) => {
-    console.log(item)
     setcollectionUpdateModal(true)
     setselectedData(item)
   }
@@ -208,8 +213,11 @@ export default function CollectionUpdate() {
                 <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1 bg-white w-20">
                   <button
                     onClick={() => {
-                      console.log("h")
+                     
+                      setpaymentHistoryList(item.paymentHistory)
                       setpaymentHistoryModal(true)
+                      setleadId(item.leadId)
+                      setleadDocId(item._id)
                     }}
                     className="inline-flex items-center gap-1  py-1 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors w-full justify-center"
                   >
@@ -244,17 +252,17 @@ export default function CollectionUpdate() {
                 </td>
 
                 <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1 w-20">
-                  <button
-                    onClick={() => {
-                      console.log("h")
-                      handleCollection(item)
-                      // setcollectionUpdateModal(true)
-                    }}
-                    className="inline-flex items-center gap-1  py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600 transition-colors w-full justify-center"
-                  >
-                    <ClipboardCheck className="w-3.5 h-3.5" />
-                    Collection Update
-                  </button>
+                  {!verifiedLead && (
+                    <button
+                      onClick={() => 
+                        handleCollection(item)
+                      }
+                      className="inline-flex items-center gap-1  py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600 transition-colors w-full justify-center"
+                    >
+                      <ClipboardCheck className="w-3.5 h-3.5" />
+                      Collection Update
+                    </button>
+                  )}
                 </td>
                 <td className="border border-t-0 border-b-0 border-gray-300 px-3 py-1"></td>
               </tr>
@@ -288,26 +296,26 @@ export default function CollectionUpdate() {
     <div className="max-h-full ">
       <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3">
         <h2 className="text-lg font-bold">
-          {varifiedLead ? "Varified Collection" : "Pending Collection"}
+          {verifiedLead ? "Verified Collection" : "Pending Collection"}
         </h2>
         <div className="flex justify-end items-center">
           {loggedUser?.role !== "Staff" && (
             <>
               <span className="text-sm whitespace-nowrap font-semibold">
-                {varifiedLead ? "Varified" : "Pending"}
+                {verifiedLead ? "Verified" : "Pending"}
               </span>
               <button
                 onClick={() => {
                   setTableData([])
-                  setvarifiedLead(!varifiedLead)
+                  setverifiedLead(!verifiedLead)
                 }}
                 className={`${
-                  varifiedLead ? "bg-green-500" : "bg-gray-300"
+                  verifiedLead ? "bg-green-500" : "bg-gray-300"
                 } w-11 h-6 flex items-center rounded-full transition-colors duration-300 mx-2`}
               >
                 <div
                   className={`${
-                    varifiedLead ? "translate-x-5" : "translate-x-0"
+                    verifiedLead ? "translate-x-5" : "translate-x-0"
                   } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
                 ></div>
               </button>
@@ -402,8 +410,20 @@ export default function CollectionUpdate() {
             data={selectedData}
             closemodal={setcollectionUpdateModal}
             partnerlist={partner}
+            loggedUser={loggedUser}
+            refreshHook={refreshHook}
           />
         )}
+      {paymenthistoryModal && (
+        <PaymentHistoryModal
+          data={paymentHistoryList}
+          onClose={setpaymentHistoryModal}
+          leadid={leadId}
+          leadDocId={leadDocId}
+          loggedUserId={loggedUser._id}
+          refresh={refreshHook}
+        />
+      )}
     </div>
   )
 }

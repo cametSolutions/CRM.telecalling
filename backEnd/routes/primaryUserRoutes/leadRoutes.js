@@ -29,12 +29,16 @@ import {
   Checkexistinglead,
   GetallleadOwned,
   GetlostLeads,
-  GetcollectionLeads
+  GetcollectionLeads,
+  UpdateCollection,
+  UpdatereceivedAmount
 
 } from "../../controller/primaryUserController/leadController.js"
 const router = express.Router()
 
 router.post("/leadRegister", authMiddleware, LeadRegister)
+router.post("/collectionUpdate", authMiddleware, UpdateCollection)
+router.post("/updatereceivedAmount", authMiddleware, UpdatereceivedAmount)
 router.post("/taskRegistration", authMiddleware, TaskRegistration)
 router.get("/checkexistinglead", authMiddleware, Checkexistinglead)
 router.put("/leadRegisterUpdate", authMiddleware, UpdateLeadRegister)

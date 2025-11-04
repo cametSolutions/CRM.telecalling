@@ -23,7 +23,7 @@ const leadSchema = new mongoose.Schema(
     //task completion date given by the authority
     dueDate: { type: Date },
     //for checking payment is completely due
-    leadVarified: { type: Boolean, default: false },
+    leadVerified: { type: Boolean, default: false },
     //product tagged in the individual leads
     leadFor: [
       {
@@ -82,7 +82,7 @@ const leadSchema = new mongoose.Schema(
         paymentDate: { type: Date },
         receivedAmount: { type: Number },
         receivedBy: { type: mongoose.Schema.Types.ObjectId, refpath: "recievedModel" },
-        recievedModel: { type: String, enum: ["Staff", "Admin"] },
+        receivedModel: { type: String, enum: ["Staff", "Admin"] },
         bankRemarks: { type: String },
         remarks: { type: String }
       }

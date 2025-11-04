@@ -2,6 +2,7 @@ import LeadMaster from "../../model/primaryUser/leadmasterSchema.js"
 import mongoose from "mongoose"
 import models from "../../model/auth/authSchema.js"
 const { Staff, Admin } = models
+import Customer from "../../model/secondaryUser/customerSchema.js"
 import Task from "../../model/primaryUser/taskSchema.js"
 import LeadId from "../../model/primaryUser/leadIdSchema.js"
 import Service from "../../model/primaryUser/servicesSchema.js"
@@ -234,6 +235,145 @@ export const TaskEdit = async (req, res) => {
     }
   } catch (error) {
     return res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const UpdatereceivedAmount = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+
+    const { leadDocId, index } = req.query
+
+    const editedData = req.body
+
+    // 1️⃣ Fetch lead
+    const lead = await LeadMaster.findById(leadDocId).session(session);
+    if (!lead) throw new Error("Lead not found");
+
+    // 2️⃣ Find payment record
+    const payment = lead.paymentHistory[index];
+    if (!payment) throw new Error("Payment record not found");
+
+    const oldReceivedAmount = payment.receivedAmount;
+    const diff = editedData.receivedAmount - oldReceivedAmount;
+
+    // 3️⃣ Update payment record
+    payment.receivedAmount = editedData.receivedAmount;
+    //update paymentdate
+    payment.paymentDate = editedData.paymentDate
+
+    // 4️⃣ Adjust totals
+    if (diff !== 0) {
+      lead.totalPaidAmount += diff;
+      lead.balanceAmount -= diff;
+    }
+
+    // Ensure no negatives or overpaid balances
+    if (lead.totalPaidAmount < 0) lead.totalPaidAmount = 0;
+    if (lead.balanceAmount < 0) lead.balanceAmount = 0;
+
+
+
+    await lead.save({ session });
+    await session.commitTransaction();
+
+    res.status(200).json({
+      message: "Payment updated successfully",
+      data: lead,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    res.status(500).json({ message: error.message });
+  } finally {
+    session.endSession();
+  }
+
+
+}
+export const UpdateCollection = async (req, res) => {
+  const formData = req.body
+  let model
+  const isAdmin = await Admin.findOne({ _id: formData.receivedBy })
+  if (isAdmin) {
+    model = "Admin"
+
+  } else {
+    const isstaff = await Staff.findOne({ _id: formData.receivedBy })
+    if (isstaff) {
+      model = "Staff"
+    }
+  }
+
+  const session = await mongoose.startSession()
+  try {
+    const formData = req.body
+
+    const customerId = formData?.customerId
+    const leadDocId = formData?.leadDocId
+
+    if (!formData.leadDocId) {
+      return res.status(400).json({ message: "Missing leadid" })
+    }
+    // console.log(formData)
+
+    session.startTransaction()
+    const updatecustomer = await Customer.findByIdAndUpdate(customerId, {
+      $set: {
+        customerName: formData.customerName,
+        address1: formData.address,
+        email: formData.email,
+        mobile: formData?.mobile,
+        registrationType: formData?.registrationType,
+        partner: formData?.partner,
+        country: formData?.country,
+        state: formData?.state,
+        city: formData?.city,
+        pincode: formData?.pincode
+
+      }
+    }, { new: true, session })
+    if (!updatecustomer) {
+      throw new Error("Customer not found")
+    }
+    // 2️⃣ Calculate updated totals
+    const newTotalPaid = (Number(formData.totalPaidAmount || 0)) + Number(formData?.receivedAmount);
+   
+    const newBalance = Math.max(0, (formData?.netAmount || 0) - newTotalPaid);
+
+    // 3️⃣ Create payment record
+    const paymentRecord = {
+      paymentDate: new Date(),
+      receivedAmount: formData?.receivedAmount || 0,
+      receivedBy: formData?.receivedBy,
+      receivedModel: model,
+      bankRemarks: formData?.bankRemarks || "",
+      remarks: formData?.remarks,
+    };
+
+    const updateLead = await LeadMaster.findByIdAndUpdate(leadDocId, {
+      $push: { paymentHistory: paymentRecord },
+      $set: {
+        totalPaidAmount: newTotalPaid,
+        balanceAmount: newBalance,
+        ...(formData.status === "verified" && { leadVerified: true })
+      }
+    }, { new: true, session })
+    if (!updateLead) {
+      throw new Error("lead not found")
+    }
+    await session.commitTransaction()
+    session.endSession()
+    return res.status(200).json({
+      success: true, message: "Payment added succesfully"
+    })
+
+  } catch (error) {
+    await session.abortTransaction()
+    session.endSession()
+
+    console.log("error", error.message)
+    return res.status(500).json({ successs: false, message: "Internal server error" })
   }
 }
 export const TaskRegistration = async (req, res) => {
@@ -2349,11 +2489,9 @@ export const GetselectedLeadData = async (req, res) => {
 }
 export const GetcollectionLeads = async (req, res) => {
   try {
-    const { selectedBranch, varified } = req.query
-    console.log(varified)
-    console.log("selectedbranch", selectedBranch)
-    const query = { leadBranch: new mongoose.Types.ObjectId(selectedBranch), leadVarified: varified === "true" ? true : false }
-    const matchedCollectionlead = await LeadMaster.find(query).populate({path:"customerName"}).populate({path:"partner"}).lean()
+    const { selectedBranch, verified } = req.query
+    const query = { leadBranch: new mongoose.Types.ObjectId(selectedBranch), leadVerified: verified === "true" ? true : false }
+    const matchedCollectionlead = await LeadMaster.find(query).populate({ path: "customerName" }).populate({ path: "partner" }).lean()
     const populatedcollectionLeads = await Promise.all(
       matchedCollectionlead.map(async (lead) => {
         if (!lead.leadByModel || !mongoose.models[lead.leadByModel]) {
@@ -2405,12 +2543,41 @@ export const GetcollectionLeads = async (req, res) => {
           })
         );
 
+        // const populatedpaymentHistory = await Promise.all(
+        //   lead?.paymentHistory && lead.paymentHistory.length > 0 && lead.paymentHistory.map(async (history) => {
+        //     const populatedhistory = { ...history }
+        //     if (history.receivedModel && history.receivedBy) {
+        //       const model = mongoose.model(history.receivedModel)
+        //       populatedhistory.receivedBy = await model.findById(history.receivedBy).select("name").lean()
+        //     }
+        //     return populatedhistory
+        //   }))
+        const populatedpaymentHistory = lead?.paymentHistory?.length
+          ? await Promise.all(
+            lead.paymentHistory.map(async (history) => {
+              const populatedhistory = { ...history } // if it's a mongoose subdoc
+              if (history.receivedModel && history.receivedBy) {
+                const model = mongoose.model(history.receivedModel)
+                populatedhistory.receivedBy = await model
+                  .findById(history.receivedBy)
+                  .select("name")
+                  .lean()
+              }
+              return populatedhistory
+            })
+          )
+          : []
+
+
+
+
         // ✅ Get last activity
         const lastActivity = populatedActivityLog[populatedActivityLog.length - 1];
 
         return {
           ...lead,
           leadBy: populatedLeadBy,
+          paymentHistory: populatedpaymentHistory,
           activityLog: populatedActivityLog, // include fully populated activity logs
           taskallocatedTo: lasttaskallocatedto || null,
           taskallocatedBy: lasttaskallocatedBy || null,
@@ -2424,11 +2591,7 @@ export const GetcollectionLeads = async (req, res) => {
       return res.status(200).json({ message: "lead  not found", data: populatedcollectionLeads })
     }
 
-    // if (matchedCollectionlead && matchedCollectionlead.length > 0) {
-    //   return res.status(201).json({ message: "collection leads found", data: matchedCollectionlead })
-    // } else {
-    //   return res.status(200).json({ message: "collection leads not found", data: matchedCollectionlead })
-    // }
+
   } catch (error) {
     console.log("error", error.message)
     return res.status(500).json({ message: "Internal server error" })
