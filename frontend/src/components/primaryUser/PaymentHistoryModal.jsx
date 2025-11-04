@@ -11,6 +11,7 @@ export const PaymentHistoryModal = ({
   loggedUserId,
   refresh
 }) => {
+console.log(data)
   const [editingRow, setEditingRow] = useState(null)
   const [message, setMessage] = useState({})
   const [editedData, setEditedData] = useState({})

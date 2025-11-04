@@ -334,16 +334,16 @@ export const Login = async (req, res) => {
     // Determine if the input is an email or a mobile number
     if (emailRegex.test(emailOrMobile)) {
       // If it's an email
-      user = await Admin.findOne({ email: emailOrMobile }).populate({path:"department",select:"department"}).lean()
+      user = await Admin.findOne({ email: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
 
       if (!user) {
-        user = await Staff.findOne({ email: emailOrMobile }).populate({path:"department",select:"department"}).lean()
+        user = await Staff.findOne({ email: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
       }
     } else {
       // If it's a mobile number
-      user = await Admin.findOne({ mobile: emailOrMobile }).populate({path:"department",select:"department"}).lean()
+      user = await Admin.findOne({ mobile: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
       if (!user) {
-        user = await Staff.findOne({ mobile: emailOrMobile }).populate({path:"department",select:"department"}).lean()
+        user = await Staff.findOne({ mobile: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
 
       }
     }
@@ -553,7 +553,7 @@ export const getYearlyStaffPerformance = async (year, frame, month, quarter) => 
 export const UpdateUserPermission = async (req, res) => {
   try {
     const userPermissions = req.body
-console.log("userpsermissison",userPermissions)
+    console.log("userpsermissison", userPermissions)
 
     const { Userid } = req.query
 
@@ -564,7 +564,7 @@ console.log("userpsermissison",userPermissions)
         .json({ message: "User ID and permissions are required." })
     }
 
-   
+
     const updateuser = await Staff.findByIdAndUpdate(Userid, {
       $set: { permissions: userPermissions }
     })
@@ -1231,7 +1231,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
     const endDate = new Date(Date.UTC(year, month, 0))
     const matchStage = {
       isVerified: true,
-      role:  { $in: ["Staff", "Manager"] }
+      role: { $in: ["Staff", "Manager"] }
     };
     if (selectedBranch) {
       matchStage["selected.branch_id"] = new mongoose.Types.ObjectId(selectedBranch)
@@ -2168,7 +2168,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         groups.push(temp);
         return groups;
       }
-
+    
       // Main function
       async function calculateAbsences(allholidayfulldate, attendances) {
         const isPresent = async (date) => {
@@ -2223,7 +2223,8 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           } else {
             // ❌ Mark all holidays as notMarked = -1
             group.forEach((date) => {
-              if (attendances.attendancedates[date]) {
+              if (attendances.attendancedates[date] && (attendances.attendancedates[date]?.otherLeave === "" && attendances.attendancedates[date]?.compensatoryLeave === "" &&attendances.attendancedates[date]?.privileageLeave === ""&& attendances.attendancedates[date]?.casualLeave === "")) {
+               
                 attendances.attendancedates[date].present = 0;
                 attendances.attendancedates[date].notMarked = 1;
               }
@@ -5438,7 +5439,7 @@ export const GetsomeAllsummary = async (
           } else {
             // ❌ Mark all holidays as notMarked = -1
             group.forEach((date) => {
-              if (attendances.attendancedates[date]) {
+              if (attendances.attendancedates[date] && (attendances.attendancedates[date]?.otherLeave === "" && attendances.attendancedates[date]?.compensatoryLeave === "" &&attendances.attendancedates[date]?.privileageLeave === ""&& attendances.attendancedates[date]?.casualLeave === "")) {
                 attendances.attendancedates[date].present = 0;
                 attendances.attendancedates[date].notMarked = 1;
               }

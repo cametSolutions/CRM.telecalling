@@ -338,7 +338,7 @@ export const UpdateCollection = async (req, res) => {
     }
     // 2️⃣ Calculate updated totals
     const newTotalPaid = (Number(formData.totalPaidAmount || 0)) + Number(formData?.receivedAmount);
-   
+
     const newBalance = Math.max(0, (formData?.netAmount || 0) - newTotalPaid);
 
     // 3️⃣ Create payment record
@@ -2543,15 +2543,7 @@ export const GetcollectionLeads = async (req, res) => {
           })
         );
 
-        // const populatedpaymentHistory = await Promise.all(
-        //   lead?.paymentHistory && lead.paymentHistory.length > 0 && lead.paymentHistory.map(async (history) => {
-        //     const populatedhistory = { ...history }
-        //     if (history.receivedModel && history.receivedBy) {
-        //       const model = mongoose.model(history.receivedModel)
-        //       populatedhistory.receivedBy = await model.findById(history.receivedBy).select("name").lean()
-        //     }
-        //     return populatedhistory
-        //   }))
+        
         const populatedpaymentHistory = lead?.paymentHistory?.length
           ? await Promise.all(
             lead.paymentHistory.map(async (history) => {
@@ -2769,3 +2761,32 @@ export const GetownLeadList = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+export const fixLeadVerifiedField = async (req,res) => {
+console.log("iiiiiiiiiiiii")
+  try {
+    // 1️⃣ Rename the field 'leadVarified' -> 'leadVerified'
+    await LeadMaster.updateMany(
+      { leadVarified: { $exists: true } },
+      {
+        $rename: { leadVarified: "leadVerified" },
+      }
+    );
+
+    // 2️⃣ Set all documents' leadVerified to false (including newly renamed ones)
+    const result = await LeadMaster.updateMany({}, { $set: { leadVerified: false } });
+console.log("uuuuuu")
+    if (result.acknowledged && result.modifiedCount > 0) {
+      console.log(`✅ Successfully updated ${result.modifiedCount} leads.`);
+      return res.status(200).json({ message: "update all" })
+
+    } else if (result.acknowledged && result.modifiedCount === 0) {
+      console.log("ℹ️ No leads were modified — they may already have leadVerified: false.");
+    } else {
+      console.log("❌ Update failed.");
+    }
+
+    console.log("✅ Field renamed to 'leadVerified' and set to false for all documents.");
+  } catch (error) {
+    console.error("❌ Error updating field:", error);
+  }
+};
