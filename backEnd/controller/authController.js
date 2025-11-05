@@ -553,7 +553,6 @@ export const getYearlyStaffPerformance = async (year, frame, month, quarter) => 
 export const UpdateUserPermission = async (req, res) => {
   try {
     const userPermissions = req.body
-    console.log("userpsermissison", userPermissions)
 
     const { Userid } = req.query
 

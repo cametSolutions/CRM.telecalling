@@ -76,8 +76,7 @@ export default function CollectionUpdate() {
       partners &&
       partners.length > 0
     ) {
-const a=collectionlead.filter((item)=>item.paymentHistory&&item.paymentHistory.length)
-console.log(a)
+      
       setTableData(normalizeTableData(collectionlead))
       setPartner(partners)
     }
@@ -93,7 +92,7 @@ console.log(a)
     }
     return []
   }
- 
+
   const handleCollection = (item) => {
     setcollectionUpdateModal(true)
     setselectedData(item)
@@ -108,6 +107,19 @@ console.log(a)
     setHistoryList(Item.activityLog)
     setselectedLeadId(Item.leadId)
     sethistoryModal(true)
+  }
+  const handleCollectionUpdate = async (formData) => {
+    try {
+      const response = await api.post("/lead/collectionUPdate", formData)
+      if (response.status === 200) {
+        toast.success("payment updated successfully")
+        refreshHook()
+        return response
+      }
+    } catch (error) {
+      toast.error("something went wrong")
+      console.log("error", error.message)
+    }
   }
   const renderTable = (data) => (
     <table className="border-collapse border border-gray-300 w-full text-sm">
@@ -300,7 +312,7 @@ console.log(a)
         <h2 className="text-lg font-bold">
           {verifiedLead ? "Verified Collection" : "Pending Collection"}
         </h2>
-       
+
         <div className="flex justify-end items-center">
           {loggedUser?.role !== "Staff" && (
             <>
@@ -414,7 +426,8 @@ console.log(a)
             closemodal={setcollectionUpdateModal}
             partnerlist={partner}
             loggedUser={loggedUser}
-            refreshHook={refreshHook}
+            // refreshHook={refreshHook}
+            handleCollectionUpdate={handleCollectionUpdate}
           />
         )}
       {paymenthistoryModal && (
@@ -424,7 +437,6 @@ console.log(a)
           leadid={leadId}
           leadDocId={leadDocId}
           loggedUserId={loggedUser._id}
-          refresh={refreshHook}
         />
       )}
     </div>
