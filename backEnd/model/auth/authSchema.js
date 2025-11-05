@@ -140,8 +140,8 @@ const staffSchema = new Schema(
         TaskLevel: Boolean,
         LeadReallocation: Boolean,
         Employee: Boolean,
-        ProductandServices: Boolean
-
+        ProductandServices: Boolean,
+        CollectionUpdate: Boolean
       }
 
     ],

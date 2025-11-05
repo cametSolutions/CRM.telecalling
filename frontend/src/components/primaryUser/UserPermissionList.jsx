@@ -1,10 +1,8 @@
-
 import { useState, useEffect, useMemo } from "react"
 import { Search, Check, X, Shield, ChevronDown, ChevronUp } from "lucide-react"
 import api from "../../api/api"
 
-
-const UserPermissionList = ({ user, closeModal,refresh}) => {
+const UserPermissionList = ({ user, closeModal, refresh }) => {
   const [userPermissions, setUserPermissions] = useState({
     Company: false,
     Branch: false,
@@ -45,7 +43,8 @@ const UserPermissionList = ({ user, closeModal,refresh}) => {
     TaskAnalysis: false,
     LeadReallocation: false,
     ProductandServices: false,
-    Employee: false
+    Employee: false,
+    CollectionUpdate: false
   })
 
   const [selectAll, setSelectAll] = useState(false)
@@ -393,6 +392,4 @@ const UserPermissionList = ({ user, closeModal,refresh}) => {
     </div>
   )
 }
- export default UserPermissionList
-
-
+export default UserPermissionList

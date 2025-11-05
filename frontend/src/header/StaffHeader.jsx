@@ -138,7 +138,6 @@ export default function StaffHeader() {
       control: user?.permissions?.[0]?.Employee ?? false
     },
 
-   
     {
       to: "/staff/masters/leavemaster",
       label: "Leavemaster",
@@ -243,6 +242,11 @@ export default function StaffHeader() {
       to: "/staff/transaction/lead/taskAnalysis",
       label: "Task Analysis",
       control: user?.permissions?.[0]?.TaskAnalysis ?? false
+    },
+    {
+      to: "/staff/transaction/lead/collectionUpdate",
+      label: "Collection Update",
+      control: user?.permissions?.[0]?.CollectionUpdate
     }
     // {
     //   to: "/staff/transaction/lead/paymenthistory",

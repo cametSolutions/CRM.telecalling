@@ -12,7 +12,7 @@ const UserPermissions = () => {
   const [selectedUser, setSelectedUser] = useState(null)
   const [showModal, setShowModal] = useState(false)
   // const [loading, setLoading] = useState(false)
-  const { data: userData, refeshHook, loading } = UseFetch("/auth/getallUsers")
+  const { data: userData, refreshHook, loading } = UseFetch("/auth/getallUsers")
 
   useEffect(() => {
     if (userData) {
@@ -168,7 +168,7 @@ const UserPermissions = () => {
         <UserPermissionList
           user={selectedUser}
           closeModal={closeModal}
-          refresh={refeshHook}
+          refresh={refreshHook}
         />
       )}
     </div>

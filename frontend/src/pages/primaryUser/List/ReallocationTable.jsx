@@ -7,6 +7,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import BarLoader from "react-spinners/BarLoader"
 import api from "../../../api/api"
 import Select from "react-select"
+import { CollectionupdateModal } from "../../../components/primaryUser/CollectionupdateModal"
 import UseFetch from "../../../hooks/useFetch"
 const ReallocationTable = () => {
   const { label } = useParams()
@@ -16,7 +17,9 @@ const ReallocationTable = () => {
   const [isClosed, setIsclosed] = useState(false)
   const [selectedLeadId, setselectedLeadId] = useState(null)
   const [selectedType, setselectedType] = useState(null)
+  const [selectedData, setselectedData] = useState({})
   const [showModal, setShowmodal] = useState(false)
+  const [partner, setpartner] = useState([])
   const [submiterror, setsubmitError] = useState("")
   const [selectedAllocationType, setselectedAllocationType] = useState({})
   const [validateError, setValidateError] = useState({})
@@ -48,7 +51,9 @@ const ReallocationTable = () => {
       selectedCompanyBranch &&
       `/lead/getallreallocatedLead?selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
   )
+  console.log(selectedData)
   const { data } = UseFetch("/auth/getallUsers")
+  const { data: partners } = UseFetch("/customer/getallpartners")
   const navigate = useNavigate()
   useEffect(() => {
     const userData = localStorage.getItem("user")
@@ -100,9 +105,15 @@ const ReallocationTable = () => {
     }
   }, [data, selectedCompanyBranch])
   useEffect(() => {
-    if (leadreallocation && leadreallocation.length > 0) {
+    if (
+      leadreallocation &&
+      leadreallocation.length > 0 &&
+      partners &&
+      partners.length > 0
+    ) {
       const filteredLeads = filterLeadsByLastTaskLabel(leadreallocation, label)
       setTableData(filteredLeads)
+      setpartner(partners)
     }
   }, [leadreallocation])
   const filterLeadsByLastTaskLabel = (leads, label) => {
@@ -141,7 +152,6 @@ const ReallocationTable = () => {
       }
       const selected = selectedAllocationType[selectedItem._id]
       setsubmitLoading(true)
-      
 
       const response = await api.post(
         `/lead/leadReallocation?allocationType=${encodeURIComponent(
@@ -159,10 +169,26 @@ const ReallocationTable = () => {
       refreshHook()
       setTableData([])
     } catch (error) {
-      
       setsubmitError({ submissionerror: "something went wrong" })
       setsubmitLoading(false)
       console.log(error)
+    }
+  }
+  const handleCollectionUpdate = async (formData) => {
+    try {
+      console.log("hhhh")
+      const type = "leadClosed"
+      const response = await api.post(
+        `/lead/collectionUPdate?allocationType=${type}`,
+        formData
+      )
+      if (response.status === 200) {
+        refreshHook()
+        return response
+      }
+    } catch (error) {
+      toast.error("something went wrong")
+      console.log("error", error.message)
     }
   }
   const handleClosed = async () => {
@@ -183,10 +209,7 @@ const ReallocationTable = () => {
     )
     toast.success(response.data.message)
     setsubmitLoading(false)
-    setFormData({
-      netAmount: "",
-      balanceAmount: ""
-    })
+
     setIsclosed(false)
     refreshHook()
     setTableData([])
@@ -499,12 +522,8 @@ const ReallocationTable = () => {
                       className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5 text-red-400 hover:text-red-500 hover:cursor-pointer font-semibold"
                       onClick={() => {
                         setIsclosed(true)
-                        setFormData((prev) => ({
-                          ...prev,
-                          netAmount: item?.netAmount,
-                          balanceAmount: item?.balanceAmount
-                        }))
-                        setselectedLeadId(item?._id)
+
+                        setselectedData(item)
                       }}
                     >
                       Closed
@@ -671,72 +690,81 @@ const ReallocationTable = () => {
           </div>
         )}
         {isClosed && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40 ">
-            <div className="bg-white md:w-1/4 grid grid-cols-1 rounded-lg shadow-xl p-5">
-              <h1 className="text-xl font-semibold">Lead Closed Amount</h1>
-              <div>
-                <label className="block text-left font-semibold text-gray-500">
-                  Net Amount
-                </label>
-                <input
-                  disabled
-                  type="number"
-                  value={formData?.netAmount}
-                  className="py-1 pl-2 border border-gray-300 w-full rounded-md shadow-xl cursor-not-allowed bg-gray-100"
-                />
-              </div>
-              <div>
-                <label className="block text-left font-semibold text-gray-500">
-                  Balance Amount
-                </label>
-                <input
-                  disabled
-                  type="number"
-                  value={formData?.balanceAmount}
-                  className="py-1 pl-2 border border-gray-300 w-full  rounded-md shadow-xl"
-                />
-              </div>
-              <div>
-                <label className="block text-left font-semibold text-gray-500">
-                  Recieved Amount
-                </label>
-                <input
-                  type="number"
-                  value={formData?.recievedAmount}
-                  onChange={(e) => {
-                    if (submiterror.recievedAmount) {
-                      setsubmitError((prev) => ({
-                        ...prev,
-                        recievedAmount: ""
-                      }))
-                    }
-                    setFormData((prev) => ({
-                      ...prev,
-                      recievedAmount: e.target.value
-                    }))
-                  }}
-                  className="py-1 pl-2 border border-gray-300 w-full  rounded-md shadow-xl focus:outline-none"
-                />
-                {submiterror.recievedAmount && (
-                  <p className="text-red-500">{submiterror.recievedAmount}</p>
-                )}
-              </div>
-              <div className="mt-3 flex space-x-3 justify-center">
-                <button
-                  onClick={() => setIsclosed(false)}
-                  className="bg-gray-600 py-1 px-3 rounded-md hover:bg-gray-700 cursor-pointer text-white"
-                >
-                  Close
-                </button>
-                <button
-                  onClick={() => handleClosed()}
-                  className="bg-blue-500 py-1 px-3 rounded-md hover:bg-blue-600 cursor-pointer text-white"
-                >
-                  Submit
-                </button>
-              </div>
-            </div>
-          </div>
+          <CollectionupdateModal
+            isClosed={true}
+            data={selectedData}
+            closemodal={setIsclosed}
+            partnerlist={partner}
+            loggedUser={loggedUser}
+            handleCollectionUpdate={handleCollectionUpdate}
+          />
+
+          // <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40 ">
+          //   <div className="bg-white md:w-1/4 grid grid-cols-1 rounded-lg shadow-xl p-5">
+          //     <h1 className="text-xl font-semibold">Lead Closed Amount</h1>
+          //     <div>
+          //       <label className="block text-left font-semibold text-gray-500">
+          //         Net Amount
+          //       </label>
+          //       <input
+          //         disabled
+          //         type="number"
+          //         value={formData?.netAmount}
+          //         className="py-1 pl-2 border border-gray-300 w-full rounded-md shadow-xl cursor-not-allowed bg-gray-100"
+          //       />
+          //     </div>
+          //     <div>
+          //       <label className="block text-left font-semibold text-gray-500">
+          //         Balance Amount
+          //       </label>
+          //       <input
+          //         disabled
+          //         type="number"
+          //         value={formData?.balanceAmount}
+          //         className="py-1 pl-2 border border-gray-300 w-full  rounded-md shadow-xl"
+          //       />
+          //     </div>
+          //     <div>
+          //       <label className="block text-left font-semibold text-gray-500">
+          //         Recieved Amount
+          //       </label>
+          //       <input
+          //         type="number"
+          //         value={formData?.recievedAmount}
+          //         onChange={(e) => {
+          //           if (submiterror.recievedAmount) {
+          //             setsubmitError((prev) => ({
+          //               ...prev,
+          //               recievedAmount: ""
+          //             }))
+          //           }
+          //           setFormData((prev) => ({
+          //             ...prev,
+          //             recievedAmount: e.target.value
+          //           }))
+          //         }}
+          //         className="py-1 pl-2 border border-gray-300 w-full  rounded-md shadow-xl focus:outline-none"
+          //       />
+          //       {submiterror.recievedAmount && (
+          //         <p className="text-red-500">{submiterror.recievedAmount}</p>
+          //       )}
+          //     </div>
+          //     <div className="mt-3 flex space-x-3 justify-center">
+          //       <button
+          //         onClick={() => setIsclosed(false)}
+          //         className="bg-gray-600 py-1 px-3 rounded-md hover:bg-gray-700 cursor-pointer text-white"
+          //       >
+          //         Close
+          //       </button>
+          //       <button
+          //         onClick={() => handleClosed()}
+          //         className="bg-blue-500 py-1 px-3 rounded-md hover:bg-blue-600 cursor-pointer text-white"
+          //       >
+          //         Submit
+          //       </button>
+          //     </div>
+          //   </div>
+          // </div>
         )}
       </div>
     </div>

@@ -1,18 +1,21 @@
-import React, { useState, useEffect } from "react"
-import { ChevronDown, X } from "lucide-react"
+import { useState, useEffect } from "react"
+import { X } from "lucide-react"
 import { FaSpinner } from "react-icons/fa"
-import api from "../../api/api"
+
 import { toast } from "react-toastify"
 import { Country, State } from "country-state-city"
-import Select from "react-select"
+
 export const CollectionupdateModal = ({
+  isClosed = false,
   data,
   closemodal,
   partnerlist,
   loggedUser,
-  refreshHook
-}) => {
 
+  handleCollectionUpdate,
+  setishavePayment = false
+}) => {
+ 
   const [isdropdownOpen, setIsdropdownOpen] = useState(false)
   const [error, setError] = useState({})
   const [noneAmount, setisnoneAmount] = useState(false)
@@ -32,8 +35,8 @@ export const CollectionupdateModal = ({
     customerName: data?.customerName?.customerName,
 
     address: data?.customerName?.address1,
-    email: data?.customerName?.email,
-    mobile: data?.customerName?.mobile,
+    email: data?.customerName?.email || data?.email,
+    mobile: data?.customerName?.mobile || data?.mobile,
     registrationType: data?.customerName?.registrationType,
     partner: data?.partner?._id,
     country: data?.customerName?.country,
@@ -50,7 +53,6 @@ export const CollectionupdateModal = ({
     receivedModel: loggedUser?.role === "Admin" ? "Admin" : "Staff"
   })
   useEffect(() => {
-
     const checkvarify = data?.balanceAmount <= 0
     if (data?.netAmount === 0) {
       setisnoneAmount(true)
@@ -60,15 +62,14 @@ export const CollectionupdateModal = ({
       if (data?.paymentHistory && data?.paymentHistory.length > 0) {
         const lastrecievedBy =
           data?.paymentHistory[data.paymentHistory.length - 1]
-       
+
         const matchedrecievedby = loggedUser._id === lastrecievedBy.receivedBy
 
-        if (!matchedrecievedby) {
-          setMessage({
-            warning: "You cant verified ,only last receiver can "
-          })
-        }
-      
+        // if (!matchedrecievedby) {
+        //   setMessage({
+        //     warning: "You cant verified ,only last receiver can "
+        //   })
+        // }
       }
       ///only if the balance is 0 or may have advance payment
       setisreadyTovarify(checkvarify)
@@ -155,6 +156,14 @@ export const CollectionupdateModal = ({
         JP: /^\d{3}-?\d{4}$/, // Japan
         SG: /^\d{6}$/ // Singapore
       }
+    
+      if (formData.country === "" || formData.country === undefined) {
+        setError((prev) => ({
+          ...prev,
+          pincode: "please fill country before pincode"
+        }))
+        return
+      }
       const pattern = postalCodePatterns[formData.country.toUpperCase()]
       if (!pattern) return true
       if (!pattern.test(value)) {
@@ -202,6 +211,7 @@ export const CollectionupdateModal = ({
           (val) => val !== null && val !== undefined && val !== ""
         )
       ) {
+       
         return
       }
       setsubmitloader(true)
@@ -228,17 +238,19 @@ export const CollectionupdateModal = ({
         setsubmitloader(false)
         return
       }
-
-      const response = await api.post("/lead/collectionUpdate", formData)
+      const response = await handleCollectionUpdate(formData)
       if (response.status === 200) {
-        toast.success("updated successfully")
+        isClosed
+          ? toast.success("Lead is closed and payment updated successfully")
+          : toast.success("Payment updated successfully")
         setsubmitloader(false)
         closemodal(false)
-        refreshHook()
+        // refreshHook()
       }
     } catch (error) {
+      console.log(error.message)
       setsubmitloader(false)
-      toast.error("something went wrong")
+      // toast.error("something went wrong")
       setError((prev) => ({
         ...prev,
         submitError: "something went wrong"
@@ -253,11 +265,11 @@ export const CollectionupdateModal = ({
 
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-3 border-b border-gray-200 bg-gradient-to-r from-slate-50 to-gray-50">
           {/* Left Section - Title & Subtitle */}
-          <div className="min-w-[180px] flex-1">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
+          <div className="min-w-[180px] flex-1 flex flex-col items-start">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 ">
               Collection Update
             </h2>
-            <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+            <p className="text-xs sm:text-sm text-gray-500 mt-0.5 ">
               Update and Manage Collection Details
             </p>
           </div>
@@ -271,33 +283,34 @@ export const CollectionupdateModal = ({
           {/* Right Section - Close Button */}
           <button
             type="button"
-            onClick={() => closemodal(false)}
+            onClick={() => {
+              closemodal(false)
+              if (setishavePayment) {
+                setishavePayment(false)
+              }
+            }}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
           >
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
-
+       
         {/* Body - Scrollable */}
         <div className="flex-1 overflow-y-auto px-6 py-3">
           <div className="space-y-2">
             {/* Follow Up Date - Read Only */}
-            <div className="grid  grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              <div>
+            <div className="grid  grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-start">
+              <div className="flex flex-col justify-start">
                 <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
                   Submission Date
                 </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    readOnly
-                    value={formData.submissionDate}
-                    className="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium cursor-not-allowed focus:outline-none"
-                  />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                  </div>
-                </div>
+
+                <input
+                  type="text"
+                  readOnly
+                  value={formData.submissionDate}
+                  className="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium cursor-not-allowed focus:outline-none"
+                />
               </div>
 
               {/* Status Dropdown */}
@@ -361,8 +374,19 @@ export const CollectionupdateModal = ({
                   <input
                     type="text"
                     value={formData.address}
+                    onChange={(e) =>
+                      setformData((prev) => ({
+                        ...prev,
+                        address: e.target.value()
+                      }))
+                    }
                     className="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium focus:outline-none"
                   />
+                  {error.address && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {error?.address}
+                    </p>
+                  )}
                 </div>
               </div>
               <div>
@@ -432,6 +456,18 @@ export const CollectionupdateModal = ({
                 <select
                   name="partner"
                   value={formData?.partner}
+                  onChange={(e) => {
+                    if (error.partner) {
+                      setError((prev) => ({
+                        ...prev,
+                        partner: ""
+                      }))
+                    }
+                    setformData((prev) => ({
+                      ...prev,
+                      partner: e.target.value
+                    }))
+                  }}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none bg-gray-50 cursor-pointer"
                 >
                   <option value="">Select Partner</option>
@@ -441,6 +477,9 @@ export const CollectionupdateModal = ({
                     </option>
                   ))}
                 </select>
+                {error.partner && (
+                  <p className="text-red-500 text-xs mt-1">{error?.partner}</p>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
@@ -454,6 +493,9 @@ export const CollectionupdateModal = ({
                   onChange={(e) => handleChange(e)}
                   className="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium  focus:outline-none"
                 />
+                {error.country && (
+                  <p className="text-red-500 text-xs mt-1">{error?.country}</p>
+                )}
                 {/* <Select
                     options={countryOptions}
                     value={formData?.country}
@@ -487,8 +529,19 @@ export const CollectionupdateModal = ({
                   <input
                     type="text"
                     value={formData.state}
+                    onChange={(e) => {
+                      if (error.state) {
+                        setformData((prev) => ({
+                          ...prev,
+                          state: e.target.value.trim()
+                        }))
+                      }
+                    }}
                     className="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium  focus:outline-none"
                   />
+                  {error.state && (
+                    <p className="text-red-500 text-xs mt-1">{error?.state}</p>
+                  )}
                 </div>
               </div>
               <div>
@@ -498,9 +551,24 @@ export const CollectionupdateModal = ({
                 <div className="relative">
                   <input
                     type="text"
-                    value={formData.city}
+                    value={formData?.city}
+                    onChange={(e) => {
+                      if (error.city) {
+                        setError((prev) => ({
+                          ...prev,
+                          city: ""
+                        }))
+                      }
+                      setformData((prev) => ({
+                        ...prev,
+                        city: e.target.value.trim()
+                      }))
+                    }}
                     className="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium  focus:outline-none"
                   />
+                  {error.city && (
+                    <p className="text-red-500 text-xs mt-1">{error?.city}</p>
+                  )}
                 </div>
               </div>
               <div>
@@ -577,6 +645,27 @@ export const CollectionupdateModal = ({
                             ...prev,
                             receivedAmount: e.target.value.trim()
                           }))
+                          if (isClosed) {
+                            setTimeout(() => {
+                              if (
+                                e.target.value.trim() < formData?.balanceAmount
+                              ) {
+                                setError((prev) => ({
+                                  ...prev,
+                                  receivedAmount:
+                                    "Received amount is less than balance amount check it"
+                                }))
+                              } else if (
+                                e.target.value.trim() > formData?.balanceAmount
+                              ) {
+                                setError((prev) => ({
+                                  ...prev,
+                                  receivedAmount:
+                                    "Received amount is more than balance amount check it"
+                                }))
+                              }
+                            }, 2000)
+                          }
                         }}
                         className="w-full px-4 py-1 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                         placeholder="Enter received amount..."
@@ -677,7 +766,12 @@ export const CollectionupdateModal = ({
         <div className="flex items-center justify-center gap-3 px-6 py-2 border-t border-gray-200 bg-gray-50">
           <button
             type="button"
-            onClick={() => closemodal(false)}
+            onClick={() => {
+              closemodal(false)
+              if (setishavePayment) {
+                setishavePayment(false)
+              }
+            }}
             className="px-6 py-1.5 border-2 border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-100 hover:border-gray-400 transition-all"
           >
             Cancel

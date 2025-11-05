@@ -293,6 +293,9 @@ export const UpdatereceivedAmount = async (req, res) => {
 }
 export const UpdateCollection = async (req, res) => {
   const formData = req.body
+  const { allocationType = null } = req.query
+ 
+
   let model
   const isAdmin = await Admin.findOne({ _id: formData.receivedBy })
   if (isAdmin) {
@@ -315,7 +318,6 @@ export const UpdateCollection = async (req, res) => {
     if (!formData.leadDocId) {
       return res.status(400).json({ message: "Missing leadid" })
     }
-    // console.log(formData)
 
     session.startTransaction()
     const updatecustomer = await Customer.findByIdAndUpdate(customerId, {
@@ -355,7 +357,15 @@ export const UpdateCollection = async (req, res) => {
       $push: { paymentHistory: paymentRecord },
       $set: {
         totalPaidAmount: newTotalPaid,
+        partner: formData.partner,
         balanceAmount: newBalance,
+        ...(allocationType === "leadClosed" && {
+          leadClosed: true,
+          leadClosedBy: formData?.receivedBy,
+          leadClosedModel: formData?.receivedModel,
+          reallocatedTo: false,
+          allocationType: allocationType
+        }),
         ...(formData.status === "verified" && { leadVerified: true })
       }
     }, { new: true, session })
@@ -544,7 +554,7 @@ export const GetallfollowupList = async (req, res) => {
 
     }
 
-    const selectedfollowup = await LeadMaster.find(query).populate({ path: "customerName", select: "customerName" }).lean()
+    const selectedfollowup = await LeadMaster.find(query).populate({ path: "customerName" }).populate({ path: "partner" }).lean()
     const followupLeads = [];
     for (const lead of selectedfollowup) {
       // Build matchedAllocations = activityLog entries where taskTo === 'followup'
@@ -1430,7 +1440,7 @@ export const GetallReallocatedLead = async (req, res) => {
     const query = { leadBranch: branchObjectId, reallocatedTo: true };
 
     const reallocatedLeads = await LeadMaster.find(query)
-      .populate({ path: "customerName", select: "customerName" })
+      .populate({ path: "customerName" }).populate({ path: "partner" })
       .lean()
 
     const populatedreallocatedLeads = await Promise.all(
@@ -1676,19 +1686,9 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       {
         $push: {
           activityLog: activityEntry,
-          ...(Number(formData.recievedAmount) > 0 && {
-            paymentHistory: {
-              paymentDate: new Date(),
-              receivedBy: loggeduserid, // change to your actual field name
-              recievedModel: followedByModel,
-              receivedAmount: Number(formData.recievedAmount),
-            }
-          })
+
         },
-        $inc: {
-          balanceAmount: -Number(formData.recievedAmount || 0), // subtract value
-          totalPaidAmount: +Number(formData.recievedAmount || 0)
-        },
+
         reallocatedTo: formData.followupType === "closed",
         leadLost: formData.followupType === "lost",
 
@@ -2543,7 +2543,7 @@ export const GetcollectionLeads = async (req, res) => {
           })
         );
 
-        
+
         const populatedpaymentHistory = lead?.paymentHistory?.length
           ? await Promise.all(
             lead.paymentHistory.map(async (history) => {
@@ -2761,8 +2761,7 @@ export const GetownLeadList = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
-export const fixLeadVerifiedField = async (req,res) => {
-console.log("iiiiiiiiiiiii")
+export const fixLeadVerifiedField = async (req, res) => {
   try {
     // 1️⃣ Rename the field 'leadVarified' -> 'leadVerified'
     await LeadMaster.updateMany(
@@ -2774,7 +2773,6 @@ console.log("iiiiiiiiiiiii")
 
     // 2️⃣ Set all documents' leadVerified to false (including newly renamed ones)
     const result = await LeadMaster.updateMany({}, { $set: { leadVerified: false } });
-console.log("uuuuuu")
     if (result.acknowledged && result.modifiedCount > 0) {
       console.log(`✅ Successfully updated ${result.modifiedCount} leads.`);
       return res.status(200).json({ message: "update all" })
