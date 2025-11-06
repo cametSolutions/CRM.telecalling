@@ -76,7 +76,6 @@ export default function CollectionUpdate() {
       partners &&
       partners.length > 0
     ) {
-      
       setTableData(normalizeTableData(collectionlead))
       setPartner(partners)
     }
@@ -123,7 +122,7 @@ export default function CollectionUpdate() {
   }
   const renderTable = (data) => (
     <table className="border-collapse border border-gray-300 w-full text-sm">
-      <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30 text-xs">
+      <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-20 text-xs">
         <tr>
           <th className="border border-gray-300 px-3 py-1 text-left">
             <div className="flex items-center gap-1.5">
@@ -155,6 +154,7 @@ export default function CollectionUpdate() {
 
           <th className="border border-gray-300 px-3 py-1 min-w-40">Action</th>
           <th className="border border-gray-300 px-3 py-1">Net Amount</th>
+          <th className="border border-gray-300 px-3 py-1 ">Bal.Amount</th>
         </tr>
       </thead>
       <tbody>
@@ -193,6 +193,7 @@ export default function CollectionUpdate() {
                   </button>
                 </td>
                 <td className="border border-b-0 border-gray-300 px-3 py-1"></td>
+                {/* <td className="border border-b-0 border-gray-300 px-3 py-1"></td> */}
               </tr>
 
               <tr className="font-medium bg-gradient-to-r from-gray-100 to-gray-50 text-xs text-gray-600">
@@ -241,12 +242,21 @@ export default function CollectionUpdate() {
                     Payment History
                   </button>
                 </td>
-                <td className="border border-t-0 border-b-0 border-gray-300 px-3  bg-white font-semibold">
+                <td className="border border-t-0 border-b-0 border-gray-300 px-3  bg-white font-semibold max-w-28">
                   <div className="flex items-center justify-start">
                     <IndianRupee className="w-4 h-3.5 text-green-600 mr-1" />
                     <span className="text-lg font-semibold">
                       {" "}
-                      {item.netAmount}
+                      {item?.netAmount}
+                    </span>
+                  </div>
+                </td>
+                <td className="border border-t-0 border-b-0 border-gray-300 px-3  bg-white font-semibold max-w-28">
+                  <div className="flex items-center justify-start">
+                    <IndianRupee className="w-4 h-3.5 text-red-600 mr-1" />
+                    <span className="text-lg font-semibold">
+                      {" "}
+                      {item?.balanceAmount}
                     </span>
                   </div>
                 </td>
@@ -279,6 +289,20 @@ export default function CollectionUpdate() {
                   )}
                 </td>
                 <td className="border border-t-0 border-b-0 border-gray-300 px-3 py-1"></td>
+                <td className="border border-t-0 border-b-0 border-gray-300 px-3 py-1"></td>
+              </tr>
+
+              <tr className="font-medium bg-gradient-to-r from-gray-100 to-gray-50 text-xs text-gray-600">
+                <td colSpan={5} className="px-3 py-1 border-t border-gray-200">
+                  <span>Last Payment Remark :</span>
+                  <span className="ml-2 text-red-600">
+                    {item?.paymentHistory[item?.paymentHistory?.length - 1]?.remarks||"-"}
+                  </span>
+                </td>
+
+                <td className="border border-t-0 border-b-0 border-gray-300 px-3 bg-white"></td>
+                <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1 bg-white"></td>
+                <td className="border border-t-0 border-b-0 border-gray-300 px-3 bg-white"></td>
               </tr>
 
               {index !== data.length - 1 && (
@@ -307,8 +331,8 @@ export default function CollectionUpdate() {
     </table>
   )
   return (
-    <div className="max-h-full ">
-      <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3">
+    <div className="max-h-full flex flex-col ">
+      <div className="flex justify-between items-center p-3 md:p-5 mb-3 sticky top-0 z-30 bg-white">
         <h2 className="text-lg font-bold">
           {verifiedLead ? "Verified Collection" : "Pending Collection"}
         </h2>
