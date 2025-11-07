@@ -51,7 +51,6 @@ const ReallocationTable = () => {
       selectedCompanyBranch &&
       `/lead/getallreallocatedLead?selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
   )
-  console.log(selectedData)
   const { data } = UseFetch("/auth/getallUsers")
   const { data: partners } = UseFetch("/customer/getallpartners")
   const navigate = useNavigate()
@@ -176,7 +175,6 @@ const ReallocationTable = () => {
   }
   const handleCollectionUpdate = async (formData) => {
     try {
-      console.log("hhhh")
       const type = "leadClosed"
       const response = await api.post(
         `/lead/collectionUPdate?allocationType=${type}`,

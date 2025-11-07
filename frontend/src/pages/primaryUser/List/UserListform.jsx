@@ -35,15 +35,13 @@ const UserListform = () => {
           .map((branch) => branch.branch_id)
           .includes(logged.selected[0].branch_id)
       )
-      console.log(filtereusers)
-      
 
       setUser(sortByVerified(filtereusers))
       setloggeduser(logged)
       setselectedBranch(logged.selected[0].branch_id)
     }
   }, [data])
-  const sortByVerified=(arr)=>{
+  const sortByVerified = (arr) => {
     return arr.sort((a, b) => (b.isVerified === true) - (a.isVerified === true))
   }
 
@@ -100,13 +98,14 @@ const UserListform = () => {
       await api.delete(`/auth/userDelete?id=${id}`)
 
       // Remove the deleted item from the items array
-      setUser((prevItems) => sortByVerified(prevItems.filter((item) => item._id !== id)))
+      setUser((prevItems) =>
+        sortByVerified(prevItems.filter((item) => item._id !== id))
+      )
     } catch (error) {
       console.error("Failed to delete item", error)
       // toast.error("Failed to delete item. Please try again.")
     }
   }
-  console.log(users)
   return (
     <div className="h-full flex flex-col bg-gray-50">
       {/* Header Section - Sticky */}
@@ -222,6 +221,9 @@ const UserListform = () => {
                     Mobile
                   </th>
                   <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider min-w-32 bg-green-300">
+                    Department
+                  </th>
+                  <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider min-w-32 bg-green-300">
                     Designation
                   </th>
 
@@ -277,6 +279,11 @@ const UserListform = () => {
                           <td className="px-4 py-4 whitespace-nowrap">
                             <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                               {user?.designation}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                              {user?.department?.department}
                             </span>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">

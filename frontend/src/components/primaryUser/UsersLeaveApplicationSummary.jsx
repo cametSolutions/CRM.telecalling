@@ -20,7 +20,6 @@ function UsersLeaveApplicationSummary() {
   const userName = searchParams.get("userName")
 
   const { selectedusersleaves, selectedusersattendance } = location.state || {}
-console.log("h")
   const [events, setEvents] = useState([])
   const [selectedMonth, setSelectedMonth] = useState("")
   const [showModal, setShowModal] = useState(false)

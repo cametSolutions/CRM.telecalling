@@ -28,6 +28,7 @@ import { CallNoteRegistration } from "../../../pages/primaryUser/register/CallNo
 import LeaveMaster from "../../../pages/primaryUser/register/LeaveMaster"
 import TaskRegistration from "../../../pages/primaryUser/register/TaskRegistration"
 import WithoutProductdetailscustomer from "../../../components/secondaryUser/WithoutProductdetailscustomer"
+import { TargetRegister } from "../../../pages/primaryUser/register/TargetRegister"
 const mastersRoutes = [
   {
     path: "/admin/masters/company",
@@ -108,14 +109,15 @@ const mastersRoutes = [
   { path: "/admin/masters/menurights", component: UserPermissions },
 
   { path: "/admin/masters/vouchermaster", component: ComingSoon },
-  { path: "/admin/masters/target", component: ComingSoon },
+  // { path: "/admin/masters/target", component: ComingSoon },
 
   { path: "/admin/masters/partners", component: PartnerRegistration },
   {
     path: "/admin/masters/servicesRegistration",
     component: ServicesRegistration
   },
-  { path: "/admin/masters/department", component: DepartmentRegistration }
+  { path: "/admin/masters/department", component: DepartmentRegistration },
+  { path: "/admin/masters/target", component: ComingSoon }
 ]
 
 export default mastersRoutes

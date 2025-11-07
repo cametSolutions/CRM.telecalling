@@ -26,6 +26,7 @@ import { toast } from "react-toastify"
 export default function CollectionUpdate() {
   const [showFullName, setShowFullName] = useState(false)
   const [tableData, setTableData] = useState([])
+  const [isdepartmentisAccountant, setisdepartmentAccountant] = useState(false)
   const [loggedUser, setLoggedUser] = useState(null)
   const [leadId, setleadId] = useState(null)
   const [leadDocId, setleadDocId] = useState(null)
@@ -44,6 +45,7 @@ export default function CollectionUpdate() {
   const [historyList, setHistoryList] = useState([])
   const navigate = useNavigate()
   const { data: companybranches } = UseFetch("/branch/getBranch")
+  // const {data}=UseFetch("/lead/fix-leadverified")
   const {
     data: collectionlead,
     loading,
@@ -57,6 +59,12 @@ export default function CollectionUpdate() {
   useEffect(() => {
     if (companybranches && companybranches.length > 0) {
       const userData = getLocalStorageItem("user")
+      if (
+        userData.department?.department === "Accountant" ||
+        userData.department?._id === "670c863652847bbebbd35743"
+      ) {
+        setisdepartmentAccountant(true)
+      }
       const branch = companybranches?.map((branch) => {
         return {
           value: branch._id,
@@ -68,18 +76,39 @@ export default function CollectionUpdate() {
       setLoggedUser(userData)
     }
   }, [companybranches])
-
   useEffect(() => {
     if (
       collectionlead &&
       collectionlead.length > 0 &&
       partners &&
-      partners.length > 0
+      partners.length > 0 &&
+      loggedUser
     ) {
-      setTableData(normalizeTableData(collectionlead))
+      if (
+        loggedUser?.department?._id === "670c863652847bbebbd35743" ||
+        loggedUser?.department?.department === "Accounts"
+      ) {
+        const filteredCollectionleads = collectionlead.filter(
+          (item) => item.paymentHistory?.length > 0
+        )
+        const sortedLeads = filteredCollectionleads.sort((a, b) => {
+          const getOldest = (lead) =>
+            lead.paymentHistory?.length
+              ? Math.min(
+                  ...lead.paymentHistory.map((p) => new Date(p.paymentDate))
+                )
+              : Date.now()
+
+          return getOldest(a) - getOldest(b)
+        })
+        setTableData(normalizeTableData(sortedLeads))
+      } else {
+        setTableData(normalizeTableData(collectionlead))
+      }
+
       setPartner(partners)
     }
-  }, [collectionlead, partners])
+  }, [collectionlead, partners, loggedUser])
   const normalizeTableData = (data) => {
     if (Array.isArray(data)) {
       return [{ staffName: null, leads: data }]
@@ -120,6 +149,7 @@ export default function CollectionUpdate() {
       console.log("error", error.message)
     }
   }
+
   const renderTable = (data) => (
     <table className="border-collapse border border-gray-300 w-full text-sm">
       <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-20 text-xs">
@@ -296,7 +326,8 @@ export default function CollectionUpdate() {
                 <td colSpan={5} className="px-3 py-1 border-t border-gray-200">
                   <span>Last Payment Remark :</span>
                   <span className="ml-2 text-red-600">
-                    {item?.paymentHistory[item?.paymentHistory?.length - 1]?.remarks||"-"}
+                    {item?.paymentHistory[item?.paymentHistory?.length - 1]
+                      ?.remarks || "-"}
                   </span>
                 </td>
 
@@ -334,14 +365,18 @@ export default function CollectionUpdate() {
     <div className="max-h-full flex flex-col ">
       <div className="flex justify-between items-center p-3 md:p-5 mb-3 sticky top-0 z-30 bg-white">
         <h2 className="text-lg font-bold">
-          {verifiedLead ? "Verified Collection" : "Pending Collection"}
+          {isdepartmentisAccountant
+            ? verifiedLead
+              ? "All Verified Payment Leads"
+              : "Pending Verified Collections"
+            : "Pending Collection Leads"}
         </h2>
 
         <div className="flex justify-end items-center">
-          {loggedUser?.role !== "Staff" && (
+          {isdepartmentisAccountant && (
             <>
               <span className="text-sm whitespace-nowrap font-semibold">
-                {verifiedLead ? "Verified" : "Pending"}
+                {verifiedLead ? "All payment Verified" : "Pending Verified"}
               </span>
               <button
                 onClick={() => {
@@ -460,7 +495,9 @@ export default function CollectionUpdate() {
           onClose={setpaymentHistoryModal}
           leadid={leadId}
           leadDocId={leadDocId}
-          loggedUserId={loggedUser._id}
+          loggedUser={loggedUser}
+          refresh={refreshHook}
+          setdata={setTableData}
         />
       )}
     </div>

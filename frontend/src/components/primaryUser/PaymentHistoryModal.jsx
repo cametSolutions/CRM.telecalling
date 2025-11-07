@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { X, Edit2, Save, DollarSign } from "lucide-react"
 import { PropagateLoader } from "react-spinners"
 import { toast } from "react-toastify"
@@ -8,15 +8,32 @@ export const PaymentHistoryModal = ({
   leadid,
   onClose,
   leadDocId,
-  loggedUserId,
-  refresh
+  loggedUser,
+  refresh,
+  setdata
 }) => {
-console.log(data)
   const [editingRow, setEditingRow] = useState(null)
+  const [isdepartmentisAccountant, setisdepartmentAccountant] = useState(false)
   const [message, setMessage] = useState({})
   const [editedData, setEditedData] = useState({})
+  const [checkverified, setcheckverified] = useState({})
   const [ispermissionEdit, setispermissionEdit] = useState(false)
   const [submitLoading, setsubmitLoading] = useState(false)
+  useEffect(() => {
+    if (
+      loggedUser?.department?.department === "Accounts" ||
+      loggedUser?.department?._id === "670c863652847bbebbd35743"
+    ) {
+      setisdepartmentAccountant(true)
+    }
+    data?.forEach((item, index) =>
+      setcheckverified((prev) => ({
+        ...prev,
+        [index]: item?.paymentVerified
+      }))
+    )
+  }, [])
+
   const formatDate = (dateString) => {
     const date = new Date(dateString)
     return date.toLocaleDateString("en-IN", {
@@ -37,7 +54,7 @@ console.log(data)
   }
 
   const handleEdit = (row, index) => {
-    const checkpermission = loggedUserId === row.receivedBy._id
+    const checkpermission = loggedUser?._id === row.receivedBy._id
     setispermissionEdit(checkpermission)
     if (!checkpermission) {
       setMessage((prev) => ({
@@ -90,6 +107,37 @@ console.log(data)
       ...prev,
       [field]: value
     }))
+  }
+  const handleVerify = async (row, index, checkverified) => {
+  
+    try {
+      setsubmitLoading(true)
+      const payload = {
+        isverified: !checkverified?.[index],
+        index: index,
+        leadId: leadDocId,
+        verifiedBy: loggedUser?._id
+      }
+      const response = await api.put("/lead/paymentverification", payload)
+      if (response.status === 204) {
+        refresh()
+        setdata([])
+        setsubmitLoading(false)
+        setcheckverified((prev) => ({
+          ...prev,
+          [index]: !checkverified?.[index]
+        }))
+      }
+      if (checkverified?.[index]) {
+        toast.success("Payment univerified succssfully")
+      } else {
+        toast.success("Payment verified successfully")
+      }
+    } catch (error) {
+      console.log(error)
+      toast.error("Something went wrong")
+      setsubmitLoading(false)
+    }
   }
 
   const totalAmount = data.reduce(
@@ -144,27 +192,27 @@ console.log(data)
         </div>
 
         {/* Table Container */}
-        <div className="flex-1 overflow-auto p-3 sm:p-6">
-          <div className="overflow-x-auto">
+        <div className="flex-1 p-3 sm:p-6">
+          <div className="overflow-x-auto overflow-y-auto">
             <table className="w-full border-collapse min-w-[800px]">
-              <thead>
-                <tr className="bg-gray-50 border-b-2 border-gray-200">
-                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">
+              <thead className="sticky top-0 bg-blue-400 text-white">
+                <tr className=" border-b-2 border-gray-200">
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold  whitespace-nowrap">
                     Payment Date
                   </th>
-                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold whitespace-nowrap">
                     Payment Done By
                   </th>
-                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold  whitespace-nowrap">
                     Payment Amount
                   </th>
-                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold whitespace-nowrap">
                     Remarks
                   </th>
-                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">
+                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold whitespace-nowrap">
                     Bank Remarks
                   </th>
-                  <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap">
+                  <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold  whitespace-nowrap">
                     Actions
                   </th>
                 </tr>
@@ -175,8 +223,8 @@ console.log(data)
                   return (
                     <tr
                       key={row._id}
-                      className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                        index % 2 === 0 ? "bg-white" : "bg-gray-25"
+                      className={`border-b border-r border-l border-t-0 border-gray-200 hover:bg-gray-50 transition-colors ${
+                        index % 2 === 0 ? "bg-white" : "bg-gray-100"
                       }`}
                     >
                       <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-gray-700 whitespace-nowrap">
@@ -246,7 +294,7 @@ console.log(data)
                           </span>
                         )}
                       </td>
-                      <td className="px-3 sm:px-4 py-3 text-center whitespace-nowrap">
+                      <td className="px-3 sm:px-4 py-3  whitespace-nowrap ">
                         {isEditing ? (
                           <div className="flex items-center justify-center gap-2">
                             <button
@@ -265,12 +313,28 @@ console.log(data)
                             </button>
                           </div>
                         ) : (
+                          !isdepartmentisAccountant && (
+                            <button
+                              onClick={() => handleEdit(row, index)}
+                              className="p-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                              title="Edit"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                          )
+                        )}
+                        {isdepartmentisAccountant && (
                           <button
-                            onClick={() => handleEdit(row, index)}
-                            className="p-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                            title="Edit"
+                            onClick={() =>
+                              handleVerify(row, index, checkverified)
+                            }
+                            className={`p-1.5 ${
+                              checkverified?.[index]
+                                ? "bg-green-500"
+                                : "bg-orange-400"
+                            }  text-white rounded-lg  transition-colors ml-2 font-semibold text-sm`}
                           >
-                            <Edit2 className="w-4 h-4" />
+                            {checkverified?.[index] ? "Verified" : "Unverified"}
                           </button>
                         )}
                       </td>
