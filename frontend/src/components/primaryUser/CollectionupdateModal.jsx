@@ -15,7 +15,6 @@ export const CollectionupdateModal = ({
   handleCollectionUpdate,
   setishavePayment = false
 }) => {
- 
   const [isdropdownOpen, setIsdropdownOpen] = useState(false)
   const [error, setError] = useState({})
   const [noneAmount, setisnoneAmount] = useState(false)
@@ -53,34 +52,16 @@ export const CollectionupdateModal = ({
     receivedModel: loggedUser?.role === "Admin" ? "Admin" : "Staff"
   })
   useEffect(() => {
-    const checkvarify = data?.balanceAmount <= 0
     if (data?.netAmount === 0) {
       setisnoneAmount(true)
     }
-
-    if (checkvarify) {
-      if (data?.paymentHistory && data?.paymentHistory.length > 0) {
-        const lastrecievedBy =
-          data?.paymentHistory[data.paymentHistory.length - 1]
-
-        const matchedrecievedby = loggedUser._id === lastrecievedBy.receivedBy
-
-        // if (!matchedrecievedby) {
-        //   setMessage({
-        //     warning: "You cant verified ,only last receiver can "
-        //   })
-        // }
-      }
-      ///only if the balance is 0 or may have advance payment
-      setisreadyTovarify(checkvarify)
-      setformData((prev) => ({
+    if (
+      data?.totalPaidAmount === data?.netAmount &&
+      data?.balanceAmount === 0
+    ) {
+      setMessage((prev) => ({
         ...prev,
-        status: "verified"
-      }))
-    } else {
-      setformData((prev) => ({
-        ...prev,
-        status: "collectionupdate"
+        warning: "There is no balance amount — all payments are completed."
       }))
     }
   }, [])
@@ -156,7 +137,7 @@ export const CollectionupdateModal = ({
         JP: /^\d{3}-?\d{4}$/, // Japan
         SG: /^\d{6}$/ // Singapore
       }
-    
+
       if (formData.country === "" || formData.country === undefined) {
         setError((prev) => ({
           ...prev,
@@ -211,16 +192,13 @@ export const CollectionupdateModal = ({
           (val) => val !== null && val !== undefined && val !== ""
         )
       ) {
-       
         return
       }
       setsubmitloader(true)
 
       // Clone formData fields
       const { bankRemarks, receivedAmount, ...newdata } = formData
-      const fields = Object.entries(
-        formData.status === "verified" ? newdata : formData
-      )
+      const fields = Object.entries(formData)
       let newErrors = {}
       let isValid = true
 
@@ -238,7 +216,14 @@ export const CollectionupdateModal = ({
         setsubmitloader(false)
         return
       }
-      const response = await handleCollectionUpdate(formData)
+      const cleanedData = Object.fromEntries(
+        Object.entries(formData).map(([key, value]) => [
+          key,
+          typeof value === "string" ? value.trim() : value
+        ])
+      )
+      
+      const response = await handleCollectionUpdate(cleanedData)
       if (response.status === 200) {
         isClosed
           ? toast.success("Lead is closed and payment updated successfully")
@@ -294,7 +279,7 @@ export const CollectionupdateModal = ({
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
-       
+
         {/* Body - Scrollable */}
         <div className="flex-1 overflow-y-auto px-6 py-3">
           <div className="space-y-2">
@@ -319,40 +304,10 @@ export const CollectionupdateModal = ({
                   Status
                 </label>
 
-                <select
-                  value={formData.status}
-                  onChange={(e) => {
-                    if (error.status) {
-                      setError((prev) => ({
-                        ...prev,
-                        status: ""
-                      }))
-                    } else {
-                      setformData((prev) => ({
-                        ...prev,
-                        status: e.target.value
-                      }))
-                    }
-                    setformData((prev) => ({
-                      ...prev,
-                      status: e.target.value
-                    }))
-                  }}
-                  onFocus={() => setIsdropdownOpen(true)}
-                  onBlur={() => setIsdropdownOpen(false)}
-                  className="w-full appearance-none px-4 py-1.5 pr-10 border border-gray-300 rounded-lg bg-white text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 transition-all cursor-pointer"
-                >
-                  {!isreadytoVarify && (
-                    <option value="collectionupdate">Collection Update</option>
-                  )}
-                  {isreadytoVarify && (
-                    <option value="verified">Verified</option>
-                  )}
-                </select>
-
-                {error.status && (
-                  <p className="text-red-500 text-xs mt-1">{error?.status}</p>
-                )}
+                <input
+                  value="Collection Update"
+                  className="w-full appearance-none px-4 py-1.5 pr-10 border border-gray-300 rounded-lg  text-gray-700 font-medium focus:outline-none  bg-gray-50 transition-all cursor-pointer"
+                />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
@@ -618,7 +573,10 @@ export const CollectionupdateModal = ({
                       className="w-full px-4 py-1 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 font-semibold cursor-not-allowed"
                     />
                   </div>
-                  {!isreadytoVarify && (
+                  {!(
+                    data?.totalPaidAmount === data?.netAmount &&
+                    data?.balanceAmount === 0
+                  ) && (
                     <div>
                       <label className="block text-xs font-semibold text-gray-700 mb-1">
                         Received Amount
@@ -698,7 +656,7 @@ export const CollectionupdateModal = ({
                       } else {
                         setformData((prev) => ({
                           ...prev,
-                          bankRemarks: e.target.value.trim()
+                          bankRemarks: e.target.value
                         }))
                       }
                     }}
@@ -729,7 +687,7 @@ export const CollectionupdateModal = ({
                     } else {
                       setformData((prev) => ({
                         ...prev,
-                        remarks: e.target.value.trim()
+                        remarks: e.target.value
                       }))
                     }
                   }}
@@ -771,6 +729,10 @@ export const CollectionupdateModal = ({
               if (setishavePayment) {
                 setishavePayment(false)
               }
+              setMessage({
+                warning: "",
+                noneAmount: ""
+              })
             }}
             className="px-6 py-1.5 border-2 border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-100 hover:border-gray-400 transition-all"
           >

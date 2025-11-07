@@ -291,10 +291,58 @@ export const UpdatereceivedAmount = async (req, res) => {
 
 
 }
+export const UpdatepaymentVerification = async (req, res) => {
+  try {
+    const { leadId, index, isverified, verifiedBy } = req.body
+  
+
+    // Find the document first
+    const lead = await LeadMaster.findOne({ _id: leadId })
+    if (!lead) {
+      return res.status(404).json({ message: "Lead not found" })
+    }
+    const isStaff = await Staff.findOne({ _id: verifiedBy })
+    let verifiedModel
+    if (isStaff) {
+      verifiedModel = "Staff"
+    } else {
+      const isAdmin = await Admin.findOne({ _id: verifiedBy })
+      if (isAdmin) {
+
+        verifiedModel = "Admin"
+      }
+    }
+    // Validate index range
+    if (index < 0 || index >= lead.paymentHistory.length) {
+      return res.status(400).json({ message: "Invalid index" })
+    }
+
+    // ✅ Update that specific paymentHistory element
+    lead.paymentHistory[index].paymentVerified = isverified
+    lead.paymentHistory[index].paymentVerifiedBy = verifiedBy
+    lead.paymentHistory[index].paymentverifiedModel = verifiedModel
+    lead.paymentHistory[index].verifiedAt = new Date()
+
+    // ✅ Check if all payments are verified
+    const allVerified = lead.paymentHistory.every((p) => p.paymentVerified === true)
+
+
+    // ✅ Update parent field
+    lead.paymentVerified =
+      allVerified &&
+      Number(lead.totalPaidAmount) === Number(lead.netAmount);
+
+    await lead.save()
+    return res.status(204).json({ message: "successfully done" })
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const UpdateCollection = async (req, res) => {
   const formData = req.body
   const { allocationType = null } = req.query
- 
+
 
   let model
   const isAdmin = await Admin.findOne({ _id: formData.receivedBy })
@@ -366,7 +414,6 @@ export const UpdateCollection = async (req, res) => {
           reallocatedTo: false,
           allocationType: allocationType
         }),
-        ...(formData.status === "verified" && { leadVerified: true })
       }
     }, { new: true, session })
     if (!updateLead) {
@@ -2490,7 +2537,7 @@ export const GetselectedLeadData = async (req, res) => {
 export const GetcollectionLeads = async (req, res) => {
   try {
     const { selectedBranch, verified } = req.query
-    const query = { leadBranch: new mongoose.Types.ObjectId(selectedBranch), leadVerified: verified === "true" ? true : false }
+    const query = { leadBranch: new mongoose.Types.ObjectId(selectedBranch), paymentVerified: verified === "true" ? true : false }
     const matchedCollectionlead = await LeadMaster.find(query).populate({ path: "customerName" }).populate({ path: "partner" }).lean()
     const populatedcollectionLeads = await Promise.all(
       matchedCollectionlead.map(async (lead) => {
@@ -2765,14 +2812,14 @@ export const fixLeadVerifiedField = async (req, res) => {
   try {
     // 1️⃣ Rename the field 'leadVarified' -> 'leadVerified'
     await LeadMaster.updateMany(
-      { leadVarified: { $exists: true } },
+      { leadVerified: { $exists: true } },
       {
-        $rename: { leadVarified: "leadVerified" },
+        $rename: { leadVerified: "paymentVerified" },
       }
     );
 
     // 2️⃣ Set all documents' leadVerified to false (including newly renamed ones)
-    const result = await LeadMaster.updateMany({}, { $set: { leadVerified: false } });
+    const result = await LeadMaster.updateMany({}, { $set: { paymentVerified: false } });
     if (result.acknowledged && result.modifiedCount > 0) {
       console.log(`✅ Successfully updated ${result.modifiedCount} leads.`);
       return res.status(200).json({ message: "update all" })

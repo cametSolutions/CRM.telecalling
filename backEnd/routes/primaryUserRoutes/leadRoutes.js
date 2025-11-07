@@ -32,14 +32,15 @@ import {
   GetcollectionLeads,
   UpdateCollection,
   UpdatereceivedAmount,
-  fixLeadVerifiedField
+UpdatepaymentVerification,
+  fixLeadVerifiedField,
 
 } from "../../controller/primaryUserController/leadController.js"
 const router = express.Router()
 
 router.post("/leadRegister", authMiddleware, LeadRegister)
-// router.put("/fix-leadverified",authMiddleware, fixLeadVerifiedField)
-
+router.put("/fix-leadverified",authMiddleware, fixLeadVerifiedField)
+router.put("/paymentverification",authMiddleware,UpdatepaymentVerification)
 router.post("/collectionUpdate", authMiddleware, UpdateCollection)
 router.post("/updatereceivedAmount", authMiddleware, UpdatereceivedAmount)
 router.post("/taskRegistration", authMiddleware, TaskRegistration)
