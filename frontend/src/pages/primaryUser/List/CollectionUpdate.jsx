@@ -149,6 +149,7 @@ export default function CollectionUpdate() {
       console.log("error", error.message)
     }
   }
+ 
 
   const renderTable = (data) => (
     <table className="border-collapse border border-gray-300 w-full text-sm">
@@ -364,6 +365,7 @@ export default function CollectionUpdate() {
   return (
     <div className="max-h-full flex flex-col ">
       <div className="flex justify-between items-center p-3 md:p-5 mb-3 sticky top-0 z-30 bg-white">
+       
         <h2 className="text-lg font-bold">
           {isdepartmentisAccountant
             ? verifiedLead
