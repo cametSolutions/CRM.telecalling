@@ -1,6 +1,6 @@
-import React, { useState } from "react"
+import { useState, useEffect } from "react"
 import { Plus, Settings, Users, X, ChevronDown } from "lucide-react"
-
+import UseFetch from "../../../hooks/useFetch"
 // Sample data
 const availableProducts = [
   { id: 1, name: "Tally Prime" },
@@ -17,10 +17,10 @@ const availableAllocations = [
 ]
 
 const availableUsers = [
-  { id: 1, name: "Riyas", slabslice: 1 },
-  { id: 2, name: "Ahmed", slabslice: 2 },
-  { id: 3, name: "Sarah", slabslice: 3 },
-  { id: 4, name: "John", slabslice: 4 }
+  { id: 1, name: "Riyas" },
+  { id: 2, name: "Ahmed" },
+  { id: 3, name: "Sarah" },
+  { id: 4, name: "John" }
 ]
 
 const months = [
@@ -53,7 +53,28 @@ export const TargetRegister = () => {
   const [splitModalData, setSplitModalData] = useState(null)
   const [targetData, setTargetData] = useState({})
   const [splitData, setSplitData] = useState({})
-  const [selectedTargetvalue, settargetValue] = useState(null)
+  const [userList, setuserList] = useState([])
+  const { data } = UseFetch("/auth/getallusers")
+  console.log(data)
+  useEffect(() => {
+    if (data) {
+      const { allusers = [], allAdmins = [] } = data
+      // Combine allusers and allAdmins
+      const combinedUsers = [...allusers, ...allAdmins]
+      console.log(combinedUsers)
+      const users = combinedUsers.map((user) => {
+        return {
+          id: user._id,
+          name: user.name
+        }
+      })
+console.log(users)
+
+      console.log(allusers)
+      console.log(allAdmins)
+      console.log("h")
+    }
+  }, [data])
   const getMonthsInRange = () => {
     const fromIndex = months.indexOf(fromMonth)
     const toIndex = months.indexOf(toMonth)
@@ -113,6 +134,49 @@ export const TargetRegister = () => {
     }))
   }
 
+  const handleAddSlab = (userId) => {
+    const key = `${splitModalData.productId}-${splitModalData.month}`
+    setSplitData((prev) => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        [`${userId}-slabs`]: [
+          ...(prev[key]?.[`${userId}-slabs`] || []),
+          { from: "", to: "", amount: "" }
+        ]
+      }
+    }))
+  }
+
+  const handleRemoveSlab = (userId, slabIndex) => {
+    const key = `${splitModalData.productId}-${splitModalData.month}`
+    setSplitData((prev) => {
+      const slabs = prev[key]?.[`${userId}-slabs`] || []
+      return {
+        ...prev,
+        [key]: {
+          ...prev[key],
+          [`${userId}-slabs`]: slabs.filter((_, index) => index !== slabIndex)
+        }
+      }
+    })
+  }
+
+  const handleSlabChange = (userId, slabIndex, field, value) => {
+    const key = `${splitModalData.productId}-${splitModalData.month}`
+    setSplitData((prev) => {
+      const slabs = [...(prev[key]?.[`${userId}-slabs`] || [])]
+      slabs[slabIndex] = { ...slabs[slabIndex], [field]: value }
+      return {
+        ...prev,
+        [key]: {
+          ...prev[key],
+          [`${userId}-slabs`]: slabs
+        }
+      }
+    })
+  }
+
   const handleSubmit = () => {
     console.log("Target Data:", targetData)
     console.log("Split Data:", splitData)
@@ -120,27 +184,19 @@ export const TargetRegister = () => {
   }
 
   return (
-    <div className="max-h-full min-h-full bg-gray-50 p-4 sm:p-6">
-      <div className=" mx-auto">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-xl shadow-sm p-2 sm:p-3 mb-3 flex justify-between">
-          <h1 className="text-2xl sm:text-2xl font-bold text-gray-800 mb-6">
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-6">
             Target Master
           </h1>
 
           {/* Period Selection */}
-          <div className="space-y-2">
+          <div className="space-y-4">
             <div className="flex items-center gap-2 flex-wrap">
-              {selectedMonths.length > 0 && (
-                <div className="inline-flex items-center gap-2 px-4 py-2">
-                  <span>Period</span>
-                  <span className="text-sm font-medium text-blue-800  bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
-                    {fromMonth} to {toMonth}
-                  </span>
-                </div>
-              )}
               <span className="text-sm font-semibold text-gray-700">
-                From Date:
+                Period:
               </span>
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="relative">
@@ -157,7 +213,7 @@ export const TargetRegister = () => {
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
                 </div>
-                <span className="text-gray-500 text-sm">To Date</span>
+                <span className="text-gray-500 text-sm">to</span>
                 <div className="relative">
                   <select
                     value={toMonth}
@@ -174,11 +230,19 @@ export const TargetRegister = () => {
                 </div>
               </div>
             </div>
+
+            {selectedMonths.length > 0 && (
+              <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+                <span className="text-sm font-medium text-blue-800">
+                  {fromMonth} to {toMonth}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Selection Icons */}
-        <div className="flex gap-3 mb-3">
+        <div className="flex gap-3 mb-6">
           <button
             onClick={() => setShowProductModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all shadow-md text-sm font-medium"
@@ -243,8 +307,7 @@ export const TargetRegister = () => {
                 {selectedProducts.map((product, idx) => (
                   <tr
                     key={product.id}
-                    className="bg-white"
-                    // className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                    className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
                   >
                     <td className="px-4 py-3 font-medium text-gray-800 border-r border-gray-200 text-sm">
                       {product.name}
@@ -269,26 +332,6 @@ export const TargetRegister = () => {
                             className="w-full px-2 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                             placeholder="0"
                           />
-                          <div className="relative flex-shrink-0">
-                            <select
-                              value={selectedTargetvalue}
-                              disabled
-                              // onChange={(e) =>
-                              //   handleIncentiveInput(
-                              //     product.id,
-                              //     alloc.id,
-                              //     e.target.value,
-                              //     "type"
-                              //   )
-                              // }
-                              className="px-2 py-1.5 pr-7 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500 appearance-none bg-white text-sm"
-                            >
-                              {/* <option value="">select</option> */}
-                              <option value="amount">₹</option>
-                              <option value="quantity">#</option>
-                            </select>
-                            <ChevronDown className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500 pointer-events-none" />
-                          </div>
                           <button
                             onClick={() => openSplitModal(product.id, month)}
                             className="p-1.5 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors flex-shrink-0"
@@ -459,9 +502,10 @@ export const TargetRegister = () => {
 
       {/* Split Target Modal */}
       {showSplitModal && splitModalData && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl w-full ">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center justify-between rounded-t-xl">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center px-2 z-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full  flex flex-col overflow-hidden max-h-full">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center justify-between rounded-t-xl flex-shrink-0">
               <div>
                 <h3 className="text-lg font-semibold text-white">
                   Split Target
@@ -482,174 +526,167 @@ export const TargetRegister = () => {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6">
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Split Type
-                </label>
-                <div className="relative">
-                  <select
-                    value={selectedTargetvalue}
-                    onChange={(e) => settargetValue(e.target.value)}
-                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
-                  >
-                    <option value="quantity">Quantity</option>
-                    <option value="amount">Amount</option>
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+
+            {/* Content Container */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {/* Sticky Top Section (Split Type + Inputs) */}
+              <div className="bg-white sticky top-0 z-10 px-6 mt-2 border-b border-gray-200 flex">
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Split Type
+                  </label>
+                  <div className="relative">
+                    <select className="w-28 px-2 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white">
+                      <option value="quantity">Quantity</option>
+                      <option value="amount">Amount</option>
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+                  </div>
+                </div>
+                {/* Total Target */}
+                <div className="flex flex-1 justify-end items-center pr-10">
+                  <p className="text-lg text-gray-700">
+                    <span className="font-semibold">Total Target:</span>{" "}
+                    {targetData[
+                      `${splitModalData.productId}-${splitModalData.month}`
+                    ] || 0}
+                  </p>
                 </div>
               </div>
+              <label className="block text-sm font-medium text-gray-700 bg-white ml-5 mt-3">
+                Assign to Users
+              </label>
 
-              <div className="space-y-3">
-                <label className="block text-sm font-medium text-gray-700">
-                  Assign to Users
-                </label>
-
+              {/* Scrollable User List Section */}
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
                 {availableUsers.map((user) => {
                   const key = `${splitModalData.productId}-${splitModalData.month}`
+                  const userSlabs = splitData[key]?.[`${user.id}-slabs`] || []
+
                   return (
-                    <div key={user.id} className="mb-4">
-                      {/* Name and main input */}
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium text-gray-700 w-24">
+                    <div
+                      key={user.id}
+                      className="border border-gray-200 rounded-lg p-3 bg-gray-50"
+                    >
+                      {/* User Row */}
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="text-sm font-medium text-gray-700 min-w-[100px]">
                           {user.name}
                         </span>
-
                         <input
                           type="number"
+                          value={splitData[key]?.[user.id] || ""}
                           onChange={(e) =>
                             handleSplitChange(user.id, e.target.value)
                           }
-                          className="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-32 px-3 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="0"
                         />
-                        <span className="bg-blue-600 text-white py-1 px-2 rounded-lg">
-                          Add slab
-                        </span>
-                        {Array.from({ length: user.slabslice }, (_, index) => (
-                          <div
-                            key={index}
-                            className="mt-2 ml-2 border border-gray-200 rounded-lg overflow-hidden w-fit flex"
-                          >
-                            <table className="text-sm text-gray-700">
-                              <thead className="bg-gray-100">
-                                <tr>
-                                  <th className="px-3 py-1 font-semibold">
-                                    From
-                                  </th>
-                                  <th className="px-3 py-1 font-semibold">
-                                    To
-                                  </th>
-                                  <th className="px-3 py-1 font-semibold">
-                                    Amount
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <tr>
-                                  <td className="px-3 py-1">
-                                    <input
-                                      type="text"
-                                      className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                    />
-                                  </td>
-                                  <td className="px-3 py-1">
-                                    <input
-                                      type="text"
-                                      className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                    />
-                                  </td>
-                                  <td className="px-3 py-1">
-                                    <input
-                                      type="number"
-                                      className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                    />
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                        ))}
+                        <button
+                          onClick={() => handleAddSlab(user.id)}
+                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+                        >
+                          Add Slab
+                        </button>
                       </div>
 
-                      {/* <div className="mt-2 ml-24 border border-gray-200 rounded-lg overflow-hidden w-fit">
-                        <table className="text-sm text-gray-700">
-                          <thead className="bg-gray-100">
-                            <tr>
-                              <th className="px-3 py-1 font-semibold">From</th>
-                              <th className="px-3 py-1 font-semibold">To</th>
-                              <th className="px-3 py-1 font-semibold">
-                                Amount
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              <td className="px-3 py-1">
-                                <input
-                                  type="text"
-                                  // placeholder="From"
-                                  className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                />
-                              </td>
-                              <td className="px-3 py-1">
-                                <input
-                                  type="text"
-                                  // placeholder="To"
-                                  className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                />
-                              </td>
-                              <td className="px-3 py-1">
-                                <input
-                                  type="number"
-                                  // placeholder="Amount"
-                                  className="w-20 px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                />
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div> */}
+                      {/* Slabs Grid */}
+                      {userSlabs.length > 0 && (
+                        <div className="flex flex-wrap gap-3 mt-3">
+                          {userSlabs.map((slab, index) => (
+                            <div
+                              key={index}
+                              className="relative bg-white border border-gray-300 rounded-lg shadow-sm overflow-visible flex-shrink-0 max-w-full"
+                            >
+                              {/* Close Button */}
+                              <button
+                                onClick={() => handleRemoveSlab(user.id, index)}
+                                className="absolute -top-2 -right-2 z-10 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors shadow-md"
+                                title="Remove slab"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+
+                              {/* Slab Table */}
+                              <table className="text-sm border-collapse">
+                                <thead>
+                                  <tr>
+                                    <th className="px-1.5 py-1 text-center text-xs font-semibold bg-red-100 text-red-800 border-b w-20">
+                                      From
+                                    </th>
+                                    <th className="px-1.5 py-1 text-center text-xs font-semibold bg-green-100 text-green-800 border-b w-20">
+                                      To
+                                    </th>
+                                    <th className="px-1.5 py-1 text-center text-xs font-semibold bg-blue-100 text-blue-800 border-b w-20">
+                                      Amount
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td className="px-1.5 py-1.5">
+                                      <input
+                                        type="text"
+                                        value={slab.from}
+                                        onChange={(e) =>
+                                          handleSlabChange(
+                                            user.id,
+                                            index,
+                                            "from",
+                                            e.target.value
+                                          )
+                                        }
+                                        className="w-20 px-1.5 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs text-center"
+                                        placeholder="0"
+                                      />
+                                    </td>
+                                    <td className="px-1.5 py-1.5">
+                                      <input
+                                        type="text"
+                                        value={slab.to}
+                                        onChange={(e) =>
+                                          handleSlabChange(
+                                            user.id,
+                                            index,
+                                            "to",
+                                            e.target.value
+                                          )
+                                        }
+                                        className="w-20 px-1.5 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs text-center"
+                                        placeholder="0"
+                                      />
+                                    </td>
+                                    <td className="px-1.5 py-1.5">
+                                      <input
+                                        type="number"
+                                        value={slab.amount}
+                                        onChange={(e) =>
+                                          handleSlabChange(
+                                            user.id,
+                                            index,
+                                            "amount",
+                                            e.target.value
+                                          )
+                                        }
+                                        className="w-20 px-1.5 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-xs text-center"
+                                        placeholder="0"
+                                      />
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )
                 })}
-
-                {/* {availableUsers.map((user) => {
-                  const key = `${splitModalData.productId}-${splitModalData.month}`
-                  return (
-                    <div key={user.id} className="flex items-center gap-3">
-                      <span className="text-sm font-medium text-gray-700 w-24">
-                        {user.name}
-                      </span>
-                      <input
-                        type="number"
-                        value={splitData[key]?.[user.id] || ""}
-                        onChange={(e) =>
-                          handleSplitChange(user.id, e.target.value)
-                        }
-                        className="w-28 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="0"
-                      />
-                      <div>
-                        <input className="w-28 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></input>
-                        <input className="w-28 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></input>
-                        <input className="w-28 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></input>
-                      </div>
-                    </div>
-                  )
-                })} */}
-              </div>
-
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-gray-700">
-                  <span className="font-semibold">Total Target:</span>{" "}
-                  {targetData[
-                    `${splitModalData.productId}-${splitModalData.month}`
-                  ] || 0}
-                </p>
               </div>
             </div>
-            <div className="px-6 py-4 bg-gray-50 rounded-b-xl flex justify-end gap-3">
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 bg-gray-100 rounded-b-xl flex justify-end gap-3 flex-shrink-0">
               <button
                 onClick={() => setShowSplitModal(false)}
                 className="px-5 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
