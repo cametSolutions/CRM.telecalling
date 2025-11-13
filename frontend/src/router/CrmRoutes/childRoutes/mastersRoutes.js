@@ -117,7 +117,7 @@ const mastersRoutes = [
     component: ServicesRegistration
   },
   { path: "/admin/masters/department", component: DepartmentRegistration },
-  { path: "/admin/masters/target", component: ComingSoon }
+  { path: "/admin/masters/target", component: TargetRegister }
 ]
 
 export default mastersRoutes

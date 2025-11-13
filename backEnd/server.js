@@ -8,6 +8,7 @@ import departmentRoutes from "./routes/primaryUserRoutes/masterRoutes/department
 import companyRoutes from "./routes/primaryUserRoutes/companyRoutes.js"
 import dashBoardRoutes from "./routes/primaryUserRoutes/dashBoardRoutes.js"
 import branchRoutes from "./routes/primaryUserRoutes/branchRoutes.js"
+import targetRoutes from "./routes/primaryUserRoutes/targetRoutes.js"
 import leadRoutes from "./routes/primaryUserRoutes/leadRoutes.js"
 import inventoryRoutes from "./routes/primaryUserRoutes/inventoryRoutes.js"
 import authRoutes from "./routes/authRoutes.js"
@@ -463,6 +464,7 @@ app.use("/api/product", productRoutes)
 app.use("/api/customer", secondaryUserRoutes)
 app.use("/api/master", departmentRoutes)
 app.use("/api/dashboard", dashBoardRoutes)
+app.use("/api/target",targetRoutes)
 
 // Error handling middleware
 app.use((err, req, res, next) => {
