@@ -600,7 +600,6 @@ export const GetallfollowupList = async (req, res) => {
 
 
     }
-
     const selectedfollowup = await LeadMaster.find(query).populate({ path: "customerName" }).populate({ path: "partner" }).lean()
     const followupLeads = [];
     for (const lead of selectedfollowup) {

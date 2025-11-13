@@ -7,10 +7,8 @@ import MyDatePicker from "../../../components/common/MyDatePicker"
 import { FaSpinner } from "react-icons/fa"
 import { LeadhistoryModal } from "../../../components/primaryUser/LeadhistoryModal"
 import { CollectionupdateModal } from "../../../components/primaryUser/CollectionupdateModal"
-import { FaChevronDown } from "react-icons/fa" // You can use any icon
 
 import { BsFilterLeft } from "react-icons/bs"
-import { PropagateLoader } from "react-spinners"
 import {
   Eye,
   Phone,
@@ -203,6 +201,7 @@ const LeadFollowUp = () => {
     local.setMinutes(date.getMinutes() - date.getTimezoneOffset())
     return local.toISOString().split("T")[0] // e.g., "2025-06-12"
   }
+
   useEffect(() => {
     if (loggedusersallocatedleads && dates.endDate && loggedUser) {
       if (pending && ownFollowUp) {
@@ -212,7 +211,8 @@ const LeadFollowUp = () => {
               (log) =>
                 log.taskTo === "followup" &&
                 log.taskallocatedTo?._id === loggedUser._id &&
-                log.followupClosed === false
+                log.followupClosed === false &&
+                log.allocationChanged === false
             )
         )
         const currentDate = new Date()
@@ -333,7 +333,7 @@ const LeadFollowUp = () => {
               (log) =>
                 log.taskTo === "followup" &&
                 log.taskallocatedTo._id === loggedUser._id &&
-                log.followupClosed === false
+                log.followupClosed === true
             )
         )
         const clearedLeads = ownFollow.filter(
@@ -392,7 +392,7 @@ const LeadFollowUp = () => {
       clearTimeout(handler) // cleanup
     }
   }, [input])
-  
+
   const TotalAmount = (data) => {
     const total = data.reduce((total, lead) => {
       if (!Array.isArray(lead.leadFor)) return total
@@ -504,7 +504,6 @@ const LeadFollowUp = () => {
       const response = await api.post("/lead/collectionUPdate", formData)
       if (response.status === 200) {
         return response
-        
       }
     } catch (error) {
       toast.error("something went wrong")
@@ -595,9 +594,7 @@ const LeadFollowUp = () => {
         formData
       )
       if (response.status === 200) {
-       
-          toast.success("Followup updated successfully")
-        
+        toast.success("Followup updated successfully")
 
         setIsEditable(false)
 
@@ -616,13 +613,15 @@ const LeadFollowUp = () => {
           Remarks: ""
         }))
         refreshHook()
+        setfollowupDateLoader(false)
         return response
       } else {
+        setfollowupDateLoader(false)
         toast.error("something went wrong")
       }
-      setfollowupDateLoader(false)
     } catch (error) {
       setIsEditable(false)
+      setfollowupDateLoader(false)
       console.log("error:", error.message)
     }
   }
@@ -674,7 +673,7 @@ const LeadFollowUp = () => {
     setShowModal(false)
     setHistoryList([])
   }
- 
+
   const renderTable = (data) => (
     <table className="border-collapse border border-gray-300 w-full text-sm">
       <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30 text-xs">
@@ -1408,7 +1407,6 @@ const LeadFollowUp = () => {
                       partner &&
                       partner.length > 0 && (
                         <CollectionupdateModal
-                          
                           data={selectedData}
                           closemodal={setcollectionUpdateModal}
                           partnerlist={partner}
@@ -1516,23 +1514,22 @@ const LeadFollowUp = () => {
               {/* <button className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all">
                 Save Changes
               </button> */}
-            
-                <button
-                  onClick={
-                    isAllocated ? handleDemoSubmit : handleFollowUpDateSubmit
-                  }
-                  className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all"
-                >
-                  {followupDateLoader || loader ? (
-                    <div className="flex items-center">
-                      Processing
-                      <FaSpinner className="animate-spin h-5 w-5  text-white ml-2" />
-                    </div>
-                  ) : (
-                    <div>{isHaveEditchoice ? "UPDATE" : "SUBMIT"}</div>
-                  )}
-                </button>
-              
+
+              <button
+                onClick={
+                  isAllocated ? handleDemoSubmit : handleFollowUpDateSubmit
+                }
+                className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all"
+              >
+                {followupDateLoader || loader ? (
+                  <div className="flex items-center">
+                    Processing
+                    <FaSpinner className="animate-spin h-5 w-5  text-white ml-2" />
+                  </div>
+                ) : (
+                  <div>{isHaveEditchoice ? "UPDATE" : "SUBMIT"}</div>
+                )}
+              </button>
             </div>
           </div>
         </div>
