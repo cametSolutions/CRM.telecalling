@@ -2167,7 +2167,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         groups.push(temp);
         return groups;
       }
-    
+
       // Main function
       async function calculateAbsences(allholidayfulldate, attendances) {
         const isPresent = async (date) => {
@@ -2222,8 +2222,8 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           } else {
             // ❌ Mark all holidays as notMarked = -1
             group.forEach((date) => {
-              if (attendances.attendancedates[date] && (attendances.attendancedates[date]?.otherLeave === "" && attendances.attendancedates[date]?.compensatoryLeave === "" &&attendances.attendancedates[date]?.privileageLeave === ""&& attendances.attendancedates[date]?.casualLeave === "")) {
-               
+              if (attendances.attendancedates[date] && (attendances.attendancedates[date]?.otherLeave === "" && attendances.attendancedates[date]?.compensatoryLeave === "" && attendances.attendancedates[date]?.privileageLeave === "" && attendances.attendancedates[date]?.casualLeave === "")) {
+
                 attendances.attendancedates[date].present = 0;
                 attendances.attendancedates[date].notMarked = 1;
               }
@@ -4471,8 +4471,17 @@ export const GetsomeAllsummary = async (
 
     const startDate = new Date(Date.UTC(year, month - 1, 1))
     const endDate = new Date(Date.UTC(year, month, 0))
+    const matchStage = {
+      isVerified: true,
+      role: { $in: ["Staff", "Manager"] }
+    }
 
     const users = await Staff.aggregate([
+      {
+        $match: matchStage
+
+      },
+
       {
         $project: {
           _id: 1,
@@ -5438,7 +5447,7 @@ export const GetsomeAllsummary = async (
           } else {
             // ❌ Mark all holidays as notMarked = -1
             group.forEach((date) => {
-              if (attendances.attendancedates[date] && (attendances.attendancedates[date]?.otherLeave === "" && attendances.attendancedates[date]?.compensatoryLeave === "" &&attendances.attendancedates[date]?.privileageLeave === ""&& attendances.attendancedates[date]?.casualLeave === "")) {
+              if (attendances.attendancedates[date] && (attendances.attendancedates[date]?.otherLeave === "" && attendances.attendancedates[date]?.compensatoryLeave === "" && attendances.attendancedates[date]?.privileageLeave === "" && attendances.attendancedates[date]?.casualLeave === "")) {
                 attendances.attendancedates[date].present = 0;
                 attendances.attendancedates[date].notMarked = 1;
               }
