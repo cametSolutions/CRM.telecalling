@@ -283,7 +283,7 @@ export default function CallRegistration() {
   const handleCheckboxChange = (e, product) => {
     if (e.target.checked) {
       // setSelectedProducts(product)
-      setSelectedProducts((prev) => [...prev, product])
+      setSelectedProducts([product])
     } else if (selectedProducts.productName === product.productName) {
       setSelectedProducts([]) // Deselect if it was previously selected
     }
@@ -334,6 +334,8 @@ export default function CallRegistration() {
 
     return `${date} ${time}` // Example: "03/02/2025 02:48:57 PM"
   }
+
+
   const stopTimer = async (time, product) => {
     if (!product) {
       toast.error("No product selected.")
@@ -392,16 +394,15 @@ export default function CallRegistration() {
       const calldata = {
         product: selectedProducts[0]?.product_id,
         license: selectedProducts[0]?.licensenumber,
-        branchName:
-          user?.role === "Admin"
-            ? user.branchName.map((branch) => branch)
-            : user.selected.map((branch) => branch.branchName),
+        branchName:[selectedProducts[0]?.branch_id?.branchName],
+          
         timedata: timeData,
         formdata: updatedformData,
         customeremail: selectedCustomer?.email,
         customerName: selectedCustomer?.customerName,
         productName: selectedProducts[0]?.productName
       }
+
       setcallReport(calldata)
 
       const response = await api.post(
@@ -479,10 +480,7 @@ export default function CallRegistration() {
       const calldata = {
         product: selectedProducts[0]?.product_id,
         license: selectedProducts[0]?.licensenumber,
-        branchName:
-          user.role === "Admin"
-            ? user.branchName.map((branch) => branch)
-            : user.selected.map((branch) => branch.branchName),
+        branchName:[selectedProducts[0]?.branch_id?.branchName],
         timedata: timeData,
         formdata: updatedformData,
         customeremail: selectedCustomer.email,
@@ -1210,10 +1208,7 @@ Problem:    \t${selectedText}
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                             <input
                               className="form-checkbox h-4 w-4 text-blue-600 hover:bg-blue-200 focus:ring-blue-500 cursor-pointer"
-                              // checked={
-                              //   selectedProducts?.productName ===
-                              //   product?.productName
-                              // }
+                            
                               checked={selectedProducts.some(
                                 (p) => p.productName === product?.productName
                               )}
@@ -1267,9 +1262,8 @@ Problem:    \t${selectedText}
                                         product?.amcendDate
                                       ) === "Expired"
                                         ? "red"
-                                        : "N/A"
-                                        ? "black"
                                         : "black"
+                                        
                                   }}
                                 >
                                   {calculateRemainingDays(product?.amcendDate)}
