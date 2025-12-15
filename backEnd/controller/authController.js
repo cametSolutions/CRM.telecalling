@@ -327,7 +327,6 @@ export const UpdateUserandAdmin = async (req, res) => {
 
 export const Login = async (req, res) => {
   const { emailOrMobile, password } = req.body
-console.log(emailOrMobile,password)
   try {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     let user
@@ -335,18 +334,16 @@ console.log(emailOrMobile,password)
     // Determine if the input is an email or a mobile number
     if (emailRegex.test(emailOrMobile)) {
       // If it's an email
-      user = await Admin.findOne({ email: emailOrMobile }).lean()
+      user = await Admin.findOne({ email: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
 
       if (!user) {
-        user = await Staff.findOne({ email: emailOrMobile }).lean()
+        user = await Staff.findOne({ email: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
       }
     } else {
       // If it's a mobile number
-console.log("oustside")
-      user = await Admin.findOne({ mobile: emailOrMobile }).lean()
-console.log("user",user)
+      user = await Admin.findOne({ mobile: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
       if (!user) {
-        user = await Staff.findOne({ mobile: emailOrMobile }).lean()
+        user = await Staff.findOne({ mobile: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
 
       }
     }
@@ -377,6 +374,22 @@ console.log("user",user)
     res.status(500).json({ message: "Server error" })
   }
 }
+
+export const Logout = (req, res) => {
+  try {
+    res.clearCookie("jwt_primary", {
+      httpOnly: true,
+      secure: true,      // use true in production (HTTPS)
+      sameSite: "strict" // must match options when you set cookie
+    });
+
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch {
+    console.log("error:", error.message)
+    res.status(500).json({ message: "Internal server error" })
+  }
+
+};
 export const Getadminpanelcount = async (req, res) => {
   try {
     const { quarter, month, year } = req.query
@@ -550,14 +563,7 @@ export const UpdateUserPermission = async (req, res) => {
         .json({ message: "User ID and permissions are required." })
     }
 
-    // // Find the user by ID
-    // const user = await Staff.findById(Userid)
-    // if (!user) {
-    //   return res.status(404).json({ message: "User not found." })
-    // }
-    // // Update user permissions
-    // user.permissions = userPermissions // Assuming `permissions` is the field in your User schema
-    // await user.save()
+
     const updateuser = await Staff.findByIdAndUpdate(Userid, {
       $set: { permissions: userPermissions }
     })
@@ -1136,7 +1142,6 @@ export const OnsiteApply = async (req, res) => {
 export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
   try {
     const { year, month, selectedBranch } = req.query || { year: yearParam, month: monthParam }
-    console.log("selectedBranch", selectedBranch)
 
     function getSundays(year, month) {
       const sundays = []
@@ -1225,6 +1230,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
     const endDate = new Date(Date.UTC(year, month, 0))
     const matchStage = {
       isVerified: true,
+      role: { $in: ["Staff", "Manager"] }
     };
     if (selectedBranch) {
       matchStage["selected.branch_id"] = new mongoose.Types.ObjectId(selectedBranch)
@@ -1240,6 +1246,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           name: 1,
           attendanceId: 1,
           assignedto: 1,
+          selected: 1,
           casualleavestartsfrom: { $ifNull: ["$casualleavestartsfrom", null] },
           sickleavestartsfrom: { $ifNull: ["$sickleavestartsfrom", null] },
           privilegeleavestartsfrom: {
@@ -1321,14 +1328,15 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       : []
 
     for (const user of users) {
-      const userId = user._id
-      const attendanceId = user.attendanceId
-      const userName = user.name
-      const staffId = user.attendanceId
-      const assignedto = user.assignedto
-      const casualleavestartsfrom = user.casualleavestartsfrom
-      const sickleavestartsfrom = user.sickleavestartsfrom
-      const privilegeleavestartsfrom = user.privilegeleavestartsfrom
+      const userId = user?._id
+      const attendanceId = user?.attendanceId
+      const branches = user?.selected
+      const userName = user?.name
+      const staffId = user?.attendanceId
+      const assignedto = user?.assignedto
+      const casualleavestartsfrom = user?.casualleavestartsfrom
+      const sickleavestartsfrom = user?.sickleavestartsfrom
+      const privilegeleavestartsfrom = user?.privilegeleavestartsfrom
 
       // Fetch attendance-related data for the given month
       const results = await Promise.allSettled([
@@ -1352,6 +1360,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
       let stats = {
         name: userName,
+        branches,
         casualleavestartsfrom,
         sickleavestartsfrom,
         privilegeleavestartsfrom,
@@ -2098,143 +2107,154 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
       const allholidays = createDates(uniqueDates, month, year)
 
+
       function getNextDate(dateString) {
-        // Parse the date string (YYYY-MM-DD)
+        const [year, month, day] = dateString.split("-").map(Number);
+        const date = new Date(year, month - 1, day);
+        date.setDate(date.getDate() + 1);
+        // Return local date string (not UTC)
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, "0");
+        const dd = String(date.getDate()).padStart(2, "0");
 
-        const [year, month, day] = dateString.split("-").map(Number)
+        return `${yyyy}-${mm}-${dd}`;  // Return local date string (not UTC)
 
-        // Create a date object
-        const date = new Date(year, month - 1, day)
-
-        // Add one day
-        date.setDate(date.getDate() + 1)
-
-        // Format the result back to 'YYYY-MM-DD'
-        const nextDay = String(date.getDate()).padStart(2, "0")
-        const nextMonth = String(date.getMonth() + 1).padStart(2, "0")
-        const nextYear = date.getFullYear() // Full year
-
-        return `${nextYear}-${nextMonth}-${nextDay}`
       }
+
       function getPreviousDate(dateString) {
-        // Parse the date string (YYYY-MM-DD)
-        const [year, month, day] = dateString.split("-").map(Number)
 
-        // Create a date object
-        const date = new Date(year, month - 1, day)
 
-        // Subtract one day
-        date.setDate(date.getDate() - 1)
+        const [year, month, day] = dateString.split("-").map(Number);
+        const date = new Date(year, month - 1, day);
 
-        // Format the result back to 'YYYY-MM-DD'
-        const prevDay = String(date.getDate()).padStart(2, "0")
-        const prevMonth = String(date.getMonth() + 1).padStart(2, "0")
-        const prevYear = date.getFullYear() // Full year
+        date.setDate(date.getDate() - 1);
+        // Return local date string (not UTC)
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, "0");
+        const dd = String(date.getDate()).padStart(2, "0");
 
-        return `${prevYear}-${prevMonth}-${prevDay}`
+        return `${yyyy}-${mm}-${dd}`;
+
       }
-      (async () => {
-        async function calculateAbsences(allholidayfulldate, attendances, onsites) {
-          const isPresent = async (date) => {
-            const attendance = attendances.attendancedates[date];
-            if (attendance) {
-              if (
-                attendance.otherLeave !== "" ||
-                attendance.privileageLeave !== "" ||
-                attendance.casualLeave !== "" ||
-                attendance.compensatoryLeave !== "" ||
-                attendance.notMarked !== ""
-              ) {
-                return {
-                  status: false,
-                  present: attendance.present,
-                  otherLeave: attendance.otherLeave,
-                  notMarked: attendance.notMarked
-                };
-              } else {
-                return {
-                  status: true,
-                  present: attendance.present,
-                  notMarked: attendance.notMarked
-                };
-              }
-            } else {
-              const previousMonth = month - 1;
-              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, year, stats.userId);
-              if (previousmonthlastdayleavestatus) {
-                return { status: false };
-              } else {
-                return { status: true };
-              }
-            }
-          };
 
-          const sortedHolidays = allholidayfulldate.sort();
-          let groups = [];
-          let tempGroup = [];
+      // Group continuous holidays
+      function groupConsecutiveDates(sortedDates) {
+        const groups = [];
+        if (sortedDates.length === 0) return groups;
+        // Helper to normalize to midnight (ignore time)
+        const normalizeDate = (dateString) => {
+          const d = new Date(dateString);
+          d.setHours(0, 0, 0, 0); // remove time component
+          return d;
+        };
 
-          for (let i = 0;i < sortedHolidays.length;i++) {
-            const currDate = new Date(sortedHolidays[i]);
-            const prevDate = i > 0 ? new Date(sortedHolidays[i - 1]) : null;
+        let temp = [sortedDates[0]];
 
-            if (prevDate && currDate - prevDate === 24 * 60 * 60 * 1000) {
-              if (!tempGroup.length) tempGroup.push(prevDate);
-              tempGroup.push(currDate);
-              groups.push(tempGroup);
-              tempGroup = [];
-            } else {
-              tempGroup.push(currDate);
-              groups.push(tempGroup);
-              tempGroup = [];
-            }
-          }
+        for (let i = 1;i < sortedDates.length;i++) {
+          const curr = normalizeDate(sortedDates[i]);
+          const prev = normalizeDate(sortedDates[i - 1]);
+          const diff = (curr - prev) / (1000 * 60 * 60 * 24);
 
-          for (const group of groups) {
-            const first = group[0];
-            const stringfirst = first.toISOString().split("T")[0];
-            const last = group[group.length - 1];
-            const stringlast = last.toISOString().split("T")[0];
-
-            const previousDay = getPreviousDate(stringfirst);
-            const nextDay = getNextDate(stringlast);
-
-            const prevFullPresent = await isPresent(previousDay);
-            const nextFullPresent = await isPresent(nextDay);
-
-            if (prevFullPresent?.status || nextFullPresent?.status) {
-              if (attendances.attendancedates[stringfirst]) {
-                attendances.attendancedates[stringfirst].present = 1;
-                attendances.attendancedates[stringfirst].notMarked = "";
-              }
-              if (attendances.attendancedates[stringlast]) {
-                attendances.attendancedates[stringlast].present = 1;
-                attendances.attendancedates[stringlast].notMarked = "";
-              }
-            }
+          if (diff === 1) {
+            // Consecutive day — same group
+            temp.push(sortedDates[i]);
+          } else {
+            // Break — start new group
+            groups.push(temp);
+            temp = [sortedDates[i]];
           }
         }
+        groups.push(temp);
+        return groups;
+      }
 
-        // ✅ Call the async absence adjustment and wait for it to finish
-        await calculateAbsences(allholidays, stats, onsites);
+      // Main function
+      async function calculateAbsences(allholidayfulldate, attendances) {
+        const isPresent = async (date) => {
+          const attendance = attendances.attendancedates[date];
+          if (attendance) {
+            return (
+              attendances.attendancedates[date].present === 1 && (attendance.otherLeave === "" ||
+                attendance.privileageLeave === "" ||
+                attendance.casualLeave === "" ||
+                attendance.compensatoryLeave === "")
 
-        // ✅ Now safely process stats
-        for (const date in stats.attendancedates) {
-          const day = stats.attendancedates[date];
-
-          stats.present += day.present || 0;
-
-          const leaveTypes = ["casualLeave", "otherLeave", "privileageLeave", "compensatoryLeave"];
-
-          leaveTypes.forEach((type) => {
-            if (!isNaN(day[type])) {
-              stats.absent += Number(day[type]);
+            );
+          } else {
+            const previousMonth = month - 1;
+            const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, year, stats.userId);
+            if (previousmonthlastdayleavestatus) {
+              return false
+            } else {
+              return true
             }
-          });
 
-          stats.notMarked += day.notMarked !== "" ? Number(day.notMarked) : 0;
+          }
+
+
+        };
+
+        const sortedHolidays = allholidayfulldate.sort();
+        const holidayGroups = groupConsecutiveDates(sortedHolidays);
+
+
+        for (const group of holidayGroups) {
+          const first = group[0];
+          const last = group[group.length - 1];
+
+          const prevDay = getPreviousDate(first);
+          const nextDay = getNextDate(last);
+
+          const prevPresent = await isPresent(prevDay);
+          const nextPresent = await isPresent(nextDay);
+
+
+
+          if (prevPresent || nextPresent) {
+            // ✅ Mark all holidays as present
+            group.forEach((date) => {
+              if (attendances.attendancedates[date]) {
+
+                attendances.attendancedates[date].present = 1;
+                attendances.attendancedates[date].notMarked = "";
+              }
+            });
+          } else {
+            // ❌ Mark all holidays as notMarked = -1
+            group.forEach((date) => {
+              if (attendances.attendancedates[date] && (attendances.attendancedates[date]?.otherLeave === "" && attendances.attendancedates[date]?.compensatoryLeave === "" && attendances.attendancedates[date]?.privileageLeave === "" && attendances.attendancedates[date]?.casualLeave === "")) {
+
+                attendances.attendancedates[date].present = 0;
+                attendances.attendancedates[date].notMarked = 1;
+              }
+            });
+          }
         }
+      }
 
-      })();
+
+
+
+      //////calculate to check whether day before and day after of holiday is present or 
+      await calculateAbsences(allholidays, stats); // your existing variables
+
+      // Then continue your existing logic to count present, absent, etc.
+      for (const date in stats.attendancedates) {
+        const day = stats.attendancedates[date];
+
+        stats.present += day.present || 0;
+
+        const leaveTypes = ["casualLeave", "otherLeave", "privileageLeave", "compensatoryLeave"];
+        leaveTypes.forEach((type) => {
+          if (!isNaN(day[type])) {
+            stats.absent += Number(day[type]);
+          }
+        });
+
+        stats.notMarked += day.notMarked !== "" ? Number(day.notMarked) : 0;
+      }
+
+
 
       const combined = stats.earlyGoing + stats.late
       stats.latecutting =
@@ -2245,8 +2265,10 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         Math.floor(combined / (latecuttingCount * 2)) * 1 +
         (Math.floor(combined / latecuttingCount) % 2) * 0.5
 
+
       staffAttendanceStats.push(stats)
     }
+
     const listofHolidays = holidays.map((item) => ({
       date: item.holyDate.toISOString().split("T")[0],
       holyname: item.customTextInput
@@ -4449,14 +4471,24 @@ export const GetsomeAllsummary = async (
 
     const startDate = new Date(Date.UTC(year, month - 1, 1))
     const endDate = new Date(Date.UTC(year, month, 0))
+    const matchStage = {
+      isVerified: true,
+      role: { $in: ["Staff", "Manager"] }
+    }
 
     const users = await Staff.aggregate([
+      {
+        $match: matchStage
+
+      },
+
       {
         $project: {
           _id: 1,
           name: 1,
           attendanceId: 1,
           assignedto: 1,
+          selected: 1,
           casualleavestartsfrom: { $ifNull: ["$casualleavestartsfrom", null] },
           sickleavestartsfrom: { $ifNull: ["$sickleavestartsfrom", null] },
           privilegeleavestartsfrom: {
@@ -4537,6 +4569,7 @@ export const GetsomeAllsummary = async (
     for (const user of users) {
       const userId = user._id
       const userName = user.name
+      const branches = user.selected
       const attendanceId = user.attendanceId
       const assignedto = user.assignedto
       const staffId = user.attendanceId
@@ -4569,6 +4602,7 @@ export const GetsomeAllsummary = async (
       )
       let stats = {
         name: userName,
+        branches,
         casualleavestartsfrom,
         sickleavestartsfrom,
         privilegeleavestartsfrom,
@@ -5303,144 +5337,128 @@ export const GetsomeAllsummary = async (
 
       const allholidays = createDates(uniqueDates, month, year)
       function getNextDate(dateString) {
-        // Parse the date string (YYYY-MM-DD)
-        const [year, month, day] = dateString.split("-").map(Number)
 
-        // Create a date object
-        const date = new Date(year, month - 1, day)
+        const [year, month, day] = dateString.split("-").map(Number);
+        const date = new Date(year, month - 1, day);
+        date.setDate(date.getDate() + 1);
+        // Return local date string (not UTC)
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, "0");
+        const dd = String(date.getDate()).padStart(2, "0");
 
-        // Add one day
-        date.setDate(date.getDate() + 1)
+        return `${yyyy}-${mm}-${dd}`;  // Return local date string (not UTC)
 
-        // Format the result back to 'YYYY-MM-DD'
-        const nextDay = String(date.getDate()).padStart(2, "0")
-        const nextMonth = String(date.getMonth() + 1).padStart(2, "0")
-        const nextYear = date.getFullYear() // Full year
 
-        return `${nextYear}-${nextMonth}-${nextDay}`
+
       }
       function getPreviousDate(dateString) {
-        // Parse the date string (YYYY-MM-DD)
-        const [year, month, day] = dateString.split("-").map(Number)
 
-        // Create a date object
-        const date = new Date(year, month - 1, day)
+        const [year, month, day] = dateString.split("-").map(Number);
+        const date = new Date(year, month - 1, day);
 
-        // Subtract one day
-        date.setDate(date.getDate() - 1)
+        date.setDate(date.getDate() - 1);
+        // Return local date string (not UTC)
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, "0");
+        const dd = String(date.getDate()).padStart(2, "0");
 
-        // Format the result back to 'YYYY-MM-DD'
-        const prevDay = String(date.getDate()).padStart(2, "0")
-        const prevMonth = String(date.getMonth() + 1).padStart(2, "0")
-        const prevYear = date.getFullYear() // Full year
+        return `${yyyy}-${mm}-${dd}`;
 
-        return `${prevYear}-${prevMonth}-${prevDay}`
       }
-      (async () => {
-        async function calculateAbsences(allholidayfulldate, attendances, onsites) {
-          const isPresent = async (date) => {
-            const attendance = attendances.attendancedates[date];
-            if (attendance) {
-              if (
-                attendance.otherLeave !== "" ||
-                attendance.privileageLeave !== "" ||
-                attendance.casualLeave !== "" ||
-                attendance.compensatoryLeave !== "" ||
-                attendance.notMarked !== ""
-              ) {
-                return {
-                  status: false,
-                  present: attendance.present,
-                  otherLeave: attendance.otherLeave,
-                  notMarked: attendance.notMarked
-                };
-              } else {
-                return {
-                  status: true,
-                  present: attendance.present,
-                  notMarked: attendance.notMarked
-                };
-              }
-            } else {
-              const previousMonth = month - 1;
-              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, year, stats.userId);
-              if (previousmonthlastdayleavestatus) {
-                return { status: false };
-              } else {
-                return { status: true };
-              }
-            }
-          };
+      // Group continuous holidays
+      function groupConsecutiveDates(sortedDates) {
+        const groups = [];
+        if (sortedDates.length === 0) return groups;
+        // Helper to normalize to midnight (ignore time)
+        const normalizeDate = (dateString) => {
+          const d = new Date(dateString);
+          d.setHours(0, 0, 0, 0); // remove time component
+          return d;
+        };
 
-          const sortedHolidays = allholidayfulldate.sort();
-          let groups = [];
-          let tempGroup = [];
+        let temp = [sortedDates[0]];
 
-          for (let i = 0;i < sortedHolidays.length;i++) {
-            const currDate = new Date(sortedHolidays[i]);
-            const prevDate = i > 0 ? new Date(sortedHolidays[i - 1]) : null;
+        for (let i = 1;i < sortedDates.length;i++) {
+          const curr = normalizeDate(sortedDates[i]);
+          const prev = normalizeDate(sortedDates[i - 1]);
+          const diff = (curr - prev) / (1000 * 60 * 60 * 24);
 
-            if (prevDate && currDate - prevDate === 24 * 60 * 60 * 1000) {
-              if (!tempGroup.length) tempGroup.push(prevDate);
-              tempGroup.push(currDate);
-              groups.push(tempGroup);
-              tempGroup = [];
-            } else {
-              tempGroup.push(currDate);
-              groups.push(tempGroup);
-              tempGroup = [];
-            }
-          }
-
-          for (const group of groups) {
-            const first = group[0];
-            const stringfirst = first.toISOString().split("T")[0];
-            const last = group[group.length - 1];
-            const stringlast = last.toISOString().split("T")[0];
-
-            const previousDay = getPreviousDate(stringfirst);
-            const nextDay = getNextDate(stringlast);
-
-            const prevFullPresent = await isPresent(previousDay);
-            const nextFullPresent = await isPresent(nextDay);
-
-            if (prevFullPresent?.status || nextFullPresent?.status) {
-              if (attendances.attendancedates[stringfirst]) {
-                attendances.attendancedates[stringfirst].present = 1;
-                attendances.attendancedates[stringfirst].notMarked = "";
-              }
-              if (attendances.attendancedates[stringlast]) {
-                attendances.attendancedates[stringlast].present = 1;
-                attendances.attendancedates[stringlast].notMarked = "";
-              }
-            }
+          if (diff === 1) {
+            // Consecutive day — same group
+            temp.push(sortedDates[i]);
+          } else {
+            // Break — start new group
+            groups.push(temp);
+            temp = [sortedDates[i]];
           }
         }
+        groups.push(temp);
+        return groups;
+      }
 
-        // ✅ Call the async absence adjustment and wait for it to finish
-        await calculateAbsences(allholidays, stats, onsites);
+      async function calculateAbsences(allholidayfulldate, attendances) {
+        const isPresent = async (date) => {
+          const attendance = attendances.attendancedates[date];
+          if (attendance) {
+            return (
+              attendances.attendancedates[date].present === 1 && (attendance.otherLeave === "" ||
+                attendance.privileageLeave === "" ||
+                attendance.casualLeave === "" ||
+                attendance.compensatoryLeave === "")
 
-        // ✅ Now safely process stats
-        for (const date in stats.attendancedates) {
-          const day = stats.attendancedates[date];
+            );
 
-          stats.present += day.present || 0;
-
-          const leaveTypes = ["casualLeave", "otherLeave", "privileageLeave", "compensatoryLeave"];
-
-          leaveTypes.forEach((type) => {
-            if (!isNaN(day[type])) {
-              stats.absent += Number(day[type]);
+          } else {
+            const previousMonth = month - 1;
+            const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, year, stats.userId);
+            if (previousmonthlastdayleavestatus) {
+              return { status: false };
+            } else {
+              return { status: true };
             }
-          });
+          }
+        };
 
-          stats.notMarked += day.notMarked !== "" ? Number(day.notMarked) : 0;
+        const sortedHolidays = allholidayfulldate.sort();
+        const holidayGroups = groupConsecutiveDates(sortedHolidays);
+
+
+        for (const group of holidayGroups) {
+          const first = group[0];
+          const last = group[group.length - 1];
+
+          const prevDay = getPreviousDate(first);
+          const nextDay = getNextDate(last);
+
+          const prevPresent = await isPresent(prevDay);
+          const nextPresent = await isPresent(nextDay);
+
+
+
+          if (prevPresent || nextPresent) {
+            // ✅ Mark all holidays as present
+            group.forEach((date) => {
+              if (attendances.attendancedates[date]) {
+
+                attendances.attendancedates[date].present = 1;
+                attendances.attendancedates[date].notMarked = "";
+              }
+            });
+          } else {
+            // ❌ Mark all holidays as notMarked = -1
+            group.forEach((date) => {
+              if (attendances.attendancedates[date] && (attendances.attendancedates[date]?.otherLeave === "" && attendances.attendancedates[date]?.compensatoryLeave === "" && attendances.attendancedates[date]?.privileageLeave === "" && attendances.attendancedates[date]?.casualLeave === "")) {
+                attendances.attendancedates[date].present = 0;
+                attendances.attendancedates[date].notMarked = 1;
+              }
+            });
+          }
         }
-
-      })();
-
+      }
 
 
+      // ✅ Call the async absence adjustment and wait for it to finish
+      await calculateAbsences(allholidays, stats);
 
       for (const date in stats.attendancedates) {
         const day = stats.attendancedates[date]

@@ -6,6 +6,7 @@ import Tiles from "../../../components/common/Tiles" // Import the Tile componen
 import { useNavigate } from "react-router-dom"
 import { PropagateLoader } from "react-spinners"
 import UseFetch from "../../../hooks/useFetch"
+import { setBranches } from "../../../../slices/companyBranchSlice"
 import BranchDropdown from "../../../components/primaryUser/BranchDropdown"
 import { getLocalStorageItem } from "../../../helper/localstorage"
 const socket = io("https://www.crm.camet.in")
@@ -13,7 +14,7 @@ const socket = io("https://www.crm.camet.in")
 
 const CallregistrationList = () => {
   const navigate = useNavigate()
-
+  const [loggedUserBranches, setLoggeduserBranches] = useState([])
   const [today, setToday] = useState(null)
   const [userBranch, setUserBranch] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -21,12 +22,13 @@ const CallregistrationList = () => {
   const [userCallStatus, setUserCallstatus] = useState([])
   const [callList, setCallList] = useState([])
   const [filteredCalls, setFilteredCalls] = useState([])
-  const [loading, setLoading] = useState(true)
-
+  const [loading, setLoading] = useState(false)
+  const [selectedCompanyBranch, setSelectedCompanyBranch] = useState(null)
   // Define states for filtered call counts
   const [pendingCallsCount, setPendingCallsCount] = useState(0)
   const [todayCallsCount, setTodayCallsCount] = useState(0)
   const [solvedCallsCount, setTodaysSolvedCount] = useState(0)
+  const [branchids, setbranchids] = useState(null)
 
   // State to track the active filter
   const [activeFilter, setActiveFilter] = useState("All")
@@ -51,16 +53,42 @@ const CallregistrationList = () => {
   useEffect(() => {
     if (branches && branches.length > 0) {
       const userData = getLocalStorageItem("user")
-      // const users = JSON.parse(userData)
       if (userData.role === "Admin") {
-        const userbranch = branches.map((item) => item.branchName)
-        setUserBranch(userbranch)
+        const isselctedArray = userData?.selected
+        if (isselctedArray) {
+          const loggeduserBranches = userData.selected.map((item) => {
+            return { value: item.branch_id, label: item.branchName }
+          })
+
+          setLoggeduserBranches(loggeduserBranches)
+          setSelectedCompanyBranch(loggeduserBranches[0].label)
+        } else {
+          const loggeduserBranches = branches.map((item) => {
+            return { value: item._id, label: item.branchName }
+          })
+          setLoggeduserBranches(loggeduserBranches)
+          setSelectedCompanyBranch(loggeduserBranches[0].label)
+        }
+      } else {
+        const loggeduserBranches = userData.selected.map((item) => {
+          return { value: item.branch_id, label: item.branchName }
+        })
+        setLoggeduserBranches(loggeduserBranches)
+        setSelectedCompanyBranch(loggeduserBranches[0].label)
       }
+      setbranchids(userData.selected.map((item) => item.branch_id))
+
+      // const users = JSON.parse(userData)
+      // if (userData.role === "Admin") {
+      //   const userbranch = branches.map((item) => item.branchName)
+      //   setUserBranch(userbranch)
+      // }
+      const a = userData.selected.map((item) => item.branchName)
+      setUserBranch(a)
 
       setUser(userData)
     }
   }, [branches])
-  console.log("H")
   const filterCallData = useCallback(
     (calls) => {
       const allCallRegistrations = calls.flatMap(
@@ -82,6 +110,49 @@ const CallregistrationList = () => {
     },
     [users]
   )
+  useEffect(() => {
+    if (users && selectedCompanyBranch) {
+      setLoading(true)
+      const userId = users._id
+      socket.emit("updatedCalls", userId)
+      const brancharray = [selectedCompanyBranch]
+      // Listen for initial data from the server
+      socket.on("updatedCalls", ({ mergedCalls }) => {
+        
+
+        const filtered = mergedCalls.filter(
+          (call) =>
+            Array.isArray(call?.callregistration) && // Check if callregistration is an array
+            call.callregistration.some((registration) => {
+              const hasMatchingBranch =
+                Array.isArray(registration?.branchName) && // Check if branchName is an array
+                registration.branchName.some(
+                  (branch) => brancharray.includes(branch) // Check if any branch matches user's branches
+                )
+
+              // If user has only one branch, ensure it matches exactly and no extra branches
+              if (brancharray.length === 1) {
+                return (
+                  hasMatchingBranch &&
+                  registration.branchName.length === 1 &&
+                  registration.branchName[0] === brancharray[0]
+                )
+              }
+
+              // If user has more than one branch, just check for any match
+              return hasMatchingBranch
+            })
+        )
+        setLoading(false)
+        setCallList(filtered)
+      })
+      //Cleanup the socket connection when the component unmounts
+      // return () => {
+      //   socket.off("updatedCalls")
+      //   socket.disconnect()
+      // }
+    }
+  }, [users, branchids, selectedCompanyBranch])
 
   useEffect(() => {
     if (callList && callList.length > 0 && users) {
@@ -98,87 +169,107 @@ const CallregistrationList = () => {
     }
   }, [callList])
 
-  useEffect(() => {
-    if (users) {
-      const userId = users._id
-      socket.emit("updatedCalls", userId)
-      // Listen for initial data from the server
-      socket.on("updatedCalls", ({ mergedCalls, user }) => {
-        if (users.role === "Admin") {
-          setCallList(mergedCalls)
-          console.log(mergedCalls)
-        } else {
-          const userBranchName = new Set(
-            users?.selected?.map((branch) => branch.branchName)
-          )
+//   const handleSearch = debounce((search) => {
+//     if(!search||search.toString().trim()===''){
+//       setFilteredCalls(callList)
+//       return
+//     }
+//     setSearchTerm(search)
+//     const searchText = search.toString().toLowerCase().trim()
+// console.log(searchText)
+//     const filteredData = callList.filter((customer) => {
+//       // Check customerName
+//       if(customer.customerName
+//         ?.toLowerCase()
+//         .includes(searchText)){
+//           return true
+//         }
+//         console.log(searchText)
+//         console.log(customer.customerName)
+//       // Check mobile (if exists)
+//       if(customer.mobile?.toString().includes(searchText)){
+//         return true
+//       }
 
-          const branchNamesArray = Array.from(userBranchName)
-          setUserBranch(branchNamesArray)
+//       // Check callregistration.incomingNumber or license
+//       if(customer.callregistration?.some((call) => {
+//         if(call.formdata?.incomingNumber
+//           ?.toString()
+//           .includes(searchText)){
+//             return true
+//           }
+        
+//         if(call.branchName?.some((branch) =>
+//           branch.toLowerCase().includes(searchText)
+//         )){
+//           return true
+//         }
+        
+//         if(call.license?.toString().includes(searchText)){
+//           return true
+//         }
+//         return false
+        
+//         })){
+//           return true
+//         }
 
-          const filtered = mergedCalls.filter(
-            (call) =>
-              Array.isArray(call?.callregistration) && // Check if callregistration is an array
-              call.callregistration.some((registration) => {
-                const hasMatchingBranch =
-                  Array.isArray(registration?.branchName) && // Check if branchName is an array
-                  registration.branchName.some(
-                    (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
-                  )
+//     })
+//     console.log(filteredData)
 
-                // If user has only one branch, ensure it matches exactly and no extra branches
-                if (branchNamesArray.length === 1) {
-                  return (
-                    hasMatchingBranch &&
-                    registration.branchName.length === 1 &&
-                    registration.branchName[0] === branchNamesArray[0]
-                  )
-                }
+//     setFilteredCalls(filteredData)
+//   }, 300)
+const handleSearch = debounce((search) => {
+  if (!search || search.toString().trim() === '') {
+    setFilteredCalls(callList); // Show all if empty search
+    return;
+  }
 
-                // If user has more than one branch, just check for any match
-                return hasMatchingBranch
-              })
-          )
+  const searchText = search.toString().toLowerCase().trim();
 
-          setCallList(filtered)
-        }
-      })
-      //Cleanup the socket connection when the component unmounts
-      // return () => {
-      //   socket.off("updatedCalls")
-      //   socket.disconnect()
-      // }
+  const filteredData = callList.filter((customer) => {
+    // 1. Customer name match
+    if (customer.customerName?.toLowerCase().includes(searchText)) {
+      return true;
     }
-  }, [users])
-  const handleSearch = debounce((search) => {
-    setSearchTerm(search)
-    const searchText = search.toString().toLowerCase()
 
-    const filteredData = callList.filter((customer) => {
-      // Check customerName
-      const nameMatch = customer.customerName
-        ?.toLowerCase()
-        .includes(searchText)
+    // 2. Mobile match
+    if (customer.mobile?.toString().includes(searchText)) {
+      return true;
+    }
 
-      // Check mobile (if exists)
-      const mobileMatch = customer.mobile?.toString().includes(searchText)
+    // 3. Call registration match
+    if (customer.callregistration?.some((call) => {
+      // Incoming number
+      if (call.formdata?.incomingNumber?.toString().includes(searchText)) {
+        return true;
+      }
+      
+      // License
+      if (call.license?.toString().includes(searchText)) {
+        return true;
+      }
+      
+      // Branch names
+      if (call.branchName?.some((branch) => 
+        branch?.toLowerCase().includes(searchText)
+      )) {
+        return true;
+      }
+      
+      return false;
+    })) {
+      return true;
+    }
 
-      // Check callregistration.incomingNumber or license
-      const callMatch = customer.callregistration?.some((call) => {
-        const incomingNumberMatch = call.formdata?.incomingNumber
-          ?.toString()
-          .includes(searchText)
-        const branchMatch = call.branchName?.some((branch) =>
-          branch.toLowerCase().includes(searchText)
-        )
-        const licenseMatch = call.license?.toString().includes(searchText)
-        return incomingNumberMatch || licenseMatch || branchMatch
-      })
+    return false;
+  });
+console.log(filteredData)
+console.log(filteredData.length)
+  setSearchTerm(search);
+  setFilteredCalls(filteredData);
+}, 300);
 
-      return nameMatch || mobileMatch || callMatch
-    })
-
-    setFilteredCalls(filteredData)
-  }, 300)
 
   const handleChange = (e) => handleSearch(e.target.value)
   const setDateandTime = (dateString) => {
@@ -325,7 +416,7 @@ const CallregistrationList = () => {
   }
 
   return (
-    <div className="mx-auto p-2  md:p-5 bg-white">
+    <div className=" mx-auto p-2  md:p-5 bg-white">
       <div className="w-auto shadow-lg rounded p-4 pt-1 h-full bg-neutral-50 ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
           {/* Search Bar for large screens */}
@@ -354,11 +445,21 @@ const CallregistrationList = () => {
             >
               Call
             </label>
-            {/* <div>
-              <button className="bg-blue-800" onClick={handlemerge}>
-                merge
-              </button>
-            </div> */}
+            <select
+              // value={selectedCompanyBranch || ""}
+              onChange={(e) => {
+                setLoading(true)
+                setFilteredCalls([])
+                setSelectedCompanyBranch(e.target.value)
+              }}
+              className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px] cursor-pointer"
+            >
+              {loggedUserBranches?.map((branch) => (
+                <option key={branch._id} value={branch.label}>
+                  {branch.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

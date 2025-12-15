@@ -24,40 +24,53 @@ const UserListform = () => {
   const [selectedBranch, setselectedBranch] = useState(null)
   const [loggeduser, setloggeduser] = useState(null)
   const { data, loading } = UseFetch("/auth/getallUsers")
-
   useEffect(() => {
     if (data) {
       const logged = getLocalStorageItem("user")
       const { allusers } = data
+
       setallusers(allusers)
       const filtereusers = allusers.filter((user) =>
         user.selected
           .map((branch) => branch.branch_id)
           .includes(logged.selected[0].branch_id)
       )
-      setUser(filtereusers)
+
+      setUser(sortByVerified(filtereusers))
       setloggeduser(logged)
       setselectedBranch(logged.selected[0].branch_id)
     }
   }, [data])
+  const sortByVerified = (arr) => {
+    return arr.sort((a, b) => (b.isVerified === true) - (a.isVerified === true))
+  }
 
   const handleSearch = debounce((query) => {
     const { allusers } = data
     const input = query.trim()
+    setSearchQuery(input)
 
     const lowerCaseQuery = input.toLowerCase()
 
     const filteredName = allusers.filter((user) =>
-      user.name.toLowerCase().includes(lowerCaseQuery)
+      user.name.toLowerCase().startsWith(lowerCaseQuery)
     )
     const filteredMobile = allusers.filter((user) =>
-      user.mobile.toString().toLowerCase().includes(lowerCaseQuery)
+      user.mobile.toString().toLowerCase().startsWith(lowerCaseQuery)
     )
 
     if (filteredName.length > 0) {
-      setUser(filteredName)
+      const filtereusersbranchwise = filteredName.filter((user) =>
+        user.selected.map((branch) => branch.branch_id).includes(selectedBranch)
+      )
+
+      setUser(sortByVerified(filtereusersbranchwise))
     } else if (filteredMobile.length > 0) {
-      setUser(filteredMobile)
+      const filtereusersbranchwise = filteredMobile.filter((user) =>
+        user.selected.map((branch) => branch.branch_id).includes(selectedBranch)
+      )
+
+      setUser(sortByVerified(filtereusersbranchwise))
     }
 
     // Reset to initial count after filtering
@@ -65,23 +78,34 @@ const UserListform = () => {
   const handlebranchChange = (e) => {
     const [id, label] = e.target.value.split("||")
     setselectedBranch(id)
-    const filtereusers = allusers.filter((user) =>
-      user.selected.map((branch) => branch.branch_id).includes(id)
-    )
-    setUser(filtereusers)
+    if (searchQuery) {
+      const filteredbyquery = allusers.filter((user) =>
+        user.name.toLowerCase().startsWith(searchQuery.toLocaleLowerCase())
+      )
+      const filtereusersbranchwise = filteredbyquery.filter((user) =>
+        user.selected.map((branch) => branch.branch_id).includes(id)
+      )
+      setUser(sortByVerified(filtereusersbranchwise))
+    } else {
+      const filtereusersbranchwise = allusers.filter((user) =>
+        user.selected.map((branch) => branch.branch_id).includes(id)
+      )
+      setUser(sortByVerified(filtereusersbranchwise))
+    }
   }
   const handleDelete = async (id) => {
     try {
       await api.delete(`/auth/userDelete?id=${id}`)
 
       // Remove the deleted item from the items array
-      setUser((prevItems) => prevItems.filter((item) => item._id !== id))
+      setUser((prevItems) =>
+        sortByVerified(prevItems.filter((item) => item._id !== id))
+      )
     } catch (error) {
       console.error("Failed to delete item", error)
       // toast.error("Failed to delete item. Please try again.")
     }
   }
-
   return (
     <div className="h-full flex flex-col bg-gray-50">
       {/* Header Section - Sticky */}
@@ -110,7 +134,7 @@ const UserListform = () => {
 
         {/* Action Buttons */}
         <div className="px-3 pb-2">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex md:flex-wrap gap-2 justify-between md:justify-start md:gap-2">
             <Link
               to={
                 loggeduser?.role === "Admin"
@@ -157,7 +181,7 @@ const UserListform = () => {
             </button>
             <select
               onChange={(e) => handlebranchChange(e)}
-              className="w-40 px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none  text-gray-700 bg-white"
+              className="w-30 md:w-auto px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none  text-gray-700 bg-white"
             >
               {loggeduser &&
                 loggeduser?.selected?.map((branch) => (
@@ -197,13 +221,20 @@ const UserListform = () => {
                     Mobile
                   </th>
                   <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider min-w-32 bg-green-300">
+                    Department
+                  </th>
+                  <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider min-w-32 bg-green-300">
                     Designation
                   </th>
+
                   <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider min-w-24 bg-green-300">
                     Role
                   </th>
                   <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider min-w-32 bg-green-300">
                     Assigned To
+                  </th>
+                  <th className="sticky top-0 z-10 px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider min-w-32 bg-green-300">
+                    Status
                   </th>
                   <th className="sticky top-0 z-10 px-4 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider min-w-24 bg-green-300">
                     Actions
@@ -251,6 +282,11 @@ const UserListform = () => {
                             </span>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                              {user?.department?.department}
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
                             <span
                               className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                                 user?.role === "Admin"
@@ -271,6 +307,17 @@ const UserListform = () => {
                                 Not assigned
                               </span>
                             )}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <span
+                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                user?.isVerified
+                                  ? "bg-green-100 text-green-500"
+                                  : "bg-red-100 text-red-500"
+                              }`}
+                            >
+                              {user.isVerified ? "Active" : "Deactive"}
+                            </span>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
                             <div className="flex items-center justify-center space-x-2">

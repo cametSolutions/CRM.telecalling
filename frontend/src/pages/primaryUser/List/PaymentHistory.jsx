@@ -13,13 +13,11 @@ const userData=localStorage.getItem("user")
 if(userData.selected){
 // console.
 }
-console.log(userData)
 setloggedUser(JSON.parse(userData))
 
 }
 
 },[branch])
-console.log(loggedUser)
   return (
     <div>PaymentHistory</div>
   )

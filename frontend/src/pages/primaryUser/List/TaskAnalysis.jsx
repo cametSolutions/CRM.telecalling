@@ -53,12 +53,16 @@ const TaskAnalysis = () => {
         const logs = lead.activityLog
         if (logs.length === 0) return acc
 
-        const lastTask = logs[logs.length - 1]
-        const taskBy = lastTask.taskTo
-
-        if (taskBy) {
-          acc[taskBy] = (acc[taskBy] || 0) + 1
-        }
+        logs.forEach((log) => {
+          // Only include logs that are not closed and have a taskTo field
+          if (
+            log.taskTo &&
+            (log.taskClosed === false || log.followupClosed === false)
+          ) {
+            acc[log.taskTo] = (acc[log.taskTo] || 0) + 1
+          }
+        })
+        
 
         return acc
       }, {})
@@ -72,7 +76,6 @@ const TaskAnalysis = () => {
       setgridList(taskByCountArray)
     }
   }, [analysisleads])
-console.log("h")
   return (
     <div className="flex flex-col h-full bg-white">
       <div>
@@ -88,7 +91,7 @@ console.log("h")
         <CurrentDate />
       </div>
 
-      <div className="m-2 mx-4">
+      <div className="m-2 mx-4 flex justify-end">
         <select
           // value={selectedCompanyBranch || ""}
           onChange={(e) => {
@@ -126,7 +129,10 @@ console.log("h")
                           )}`
                         : `/staff/transaction/lead/taskanalysisTable/${encodeURIComponent(
                             item.label
-                          )}`
+                          )}`,
+                      {
+                        state: { branchid: selectedCompanyBranch }
+                      }
                     )
                   }
                   className="flex justify-between w-full px-6 py-2 bg-white shadow-xl rounded-md border border-gray-100"

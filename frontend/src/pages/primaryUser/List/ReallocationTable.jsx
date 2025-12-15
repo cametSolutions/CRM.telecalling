@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useLocation } from "react-router-dom"
 import React from "react"
 import { toast } from "react-toastify"
 import { PropagateLoader } from "react-spinners"
@@ -6,6 +7,7 @@ import { useNavigate, useParams } from "react-router-dom"
 import BarLoader from "react-spinners/BarLoader"
 import api from "../../../api/api"
 import Select from "react-select"
+import { CollectionupdateModal } from "../../../components/primaryUser/CollectionupdateModal"
 import UseFetch from "../../../hooks/useFetch"
 const ReallocationTable = () => {
   const { label } = useParams()
@@ -15,7 +17,9 @@ const ReallocationTable = () => {
   const [isClosed, setIsclosed] = useState(false)
   const [selectedLeadId, setselectedLeadId] = useState(null)
   const [selectedType, setselectedType] = useState(null)
+  const [selectedData, setselectedData] = useState({})
   const [showModal, setShowmodal] = useState(false)
+  const [partner, setpartner] = useState([])
   const [submiterror, setsubmitError] = useState("")
   const [selectedAllocationType, setselectedAllocationType] = useState({})
   const [validateError, setValidateError] = useState({})
@@ -32,6 +36,8 @@ const ReallocationTable = () => {
   const [selectedItem, setSelectedItem] = useState(null)
   const [tableData, setTableData] = useState([])
   const { data: branches } = UseFetch("/branch/getBranch")
+  const location = useLocation()
+  const { id } = location.state || {}
   const [formData, setFormData] = useState({
     allocationDate: "",
     allocationDescription: ""
@@ -46,6 +52,7 @@ const ReallocationTable = () => {
       `/lead/getallreallocatedLead?selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
   )
   const { data } = UseFetch("/auth/getallUsers")
+  const { data: partners } = UseFetch("/customer/getallpartners")
   const navigate = useNavigate()
   useEffect(() => {
     const userData = localStorage.getItem("user")
@@ -61,20 +68,20 @@ const ReallocationTable = () => {
             return { value: item.branch_id, label: item.branchName }
           })
           setLoggeduserBranches(loggeduserBranches)
-          setSelectedCompanyBranch(loggeduserBranches[0].value)
+          setSelectedCompanyBranch(id)
         } else {
           const loggeduserBranches = branches.map((item) => {
             return { value: item._id, label: item.branchName }
           })
           setLoggeduserBranches(loggeduserBranches)
-          setSelectedCompanyBranch(loggeduserBranches[0].value)
+          setSelectedCompanyBranch(id)
         }
       } else {
         const loggeduserBranches = loggedUser.selected.map((item) => {
           return { value: item.branch_id, label: item.branchName }
         })
         setLoggeduserBranches(loggeduserBranches)
-        setSelectedCompanyBranch(loggeduserBranches[0].value)
+        setSelectedCompanyBranch(id)
       }
     }
   }, [loggedUser, branches])
@@ -97,9 +104,15 @@ const ReallocationTable = () => {
     }
   }, [data, selectedCompanyBranch])
   useEffect(() => {
-    if (leadreallocation && leadreallocation.length > 0) {
+    if (
+      leadreallocation &&
+      leadreallocation.length > 0 &&
+      partners &&
+      partners.length > 0
+    ) {
       const filteredLeads = filterLeadsByLastTaskLabel(leadreallocation, label)
       setTableData(filteredLeads)
+      setpartner(partners)
     }
   }, [leadreallocation])
   const filterLeadsByLastTaskLabel = (leads, label) => {
@@ -138,8 +151,7 @@ const ReallocationTable = () => {
       }
       const selected = selectedAllocationType[selectedItem._id]
       setsubmitLoading(true)
-      // return
-      // const selected = selectedAllocationType[selectedItem._id]
+
       const response = await api.post(
         `/lead/leadReallocation?allocationType=${encodeURIComponent(
           selected
@@ -156,9 +168,25 @@ const ReallocationTable = () => {
       refreshHook()
       setTableData([])
     } catch (error) {
+      setsubmitError({ submissionerror: "something went wrong" })
       setsubmitLoading(false)
       console.log(error)
-      setsubmitError({ submissionerror: "something went error" })
+    }
+  }
+  const handleCollectionUpdate = async (formData) => {
+    try {
+      const type = "leadClosed"
+      const response = await api.post(
+        `/lead/collectionUPdate?allocationType=${type}`,
+        formData
+      )
+      if (response.status === 200) {
+        refreshHook()
+        return response
+      }
+    } catch (error) {
+      toast.error("something went wrong")
+      console.log("error", error.message)
     }
   }
   const handleClosed = async () => {
@@ -179,15 +207,11 @@ const ReallocationTable = () => {
     )
     toast.success(response.data.message)
     setsubmitLoading(false)
-    setFormData({
-      netAmount: "",
-      balanceAmount: ""
-    })
+
     setIsclosed(false)
     refreshHook()
     setTableData([])
   }
-console.log("h")
   return (
     <div className="flex flex-col h-full">
       {(submitLoading || loading) && (
@@ -202,7 +226,7 @@ console.log("h")
         <div className="flex justify-end  ml-auto gap-6 items-center">
           {/* Branch Dropdown */}
           <select
-            // value={selectedCompanyBranch || ""}
+            value={selectedCompanyBranch || ""}
             onChange={(e) => {
               setSelectedCompanyBranch(e.target.value)
               setStatus(approvedToggleStatus ? "Approved" : "Pending")
@@ -288,13 +312,7 @@ console.log("h")
                     <td className="px-4 ">{item?.email}</td>
                     <td className=" px-4 ">{item?.leadId}</td>
                     <td className=" px-4 border border-b-0 border-gray-400 "></td>
-                    <td className="border border-b-0 border-gray-400 px-4 ">
-                      {/* {
-                        item.followUpDatesandRemarks[
-                          item.followUpDatesandRemarks.length - 1
-                        ]?.nextfollowpdate
-                      } */}
-                    </td>
+                    <td className="border border-b-0 border-gray-400 px-4 "></td>
 
                     <td className="border border-b-0 border-gray-400 px-1  text-blue-400 min-w-[50px] hover:text-blue-500 hover:cursor-pointer font-semibold">
                       <button
@@ -377,8 +395,33 @@ console.log("h")
                         </p>
                       )}
                     </td>
-                    <td className=" border border-t-0 border-b-0 border-gray-400 px-4  text-blue-400 hover:text-blue-500 hover:cursor-pointer bg-white">
-                      Follow Up
+                    <td
+                      className=" border border-t-0 border-b-0 border-gray-400 px-4  text-red-500 hover:cursor-pointer bg-white"
+                      onClick={() => {
+                        if (!selectedAllocates.hasOwnProperty(item._id)) {
+                          setValidateError((prev) => ({
+                            ...prev,
+                            [item._id]: "Allocate to Someone"
+                          }))
+                          return
+                        }
+                        if (!selectedAllocationType.hasOwnProperty(item._id)) {
+                          setValidatetypeError((prev) => ({
+                            ...prev,
+                            [item._id]: "please select a Type"
+                          }))
+                          return
+                        }
+                        setselectedLeadId(item.leadId)
+                        setShowmodal(true)
+                        setSelectedItem(item)
+                        setFormData((prev) => ({
+                          ...prev,
+                          allocationDate: new Date()
+                        }))
+                      }}
+                    >
+                      Allocate
                     </td>
                     <td className=" border border-t-0 border-b-0 border-gray-400 px-4 bg-white ">
                       {" "}
@@ -466,46 +509,22 @@ console.log("h")
                         </div>
                       </div>
                     </td>
-                    <td className="border  border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5">
-                      {/* {item?.allocatedBy?.name} */}
-                    </td>
-                    <td className="border  border-t-0 border-r-0 border-l-0 border-b-0  border-gray-400  px-4 py-0.5 ">
-                      {/* {item.followUpDatesandRemarks.length} */}
-                    </td>
+                    <td className="border  border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5"></td>
+                    <td className="border  border-t-0 border-r-0 border-l-0 border-b-0  border-gray-400  px-4 py-0.5 "></td>
                     <td className="border  border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 ">
                       {new Date(item?.leadDate).toLocaleDateString()}
                     </td>
-                    <td className="border  border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5 ">
-                      {/* {item.leadDate?.toString().split("T")[0]} */}
-                    </td>
+                    <td className="border  border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5 "></td>
                     <td className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5 "></td>
                     <td
                       className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5 text-red-400 hover:text-red-500 hover:cursor-pointer font-semibold"
                       onClick={() => {
-                        if (!selectedAllocates.hasOwnProperty(item._id)) {
-                          setValidateError((prev) => ({
-                            ...prev,
-                            [item._id]: "Allocate to Someone"
-                          }))
-                          return
-                        }
-                        if (!selectedAllocationType.hasOwnProperty(item._id)) {
-                          setValidatetypeError((prev) => ({
-                            ...prev,
-                            [item._id]: "please select a Type"
-                          }))
-                          return
-                        }
-                        setselectedLeadId(item.leadId)
-                        setShowmodal(true)
-                        setSelectedItem(item)
-                        setFormData((prev) => ({
-                          ...prev,
-                          allocationDate: new Date()
-                        }))
+                        setIsclosed(true)
+
+                        setselectedData(item)
                       }}
                     >
-                      Allocate
+                      Closed
                     </td>
                     <td className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5"></td>
                   </tr>
@@ -538,15 +557,6 @@ console.log("h")
                     <td className="border border-t-0 border-gray-400 "></td>
                     <td className="border border-t-0 border-gray-400 "></td>
                     <td
-                      onClick={() => {
-                        setIsclosed(true)
-                        setFormData((prev) => ({
-                          ...prev,
-                          netAmount: item?.netAmount,
-                          balanceAmount: item?.balanceAmount
-                        }))
-                        setselectedLeadId(item?._id)
-                      }}
                       // onClick={() => {
                       //   if (!selectedAllocates.hasOwnProperty(item._id)) {
                       //     setValidateError((prev) => ({
@@ -570,10 +580,8 @@ console.log("h")
                       //     allocationDate: new Date()
                       //   }))
                       // }}
-                      className="border border-t-0 border-gray-400 text-red-400 hover:text-red-500 font-semibold cursor-pointer"
-                    >
-                      Closed
-                    </td>
+                      className="border border-t-0 border-gray-400"
+                    ></td>
                     <td className="border border-t-0 border-gray-400 "></td>
                   </tr>
                   <tr>
@@ -622,7 +630,7 @@ console.log("h")
               <div className="md:px-6 md:py-4 py-2 px-3">
                 <h1 className="font-semibold text-xl">{`Lead Reallocation for ${selectedType}-LeadId:${selectedLeadId}`}</h1>
                 <div>
-                  <label className="block text-left">Allocated Date</label>
+                  <label className="block text-left">Completion Date</label>
                   <input
                     value={formData.allocationDate || ""}
                     type="date"
@@ -680,72 +688,81 @@ console.log("h")
           </div>
         )}
         {isClosed && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40 ">
-            <div className="bg-white md:w-1/4 grid grid-cols-1 rounded-lg shadow-xl p-5">
-              <h1 className="text-xl font-semibold">Lead Closed Amount</h1>
-              <div>
-                <label className="block text-left font-semibold text-gray-500">
-                  Net Amount
-                </label>
-                <input
-                  disabled
-                  type="number"
-                  value={formData?.netAmount}
-                  className="py-1 pl-2 border border-gray-300 w-full rounded-md shadow-xl cursor-not-allowed bg-gray-100"
-                />
-              </div>
-              <div>
-                <label className="block text-left font-semibold text-gray-500">
-                  Balance Amount
-                </label>
-                <input
-                  disabled
-                  type="number"
-                  value={formData?.balanceAmount}
-                  className="py-1 pl-2 border border-gray-300 w-full  rounded-md shadow-xl"
-                />
-              </div>
-              <div>
-                <label className="block text-left font-semibold text-gray-500">
-                  Recieved Amount
-                </label>
-                <input
-                  type="number"
-                  value={formData?.recievedAmount}
-                  onChange={(e) => {
-                    if (submiterror.recievedAmount) {
-                      setsubmitError((prev) => ({
-                        ...prev,
-                        recievedAmount: ""
-                      }))
-                    }
-                    setFormData((prev) => ({
-                      ...prev,
-                      recievedAmount: e.target.value
-                    }))
-                  }}
-                  className="py-1 pl-2 border border-gray-300 w-full  rounded-md shadow-xl focus:outline-none"
-                />
-                {submiterror.recievedAmount && (
-                  <p className="text-red-500">{submiterror.recievedAmount}</p>
-                )}
-              </div>
-              <div className="mt-3 flex space-x-3 justify-center">
-                <button
-                  onClick={() => setIsclosed(false)}
-                  className="bg-gray-600 py-1 px-3 rounded-md hover:bg-gray-700 cursor-pointer text-white"
-                >
-                  Close
-                </button>
-                <button
-                  onClick={() => handleClosed()}
-                  className="bg-blue-500 py-1 px-3 rounded-md hover:bg-blue-600 cursor-pointer text-white"
-                >
-                  Submit
-                </button>
-              </div>
-            </div>
-          </div>
+          <CollectionupdateModal
+            isClosed={true}
+            data={selectedData}
+            closemodal={setIsclosed}
+            partnerlist={partner}
+            loggedUser={loggedUser}
+            handleCollectionUpdate={handleCollectionUpdate}
+          />
+
+          // <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40 ">
+          //   <div className="bg-white md:w-1/4 grid grid-cols-1 rounded-lg shadow-xl p-5">
+          //     <h1 className="text-xl font-semibold">Lead Closed Amount</h1>
+          //     <div>
+          //       <label className="block text-left font-semibold text-gray-500">
+          //         Net Amount
+          //       </label>
+          //       <input
+          //         disabled
+          //         type="number"
+          //         value={formData?.netAmount}
+          //         className="py-1 pl-2 border border-gray-300 w-full rounded-md shadow-xl cursor-not-allowed bg-gray-100"
+          //       />
+          //     </div>
+          //     <div>
+          //       <label className="block text-left font-semibold text-gray-500">
+          //         Balance Amount
+          //       </label>
+          //       <input
+          //         disabled
+          //         type="number"
+          //         value={formData?.balanceAmount}
+          //         className="py-1 pl-2 border border-gray-300 w-full  rounded-md shadow-xl"
+          //       />
+          //     </div>
+          //     <div>
+          //       <label className="block text-left font-semibold text-gray-500">
+          //         Recieved Amount
+          //       </label>
+          //       <input
+          //         type="number"
+          //         value={formData?.recievedAmount}
+          //         onChange={(e) => {
+          //           if (submiterror.recievedAmount) {
+          //             setsubmitError((prev) => ({
+          //               ...prev,
+          //               recievedAmount: ""
+          //             }))
+          //           }
+          //           setFormData((prev) => ({
+          //             ...prev,
+          //             recievedAmount: e.target.value
+          //           }))
+          //         }}
+          //         className="py-1 pl-2 border border-gray-300 w-full  rounded-md shadow-xl focus:outline-none"
+          //       />
+          //       {submiterror.recievedAmount && (
+          //         <p className="text-red-500">{submiterror.recievedAmount}</p>
+          //       )}
+          //     </div>
+          //     <div className="mt-3 flex space-x-3 justify-center">
+          //       <button
+          //         onClick={() => setIsclosed(false)}
+          //         className="bg-gray-600 py-1 px-3 rounded-md hover:bg-gray-700 cursor-pointer text-white"
+          //       >
+          //         Close
+          //       </button>
+          //       <button
+          //         onClick={() => handleClosed()}
+          //         className="bg-blue-500 py-1 px-3 rounded-md hover:bg-blue-600 cursor-pointer text-white"
+          //       >
+          //         Submit
+          //       </button>
+          //     </div>
+          //   </div>
+          // </div>
         )}
       </div>
     </div>

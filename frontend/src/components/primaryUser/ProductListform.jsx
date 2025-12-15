@@ -1,5 +1,6 @@
-import React, { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { CiEdit } from "react-icons/ci"
+import { PropagateLoader } from "react-spinners"
 import { useNavigate } from "react-router-dom"
 import {
   FaUserPlus,
@@ -11,7 +12,7 @@ import {
 import { Link } from "react-router-dom"
 import _ from "lodash"
 
-const ProductListform = ({ productlist }) => {
+const ProductListform = ({ productlist, loading }) => {
   const user = localStorage.getItem("user")
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
@@ -106,7 +107,7 @@ const ProductListform = ({ productlist }) => {
             <tbody className="bg-white divide-y divide-gray-200 ">
               {filteredProducts?.length > 0 ? (
                 filteredProducts.map((product) =>
-                  product.selected.map((item) => (
+                  product.selected.map((item, itemIndex) => (
                     <tr key={`${product._id}-${item.branch_id}`}>
                       <td className="px-6 py-3     whitespace-nowrap text-sm text-black">
                         {item.companyName}
@@ -136,7 +137,7 @@ const ProductListform = ({ productlist }) => {
                       >
                         {item.status || "N/A"}
                       </td> */}
-                      <td className="px-6 py-3 whitespace-nowrap text-xl text-black ">
+                      <td className="px-6 py-3 whitespace-nowrap text-xl text-black cursor-pointer">
                         {/* Add actions like Edit/Delete here */}
 
                         <CiEdit
@@ -145,7 +146,9 @@ const ProductListform = ({ productlist }) => {
                             navigate("/admin/masters/productEdit", {
                               state: {
                                 product: product,
-                                selected: item
+                                selected: item,
+                                item: product,
+                                index: itemIndex
                               } // pass the correct data here
                             })
                           }
@@ -160,7 +163,11 @@ const ProductListform = ({ productlist }) => {
                     colSpan="10"
                     className="px-6 py-4 text-center text-sm text-gray-500"
                   >
-                    No Data
+                    {loading && (
+                      <div className="flex justify-center">
+                        <PropagateLoader color="#3b82f6" size={10} />
+                      </div>
+                    )}
                   </td>
                 </tr>
               )}

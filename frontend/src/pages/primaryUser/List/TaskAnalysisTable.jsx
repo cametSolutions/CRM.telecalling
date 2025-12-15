@@ -1,7 +1,16 @@
-
 import React, { useState, useEffect } from "react"
 import UseFetch from "../../../hooks/useFetch"
+import { useLocation } from "react-router-dom"
 import { useNavigate, useParams } from "react-router-dom"
+// import { Plus, Building2, ChevronDown, BarChart3 } from "lucide-react"
+import {
+  Plus,
+  Building2,
+  ChevronDown,
+  BarChart3,
+  DollarSign,
+  IndianRupee
+} from "lucide-react"
 const TaskAnalysisTable = () => {
   const { label } = useParams()
   const [netAmount, setnetAmount] = useState(0)
@@ -19,7 +28,8 @@ const TaskAnalysisTable = () => {
       selectedCompanyBranch &&
       `/lead/getalltaskAnalysisLeads?selectedBranch=${selectedCompanyBranch}`
   )
-
+  const location = useLocation()
+  const { branchid } = location.state || {}
   const navigate = useNavigate()
   useEffect(() => {
     const userData = localStorage.getItem("user")
@@ -35,20 +45,20 @@ const TaskAnalysisTable = () => {
             return { value: item.branch_id, label: item.branchName }
           })
           setLoggeduserBranches(loggeduserBranches)
-          setSelectedCompanyBranch(loggeduserBranches[0].value)
+          setSelectedCompanyBranch(branchid)
         } else {
           const loggeduserBranches = branches.map((item) => {
             return { value: item._id, label: item.branchName }
           })
           setLoggeduserBranches(loggeduserBranches)
-          setSelectedCompanyBranch(loggeduserBranches[0].value)
+          setSelectedCompanyBranch(branchid)
         }
       } else {
         const loggeduserBranches = loggedUser.selected.map((item) => {
           return { value: item.branch_id, label: item.branchName }
         })
         setLoggeduserBranches(loggeduserBranches)
-        setSelectedCompanyBranch(loggeduserBranches[0].value)
+        setSelectedCompanyBranch(branchid)
       }
     }
   }, [loggedUser, branches])
@@ -62,7 +72,6 @@ const TaskAnalysisTable = () => {
       filteredLeads.forEach((lead) => {
         const assignedTo = lead?.allocatedTo?.name
         const amount = lead?.netAmount || 0
-console.log(amount)
         grandTotal += amount
         if (!groupedLeads[assignedTo]) {
           groupedLeads[assignedTo] = []
@@ -84,8 +93,6 @@ console.log(amount)
     })
   }
 
- 
-
   const getRemainingDays = (dueDate) => {
     const today = new Date()
     const target = new Date(dueDate)
@@ -95,25 +102,52 @@ console.log(amount)
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     return diffDays
   }
-
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {loading && <div className="w-full h-1 bg-blue-500 animate-pulse"></div>}
 
-      <div className="bg-white border-b sticky top-0 z-40">
-        <div className="w-full mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-xl font-bold text-gray-900">Task Analysis</h1>
-              <h2 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                {label?.toUpperCase() || "FOLLOWUP"}
-              </h2>
+      <div className="mx-auto px-3 sm:px-6 lg:px-8 py-2 bg-blue-100 w-full">
+        {/* Header Row */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
+          {/* Left Section: Title + Task Type + Actions */}
+          <div className="flex flex-wrap items-center gap-3 md:gap-4">
+            {/* Icon + Title */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg items-center justify-center shadow-sm">
+                <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+              </div>
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900 tracking-tight">
+                Task Analysis
+              </h1>
             </div>
 
-            <div className="flex items-center gap-3">
+            {/* Task Type Badge */}
+            <span className="px-2.5 py-1 rounded-md text-xs sm:text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-purple-600 shadow-sm uppercase">
+              {label || "FOLLOWUP"}
+            </span>
+
+            {/* New Lead Button */}
+            <button
+              onClick={() =>
+                loggedUser.role === "Admin"
+                  ? navigate("/admin/transaction/lead")
+                  : navigate("/staff/transaction/lead")
+              }
+              className="inline-flex items-center gap-2 bg-blue-700 hover:bg-blue-800 text-white font-medium py-1.5 px-3 sm:px-4 rounded-md text-sm shadow-sm transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              <span>New Lead</span>
+            </button>
+          </div>
+
+          {/* Right Section: Total Amount */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Branch Selector */}
+            <div className="relative">
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               <select
                 onChange={(e) => setSelectedCompanyBranch(e.target.value)}
-                className="border border-gray-300 py-1 px-3 rounded focus:outline-none text-sm min-w-[140px]"
+                className="pl-9 pr-8 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer"
                 value={selectedCompanyBranch}
               >
                 {loggedUserBranches?.map((branch) => (
@@ -122,26 +156,21 @@ console.log(amount)
                   </option>
                 ))}
               </select>
-
-              <button
-                onClick={() =>
-                  loggedUser.role === "Admin"
-                    ? navigate("/admin/transaction/lead")
-                    : navigate("/staff/transaction/lead")
-                }
-                className="bg-blue-600 hover:bg-blue-700 text-white py-1 px-4 rounded text-sm"
-              >
-                New Lead
-              </button>
+            </div>
+            <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-md">
+              <IndianRupee className="w-4 h-4 text-green-600" />
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-1">
+              <span className="text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wide">
+                Total:
+              </span>
+              <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                {netAmount}
+              </span>
             </div>
           </div>
         </div>
       </div>
-      <div className="flex justify-end text-blue-600 text-md font-bold pr-4 gap-2">
-        <span>Total Amount: </span>
-        <span> {netAmount}</span>
-      </div>
-
       <div className="flex-1 overflow-y-auto">
         <div className="w-full mx-auto px-4 py-3">
           {tableData && Object.keys(tableData).length > 0 ? (
@@ -163,8 +192,8 @@ console.log(amount)
                   </div>
 
                   <div className="overflow-x-auto">
-                    <table className="border-collapse border border-gray-400 w-full text-sm">
-                      <thead className="whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
+                    <table className="border-collapse border border-gray-400 w-full text-sm ">
+                      <thead className="whitespace-nowrap bg-blue-900 text-white sticky top-0 z-30">
                         <tr>
                           <th className="border border-r-0 border-gray-400 px-4 py-2">
                             SNO.
@@ -187,7 +216,7 @@ console.log(amount)
                           <th className="border border-r-0 border-l-0 border-gray-400 px-4 py-2 min-w-[100px]">
                             B.Amount
                           </th>
-                        
+
                           <th className="border border-gray-400 px-4 py-2 min-w-[100px]">
                             Action
                           </th>
@@ -200,7 +229,7 @@ console.log(amount)
                       <tbody>
                         {leads.map((item, index) => (
                           <React.Fragment key={item._id}>
-                            <tr className="bg-white border border-gray-400 border-b-0 hover:bg-gray-50 transition-colors text-center">
+                            <tr className="bg-white border border-gray-400 border-b-0 hover:bg-gray-50 transition-colors text-center ">
                               <td className="px-4 border border-b-0 border-gray-400"></td>
                               <td
                                 onClick={() => setShowFullName(!showFullName)}
@@ -222,8 +251,8 @@ console.log(amount)
                                 {item?.leadId}
                               </td>
                               <td className="border border-b-0 border-gray-400 px-4"></td>
-                            
-                              <td className="border border-b-0 border-gray-400 px-1 text-blue-400 font-semibold">
+
+                              <td className="border border-b-0 border-gray-400 px-1 text-yellow-500 font-semibold text-md">
                                 <button
                                   onClick={() =>
                                     loggedUser.role === "Admin"
@@ -251,9 +280,7 @@ console.log(amount)
                                   View
                                 </button>
                               </td>
-                              <td className="border border-b-0 border-gray-400 px-4">
-
-                              </td>
+                              <td className="border border-b-0 border-gray-400 px-4"></td>
                             </tr>
 
                             <tr className="font-semibold bg-gray-200 text-center">
@@ -264,10 +291,8 @@ console.log(amount)
                               <td className="px-4 text-black">Due Date</td>
                               <td className="px-4 text-black">Remaing Day's</td>
                               <td className="px-4 text-black">Last Comment</td>
-                            
-                              <td className="px-4 font-medium">
-                               
-                              </td>
+
+                              <td className="px-4 font-medium"></td>
 
                               <td className="border border-t-0 border-b-0 border-gray-400 px-4">
                                 {item?.balanceAmount}
@@ -309,12 +334,10 @@ console.log(amount)
                                   item?.activityLog?.length - 1
                                 ]?.remarks || "No comments"}
                               </td>
-                              <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 text-black">
-                              
-                              </td>
+                              <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 text-black"></td>
                               <td className="border border-t-0 border-b-0 border-gray-400 px-4 py-0.5"></td>
                               <td className="border border-t-0 border-b-0 border-gray-400 px-4 py-0.5"></td>
-                   
+
                               <td className="border border-t-0 border-b-0 border-gray-400 px-4 py-0.5"></td>
                             </tr>
                           </React.Fragment>
@@ -509,7 +532,6 @@ console.log(amount)
               </table>
             </div>
           </div>
-
         )}
       </div>
     </div>

@@ -26,6 +26,7 @@ import DepartmentRegistration from "../../pages/primaryUser/register/DepartmentR
 import UserEdit from "../../pages/primaryUser/edit/UserEdit"
 import LeadRegister from "../../pages/primaryUser/register/LeadRegister"
 import WithoutProductdetailscustomer from "../../components/secondaryUser/WithoutProductdetailscustomer"
+import TargetRegister from "../../pages/primaryUser/register/TargetRegister"
 const staffmastersRoutes = [
   {
     path: "/staff/masters/company",
@@ -102,7 +103,7 @@ const staffmastersRoutes = [
   { path: "/staff/masters/menurights", component: UserPermissions },
 
   { path: "/staff/masters/vouchermaster", component: ComingSoon },
-  { path: "/staff/masters/target", component: ComingSoon },
+  { path: "/staff/masters/target", component: TargetRegister },
   { path: "/staff/masters/product", component: ProductList },
 
   { path: "/staff/masters/partners", component: ComingSoon },

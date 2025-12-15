@@ -131,7 +131,7 @@ export default function LeadModal({
           >
             History
           </span>
-          {type === "lead-Task" && (
+          {type === "leadTask" && (
             <span
               className={`hover:cursor-pointer pb-1 ${
                 selectedTab === "Task"
@@ -184,7 +184,7 @@ export default function LeadModal({
                         <th className="border border-indigo-200 p-2 min-w-[100px] ">
                           User
                         </th>
-                        <th className="border border-indigo-200 p-2 min-w-[100px] ">
+                        <th className="border border-indigo-200 p-2 min-w-[100px] text-nowrap">
                           Task
                         </th>
 
@@ -252,7 +252,7 @@ export default function LeadModal({
                               <td className="border border-gray-200 p-2">
                                 {item?.submittedUser?.name}
                               </td>
-                              <td className="border border-gray-200 p-2 min-w-[160px]">
+                              <td className="border border-gray-200 p-2 min-w-[160px] text-nowrap">
                                 <div>
                                   {item?.taskallocatedTo ? (
                                     <>
@@ -283,8 +283,8 @@ export default function LeadModal({
                                 {item?.remarks || "N/A"}
                               </td>
                               <td className="border border-gray-200 p-2">
-                                {item?.nextfollowUpDate
-                                  ? new Date(item.nextfollowUpDate)
+                                {item?.nextFollowUpDate
+                                  ? new Date(item.nextFollowUpDate)
                                       .toLocaleDateString("en-GB")
                                       .split("/")
                                       .join("-")
@@ -329,7 +329,7 @@ export default function LeadModal({
                   </div>
                   <div>
                     <label className="block text-sm mb-1 text-gray-700 font-semibold text-left">
-                      Assigned Date
+                      Completion Date
                     </label>
                     <input
                       type="date"
@@ -355,7 +355,7 @@ export default function LeadModal({
                   </div>
                   <div>
                     <label className="block text-sm mb-1 text-gray-700 font-semibold text-left">
-                      Task Date
+                      Task Submission Date
                     </label>
                     <input
                       type="text"

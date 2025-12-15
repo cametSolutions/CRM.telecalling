@@ -30,6 +30,7 @@ export const ProductRegistration = async (req, res) => {
       message: "Products created successfully"
     })
   } catch (error) {
+    console.log(error)
     res.status(500).json({ message: "server error" })
   }
 }
@@ -47,11 +48,10 @@ export const EditProduct = async (req, res) => {
     if (!existingProduct) {
       return res.status(404).json({ message: "Product not found" })
     }
-console.log("edit data",editData)
 
 
     // Step 2: Update the existing product with new values
-    existingProduct.selected = [editData] // Use the updated tableData
+    existingProduct.selected = editData// Use the updated tableData
     existingProduct.productName =
       productData.productName || existingProduct.productName
     existingProduct.productPrice =
@@ -73,28 +73,52 @@ console.log("edit data",editData)
 
 export const GetallProducts = async (req, res) => {
   try {
-    const { branchselected = null } = req.query
-    let products
-    if (branchselected) {
-      const decodedbranches = JSON.parse(decodeURIComponent(branchselected))
-      products = await Product.find({
+    const { branchselected = null, branchselectedArray = null } = req.query
+    if (branchselectedArray) {
+      let decodedbranches = JSON.parse(decodeURIComponent(branchselectedArray));
+
+      if (!Array.isArray(decodedbranches)) {
+        decodedbranches = [decodedbranches]; // ensure it's always an array
+      }
+      const products = await Product.find({
         selected: {
           $elemMatch: {
-            branch_id: { $in: decodedbranches }
+            branch_id: { $in: decodedbranches },
+          },
+        },
+      })
+      if (products && products.length) {
+
+        return res.status(201).json({ message: "foound products", data: products })
+      } else {
+        return res.status(404).json({ message: "products not found", data: [] })
+      }
+
+
+
+    } else if (branchselected) {
+      let products
+      if (branchselected) {
+        const decodedbranches = JSON.parse(decodeURIComponent(branchselected))
+        products = await Product.find({
+          selected: {
+            $elemMatch: {
+              branch_id: { $in: decodedbranches }
+            }
           }
-        }
-      }).populate({ path: "selected.hsn_id", select: "onValue" })
+        }).populate({ path: "selected.hsn_id", select: "onValue" })
 
 
+      } else {
+        products = await Product.find()
+      }
 
-    } else {
-      products = await Product.find()
+      if (!products && products.length === 0) {
+        res.status(404).json({ messsge: "products not found" })
+      }
+      res.status(200).json({ message: "productsfound", data: products })
     }
 
-    if (!products && products.length < 0) {
-      res.status(404).json({ messsge: "products not found" })
-    }
-    res.status(200).json({ message: "productsfound", data: products })
   } catch (err) {
     console.error(err.message)
     res.status(500).send("Server Error")
@@ -403,17 +427,37 @@ export const UpdateServices = async (req, res) => {
 }
 export const GetallServices = async (req, res) => {
   try {
-    const { branchselected = null } = req.query
-    let services
-    if (branchselected) {
-      const branchObjectId = new mongoose.Types.ObjectId(branchselected)
-      services = await Service.find({ branch: branchObjectId })
-    } else {
+    const { branchselected = null, branchselectedArray = null } = req.query
+    console.log("null",branchselectedArray)
+    if (branchselectedArray) {
+      console.log('gggg')
+      let decodedbranches = JSON.parse(decodeURIComponent(branchselectedArray))
+      if (!Array.isArray(decodedbranches)) {
+        decodedbranches = [decodedbranches]
+      }
 
-      services = await Service.find({})
-    }
-    if (services) {
-      return res.status(200).json({ message: "Services found", data: services })
+      const services = await Service.find({
+        branch: { $in: decodedbranches }
+      });
+      if (services && services.length) {
+        return res.status(201).json({ message: "services found", data: services })
+      } else {
+        return res.status(404).json({ message: "no service found", data: [] })
+      }
+
+    } else if (branchselected) {
+
+      let services
+      if (branchselected) {
+        const branchObjectId = new mongoose.Types.ObjectId(branchselected)
+        services = await Service.find({ branch: branchObjectId })
+      } else {
+
+        services = await Service.find({})
+      }
+      if (services) {
+        return res.status(200).json({ message: "Services found", data: services })
+      }
     }
   } catch (error) {
     console.log("error:", error.message)

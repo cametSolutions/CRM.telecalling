@@ -96,7 +96,6 @@ const WithoutProductdetailscustomer = () => {
       toast.error("Failed to delete brand")
     }
   }
-  console.log(searchedCustomers)
   return (
     <div className="container mx-auto h-full py-5 bg-gray-100">
       <div className="w-auto bg-white shadow-lg rounded p-5 h-full mx-4 flex flex-col">

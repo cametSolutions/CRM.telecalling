@@ -187,7 +187,6 @@ const LeadMaster = ({
       setValueMain("leadBy", loggeduser._id) // Manually set the value
     }
   }, [loggeduser, setValueMain])
-
   useEffect(() => {
     if (
       Data &&
@@ -196,17 +195,20 @@ const LeadMaster = ({
       customerOptions.length &&
       loggeduser
     ) {
-      if (Data[0].activityLog.length === 2) {
-        const allocatedtoData =
-          Data[0].activityLog[Data[0].activityLog.length - 1]
-        if (allocatedtoData.taskallocatedBy === loggeduser._id) {
-          setselfAllocationChangable(true)
-        } else {
-          setselfAllocationChangable(false)
-        }
-      } else if (Data[0].activityLog.length > 2) {
+      if (Data[0]?.selfAllocation) {
         setselfAllocationChangable(false)
       }
+      // if (Data[0].activityLog.length === 2) {
+      //   const allocatedtoData =
+      //     Data[0].activityLog[Data[0].activityLog.length - 1]
+      //   if (allocatedtoData.taskallocatedBy === loggeduser._id) {
+      //     setselfAllocationChangable(true)
+      //   } else {
+      //     setselfAllocationChangable(false)
+      //   }
+      // } else if (Data[0].activityLog.length > 2) {
+      //   setselfAllocationChangable(false)
+      // }
       if (Data[0].activityLog.length === 1) {
         setcutomerchangeandbranch(true)
       } else if (Data[0].activityLog.length > 1) {
@@ -492,7 +494,7 @@ const LeadMaster = ({
               productPrice: newPrice,
               netAmount: (
                 Number(newPrice) +
-                (Number(product.hsn)/ 100) * Number(newPrice)
+                (Number(product.hsn) / 100) * Number(newPrice)
               ).toFixed(2)
             }
           : product
@@ -566,9 +568,11 @@ const LeadMaster = ({
     )
   }
   const calculateTotalAmount = () => {
-    return selectedleadlist.reduce((total, product) => {
-      return total + (Number(product.netAmount) || 0) // Ensure price is a number and handle null values
-    }, 0)
+    return selectedleadlist
+      .reduce((total, product) => {
+        return total + (Number(product.netAmount) || 0) // Ensure price is a number and handle null values
+      }, 0)
+      .toFixed(2)
   }
   const calculatetaxAmount = () => {
     return (
@@ -620,8 +624,8 @@ const LeadMaster = ({
               price: item?.productPrice,
 
               netAmount: (
-                (Number(item?.productPrice || 0)) +
-                (Number(igstRate) / 100) * (Number(item?.productPrice || 0))
+                Number(item?.productPrice || 0) +
+                (Number(igstRate) / 100) * Number(item?.productPrice || 0)
               ).toFixed(2)
               // netAmount:
               //   item?.productPrice +
@@ -655,13 +659,10 @@ const LeadMaster = ({
               productPrice: item?.productPrice,
               hsn: item?.selectedArray[0]?.hsn_id?.onValue?.igstRate || 0,
               price: item.productPrice || item.price,
-              netAmount:
-                ((Number(item?.productPrice || 0)) +
-                (Number(igstRate) / 100) * (Number(item?.productPrice || 0))).toFixed(2)
-              // netAmount:
-              //   item?.productPrice +
-              //   (item?.selectedArray[0]?.hsn_id?.onValue?.igstRate / 100) *
-              //     item?.productPrice
+              netAmount: (
+                Number(item?.productPrice || 0) +
+                (Number(igstRate) / 100) * Number(item?.productPrice || 0)
+              ).toFixed(2)
             }
           })
 
@@ -755,6 +756,7 @@ const LeadMaster = ({
           }))
           return
         }
+
         seteditLoadingState(true)
         await handleEditData(data, selectedleadlist, Data[0]?._id)
       }
@@ -815,7 +817,7 @@ const LeadMaster = ({
     }
   }
   return (
-    <div className="bg-gray-100">
+    <div className="bg-gray-100 h-full">
       {(modalloader ||
         loadingState ||
         editloadingState ||
@@ -841,7 +843,7 @@ const LeadMaster = ({
           }}
         >
           <div className="flex justify-between">
-            <h2 className="text-xl md:text-2xl font-semibold  mb-2 md:mb-1">
+            <h2 className="text-xl md:text-2xl font-semibold  mb-1 md:mb-2">
               {Data && Data?.length > 0 ? "Lead Edit" : "Lead"}
             </h2>
           </div>
@@ -857,7 +859,7 @@ const LeadMaster = ({
             />
           )}
 
-          <form onSubmit={handleSubmitMain(onSubmit)} className="md:py-5">
+          <form onSubmit={handleSubmitMain(onSubmit)} className="">
             <div className="md:flex items-start">
               <div className="md:w-1/2  grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 md:mr-2">
                 <div>
@@ -955,8 +957,16 @@ const LeadMaster = ({
                           backgroundColor: state.isDisabled
                             ? "#f3f4f6"
                             : "white",
-                          color: state.isDisabled ? "black" : "black", // Tailwind's text-gray-500
+
                           opacity: state.isDisabled ? 0.7 : 1
+                        }),
+                        singleValue: (base, state) => ({
+                          ...base,
+                          color: state.isDisabled ? "#4b5563" : "#111827",
+                          cursor: state.isDisabled ? "not-allowed" : "pointer",
+                          userSelect: state.isDisabled ? "none" : "auto",
+                          // ensure text doesn't show caret on hover
+                          WebkitUserSelect: state.isDisabled ? "none" : "auto"
                         }),
                         menu: (provided) => ({
                           ...provided,
@@ -1084,105 +1094,138 @@ const LeadMaster = ({
                     placeholder="Remarks..."
                   />
                 </div>
-                <div>
+                {process !== "edit" && (
+                  <>
+                    <div>
+                      <label
+                        htmlFor="selfAllocation"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                        Self Allocation/Other
+                      </label>
+                      <select
+                        disabled={!isSelfAllocationChangable}
+                        {...registerMain("selfAllocation", {
+                          setValueAs: (value) => value === "true",
+                          validate: (value) =>
+                            value === true || value === false
+                              ? true
+                              : "This field is requireded",
+                          onChange: (e) =>
+                            setselfAllocation(e.target.value === "true")
+                        })}
+                        className={`w-full border border-gray-300 rounded-md p-2 focus:outline-none ${
+                          isSelfAllocationChangable
+                            ? "cursor-pointer"
+                            : "bg-gray-200 cursor-not-allowed"
+                        }
+                    `}
+                      >
+                        <option value="">Select</option>
+                        {/*only for admin and marketing teams*/}
+                        {(loggeduser?.department?._id ===
+                          "670c866552847bbebbd35748" ||
+                          loggeduser?.department?._id ===
+                            "670c867352847bbebbd35750") && (
+                          <option value="true">Self Allocate</option>
+                        )}
+
+                        <option value="false">Allocate To Other</option>
+                      </select>
+                      {errorsMain.selfAllocation && (
+                        <p className="text-red-500 text-sm">
+                          {errorsMain.selfAllocation.message}
+                        </p>
+                      )}
+                    </div>
+                    {selfAllocation && (
+                      <>
+                        {" "}
+                        <div>
+                          <label
+                            htmlFor="allocationType"
+                            className="block text-sm font-medium text-gray-700 mb-2"
+                          >
+                            Allocation Type
+                          </label>
+                          <select
+                            disabled={!isSelfAllocationChangable}
+                            {...registerMain("allocationType", {
+                              required: "Allocation type is required"
+                            })}
+                            className={`w-full focus:outline-none rounded-md py-1 border border-gray-300 px-2 ${
+                              isSelfAllocationChangable
+                                ? ""
+                                : "bg-gray-200 cursor-not-allowed"
+                            }`}
+                          >
+                            {/* <option value="">Select Allocationtype</option> */}
+                            <option value="followup">Followup</option>
+                          </select>
+                          {errorsMain.allocationType && (
+                            <p className="text-red-500 text-sm">
+                              {errorsMain.allocationType.message}
+                            </p>
+                          )}
+                        </div>
+                        <div>
+                          <label
+                            htmlFor="dueDate"
+                            className="block text-sm font-medium text-gray-700 mb-2"
+                          >
+                            Due Date
+                          </label>
+                          <input
+                            type="date"
+                            {...registerMain("dueDate", {
+                              required: "Due Date is required"
+                            })}
+                            className="w-full focus:outline-none rounded-md py-1 border border-gray-300 px-2"
+                          />
+
+                          {errorsMain.dueDate && (
+                            <p className="text-red-500 text-sm">
+                              {errorsMain.dueDate.message}
+                            </p>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+
+                <div className="">
                   <label
-                    htmlFor="selfAllocation"
-                    className="block text-sm font-medium text-gray-700 mb-2"
+                    htmlFor="partner"
+                    className="block text-sm font-medium text-gray-700"
                   >
-                    Self Allocation/Other
+                    Partnership Type
                   </label>
                   <select
-                    disabled={!isSelfAllocationChangable}
-                    {...registerMain("selfAllocation", {
-                      setValueAs: (value) => value === "true",
-                      validate: (value) =>
-                        value === true || value === false
-                          ? true
-                          : "This field is requireded",
-                      onChange: (e) =>
-                        setselfAllocation(e.target.value === "true")
+                    id="partner"
+                    disabled={isReadOnly}
+                    {...registerMain("partner", {
+                      required: "Partnership is Required"
                     })}
-                    className={`w-full border border-gray-300 rounded-md p-2 focus:outline-none ${
-                      isSelfAllocationChangable
-                        ? "cursor-pointer"
-                        : "bg-gray-200 cursor-not-allowed"
-                    }
-                    `}
+                    className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:outline-none  ${
+                      isReadOnly
+                        ? "cursor-not-allowed bg-gray-100"
+                        : "cursor-pointer"
+                    }`}
                   >
-                    <option value="">Select</option>
-                    <option value="true">Self Allocate</option>
-                    <option value="false">Allocate To Other</option>
+                    <option value="">Select Partner</option>
+                    {partner?.map((partnr, index) => (
+                      <option key={index} value={partnr._id}>
+                        {partnr.partner}
+                      </option>
+                    ))}
                   </select>
-                  {errorsMain.selfAllocation && (
+                  {errorsMain.partner && (
                     <p className="text-red-500 text-sm">
-                      {errorsMain.selfAllocation.message}
+                      {errorsMain.partner.message}
                     </p>
                   )}
                 </div>
-                {selfAllocation && (
-                  <>
-                    {" "}
-                    <div>
-                      <label
-                        htmlFor="allocationType"
-                        className="block text-sm font-medium text-gray-700 mb-2"
-                      >
-                        Allocation Type
-                      </label>
-                      <select
-                        {...registerMain("allocationType", {
-                          required: "Allocation type is required"
-                        })}
-                        className="w-full focus:outline-none rounded-md py-1 border border-gray-300 px-2"
-                      >
-                        <option value="">Select Allocationtype</option>
-                        <option value="followup">Followup</option>
-                        <option value="programming">Programming</option>
-                        <option value="testing-&-implementation">
-                          Testing & Implementation
-                        </option>
-                        <option value="coding-&-testing">
-                          Coding & Testing
-                        </option>
-                        <option value="software-services">
-                          Software Service
-                        </option>
-                        <option value="customermeet">Customer Meet</option>
-                        <option value="demo">Demo</option>
-                        <option value="training">Training</option>
-
-                        <option value="onsite">Onsite</option>
-                        <option value="office">Office</option>
-                      </select>
-                      {errorsMain.allocationType && (
-                        <p className="text-red-500 text-sm">
-                          {errorsMain.allocationType.message}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="dueDate"
-                        className="block text-sm font-medium text-gray-700 mb-2"
-                      >
-                        Due Date
-                      </label>
-                      <input
-                        type="date"
-                        {...registerMain("dueDate", {
-                          required: "Due Date is required"
-                        })}
-                        className="w-full focus:outline-none rounded-md py-1 border border-gray-300 px-2"
-                      />
-
-                      {errorsMain.dueDate && (
-                        <p className="text-red-500 text-sm">
-                          {errorsMain.dueDate.message}
-                        </p>
-                      )}
-                    </div>
-                  </>
-                )}
               </div>
               <div className="md:ml-2  md:w-1/2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:gap-4">
@@ -1369,169 +1412,147 @@ const LeadMaster = ({
                       </div>
                     )}
                   </div>
-                  <div className="">
-                    <label
-                      htmlFor="partner"
-                      className="block text-sm font-medium text-gray-700"
-                    >
-                      Partnership Type
-                    </label>
-                    <select
-                      id="partner"
-                      disabled={isReadOnly}
-                      {...registerMain("partner", {
-                        required: "Partnership is Required"
-                      })}
-                      className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:outline-none  ${
-                        isReadOnly
-                          ? "cursor-not-allowed bg-gray-100"
-                          : "cursor-pointer"
-                      }`}
-                    >
-                      <option value="">Select Partner</option>
-                      {partner?.map((partnr, index) => (
-                        <option key={index} value={partnr._id}>
-                          {partnr.partner}
-                        </option>
-                      ))}
-                    </select>
-                    {errorsMain.partner && (
-                      <p className="text-red-500 text-sm">
-                        {errorsMain.partner.message}
-                      </p>
-                    )}
-                  </div>
                 </div>
 
                 {selectedleadlist && selectedleadlist.length > 0 && (
-                  <div className=" flex flex-col-1 bg-white border rounded-md  max-h-[200px] overflow-y-auto overflow-x-auto mt-4">
-                    <table className="w-full border-collapse border border-gray-300">
-                      <thead className="bg-gray-50 ">
-                        <tr className="">
-                          <th
-                            rowSpan="2"
-                            className="border border-gray-300 px-1 py-1 text-left font-normal"
+                  <div className="mt-4 bg-white border rounded-md overflow-hidden">
+                    <div className="max-h-[200px] overflow-y-auto">
+                      <div className="overflow-x-auto">
+                        <table className="w-full border-collapse text-sm">
+                          <thead
+                            className={`bg-gray-100 ${
+                              popupOpen ? "" : "sticky top-0 z-10"
+                            }`}
                           >
-                            License No
-                          </th>
-                          <th
-                            rowSpan="2"
-                            className="border border-gray-300 px-1 py-1 text-left font-normal"
-                          >
-                            Product/Service
-                          </th>
-                          <th
-                            className="border border-gray-300 px-1 py-1 text-center font-normal"
-                            colSpan="3"
-                          >
-                            Price Details
-                          </th>
-                          <th
-                            rowSpan="2"
-                            className="border border-gray-300 px-1 py-1 text-center font-normal"
-                          >
-                            Action
-                          </th>
-                        </tr>
-                        {/* Subheading row */}
-                        <tr>
-                          <th className="border border-gray-300 px-1 py-1 text-center  bg-gray-100 font-normal">
-                            Price
-                          </th>
-                          <th className="border border-gray-300 px-1 py-1 text-center bg-gray-100 font-normal">
-                            Tax
-                          </th>
-                          <th className="border border-gray-300 px-0.5 py-1 text-center  bg-gray-100 font-normal">
-                            Price Incl. Tax
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedleadlist.map((item, index) => (
-                          <tr key={index} className="border-b hover:bg-gray-50">
-                            <td className="border border-gray-300 px-3 py-2">
-                              {item.licenseNumber || "Not Selected"}
-                            </td>
-                            <td className="border border-gray-300 px-3 py-2">
-                              {item.productorServiceName}
-                            </td>
-
-                            {/* Price Input - First column of Price Details */}
-                            <td className="border border-gray-300 px-2 py-2">
-                              <input
-                                type="number"
-                                readOnly={isReadOnly}
-                                value={item.productPrice}
-                                onChange={(e) =>
-                                  handlePriceChange(index, e.target.value)
-                                }
-                                className={`w-full border rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                                  isReadOnly
-                                    ? "cursor-not-allowed bg-gray-100 text-gray-700"
-                                    : "bg-white"
-                                }`}
-                                placeholder="0.00"
-                              />
-                            </td>
-
-                            {/* HSN/Tax Input - Second column of Price Details */}
-                            <td className="border border-gray-300 px-2 py-2">
-                              <input
-                                type="number"
-                                value={item.hsn}
-                                onChange={(e) =>
-                                  handleHsnChange(index, e.target.value)
-                                }
-                                className={`w-full border rounded-md px-2 py-1 text-sm focus:outline-none  bg-gray-100 text-gray-700 ${
-                                  isReadOnly ? "cursor-not-allowed" : ""
-                                }`}
-                                placeholder="HSN"
-                                readOnly={isReadOnly}
-                              />
-                            </td>
-
-                            {/* Net Amount Input - Third column of Price Details */}
-                            <td className="border border-gray-300 px-2 py-2">
-                              <input
-                                type="text"
-                                value={item.netAmount}
-                                className="w-full border rounded-md px-2 py-1 text-sm focus:outline-none cursor-not-allowed bg-gray-100 text-gray-700"
-                                placeholder="0.00"
-                                readOnly
-                              />
-                            </td>
-
-                            {/* Actions */}
-                            <td className="border border-gray-300 px-3 py-2 text-center">
-                              <button
-                                type="button"
-                                disabled={isReadOnly}
-                                onClick={() =>
-                                  handleDeletetableData(item, index)
-                                }
-                                className={`text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors duration-200 ${
-                                  isReadOnly ? "cursor-not-allowed" : ""
-                                }`}
-                                title="Delete Product"
+                            <tr>
+                              <th
+                                rowSpan="2"
+                                className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700 whitespace-nowrap"
                               >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="h-5 w-5"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                >
-                                  <path d="M3 6h18" />
-                                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                                </svg>
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                                License No
+                              </th>
+                              <th
+                                rowSpan="2"
+                                className="border border-gray-300 px-3 py-2 text-left font-medium text-gray-700 whitespace-nowrap"
+                              >
+                                Product/Service
+                              </th>
+                              <th
+                                colSpan="3"
+                                className="border border-gray-300 px-3 py-2 text-center font-medium text-gray-700 "
+                              >
+                                Price Details
+                              </th>
+                              <th
+                                rowSpan="2"
+                                className="border border-gray-300 px-3 py-2 text-center font-medium text-gray-700"
+                              >
+                                Action
+                              </th>
+                            </tr>
+                            <tr>
+                              <th className="border border-gray-300 px-3 py-2 text-center font-medium text-gray-600 bg-gray-50 whitespace-nowrap min-w-24">
+                                Price
+                              </th>
+                              <th className="border border-gray-300 px-3 py-2 text-center font-medium text-gray-600 bg-gray-50 whitespace-nowrap min-w-20">
+                                Tax
+                              </th>
+                              <th className="border border-gray-300 px-3 py-2 text-center font-medium text-gray-600 bg-gray-50 whitespace-nowrap">
+                                Price Incl. Tax
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {selectedleadlist.map((item, index) => (
+                              <tr
+                                key={index}
+                                className="border-b even:bg-gray-50 hover:bg-gray-100 transition-colors"
+                              >
+                                <td className="border border-gray-300 px-3 py-2 whitespace-nowrap">
+                                  {item.licenseNumber || "Not Selected"}
+                                </td>
+                                <td className="border border-gray-300 px-3 py-2 whitespace-nowrap">
+                                  {item.productorServiceName}
+                                </td>
+
+                                {/* Price */}
+                                <td className="border border-gray-300 px-2 py-2">
+                                  <input
+                                    type="number"
+                                    readOnly={isReadOnly}
+                                    value={item.productPrice}
+                                    onChange={(e) =>
+                                      handlePriceChange(index, e.target.value)
+                                    }
+                                    className={`w-full px-2 py-1 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                      isReadOnly
+                                        ? "cursor-not-allowed bg-gray-100 text-gray-700"
+                                        : "bg-white"
+                                    }`}
+                                    placeholder="0.00"
+                                  />
+                                </td>
+
+                                {/* Tax */}
+                                <td className="border border-gray-300 px-2 py-2">
+                                  <input
+                                    type="number"
+                                    value={item.hsn}
+                                    onChange={(e) =>
+                                      handleHsnChange(index, e.target.value)
+                                    }
+                                    className={`w-full px-2 py-1 border rounded-md text-sm focus:outline-none bg-gray-100 text-gray-700 ${
+                                      isReadOnly ? "cursor-not-allowed" : ""
+                                    }`}
+                                    placeholder="HSN"
+                                    readOnly={isReadOnly}
+                                  />
+                                </td>
+
+                                {/* Net Amount */}
+                                <td className="border border-gray-300 px-2 py-2">
+                                  <input
+                                    type="text"
+                                    value={item.netAmount}
+                                    className="w-full px-2 py-1 border rounded-md text-sm focus:outline-none cursor-not-allowed bg-gray-100 text-gray-700"
+                                    placeholder="0.00"
+                                    readOnly
+                                  />
+                                </td>
+
+                                {/* Action */}
+                                <td className="border border-gray-300 px-3 py-2 text-center">
+                                  <button
+                                    type="button"
+                                    disabled={isReadOnly}
+                                    onClick={() =>
+                                      handleDeletetableData(item, index)
+                                    }
+                                    className={`text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition-colors duration-200 ${
+                                      isReadOnly ? "cursor-not-allowed" : ""
+                                    }`}
+                                    title="Delete Product"
+                                  >
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-5 w-5"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                    >
+                                      <path d="M3 6h18" />
+                                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                    </svg>
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -1562,7 +1583,7 @@ const LeadMaster = ({
                     ) : (
                       <>
                         <input type="hidden" {...registerMain("leadBy")} />
-                        <p className="mt-1 w-full border rounded-md p-2 cursor-not-allowed bg-gray-100 shadow-xl">
+                        <p className="mt-1 w-full border rounded-md p-2 cursor-not-allowed bg-gray-100  border-gray-300">
                           {loggeduser?.name}
                         </p>
                       </>
@@ -1578,8 +1599,7 @@ const LeadMaster = ({
                       {...registerMain("taxAmount")}
                       readOnly // Make it non-editable
                       // value={calculateTotalAmount()} // Auto-updates with total price
-                      className="mt-1 w-full border rounded-md p-2 focus:outline-none bg-gray-100 cursor-not-allowed shadow-xl"
-                      // placeholder="Net Amount"
+                      className="mt-1 w-full border rounded-md p-2 focus:outline-none bg-gray-100 cursor-not-allowed border-gray-300"
                     />
                   </div>
                   <div>
@@ -1592,7 +1612,7 @@ const LeadMaster = ({
                       {...registerMain("taxableAmount")}
                       readOnly // Make it non-editable
                       // value={calculateTotalAmount()} // Auto-updates with total price
-                      className="mt-1 w-full border rounded-md p-2 focus:outline-none bg-gray-100 cursor-not-allowed shadow-xl"
+                      className="mt-1 w-full border rounded-md p-2 focus:outline-none bg-gray-100 cursor-not-allowed border-gray-300"
                       // placeholder="Net Amount"
                     />
                   </div>
@@ -1606,7 +1626,7 @@ const LeadMaster = ({
                       {...registerMain("netAmount")}
                       readOnly // Make it non-editable
                       // value={calculateTotalAmount()} // Auto-updates with total price
-                      className="mt-1 w-full border rounded-md p-2 focus:outline-none bg-gray-100 cursor-not-allowed shadow-xl"
+                      className="mt-1 w-full border rounded-md p-2 focus:outline-none bg-gray-100 cursor-not-allowed border-gray-300"
                       placeholder="Net Amount"
                     />
                   </div>

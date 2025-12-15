@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react"
-import UseFetch from "../../hooks/useFetch"
+import UseFetch from "../../../hooks/useFetch"
 import { useNavigate } from "react-router-dom"
-import { LeadhistoryModal } from "../../components/primaryUser/LeadhistoryModal"
+import { PaymentHistoryModal } from "../../../components/primaryUser/PaymentHistoryModal"
+import { LeadhistoryModal } from "../../../components/primaryUser/LeadhistoryModal"
+import { CollectionupdateModal } from "../../../components/primaryUser/CollectionupdateModal"
+import api from "../../../api/api"
 import {
   Eye,
   Phone,
@@ -13,35 +16,55 @@ import {
   UserCheck,
   IndianRupee,
   BellRing, // Follow-up
-  History // Event Log
+  CreditCard, // Payment History
+  ClipboardCheck // Collection Update
 } from "lucide-react"
-import { getLocalStorageItem } from "../../helper/localstorage"
+import { getLocalStorageItem } from "../../../helper/localstorage"
 import { PropagateLoader } from "react-spinners"
+import { toast } from "react-toastify"
 
-export default function OwnLeadList() {
+export default function CollectionUpdate() {
   const [showFullName, setShowFullName] = useState(false)
   const [tableData, setTableData] = useState([])
+  const [isdepartmentisAccountant, setisdepartmentAccountant] = useState(false)
   const [loggedUser, setLoggedUser] = useState(null)
+  const [leadId, setleadId] = useState(null)
+  const [leadDocId, setleadDocId] = useState(null)
+  const [partner, setPartner] = useState([])
   const [showFullEmail, setShowFullEmail] = useState(false)
+  const [paymenthistoryModal, setpaymentHistoryModal] = useState(false)
+  const [collectionupdateModal, setcollectionUpdateModal] = useState(false)
   const [showModal, setShowModal] = useState(false)
-  const [selectedData, setselectedData] = useState([])
+  const [selectedData, setselectedData] = useState(null)
   const [selectedLeadId, setselectedLeadId] = useState(null)
-  const [ownLead, setownLead] = useState(true)
+  const [verifiedLead, setverifiedLead] = useState(false)
   const [companyBranches, setcompanyBranches] = useState(null)
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
   const [showhistoryModal, sethistoryModal] = useState(false)
+  const [paymentHistoryList, setpaymentHistoryList] = useState([])
   const [historyList, setHistoryList] = useState([])
   const navigate = useNavigate()
   const { data: companybranches } = UseFetch("/branch/getBranch")
-  const { data: ownedlead, loading } = UseFetch(
-    loggedUser &&
-      selectedCompanyBranch &&
-      `/lead/ownregisteredLead?userId=${loggedUser._id}&role=${loggedUser.role}&selectedBranch=${selectedCompanyBranch}&ownlead=${ownLead}`
+  // const {data}=UseFetch("/lead/fix-leadverified")
+  const {
+    data: collectionlead,
+    loading,
+    refreshHook
+  } = UseFetch(
+    selectedCompanyBranch &&
+      `/lead/collectionLeads?selectedBranch=${selectedCompanyBranch}&verified=${verifiedLead}`
   )
+  const { data: partners } = UseFetch("/customer/getallpartners")
 
   useEffect(() => {
     if (companybranches && companybranches.length > 0) {
       const userData = getLocalStorageItem("user")
+      if (
+        userData.department?.department === "Accountant" ||
+        userData.department?._id === "670c863652847bbebbd35743"
+      ) {
+        setisdepartmentAccountant(true)
+      }
       const branch = companybranches?.map((branch) => {
         return {
           value: branch._id,
@@ -53,29 +76,39 @@ export default function OwnLeadList() {
       setLoggedUser(userData)
     }
   }, [companybranches])
-
   useEffect(() => {
-    if (ownedlead && ownedlead.length > 0) {
-      if (ownLead) {
-        const Data = normalizeTableData(ownedlead)
-        setTableData(Data)
-      } else {
-        const groupedLeads = {}
-        let grandTotal = 0
-        ownedlead.forEach((lead) => {
-          const assignedTo = lead?.leadBy?.name
-          const amount = lead?.netAmount || 0
-          grandTotal += amount
-          if (!groupedLeads[assignedTo]) {
-            groupedLeads[assignedTo] = []
-          }
-          groupedLeads[assignedTo].push(lead)
+    if (
+      collectionlead &&
+      collectionlead.length > 0 &&
+      partners &&
+      partners.length > 0 &&
+      loggedUser
+    ) {
+      if (
+        loggedUser?.department?._id === "670c863652847bbebbd35743" ||
+        loggedUser?.department?.department === "Accounts"
+      ) {
+        const filteredCollectionleads = collectionlead.filter(
+          (item) => item.paymentHistory?.length > 0
+        )
+        const sortedLeads = filteredCollectionleads.sort((a, b) => {
+          const getOldest = (lead) =>
+            lead.paymentHistory?.length
+              ? Math.min(
+                  ...lead.paymentHistory.map((p) => new Date(p.paymentDate))
+                )
+              : Date.now()
+
+          return getOldest(a) - getOldest(b)
         })
-        const Data = normalizeTableData(groupedLeads)
-        setTableData(Data)
+        setTableData(normalizeTableData(sortedLeads))
+      } else {
+        setTableData(normalizeTableData(collectionlead))
       }
+
+      setPartner(partners)
     }
-  }, [ownedlead])
+  }, [collectionlead, partners, loggedUser])
   const normalizeTableData = (data) => {
     if (Array.isArray(data)) {
       return [{ staffName: null, leads: data }]
@@ -86,6 +119,11 @@ export default function OwnLeadList() {
       }))
     }
     return []
+  }
+
+  const handleCollection = (item) => {
+    setcollectionUpdateModal(true)
+    setselectedData(item)
   }
   const handlecloseModal = () => {
     setHistoryList([])
@@ -98,9 +136,24 @@ export default function OwnLeadList() {
     setselectedLeadId(Item.leadId)
     sethistoryModal(true)
   }
+  const handleCollectionUpdate = async (formData) => {
+    try {
+      const response = await api.post("/lead/collectionUPdate", formData)
+      if (response.status === 200) {
+        toast.success("payment updated successfully")
+        refreshHook()
+        return response
+      }
+    } catch (error) {
+      toast.error("something went wrong")
+      console.log("error", error.message)
+    }
+  }
+ 
+
   const renderTable = (data) => (
     <table className="border-collapse border border-gray-300 w-full text-sm">
-      <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30 text-xs">
+      <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-20 text-xs">
         <tr>
           <th className="border border-gray-300 px-3 py-1 text-left">
             <div className="flex items-center gap-1.5">
@@ -130,10 +183,9 @@ export default function OwnLeadList() {
             Lead Id
           </th>
 
-          <th className="border border-gray-300 px-3 py-1 min-w-[90px]">
-            Action
-          </th>
+          <th className="border border-gray-300 px-3 py-1 min-w-40">Action</th>
           <th className="border border-gray-300 px-3 py-1">Net Amount</th>
+          <th className="border border-gray-300 px-3 py-1 ">Bal.Amount</th>
         </tr>
       </thead>
       <tbody>
@@ -161,7 +213,7 @@ export default function OwnLeadList() {
                   {item?.leadId}
                 </td>
 
-                <td className="border border-b-0 border-gray-300 px-2 py-1 text-center">
+                <td className="border border-b-0 border-gray-300 px-2 py-1 text-center w-20">
                   <button
                     type="button"
                     onClick={() => handleHistory(item)}
@@ -172,6 +224,7 @@ export default function OwnLeadList() {
                   </button>
                 </td>
                 <td className="border border-b-0 border-gray-300 px-3 py-1"></td>
+                {/* <td className="border border-b-0 border-gray-300 px-3 py-1"></td> */}
               </tr>
 
               <tr className="font-medium bg-gradient-to-r from-gray-100 to-gray-50 text-xs text-gray-600">
@@ -206,41 +259,35 @@ export default function OwnLeadList() {
                   </div>
                 </td>
 
-                <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1 bg-white">
+                <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1 bg-white w-20">
                   <button
                     onClick={() => {
-                      const isAllocatedToeditable = item.activityLog.some(
-                        (it) =>
-                          it?.taskallocatedTo?._id === loggedUser._id &&
-                          it?.taskClosed === false
-                      )
-
-                      loggedUser.role === "Admin"
-                        ? navigate("/admin/transaction/lead/leadEdit", {
-                            state: {
-                              leadId: item._id,
-                              isReadOnly: !isAllocatedToeditable
-                            }
-                          })
-                        : navigate("/staff/transaction/lead/leadEdit", {
-                            state: {
-                              leadId: item._id,
-                              isReadOnly: !isAllocatedToeditable
-                            }
-                          })
+                      setpaymentHistoryList(item.paymentHistory)
+                      setpaymentHistoryModal(true)
+                      setleadId(item.leadId)
+                      setleadDocId(item._id)
                     }}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors w-full justify-center"
+                    className="inline-flex items-center gap-1  py-1 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors w-full justify-center"
                   >
-                    <Eye className="w-3.5 h-3.5" />
-                    View/Modify
+                    <CreditCard className="w-3.5 h-3.5" />
+                    Payment History
                   </button>
                 </td>
-                <td className="border border-t-0 border-b-0 border-gray-300 px-3  bg-white font-semibold">
+                <td className="border border-t-0 border-b-0 border-gray-300 px-3  bg-white font-semibold max-w-28">
                   <div className="flex items-center justify-start">
                     <IndianRupee className="w-4 h-3.5 text-green-600 mr-1" />
                     <span className="text-lg font-semibold">
                       {" "}
-                      {item.netAmount}
+                      {item?.netAmount}
+                    </span>
+                  </div>
+                </td>
+                <td className="border border-t-0 border-b-0 border-gray-300 px-3  bg-white font-semibold max-w-28">
+                  <div className="flex items-center justify-start">
+                    <IndianRupee className="w-4 h-3.5 text-red-600 mr-1" />
+                    <span className="text-lg font-semibold">
+                      {" "}
+                      {item?.balanceAmount}
                     </span>
                   </div>
                 </td>
@@ -261,10 +308,33 @@ export default function OwnLeadList() {
                   {item.leadDate?.toString().split("T")[0]}
                 </td>
 
-                <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1">
-                  {" "}
+                <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1 w-20">
+                  {!verifiedLead && (
+                    <button
+                      onClick={() => handleCollection(item)}
+                      className="inline-flex items-center gap-1  py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600 transition-colors w-full justify-center"
+                    >
+                      <ClipboardCheck className="w-3.5 h-3.5" />
+                      Collection Update
+                    </button>
+                  )}
                 </td>
                 <td className="border border-t-0 border-b-0 border-gray-300 px-3 py-1"></td>
+                <td className="border border-t-0 border-b-0 border-gray-300 px-3 py-1"></td>
+              </tr>
+
+              <tr className="font-medium bg-gradient-to-r from-gray-100 to-gray-50 text-xs text-gray-600">
+                <td colSpan={5} className="px-3 py-1 border-t border-gray-200">
+                  <span>Last Payment Remark :</span>
+                  <span className="ml-2 text-red-600">
+                    {item?.paymentHistory[item?.paymentHistory?.length - 1]
+                      ?.remarks || "-"}
+                  </span>
+                </td>
+
+                <td className="border border-t-0 border-b-0 border-gray-300 px-3 bg-white"></td>
+                <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1 bg-white"></td>
+                <td className="border border-t-0 border-b-0 border-gray-300 px-3 bg-white"></td>
               </tr>
 
               {index !== data.length - 1 && (
@@ -293,29 +363,35 @@ export default function OwnLeadList() {
     </table>
   )
   return (
-    <div className="h-full ">
-      <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3">
+    <div className="max-h-full flex flex-col ">
+      <div className="flex justify-between items-center p-3 md:p-5 mb-3 sticky top-0 z-30 bg-white">
+       
         <h2 className="text-lg font-bold">
-          {ownLead ? "Own Lead" : "All Lead"}
+          {isdepartmentisAccountant
+            ? verifiedLead
+              ? "All Verified Payment Leads"
+              : "Pending Verified Collections"
+            : "Pending Collection Leads"}
         </h2>
+
         <div className="flex justify-end items-center">
-          {loggedUser?.role !== "Staff" && (
+          {isdepartmentisAccountant && (
             <>
               <span className="text-sm whitespace-nowrap font-semibold">
-                {ownLead ? "Own Lead" : "All Lead"}
+                {verifiedLead ? "All payment Verified" : "Pending Verified"}
               </span>
               <button
                 onClick={() => {
                   setTableData([])
-                  setownLead(!ownLead)
+                  setverifiedLead(!verifiedLead)
                 }}
                 className={`${
-                  ownLead ? "bg-green-500" : "bg-gray-300"
+                  verifiedLead ? "bg-green-500" : "bg-gray-300"
                 } w-11 h-6 flex items-center rounded-full transition-colors duration-300 mx-2`}
               >
                 <div
                   className={`${
-                    ownLead ? "translate-x-5" : "translate-x-0"
+                    verifiedLead ? "translate-x-5" : "translate-x-0"
                   } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
                 ></div>
               </button>
@@ -358,7 +434,6 @@ export default function OwnLeadList() {
                 (group) => Array.isArray(group.leads) && group.leads.length > 0
               )
 
-           
             if (!hasLeads || tableData.length === 0) {
               return loading ? (
                 <div className="flex justify-center py-6">
@@ -366,7 +441,7 @@ export default function OwnLeadList() {
                 </div>
               ) : (
                 <div className="text-center text-gray-500 py-6">
-                  No Lead Available
+                  No Data Available
                 </div>
               )
             }
@@ -401,6 +476,30 @@ export default function OwnLeadList() {
           selectedLeadId={selectedLeadId}
           historyList={historyList}
           handlecloseModal={handlecloseModal}
+        />
+      )}
+      {collectionupdateModal &&
+        selectedData &&
+        partner &&
+        partner.length > 0 && (
+          <CollectionupdateModal
+            data={selectedData}
+            closemodal={setcollectionUpdateModal}
+            partnerlist={partner}
+            loggedUser={loggedUser}
+            // refreshHook={refreshHook}
+            handleCollectionUpdate={handleCollectionUpdate}
+          />
+        )}
+      {paymenthistoryModal && (
+        <PaymentHistoryModal
+          data={paymentHistoryList}
+          onClose={setpaymentHistoryModal}
+          leadid={leadId}
+          leadDocId={leadDocId}
+          loggedUser={loggedUser}
+          refresh={refreshHook}
+          setdata={setTableData}
         />
       )}
     </div>
