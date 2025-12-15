@@ -169,36 +169,107 @@ const CallregistrationList = () => {
     }
   }, [callList])
 
-  const handleSearch = debounce((search) => {
-    setSearchTerm(search)
-    const searchText = search.toString().toLowerCase()
+//   const handleSearch = debounce((search) => {
+//     if(!search||search.toString().trim()===''){
+//       setFilteredCalls(callList)
+//       return
+//     }
+//     setSearchTerm(search)
+//     const searchText = search.toString().toLowerCase().trim()
+// console.log(searchText)
+//     const filteredData = callList.filter((customer) => {
+//       // Check customerName
+//       if(customer.customerName
+//         ?.toLowerCase()
+//         .includes(searchText)){
+//           return true
+//         }
+//         console.log(searchText)
+//         console.log(customer.customerName)
+//       // Check mobile (if exists)
+//       if(customer.mobile?.toString().includes(searchText)){
+//         return true
+//       }
 
-    const filteredData = callList.filter((customer) => {
-      // Check customerName
-      const nameMatch = customer.customerName
-        ?.toLowerCase()
-        .includes(searchText)
+//       // Check callregistration.incomingNumber or license
+//       if(customer.callregistration?.some((call) => {
+//         if(call.formdata?.incomingNumber
+//           ?.toString()
+//           .includes(searchText)){
+//             return true
+//           }
+        
+//         if(call.branchName?.some((branch) =>
+//           branch.toLowerCase().includes(searchText)
+//         )){
+//           return true
+//         }
+        
+//         if(call.license?.toString().includes(searchText)){
+//           return true
+//         }
+//         return false
+        
+//         })){
+//           return true
+//         }
 
-      // Check mobile (if exists)
-      const mobileMatch = customer.mobile?.toString().includes(searchText)
+//     })
+//     console.log(filteredData)
 
-      // Check callregistration.incomingNumber or license
-      const callMatch = customer.callregistration?.some((call) => {
-        const incomingNumberMatch = call.formdata?.incomingNumber
-          ?.toString()
-          .includes(searchText)
-        const branchMatch = call.branchName?.some((branch) =>
-          branch.toLowerCase().includes(searchText)
-        )
-        const licenseMatch = call.license?.toString().includes(searchText)
-        return incomingNumberMatch || licenseMatch || branchMatch
-      })
+//     setFilteredCalls(filteredData)
+//   }, 300)
+const handleSearch = debounce((search) => {
+  if (!search || search.toString().trim() === '') {
+    setFilteredCalls(callList); // Show all if empty search
+    return;
+  }
 
-      return nameMatch || mobileMatch || callMatch
-    })
+  const searchText = search.toString().toLowerCase().trim();
 
-    setFilteredCalls(filteredData)
-  }, 300)
+  const filteredData = callList.filter((customer) => {
+    // 1. Customer name match
+    if (customer.customerName?.toLowerCase().includes(searchText)) {
+      return true;
+    }
+
+    // 2. Mobile match
+    if (customer.mobile?.toString().includes(searchText)) {
+      return true;
+    }
+
+    // 3. Call registration match
+    if (customer.callregistration?.some((call) => {
+      // Incoming number
+      if (call.formdata?.incomingNumber?.toString().includes(searchText)) {
+        return true;
+      }
+      
+      // License
+      if (call.license?.toString().includes(searchText)) {
+        return true;
+      }
+      
+      // Branch names
+      if (call.branchName?.some((branch) => 
+        branch?.toLowerCase().includes(searchText)
+      )) {
+        return true;
+      }
+      
+      return false;
+    })) {
+      return true;
+    }
+
+    return false;
+  });
+console.log(filteredData)
+console.log(filteredData.length)
+  setSearchTerm(search);
+  setFilteredCalls(filteredData);
+}, 300);
+
 
   const handleChange = (e) => handleSearch(e.target.value)
   const setDateandTime = (dateString) => {

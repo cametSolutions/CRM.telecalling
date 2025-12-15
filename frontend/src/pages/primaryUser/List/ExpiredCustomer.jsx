@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState,useRef } from "react"
 import { PropagateLoader } from "react-spinners"
 import { CiEdit } from "react-icons/ci"
 import MyDatePicker from "../../../components/common/MyDatePicker"
@@ -36,8 +36,11 @@ const ExpiredCustomer = () => {
   const [selectedBranch, setSelectedBranch] = useState("All")
   const [selectedBranchName, setselectedBranchName] = useState(null)
   const [expiredCustomerCalls, setExpiredCustomerCalls] = useState([])
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+const filterRef = useRef(null);
   // const { data: branches } = UseFetch("/branch/getBranch")
   const navigate = useNavigate()
+  console.log("hhh")
   useEffect(() => {
     const now = new Date()
 
@@ -215,6 +218,16 @@ const ExpiredCustomer = () => {
       }
     }
   }, [callList])
+  // Close dropdown when clicking outside
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (filterRef.current && !filterRef.current.contains(event.target)) {
+      setIsFilterOpen(false);
+    }
+  };
+  document.addEventListener('mousedown', handleClickOutside);
+  return () => document.removeEventListener('mousedown', handleClickOutside);
+}, [])
 
   useEffect(() => {
     setHasMounted(true) // Set this to true AFTER the first render
@@ -258,6 +271,7 @@ const ExpiredCustomer = () => {
         let payload = null // Initialize payload as null (for GET request)
 
         if (isCallsToggled) {
+          console.log("hhhhddd")
           // When calls are toggled, use POST request and send expiredCustomerIds as the payload
           endpoint = "/customer/getallExpiredCustomerCalls"
           payload = {
@@ -269,6 +283,7 @@ const ExpiredCustomer = () => {
           } // Send as body in POST request
           method = "post" // Change method to POST
         } else {
+          console.log("dd")
           endpoint = isToggled
             ? `/customer/getallExpiryregisterCustomer?nextmonthReport=${isToggled}`
             : `/customer/getallExpiryregisterCustomer?startDate=${dates.startDate}&endDate=${dates.endDate}`
@@ -363,6 +378,7 @@ const ExpiredCustomer = () => {
           setLoading(false)
         }
       } catch (error) {
+        setLoading(false)
         console.error("Error fetching user list:", error)
       }
     }
@@ -517,6 +533,7 @@ const ExpiredCustomer = () => {
       }
     }
   }
+const toggleFilter = () => setIsFilterOpen(!isFilterOpen);
 
   const toggle = () => {
     setexpiryRegisterList([])
@@ -647,45 +664,77 @@ const ExpiredCustomer = () => {
             </div>
 
             {/* Right: Toggles */}
-            <div className="flex flex-row gap-6 justify-end flex-wrap sm:flex-nowrap">
-              {/* Upcoming Toggle */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-600 whitespace-nowrap">
-                  Upcoming
-                </span>
-                <button
-                  onClick={toggle}
-                  className={`w-11 h-6 ${
-                    isToggled ? "bg-green-500" : "bg-gray-300"
-                  } rounded-full relative focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300`}
-                >
-                  <div
-                    className={`w-5 h-5 bg-white rounded-full shadow-md absolute top-0.5 left-0.5 transform transition-transform duration-300 ${
-                      isToggled ? "translate-x-5" : "translate-x-0"
-                    }`}
-                  ></div>
-                </button>
-              </div>
+            <div className="relative" ref={filterRef}>
+    {/* Filter Icon Button */}
+    <button
+      onClick={toggleFilter}
+      className="p-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm flex items-center gap-1 text-gray-700 hover:text-gray-900"
+    >
+      <svg 
+        className="w-5 h-5" 
+        fill="none" 
+        stroke="currentColor" 
+        viewBox="0 0 24 24"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-3 3v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+      </svg>
+      <span className="text-xs font-medium hidden sm:inline">Filters</span>
+    </button>
 
-              {/* Calls Toggle */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-600 whitespace-nowrap">
-                  Calls
-                </span>
-                <button
-                  onClick={callstoggle}
-                  className={`w-11 h-6 ${
-                    isCallsToggled ? "bg-green-500" : "bg-gray-300"
-                  } rounded-full relative focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300`}
-                >
-                  <div
-                    className={`w-5 h-5 bg-white rounded-full shadow-md absolute top-0.5 left-0.5 transform transition-transform duration-300 ${
-                      isCallsToggled ? "translate-x-5" : "translate-x-0"
-                    }`}
-                  ></div>
-                </button>
-              </div>
-            </div>
+    {/* Dropdown Panel */}
+    {isFilterOpen && (
+      <div className="absolute top-full right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-200 py-4 px-6 z-50 animate-in slide-in-from-top-2 duration-200">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
+          <h3 className="text-sm font-semibold text-gray-900">Filters</h3>
+          <button
+            onClick={toggleFilter}
+            className="text-gray-400 hover:text-gray-600 p-1 -m-1 rounded-lg transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Upcoming Toggle */}
+        <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
+          <span className="text-sm font-medium text-gray-700">{isToggled?"Upcoming Month Expired Customer":"Expired Customer"}</span>
+          <button
+            onClick={toggle}
+            className={`w-11 h-6 ${
+              isToggled ? "bg-green-500" : "bg-gray-300"
+            } rounded-full relative focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300`}
+          >
+            <div
+              className={`w-5 h-5 bg-white rounded-full shadow-md absolute top-0.5 left-0.5 transform transition-transform duration-300 ${
+                isToggled ? "translate-x-5" : "translate-x-0"
+              }`}
+            ></div>
+          </button>
+        </div>
+
+        {/* Calls Toggle */}
+        <div className="flex items-center justify-between py-3">
+          <span className="text-sm font-medium text-gray-700">Expired Customer Calls</span>
+          <button
+            onClick={callstoggle}
+            className={`w-11 h-6 ${
+              isCallsToggled ? "bg-green-500" : "bg-gray-300"
+            } rounded-full relative focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300`}
+          >
+            <div
+              className={`w-5 h-5 bg-white rounded-full shadow-md absolute top-0.5 left-0.5 transform transition-transform duration-300 ${
+                isCallsToggled ? "translate-x-5" : "translate-x-0"
+              }`}
+            ></div>
+          </button>
+        </div>
+      </div>
+    )}
+  </div>
+
+           
           </div>
         </div>
 
@@ -734,9 +783,7 @@ const ExpiredCustomer = () => {
                     <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
                       License No
                     </th>
-                    <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
-                      AMC Start (D-M-Y)
-                    </th>
+                   
                     <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
                       AMC End (D-M-Y)
                     </th>
@@ -885,28 +932,22 @@ const ExpiredCustomer = () => {
                           <td className="px-4 py-2 border-b text-center">
                             {item.licensenumber || "N/A"}
                           </td>
-                          <td className="px-4 py-2 border-b text-center">
-                            {item.amcstartDate
-                              ? new Date(item.amcstartDate).toLocaleDateString(
-                                  "en-GB"
-                                )
-                              : "N/A"}
-                          </td>
-                          <td className="px-4 py-2 border-b text-center">
+                         
+                          <td className="px-4 py-2 border-b text-center min-w-40">
                             {item.amcendDate
                               ? new Date(item.amcendDate).toLocaleDateString(
                                   "en-GB"
                                 )
                               : "N/A"}
                           </td>
-                          <td className="px-4 py-2 border-b text-center">
+                          <td className="px-4 py-2 border-b text-center min-w-40">
                             {item.tvuexpiryDate
                               ? new Date(item.tvuexpiryDate).toLocaleDateString(
                                   "en-GB"
                                 )
                               : "N/A"}
                           </td>
-                          <td className="px-4 py-2 border-b text-center">
+                          <td className="px-4 py-2 border-b text-center min-w-48">
                             {item.licenseExpiryDate
                               ? new Date(
                                   item.licenseExpiryDate
