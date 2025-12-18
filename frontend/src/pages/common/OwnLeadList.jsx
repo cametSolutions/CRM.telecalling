@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react"
-import UseFetch from "../../hooks/useFetch"
-import { useNavigate } from "react-router-dom"
-import { LeadhistoryModal } from "../../components/primaryUser/LeadhistoryModal"
+import React, { useEffect, useState } from "react";
+import UseFetch from "../../hooks/useFetch";
+import { useNavigate } from "react-router-dom";
+import { LeadhistoryModal } from "../../components/primaryUser/LeadhistoryModal";
 import {
   Eye,
   Phone,
@@ -13,91 +13,92 @@ import {
   UserCheck,
   IndianRupee,
   BellRing, // Follow-up
-  History // Event Log
-} from "lucide-react"
-import { getLocalStorageItem } from "../../helper/localstorage"
-import { PropagateLoader } from "react-spinners"
+  History, // Event Log
+} from "lucide-react";
+import { getLocalStorageItem } from "../../helper/localstorage";
+import { PropagateLoader } from "react-spinners";
 
 export default function OwnLeadList() {
-  const [showFullName, setShowFullName] = useState(false)
-  const [tableData, setTableData] = useState([])
-  const [loggedUser, setLoggedUser] = useState(null)
-  const [showFullEmail, setShowFullEmail] = useState(false)
-  const [showModal, setShowModal] = useState(false)
-  const [selectedData, setselectedData] = useState([])
-  const [selectedLeadId, setselectedLeadId] = useState(null)
-  const [ownLead, setownLead] = useState(true)
-  const [companyBranches, setcompanyBranches] = useState(null)
-  const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
-  const [showhistoryModal, sethistoryModal] = useState(false)
-  const [historyList, setHistoryList] = useState([])
-  const navigate = useNavigate()
-  const { data: companybranches } = UseFetch("/branch/getBranch")
+  const [showFullName, setShowFullName] = useState(false);
+  const [tableData, setTableData] = useState([]);
+  const [loggedUser, setLoggedUser] = useState(null);
+  const [showFullEmail, setShowFullEmail] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedData, setselectedData] = useState([]);
+  const [selectedLeadId, setselectedLeadId] = useState(null);
+  const [ownLead, setownLead] = useState(true);
+  const [companyBranches, setcompanyBranches] = useState(null);
+  const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null);
+  const [showhistoryModal, sethistoryModal] = useState(false);
+  const [historyList, setHistoryList] = useState([]);
+  const navigate = useNavigate();
+  const { data: companybranches } = UseFetch("/branch/getBranch");
   const { data: ownedlead, loading } = UseFetch(
     loggedUser &&
       selectedCompanyBranch &&
       `/lead/ownregisteredLead?userId=${loggedUser._id}&role=${loggedUser.role}&selectedBranch=${selectedCompanyBranch}&ownlead=${ownLead}`
-  )
-
+  );
+  console.log(ownedlead?.length);
   useEffect(() => {
     if (companybranches && companybranches.length > 0) {
-      const userData = getLocalStorageItem("user")
+      const userData = getLocalStorageItem("user");
       const branch = companybranches?.map((branch) => {
         return {
           value: branch._id,
-          label: branch.branchName
-        }
-      })
-      setcompanyBranches(branch)
-      setselectedCompanyBranch(branch[0].value)
-      setLoggedUser(userData)
+          label: branch.branchName,
+        };
+      });
+      setcompanyBranches(branch);
+      setselectedCompanyBranch(branch[0].value);
+      setLoggedUser(userData);
     }
-  }, [companybranches])
+  }, [companybranches]);
 
   useEffect(() => {
     if (ownedlead && ownedlead.length > 0) {
       if (ownLead) {
-        const Data = normalizeTableData(ownedlead)
-        setTableData(Data)
+        const Data = normalizeTableData(ownedlead);
+        setTableData(Data);
       } else {
-        const groupedLeads = {}
-        let grandTotal = 0
+        const groupedLeads = {};
+        let grandTotal = 0;
         ownedlead.forEach((lead) => {
-          const assignedTo = lead?.leadBy?.name
-          const amount = lead?.netAmount || 0
-          grandTotal += amount
+          const assignedTo = lead?.leadBy?.name;
+          const amount = lead?.netAmount || 0;
+          grandTotal += amount;
           if (!groupedLeads[assignedTo]) {
-            groupedLeads[assignedTo] = []
+            groupedLeads[assignedTo] = [];
           }
-          groupedLeads[assignedTo].push(lead)
-        })
-        const Data = normalizeTableData(groupedLeads)
-        setTableData(Data)
+          groupedLeads[assignedTo].push(lead);
+        });
+        const Data = normalizeTableData(groupedLeads);
+        setTableData(Data);
       }
     }
-  }, [ownedlead])
+  }, [ownedlead]);
   const normalizeTableData = (data) => {
     if (Array.isArray(data)) {
-      return [{ staffName: null, leads: data }]
+      return [{ staffName: null, leads: data }];
     } else if (typeof data === "object" && data !== null) {
       return Object.entries(data).map(([staffName, leads]) => ({
         staffName,
-        leads
-      }))
+        leads,
+      }));
     }
-    return []
-  }
+    return [];
+  };
   const handlecloseModal = () => {
-    setHistoryList([])
-    sethistoryModal(false)
-    setselectedLeadId(null)
-  }
+    setHistoryList([]);
+    sethistoryModal(false);
+    setselectedLeadId(null);
+  };
+  console.log(historyList);
   const handleHistory = (Item) => {
-    setselectedData(Item.activityLog)
-    setHistoryList(Item.activityLog)
-    setselectedLeadId(Item.leadId)
-    sethistoryModal(true)
-  }
+    setselectedData(Item.activityLog);
+    setHistoryList(Item.activityLog);
+    setselectedLeadId(Item.leadId);
+    sethistoryModal(true);
+  };
   const renderTable = (data) => (
     <table className="border-collapse border border-gray-300 w-full text-sm">
       <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30 text-xs">
@@ -213,21 +214,21 @@ export default function OwnLeadList() {
                         (it) =>
                           it?.taskallocatedTo?._id === loggedUser._id &&
                           it?.taskClosed === false
-                      )
+                      );
 
                       loggedUser.role === "Admin"
                         ? navigate("/admin/transaction/lead/leadEdit", {
                             state: {
                               leadId: item._id,
-                              isReadOnly: !isAllocatedToeditable
-                            }
+                              isReadOnly: !isAllocatedToeditable,
+                            },
                           })
                         : navigate("/staff/transaction/lead/leadEdit", {
                             state: {
                               leadId: item._id,
-                              isReadOnly: !isAllocatedToeditable
-                            }
-                          })
+                              isReadOnly: !isAllocatedToeditable,
+                            },
+                          });
                     }}
                     className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors w-full justify-center"
                   >
@@ -291,7 +292,7 @@ export default function OwnLeadList() {
         )}
       </tbody>
     </table>
-  )
+  );
   return (
     <div className="h-full ">
       <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3">
@@ -306,8 +307,8 @@ export default function OwnLeadList() {
               </span>
               <button
                 onClick={() => {
-                  setTableData([])
-                  setownLead(!ownLead)
+                  setTableData([]);
+                  setownLead(!ownLead);
                 }}
                 className={`${
                   ownLead ? "bg-green-500" : "bg-gray-300"
@@ -324,8 +325,8 @@ export default function OwnLeadList() {
           <select
             value={selectedCompanyBranch || ""}
             onChange={(e) => {
-              setTableData([])
-              setselectedCompanyBranch(e.target.value)
+              setTableData([]);
+              setselectedCompanyBranch(e.target.value);
             }}
             className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[150px] mr-2 cursor-pointer"
           >
@@ -356,9 +357,8 @@ export default function OwnLeadList() {
               Array.isArray(tableData) &&
               tableData.some(
                 (group) => Array.isArray(group.leads) && group.leads.length > 0
-              )
+              );
 
-           
             if (!hasLeads || tableData.length === 0) {
               return loading ? (
                 <div className="flex justify-center py-6">
@@ -368,7 +368,7 @@ export default function OwnLeadList() {
                 <div className="text-center text-gray-500 py-6">
                   No Lead Available
                 </div>
-              )
+              );
             }
 
             return tableData.map(({ staffName, leads }, index) => (
@@ -391,7 +391,7 @@ export default function OwnLeadList() {
                   </div>
                 )}
               </div>
-            ))
+            ));
           })()}
         </>
       </div>
@@ -404,5 +404,5 @@ export default function OwnLeadList() {
         />
       )}
     </div>
-  )
+  );
 }
