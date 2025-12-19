@@ -62,16 +62,23 @@ export const LeadRegister = async (req, res) => {
     }
     const session = await mongoose.startSession();
     session.startTransaction();
+    const leadtask = await Task.findOne({ taskName: "Lead" });
+    let allocationtask = null;
+    if (allocationType) {
+      allocationtask = await Task.findOne({ taskName: "Allocation" });
+    }
+    console.log("taskid", leadtask?._id);
     const activityLog = [
       {
         submissionDate: leadDate,
         submittedUser: leadBy,
         submissiondoneByModel: leadByModel,
         remarks: remark,
-        taskBy: "lead",
+        taskBy: leadtask?._id,
       },
     ];
     if (allocationType) {
+      const allocationName = await Task.findOne({ _id: allocationType });
       activityLog.push({
         submissionDate: leadDate,
         submittedUser: leadBy,
@@ -81,8 +88,9 @@ export const LeadRegister = async (req, res) => {
         taskallocatedTo: leadBy,
         taskallocatedToModel: leadByModel,
         remarks: remark,
-        taskBy: "allocated",
-        taskTo: allocationType,
+        taskBy: allocationtask?._id,
+        taskTo: allocationName?.taskName,
+        taskId: allocationType,
         allocationChanged: false,
         followupClosed: false,
         taskfromFollowup: false,
@@ -338,9 +346,8 @@ export const UpdatepaymentVerification = async (req, res) => {
   }
 };
 export const UpdateCollection = async (req, res) => {
+  const { isFrom = null } = req.query;
   const formData = req.body;
-  const { allocationType = null } = req.query;
-
   let model;
   const isAdmin = await Admin.findOne({ _id: formData.receivedBy });
   if (isAdmin) {
@@ -354,8 +361,13 @@ export const UpdateCollection = async (req, res) => {
 
   const session = await mongoose.startSession();
   try {
-    const formData = req.body;
-
+    console.log("formData", formData);
+    // const toBoolean = (value, defaultValue = false) => {
+    //   if (value === null || value === undefined || value === "")
+    //     return defaultValue;
+    //   return value === "true" || value === true || value === 1 || value === "1";
+    // };
+    // const followupClosed = toBoolean(req.query.followupclosed);
     const customerId = formData?.customerId;
     const leadDocId = formData?.leadDocId;
 
@@ -364,6 +376,7 @@ export const UpdateCollection = async (req, res) => {
     }
 
     session.startTransaction();
+
     const updatecustomer = await Customer.findByIdAndUpdate(
       customerId,
       {
@@ -400,7 +413,10 @@ export const UpdateCollection = async (req, res) => {
       bankRemarks: formData?.bankRemarks || "",
       remarks: formData?.remarks,
     };
-
+    let allocation = null;
+    if (isFrom) {
+      allocation = await Task.findOne({ taskName: "Leadclosed" });
+    }
     const updateLead = await LeadMaster.findByIdAndUpdate(
       leadDocId,
       {
@@ -409,16 +425,36 @@ export const UpdateCollection = async (req, res) => {
           totalPaidAmount: newTotalPaid,
           partner: formData.partner,
           balanceAmount: newBalance,
-          ...(allocationType === "leadClosed" && {
+          ...(isFrom === "reallocation" && {
             leadClosed: true,
             leadClosedBy: formData?.receivedBy,
             leadClosedModel: formData?.receivedModel,
             reallocatedTo: false,
-            allocationType: allocationType,
+            allocationType: allocation?._id,
           }),
+          // ///set followupclosed:true for all activitlylog array elements
+          // ...(followupClosed && {
+          //   "activityLog.$[].followupClosed": true,
+          //   reallocatedTo: true,
+          // }),
         },
       },
       { new: true, session }
+    );
+    await LeadMaster.updateMany(
+      { customerName: updateLead.customerName },
+      {
+        $set: {
+          email: formData?.email,
+          mobile: formData?.mobile,
+          pincode: formData?.pincode,
+          partner: formData?.partner,
+        },
+      },
+      {
+        new: true,
+        session,
+      }
     );
     if (!updateLead) {
       throw new Error("lead not found");
@@ -1480,6 +1516,8 @@ export const GetalltaskanalysisLeads = async (req, res) => {
       // ✅ populate all submittedUser in activityLog
       const populatedActivityLogs = [];
       for (const activity of lead.activityLog) {
+        let populatedtaskBy = null;
+        let populatedtask = null;
         if (activity.submittedUser && activity.submissiondoneByModel) {
           const SubmittedModel = mongoose.model(activity.submissiondoneByModel);
           const populatedSubmittedUser = await SubmittedModel.findById(
@@ -1487,8 +1525,19 @@ export const GetalltaskanalysisLeads = async (req, res) => {
           )
             .select("name")
             .lean();
-          const populatedtaskBy = await populatedActivityLogs.push({
+          if (activity.taskId && isValidObjectId(activity.taskId)) {
+            populatedtask = await Task.findById(activity.taskId)
+              .select("taskName")
+              .lean();
+          }
+          if (activity.taskBy && isValidObjectId(activity.taskBy)) {
+            populatedtaskBy = await Task.findById(activity.taskBy);
+          }
+
+          populatedActivityLogs.push({
             ...activity,
+            taskId: populatedtask,
+            taskBy: populatedtaskBy,
             submittedUser: populatedSubmittedUser,
           });
         } else {
@@ -1797,12 +1846,12 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         }
       );
     }
-
+    const allocationTask = await Task.findOne({ taskName: "Followup" });
     const activityEntry = {
       submissionDate: formData.followUpDate,
       submittedUser: loggeduserid,
       submissiondoneByModel: followedByModel,
-      taskBy: "followup",
+      taskBy: allocationTask?._id,
       nextFollowUpDate: formData.nextfollowUpDate,
       remarks: formData.Remarks,
       taskfromFollowup: false,
@@ -1833,6 +1882,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       return res.status(200).json({ message: "Update followupDate" });
     }
   } catch (error) {
+    console.log("errrr:", error);
     console.log("error:", error.message);
     return res.status(500).json({ message: "Internal server error" });
   }
@@ -2149,7 +2199,11 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
     }
 
     const matchLead = await LeadMaster.findOne({ _id: selectedItem._id });
-
+    const allocationTask = await Task.findOne({ taskName: "Allocation" });
+    if (!allocationTask) {
+      return res.status(404).json({ message: "allocation taskname not found" });
+    }
+    console.log("allllll", allocationTypeName);
     if (matchLead.activityLog.length === 1) {
       // Create base activity log
       const activityLogEntry = {
@@ -2161,7 +2215,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         taskallocatedTo: selectedItem.allocatedTo,
         taskallocatedToModel: allocatedToModel,
         remarks: cleanedData.allocationDescription,
-        taskBy: "allocated",
+        taskBy: allocationTask?._id,
         taskTo: allocationTypeName.toLowerCase(),
         taskId: allocationtypeId,
 
@@ -2224,7 +2278,7 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
         taskallocatedTo: selectedItem.allocatedTo,
         taskallocatedToModel: allocatedToModel,
         remarks: cleanedData.allocationDescription,
-        taskBy: "allocated",
+        taskBy: allocationTask?._id,
         taskTo: allocationTypeName.toLowerCase(),
         taskId: allocationtypeId,
         taskfromFollowup: false,

@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import React from "react";
-
-import {} from "lucide-react";
 import { formatDate } from "../../../utils/dateUtils";
 import MyDatePicker from "../../../components/common/MyDatePicker";
 import { FaSpinner } from "react-icons/fa";
@@ -508,6 +506,8 @@ const LeadFollowUp = () => {
   };
   const handleCollectionUpdate = async (formData) => {
     try {
+      console.log(formData);
+
       const response = await api.post("/lead/collectionUPdate", formData);
       if (response.status === 200) {
         return response;
@@ -627,6 +627,8 @@ const LeadFollowUp = () => {
         toast.error("something went wrong");
       }
     } catch (error) {
+      console.log("sometig");
+      toast.error("Something went wrong");
       setIsEditable(false);
       setfollowupDateLoader(false);
       console.log("error:", error.message);
@@ -1386,7 +1388,7 @@ const LeadFollowUp = () => {
                 )}
 
                 {/* Payment Section */}
-                {formData.followupType === "closed" && (
+                {formData.followupType !== "lost" && (
                   <div className="border-2 border-green-200 rounded-xl p-5 bg-gradient-to-br from-green-50 to-emerald-50">
                     <label className="flex items-start cursor-pointer group mb-4">
                       <input
@@ -1421,62 +1423,6 @@ const LeadFollowUp = () => {
                           setishavePayment={setishavePayment}
                           handleCollectionUpdate={handleCollectionUpdate}
                         />
-                        // <div className="space-y-4 pt-3 border-t border-green-200">
-                        //   <div className="grid grid-cols-2 gap-4">
-                        //     <div>
-                        //       <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        //         Net Amount
-                        //       </label>
-                        //       <input
-                        //         type="number"
-                        //         disabled
-                        //         value={formData.netAmount}
-                        //         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 font-semibold cursor-not-allowed"
-                        //       />
-                        //     </div>
-
-                        //     <div>
-                        //       <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        //         Balance Amount
-                        //       </label>
-                        //       <input
-                        //         type="number"
-                        //         disabled
-                        //         value={formData.balanceAmount}
-                        //         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 font-semibold cursor-not-allowed"
-                        //       />
-                        //     </div>
-                        //   </div>
-
-                        //   <div>
-                        //     <label className="block text-xs font-semibold text-gray-700 mb-2">
-                        //       Received Amount
-                        //     </label>
-                        //     <input
-                        //       type="number"
-                        //       value={formData.recievedAmount}
-                        //       onChange={(e) => {
-                        //         if (errors.recievedAmount) {
-                        //           setErrors((prev) => ({
-                        //             ...prev,
-                        //             recievedAmount: ""
-                        //           }))
-                        //         }
-                        //         setFormData((prev) => ({
-                        //           ...prev,
-                        //           recievedAmount: e.target.value
-                        //         }))
-                        //       }}
-                        //       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                        //       placeholder="Enter received amount..."
-                        //     />
-                        //     {errors.recievedAmount && (
-                        //       <p className="mt-1.5 text-xs text-red-600 font-medium">
-                        //         {errors.recievedAmount}
-                        //       </p>
-                        //     )}
-                        //   </div>
-                        // </div>
                       )}
                   </div>
                 )}

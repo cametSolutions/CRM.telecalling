@@ -213,6 +213,9 @@ const LeadAllocationTable = () => {
   console.log(selected);
   console.log(selectedAllocationType);
   const handleSubmit = async () => {
+    if (submitLoading) {
+      return;
+    }
     // sanitize all string fields
     const cleanedData = Object.fromEntries(
       Object.entries(formData).map(([key, value]) => [
@@ -241,9 +244,11 @@ const LeadAllocationTable = () => {
     try {
       if (selectedAllocationType) {
         const selected = selectedAllocationType[selectedItem._id];
-        const allocationname = selectedAllocationtypeNames[selectedItem._id];
 
+        const allocationname =
+          selectedAllocationtypeNames[selectedItem._id]?.taskName;
         setsubmitLoading(true);
+
         let response;
         if (approvedToggleStatus) {
           response = await api.post(
@@ -334,7 +339,6 @@ const LeadAllocationTable = () => {
       allocationDate: new Date(),
     }));
   };
-  console.log(selectedAllocationType);
   return (
     <div className="flex flex-col h-full">
       {loading && (

@@ -47,6 +47,7 @@ const LeadMaster = ({
     {}
   );
   const [leadList, setLeadList] = useState([]);
+  const [submitLoading, setsubmitLoading] = useState(false);
   const [popupOpen, setPopupOpen] = useState(false);
   const [formData, setFormData] = useState(null);
   const [restrictionMessage, setrestrictMessage] = useState();
@@ -742,6 +743,11 @@ const LeadMaster = ({
     return isEligible;
   };
   const onSubmit = async (data) => {
+    setsubmitLoading(true);
+    if (submitLoading) {
+      return;
+    }
+
     try {
       if (process === "Registration") {
         if (selectedleadlist.length === 0) {
@@ -846,9 +852,10 @@ const LeadMaster = ({
           color="#4A90E2" // Change color as needed
         />
       )}
-      <div className=" h-full overflow-y-auto container justify-center items-center p-3 md:p-8 shadow-xl">
+      <div className="bg-white h-full overflow-y-auto flex justify-center items-center shadow-xl p-3 md:p-8 w-full">
+        {" "}
         <div
-          className="bg-white shadow-xl rounded p-2 md:p-3 lg:p-8 mx-auto "
+          className="bg-white shadow-xl rounded mx-auto p-3 md:p-8 w-full"
           style={{
             opacity:
               productLoading || usersLoading || customerLoading ? 0.2 : 1,

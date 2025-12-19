@@ -178,9 +178,9 @@ const ReallocationTable = () => {
   };
   const handleCollectionUpdate = async (formData) => {
     try {
-      const type = "leadClosed";
+      const isfrom = "reallocation";
       const response = await api.post(
-        `/lead/collectionUPdate?allocationType=${type}`,
+        `/lead/collectionUPdate?isFrom=${isfrom}`,
         formData
       );
       if (response.status === 200) {

@@ -121,7 +121,7 @@ const leadSchema = new mongoose.Schema(
         }, //its the task get by the user.user 1 is assigned a task to user 2 ,user 2 is the taskallocatedto
         taskallocatedToModel: { type: String, enum: ["Staff", "Admin"] },
         remarks: { type: String },
-        taskBy: { type: String }, //name of task done by the submitter user its are lead,allocated,followup,implementation when a lead is created taskby by is lead and when assign to someone its become allocated and later its name of the given task
+        taskBy: { type: mongoose.Schema.Types.ObjectId, ref: "Task" }, //name of task done by the submitter user its are lead,allocated,followup,implementation when a lead is created taskby by is lead and when assign to someone its become allocated and later its name of the given task
         taskTo: { type: String }, //name of task given to the assigned user such as fid of  followup,implementation,coding etc..
         taskId: { type: mongoose.Schema.Types.ObjectId, ref: "Task" }, //id of the task tagged
         taskDescription: { type: String }, //description given by the assigned user while in the task submission

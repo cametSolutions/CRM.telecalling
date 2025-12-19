@@ -59,12 +59,12 @@ const TaskAnalysis = () => {
         logs.forEach((log) => {
           // Only include logs that are not closed and have a taskTo field
           if (
-            log.taskTo &&
+            log.taskId &&
             (log.taskClosed === false || log.followupClosed === false) &&
             log?.allocatedClosed === false
           ) {
-            console.log(lead.leadId, log.taskTo);
-            acc[log.taskTo] = (acc[log.taskTo] || 0) + 1;
+            console.log(lead.leadId, log.taskId);
+            acc[log.taskId.taskName] = (acc[log.taskId.taskName] || 0) + 1;
           }
         });
 

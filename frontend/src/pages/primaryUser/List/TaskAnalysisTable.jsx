@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react"
-import UseFetch from "../../../hooks/useFetch"
-import { useLocation } from "react-router-dom"
-import { useNavigate, useParams } from "react-router-dom"
+import React, { useState, useEffect } from "react";
+import UseFetch from "../../../hooks/useFetch";
+import { useLocation } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 // import { Plus, Building2, ChevronDown, BarChart3 } from "lucide-react"
 import {
   Plus,
@@ -9,99 +9,102 @@ import {
   ChevronDown,
   BarChart3,
   DollarSign,
-  IndianRupee
-} from "lucide-react"
+  IndianRupee,
+} from "lucide-react";
 const TaskAnalysisTable = () => {
-  const { label } = useParams()
-  const [netAmount, setnetAmount] = useState(0)
-  const [selectedLeadId, setselectedLeadId] = useState(null)
-  const [selectedCompanyBranch, setSelectedCompanyBranch] = useState(null)
-  const [showFullName, setShowFullName] = useState(false)
-  const [loggedUser, setLoggedUser] = useState(null)
-  const [showModal, setShowModal] = useState(false)
-  const [tableData, setTableData] = useState({})
-  const [selectedData, setselectedData] = useState([])
-  const { data: branches } = UseFetch("/branch/getBranch")
-  const [loggedUserBranches, setLoggeduserBranches] = useState([])
+  const { label } = useParams();
+  const [netAmount, setnetAmount] = useState(0);
+  const [selectedLeadId, setselectedLeadId] = useState(null);
+  const [selectedCompanyBranch, setSelectedCompanyBranch] = useState(null);
+  const [showFullName, setShowFullName] = useState(false);
+  const [loggedUser, setLoggedUser] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [tableData, setTableData] = useState({});
+  const [selectedData, setselectedData] = useState([]);
+  const { data: branches } = UseFetch("/branch/getBranch");
+  const [loggedUserBranches, setLoggeduserBranches] = useState([]);
   const { data: taskAnalysisLeads, loading } = UseFetch(
     loggedUser &&
       selectedCompanyBranch &&
       `/lead/getalltaskAnalysisLeads?selectedBranch=${selectedCompanyBranch}`
-  )
-  const location = useLocation()
-  const { branchid } = location.state || {}
-  const navigate = useNavigate()
+  );
+  const location = useLocation();
+  const { branchid } = location.state || {};
+  const navigate = useNavigate();
   useEffect(() => {
-    const userData = localStorage.getItem("user")
-    const user = JSON.parse(userData)
-    setLoggedUser(user)
-  }, [])
+    const userData = localStorage.getItem("user");
+    const user = JSON.parse(userData);
+    setLoggedUser(user);
+  }, []);
   useEffect(() => {
     if (loggedUser && branches && branches.length > 0) {
       if (loggedUser.role === "Admin") {
-        const isselctedArray = loggedUser?.selected
+        const isselctedArray = loggedUser?.selected;
         if (isselctedArray) {
           const loggeduserBranches = loggedUser.selected.map((item) => {
-            return { value: item.branch_id, label: item.branchName }
-          })
-          setLoggeduserBranches(loggeduserBranches)
-          setSelectedCompanyBranch(branchid)
+            return { value: item.branch_id, label: item.branchName };
+          });
+          setLoggeduserBranches(loggeduserBranches);
+          setSelectedCompanyBranch(branchid);
         } else {
           const loggeduserBranches = branches.map((item) => {
-            return { value: item._id, label: item.branchName }
-          })
-          setLoggeduserBranches(loggeduserBranches)
-          setSelectedCompanyBranch(branchid)
+            return { value: item._id, label: item.branchName };
+          });
+          setLoggeduserBranches(loggeduserBranches);
+          setSelectedCompanyBranch(branchid);
         }
       } else {
         const loggeduserBranches = loggedUser.selected.map((item) => {
-          return { value: item.branch_id, label: item.branchName }
-        })
-        setLoggeduserBranches(loggeduserBranches)
-        setSelectedCompanyBranch(branchid)
+          return { value: item.branch_id, label: item.branchName };
+        });
+        setLoggeduserBranches(loggeduserBranches);
+        setSelectedCompanyBranch(branchid);
       }
     }
-  }, [loggedUser, branches])
+  }, [loggedUser, branches]);
 
   useEffect(() => {
     if (taskAnalysisLeads && taskAnalysisLeads.length > 0) {
-      const filteredLeads = filterLeadsByLastTaskLabel(taskAnalysisLeads, label)
-      const groupedLeads = {}
-      let grandTotal = 0 //to hold total across all
+      const filteredLeads = filterLeadsByLastTaskLabel(
+        taskAnalysisLeads,
+        label
+      );
+      const groupedLeads = {};
+      let grandTotal = 0; //to hold total across all
 
       filteredLeads.forEach((lead) => {
-        const assignedTo = lead?.allocatedTo?.name
-        const amount = lead?.netAmount || 0
-        grandTotal += amount
+        const assignedTo = lead?.allocatedTo?.name;
+        const amount = lead?.netAmount || 0;
+        grandTotal += amount;
         if (!groupedLeads[assignedTo]) {
-          groupedLeads[assignedTo] = []
+          groupedLeads[assignedTo] = [];
         }
 
-        groupedLeads[assignedTo].push(lead)
-      })
-      setnetAmount(parseFloat(grandTotal.toFixed(2)))
-      setTableData(groupedLeads)
+        groupedLeads[assignedTo].push(lead);
+      });
+      setnetAmount(parseFloat(grandTotal.toFixed(2)));
+      setTableData(groupedLeads);
     }
-  }, [taskAnalysisLeads])
+  }, [taskAnalysisLeads]);
   const filterLeadsByLastTaskLabel = (leads, label) => {
     return leads.filter((lead) => {
-      const logs = lead.activityLog
-      if (!logs || logs.length === 0) return false
+      const logs = lead.activityLog;
+      if (!logs || logs.length === 0) return false;
 
-      const lastLog = logs[logs.length - 1]
-      return lastLog.taskTo?.toLowerCase() === label.toLowerCase()
-    })
-  }
+      const lastLog = logs[logs.length - 1];
+      return lastLog.taskTo?.toLowerCase() === label.toLowerCase();
+    });
+  };
 
   const getRemainingDays = (dueDate) => {
-    const today = new Date()
-    const target = new Date(dueDate)
-    today.setHours(0, 0, 0, 0)
-    target.setHours(0, 0, 0, 0)
-    const diffTime = target - today
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays
-  }
+    const today = new Date();
+    const target = new Date(dueDate);
+    today.setHours(0, 0, 0, 0);
+    target.setHours(0, 0, 0, 0);
+    const diffTime = target - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {loading && <div className="w-full h-1 bg-blue-500 animate-pulse"></div>}
@@ -261,8 +264,8 @@ const TaskAnalysisTable = () => {
                                           {
                                             state: {
                                               leadId: item._id,
-                                              isReadOnly: true
-                                            }
+                                              isReadOnly: true,
+                                            },
                                           }
                                         )
                                       : navigate(
@@ -270,8 +273,8 @@ const TaskAnalysisTable = () => {
                                           {
                                             state: {
                                               leadId: item._id,
-                                              isReadOnly: true
-                                            }
+                                              isReadOnly: true,
+                                            },
                                           }
                                         )
                                   }
@@ -300,9 +303,9 @@ const TaskAnalysisTable = () => {
                               <td className="border border-t-0 border-b-0 border-gray-400 px-4 text-blue-400 hover:text-blue-500 hover:cursor-pointer">
                                 <button
                                   onClick={() => {
-                                    setselectedData(item?.activityLog)
-                                    setselectedLeadId(item?.leadId)
-                                    setShowModal(true)
+                                    setselectedData(item?.activityLog);
+                                    setselectedLeadId(item?.leadId);
+                                    setShowModal(true);
                                   }}
                                   type="button"
                                 >
@@ -385,9 +388,9 @@ const TaskAnalysisTable = () => {
               {/* Close Button */}
               <button
                 onClick={() => {
-                  setselectedLeadId(null)
-                  setselectedData([])
-                  setShowModal(false)
+                  setselectedLeadId(null);
+                  setselectedData([]);
+                  setShowModal(false);
                 }}
                 className="absolute top-2 right-2  text-red-500 font-bold hover:text-red-600 text-lg"
               >
@@ -428,7 +431,7 @@ const TaskAnalysisTable = () => {
                     selectedData.map((item, index) => {
                       const hasFollowerData =
                         Array.isArray(item.folowerData) &&
-                        item.folowerData.length > 0
+                        item.folowerData.length > 0;
 
                       return hasFollowerData ? (
                         item.folowerData.map((subItem, subIndex) => (
@@ -477,14 +480,14 @@ const TaskAnalysisTable = () => {
                             <div>
                               {item?.taskallocatedTo ? (
                                 <>
-                                  <span>{item?.taskBy || "N/A"}</span>
+                                  <span>{item?.taskBy?.taskName || "N/A"}</span>
                                   <span className="text-red-500">
                                     {" "}
                                     - {item?.taskallocatedTo?.name || ""}
                                   </span>
                                   <br />
                                   <span className="text-red-500">
-                                    {item.taskTo}
+                                    {item?.taskId?.taskName}
                                   </span>
                                   {item.allocationDate && (
                                     <span>
@@ -498,7 +501,7 @@ const TaskAnalysisTable = () => {
                                   )}
                                 </>
                               ) : (
-                                <span>{item.taskBy}</span>
+                                <span>{item?.taskBy?.taskName}</span>
                               )}
                             </div>
                           </td>
@@ -516,7 +519,7 @@ const TaskAnalysisTable = () => {
                             </td>
                           )}
                         </tr>
-                      )
+                      );
                     })
                   ) : (
                     <tr>
@@ -535,7 +538,7 @@ const TaskAnalysisTable = () => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default TaskAnalysisTable
+export default TaskAnalysisTable;
