@@ -1,108 +1,109 @@
-import { useState, useEffect } from "react"
-import { useLocation } from "react-router-dom"
-import React from "react"
-import { toast } from "react-toastify"
-import { PropagateLoader } from "react-spinners"
-import { useNavigate, useParams } from "react-router-dom"
-import BarLoader from "react-spinners/BarLoader"
-import api from "../../../api/api"
-import Select from "react-select"
-import { CollectionupdateModal } from "../../../components/primaryUser/CollectionupdateModal"
-import UseFetch from "../../../hooks/useFetch"
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import React from "react";
+import { toast } from "react-toastify";
+import { PropagateLoader } from "react-spinners";
+import { useNavigate, useParams } from "react-router-dom";
+import BarLoader from "react-spinners/BarLoader";
+import api from "../../../api/api";
+import Select from "react-select";
+import { CollectionupdateModal } from "../../../components/primaryUser/CollectionupdateModal";
+import UseFetch from "../../../hooks/useFetch";
 const ReallocationTable = () => {
-  const { label } = useParams()
-  const [status, setStatus] = useState("Pending")
+  const { label } = useParams();
+  console.log(label);
+  const [status, setStatus] = useState("Pending");
 
-  const [toggleLoading, setToggleLoading] = useState(false)
-  const [isClosed, setIsclosed] = useState(false)
-  const [selectedLeadId, setselectedLeadId] = useState(null)
-  const [selectedType, setselectedType] = useState(null)
-  const [selectedData, setselectedData] = useState({})
-  const [showModal, setShowmodal] = useState(false)
-  const [partner, setpartner] = useState([])
-  const [submiterror, setsubmitError] = useState("")
-  const [selectedAllocationType, setselectedAllocationType] = useState({})
-  const [validateError, setValidateError] = useState({})
-  const [validatetypeError, setValidatetypeError] = useState({})
-  const [loggedUserBranches, setLoggeduserBranches] = useState([])
-  const [selectedCompanyBranch, setSelectedCompanyBranch] = useState(null)
-  const [showFullName, setShowFullName] = useState(false)
-  const [showFullEmail, setShowFullEmail] = useState(false)
-  const [approvedToggleStatus, setapprovedToggleStatus] = useState(false)
-  const [submitLoading, setsubmitLoading] = useState(false)
-  const [allocationOptions, setAllocationOptions] = useState([])
-  const [selectedAllocates, setSelectedAllocates] = useState({})
-  const [loggedUser, setLoggedUser] = useState(null)
-  const [selectedItem, setSelectedItem] = useState(null)
-  const [tableData, setTableData] = useState([])
-  const { data: branches } = UseFetch("/branch/getBranch")
-  const location = useLocation()
-  const { id } = location.state || {}
+  const [toggleLoading, setToggleLoading] = useState(false);
+  const [isClosed, setIsclosed] = useState(false);
+  const [selectedLeadId, setselectedLeadId] = useState(null);
+  const [selectedType, setselectedType] = useState(null);
+  const [selectedData, setselectedData] = useState({});
+  const [showModal, setShowmodal] = useState(false);
+  const [partner, setpartner] = useState([]);
+  const [submiterror, setsubmitError] = useState("");
+  const [selectedAllocationType, setselectedAllocationType] = useState({});
+  const [validateError, setValidateError] = useState({});
+  const [validatetypeError, setValidatetypeError] = useState({});
+  const [loggedUserBranches, setLoggeduserBranches] = useState([]);
+  const [selectedCompanyBranch, setSelectedCompanyBranch] = useState(null);
+  const [showFullName, setShowFullName] = useState(false);
+  const [showFullEmail, setShowFullEmail] = useState(false);
+  const [approvedToggleStatus, setapprovedToggleStatus] = useState(false);
+  const [submitLoading, setsubmitLoading] = useState(false);
+  const [allocationOptions, setAllocationOptions] = useState([]);
+  const [selectedAllocates, setSelectedAllocates] = useState({});
+  const [loggedUser, setLoggedUser] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [tableData, setTableData] = useState([]);
+  const { data: branches } = UseFetch("/branch/getBranch");
+  const location = useLocation();
+  const { id } = location.state || {};
   const [formData, setFormData] = useState({
     allocationDate: "",
-    allocationDescription: ""
-  })
+    allocationDescription: "",
+  });
   const {
     data: leadreallocation,
     loading,
-    refreshHook
+    refreshHook,
   } = UseFetch(
     loggedUser &&
       selectedCompanyBranch &&
       `/lead/getallreallocatedLead?selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
-  )
-  const { data } = UseFetch("/auth/getallUsers")
-  const { data: partners } = UseFetch("/customer/getallpartners")
-  const navigate = useNavigate()
+  );
+  const { data } = UseFetch("/auth/getallUsers");
+  const { data: partners } = UseFetch("/customer/getallpartners");
+  const navigate = useNavigate();
   useEffect(() => {
-    const userData = localStorage.getItem("user")
-    const user = JSON.parse(userData)
-    setLoggedUser(user)
-  }, [])
+    const userData = localStorage.getItem("user");
+    const user = JSON.parse(userData);
+    setLoggedUser(user);
+  }, []);
   useEffect(() => {
     if (loggedUser && branches && branches.length > 0) {
       if (loggedUser.role === "Admin") {
-        const isselctedArray = loggedUser?.selected
+        const isselctedArray = loggedUser?.selected;
         if (isselctedArray) {
           const loggeduserBranches = loggedUser.selected.map((item) => {
-            return { value: item.branch_id, label: item.branchName }
-          })
-          setLoggeduserBranches(loggeduserBranches)
-          setSelectedCompanyBranch(id)
+            return { value: item.branch_id, label: item.branchName };
+          });
+          setLoggeduserBranches(loggeduserBranches);
+          setSelectedCompanyBranch(id);
         } else {
           const loggeduserBranches = branches.map((item) => {
-            return { value: item._id, label: item.branchName }
-          })
-          setLoggeduserBranches(loggeduserBranches)
-          setSelectedCompanyBranch(id)
+            return { value: item._id, label: item.branchName };
+          });
+          setLoggeduserBranches(loggeduserBranches);
+          setSelectedCompanyBranch(id);
         }
       } else {
         const loggeduserBranches = loggedUser.selected.map((item) => {
-          return { value: item.branch_id, label: item.branchName }
-        })
-        setLoggeduserBranches(loggeduserBranches)
-        setSelectedCompanyBranch(id)
+          return { value: item.branch_id, label: item.branchName };
+        });
+        setLoggeduserBranches(loggeduserBranches);
+        setSelectedCompanyBranch(id);
       }
     }
-  }, [loggedUser, branches])
+  }, [loggedUser, branches]);
   useEffect(() => {
     if (data && selectedCompanyBranch) {
-      const { allusers = [], allAdmins = [] } = data
+      const { allusers = [], allAdmins = [] } = data;
 
       // Combine allusers and allAdmins
 
       const filter = allusers.filter((staff) =>
         staff.selected.some((s) => selectedCompanyBranch === s.branch_id)
-      )
-      const combinedUsers = [...filter, ...allAdmins]
+      );
+      const combinedUsers = [...filter, ...allAdmins];
       setAllocationOptions(
         combinedUsers.map((item) => ({
           value: item._id,
-          label: item.name
+          label: item.name,
         }))
-      )
+      );
     }
-  }, [data, selectedCompanyBranch])
+  }, [data, selectedCompanyBranch]);
   useEffect(() => {
     if (
       leadreallocation &&
@@ -110,108 +111,110 @@ const ReallocationTable = () => {
       partners &&
       partners.length > 0
     ) {
-      const filteredLeads = filterLeadsByLastTaskLabel(leadreallocation, label)
-      setTableData(filteredLeads)
-      setpartner(partners)
+      const filteredLeads = filterLeadsByLastTaskLabel(leadreallocation, label);
+      setTableData(filteredLeads);
+      setpartner(partners);
     }
-  }, [leadreallocation])
+  }, [leadreallocation]);
   const filterLeadsByLastTaskLabel = (leads, label) => {
     return leads.filter((lead) => {
-      const logs = lead.activityLog
-      if (!logs || logs.length === 0) return false
+      const logs = lead.activityLog;
+      if (!logs || logs.length === 0) return false;
 
-      const lastLog = logs[logs.length - 1]
-      return lastLog.taskBy?.toLowerCase() === label.toLowerCase()
-    })
-  }
+      const lastLog = lead?.lasttask?.taskName;
+      console.log(lastLog);
+      console.log(label);
+      return lastLog.toLowerCase() === label.toLowerCase();
+    });
+  };
 
   const handleSelectedAllocates = (item, value) => {
     setTableData((prevLeads) =>
       prevLeads.map((lead) =>
         lead._id === item._id ? { ...lead, allocatedTo: value } : lead
       )
-    )
-  }
+    );
+  };
 
   const handleSubmit = async () => {
     try {
       if (!selectedAllocates.hasOwnProperty(selectedItem._id)) {
         setValidateError((prev) => ({
           ...prev,
-          [selectedItem._id]: "Allocate to Someone"
-        }))
-        return
+          [selectedItem._id]: "Allocate to Someone",
+        }));
+        return;
       }
       if (!selectedAllocationType.hasOwnProperty(selectedItem._id)) {
         setValidatetypeError((prev) => ({
           ...prev,
-          [selectedItem._id]: "Select Type"
-        }))
-        return
+          [selectedItem._id]: "Select Type",
+        }));
+        return;
       }
-      const selected = selectedAllocationType[selectedItem._id]
-      setsubmitLoading(true)
+      const selected = selectedAllocationType[selectedItem._id];
+      setsubmitLoading(true);
 
       const response = await api.post(
         `/lead/leadReallocation?allocationType=${encodeURIComponent(
           selected
         )}&allocatedBy=${loggedUser._id}`,
         { selectedItem, formData }
-      )
-      toast.success(response.data.message)
-      setsubmitLoading(false)
+      );
+      toast.success(response.data.message);
+      setsubmitLoading(false);
       setFormData({
         allocationDate: "",
-        allocationDescription: ""
-      })
-      setShowmodal(false)
-      refreshHook()
-      setTableData([])
+        allocationDescription: "",
+      });
+      setShowmodal(false);
+      refreshHook();
+      setTableData([]);
     } catch (error) {
-      setsubmitError({ submissionerror: "something went wrong" })
-      setsubmitLoading(false)
-      console.log(error)
+      setsubmitError({ submissionerror: "something went wrong" });
+      setsubmitLoading(false);
+      console.log(error);
     }
-  }
+  };
   const handleCollectionUpdate = async (formData) => {
     try {
-      const type = "leadClosed"
+      const isfrom = "reallocation";
       const response = await api.post(
-        `/lead/collectionUPdate?allocationType=${type}`,
+        `/lead/collectionUPdate?isFrom=${isfrom}`,
         formData
-      )
+      );
       if (response.status === 200) {
-        refreshHook()
-        return response
+        refreshHook();
+        return response;
       }
     } catch (error) {
-      toast.error("something went wrong")
-      console.log("error", error.message)
+      toast.error("something went wrong");
+      console.log("error", error.message);
     }
-  }
+  };
   const handleClosed = async () => {
     if (!formData.recievedAmount) {
       setsubmitError((prev) => ({
         ...prev,
-        recievedAmount: "Plase add closing amount"
-      }))
-      return
+        recievedAmount: "Plase add closing amount",
+      }));
+      return;
     }
     // return
-    const allocationType = "lead Closed"
+    const allocationType = "lead Closed";
     const response = await api.post(
       `/lead/leadClosingAmount?allocationType=${encodeURIComponent(
         allocationType
       )}&allocatedBy=${loggedUser._id}&leadId=${selectedLeadId}`,
       { formData }
-    )
-    toast.success(response.data.message)
-    setsubmitLoading(false)
+    );
+    toast.success(response.data.message);
+    setsubmitLoading(false);
 
-    setIsclosed(false)
-    refreshHook()
-    setTableData([])
-  }
+    setIsclosed(false);
+    refreshHook();
+    setTableData([]);
+  };
   return (
     <div className="flex flex-col h-full">
       {(submitLoading || loading) && (
@@ -228,8 +231,8 @@ const ReallocationTable = () => {
           <select
             value={selectedCompanyBranch || ""}
             onChange={(e) => {
-              setSelectedCompanyBranch(e.target.value)
-              setStatus(approvedToggleStatus ? "Approved" : "Pending")
+              setSelectedCompanyBranch(e.target.value);
+              setStatus(approvedToggleStatus ? "Approved" : "Pending");
             }}
             className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px]"
           >
@@ -321,14 +324,14 @@ const ReallocationTable = () => {
                             ? navigate("/admin/transaction/lead/leadEdit", {
                                 state: {
                                   leadId: item._id,
-                                  isReadOnly: true
-                                }
+                                  isReadOnly: true,
+                                },
                               })
                             : navigate("/staff/transaction/lead/leadEdit", {
                                 state: {
                                   leadId: item._id,
-                                  isReadOnly: true
-                                }
+                                  isReadOnly: true,
+                                },
                               })
                         }
                         className="text-blue-400 hover:text-blue-500 font-semibold cursor-pointer"
@@ -359,13 +362,13 @@ const ReallocationTable = () => {
                         onChange={(e) => {
                           setselectedAllocationType((prev) => ({
                             ...prev,
-                            [item._id]: e.target.value
-                          }))
-                          setselectedType(e.target.value)
+                            [item._id]: e.target.value,
+                          }));
+                          setselectedType(e.target.value);
                           setValidatetypeError((prev) => ({
                             ...prev,
-                            [item._id]: ""
-                          }))
+                            [item._id]: "",
+                          }));
                         }}
                         className="py-1 border border-gray-400 rounded-md  w-full focus:outline-none cursor-pointer"
                       >
@@ -401,24 +404,24 @@ const ReallocationTable = () => {
                         if (!selectedAllocates.hasOwnProperty(item._id)) {
                           setValidateError((prev) => ({
                             ...prev,
-                            [item._id]: "Allocate to Someone"
-                          }))
-                          return
+                            [item._id]: "Allocate to Someone",
+                          }));
+                          return;
                         }
                         if (!selectedAllocationType.hasOwnProperty(item._id)) {
                           setValidatetypeError((prev) => ({
                             ...prev,
-                            [item._id]: "please select a Type"
-                          }))
-                          return
+                            [item._id]: "please select a Type",
+                          }));
+                          return;
                         }
-                        setselectedLeadId(item.leadId)
-                        setShowmodal(true)
-                        setSelectedItem(item)
+                        setselectedLeadId(item.leadId);
+                        setShowmodal(true);
+                        setSelectedItem(item);
                         setFormData((prev) => ({
                           ...prev,
-                          allocationDate: new Date()
-                        }))
+                          allocationDate: new Date(),
+                        }));
                       }}
                     >
                       Allocate
@@ -443,16 +446,16 @@ const ReallocationTable = () => {
                             onChange={(selectedOption) => {
                               setSelectedAllocates((prev) => ({
                                 ...prev,
-                                [item._id]: selectedOption
-                              }))
+                                [item._id]: selectedOption,
+                              }));
                               handleSelectedAllocates(
                                 item,
                                 selectedOption.value
-                              )
+                              );
                               setValidateError((prev) => ({
                                 ...prev,
-                                [item._id]: ""
-                              }))
+                                [item._id]: "",
+                              }));
                             }}
                             className="w-44 focus:outline-red-500"
                             styles={{
@@ -464,8 +467,8 @@ const ReallocationTable = () => {
                                 borderColor: "red",
                                 cursor: "pointer",
                                 "&:hover": {
-                                  borderColor: "red" // optional hover styling
-                                }
+                                  borderColor: "red", // optional hover styling
+                                },
                               }),
                               option: (base, state) => ({
                                 ...base,
@@ -473,27 +476,27 @@ const ReallocationTable = () => {
                                 backgroundColor: state.isFocused
                                   ? "#f0f0f0"
                                   : "white", // optional styling
-                                color: "black"
+                                color: "black",
                               }),
                               valueContainer: (base) => ({
                                 ...base,
                                 paddingTop: "2px", // Reduce vertical padding
-                                paddingBottom: "2px"
+                                paddingBottom: "2px",
                               }),
                               indicatorsContainer: (base) => ({
                                 ...base,
-                                height: "30px"
+                                height: "30px",
                               }),
                               menu: (provided) => ({
                                 ...provided,
                                 maxHeight: "200px", // Set dropdown max height
-                                overflowY: "auto" // Enable scrolling
+                                overflowY: "auto", // Enable scrolling
                               }),
                               menuList: (provided) => ({
                                 ...provided,
                                 maxHeight: "200px", // Ensures dropdown scrolls internally
-                                overflowY: "auto"
-                              })
+                                overflowY: "auto",
+                              }),
                             }}
                             menuPlacement="auto"
                             menuPosition="absolute"
@@ -519,9 +522,9 @@ const ReallocationTable = () => {
                     <td
                       className="border border-t-0 border-b-0 border-gray-400   px-4 py-0.5 text-red-400 hover:text-red-500 hover:cursor-pointer font-semibold"
                       onClick={() => {
-                        setIsclosed(true)
+                        setIsclosed(true);
 
-                        setselectedData(item)
+                        setselectedData(item);
                       }}
                     >
                       Closed
@@ -637,7 +640,7 @@ const ReallocationTable = () => {
                     onChange={(e) =>
                       setFormData((prev) => ({
                         ...prev,
-                        allocationDate: e.target.value
+                        allocationDate: e.target.value,
                       }))
                     }
                     className="py-1 border border-gray-400 mt-1  w-full rounded-md px-2 focus:outline-none"
@@ -651,7 +654,7 @@ const ReallocationTable = () => {
                     onChange={(e) =>
                       setFormData((prev) => ({
                         ...prev,
-                        allocationDescription: e.target.value
+                        allocationDescription: e.target.value,
                       }))
                     }
                     className="py-1 px-2 border border-gray-400 mt-1 w-full focus:outline-none rounded-md"
@@ -669,8 +672,8 @@ const ReallocationTable = () => {
                 <div className="flex justify-center gap-4 text-white mt-2">
                   <button
                     onClick={() => {
-                      setShowmodal(false)
-                      setsubmitError({ submissionerror: "" })
+                      setShowmodal(false);
+                      setsubmitError({ submissionerror: "" });
                     }}
                     className="bg-gray-600 py-1 px-3 rounded-md hover:bg-gray-700 cursor-pointer"
                   >
@@ -766,7 +769,7 @@ const ReallocationTable = () => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ReallocationTable
+export default ReallocationTable;

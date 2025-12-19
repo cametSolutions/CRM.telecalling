@@ -1,10 +1,16 @@
-
-export const LeadhistoryModal = ({ selectedLeadId,historyList,handlecloseModal }) => {
+export const LeadhistoryModal = ({
+  selectedLeadId,
+  historyList,
+  handlecloseModal,
+}) => {
+  console.log(historyList);
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40 ">
-      <div className="bg-white shadow-xl   text-center md:w-auto  w-full px-2 md:px-5 rounded-lg pb-3 ">
+      <div className="bg-white shadow-xl   text-center md:w-auto w-full px-2 md:px-5 rounded-lg pb-3 ">
         <div className="font-semibold space-x-6 mb-1 text-blue-500">
-          <h2 className="text-lg underline decoration-2 underline-offset-8">History</h2>
+          <h2 className="text-lg underline decoration-2 underline-offset-8">
+            History
+          </h2>
         </div>
 
         <h1 className=" font-bold">{` LEAD ID - ${selectedLeadId}`}</h1>
@@ -35,7 +41,7 @@ export const LeadhistoryModal = ({ selectedLeadId,historyList,handlecloseModal }
                 historyList.map((item, index) => {
                   const hasFollowerData =
                     Array.isArray(item.folowerData) &&
-                    item.folowerData.length > 0
+                    item.folowerData.length > 0;
 
                   return hasFollowerData ? (
                     item.folowerData.map((subItem, subIndex) => (
@@ -65,7 +71,7 @@ export const LeadhistoryModal = ({ selectedLeadId,historyList,handlecloseModal }
                     ))
                   ) : (
                     <tr
-                      key={index}
+                      key={item._id}
                       className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}
                     >
                       <td className="border border-gray-200 p-2 text-nowrap">
@@ -79,30 +85,34 @@ export const LeadhistoryModal = ({ selectedLeadId,historyList,handlecloseModal }
                       </td>
                       <td className="border border-gray-200 p-2 min-w-[160px] text-nowrap">
                         <div className="flex justify-center">
-                          {item.taskTo ? (
+                          {item?.taskTo ? (
                             <>
-                              <span>{item.taskBy}</span>-
-                              <span>{item.taskallocatedTo?.name}</span>
+                              <span>{item?.taskBy?.taskName}</span>-
+                              <span className="mx-1">
+                                {item?.taskallocatedTo?.name}
+                              </span>
+                              -
                             </>
                           ) : (
-                            item.taskBy
+                            item?.taskBy?.taskName ?? ""
+                          )}
+                          {item?.taskId && (
+                            <>
+                              <span className="text-red-600 mx-1">
+                                {item?.taskId?.taskName}
+                              </span>
+                              {item.allocationDate && (
+                                <span>
+                                  -on(
+                                  {new Date(
+                                    item.allocationDate
+                                  ).toLocaleDateString("en-GB")}
+                                  )
+                                </span>
+                              )}
+                            </>
                           )}
                         </div>
-
-                        {item.taskTo && (
-                          <>
-                            <span>{item.taskTo}</span>
-                            {item.allocationDate && (
-                              <span>
-                                -on(
-                                {new Date(
-                                  item.allocationDate
-                                ).toLocaleDateString("en-GB")}
-                                )
-                              </span>
-                            )}
-                          </>
-                        )}
                       </td>
                       <td className="border border-gray-200 p-2">
                         {item?.remarks || "N/A"}
@@ -116,7 +126,7 @@ export const LeadhistoryModal = ({ selectedLeadId,historyList,handlecloseModal }
                           : "-"}
                       </td>
                     </tr>
-                  )
+                  );
                 })
               ) : (
                 <tr>
@@ -140,5 +150,5 @@ export const LeadhistoryModal = ({ selectedLeadId,historyList,handlecloseModal }
         </button>
       </div>
     </div>
-  )
-}
+  );
+};
