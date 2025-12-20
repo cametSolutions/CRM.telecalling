@@ -853,7 +853,6 @@ const LeadMaster = ({
         />
       )}
       <div className="bg-white h-full overflow-y-auto flex justify-center items-center shadow-xl p-3 md:p-8 w-full">
-        {" "}
         <div
           className="bg-white shadow-xl rounded mx-auto p-3 md:p-8 w-full"
           style={{
@@ -866,6 +865,14 @@ const LeadMaster = ({
             transition: "opacity 0.3s ease-in-out",
           }}
         >
+          {/* {Data && (
+            <div className="flex justify-end">
+              <span className="text-white p-2 rounded-md bg-blue-500 text-md font-bold cursor-pointer hover:bg-blue-600">
+                Edit Customer
+              </span>
+            </div>
+          )} */}
+
           <div className="flex justify-between">
             <h2 className="text-xl md:text-2xl font-semibold  mb-1 md:mb-2">
               {Data && Data?.length > 0 ? "Lead Edit" : "Lead"}

@@ -67,7 +67,6 @@ export const LeadRegister = async (req, res) => {
     if (allocationType) {
       allocationtask = await Task.findOne({ taskName: "Allocation" });
     }
-    console.log("taskid", leadtask?._id);
     const activityLog = [
       {
         submissionDate: leadDate,
@@ -209,7 +208,7 @@ export const Checkexistinglead = async (req, res) => {
 };
 export const GetallTask = async (req, res) => {
   try {
-    const tasks = await Task.find({});
+    const tasks = await Task.find({ listed: true });
     if (tasks) {
       return res.status(200).json({ message: "Task found", data: tasks });
     } else {
@@ -361,7 +360,6 @@ export const UpdateCollection = async (req, res) => {
 
   const session = await mongoose.startSession();
   try {
-    console.log("formData", formData);
     // const toBoolean = (value, defaultValue = false) => {
     //   if (value === null || value === undefined || value === "")
     //     return defaultValue;
@@ -2203,7 +2201,6 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
     if (!allocationTask) {
       return res.status(404).json({ message: "allocation taskname not found" });
     }
-    console.log("allllll", allocationTypeName);
     if (matchLead.activityLog.length === 1) {
       // Create base activity log
       const activityLogEntry = {
