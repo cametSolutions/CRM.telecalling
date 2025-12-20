@@ -10,6 +10,8 @@ import { FaSpinner, FaUserCircle } from "react-icons/fa"
 import { toast } from "react-toastify"
 import { Link } from "react-router-dom"
 import UseFetch from "../../../hooks/useFetch"
+import { getLocalStorageItem } from "../../../helper/localstorage"
+
 import api from "../../../api/api"
 export default function PrimaryUserDashBoard() {
   const [leaveList, setTodayLeaveList] = useState([])
@@ -40,12 +42,16 @@ export default function PrimaryUserDashBoard() {
   const { data: acheivementlist, refreshHook } = UseFetch(
     "/dashboard/getcurrentquarterlyAchiever"
   )
-  const { data: holydata, refreshHook: holyrefresh } = UseFetch(
-    "/customer/getallholy"
-  )
+  const { data: holydata } = UseFetch("/customer/getallholy")
   const { data: announcementlist } = UseFetch(
     "/dashboard/getcurrentAnnouncement"
   )
+  useEffect(() => {
+    const userData = getLocalStorageItem("user")
+
+    setUser(userData)
+  }, [])
+
   useEffect(() => {
     if (headerRef.current) {
       const headerHeight = headerRef.current.getBoundingClientRect().height
@@ -54,7 +60,6 @@ export default function PrimaryUserDashBoard() {
   }, [])
   useEffect(() => {
     if (holydata && holydata.length) {
-    
       const now = new Date()
       const currentMonth = now.getMonth() // 0 = Jan, 11 = Dec
       const currentYear = now.getFullYear()
@@ -69,11 +74,7 @@ export default function PrimaryUserDashBoard() {
       setcurrentyearHoliday(currentMonthHolidays)
     }
   }, [holydata])
-  useEffect(() => {
-    const userData = localStorage.getItem("user")
-    const user = JSON.parse(userData)
-    setUser(user)
-  }, [])
+
   useEffect(() => {
     const wishValue = JSON.parse(localStorage.getItem("wish"))
     if (wishValue) {
@@ -124,8 +125,8 @@ export default function PrimaryUserDashBoard() {
           acheivementlist.yearlyachiever[0].achieverId))
     ) {
       const title =
-        acheivementlist.quarterlyachiever[0].title ||
-        acheivementlist.yearlyachiever[0].title
+        acheivementlist.quarterlyachiever[0]?.title ||
+        acheivementlist.yearlyachiever[0]?.title
       setQuarterlyTitle(title)
       const quarterlyIds = acheivementlist.quarterlyachiever.map(
         (item) => item.achieverId._id
@@ -230,7 +231,7 @@ export default function PrimaryUserDashBoard() {
     const wish = true
     localStorage.setItem("wish", JSON.stringify(wish))
   }
-  console.log(birthdayPerson)
+
   return (
     <div className="min-h-full bg-[#bfdbf7] ">
       {showBirthdayPopup && (

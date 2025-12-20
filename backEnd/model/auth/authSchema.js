@@ -107,6 +107,7 @@ const staffSchema = new Schema(
         CallNotes: Boolean,
         UsersAndPasswords: Boolean,
         MenuRights: Boolean,
+        Services: Boolean,
         VoucherMaster: Boolean,
         Target: Boolean,
         Product: Boolean,
@@ -136,7 +137,11 @@ const staffSchema = new Schema(
         AccountSearch: Boolean,
         LeaveSummary: Boolean,
         TaskAnalysis: Boolean,
+        TaskLevel: Boolean,
         LeadReallocation: Boolean,
+        Employee: Boolean,
+        ProductandServices: Boolean,
+        CollectionUpdate: Boolean
       }
 
     ],
@@ -175,6 +180,12 @@ const adminSchema = new Schema(
       type: String,
 
       match: /^[0-9]{10}$/ // Example for a 10-digit Indian number
+    },
+    department: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+      required: false, // This makes it optional
+      default: null
     },
     password: {
       type: String,

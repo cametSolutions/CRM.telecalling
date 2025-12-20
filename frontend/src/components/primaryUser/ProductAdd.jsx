@@ -2,14 +2,16 @@ import { useEffect, useState, useMemo } from "react"
 import { useForm } from "react-hook-form"
 import UseFetch from "../../hooks/useFetch"
 import { toast } from "react-toastify"
-import { FaTrash } from "react-icons/fa" // Import icons
+import { Trash2, Building2, MapPin, Edit2 } from "lucide-react"
 
 const ProductAdd = ({
   process,
   product,
   selected,
   handleProductData,
-  handleEditedData
+  handleEditedData,
+  index,
+  item
 }) => {
   const {
     register,
@@ -50,7 +52,7 @@ const ProductAdd = ({
     hsn_id: "",
     hsnName: ""
   })
- 
+
   const { data: companyData, error: companyError } = UseFetch(
     "/company/getCompany"
   )
@@ -64,6 +66,8 @@ const ProductAdd = ({
 
   useEffect(() => {
     if (selected) {
+      setShowTable(true)
+      setSelectedBranch(true)
 
       setTableObject({
         company_id: selected.company_id || "",
@@ -77,20 +81,46 @@ const ProductAdd = ({
         hsn_id: selected.hsn_id || "",
         hsnName: selected.hsnName || ""
       })
+      const tablearray = item.selected.map((sel) => ({
+        company_id: sel.company_id || "",
+        companyName: sel.companyName || "",
+        branch_id: sel.branch_id || "",
+        branchName: sel.branchName || "",
+        brand_id: sel.brand_id || "",
+        brandName: sel.brandName || "",
+        category_id: sel.category_id || "",
+        categoryName: sel.categoryName || "",
+        hsn_id: sel.hsn_id || "",
+        hsnName: sel.hsnName || ""
+      }))
+      setTableData(tablearray)
+      // setTableData([
+      //   {
+      //     company_id: selected.company_id || "",
+      //     companyName: selected.companyName || "",
+      //     branch_id: selected.branch_id || "",
+      //     branchName: selected.branchName || "",
+      //     brand_id: selected.brand_id || "",
+      //     brandName: selected.brandName || "",
+      //     category_id: selected.category_id || "",
+      //     categoryName: selected.categoryName || "",
+      //     hsn_id: selected.hsn_id || "",
+      //     hsnName: selected.hsnName || ""
+      //   }
+      // ])
 
       Object.keys(selected).forEach((key) => {
         if (key === "brandName") {
-
-          setValue(key, selected.brand_id)
+          setValue(key, selected?.brand_id)
         } else if (key === "categoryName") {
-          setValue(key, selected.category_id)
+          setValue(key, selected?.category_id)
         } else if (key === "hsnName") {
-          setValue(key, selected.hsn_id._id)
+          setValue(key, selected?.hsn_id?._id)
         } else if (key === "companyName") {
-          setSelectedCompany(selected.company_id)
-          setValue(key, selected.company_id)
+          setSelectedCompany(selected?.company_id)
+          setValue(key, selected?.company_id)
         } else if (key === "branchName") {
-          setValue(key, selected.branch_id)
+          setValue(key, selected?.branch_id)
         }
         // Log the key if necessary
       })
@@ -98,7 +128,6 @@ const ProductAdd = ({
     if (product) {
       Object.keys(product).forEach((key) => {
         // Check if the key is not in the ignored list
-        console.log(key) // Log the key if necessary
         setValue(key, product[key])
       })
     }
@@ -166,9 +195,9 @@ const ProductAdd = ({
       branchName: branchName
     }))
     setSelectedBranch(true)
+    setShowTable(true)
     setValue("branch", branchId) // Update the value in react-hook-form
   }
-
   const handleTableData = (e) => {
     e.preventDefault()
     if (tableObject.product_id === "") {
@@ -220,15 +249,24 @@ const ProductAdd = ({
   const handleBrandChange = (e) => {
     const brandId = e.target.value
     const selectedBrand = data.brands.find((brand) => brand._id === brandId)
-   
+
     setTableObject((prev) => ({
       ...prev,
       brand_id: brandId,
       brandName: selectedBrand.brand
     }))
 
+    setTableData((prev) =>
+      prev.map((item) => ({
+        ...item,
+        brand_id: brandId,
+        brandName: selectedBrand.brand
+      }))
+    )
+
     // setValue("brandName", brandId) // Update the value in react-hook-form
   }
+ 
   const handleCategoryChange = (e) => {
     const categoryId = e.target.value
     const selectedCategory = data.categories.find(
@@ -239,6 +277,13 @@ const ProductAdd = ({
       category_id: categoryId,
       categoryName: selectedCategory.category
     }))
+    setTableData((prev) =>
+      prev.map((item) => ({
+        ...item,
+        category_id: categoryId,
+        categoryName: selectedCategory.category
+      }))
+    )
 
     setValue("category", categoryId) // Update the value in react-hook-form
   }
@@ -248,12 +293,18 @@ const ProductAdd = ({
     setTableObject((prev) => ({
       ...prev,
       hsn_id: hsnId,
-      hsnName: selectedHsn.hsnSac
+      hsnName: selectedHsn?.hsnSac || ""
     }))
+    setTableData((prev) =>
+      prev.map((item) => ({
+        ...item,
+        hsn_id: hsnId,
+        hsnName: selectedHsn?.hsnSac || ""
+      }))
+    )
 
     setValue("hsn", hsnId) // Update the value in react-hook-form
   }
-
   const companyOptions = useMemo(
     () =>
       data.companies.map((company) => ({
@@ -315,21 +366,22 @@ const ProductAdd = ({
       if (process === "Registration") {
         await handleProductData(data, tableData)
       } else if (process === "edit") {
-        await handleEditedData(data, tableObject)
+        await handleEditedData(data, tableData)
       }
       // Refetch the product data
     } catch (error) {
-      console.log("error on onsubmit",error)
+      console.log("error on onsubmit", error)
       toast.error("Failed to add product!")
     }
   }
+
   return (
-    <div className="container justify-center items-center  p-8 ">
-      <div className="w-auto bg-white shadow-lg rounded p-8 mx-auto">
+    <div className="justify-center items-center m-5">
+      <div className="w-auto bg-white shadow-lg rounded p-3 md:p-8 mx-auto">
         <h2 className="text-2xl font-semibold mb-6">Product Master</h2>
 
         <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 m-5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-6 m-2 md:m-5">
             {/* Other Input Fields */}
             <div>
               <label
@@ -366,7 +418,7 @@ const ProductAdd = ({
                 id="productPrice"
                 type="number"
                 {...register("productPrice")}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none focus:border-gray-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="Product Price"
               />
             </div>
@@ -383,7 +435,7 @@ const ProductAdd = ({
                 id="brandName"
                 {...register("brandName")}
                 onChange={handleBrandChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none cursor-pointer"
               >
                 <option value="">-- Select a Brand --</option>
 
@@ -408,9 +460,9 @@ const ProductAdd = ({
                 id="categoryName"
                 {...register("categoryName")}
                 onChange={handleCategoryChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none cursor-pointer"
               >
-                <option value="">-- Select a company --</option>
+                <option value="">-- Select a category --</option>
 
                 {data.categories?.map((category) => (
                   <option key={category._id} value={category._id}>
@@ -433,7 +485,7 @@ const ProductAdd = ({
                 id="hsnName"
                 {...register("hsnName")}
                 onChange={handleHsnChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none cursor-pointer"
               >
                 <option value="">-- Select Hsn--</option>
 
@@ -471,7 +523,7 @@ const ProductAdd = ({
                 id="companyName"
                 {...register("companyName")}
                 onChange={handleCompanyChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none cursor-pointer"
               >
                 <option value="">-- Select a company --</option>
 
@@ -495,7 +547,7 @@ const ProductAdd = ({
                 id="branchName"
                 {...register("branchName")}
                 onChange={handleBranchChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none cursor-pointer"
               >
                 <option value="">-- Select a Branch--</option>
 
@@ -514,62 +566,106 @@ const ProductAdd = ({
                   onClick={(event) => handleTableData(event)}
                   className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
                 >
-                  Add
+                  Add To Table
                 </button>
               </div>
             )}
           </div>
-          {selectedBranch && (
-            <div className="mt-6">
-              <h3 className="text-lg font-medium text-gray-900">
-                Product List
-              </h3>
-              <table className="min-w-full divide-y divide-gray-200 mt-4">
-                <thead>
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-4  text-xs font-semibold text-gray-700 uppercase tracking-wider text-nowrap">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="w-4 h-4" />
                       Company Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    </div>
+                  </th>
+                  <th className="px-6 py-4 text-center items-center text-xs font-semibold text-gray-700 uppercase tracking-wider text-nowrap ">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4" />
                       Branch Name
-                    </th>
-
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    </div>
+                  </th>
+                  <th className=" py-4 text-xs font-semibold text-gray-700 uppercase tracking-wider text-nowrap w-32 text-center">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-100">
+                {tableData.length === 0 ? (
+                  <tr>
+                    <td colSpan="3" className="px-6 py-5 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <Building2 className="w-12 h-12 text-gray-300" />
+                        <p className="text-gray-500 font-medium">
+                          No data available
+                        </p>
+                        <p className="text-gray-400 text-sm">
+                          Add companies to get started
+                        </p>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {tableData?.map((product, index) => (
-                    <tr key={index}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {product?.companyName}
+                ) : (
+                  tableData &&
+                  tableData.length > 0 &&
+                  tableData.map((product, index) => (
+                    <tr
+                      key={index}
+                      className="hover:bg-gray-50 transition-colors duration-150"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-lg flex items-center justify-center">
+                            <span className="text-white font-semibold text-sm">
+                              {product?.companyName?.charAt(0)}
+                            </span>
+                          </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {product?.companyName}
+                            </div>
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {product?.branchName}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {product?.branchName}
+                        </div>
                       </td>
-
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-right"></td> */}
+                      <td className=" py-4 whitespace-nowrap text-sm font-medium text-center">
+                        {/* <button
+                          type="button"
+                          onClick={() => handleEdit(index)}
+                          className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors duration-150 font-medium mr-2 cursor-pointer"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                          
+                        </button> */}
                         <button
                           type="button"
-                          className="text-blue-600 hover:text-blue-900"
+                          onClick={() => handleDelete(index)}
+                          className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors duration-150 font-medium cursor-pointer"
                         >
-                          <FaTrash onClick={() => handleDelete(index)} />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
           <div className="mt-6">
             <button
               type="submit"
               className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
             >
-              {process === "Registration" ? "Add Product" : "Update Product"}
+              {process === "Registration" ? "SUBMIT" : "SUBMIT"}
             </button>
           </div>
         </form>

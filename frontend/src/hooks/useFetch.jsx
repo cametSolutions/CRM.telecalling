@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { fetchDataFromApi } from "../api/fetchDataFromApi"
 
 const UseFetch = (url) => {
-console.log("url",url)
 
   const [refresh, setRefresh] = useState(false)
   const [data, setData] = useState(null)

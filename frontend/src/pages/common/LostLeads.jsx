@@ -1,70 +1,99 @@
-import React from "react"
-import { useState } from "react"
+import React, { useEffect, useState } from "react"
+import UseFetch from "../../hooks/useFetch"
 import { useNavigate } from "react-router-dom"
-import { LeadhistoryModal } from "./LeadhistoryModal"
+import { LeadhistoryModal } from "../../components/primaryUser/LeadhistoryModal"
 import { PropagateLoader } from "react-spinners"
-import LeadModal from "./LeadModal"
-import TasksubmissionModal from "./TasksubmissionModal"
 import {
   Eye,
   Phone,
   Mail,
   User,
   Calendar,
-  ArrowRight,
   Clock,
   UserPlus,
   UserCheck,
   IndianRupee,
   BellRing, // Follow-up
-  History, // Event Log
-  CalendarDays, // For Due Date
-  Hourglass, //Remaining days
-  RefreshCcw //Update icon
+  History // Event Log
 } from "lucide-react"
-export default function LeadTaskComponent({
-  type,
-  Data,
-  loading,
-  loggedUser,
-  refresh,
-  pending
-}) {
+import { getLocalStorageItem } from "../../helper/localstorage"
+
+export default function LostLeads() {
   const [showFullName, setShowFullName] = useState(false)
-  const [selectedData, setselectedData] = useState({})
-  const [historyList, setHistoryList] = useState([])
-  const [showComponent, setShowComponent] = useState(false)
-  const [selectedleadId, setselectedleadId] = useState(null)
+  const [tableData, setTableData] = useState([])
+  const [TotalAmount, settotalAmount] = useState(0)
+  const [loggedUser, setLoggedUser] = useState(null)
+  const [showFullEmail, setShowFullEmail] = useState(false)
+  const [showModal, setShowModal] = useState(false)
+  const [selectedData, setselectedData] = useState([])
+  const [selectedLeadId, setselectedLeadId] = useState(null)
+  const [ownLead, setownLead] = useState(true)
+  const [companyBranches, setcompanyBranches] = useState(null)
+  const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
   const [showhistoryModal, sethistoryModal] = useState(false)
+  const [historyList, setHistoryList] = useState([])
   const navigate = useNavigate()
-  const getRemainingDays = (dueDate) => {
-    const today = new Date()
-    const target = new Date(dueDate)
+  const { data: companybranches } = UseFetch("/branch/getBranch")
+  const { data: lostlead, loading } = UseFetch(
+    loggedUser &&
+      selectedCompanyBranch &&
+      `/lead/lostlead?userId=${loggedUser._id}&role=${loggedUser.role}&selectedBranch=${selectedCompanyBranch}&ownlead=${ownLead}`
+  )
 
-    // Zero out time to compare only dates
-    today.setHours(0, 0, 0, 0)
-    target.setHours(0, 0, 0, 0)
-
-    const diffTime = target - today // milliseconds
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-    return diffDays
+  useEffect(() => {
+    if (companybranches && companybranches.length > 0) {
+      const userData = getLocalStorageItem("user")
+      const branch = companybranches?.map((branch) => {
+        return {
+          value: branch._id,
+          label: branch.branchName
+        }
+      })
+      setcompanyBranches(branch)
+      setselectedCompanyBranch(branch[0].value)
+      setLoggedUser(userData)
+    }
+  }, [companybranches])
+  useEffect(() => {
+    if (lostlead && lostlead.length > 0) {
+      const groupedLeads = {}
+      let grandTotal = 0
+      lostlead.forEach((lead) => {
+        const assignedTo = lead?.leadclosedBy?.name
+        const amount = lead?.netAmount || 0
+        grandTotal += amount
+        if (!groupedLeads[assignedTo]) {
+          groupedLeads[assignedTo] = []
+        }
+        groupedLeads[assignedTo].push(lead)
+      })
+      const Data = normalizeTableData(groupedLeads)
+      settotalAmount(grandTotal)
+      setTableData(Data)
+    }
+  }, [lostlead])
+  const normalizeTableData = (data) => {
+    if (Array.isArray(data)) {
+      return [{ staffName: null, leads: data }]
+    } else if (typeof data === "object" && data !== null) {
+      return Object.entries(data).map(([staffName, leads]) => ({
+        staffName,
+        leads
+      }))
+    }
+    return []
   }
-  const handleHistory = (Item) => {
-    
-    setselectedData(Item.activityLog)
-    setHistoryList(Item.activityLog)
-    setselectedleadId(Item.leadId)
-    sethistoryModal(true)
-  }
- 
   const handlecloseModal = () => {
-    setselectedData([])
     setHistoryList([])
     sethistoryModal(false)
-    setselectedleadId(null)
+    setselectedLeadId(null)
   }
- 
+  const handleHistory = (Item) => {
+    setselectedData(Item.activityLog)
+    setHistoryList(Item.activityLog)
+    setselectedLeadId(Item.leadId)
+    sethistoryModal(true)
+  }
   const renderTable = (data) => (
     <table className="border-collapse border border-gray-300 w-full text-sm">
       <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30 text-xs">
@@ -96,7 +125,7 @@ export default function LeadTaskComponent({
           <th className="border border-gray-300 px-3 py-1 min-w-[90px] text-left">
             Lead Id
           </th>
-          {pending && (
+          {/* {pending && (
             <>
               <th className="border border-gray-300 px-3 py-1">
                 <div className="flex items-center gap-1.5 justify-center">
@@ -111,7 +140,7 @@ export default function LeadTaskComponent({
                 </div>
               </th>
             </>
-          )}
+          )} */}
 
           <th className="border border-gray-300 px-3 py-1 min-w-[90px]">
             Action
@@ -133,7 +162,7 @@ export default function LeadTaskComponent({
                   }`}
                   style={{ lineHeight: "1.5em" }}
                 >
-                  {item?.customerName?.customerName||item?.customerName}
+                  {item?.customerName?.customerName || item?.customerName}
                 </td>
                 <td className="px-3 py-1 text-gray-700">{item?.mobile}</td>
                 <td className="px-3 py-1 text-gray-700">{item?.phone}</td>
@@ -143,12 +172,12 @@ export default function LeadTaskComponent({
                 <td className="px-3 py-1 font-medium text-blue-700">
                   {item?.leadId}
                 </td>
-                {pending && (
+                {/* {pending && (
                   <>
                     <td className="border border-b-0 border-gray-300 px-3 py-1"></td>
                     <td className="border border-b-0 border-gray-300 px-3 py-1"></td>
                   </>
-                )}
+                )} */}
 
                 <td className="border border-b-0 border-gray-300 px-2 py-1 text-center">
                   <button
@@ -194,7 +223,7 @@ export default function LeadTaskComponent({
                     <span>Lead Date</span>
                   </div>
                 </td>
-                {pending && (
+                {/* {pending && (
                   <>
                     <td className="border border-t-0 border-b-0 border-gray-300 px-3  bg-white text-center text-lg font-semibold text-red-500">
                       {new Date(item.dueDate).toLocaleDateString("en-GB")}
@@ -203,37 +232,9 @@ export default function LeadTaskComponent({
                       {getRemainingDays(item.dueDate)} days left
                     </td>
                   </>
-                )}
+                )} */}
 
-                <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1 bg-white">
-                  <button
-                    onClick={() => {
-                      const isAllocatedToeditable = item.activityLog.some(
-                        (it) =>
-                          it?.taskallocatedTo?._id === loggedUser._id &&
-                          it?.taskClosed === false
-                      )
-
-                      loggedUser.role === "Admin"
-                        ? navigate("/admin/transaction/lead/leadEdit", {
-                            state: {
-                              leadId: item._id,
-                              isReadOnly: !isAllocatedToeditable
-                            }
-                          })
-                        : navigate("/staff/transaction/lead/leadEdit", {
-                            state: {
-                              leadId: item._id,
-                              isReadOnly: !isAllocatedToeditable
-                            }
-                          })
-                    }}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors w-full justify-center"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    View/Modify
-                  </button>
-                </td>
+                <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1 bg-white"></td>
                 <td className="border border-t-0 border-b-0 border-gray-300 px-3  bg-white font-semibold">
                   <div className="flex items-center justify-start">
                     <IndianRupee className="w-4 h-3.5 text-green-600 mr-1" />
@@ -250,25 +251,25 @@ export default function LeadTaskComponent({
                   {item?.leadBy?.name}
                 </td>
                 <td className="border border-t-0 border-gray-300 px-3 py-1 text-gray-700">
-                  {item?.taskallocatedTo?.name||"-"}
+                  {item?.taskallocatedTo?.name || "-"}
                 </td>
                 <td className="border border-t-0 border-gray-300 px-3 py-1 text-gray-700">
-                  {item?.taskallocatedBy?.name||"-"}
+                  {item?.taskallocatedBy?.name || "-"}
                 </td>
                 <td className="border border-t-0 border-gray-300 px-3 py-1 text-gray-700"></td>
                 <td className="border border-t-0 border-gray-300 px-3 py-1 text-gray-900">
                   {item.leadDate?.toString().split("T")[0]}
                 </td>
-                {pending && (
+                {/* {pending && (
                   <>
                     <td className="border border-t-0 border-b-0 border-gray-300 px-3 py-1"></td>
                     <td className="border border-t-0 border-b-0 border-gray-300 px-3 py-1"></td>
                   </>
-                )}
+                )} */}
 
                 <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1">
                   {" "}
-                  {pending &&item.sameUser&& (
+                  {/* {pending && item.sameUser && (
                     <button
                       onClick={() => {
                         setShowComponent(true)
@@ -279,27 +280,23 @@ export default function LeadTaskComponent({
                       <RefreshCcw className="w-3.5 h-3.5" />
                       Update
                     </button>
-                  )}
+                  )} */}
                 </td>
                 <td className="border border-t-0 border-b-0 border-gray-300 px-3 py-1"></td>
               </tr>
-              {pending && (
-                <tr className="font-medium bg-gradient-to-r from-gray-100 to-gray-50 text-xs text-gray-600">
-                  <td
-                    colSpan={5}
-                    className="px-3 py-1 border-t border-gray-200"
-                  >
-                    <span>Remark :</span>
-                    <span className="ml-2 text-red-600">
-                      {item?.matchedlog?.remarks}
-                    </span>
-                  </td>
 
-                  <td className="border border-t-0 border-b-0 border-gray-300 px-3 bg-white"></td>
-                  <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1 bg-white"></td>
-                  <td className="border border-t-0 border-b-0 border-gray-300 px-3 bg-white"></td>
-                </tr>
-              )}
+              <tr className="font-medium bg-gradient-to-r from-gray-100 to-gray-50 text-xs text-gray-600">
+                <td colSpan={5} className="px-3 py-1 border-t border-gray-200">
+                  <span>Remark :</span>
+                  <span className="ml-2 text-red-500">
+                    {item?.activityLog[item?.activityLog?.length - 1]?.remarks}
+                  </span>
+                </td>
+
+                {/* <td className="border border-t-0 border-b-0 border-gray-300 px-3 bg-white"></td> */}
+                <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1 bg-white"></td>
+                <td className="border border-t-0 border-b-0 border-gray-300 px-3 bg-white"></td>
+              </tr>
 
               {index !== data.length - 1 && (
                 <tr>
@@ -326,66 +323,96 @@ export default function LeadTaskComponent({
       </tbody>
     </table>
   )
-  
+
   return (
-    <div className="flex-1 overflow-x-auto rounded-lg  overflow-y-auto  shadow-xl md:mx-5 mx-3 mb-3">
-      <>
-        {(() => {
-          const hasLeads =
-            Array.isArray(Data) &&
-            Data.some(
-              (group) => Array.isArray(group.leads) && group.leads.length > 0
-            )
+    <div className="max-h-full h-full p-3 bg-white">
+      <div className="flex justify-between items-center mx-3 md:mx-5  mb-3">
+        <h2 className="text-lg font-bold">Lost Leads</h2>
+        <div className="flex justify-end items-center">
+          <select
+            value={selectedCompanyBranch || ""}
+            onChange={(e) => {
+              setTableData([])
+              setselectedCompanyBranch(e.target.value)
+            }}
+            className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[150px] mr-2 cursor-pointer"
+          >
+            {companyBranches?.map((branch) => (
+              <option key={branch.value} value={branch.value}>
+                {branch.label}
+              </option>
+            ))}
+          </select>
 
-          if (!hasLeads || Data.length === 0) {
-            return (
-              <div className="text-center text-gray-500 py-6">
-                No Task Available
-              </div>
-            )
-          }
+          <button
+            onClick={() =>
+              loggedUser?.role === "Admin"
+                ? navigate("/admin/transaction/lead")
+                : navigate("/staff/transaction/lead")
+            }
+            className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600"
+          >
+            New Lead
+          </button>
+        </div>
+      </div>
+      {tableData && tableData.length > 0 && (
+        <div className="flex justify-end md:mx-5 text-blue-500">
+          <span>Total Amount :</span>
+          <span className="ml-1">{TotalAmount}</span>
+        </div>
+      )}
 
-          return Data.map(({ staffName, leads }, index) => (
-            <div key={staffName || `group-${index}`} className="mb-6">
-              {staffName && (
-                <h3 className="text-base font-semibold text-gray-800 mb-2">
-                  {staffName}{" "}
-                  <span className="text-sm text-gray-500">
-                    ({leads?.length || 0} Leads)
-                  </span>
-                </h3>
-              )}
+      {/* Responsive Table Container this is the newest design*/}
+      <div className="flex-1 overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3">
+        <>
+          {(() => {
+            const hasLeads =
+              Array.isArray(tableData) &&
+              tableData.some(
+                (group) => Array.isArray(group.leads) && group.leads.length > 0
+              )
 
-              {/* only render table if there are leads */}
-              {leads.length > 0 ? (
-                renderTable(leads)
-              ) : (
-                <div className="text-center text-gray-400 py-3 text-sm">
-                  No Task under {staffName || "this group"}.
+            if (!hasLeads || tableData.length === 0) {
+              return (
+                <div className="text-center text-gray-500 py-6">
+                  No Lost Leads Available
                 </div>
-              )}
-            </div>
-          ))
-        })()}
-      </>
-      
-      
+              )
+            }
+
+            return tableData.map(({ staffName, leads }, index) => (
+              <div key={staffName || `group-${index}`} className="mb-6">
+                {staffName && (
+                  <h3 className="text-base font-semibold text-gray-800 mb-2 ml-1">
+                    {staffName}{" "}
+                    <span className="text-sm text-gray-500">
+                      ({leads?.length || 0} Leads)
+                    </span>
+                  </h3>
+                )}
+
+                {/* only render table if there are leads */}
+                {leads.length > 0 ? (
+                  renderTable(leads)
+                ) : (
+                  <div className="text-center text-gray-400 py-3 text-sm">
+                    No Lead under {staffName || "this group"}.
+                  </div>
+                )}
+              </div>
+            ))
+          })()}
+        </>
+      </div>
+
       {showhistoryModal && historyList && historyList.length > 0 && (
         <LeadhistoryModal
-          selectedLeadId={selectedleadId}
+          selectedLeadId={selectedLeadId}
           historyList={historyList}
           handlecloseModal={handlecloseModal}
         />
       )}
-      {showComponent && (
-        <TasksubmissionModal
-          task={selectedData}
-          refresh={refresh}
-          pending={pending}
-          setShowComponent={setShowComponent}
-        />
-      )}
-      
     </div>
   )
 }

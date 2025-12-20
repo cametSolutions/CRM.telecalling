@@ -20,7 +20,6 @@ function UsersLeaveApplicationSummary() {
   const userName = searchParams.get("userName")
 
   const { selectedusersleaves, selectedusersattendance } = location.state || {}
-
   const [events, setEvents] = useState([])
   const [selectedMonth, setSelectedMonth] = useState("")
   const [showModal, setShowModal] = useState(false)
@@ -285,20 +284,7 @@ function UsersLeaveApplicationSummary() {
     }
   }
 
-  //   const handleUpdate = async (id, updatedData) => {
-  //     try {
-  //       const response = await fetch(`/api/leaves/${id}`, {
-  //         method: "PUT",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify(updatedData)
-  //       })
-  //       const result = await response.json()
-  //       setEvents(events.map((event) => (event._id === id ? result : event)))
-  //       setShowModal(false)
-  //     } catch (error) {
-  //       console.error("Error updating leave:", error)
-  //     }
-  //   }
+
   const handleDatesSet = (info) => {
     // Get the current start date of the view (first day of the current month)
     const monthName = info.view.currentStart.toLocaleString("default", {

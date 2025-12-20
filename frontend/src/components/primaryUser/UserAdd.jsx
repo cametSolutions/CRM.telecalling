@@ -1,4 +1,4 @@
-import  { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { toast } from "react-toastify"
 import { useForm, Controller } from "react-hook-form"
 import { Country, State } from "country-state-city"
@@ -134,16 +134,16 @@ const UserAdd = ({
       toast.error("please select a branch")
       return
     }
+  
+    const isIncluded = tableData.some(
+      (item) => JSON.stringify(item) === JSON.stringify(tableObject)
+    )
+    if (isIncluded) {
+      toast.error("Branch already exists")
+      return
+    }
 
     if (tableEdit) {
-      const isIncluded = tableData.some(
-        (item) => JSON.stringify(item) === JSON.stringify(tableObject)
-      )
-
-      if (isIncluded) {
-        toast.error("already added")
-        return
-      }
       setTableData((prev) => {
         const newData = [...prev]
         newData[editIndex] = tableObject // Update the specific item
@@ -160,7 +160,7 @@ const UserAdd = ({
       )
 
       if (isIncluded) {
-        toast.error("already added")
+        toast.error("Branch already exists")
         return
       }
 
@@ -218,12 +218,9 @@ const UserAdd = ({
       departments.length > 0 &&
       company &&
       company.length > 0 &&
-      // branches &&
-      // branches.length > 0 &&
       users &&
       users.length > 0
     ) {
-      
       setIsEditMode(true)
       setValue("name", User.name)
       setValue("role", User.role)
@@ -265,8 +262,14 @@ const UserAdd = ({
     ) {
       setShowTable(true)
 
-      const tabledataWithoutId = User.selected.map(({ _id, ...rest }) => rest)
-      setTableData(User.selected)
+      setTableData(
+        User.selected.map((item) => ({
+          company_id: item.company_id,
+          companyName: item.companyName,
+          branch_id: item.branch_id,
+          branchName: item.branchName
+        }))
+      )
       setTableObject({
         company_id: Selected.company_id || "",
         companyName: Selected.companyName || "",
@@ -357,11 +360,10 @@ const UserAdd = ({
 
       const formattedData = {
         ...data,
-        department: data.department || null,
+        department: data.department || null
       }
       handleUserData(formattedData, imageData, tableData)
     } else if (process === "Edit") {
-    
       handleEditedData(data, User?._id, tableData, imageData)
     }
   }
@@ -893,9 +895,19 @@ const UserAdd = ({
                   <button
                     type="button"
                     onClick={handleTableData}
-                    className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+                    className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors"
                   >
-                    {isEditMode ? "UPDATE" : "ADD"}
+                    {isEditMode ? (
+                      <>
+                        <span className="text-xl font-bold mr-1">+</span>Update To
+                        Table
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-xl font-bold">+</span> Add to
+                        Table
+                      </>
+                    )}
                   </button>
                 </div>
 
@@ -903,53 +915,64 @@ const UserAdd = ({
                   <table className="bg-green-300 w-full divide-y divide-gray-200  ">
                     <thead>
                       <tr className="text-center">
-                        <th className="  py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="  py-3 text-left px-4 text-sm font-medium text-gray-500 uppercase tracking-wide">
                           Company Name
                         </th>
-                        <th className=" px-5 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className=" px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
                           Branch Name
                         </th>
 
-                        <th className="px-4  py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="pr-10  py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider">
                           Edit
                         </th>
-                        <th className="px-5  py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="pr-8  py-3 text-right text-sm font-medium text-gray-500 uppercase tracking-wider">
                           Delete
                         </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200 ">
-                      {tableData?.map((item, index) => (
-                        <tr key={index} className="text-center">
-                          <td className=" py-4 whitespace-nowrap text-sm text-gray-500">
-                            {item?.companyName}
-                          </td>
+                      {tableData && tableData.length > 0 ? (
+                        tableData?.map((item, index) => (
+                          <tr key={index} className="text-center">
+                            <td className=" py-4 whitespace-nowrap text-sm text-gray-500 text-left px-4">
+                              {item?.companyName}
+                            </td>
 
-                          <td className=" py-4 whitespace-nowrap text-sm text-gray-500">
-                            {item?.branchName}
-                          </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500 text-left">
+                              {item?.branchName}
+                            </td>
 
-                          <td className=" py-4 whitespace-nowrap text-sm font-medium">
-                            <button
-                              type="button"
-                              className="text-green-600 hover:text-green-900 mr-2" // Adjust styles as needed
-                            >
-                              <FaEdit
-                                onClick={() => handleEdit(item.branch_id)}
-                              />
-                            </button>
-                          </td>
+                            <td className=" py-4 whitespace-nowrap text-sm font-medium text-right pr-10">
+                              <button
+                                type="button"
+                                className="text-green-600 hover:text-green-900 mr-2" // Adjust styles as needed
+                              >
+                                <FaEdit
+                                  onClick={() => handleEdit(item.branch_id)}
+                                />
+                              </button>
+                            </td>
 
-                          <td className=" py-4 whitespace-nowrap text-sm font-medium">
-                            <button
-                              type="button"
-                              className="text-blue-600 hover:text-blue-900"
-                            >
-                              <FaTrash onClick={() => handleDelete(index)} />
-                            </button>
+                            <td className=" py-4 whitespace-nowrap text-sm font-medium text-right pr-10">
+                              <button
+                                type="button"
+                                className="text-blue-600 hover:text-blue-900 mr-2"
+                              >
+                                <FaTrash onClick={() => handleDelete(index)} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan="4"
+                            className="py-4 text-center text-sm text-gray-500"
+                          >
+                            No branch selected
                           </td>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
                   </table>
                 </div>

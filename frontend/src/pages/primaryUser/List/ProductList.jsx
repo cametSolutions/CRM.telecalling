@@ -1,14 +1,12 @@
-import React, { useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import ProductListform from "../../../components/primaryUser/ProductListform"
 import UseFetch from "../../../hooks/useFetch"
 import toast from "react-hot-toast"
 function ProductList() {
   const [products, setProducts] = useState([])
   const [loggeduserBranch, setloggeduserBranch] = useState(null)
-console.log('H')
   const {
-    data: productData,
-    loading,
+    data: productData,loading,
     error
   } = UseFetch(
     loggeduserBranch &&
@@ -16,7 +14,6 @@ console.log('H')
         JSON.stringify(loggeduserBranch)
       )}`
   )
-console.log(loggeduserBranch)
   const { data: companyBranches } = UseFetch("/branch/getBranch")
 
   useEffect(() => {
@@ -67,7 +64,7 @@ console.log(loggeduserBranch)
 
   return (
     <div>
-      <ProductListform productlist={products} />
+      <ProductListform productlist={products} loading={loading}/>
     </div>
   )
 }

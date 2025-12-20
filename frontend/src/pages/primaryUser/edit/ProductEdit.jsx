@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 
 import { useLocation } from "react-router-dom"
 import UseFetch from "../../../hooks/useFetch"
@@ -10,16 +10,12 @@ function ProductEdit() {
   const [data, setData] = useState([])
   const navigate = useNavigate()
   const location = useLocation()
-  const { product, selected } = location.state
+  const { product, selected, index, item } = location.state
   const productId = product._id
- 
 
   const handleSubmit = async (productData, editData) => {
-
-
-   
     try {
-      const response = await api.post(
+      await api.post(
         `/product/productEdit?productid=${productId}`,
         { productData, editData },
         {
@@ -39,6 +35,8 @@ function ProductEdit() {
         handleEditedData={handleSubmit}
         product={product}
         selected={selected}
+        index={index}
+        item={item}
       />
     </div>
   )

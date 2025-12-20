@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { Link, NavLink, useNavigate } from "react-router-dom"
 import { toast } from "react-toastify"
+import api from "../api/api"
 import { FiMessageCircle } from "react-icons/fi"
 import { FiLogOut } from "react-icons/fi"
 import { FaChevronRight, FaChevronDown } from "react-icons/fa"
@@ -16,7 +17,7 @@ export default function StaffHeader() {
   const [masterMenuOpen, setMasterMenuOpen] = useState(false)
   const [reportsMenuOpen, setReportsMenuOpen] = useState(false)
   const [tasksMenuOpen, setTasksMenuOpen] = useState(false)
-
+  const [openSubmenu, setOpenSubmenu] = useState(null)
   const [activeSubmenu, setActiveSubmenu] = useState(null)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [inventoryMenuOpen, setInventoryMenuOpen] = useState(false)
@@ -64,17 +65,34 @@ export default function StaffHeader() {
       }, 50)
     }
   }
+  const logout = async () => {
+    try {
+      const res = await api.post("/auth/logout") // Call backend
 
-  const logout = () => {
-    // Clear the authentication token from local storage
-    localStorage.removeItem("authToken")
-    localStorage.removeItem("user")
-    localStorage.removeItem("timer")
-    localStorage.removeItem("wish")
-    // Redirect to login page
-    toast.success("Logout successfully")
-    navigate("/")
+      // ✅ Check if backend returned success
+      if (
+        res.status === 200 &&
+        res.data?.message === "Logged out successfully"
+      ) {
+        // Clear localStorage only after successful logout
+        localStorage.removeItem("authToken")
+        localStorage.removeItem("user")
+        localStorage.removeItem("timer")
+        localStorage.removeItem("wish")
+
+        toast.success("Logout successfully")
+
+        // Redirect to login page
+        navigate("/")
+      } else {
+        toast.error("Logout failed on server")
+      }
+    } catch (err) {
+      console.error("Logout API failed:", err)
+      toast.error("Logout failed, please try again")
+    }
   }
+
   const links = [
     { to: "/staff/dashBoard", label: "Dashboard" },
     { label: "Masters" },
@@ -95,15 +113,19 @@ export default function StaffHeader() {
       control: user?.permissions?.[0]?.Company ?? false
     },
     {
-      to: "/staff/masters/taskRegistration",
-      label: "Task",
-      control: user?.permissions?.[0]?.Task ?? false
-    },
-
-    {
       to: "/staff/masters/branch",
       label: "Branch",
       control: user?.permissions?.[0]?.Branch ?? false
+    },
+    {
+      to: "/staff/masters/department",
+      label: "Department",
+      control: user?.permissions?.[0]?.Department ?? false
+    },
+    {
+      label: "Product & Service",
+      hasChildren: true,
+      control: user?.permissions?.[0]?.ProductandServices ?? false
     },
     {
       to: "/staff/masters/customer",
@@ -111,11 +133,62 @@ export default function StaffHeader() {
       control: user?.permissions?.[0]?.Customer ?? false
     },
     {
+      label: "Employee",
+      hasChildren: true,
+      control: user?.permissions?.[0]?.Employee ?? false
+    },
+
+    {
+      to: "/staff/masters/leavemaster",
+      label: "Leavemaster",
+      control: user?.permissions?.[0]?.Leavemaster ?? false
+    },
+
+    {
+      to: "/staff/masters/partners",
+      label: "Partners",
+      control: user?.permissions?.[0]?.Partners ?? false
+    }
+  ]
+  console.log(user?.permissions[0])
+  const ProductandServices = [
+    {
+      to: "/staff/masters/product",
+      label: "Product",
+      control: user?.permissions?.[0]?.Product ?? false
+    },
+    {
+      to: "/staff/masters/servicesRegistration",
+      label: "Services",
+      control: user?.permissions?.[0]?.Services ?? false
+    },
+    {
+      to: "/staff/masters/inventory/brandRegistration",
+      label: "Brand",
+      control: user?.permissions?.[0]?.Brand ?? false
+    },
+    {
+      to: "/staff/masters/inventory/categoryRegistration",
+      label: "Category",
+      control: user?.permissions?.[0]?.Category ?? false
+    },
+    {
+      to: "/staff/masters/inventory/hsnlist",
+      label: "HSN",
+      control: user?.permissions?.[0]?.HSN ?? false
+    },
+    {
       to: "/staff/masters/callnotes",
       label: "Call Notes",
       control: user?.permissions?.[0]?.CallNotes ?? false
     },
-
+    {
+      to: "/staff/masters/taskRegistration",
+      label: "Task Level",
+      control: user?.permissions?.[0]?.TaskLevel ?? false
+    }
+  ]
+  const Employee = [
     {
       to: "/staff/masters/users-&-passwords",
       label: "users & Passwords",
@@ -127,35 +200,14 @@ export default function StaffHeader() {
       control: user?.permissions?.[0]?.MenuRights ?? false
     },
     {
-      to: "/staff/masters/voucherMaster",
-      label: "Voucher Master",
-      control: user?.permissions?.[0]?.voucherMaster ?? false
-    },
-    {
       to: "/staff/masters/target",
       label: "Target",
       control: user?.permissions?.[0]?.Target ?? false
     },
     {
-      to: "/staff/masters/product",
-      label: "Product",
-      control: user?.permissions?.[0]?.Product ?? false
-    },
-    {
-      label: "Inventory",
-      hasChildren: true,
-      control: user?.permissions?.[0]?.Inventory ?? false
-    },
-
-    {
-      to: "/staff/masters/partners",
-      label: "Partners",
-      control: user?.permissions?.[0]?.Partners ?? false
-    },
-    {
-      to: "/staff/masters/department",
-      label: "Department",
-      control: user?.permissions?.[0]?.Department ?? false
+      to: "/staff/masters/voucherMaster",
+      label: "Voucher Master",
+      control: user?.permissions?.[0]?.VoucherMaster ?? false
     }
   ]
   const leads = [
@@ -178,7 +230,7 @@ export default function StaffHeader() {
     },
     {
       to: "/staff/transaction/lead/leadTask",
-      label: "Task",
+      label: "Task Pending",
       control: true
     },
 
@@ -191,6 +243,11 @@ export default function StaffHeader() {
       to: "/staff/transaction/lead/taskAnalysis",
       label: "Task Analysis",
       control: user?.permissions?.[0]?.TaskAnalysis ?? false
+    },
+    {
+      to: "/staff/transaction/lead/collectionUpdate",
+      label: "Collection Update",
+      control: user?.permissions?.[0]?.CollectionUpdate
     }
     // {
     //   to: "/staff/transaction/lead/paymenthistory",
@@ -280,7 +337,7 @@ export default function StaffHeader() {
   ]
   return (
     <header className="sticky top-0 z-50 flex items-center md:justify-between bg-green-600 px-2 md:px-4 lg:px-6 h-16 md:h-18 lg:h-18">
-     {/* <header className="sticky top-0 z-40 flex items-center justify-between bg-white shadow-md px-2 md:px-4 lg:px-6 h-16 md:h-18 lg:h-20 overflow-hidden"> */}
+      {/* <header className="sticky top-0 z-40 flex items-center justify-between bg-white shadow-md px-2 md:px-4 lg:px-6 h-16 md:h-18 lg:h-20 overflow-hidden"> */}
       {/* Mobile menu button */}
       <div className="md:hidden flex justify-between py-2 md:px-4">
         <button
@@ -548,256 +605,288 @@ export default function StaffHeader() {
 
         {/* <span className="text-3xl font-bold text-green-600">MANAGEMENT</span> */}
       </div>
-      
-        <nav className="hidden lg:flex  items-center md:gap-2 lg:gap-8 text-white">
-          {links.map((link) => (
-            <div
-              key={link.to}
-              className="relative mb-2 "
-              onMouseEnter={() => {
-                if (
-                  link.label === "Masters" &&
-                  masters.some((master) => master.control)
-                ) {
-                  setMasterMenuOpen(true)
-                } else if (
-                  link.label === "Transactions" &&
-                  transactions.some((transaction) => transaction.control)
-                ) {
-                  setTransactionMenuOpen(true)
-                } else if (
-                  link.label === "Reports" &&
-                  reports.some((report) => report.control)
-                ) {
-                  setReportsMenuOpen(true)
-                } else if (
-                  link.label === "Task" &&
-                  tasks.some((task) => task.control)
-                ) {
-                  setTasksMenuOpen(true)
-                }
-              }}
-              onMouseLeave={() => {
-                if (
-                  link.label === "Masters" &&
-                  masters.some((master) => master.control)
-                ) {
-                  setMasterMenuOpen(false)
-                } else if (
-                  link.label === "Transactions" &&
-                  transactions.some((transaction) => transaction.control)
-                ) {
-                  setTransactionMenuOpen(false)
-                } else if (
-                  link.label === "Reports" &&
-                  reports.some((report) => report.control)
-                ) {
-                  setReportsMenuOpen(false)
-                } else if (
-                  link.label === "Task" &&
-                  tasks.some((task) => task.control)
-                ) {
-                  setTasksMenuOpen(false)
-                }
-              }}
+
+      <nav className="hidden lg:flex  items-center md:gap-3 lg:gap-8 xl:gap-8 text-white">
+        {links.map((link) => (
+          <div
+            key={link.to}
+            className="relative mb-2 "
+            onMouseEnter={() => {
+              if (
+                link.label === "Masters" &&
+                masters.some((master) => master.control)
+              ) {
+                setMasterMenuOpen(true)
+              } else if (
+                link.label === "Transactions" &&
+                transactions.some((transaction) => transaction.control)
+              ) {
+                setTransactionMenuOpen(true)
+              } else if (
+                link.label === "Reports" &&
+                reports.some((report) => report.control)
+              ) {
+                setReportsMenuOpen(true)
+              } else if (
+                link.label === "Task" &&
+                tasks.some((task) => task.control)
+              ) {
+                setTasksMenuOpen(true)
+              }
+            }}
+            onMouseLeave={() => {
+              if (
+                link.label === "Masters" &&
+                masters.some((master) => master.control)
+              ) {
+                setMasterMenuOpen(false)
+              } else if (
+                link.label === "Transactions" &&
+                transactions.some((transaction) => transaction.control)
+              ) {
+                setTransactionMenuOpen(false)
+              } else if (
+                link.label === "Reports" &&
+                reports.some((report) => report.control)
+              ) {
+                setReportsMenuOpen(false)
+              } else if (
+                link.label === "Task" &&
+                tasks.some((task) => task.control)
+              ) {
+                setTasksMenuOpen(false)
+              }
+            }}
+          >
+            <NavLink
+              to={link.to}
+              className={({ isActive }) =>
+                isActive
+                  ? "text-primary text-xl leading-7 font-bold"
+                  : "text-textColor text-xl leading-7 hover:text-primary"
+              }
             >
-              <NavLink
-                to={link.to}
-                className={({ isActive }) =>
-                  isActive
-                    ? "text-primary text-xl leading-7 font-bold"
-                    : "text-textColor text-xl leading-7 hover:text-primary"
-                }
-              >
-                {link.label}
-              </NavLink>
+              {link.label}
+            </NavLink>
 
-              {/* Masters dropdown */}
-              {link.label === "Masters" &&
-                masterMenuOpen &&
-                masters.some((master) => master.control) && (
-                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md z-50 ">
-                    {masters.map(
-                      (master) =>
-                        master.control && (
-                          <div
-                            key={master.to}
-                            className="relative mb-2"
-                            onMouseEnter={() => {
-                              if (master.hasChildren) setInventoryMenuOpen(true)
-                            }}
-                            onMouseLeave={() => {
-                              if (master.hasChildren)
-                                setInventoryMenuOpen(false)
-                            }}
+            {/* Masters dropdown */}
+            {link.label === "Masters" &&
+              masterMenuOpen &&
+              masters.some((master) => master.control) && (
+                <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md z-50 ">
+                  {masters.map(
+                    (master) =>
+                      master.control && (
+                        <div
+                          key={master.to}
+                          className="relative mb-2"
+                          onMouseEnter={() => {
+                            if (master.hasChildren) setOpenSubmenu(master.label)
+                          }}
+                          onMouseLeave={() => {
+                            if (master.hasChildren) setOpenSubmenu(null)
+                          }}
+                        >
+                          <Link
+                            to={master.to}
+                            className="flex justify-between px-4 py-1 text-gray-600 text-sm hover:bg-gray-100"
                           >
-                            <Link
-                              to={master.to}
-                              className="flex justify-between px-4 py-1 text-gray-600 text-sm hover:bg-gray-100"
-                            >
-                              {master.label}
-                              {master.hasChildren && <FaChevronRight />}
-                            </Link>
+                            {master.label}
+                            {master.hasChildren && <FaChevronRight />}
+                          </Link>
 
-                            {/* Inventory dropdown */}
-                            {master.hasChildren && inventoryMenuOpen && (
-                              <div
-                                className="absolute top-0 left-full w-48 bg-white border border-gray-200 shadow-lg rounded-md"
-                                onMouseEnter={() => setInventoryMenuOpen(true)}
-                                onMouseLeave={() => setInventoryMenuOpen(false)}
-                              >
-                                {inventorys.map((inventory) => (
-                                  <Link
-                                    key={inventory.to}
-                                    to={inventory.to}
-                                    className="block px-4 py-2 text-gray-600 text-sm hover:bg-gray-100"
-                                  >
-                                    {inventory.label}
-                                  </Link>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )
-                    )}
-                  </div>
-                )}
-              {link.label === "Transactions" &&
-                transactionMenuOpen &&
-                transactions.some((transaction) => transaction.control) && (
-                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 shadow-lg block rounded-md z-50">
-                    {transactions.map(
-                      (transaction) =>
-                        transaction.control && (
-                          <div
-                            key={transaction.to}
-                            className="relative mb-2"
-                            onMouseEnter={() => {
-                              if (
-                                transaction.hasChildren &&
-                                transaction.label === "Lead"
-                              ) {
-                                setLeadMenuOpen(true)
-                              }
-                            }}
-                            onMouseLeave={() => {
-                              if (
-                                transaction.hasChildren &&
-                                transaction.label === "Lead"
-                              ) {
-                                setLeadMenuOpen(false)
-                              }
-                            }}
-                          >
-                            <Link
-                              to={transaction.to}
-                              className="flex justify-between px-4 py-1 text-gray-600 text-sm hover:bg-gray-100 items-center"
+                          {/* {master.hasChildren && inventoryMenuOpen && (
+                            <div
+                              className="absolute top-0 left-full w-48 bg-white border border-gray-200 shadow-lg rounded-md"
+                              onMouseEnter={() => setInventoryMenuOpen(true)}
+                              onMouseLeave={() => setInventoryMenuOpen(false)}
                             >
-                              {transaction.label}
-                              {transaction.hasChildren && <FaChevronRight />}
-                            </Link>
-                            {/*Lead dropdown*/}
-                            {transaction.hasChildren && leadMenuOpen && (
-                              <div
-                                className="absolute top-0 left-full w-48 bg-white border border-gray-200 shadow-lg rounded-md"
-                                onMouseEnter={() => setLeadMenuOpen(true)}
-                                onMouseLeave={() => setLeadMenuOpen(false)}
-                              >
-                                {leads.map(
-                                  (lead) =>
-                                    lead.control && (
+                              {inventorys.map((inventory) => (
+                                <Link
+                                  key={inventory.to}
+                                  to={inventory.to}
+                                  className="block px-4 py-2 text-gray-600 text-sm hover:bg-gray-100"
+                                >
+                                  {inventory.label}
+                                </Link>
+                              ))}
+                            </div>
+                          )} */}
+                          {master.hasChildren &&
+                            openSubmenu === "Employee" &&
+                            master.label === "Employee" && (
+                              <div className="absolute top-0 left-full w-48 bg-white border border-gray-200 shadow-lg rounded-md">
+                                {Employee.map(
+                                  (employee) =>
+                                    employee.control && (
                                       <Link
-                                        key={lead.to}
-                                        to={lead.to}
+                                        key={employee.to}
+                                        to={employee.to}
                                         className="block px-4 py-2 text-gray-600 text-sm hover:bg-gray-100"
                                       >
-                                        {lead.label}
+                                        {employee.label}
                                       </Link>
                                     )
                                 )}
                               </div>
                             )}
-                          </div>
-                        )
-                    )}
-                  </div>
-                )}
 
-              {link.label === "Reports" &&
-                reportsMenuOpen &&
-                reports.some((report) => report.control) && (
-                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md z-50">
-                    {reports.map(
-                      (report) =>
-                        report.control && (
+                          {master.hasChildren &&
+                            openSubmenu === "Product & Service" &&
+                            master.label === "Product & Service" && (
+                              <div className="absolute top-0 left-full w-48 bg-white border border-gray-200 shadow-lg rounded-md">
+                                {ProductandServices.map(
+                                  (product) =>
+                                    product.control && (
+                                      <Link
+                                        key={product.to}
+                                        to={product.to}
+                                        className="block px-4 py-2 text-gray-600 text-sm hover:bg-gray-100"
+                                      >
+                                        {product.label}
+                                      </Link>
+                                    )
+                                )}
+                              </div>
+                            )}
+                        </div>
+                      )
+                  )}
+                </div>
+              )}
+            {link.label === "Transactions" &&
+              transactionMenuOpen &&
+              transactions.some((transaction) => transaction.control) && (
+                <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 shadow-lg block rounded-md z-50">
+                  {transactions.map(
+                    (transaction) =>
+                      transaction.control && (
+                        <div
+                          key={transaction.to}
+                          className="relative mb-2"
+                          onMouseEnter={() => {
+                            if (
+                              transaction.hasChildren &&
+                              transaction.label === "Lead"
+                            ) {
+                              setLeadMenuOpen(true)
+                            }
+                          }}
+                          onMouseLeave={() => {
+                            if (
+                              transaction.hasChildren &&
+                              transaction.label === "Lead"
+                            ) {
+                              setLeadMenuOpen(false)
+                            }
+                          }}
+                        >
                           <Link
-                            key={report.to}
-                            to={report.to}
-                            className=" px-4 py-2 text-gray-600 text-sm hover:bg-gray-100"
+                            to={transaction.to}
+                            className="flex justify-between px-4 py-1 text-gray-600 text-sm hover:bg-gray-100 items-center"
                           >
-                            {report.label}
+                            {transaction.label}
+                            {transaction.hasChildren && <FaChevronRight />}
                           </Link>
-                        )
-                    )}
-                  </div>
-                )}
-              {link.label === "Task" &&
-                tasksMenuOpen &&
-                tasks.some((task) => task.control) && (
-                  <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md z-50">
-                    {tasks.map(
-                      (task) =>
-                        task.control && (
-                          <Link
-                            key={task.to}
-                            to={task.to}
-                            className=" px-4 py-2 text-gray-600 text-sm hover:bg-gray-100"
-                          >
-                            {task.label}
-                          </Link>
-                        )
-                    )}
-                  </div>
-                )}
-            </div>
-          ))}
-        </nav>
-      
+                          {/*Lead dropdown*/}
+                          {transaction.hasChildren && leadMenuOpen && (
+                            <div
+                              className="absolute top-0 left-full w-48 bg-white border border-gray-200 shadow-lg rounded-md"
+                              onMouseEnter={() => setLeadMenuOpen(true)}
+                              onMouseLeave={() => setLeadMenuOpen(false)}
+                            >
+                              {leads.map(
+                                (lead) =>
+                                  lead.control && (
+                                    <Link
+                                      key={lead.to}
+                                      to={lead.to}
+                                      className="block px-4 py-2 text-gray-600 text-sm hover:bg-gray-100"
+                                    >
+                                      {lead.label}
+                                    </Link>
+                                  )
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )
+                  )}
+                </div>
+              )}
 
-      
-        <div className="hidden md:flex items-center flex-shrink-0 space-x-2">
-          {user?.profileUrl && user?.profileUrl?.length > 0 ? (
-            <img
-              src={user?.profileUrl}
-              // alt={`${user?.name}'s profile`}
-              onMouseEnter={() => setProfileMenuOpen(true)}
-              onMouseLeave={() => setProfileMenuOpen(false)}
-              className="w-10 h-10 rounded-full border-2" // Add styling as needed
-            />
-          ) : (
-            <FaUserCircle
-              className=" text-white text-3xl hover:text-yellow-200 cursor-pointer"
-              onMouseEnter={() => setProfileMenuOpen(true)}
-              onMouseLeave={() => setProfileMenuOpen(false)}
-            />
-          )}
-          <span
+            {link.label === "Reports" &&
+              reportsMenuOpen &&
+              reports.some((report) => report.control) && (
+                <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md z-50">
+                  {reports.map(
+                    (report) =>
+                      report.control && (
+                        <Link
+                          key={report.to}
+                          to={report.to}
+                          className=" px-4 py-2 text-gray-600 text-sm hover:bg-gray-100"
+                        >
+                          {report.label}
+                        </Link>
+                      )
+                  )}
+                </div>
+              )}
+            {link.label === "Task" &&
+              tasksMenuOpen &&
+              tasks.some((task) => task.control) && (
+                <div className="absolute top-full left-0 mt-0 w-48 bg-white border border-gray-200 grid grid-cols-1 shadow-lg rounded-md z-50">
+                  {tasks.map(
+                    (task) =>
+                      task.control && (
+                        <Link
+                          key={task.to}
+                          to={task.to}
+                          className=" px-4 py-2 text-gray-600 text-sm hover:bg-gray-100"
+                        >
+                          {task.label}
+                        </Link>
+                      )
+                  )}
+                </div>
+              )}
+          </div>
+        ))}
+      </nav>
+
+      <div className="hidden md:flex items-center flex-shrink-0 space-x-2">
+        {user?.profileUrl && user?.profileUrl?.length > 0 ? (
+          <img
+            src={user?.profileUrl}
+            // alt={`${user?.name}'s profile`}
             onMouseEnter={() => setProfileMenuOpen(true)}
             onMouseLeave={() => setProfileMenuOpen(false)}
-            className="text-white mx-4 rounded-md cursor-pointer hover:text-yellow-200"
-          >
-            {user?.name || "Profile"}
-          </span>
+            className="w-10 h-10 rounded-full border-2" // Add styling as needed
+          />
+        ) : (
+          <FaUserCircle
+            className=" text-white text-3xl hover:text-yellow-200 cursor-pointer"
+            onMouseEnter={() => setProfileMenuOpen(true)}
+            onMouseLeave={() => setProfileMenuOpen(false)}
+          />
+        )}
+        <span
+          onMouseEnter={() => setProfileMenuOpen(true)}
+          onMouseLeave={() => setProfileMenuOpen(false)}
+          className="text-white mx-4 rounded-md cursor-pointer hover:text-yellow-200"
+        >
+          {user?.name || "Profile"}
+        </span>
 
-          <div
-            onClick={logout}
-            className="bg-white text-green-600 border border-green-600 px-3 py-1 flex  items-center gap-1  rounded hover:cursor-pointer hover:scale-110  hover:shadow-lg shadow-xl transform transition-transform duration-300"
-          >
-            <FiLogOut className="text-red-500" size={20} />
-            <span className="text-red-500 hover:text-red-600">Logout</span>
-          </div>
+        <div
+          onClick={logout}
+          className="bg-white text-green-600 border border-green-600 px-3 py-1 flex  items-center gap-1  rounded hover:cursor-pointer hover:scale-110  hover:shadow-lg shadow-xl transform transition-transform duration-300"
+        >
+          <FiLogOut className="text-red-500" size={20} />
+          <span className="text-red-500 hover:text-red-600">Logout</span>
         </div>
-      
+      </div>
     </header>
   )
 }

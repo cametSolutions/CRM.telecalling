@@ -1,15 +1,17 @@
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import api from "../../../api/api"
-import { useNavigate } from "react-router-dom"
 import { useDispatch } from "react-redux"
+import { useNavigate } from "react-router-dom"
 import { FaSpinner } from "react-icons/fa"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons"
 import { toast } from "react-toastify"
 import { setLocalStorageItem } from "../../../helper/localstorage"
-import { setBranches } from "../../../../slices/companyBranchSlice.js"
-import UseFetch from "../../../hooks/useFetch"
+import {
+  setBranches,
+  loggeduserBranches
+} from "../../../../slices/companyBranchSlice.js"
 const Login = () => {
   const [passwordVisible, setPasswordVisible] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -20,7 +22,6 @@ const Login = () => {
     formState: { errors }
   } = useForm()
   const navigate = useNavigate()
-  const { data: branches } = UseFetch("/branch/getBranch")
 
   const onSubmit = async (data) => {
     try {
@@ -28,35 +29,41 @@ const Login = () => {
       const response = await api.post(`/auth/login`, data)
       const datas = await response.data
       const { token, User } = datas
-      const allcompanybranches = branches.map((b) => b._id)
       if (response.status === 200) {
-        setLocalStorageItem("authToken", token)
-        setLocalStorageItem("user", User)
+        const res = await api.get("/branch/getBranch")
+        if (res.status === 200) {
+          const allcompanybranches = res.data?.data?.map((b) => b._id) || []
+          const loggeduserbranches = User.selected?.map((a) => a.branch_id)
 
-        // Store in localStorage
-        setLocalStorageItem("companybranches", allcompanybranches)
-        dispatch(setBranches(allcompanybranches)) //companies all branches
-        setTimeout(() => {
-          if (User.role === "Admin") {
-            setLoading(false)
-            navigate("/admin/dashBoard")
-          } else if (User.role === "Staff" || User.role === "Manager") {
-            setLoading(false)
-            navigate("/staff/dashBoard")
-          }
-        }, 1000)
-        toast.success(response.data.message, {
-          icon: "🚀",
-          style: {
-            backgroundColor: "#fff", // White background
-            color: "#000", // Black text for better contrast
-            boxShadow:
-              "0px 4px 10px rgba(0, 0, 0, 0.3), 0px 1px 3px rgba(0, 0, 0, 0.1)", // 3D shadow effect
-            borderRadius: "8px", // Rounded corners for a polished look
-            padding: "10px 15px", // Comfortable padding
-            fontWeight: "bold" // Bold text for prominence
-          }
-        })
+          setLocalStorageItem("loggeduserbranches", loggeduserbranches)
+          setLocalStorageItem("companybranches", allcompanybranches)
+          dispatch(loggeduserBranches(loggeduserbranches))
+          dispatch(setBranches(allcompanybranches))
+
+          toast.success(response.data.message, {
+            icon: "🚀",
+            style: {
+              backgroundColor: "#fff", // White background
+              color: "#000", // Black text for better contrast
+              boxShadow:
+                "0px 4px 10px rgba(0, 0, 0, 0.3), 0px 1px 3px rgba(0, 0, 0, 0.1)", // 3D shadow effect
+              borderRadius: "8px", // Rounded corners for a polished look
+              padding: "10px 15px", // Comfortable padding
+              fontWeight: "bold" // Bold text for prominence
+            }
+          })
+          localStorage.setItem("authToken", token)
+          localStorage.setItem("user", JSON.stringify(User))
+          setTimeout(() => {
+            if (User.role === "Admin") {
+              setLoading(false)
+              navigate("/admin/dashBoard")
+            } else if (User.role === "Staff" || User.role === "Manager") {
+              setLoading(false)
+              navigate("/staff/dashBoard")
+            }
+          }, 1000)
+        }
       }
     } catch (error) {
       console.log(error)

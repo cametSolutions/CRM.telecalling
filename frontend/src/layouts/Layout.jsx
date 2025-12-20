@@ -19,7 +19,6 @@ const Layout = () => {
       setHeaderHeight(headerRef.current.offsetHeight)
     }
   }, [location.pathname]) // Update height on route change
- console.log(headerHeight)
   return (
     <div className="h-screen flex flex-col">
       <div ref={headerRef} className="sticky top-0 z-50 flex-shrink-0">

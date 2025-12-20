@@ -6,7 +6,6 @@ const excelDateToFormatNumber = (value) => {
   // Check if the value is a serial (number) or a string
   if (typeof value === "number") {
     // console.log("number", value)
-    // console.log
     // const date1900 = new Date(Date.UTC(1900, 0, 1))
     // const jsDate = new Date(date1900.getTime() + (value - 2) * 86400000) // Subtract 2 for 1900 leap year bug
     // const year = jsDate.getUTCFullYear()

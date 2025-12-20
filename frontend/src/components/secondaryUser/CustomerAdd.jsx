@@ -15,7 +15,6 @@ const CustomerAdd = ({
   handleEditedData,
   customer
 }) => {
-  console.log(customer)
   const {
     register,
     handleSubmit,
@@ -26,6 +25,7 @@ const CustomerAdd = ({
     getValues,
     setValue,
     watch,
+
     formState: { errors, isSubmitting }
   } = useForm({
     defaultValues: {
@@ -110,7 +110,9 @@ const CustomerAdd = ({
   const { data: licensenumber } = UseFetch("/customer/getLicensenumber")
   const { data: partners } = UseFetch("/customer/getallpartners")
   const { data: allcompanyBranches } = UseFetch("/branch/getBranch")
-  const loggeduserBranch = useSelector((state) => state.companyBranch.branches)
+  const loggeduserBranch = useSelector(
+    (state) => state.companyBranch.loggeduserbranches
+  )
 
   const { data: productData, error: productError } = UseFetch(
     loggeduserBranch &&
@@ -118,6 +120,7 @@ const CustomerAdd = ({
         JSON.stringify(loggeduserBranch)
       )}`
   )
+
   const navigate = useNavigate()
   useEffect(() => {
     if (allcompanyBranches && allcompanyBranches.length) {
@@ -131,13 +134,10 @@ const CustomerAdd = ({
       setShowTable(true)
       seteditState(true)
       setEditIndex(customer.index ?? 0)
-      console.log(customer)
       // Set tableObject using the selected index
       const selectedIndex = customer.index ?? 0
       const selectedItem = customer.selected?.[selectedIndex]
-      // setselectedproductId(selectedItem?.product_id)
-      console.log(selectedItem)
-      //
+      
       // Reset the form
       reset({
         customerName: customer?.customerName,
@@ -156,6 +156,7 @@ const CustomerAdd = ({
         registrationType: customer.registrationType,
 
         licensenumber: selectedItem?.licensenumber,
+        softwareTrade: selectedItem?.softwareTrade,
         noofusers: selectedItem?.noofusers,
         version: selectedItem?.version,
         customerAddDate: selectedItem?.customerAddDate,
@@ -239,12 +240,8 @@ const CustomerAdd = ({
         value: selectedItem.product_id
       }
       handleProductChange(editedproductoption)
-      console.log("H")
     }
-    console.log(tableData)
   }, [tableData, tableObject])
-  console.log(tableObject)
-  console.log(tableData)
   // First effect: handles product + sets value
   useEffect(() => {
     if (productData) {
@@ -257,7 +254,6 @@ const CustomerAdd = ({
       )
     }
   }, [productData, reset, customer, partners])
-  console.log(tableObject)
   // Second effect: run company handler after product is set
 
   useEffect(() => {
@@ -362,13 +358,10 @@ const CustomerAdd = ({
       setTableData((prev) => [...prev, tableObject])
     }
   }
-  console.log("h")
   useEffect(() => {
     if (selectedproductid) {
-      console.log(selectedproductid)
       const options = getCompaniesForProduct(selectedproductid) // mapping function
       setCompanyOptions(options)
-      console.log(options)
       if (options.length > 0) {
         const firstCompany = options[0]
         setSelectedCompanyId(firstCompany) // auto select company
@@ -403,10 +396,8 @@ const CustomerAdd = ({
         selectedproductid,
         selectedCompanyId.value
       )
-      console.log(branchOptions)
       setBranchOptions(branchOptions)
       setSelectedBranchId(branchOptions[0])
-      console.log(selectedCompanyId)
     }
   }, [selectedCompanyId])
   useEffect(() => {
@@ -417,7 +408,6 @@ const CustomerAdd = ({
         branch_id: selectedbranchId.value,
         branchName: selectedbranchId.label
       }))
-      console.log(selectedbranchId)
     }
   }, [selectedbranchId])
 
@@ -515,10 +505,8 @@ const CustomerAdd = ({
       setEditIndex(index)
     }
   }
-  console.log("H")
   const handleProductChange = (selectedOption) => {
     setValue("productName", selectedOption)
-    console.log(selectedOption)
     setselectedproductId(selectedOption.value)
     setShowTable(true)
     setTableObject((prev) => ({
@@ -531,10 +519,8 @@ const CustomerAdd = ({
   const handleCompanyChange = (selectedCompanyOption) => {
     setSelectedCompanyId(selectedCompanyOption.value)
   }
-  console.log(tableObject)
   const handleBranchChange = (selectedBranchOption) => {
     setValue("branchName", selectedBranchOption)
-    console.log(selectedBranchOption)
     setTableObject((prev) => ({
       ...prev,
       branch_id: selectedBranchOption.value,
@@ -575,11 +561,30 @@ const CustomerAdd = ({
     })
     seteditState(false)
     setEditIndex(null)
+    reset({
+      productName: "",
+      companyName: "",
+      branchName: "",
+      licensenumber: "",
+      softwareTrade: "",
+      noofusers: "",
+      version: "",
+      customerAddDate: "",
+      amcstartDate: "",
+      amcendDate: "",
+      amcAmount: "",
+      licenseExpiryDate: "",
+      productAmount: "",
+      productamountDescription: "",
+      tvuexpiryDate: "",
+      tvuAmount: "",
+      tvuamountDescription: "",
+      
+      reasonofStatus: ""
+    })
   }
   const getCompaniesForProduct = (productId) => {
-    console.log(productId)
     const product = productData.find((item) => item._id === productId)
-    console.log(product)
     if (!product) return []
 
     const seen = new Set()
@@ -1472,13 +1477,13 @@ const CustomerAdd = ({
                       {...register("isActive", {
                         required: "Status is Required"
                       })}
-                      onChange={
-                        (e) =>
-                          setTableObject({
-                            ...tableObject,
-                            isActive: e.target.value
-                          }) // Update state on change
-                      }
+                      onChange={(e) => {
+                        setTableObject({
+                          ...tableObject,
+                          isActive: e.target.value
+                        }) // Update state on
+                        clearErrors("isActive") // ✅ clears the error instantly when a value is selected
+                      }}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
                     >
                       <option>select a status</option>
