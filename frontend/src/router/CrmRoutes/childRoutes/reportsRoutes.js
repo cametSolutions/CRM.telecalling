@@ -1,8 +1,11 @@
-import ComingSoon from "../../../pages/common/ComingSoon"
-import Summary from "../../../pages/primaryUser/List/Summary"
-import ExpiredCustomer from "../../../pages/primaryUser/List/ExpiredCustomer"
-import AccountSearch from "../../../pages/primaryUser/List/AccountSearch"
-import LeaveSummary from "../../../components/primaryUser/LeaveSummary"
+import ComingSoon from "../../../pages/common/ComingSoon";
+import Summary from "../../../pages/primaryUser/List/Summary";
+import ExpiredCustomer from "../../../pages/primaryUser/List/ExpiredCustomer";
+import AccountSearch from "../../../pages/primaryUser/List/AccountSearch";
+import LeaveSummary from "../../../components/primaryUser/LeaveSummary";
+import ReportTable from "../../../components/primaryUser/ReportTable";
+import ProductWiseleadReport from "../../../pages/primaryUser/List/ProductWiseleadReport";
+import FollowupSummaryDashboard from "../../../pages/primaryUser/List/FollowupSummaryDashboard";
 const reportsRoutes = [
   { path: "/admin/reports/summary", component: Summary },
 
@@ -12,7 +15,15 @@ const reportsRoutes = [
 
   { path: "/admin/reports/account-search", component: AccountSearch },
 
-  { path: "/admin/reports/leave-summary", component: LeaveSummary }
-]
+  { path: "/admin/reports/leave-summary", component: LeaveSummary },
+  {
+    path: "/admin/reports/product-wise-report",
+    component: ProductWiseleadReport,
+  },
+  {
+    path: "/admin/reports/follow-up-summaryReport",
+    component: FollowupSummaryDashboard,
+  },
+];
 
-export default reportsRoutes
+export default reportsRoutes;
