@@ -16,6 +16,8 @@ const leadSchema = new mongoose.Schema(
     leadConfirmed: { type: Boolean, default: false },
     //to show closed lead list 
     leadClosed: { type: Boolean, default: false },
+    leadClosedDate:{type:Date},
+    leadLostDate:{type:Date},
     //may some leads are not confirmed may customers leaves from leads so to check the leads is lost or confirmed
     leadLost: { type: Boolean, default: false },
     //leads are gets from branchwise so to know the leads are in which branch

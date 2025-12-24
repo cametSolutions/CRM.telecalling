@@ -399,11 +399,26 @@ export const UpdateCollection = async (req, res) => {
       bankRemarks: formData?.bankRemarks || "",
       remarks: formData?.remarks,
     };
+    let activity=null
+    if(allocationType){
+      activity={
+         submissionDate:new Date(),
+      submittedUser:formData.receivedBy,
+      submissiondoneByModel:model,
+      remarks:formData?.remarks,
+      taskBy:"leadClosed",
+
+
+
+      }
+     
+
+    }
 
     const updateLead = await LeadMaster.findByIdAndUpdate(
       leadDocId,
       {
-        $push: { paymentHistory: paymentRecord },
+        $push: { paymentHistory: paymentRecord,activityLog:activity },
         $set: {
           totalPaidAmount: newTotalPaid,
           partner: formData.partner,
@@ -414,6 +429,7 @@ export const UpdateCollection = async (req, res) => {
             leadClosedModel: formData?.receivedModel,
             reallocatedTo: false,
             allocationType: allocationType,
+            leadClosedDate:new Date()
           }),
         },
       },
