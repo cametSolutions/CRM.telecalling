@@ -1,111 +1,113 @@
-import { useState, useEffect } from "react"
-import { CiEdit } from "react-icons/ci"
-import { PropagateLoader } from "react-spinners"
-import { useNavigate } from "react-router-dom"
-import api from "../../../api/api"
-import DeleteAlert from "../../../components/common/DeleteAlert"
+import { useState, useEffect } from "react";
+import { CiEdit } from "react-icons/ci";
+import { PropagateLoader } from "react-spinners";
+import { useNavigate } from "react-router-dom";
+import api from "../../../api/api";
+import DeleteAlert from "../../../components/common/DeleteAlert";
 import {
   FaUserPlus,
   FaSearch,
   FaRegFileExcel,
   FaFilePdf,
-  FaPrint
-} from "react-icons/fa"
-import { Link } from "react-router-dom"
-import debounce from "lodash.debounce"
-import UseFetch from "../../../hooks/useFetch"
-import { getLocalStorageItem } from "../../../helper/localstorage"
+  FaPrint,
+} from "react-icons/fa";
+import { Link } from "react-router-dom";
+import debounce from "lodash.debounce";
+import UseFetch from "../../../hooks/useFetch";
+import { getLocalStorageItem } from "../../../helper/localstorage";
 
 const UserListform = () => {
-  const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState("")
-  const [users, setUser] = useState([])
-  const [allusers, setallusers] = useState([])
-  const [selectedBranch, setselectedBranch] = useState(null)
-  const [loggeduser, setloggeduser] = useState(null)
-  const { data, loading } = UseFetch("/auth/getallUsers")
+  const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [users, setUser] = useState([]);
+  const [allusers, setallusers] = useState([]);
+  const [selectedBranch, setselectedBranch] = useState(null);
+  const [loggeduser, setloggeduser] = useState(null);
+  const { data, loading } = UseFetch("/auth/getallUsers");
   useEffect(() => {
     if (data) {
-      const logged = getLocalStorageItem("user")
-      const { allusers } = data
+      const logged = getLocalStorageItem("user");
+      const { allusers } = data;
 
-      setallusers(allusers)
+      setallusers(allusers);
       const filtereusers = allusers.filter((user) =>
         user.selected
           .map((branch) => branch.branch_id)
           .includes(logged.selected[0].branch_id)
-      )
+      );
 
-      setUser(sortByVerified(filtereusers))
-      setloggeduser(logged)
-      setselectedBranch(logged.selected[0].branch_id)
+      setUser(sortByVerified(filtereusers));
+      setloggeduser(logged);
+      setselectedBranch(logged.selected[0].branch_id);
     }
-  }, [data])
+  }, [data]);
   const sortByVerified = (arr) => {
-    return arr.sort((a, b) => (b.isVerified === true) - (a.isVerified === true))
-  }
+    return arr.sort(
+      (a, b) => (b.isVerified === true) - (a.isVerified === true)
+    );
+  };
 
   const handleSearch = debounce((query) => {
-    const { allusers } = data
-    const input = query.trim()
-    setSearchQuery(input)
+    const { allusers } = data;
+    const input = query.trim();
+    setSearchQuery(input);
 
-    const lowerCaseQuery = input.toLowerCase()
+    const lowerCaseQuery = input.toLowerCase();
 
     const filteredName = allusers.filter((user) =>
       user.name.toLowerCase().startsWith(lowerCaseQuery)
-    )
+    );
     const filteredMobile = allusers.filter((user) =>
       user.mobile.toString().toLowerCase().startsWith(lowerCaseQuery)
-    )
+    );
 
     if (filteredName.length > 0) {
       const filtereusersbranchwise = filteredName.filter((user) =>
         user.selected.map((branch) => branch.branch_id).includes(selectedBranch)
-      )
+      );
 
-      setUser(sortByVerified(filtereusersbranchwise))
+      setUser(sortByVerified(filtereusersbranchwise));
     } else if (filteredMobile.length > 0) {
       const filtereusersbranchwise = filteredMobile.filter((user) =>
         user.selected.map((branch) => branch.branch_id).includes(selectedBranch)
-      )
+      );
 
-      setUser(sortByVerified(filtereusersbranchwise))
+      setUser(sortByVerified(filtereusersbranchwise));
     }
 
     // Reset to initial count after filtering
-  }, 300)
+  }, 300);
   const handlebranchChange = (e) => {
-    const [id, label] = e.target.value.split("||")
-    setselectedBranch(id)
+    const [id, label] = e.target.value.split("||");
+    setselectedBranch(id);
     if (searchQuery) {
       const filteredbyquery = allusers.filter((user) =>
         user.name.toLowerCase().startsWith(searchQuery.toLocaleLowerCase())
-      )
+      );
       const filtereusersbranchwise = filteredbyquery.filter((user) =>
         user.selected.map((branch) => branch.branch_id).includes(id)
-      )
-      setUser(sortByVerified(filtereusersbranchwise))
+      );
+      setUser(sortByVerified(filtereusersbranchwise));
     } else {
       const filtereusersbranchwise = allusers.filter((user) =>
         user.selected.map((branch) => branch.branch_id).includes(id)
-      )
-      setUser(sortByVerified(filtereusersbranchwise))
+      );
+      setUser(sortByVerified(filtereusersbranchwise));
     }
-  }
+  };
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/auth/userDelete?id=${id}`)
+      await api.delete(`/auth/userDelete?id=${id}`);
 
       // Remove the deleted item from the items array
       setUser((prevItems) =>
         sortByVerified(prevItems.filter((item) => item._id !== id))
-      )
+      );
     } catch (error) {
-      console.error("Failed to delete item", error)
+      console.error("Failed to delete item", error);
       // toast.error("Failed to delete item. Please try again.")
     }
-  }
+  };
   return (
     <div className="h-full flex flex-col bg-gray-50">
       {/* Header Section - Sticky */}
@@ -278,14 +280,15 @@ const UserListform = () => {
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                              {user?.designation}
+                              {user?.department?.department}
                             </span>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                              {user?.department?.department}
+                              {user?.designation}
                             </span>
                           </td>
+
                           <td className="px-4 py-4 whitespace-nowrap">
                             <span
                               className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -325,15 +328,15 @@ const UserListform = () => {
                                 onClick={() => {
                                   if (loggeduser?.role === "Admin") {
                                     navigate("/admin/masters/userEdit", {
-                                      state: { user, selected: item }
-                                    })
+                                      state: { user, selected: item },
+                                    });
                                   } else if (
                                     loggeduser?.role === "Staff" ||
                                     loggeduser?.role === "Manager"
                                   ) {
                                     navigate("/staff/masters/userEdit", {
-                                      state: { user, selected: item }
-                                    })
+                                      state: { user, selected: item },
+                                    });
                                   }
                                 }}
                                 className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors duration-200"
@@ -348,7 +351,7 @@ const UserListform = () => {
                             </div>
                           </td>
                         </tr>
-                      ))
+                      ));
                     } else {
                       return (
                         <tr
@@ -410,12 +413,12 @@ const UserListform = () => {
                                 onClick={() => {
                                   if (loggeduser?.role === "Admin") {
                                     navigate("/admin/masters/userEdit", {
-                                      state: { user }
-                                    })
+                                      state: { user },
+                                    });
                                   } else if (loggeduser?.role === "Staff") {
                                     navigate("/staff/masters/userEdit", {
-                                      state: { user }
-                                    })
+                                      state: { user },
+                                    });
                                   }
                                 }}
                                 className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors duration-200"
@@ -430,7 +433,7 @@ const UserListform = () => {
                             </div>
                           </td>
                         </tr>
-                      )
+                      );
                     }
                   })
                 ) : (
@@ -459,7 +462,7 @@ const UserListform = () => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default UserListform
+export default UserListform;

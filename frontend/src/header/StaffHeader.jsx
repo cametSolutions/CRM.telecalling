@@ -150,6 +150,7 @@ export default function StaffHeader() {
       control: user?.permissions?.[0]?.Partners ?? false
     }
   ]
+  console.log(user?.permissions[0])
   const ProductandServices = [
     {
       to: "/staff/masters/product",
@@ -174,7 +175,7 @@ export default function StaffHeader() {
     {
       to: "/staff/masters/inventory/hsnlist",
       label: "HSN",
-      control: user?.permissions?.[0]?.Hsn ?? false
+      control: user?.permissions?.[0]?.HSN ?? false
     },
     {
       to: "/staff/masters/callnotes",

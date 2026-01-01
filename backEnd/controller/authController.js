@@ -1,14 +1,11 @@
 import models from "../model/auth/authSchema.js"
 import Leavemaster from "../model/secondaryUser/leavemasterSchema.js"
 import Customer from "../model/secondaryUser/customerSchema.js"
-import QuarterlyAchiever from "../model/primaryUser/quarterlyAchieversSchema.js"
-import YearlyAchiever from "../model/primaryUser/yearylyAchieversSchema.js"
+
 import { getStaffSolvedCallCounts } from "../helper/staffHighestandlowestsolvedcallscount.js"
 import LeadMaster from "../model/primaryUser/leadmasterSchema.js"
-import { checkAcheivementlist } from "../helper/achievementCheck.js"
 import { PreviousmonthLeavesummary } from "../helper/previousMonthleaveSummary.js"
 import mongoose from "mongoose"
-import Branch from "../model/primaryUser/branchSchema.js"
 import Attendance from "../model/primaryUser/attendanceSchema.js"
 import Holymaster from "../model/secondaryUser/holydaymasterSchema.js"
 import Onsite from "../model/primaryUser/onsiteSchema.js"
@@ -2170,24 +2167,65 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
       // Main function
       async function calculateAbsences(allholidayfulldate, attendances) {
-        const isPresent = async (date) => {
+        const isPresent = async (date, daytype, check = false) => {
           const attendance = attendances.attendancedates[date];
-          if (attendance) {
-            return (
-              attendances.attendancedates[date].present === 1 && (attendance.otherLeave === "" ||
-                attendance.privileageLeave === "" ||
-                attendance.casualLeave === "" ||
-                attendance.compensatoryLeave === "")
 
-            );
+          if (attendance) {
+            if (attendance.otherLeave === (0.5 || "0.5") || attendance.casualLeave === (0.5 || "0.5") || attendance.privileageLeave === (0.5 || "0.5") || attendance.compensatoryLeave === (0.5 || "0.5")) {
+              if (daytype === "previous") {
+                if (attendance.otherLeave === (0.5 || "0.5") || attendance.privileageLeave === (0.5 || "0.5") || attendance.casualLeave === (0.5 || "0.5") || attendance.compensatoryLeave === (0.5 || "0.5")) {
+                  if (attendance.halfDayPeriod === "Afternoon") {
+                    return false
+                  } else if (attendance.halfDayPeriod === "Morning") {
+                    return true
+                  }
+                }
+              } else if (daytype === "after") {
+                if (attendance.otherLeave === (0.5 || "0.5") || attendance.privileageLeave === (0.5 || "0.5") || attendance.casualLeave === (0.5 || "0.5") || attendance.compensatoryLeave === (0.5 || "0.5")) {
+                  if (attendance.halfDayPeriod === "Afternoon") {
+                    return true
+                  } else if (attendance.halfDayPeriod === "Morning") {
+                    if (check) {
+                      return true
+                    } else {
+                      return false
+                    }
+                  }
+                }
+              }
+            } else {
+              return (
+                attendances.attendancedates[date].present === 1 && (attendance.otherLeave === "" ||
+                  attendance.privileageLeave === "" ||
+                  attendance.casualLeave === "" ||
+                  attendance.compensatoryLeave === "")
+
+              );
+            }
+
+
           } else {
             const previousMonth = month - 1;
-            const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, year, stats.userId);
-            if (previousmonthlastdayleavestatus) {
-              return false
-            } else {
-              return true
+            const d = new Date(date);
+            const matchingmonth = d.getMonth() + 1; // takes month only
+            const matchingYear = new Date(date).getFullYear()
+            if (matchingmonth < month) {
+              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, matchingYear, stats.userId);
+              if (previousmonthlastdayleavestatus) {
+                return false
+              } else {
+                return true
+              }
+            } else if (matchingmonth > month) {
+              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(matchingmonth, matchingYear, stats.userId);
+              if (previousmonthlastdayleavestatus) {
+                return false
+              } else {
+                return true
+              }
             }
+
+
 
           }
 
@@ -2205,8 +2243,8 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           const prevDay = getPreviousDate(first);
           const nextDay = getNextDate(last);
 
-          const prevPresent = await isPresent(prevDay);
-          const nextPresent = await isPresent(nextDay);
+          const prevPresent = await isPresent(prevDay, "previous");
+          const nextPresent = await isPresent(nextDay, "after", prevPresent);
 
 
 
@@ -5400,22 +5438,62 @@ export const GetsomeAllsummary = async (
         const isPresent = async (date) => {
           const attendance = attendances.attendancedates[date];
           if (attendance) {
-            return (
-              attendances.attendancedates[date].present === 1 && (attendance.otherLeave === "" ||
-                attendance.privileageLeave === "" ||
-                attendance.casualLeave === "" ||
-                attendance.compensatoryLeave === "")
 
-            );
+            if (attendance.otherLeave === (0.5 || "0.5") || attendance.casualLeave === (0.5 || "0.5") || attendance.privileageLeave === (0.5 || "0.5") || attendance.compensatoryLeave === (0.5 || "0.5")) {
+              if (daytype === "previous") {
+                if (attendance.otherLeave === (0.5 || "0.5") || attendance.privileageLeave === (0.5 || "0.5") || attendance.casualLeave === (0.5 || "0.5") || attendance.compensatoryLeave === (0.5 || "0.5")) {
+                  if (attendance.halfDayPeriod === "Afternoon") {
+                    return false
+                  } else if (attendance.halfDayPeriod === "Morning") {
+                    return true
+                  }
+                }
+              } else if (daytype === "after") {
+                if (attendance.otherLeave === (0.5 || "0.5") || attendance.privileageLeave === (0.5 || "0.5") || attendance.casualLeave === (0.5 || "0.5") || attendance.compensatoryLeave === (0.5 || "0.5")) {
+                  if (attendance.halfDayPeriod === "Afternoon") {
+                    return true
+                  } else if (attendance.halfDayPeriod === "Morning") {
+                    if (check) {
+                      return true
+                    } else {
+                      return false
+                    }
+                  }
+                }
+              }
+            } else {
+              return (
+                attendances.attendancedates[date].present === 1 && (attendance.otherLeave === "" ||
+                  attendance.privileageLeave === "" ||
+                  attendance.casualLeave === "" ||
+                  attendance.compensatoryLeave === "")
+
+              );
+            }
+
 
           } else {
             const previousMonth = month - 1;
-            const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, year, stats.userId);
-            if (previousmonthlastdayleavestatus) {
-              return { status: false };
-            } else {
-              return { status: true };
+            const d = new Date(date);
+            const matchingmonth = d.getMonth() + 1; // takes month only
+            const matchingYear = new Date(date).getFullYear()
+            if (matchingmonth < month) {
+              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, matchingYear, stats.userId);
+              if (previousmonthlastdayleavestatus) {
+                return {status:false}
+              } else {
+                return {status:true}
+              }
+            } else if (matchingmonth > month) {
+              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(matchingmonth, matchingYear, stats.userId);
+              if (previousmonthlastdayleavestatus) {
+                return {status:false}
+              } else {
+                return {status:true}
+              }
             }
+
+           
           }
         };
 

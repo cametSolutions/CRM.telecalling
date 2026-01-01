@@ -1104,10 +1104,30 @@ export const GetCustomer = async (req, res) => {
       } else {
         // Search by customer name
         const searchRegex = new RegExp(`^${search}`, "i")
+        console.log("searchregex",searchRegex)
         const customers = await Customer.aggregate([
+           // 1. FIRST: Populate partner to search by partner name
+  {
+    $lookup: {
+      from: "partners",
+      localField: "partner",
+      foreignField: "_id",
+      as: "partnerDetails"
+    }
+  },
+  {
+    $addFields: {
+      partnerName: { $arrayElemAt: ["$partnerDetails.partner", 0] }
+    }
+  },
+  //match customername or partnername
+
           {
             $match: {
-              customerName: searchRegex, // Match the customer name using the regex search
+              $or:[
+                {customerName:searchRegex},
+               { partnerName:searchRegex}
+              ],
               "selected.branch_id": { $in: objectIds } // Match branch_id within the selected array
             }
           },
@@ -1156,14 +1176,14 @@ export const GetCustomer = async (req, res) => {
               as: "productDetails" // Alias for the resulting joined product documents
             }
           },
-          {
-            $lookup: {
-              from: "partners", // Name of the Product collection
-              localField: "partnerObjectId", // Field from the customer document
-              foreignField: "_id", // Match the _id field from the Product collection
-              as: "partnerDetails" // Alias for the resulting joined product documents
-            }
-          },
+          // {
+          //   $lookup: {
+          //     from: "partners", // Name of the Product collection
+          //     localField: "partnerObjectId", // Field from the customer document
+          //     foreignField: "_id", // Match the _id field from the Product collection
+          //     as: "partnerDetails" // Alias for the resulting joined product documents
+          //   }
+          // },
           {
             $addFields: {
               partner: { $arrayElemAt: ["$partnerDetails", 0] },
@@ -1386,8 +1406,25 @@ export const GetCustomer = async (req, res) => {
         const searchRegex = new RegExp(`^${search}`, "i")
         const customers = await Customer.aggregate([
           {
+    $lookup: {
+      from: "partners",
+      localField: "partner",
+      foreignField: "_id",
+      as: "partnerDetails"
+    }
+  },
+   {
+    $addFields: {
+      partnerName: { $arrayElemAt: ["$partnerDetails.partner", 0] }
+    }
+  },
+
+          {
             $match: {
-              customerName: searchRegex // Match the customer name using the regex search
+              $or:[
+                {customerName:searchRegex},
+                {partnerName:searchRegex}
+              ]
             }
           },
           {
@@ -1962,7 +1999,7 @@ export const customerCallRegistration = async (req, res) => {
 
 
         }
-
+console.log("calldata",calldata)
         user.callregistration.push(calldata)
         const updatedCall = await user.save()
         const Id = calldata.formdata.attendedBy.callerId
@@ -2881,6 +2918,7 @@ export const getallExpiredCustomerCalls = async (req, res) => {
         }
       }
     })
+    console.log("expiredcustomere",expiredCustomers.length)
     const expiredCustomerIds = expiredCustomers.map((customer) => customer._id)
     const calls = await CallRegistration.find({
       customerid: { $in: expiredCustomerIds } // Assuming 'customerId' field in CallRegistration matches customer IDs
