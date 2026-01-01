@@ -236,20 +236,20 @@ export default function CallRegistration() {
 
   const fetchCallDetails = async (callId) => {
     setLoader(true)
-    // const response = await fetch(
-    //   `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
-    //   {
-    //     method: "GET",
-    //     credentials: "include" // This allows cookies to be sent with the request
-    //   }
-    // )
     const response = await fetch(
-      `http://localhost:9000/api/customer/getcallregister/${callId}`,
+      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
       {
         method: "GET",
         credentials: "include" // This allows cookies to be sent with the request
       }
     )
+    // const response = await fetch(
+    //   `http://localhost:9000/api/customer/getcallregister/${callId}`,
+    //   {
+    //     method: "GET",
+    //     credentials: "include" // This allows cookies to be sent with the request
+    //   }
+    // )
     const data = await response.json()
 
     return data
@@ -335,7 +335,6 @@ export default function CallRegistration() {
     return `${date} ${time}` // Example: "03/02/2025 02:48:57 PM"
   }
 
-
   const stopTimer = async (time, product) => {
     if (!product) {
       toast.error("No product selected.")
@@ -349,7 +348,7 @@ export default function CallRegistration() {
 
     const endTime = new Date().toISOString()
     const durationInSeconds = timeStringToSeconds(time)
-
+    console.log("token", token)
     // Save timer value in local storage
     if (!token) {
       const branchName = product.branchName
@@ -394,8 +393,8 @@ export default function CallRegistration() {
       const calldata = {
         product: selectedProducts[0]?.product_id,
         license: selectedProducts[0]?.licensenumber,
-        branchName:[selectedProducts[0]?.branch_id?.branchName],
-          
+        branchName: [selectedProducts[0]?.branch_id?.branchName],
+
         timedata: timeData,
         formdata: updatedformData,
         customeremail: selectedCustomer?.email,
@@ -404,6 +403,8 @@ export default function CallRegistration() {
       }
 
       setcallReport(calldata)
+      console.log("slected", selectedProducts)
+      console.log("calldata", calldata)
 
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
@@ -480,7 +481,7 @@ export default function CallRegistration() {
       const calldata = {
         product: selectedProducts[0]?.product_id,
         license: selectedProducts[0]?.licensenumber,
-        branchName:[selectedProducts[0]?.branch_id?.branchName],
+        branchName: [selectedProducts[0]?.branch_id?.branchName],
         timedata: timeData,
         formdata: updatedformData,
         customeremail: selectedCustomer.email,
@@ -488,6 +489,9 @@ export default function CallRegistration() {
         productName: selectedProducts[0]?.productName
       }
       setcallReport(calldata)
+      console.log(calldata)
+      console.log("selectedteddddddddd", selectedProducts)
+      return
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
         calldata,
@@ -613,23 +617,23 @@ Problem:    \t${selectedText}
   const fetchCustomerData = async (query) => {
     let url
     if (user.role === "Admin") {
-      url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
-      // url = `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
+      // url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
+      url = `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
     } else {
       const branches = JSON.stringify(branch)
 
-      url =
-        branches &&
-        branches.length > 0 &&
-        `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
-          user.role
-        }&userBranch=${encodeURIComponent(branches)}`
       // url =
       //   branches &&
       //   branches.length > 0 &&
-      //   `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+      //   `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
       //     user.role
       //   }&userBranch=${encodeURIComponent(branches)}`
+      url =
+        branches &&
+        branches.length > 0 &&
+        `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+          user.role
+        }&userBranch=${encodeURIComponent(branches)}`
     }
 
     try {
@@ -771,7 +775,7 @@ Problem:    \t${selectedText}
           // loader={true}
         />
       )}
-      <div className="container  justify-center items-center p-8 h-auto">
+      <div className=" justify-center items-center p-8 h-auto">
         <div className="w-auto bg-white shadow-lg rounded  p-8 mx-auto h-auto">
           <div className="flex justify-between ">
             <h2 className="text-2xl font-semibold mb-4">Call Registration</h2>
@@ -1209,7 +1213,6 @@ Problem:    \t${selectedText}
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                             <input
                               className="form-checkbox h-4 w-4 text-blue-600 hover:bg-blue-200 focus:ring-blue-500 cursor-pointer"
-                            
                               checked={selectedProducts.some(
                                 (p) => p.productName === product?.productName
                               )}
@@ -1264,7 +1267,6 @@ Problem:    \t${selectedText}
                                       ) === "Expired"
                                         ? "red"
                                         : "black"
-                                        
                                   }}
                                 >
                                   {calculateRemainingDays(product?.amcendDate)}
@@ -1364,21 +1366,24 @@ Problem:    \t${selectedText}
                           </span>
                         )}
                       </div>
-                      <div>
-                        {/* Adjust width and padding for spacing */}
-                        <label
-                          htmlFor="token"
-                          className="block text-sm font-medium text-gray-700"
-                        >
-                          Token
-                        </label>
-                        <input
-                          type="text"
-                          id="token"
-                          {...register("token", {})}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
-                        />
-                      </div>
+                      {token && (
+                        <div>
+                          {/* Adjust width and padding for spacing */}
+                          <label
+                            htmlFor="token"
+                            className="block text-sm font-medium text-gray-700"
+                          >
+                            Tokens
+                          </label>
+                          <input
+                            type="text"
+                            id="token"
+                            {...register("token", {})}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
+                          />
+                        </div>
+                      )}
+
                       <div>
                         {/* Adjust width and padding for spacing */}
                         <label

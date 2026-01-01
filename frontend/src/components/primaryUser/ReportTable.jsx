@@ -45,7 +45,7 @@
 //     </div>
 //   );
 // }
-import React from "react";
+
 
 export default function ReportTable({ headers, reportName, data }) {
   return (

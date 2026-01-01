@@ -15,7 +15,6 @@ import CallregistrationList from "../pages/secondaryUser/List/CallregistrationLi
 import stafftasksRoutes from "./staffRoutes/stafftaskRoutes.js"
 import staffmastersRoutes from "./staffRoutes/staffmasterRoutes.js"
 import staffreportsRoutes from "./staffRoutes/staffreportRoutes.js"
-import UsersLeaveApplicationSummary from "../components/primaryUser/UsersLeaveApplicationSummary.jsx"
 
 const Mainrouter = ({ headerHeight }) => {
 
@@ -51,10 +50,7 @@ const Mainrouter = ({ headerHeight }) => {
         {!isMobile && (
           <Route path="/admin/home" element={<CallregistrationList />} />
         )}
-        <Route
-          path="/admin/usersleave-application"
-          element={<UsersLeaveApplicationSummary />}
-        />
+      
         {!isMobile && (
           <Route path="/staff/home" element={<CallregistrationList />} />
         )}

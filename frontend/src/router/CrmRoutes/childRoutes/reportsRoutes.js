@@ -3,7 +3,6 @@ import Summary from "../../../pages/primaryUser/List/Summary";
 import ExpiredCustomer from "../../../pages/primaryUser/List/ExpiredCustomer";
 import AccountSearch from "../../../pages/primaryUser/List/AccountSearch";
 import LeaveSummary from "../../../components/primaryUser/LeaveSummary";
-import ReportTable from "../../../components/primaryUser/ReportTable";
 import ProductWiseleadReport from "../../../pages/primaryUser/List/ProductWiseleadReport";
 import FollowupSummaryDashboard from "../../../pages/primaryUser/List/FollowupSummaryDashboard";
 const reportsRoutes = [
@@ -21,7 +20,7 @@ const reportsRoutes = [
     component: ProductWiseleadReport,
   },
   {
-    path: "/admin/reports/follow-up-summaryReport",
+    path: "/admin/reports/follow-up-summary",
     component: FollowupSummaryDashboard,
   },
 ];

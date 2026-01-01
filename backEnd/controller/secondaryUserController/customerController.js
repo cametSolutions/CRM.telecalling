@@ -1999,7 +1999,7 @@ export const customerCallRegistration = async (req, res) => {
 
 
         }
-
+console.log("calldata",calldata)
         user.callregistration.push(calldata)
         const updatedCall = await user.save()
         const Id = calldata.formdata.attendedBy.callerId

@@ -120,7 +120,7 @@ export const MonthRangePicker = ({ onChange }) => {
   }, [startMonth, endMonth]);
 
   return (
-    <div className="flex items-center gap-3 p-4 bg-white border-b border-gray-200">
+    <div className="flex flex-grow items-center gap-3 px-4 bg-white border-b border-gray-200">
       {/* Start Month */}
       <div className="flex-1">
         <label className="block text-xs font-medium text-gray-500 mb-1">
