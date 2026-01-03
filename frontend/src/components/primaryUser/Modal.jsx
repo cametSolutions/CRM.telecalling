@@ -74,6 +74,7 @@ const Modal = ({
   )
   const { data: compensatoryleaves, refreshHook: refreshHookCompensatory } =
     UseFetch(staffId && `/auth/getallcompensatoryleave?userid=${staffId}`)
+console.log(compensatoryleaves)
   useEffect(() => {
     if (leaves && leaves.length > 0) {
       setallLeaves(leaves)
@@ -234,7 +235,8 @@ const Modal = ({
       setBalanceprivilegeLeaveCount(Math.max(balanceprivilege, 0))
       setBalancecasualLeaveCount(Math.max(balancecasualcount, 0))
       setBalancecompensatoryLeaveCount(compensatoryleaves)
-
+console.log("h")
+console.log(compensatoryleaves)
       setLeaveBalance({
         ...leaveBalance,
         casual: Math.max(balancecasualcount, 0),
@@ -465,13 +467,8 @@ const Modal = ({
                       value="Full Day"
                       checked={selectedLeave.leaveType === "Full Day"}
                       onChange={handleDataChange}
-                      // onChange={(e) => {
-                      //   setselectedLeave((prev) => ({
-                      //     ...prev,
-                      //     leaveType: e.target.value,
-                      //     halfDayPeriod: "" // Replace `newDate` with the actual value you want to set
-                      //   }))
-                      // }}
+                    
+                      
                     />
                     Full Day
                   </label>
@@ -482,13 +479,7 @@ const Modal = ({
                       value="Half Day"
                       checked={selectedLeave.leaveType === "Half Day"}
                       onChange={handleDataChange}
-                      // onChange={(e) => {
-                      //   setselectedLeave((prev) => ({
-                      //     ...prev,
-                      //     leaveType: e.target.value, // Replace `newDate` with the actual value you want to set
-                      //     halfDayPeriod: "Morning"
-                      //   }))
-                      // }}
+                    
                     />
                     Half Day
                   </label>
@@ -502,12 +493,7 @@ const Modal = ({
                         className="border py-1  rounded w-auto"
                         value={selectedLeave?.halfDayPeriod || "Morning"}
                         onChange={handleDataChange}
-                        // onChange={(e) => {
-                        //   setselectedLeave((prev) => ({
-                        //     ...prev,
-                        //     halfDayPeriod: e.target.value // Replace `newDate` with the actual value you want to set
-                        //   }))
-                        // }}
+                      
                       >
                         <option value="">Select Period</option>
                         <option value="Morning">Morning</option>
@@ -586,12 +572,7 @@ const Modal = ({
                     className="border p-2 rounded w-full"
                     value={selectedLeave?.leaveCategory || ""}
                     onChange={handleDataChange}
-                    // onChange={(e) => {
-                    //   setselectedLeave((prev) => ({
-                    //     ...prev,
-                    //     leaveCategory: e.target.value // Replace `newDate` with the actual value you want to set
-                    //   }))
-                    // }}
+                   
                   >
                     <option value="">Select Leave Type</option>
                     {((selectedLeave.leaveType === "Full Day" &&
@@ -625,30 +606,7 @@ const Modal = ({
                       <option value="sick Leave">Sick Leave</option>
                     )}
 
-                    {/* <option
-                      value="casual Leave"
-                      disabled={BalancedcasualleaveCount === 0}
-                    >
-                      Casual Leave
-                    </option>
-                    <option
-                      value="privileage Leave"
-                      disabled={BalanceprivilegeleaveCount === 0}
-                    >
-                      Privilege Leave
-                    </option>
-                    <option
-                      value="compensatory Leave"
-                      disabled={BalancecompensatoryleaveCount === 0}
-                    >
-                      Compensatory Leave
-                    </option>
-                    <option
-                      value="sick Leave"
-                      disabled={BalancesickleaveCount === 0}
-                    >
-                      Sick Leave
-                    </option> */}
+                    
                     <option value="other Leave">Other Leave</option>
                   </select>
                 </div>
@@ -665,13 +623,8 @@ const Modal = ({
                     placeholder="Enter reason"
                     value={selectedLeave?.reason || ""}
                     onChange={handleDataChange}
-                    // onChange={(e) => {
-                    //   setselectedLeave((prev) => ({
-                    //     ...prev,
-                    //     reason: e.target.value // Replace `newDate` with the actual value you want to set
-                    //   }))
-                    // }}
-                  ></textarea>
+                  
+                  />
                 </div>
                 <div className="text-center mb-1">
                   {errors.reason && (

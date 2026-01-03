@@ -170,7 +170,7 @@ function LeaveApplication() {
         ? new Date(formData?.leaveDate)
         : new Date()
       const leaveYear = leaveDate.getFullYear()
-     
+
       const privileageDate = new Date(user?.privilegeleavestartsfrom)
       const privileagestartYear = privileageDate.getFullYear()
       const privileagestartmonth = privileageDate.getMonth() + 1 // 1-based month
@@ -207,7 +207,7 @@ function LeaveApplication() {
 
       if (privileagestartYear < currentYear) {
         let privilegeCount
-      
+
         if (privileagestartYear < leaveYear && leaveYear < currentYear) {
           privilegeCount = 12 * privilegePerMonth
         } else if (privileagestartYear < leaveYear) {
@@ -276,7 +276,6 @@ function LeaveApplication() {
 
       const balancecasualcount = ownedcasualCount - usedCasualCount
       const balanceprivilege = ownedprivilegeCount - takenPrivilegeCount
-      
 
       setBalanceprivilegeLeaveCount(Math.max(balanceprivilege, 0))
       setBalancecasualLeaveCount(Math.max(balancecasualcount, 0))
@@ -296,8 +295,10 @@ function LeaveApplication() {
       const currentDate = new Date()
       const currentYear = currentDate.getFullYear()
       const currentmonth = currentDate.getMonth() + 1
-      const leaveDate = formData.leaveDate?new Date(formData.leaveDate):new Date()
-      const leaveYear = leaveDate.getFullYear() 
+      const leaveDate = formData.leaveDate
+        ? new Date(formData.leaveDate)
+        : new Date()
+      const leaveYear = leaveDate.getFullYear()
       const privileagestartDate = new Date(user?.privilegeleavestartsfrom)
       const privileagestartYear = privileagestartDate.getFullYear()
       const privileagestartmonth = privileagestartDate.getMonth() + 1 // 1-based month
@@ -469,6 +470,7 @@ function LeaveApplication() {
               prevCategory: formData.prevCategory
             }
           : {
+              docId: data?.onsiteId,
               onsiteType: data.onsiteType,
               description: data.description,
               onsiteDate: data.onsiteDate
@@ -536,6 +538,8 @@ function LeaveApplication() {
           setLoader(false)
           setMessage({ top: "", bottom: "" })
           setAllOnsite(data)
+          refreshHook()
+          refreshHookCompensatory()
 
           setTableRows([])
           setSelectedTab("Leave")
@@ -897,6 +901,8 @@ function LeaveApplication() {
             "This onsite is already approved. Do not make any changes."
           )
         } else {
+          console.log(formData)
+
           setLoader(true)
           // const response = await api.post(
           //   `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
@@ -1862,11 +1868,6 @@ function LeaveApplication() {
                           onsite: false,
                           halfDayPeriod: "",
                           leaveType: "Full Day"
-                        })
-                        setselectedAttendance({
-                          attendanceDate: "",
-                          inTime: { hours: "12", minutes: "00", amPm: "AM" },
-                          outTime: { hours: "12", minutes: "00", amPm: "AM" }
                         })
 
                         setSelectedTab("Leave")
