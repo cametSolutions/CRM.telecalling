@@ -7,7 +7,7 @@ import Onsite from "../model/primaryUser/onsiteSchema.js"
 const { Staff, Admin } = models
 import LeaveRequest from "../model/primaryUser/leaveRequestSchema.js"
 
-export const PreviousmonthLeavesummary = async (month, year, Id) => {
+export const PreviousmonthLeavesummary = async (month, year, Id, check) => {
     try {
 
         function getSundays(year, month) {
@@ -995,7 +995,7 @@ export const PreviousmonthLeavesummary = async (month, year, Id) => {
 
             return `${prevYear}-${prevMonth}-${prevDay}`
         }
-       
+
 
         ; (function calculateAbsences(allholidayfulldate, attendances, onsites) {
             const isPresent = (date) => {
@@ -1023,7 +1023,7 @@ export const PreviousmonthLeavesummary = async (month, year, Id) => {
                         }
                     }
                 } else {
-                 
+
                 }
             }
             // Sort dates first to ensure they are in order
@@ -1052,7 +1052,7 @@ export const PreviousmonthLeavesummary = async (month, year, Id) => {
                     tempGroup = []
                 }
             }
-           
+
             groups.forEach((group) => {
                 const first = group[0]
                 const stringfirst = first.toISOString().split("T")[0]
@@ -1061,7 +1061,7 @@ export const PreviousmonthLeavesummary = async (month, year, Id) => {
 
                 const previousDay = getPreviousDate(stringfirst)
                 const nextDay = getNextDate(stringlast)
-               
+
                 const prevFullPresent = isPresent(previousDay)
 
                 const nextFullPresent = isPresent(nextDay)
@@ -1069,7 +1069,7 @@ export const PreviousmonthLeavesummary = async (month, year, Id) => {
                 if (prevFullPresent?.status || nextFullPresent?.status) {
 
                     stats.attendancedates[stringfirst].present = 1
-                   
+
                     stats.attendancedates[stringlast].present = 1
                     stats.attendancedates[stringlast].notMarked = ""
                     // stats.attendancedates[nextDay].otherLeave = 1
@@ -1119,25 +1119,32 @@ export const PreviousmonthLeavesummary = async (month, year, Id) => {
             date: item.holyDate.toISOString().split("T")[0],
             holyname: item.customTextInput
         }))
-       
-        
-        const attendance= staffAttendanceStats[0]
+
+
+        const attendance = staffAttendanceStats[0]
         const alldate = Object.keys(attendance.attendancedates)
         const sortedDates = alldate.sort()
-        const last = sortedDates[alldate.length - 1]
-        const entry = attendance.attendancedates[last]
-        let lastDateEntry = {};
+        let entry = null
+        if (check == "previous") {
+            const last = sortedDates[alldate.length - 1]
+            entry = attendance.attendancedates[last]
+        } else if (check === "next") {
+            const first = sortedDates[0]
+            entry = attendance.attendancedates[first]
+        }
+
+        let DateEntry = {};
 
         // 4. Normalize entry in case it's wrapped in an array or malformed
         if (Array.isArray(entry)) {
-            lastDateEntry = typeof entry[0] === "object" ? entry[0] : {};
+            DateEntry = typeof entry[0] === "object" ? entry[0] : {};
         } else if (typeof entry === "object" && entry !== null) {
-            lastDateEntry = entry;
+            DateEntry = entry;
         } else {
             console.warn("⚠️ Invalid data format on last date");
         }
-       
-        const hasLeave = lastDateEntry.casualLeave !=="" || lastDateEntry.privileageLeave !=="" || lastDateEntry.compensatoryLeave !=="" || lastDateEntry.otherLeave !==""
+
+        const hasLeave = DateEntry.casualLeave !== "" || DateEntry.privileageLeave !== "" || DateEntry.compensatoryLeave !== "" || DateEntry.otherLeave !== ""
 
 
         return hasLeave

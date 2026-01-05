@@ -2220,6 +2220,9 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
                   }
                 }
               }
+            } else if (attendance.otherLeave === (1 || "1") || attendance.casualLeave === (1 || "1") || attendance.privileageLeave === (1 || "1") || attendance.compensatoryLeave === (1 || "1")) {
+              return false
+
             } else {
               return (
                 attendances.attendancedates[date].present === 1 && (attendance.otherLeave === "" ||
@@ -2237,14 +2240,14 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             const matchingmonth = d.getMonth() + 1; // takes month only
             const matchingYear = new Date(date).getFullYear()
             if (matchingmonth < month) {
-              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, matchingYear, stats.userId);
+              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, matchingYear, stats.userId,"previous");
               if (previousmonthlastdayleavestatus) {
                 return false
               } else {
                 return true
               }
             } else if (matchingmonth > month) {
-              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(matchingmonth, matchingYear, stats.userId);
+              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(matchingmonth, matchingYear, stats.userId,"next");
               if (previousmonthlastdayleavestatus) {
                 return false
               } else {
@@ -2393,7 +2396,7 @@ export const Getallcompensatoryleave = async (req, res) => {
     const { userid } = req.query
     const objectId = new mongoose.Types.ObjectId(userid)
 
-  
+
     const result = await CompensatoryLeave.aggregate([
       { $match: { userId: objectId } },
       { $group: { _id: null, total: { $sum: "$value" } } }
@@ -5762,7 +5765,7 @@ export const DeleteEvent = async (req, res) => {
           const updatecompensatory = await CompensatoryLeave.deleteOne({
             _id: findifcompensatoryleave._id
           })
-        
+
         }
         const onsites = await Onsite.find({ userId: objectId })
         // Check if no records found
