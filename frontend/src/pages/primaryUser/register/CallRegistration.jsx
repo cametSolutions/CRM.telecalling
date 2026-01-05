@@ -489,9 +489,8 @@ export default function CallRegistration() {
         productName: selectedProducts[0]?.productName
       }
       setcallReport(calldata)
-      console.log(calldata)
-      console.log("selectedteddddddddd", selectedProducts)
-      return
+      
+      
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
         calldata,
