@@ -13,8 +13,8 @@ import UseFetch from "../../../hooks/useFetch"
 import Timer from "../../../components/primaryUser/Timer"
 import PopUp from "../../../components/common/PopUp"
 import { toast } from "react-toastify"
-const socket = io("https://www.crm.camet.in")
-// const socket = io("http://localhost:9000")
+// const socket = io("https://www.crm.camet.in")
+const socket = io("http://localhost:9000")
 
 export default function CallRegistration() {
   const {
@@ -61,6 +61,7 @@ export default function CallRegistration() {
   const { data } = UseFetch(
     user._id && `/customer/getloggeduserCurrentCalls?loggedUserId=${user._id}`
   )
+  const { data: callscount } = UseFetch("/customer/getcallregistrationlist")
   const { data: callnotes } = UseFetch("/customer/getallcallNotes")
   const handleQuillChange = (value) => {
     setValue("description", value, { shouldValidate: true }) // Update React Hook Form's value
@@ -101,55 +102,94 @@ export default function CallRegistration() {
     }
   }, [callnotes])
   useEffect(() => {
-    if (user) {
-      const userId = user._id
-      socket.emit("updatedCalls", userId)
-      // Listen for initial data from the server
-      socket.on("updatedCalls", ({ calls, user }) => {
-        if (user?.role === "Admin") {
-          setCallList(calls)
-        } else {
-          const userBranchName = new Set(
-            user?.selected?.map((branch) => branch.branchName)
-          )
+    if (user&&callscount) {
+      if (user?.role === "Admin") {
+        setCallList(callscount)
+      } else {
+        const userBranchName = new Set(
+          user?.selected?.map((branch) => branch.branchName)
+        )
 
-          const branchNamesArray = Array.from(userBranchName)
+        const branchNamesArray = Array.from(userBranchName)
 
-          const filtered = calls.filter(
-            (call) =>
-              Array.isArray(call?.callregistration) && // Check if callregistration is an array
-              call.callregistration.some((registration) => {
-                const hasMatchingBranch =
-                  Array.isArray(registration?.branchName) && // Check if branchName is an array
-                  registration.branchName.some(
-                    (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
-                  )
+        const filtered = callscount.filter(
+          (call) =>
+            Array.isArray(call?.callregistration) && // Check if callregistration is an array
+            call.callregistration.some((registration) => {
+              const hasMatchingBranch =
+                Array.isArray(registration?.branchName) && // Check if branchName is an array
+                registration.branchName.some(
+                  (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
+                )
 
-                // If user has only one branch, ensure it matches exactly and no extra branches
-                if (branchNamesArray.length === 1) {
-                  return (
-                    hasMatchingBranch &&
-                    registration.branchName.length === 1 &&
-                    registration.branchName[0] === branchNamesArray[0]
-                  )
-                }
+              // If user has only one branch, ensure it matches exactly and no extra branches
+              if (branchNamesArray.length === 1) {
+                return (
+                  hasMatchingBranch &&
+                  registration.branchName.length === 1 &&
+                  registration.branchName[0] === branchNamesArray[0]
+                )
+              }
 
-                // If user has more than one branch, just check for any match
-                return hasMatchingBranch
-              })
-          )
+              // If user has more than one branch, just check for any match
+              return hasMatchingBranch
+            })
+        )
 
-          setCallList(filtered)
-        }
-      })
-
-      //Cleanup the socket connection when the component unmounts
-      return () => {
-        socket.off("updatedCalls")
-        socket.disconnect()
+        setCallList(filtered)
       }
     }
-  }, [user])
+  },[user,callscount])
+  // useEffect(() => {
+  //   if (user) {
+  //     const userId = user._id
+  //     socket.emit("updatedCalls", userId)
+  //     // Listen for initial data from the server
+  //     socket.on("updatedCalls", ({ calls, user }) => {
+  //       if (user?.role === "Admin") {
+  //         setCallList(calls)
+  //       } else {
+  //         const userBranchName = new Set(
+  //           user?.selected?.map((branch) => branch.branchName)
+  //         )
+
+  //         const branchNamesArray = Array.from(userBranchName)
+
+  //         const filtered = calls.filter(
+  //           (call) =>
+  //             Array.isArray(call?.callregistration) && // Check if callregistration is an array
+  //             call.callregistration.some((registration) => {
+  //               const hasMatchingBranch =
+  //                 Array.isArray(registration?.branchName) && // Check if branchName is an array
+  //                 registration.branchName.some(
+  //                   (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
+  //                 )
+
+  //               // If user has only one branch, ensure it matches exactly and no extra branches
+  //               if (branchNamesArray.length === 1) {
+  //                 return (
+  //                   hasMatchingBranch &&
+  //                   registration.branchName.length === 1 &&
+  //                   registration.branchName[0] === branchNamesArray[0]
+  //                 )
+  //               }
+
+  //               // If user has more than one branch, just check for any match
+  //               return hasMatchingBranch
+  //             })
+  //         )
+
+  //         setCallList(filtered)
+  //       }
+  //     })
+
+  //     //Cleanup the socket connection when the component unmounts
+  //     return () => {
+  //       socket.off("updatedCalls")
+  //       socket.disconnect()
+  //     }
+  //   }
+  // }, [user])
   // Cleanup the timeout if the component unmounts
   useEffect(() => {
     return () => clearTimeout(debounceTimeoutRef.current)
@@ -403,8 +443,7 @@ export default function CallRegistration() {
       }
 
       setcallReport(calldata)
-      console.log("slected", selectedProducts)
-      console.log("calldata", calldata)
+     
 
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
@@ -425,7 +464,7 @@ export default function CallRegistration() {
         setSelectedCustomer(null)
         setCustomerData([])
         setSearching(false)
-        socket.emit("updatedCalls")
+        // socket.emit("updatedCalls")
         sendWhatapp(calldata, selectedText)
         setSearch("")
       } else if (response.status === 207) {
@@ -435,7 +474,7 @@ export default function CallRegistration() {
         setSelectedCustomer(null)
         setCustomerData([])
         setSearching(false)
-        socket.emit("updatedCalls")
+        // socket.emit("updatedCalls")
         sendWhatapp(calldata, selectedText)
         setSearch("")
       } else {
@@ -489,8 +528,7 @@ export default function CallRegistration() {
         productName: selectedProducts[0]?.productName
       }
       setcallReport(calldata)
-      
-      
+
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
         calldata,
@@ -509,7 +547,7 @@ export default function CallRegistration() {
         setSearching(false)
         setSelectedCustomer(null)
         setSelectedProducts([])
-        socket.emit("updatedCalls")
+        // socket.emit("updatedCalls")
         sendWhatapp(calldata, selectedText)
       } else if (response.status === 207) {
         setSubmitLoading(false)
@@ -518,7 +556,7 @@ export default function CallRegistration() {
         setSearching(false)
         setSelectedCustomer(null)
         setSelectedProducts([])
-        socket.emit("updatedCalls")
+        // socket.emit("updatedCalls")
         sendWhatapp(calldata, selectedText)
         toast.success(response.data.message)
       } else {

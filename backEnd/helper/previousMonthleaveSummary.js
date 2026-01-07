@@ -54,7 +54,8 @@ export const PreviousmonthLeavesummary = async (month, year, Id, check) => {
                     privileageLeave: "",
                     compensatoryLeave: "",
                     otherLeave: "",
-                    leaveDetails: {}
+                    leaveDetails: {},
+                    cantchange: false
                 } // Initialize empty object for each date
             }
 
@@ -337,6 +338,9 @@ export const PreviousmonthLeavesummary = async (month, year, Id, check) => {
                     arr.push(day)
 
                     stats.attendancedates[dayTime].notMarked = 1
+                    if (!isOnsite && !isLeave) {
+                        stats.attendancedates[dayTime].cantchange = true
+                    }
                     if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
                         stats.attendancedates[dayTime].present = 1
                         stats.attendancedates[dayTime].notMarked = ""
@@ -1143,8 +1147,10 @@ export const PreviousmonthLeavesummary = async (month, year, Id, check) => {
         } else {
             console.warn("⚠️ Invalid data format on last date");
         }
-
-        const hasLeave = DateEntry.casualLeave !== "" || DateEntry.privileageLeave !== "" || DateEntry.compensatoryLeave !== "" || DateEntry.otherLeave !== ""
+        if (stats.name === "FAHIZA PARVIN") {
+            console.log("entry", DateEntry)
+        }
+        const hasLeave = DateEntry.casualLeave !== "" || DateEntry.privileageLeave !== "" || DateEntry.compensatoryLeave !== "" || DateEntry.otherLeave !== "" || DateEntry.present !== (1 || "1")
 
 
         return hasLeave
