@@ -2200,23 +2200,24 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       // Main function
       async function calculateAbsences(allholidayfulldate, attendances) {
         const isPresent = async (date, daytype, check = false) => {
+         
           const attendance = attendances.attendancedates[date];
 
           if (attendance) {
             if (attendance.otherLeave === (0.5 || "0.5") || attendance.casualLeave === (0.5 || "0.5") || attendance.privileageLeave === (0.5 || "0.5") || attendance.compensatoryLeave === (0.5 || "0.5")) {
               if (daytype === "previous") {
                 if (attendance.otherLeave === (0.5 || "0.5") || attendance.privileageLeave === (0.5 || "0.5") || attendance.casualLeave === (0.5 || "0.5") || attendance.compensatoryLeave === (0.5 || "0.5")) {
-                  if (attendance.halfDayPeriod === "Afternoon") {
+                  if (attendance.halfDayperiod === "Afternoon") {
                     return { status: false, cantchange: false }
-                  } else if (attendance.halfDayPeriod === "Morning") {
+                  } else if (attendance.halfDayperiod === "Morning") {
                     return { status: true, cantchange: false }
                   }
                 }
               } else if (daytype === "after") {
                 if (attendance.otherLeave === (0.5 || "0.5") || attendance.privileageLeave === (0.5 || "0.5") || attendance.casualLeave === (0.5 || "0.5") || attendance.compensatoryLeave === (0.5 || "0.5")) {
-                  if (attendance.halfDayPeriod === "Afternoon") {
+                  if (attendance.halfDayperiod === "Afternoon") {
                     return { status: true, cantchange: false }
-                  } else if (attendance.halfDayPeriod === "Morning") {
+                  } else if (attendance.halfDayperiod === "Morning") {
                     if (check) {
                       return { status: true, cantchange: false }
                     } else {
@@ -2231,7 +2232,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               return { status: false, cantchange: false }
 
             } else if (attendance.present === 0 && attendance.casualLeave === "" && attendance.privileageLeave === "" && attendance.compensatoryLeave === "") {
-              console.log("undoooo")
               return { status: false, cantchange: true }
             } else {
               return {
@@ -2286,7 +2286,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           const nextDay = getNextDate(last);
 
           const prevPresent = await isPresent(prevDay, "previous");
-          console.log("prevpressrtnt", prevPresent, prevDay)
           const nextPresent = await isPresent(nextDay, "after", prevPresent);
 
 
