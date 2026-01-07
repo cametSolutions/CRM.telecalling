@@ -1211,7 +1211,8 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           privileageLeave: "",
           compensatoryLeave: "",
           otherLeave: "",
-          leaveDetails: {}
+          leaveDetails: {},
+          cantchange: false
         } // Initialize empty object for each date
       }
 
@@ -1501,6 +1502,10 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             arr.push(day)
 
             stats.attendancedates[dayTime].notMarked = 1
+            if (!isOnsite && !isLeave) {
+
+              stats.attendancedates[dayTime].cantchange = true
+            }
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.attendancedates[dayTime].present = 1
               stats.attendancedates[dayTime].notMarked = ""
@@ -2202,35 +2207,42 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               if (daytype === "previous") {
                 if (attendance.otherLeave === (0.5 || "0.5") || attendance.privileageLeave === (0.5 || "0.5") || attendance.casualLeave === (0.5 || "0.5") || attendance.compensatoryLeave === (0.5 || "0.5")) {
                   if (attendance.halfDayPeriod === "Afternoon") {
-                    return false
+                    return { status: false, cantchange: false }
                   } else if (attendance.halfDayPeriod === "Morning") {
-                    return true
+                    return { status: true, cantchange: false }
                   }
                 }
               } else if (daytype === "after") {
                 if (attendance.otherLeave === (0.5 || "0.5") || attendance.privileageLeave === (0.5 || "0.5") || attendance.casualLeave === (0.5 || "0.5") || attendance.compensatoryLeave === (0.5 || "0.5")) {
                   if (attendance.halfDayPeriod === "Afternoon") {
-                    return true
+                    return { status: true, cantchange: false }
                   } else if (attendance.halfDayPeriod === "Morning") {
                     if (check) {
-                      return true
+                      return { status: true, cantchange: false }
                     } else {
-                      return false
+                      return { status: false, cantchange: false }
                     }
                   }
                 }
+              } else {
+                console.log("taekennd")
               }
             } else if (attendance.otherLeave === (1 || "1") || attendance.casualLeave === (1 || "1") || attendance.privileageLeave === (1 || "1") || attendance.compensatoryLeave === (1 || "1")) {
-              return false
+              return { status: false, cantchange: false }
 
+            } else if (attendance.present === 0 && attendance.casualLeave === "" && attendance.privileageLeave === "" && attendance.compensatoryLeave === "") {
+              console.log("undoooo")
+              return { status: false, cantchange: true }
             } else {
-              return (
-                attendances.attendancedates[date].present === 1 && (attendance.otherLeave === "" ||
-                  attendance.privileageLeave === "" ||
-                  attendance.casualLeave === "" ||
-                  attendance.compensatoryLeave === "")
+              return {
+                status: (
+                  attendance.present === 1 && (attendance.otherLeave === "" ||
+                    attendance.privileageLeave === "" ||
+                    attendance.casualLeave === "" ||
+                    attendance.compensatoryLeave === "")
 
-              );
+                ), cantchange: false
+              }
             }
 
 
@@ -2240,18 +2252,18 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             const matchingmonth = d.getMonth() + 1; // takes month only
             const matchingYear = new Date(date).getFullYear()
             if (matchingmonth < month) {
-              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, matchingYear, stats.userId,"previous");
+              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, matchingYear, stats.userId, "previous");
               if (previousmonthlastdayleavestatus) {
-                return false
+                return { status: false, cantchange: false }
               } else {
-                return true
+                return { status: true, cantchange: false }
               }
             } else if (matchingmonth > month) {
-              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(matchingmonth, matchingYear, stats.userId,"next");
+              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(matchingmonth, matchingYear, stats.userId, "next");
               if (previousmonthlastdayleavestatus) {
-                return false
+                return { status: false, cantchange: false }
               } else {
-                return true
+                return { status: true, cantchange: false }
               }
             }
 
@@ -2274,11 +2286,12 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           const nextDay = getNextDate(last);
 
           const prevPresent = await isPresent(prevDay, "previous");
+          console.log("prevpressrtnt", prevPresent, prevDay)
           const nextPresent = await isPresent(nextDay, "after", prevPresent);
 
 
 
-          if (prevPresent || nextPresent) {
+          if ((prevPresent.status || nextPresent.status) && prevPresent.cantchange === false) {
             // ✅ Mark all holidays as present
             group.forEach((date) => {
               if (attendances.attendancedates[date]) {

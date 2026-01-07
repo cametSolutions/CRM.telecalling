@@ -84,6 +84,8 @@ io.on("connection", (socket) => {
       ],
 
       )
+      // ADD THIS LINE:
+      // console.log(`📊 DATA SIZE for pending: ${JSON.stringify(pendingcalls).length / 1024 / 1024} MB`);
 
       const todayscalls = await CallRegistration.aggregate([
         // Filter the callregistration array to keep only entries with today's attendance
@@ -235,6 +237,7 @@ io.on("connection", (socket) => {
           }
         }
       ])
+      // console.log(`📊 DATA SIZE for solved: ${JSON.stringify(todayscalls).length / 1024 / 1024} MB`);
       // Step 1: Use a Map to store unique merged entries by _id
       const mergedMap = new Map();
 
@@ -257,6 +260,8 @@ io.on("connection", (socket) => {
       // Extract unique IDs for attendedBy and completedBy
       const attendedByIds = new Set()
       const completedByIds = new Set()
+      const beforeSize = JSON.stringify(mergedCalls).length / 1024 / 1024;
+      console.log(`📊 BEFORE loop: ${beforeSize.toFixed(2)} MB`);
       mergedCalls.forEach((call) =>
         call.callregistration.forEach((entry) => {
           // Handle `attendedBy`
@@ -294,6 +299,9 @@ io.on("connection", (socket) => {
           }
         })
       )
+      // 📊 MEASURE AFTER the loop
+      // console.log(`📊 AFTER loop: ${JSON.stringify(mergedCalls).length / 1024 / 1024} MB`);
+      // console.log(`📊 SIZE INCREASE: ${((JSON.stringify(mergedCalls).length / 1024 / 1024) - beforeSize).toFixed(2)} MB`);
 
       // Separate IDs and names from the Sets
       const attendedByIdsArray = Array.from(attendedByIds)
@@ -404,9 +412,10 @@ io.on("connection", (socket) => {
           }
         })
       )
-      
+      console.log(`📊 AFTER loop: ${JSON.stringify(mergedCalls).length / 1024 / 1024} MB`);
+      console.log(`📊 SIZE INCREASE: ${((JSON.stringify(mergedCalls).length / 1024 / 1024) - beforeSize).toFixed(2)} MB`);
 
-      io.emit("updatedCalls", { mergedCalls})
+      io.emit("updatedCalls", { mergedCalls })
     } catch (error) {
       console.error("Error fetching call data:", error)
       socket.emit("error", "Error fetching data")
@@ -464,7 +473,7 @@ app.use("/api/product", productRoutes)
 app.use("/api/customer", secondaryUserRoutes)
 app.use("/api/master", departmentRoutes)
 app.use("/api/dashboard", dashBoardRoutes)
-app.use("/api/target",targetRoutes)
+app.use("/api/target", targetRoutes)
 
 // Error handling middleware
 app.use((err, req, res, next) => {
