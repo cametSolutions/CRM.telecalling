@@ -31,7 +31,10 @@ const CallregistrationList = () => {
   // State to track the active filter
   const [activeFilter, setActiveFilter] = useState("All")
   const { data: branches } = UseFetch("/branch/getbranch")
-  const { data: callscount,loading:loadingcounts } = UseFetch("/customer/getcallregistrationlist")
+  const { data: callscount, loading: loadingcounts } = UseFetch(
+    "/customer/getcallregistrationlist"
+  )
+ 
   // const socketRef = useRef(null)
   // useEffect(() => {
   //   if (!socketRef.current) {
@@ -151,7 +154,7 @@ const CallregistrationList = () => {
       // setLoading(false)
       setCallList(filtered)
     }
-  },[callscount,selectedCompanyBranch])
+  }, [callscount, selectedCompanyBranch])
   // useEffect(() => {
   //   if (users && selectedCompanyBranch) {
   //     console.log("hh")
@@ -340,7 +343,7 @@ const CallregistrationList = () => {
 
       return false
     })
-   
+
     setSearchTerm(search)
     setFilteredCalls(filteredData)
   }, 300)
@@ -1078,7 +1081,7 @@ const CallregistrationList = () => {
                     colSpan="12"
                     className="px-4 py-4 text-center text-sm text-gray-500"
                   >
-                    {loadingcounts? (
+                    {loadingcounts ? (
                       <div className="justify center">
                         <PropagateLoader color="#3b82f6" size={10} />
                       </div>

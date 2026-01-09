@@ -3587,376 +3587,821 @@ export const GeteditedCustomer = async (req, res) => {
 //     return res.status(500).json({ message: "Internal server error" })
 //   }
 // }
+//api code
+// export const Getallcallregistrationlist = async (req, res) => {
+//   try {
+// const todayStart =
+//   new Date().toISOString().split("T")[0] + "T00:00:00.000Z"
+// const todayEnd = new Date().toISOString().split("T")[0] + "T23:59:59.999Z"
+
+// const pendingcalls = await CallRegistration.aggregate([
+//   {
+//     $set: {
+//       callregistration: {
+//         $filter: {
+//           input: "$callregistration",
+//           as: "cr",
+//           cond: { $eq: ["$$cr.formdata.status", "pending"] }
+//         }
+//       }
+//     }
+//   },
+//   {
+//     $match: { "callregistration.0": { $exists: true } } // Ensures only documents with at least one pending call remain
+//   },
+//   {
+//     $lookup: {
+//       from: "products", // Replace with actual product collection name
+//       localField: "callregistration.product", // Field in CallRegistration referencing products
+//       foreignField: "_id", // Matching field in the Product collection
+//       as: "productDetails"
+//     }
+//   }
+// ],
+
+// )
+// // ADD THIS LINE:
+// // console.log(`📊 DATA SIZE for pending: ${JSON.stringify(pendingcalls).length / 1024 / 1024} MB`);
+
+// const todayscalls = await CallRegistration.aggregate([
+//   // Filter the callregistration array to keep only entries with today's attendance
+//   {
+//     $addFields: {
+//       callregistration: {
+//         $filter: {
+//           input: "$callregistration",
+//           as: "call",
+//           cond: {
+//             $and: [{ $eq: ["$$call.formdata.status", "solved"] },
+//             {
+//               $anyElementTrue: {
+//                 $map: {
+//                   input: {
+//                     $cond: {
+//                       if: {
+//                         $isArray: {
+//                           $ifNull: ["$$call.formdata.attendedBy", []]
+//                         }
+//                       },
+//                       then: { $ifNull: ["$$call.formdata.attendedBy", []] },
+//                       else: []
+//                     }
+//                   },
+//                   as: "attendance",
+//                   in: {
+//                     $and: [
+//                       { $ifNull: ["$$attendance.calldate", false] },
+//                       {
+//                         $gte: [
+//                           {
+//                             $ifNull: ["$$attendance.calldate", new Date(0)]
+//                           },
+//                           todayStart
+//                         ]
+//                       },
+//                       {
+//                         $lt: [
+//                           {
+//                             $ifNull: ["$$attendance.calldate", new Date(0)]
+//                           },
+//                           todayEnd
+//                         ]
+//                       }
+//                     ]
+//                   }
+//                 }
+//               }
+//             }
+
+//             ]
+
+//           }
+//         }
+//       }
+//     }
+//   },
+
+
+//   // Remove documents where the callregistration array is now empty
+//   {
+//     $match: {
+//       "callregistration.0": { $exists: true }
+//     }
+//   },
+
+//   // For each call in the filtered array, filter the attendedBy array to keep only today's records
+//   {
+//     $addFields: {
+//       callregistration: {
+//         $map: {
+//           input: "$callregistration",
+//           as: "call",
+//           in: {
+//             $mergeObjects: [
+//               "$$call",
+//               {
+//                 formdata: {
+//                   $mergeObjects: [
+//                     "$$call.formdata",
+//                     {
+//                       attendedBy: {
+//                         $cond: {
+//                           if: {
+//                             $isArray: {
+//                               $ifNull: ["$$call.formdata.attendedBy", []]
+//                             }
+//                           },
+//                           then: {
+//                             $filter: {
+//                               input: "$$call.formdata.attendedBy",
+//                               as: "attendance",
+//                               cond: {
+//                                 $and: [
+//                                   {
+//                                     $ifNull: [
+//                                       "$$attendance.calldate",
+//                                       false
+//                                     ]
+//                                   },
+//                                   {
+//                                     $gte: [
+//                                       {
+//                                         $ifNull: [
+//                                           "$$attendance.calldate",
+//                                           new Date(0)
+//                                         ]
+//                                       },
+//                                       todayStart
+//                                     ]
+//                                   },
+//                                   {
+//                                     $lt: [
+//                                       {
+//                                         $ifNull: [
+//                                           "$$attendance.calldate",
+//                                           new Date(0)
+//                                         ]
+//                                       },
+//                                       todayEnd
+//                                     ]
+//                                   }
+//                                 ]
+//                               }
+//                             }
+//                           },
+//                           else: "$$call.formdata.attendedBy" // Keep original if not an array
+//                         }
+//                       }
+//                     }
+//                   ]
+//                 }
+//               }
+//             ]
+//           }
+//         }
+//       }
+//     }
+//   },
+
+//   // Lookup product details
+//   {
+//     $lookup: {
+//       from: "products",
+//       localField: "callregistration.product",
+//       foreignField: "_id",
+//       as: "productDetails"
+//     }
+//   }
+// ])
+// // console.log(`📊 DATA SIZE for solved: ${JSON.stringify(todayscalls).length / 1024 / 1024} MB`);
+// // Step 1: Use a Map to store unique merged entries by _id
+// const mergedMap = new Map();
+
+// pendingcalls.forEach((call) => {
+//   mergedMap.set(call._id, { ...call })
+// })
+// todayscalls.forEach((call) => {
+//   if (mergedMap.has(call._id)) {
+//     //Merge callregistration arrays
+//     const existing = mergedMap.get(call._id)
+//     existing.callregistration = [...existing.callregistration,
+//     ...call.callregistration]
+//     mergedMap.set(call._id, existing)
+//   } else {
+//     mergedMap.set(call._id, { ...call })
+//   }
+// })
+// // Final merged array
+// const mergedCalls = Array.from(mergedMap.values());
+// // Extract unique IDs for attendedBy and completedBy
+// const attendedByIds = new Set()
+// const completedByIds = new Set()
+// const beforeSize = JSON.stringify(mergedCalls).length / 1024 / 1024;
+// console.log(`📊 BEFORE loop: ${beforeSize.toFixed(2)} MB`);
+// mergedCalls.forEach((call) =>
+//   call.callregistration.forEach((entry) => {
+//     // Handle `attendedBy`
+//     const attendedBy = entry.formdata.attendedBy
+//     if (Array.isArray(attendedBy)) {
+//       // If it's an array, iterate over it
+//       attendedBy.forEach((attendee) => {
+//         if (attendee.callerId) {
+//           attendedByIds.add(attendee.callerId.toString())
+//         } else if (attendee.name) {
+//           attendedByIds.add(attendee.name)
+//         }
+//       })
+//     } else if (typeof attendedBy === "string") {
+//       // If it's a string, add it directly
+//       attendedByIds.add(attendedBy)
+//     }
+
+//     // Handle `completedBy`
+//     const completedBy = entry.formdata.completedBy
+//     if (Array.isArray(completedBy) && completedBy.length > 0) {
+//       const completedByEntry = completedBy[0]
+//       if (completedByEntry.callerId) {
+//         completedByIds.add(completedByEntry.callerId.toString())
+//       } else if (completedByEntry.name) {
+//         completedByIds.add(completedByEntry.name)
+//         // Optionally, handle cases where only the name exists
+//         console.warn(
+//           `CompletedBy has name but no callerId: ${completedByEntry.name}`
+//         )
+//       }
+//     } else if (typeof completedBy === "string") {
+//       // If it's a string, add it directly
+//       completedByIds.add(completedBy)
+//     }
+//   })
+// )
+// // 📊 MEASURE AFTER the loop
+// // console.log(`📊 AFTER loop: ${JSON.stringify(mergedCalls).length / 1024 / 1024} MB`);
+// // console.log(`📊 SIZE INCREASE: ${((JSON.stringify(mergedCalls).length / 1024 / 1024) - beforeSize).toFixed(2)} MB`);
+
+// // Separate IDs and names from the Sets
+// const attendedByIdsArray = Array.from(attendedByIds)
+// const attendedByObjectIds = attendedByIdsArray.filter((id) =>
+//   mongoose.Types.ObjectId.isValid(id)
+// )
+
+// const attendedByNames = attendedByIdsArray
+//   .filter((id) => !mongoose.Types.ObjectId.isValid(id)) // Filter invalid ObjectIds (names)
+//   .map((name) => ({ name })) // Transform them into objects with a "name" property
+
+// const completedByIdsArray = Array.from(completedByIds)
+// const completedByObjectIds = completedByIdsArray.filter((id) =>
+//   mongoose.Types.ObjectId.isValid(id)
+// )
+
+// const completedByNames = completedByIdsArray
+//   .filter((id) => !mongoose.Types.ObjectId.isValid(id)) // Filter invalid ObjectIds (names)
+//   .map((name) => ({ name })) // Transform them into objects with a "name" property
+
+// // Query for ObjectIds (staff/admin users)
+// const [
+//   attendedByStaff,
+//   attendedByAdmin,
+//   completedByStaff,
+//   completedByAdmin
+// ] = await Promise.all([
+//   // Search attendedBy IDs in Staff
+//   mongoose
+//     .model("Staff")
+//     .find({ _id: { $in: attendedByObjectIds } })
+//     .select("name _id ")
+//     .lean(),
+
+//   // Search attendedBy IDs in Admin
+//   mongoose
+//     .model("Admin")
+//     .find({ _id: { $in: attendedByObjectIds } })
+//     .select("name _id ")
+//     .lean(),
+
+//   // Search completedBy IDs in Staff
+//   mongoose
+//     .model("Staff")
+//     .find({ _id: { $in: completedByObjectIds } })
+//     .select("name _id ")
+//     .lean(),
+
+//   // Search completedBy IDs in Admin
+//   mongoose
+//     .model("Admin")
+//     .find({ _id: { $in: completedByObjectIds } })
+//     .select("name _id ")
+//     .lean()
+// ])
+
+// // Combine results for attendedBy and completedBy
+// const attendedByUsers = [...attendedByStaff, ...attendedByAdmin]
+// const completedByUsers = [...completedByStaff, ...completedByAdmin]
+
+// // Optionally handle name-based entries as well
+// const attendedByCombined = [...attendedByUsers, ...attendedByNames]
+
+// const completedByCombined = [...completedByUsers, ...completedByNames]
+// const userMap = new Map(
+//   [...attendedByCombined, ...completedByCombined].map((user) => [
+//     user._id ? user._id.toString() : user.name,
+//     user.name
+//   ])
+// )
+// mergedCalls.forEach((call) =>
+//   call.callregistration.forEach((entry) => {
+//     // Handle attendedBy field
+//     if (Array.isArray(entry?.formdata?.attendedBy)) {
+//       entry.formdata.attendedBy = entry.formdata.attendedBy
+//         .flat() // Flatten the array
+//         .map((attendee) => {
+//           const name = userMap.get(attendee?.callerId?.toString())
+//           // If name is found, attach it to the callerId
+//           return name ? { ...attendee, callerId: { name } } : attendee // Keep original if no name found
+//         })
+//     } else if (typeof entry?.formdata?.attendedBy === "string") {
+//       // If attendedBy is a string (not an array), map it to the name if it exists in userMap
+//       const name = userMap.get(entry?.formdata?.attendedBy)
+//       entry.formdata.attendedBy = name
+//         ? { callerId: { name } } // Map the string to an object with a name
+//         : { callerId: entry?.formdata?.attendedBy } // Keep the original if no name found
+//     }
+
+//     // Handle completedBy field
+//     if (
+//       Array.isArray(entry?.formdata?.completedBy) &&
+//       entry?.formdata?.completedBy.length > 0
+//     ) {
+//       // If completedBy is an array, map over each entry (assuming one entry)
+//       const completedUser = userMap.get(
+//         entry?.formdata?.completedBy[0]?.callerId?.toString()
+//       )
+//       entry.formdata.completedBy = completedUser
+//         ? [{ ...entry?.formdata?.completedBy[0], name: completedUser }] // Add the name to the first item
+//         : entry.formdata.completedBy // Keep as is if no name found
+//     } else if (typeof entry?.formdata?.completedBy === "string") {
+//       // If completedBy is a string, map it to the name if it exists in userMap
+//       const name = userMap.get(entry?.formdata?.completedBy)
+//       entry.formdata.completedBy = name
+//         ? { callerId: { name } } // Map the string to an object with a name
+//         : { callerId: entry?.formdata?.completedBy } // Keep the original if no name found
+//     }
+//   })
+// )
+// console.log(`📊 AFTER loop: ${JSON.stringify(mergedCalls).length / 1024 / 1024} MB`);
+// console.log(`📊 SIZE INCREASE: ${((JSON.stringify(mergedCalls).length / 1024 / 1024) - beforeSize).toFixed(2)} MB`);
+
+// return res.status(200).json({ message: "calllist found", data: mergedCalls })
+//   } catch (error) {
+//     console.error("Error fetching call data:", error)
+//     return res.status(500).json({ message: "Internal server error" })
+//   }
+
+// }
+// //new api code
+// export const Getallcallregistrationlist = async (req, res) => {
+//   try {
+//     const today = new Date().toISOString().split("T")[0];
+//     const todayStart = new Date(`${today}T00:00:00.000Z`);
+//     const todayEnd = new Date(`${today}T23:59:59.999Z`);
+//     const result = await CallRegistration.aggregate([
+//       {
+//         $facet: {
+//           pending: [
+//             {
+//               $match: {
+//                 "callregistration.formdata.status": "pending"
+//               }
+//             },
+//             {
+//               $project: {
+//                 callregistration: {
+//                   $filter: {
+//                     input: "$callregistration",
+//                     as: "cr",
+//                     cond: { $eq: ["$$cr.formdata.status", "pending"] }
+//                   }
+//                 }
+//               }
+//             }
+//           ],
+
+//           todaySolved: [
+//             {
+//               $match: {
+//                 "callregistration.formdata.status": "solved",
+//                 "callregistration.formdata.attendedBy.calldate": {
+//                   $gte: todayStart,
+//                   $lt: todayEnd
+//                 }
+//               }
+//             },
+//             {
+//               $project: {
+//                 callregistration: {
+//                   $filter: {
+//                     input: "$callregistration",
+//                     as: "cr",
+//                     cond: {
+//                       $and: [
+//                         { $eq: ["$$cr.formdata.status", "solved"] },
+//                         {
+//                           $anyElementTrue: {
+//                             $map: {
+//                               input: { $ifNull: ["$$cr.formdata.attendedBy", []] },
+//                               as: "att",
+//                               in: {
+//                                 $and: [
+//                                   { $gte: ["$$att.calldate", todayStart] },
+//                                   { $lt: ["$$att.calldate", todayEnd] }
+//                                 ]
+//                               }
+//                             }
+//                           }
+//                         }
+//                       ]
+//                     }
+//                   }
+//                 }
+//               }
+//             }
+//           ]
+//         }
+//       },
+
+//       /* 🔥 MERGE BOTH ARRAYS */
+//       {
+//         $project: {
+//           data: { $concatArrays: ["$pending", "$todaySolved"] }
+//         }
+//       },
+//       { $unwind: "$data" },
+//       { $replaceRoot: { newRoot: "$data" } },
+
+//       /* ✅ RESTORE ORIGINAL SHAPE */
+//       {
+//         $group: {
+//           _id: "$_id",
+//           callregistration: { $push: "$callregistration" },
+//           root: { $first: "$$ROOT" }
+//         }
+//       },
+//       {
+//         $project: {
+//           _id: 1,
+//           callregistration: {
+//             $reduce: {
+//               input: "$callregistration",
+//               initialValue: [],
+//               in: { $concatArrays: ["$$value", "$$this"] }
+//             }
+//           },
+//           root: 1
+//         }
+//       },
+//       {
+//         $replaceRoot: {
+//           newRoot: {
+//             $mergeObjects: ["$root", { callregistration: "$callregistration" }]
+//           }
+//         }
+//       }
+//     ]);
+
+//     // const result = await CallRegistration.aggregate([
+//     //   {
+//     //     $facet: {
+//     //       pending: [
+//     //         {
+//     //           $match: {
+//     //             "callregistration.formdata.status": "pending"
+//     //           }
+//     //         },
+//     //         {
+//     //           $project: {
+//     //             callregistration: {
+//     //               $filter: {
+//     //                 input: "$callregistration",
+//     //                 as: "cr",
+//     //                 cond: { $eq: ["$$cr.formdata.status", "pending"] }
+//     //               }
+//     //             }
+//     //           }
+//     //         }
+//     //       ],
+
+//     //       todaySolved: [
+//     //         {
+//     //           $match: {
+//     //             "callregistration.formdata.status": "solved",
+//     //             "callregistration.formdata.attendedBy.calldate": {
+//     //               $gte: todayStart,
+//     //               $lt: todayEnd
+//     //             }
+//     //           }
+//     //         },
+//     //         {
+//     //           $project: {
+//     //             callregistration: {
+//     //               $filter: {
+//     //                 input: "$callregistration",
+//     //                 as: "cr",
+//     //                 cond: {
+//     //                   $and: [
+//     //                     { $eq: ["$$cr.formdata.status", "solved"] },
+//     //                     {
+//     //                       $anyElementTrue: {
+//     //                         $map: {
+//     //                           input: { $ifNull: ["$$cr.formdata.attendedBy", []] },
+//     //                           as: "att",
+//     //                           in: {
+//     //                             $and: [
+//     //                               { $gte: ["$$att.calldate", todayStart] },
+//     //                               { $lt: ["$$att.calldate", todayEnd] }
+//     //                             ]
+//     //                           }
+//     //                         }
+//     //                       }
+//     //                     }
+//     //                   ]
+//     //                 }
+//     //               }
+//     //             }
+//     //           }
+//     //         }
+//     //       ]
+//     //     }
+//     //   },
+//     //   {
+//     //     $project: {
+//     //       merged: { $concatArrays: ["$pending", "$todaySolved"] }
+//     //     }
+//     //   },
+//     //   { $unwind: "$merged" },
+//     //   { $replaceRoot: { newRoot: "$merged" } }
+//     // ]);
+
+//     /* ------------------------------------
+//        EXTRACT UNIQUE USER IDS
+//     ------------------------------------ */
+
+//     const userIds = new Set();
+
+//     result.forEach(doc =>
+//       doc.callregistration.forEach(cr => {
+//         const attended = cr.formdata.attendedBy || [];
+//         const completed = cr.formdata.completedBy || [];
+
+//         attended.forEach(a => a?.callerId && userIds.add(a.callerId.toString()));
+//         completed.forEach(c => c?.callerId && userIds.add(c.callerId.toString()));
+//       })
+//     );
+
+//     const ids = [...userIds].filter(id => mongoose.Types.ObjectId.isValid(id));
+
+//     /* ------------------------------------
+//        FETCH USERS ONCE
+//     ------------------------------------ */
+
+//     const [staff, admin] = await Promise.all([
+//       mongoose.model("Staff").find({ _id: { $in: ids } }).select("name").lean(),
+//       mongoose.model("Admin").find({ _id: { $in: ids } }).select("name").lean()
+//     ]);
+
+//     const userMap = new Map(
+//       [...staff, ...admin].map(u => [u._id.toString(), u.name])
+//     );
+
+//     /* ------------------------------------
+//        ATTACH NAMES
+//     ------------------------------------ */
+
+//     result.forEach(doc =>
+//       doc.callregistration.forEach(cr => {
+//         if (Array.isArray(cr.formdata.attendedBy)) {
+//           cr.formdata.attendedBy = cr.formdata.attendedBy.map(a => ({
+//             ...a,
+//             callerId: { name: userMap.get(a.callerId?.toString()) || "Unknown" }
+//           }));
+//         }
+
+//         if (Array.isArray(cr.formdata.completedBy)) {
+//           cr.formdata.completedBy = cr.formdata.completedBy.map(c => ({
+//             ...c,
+//             name: userMap.get(c.callerId?.toString()) || "Unknown"
+//           }));
+//         }
+//       })
+//     );
+
+//     return res.status(200).json({
+//       message: "calllist found",
+//       data: result
+//     });
+//   } catch (error) {
+//     console.error("Error fetching call data:", error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
+
 export const Getallcallregistrationlist = async (req, res) => {
   try {
-    const todayStart =
-      new Date().toISOString().split("T")[0] + "T00:00:00.000Z"
-    const todayEnd = new Date().toISOString().split("T")[0] + "T23:59:59.999Z"
+    const todayStart = new Date().toISOString().split("T")[0] + "T00:00:00.000Z";
+    const todayEnd = new Date().toISOString().split("T")[0] + "T23:59:59.999Z";
 
-    const pendingcalls = await CallRegistration.aggregate([
+    const aggregated = await CallRegistration.aggregate([
       {
-        $set: {
-          callregistration: {
-            $filter: {
-              input: "$callregistration",
-              as: "cr",
-              cond: { $eq: ["$$cr.formdata.status", "pending"] }
-            }
-          }
-        }
-      },
-      {
-        $match: { "callregistration.0": { $exists: true } } // Ensures only documents with at least one pending call remain
-      },
-      {
-        $lookup: {
-          from: "products", // Replace with actual product collection name
-          localField: "callregistration.product", // Field in CallRegistration referencing products
-          foreignField: "_id", // Matching field in the Product collection
-          as: "productDetails"
-        }
-      }
-    ],
-
-    )
-    // ADD THIS LINE:
-    // console.log(`📊 DATA SIZE for pending: ${JSON.stringify(pendingcalls).length / 1024 / 1024} MB`);
-
-    const todayscalls = await CallRegistration.aggregate([
-      // Filter the callregistration array to keep only entries with today's attendance
-      {
-        $addFields: {
-          callregistration: {
-            $filter: {
-              input: "$callregistration",
-              as: "call",
-              cond: {
-                $and: [{ $eq: ["$$call.formdata.status", "solved"] },
-                {
-                  $anyElementTrue: {
-                    $map: {
-                      input: {
-                        $cond: {
-                          if: {
-                            $isArray: {
-                              $ifNull: ["$$call.formdata.attendedBy", []]
-                            }
-                          },
-                          then: { $ifNull: ["$$call.formdata.attendedBy", []] },
-                          else: []
-                        }
-                      },
-                      as: "attendance",
-                      in: {
-                        $and: [
-                          { $ifNull: ["$$attendance.calldate", false] },
-                          {
-                            $gte: [
-                              {
-                                $ifNull: ["$$attendance.calldate", new Date(0)]
-                              },
-                              todayStart
-                            ]
-                          },
-                          {
-                            $lt: [
-                              {
-                                $ifNull: ["$$attendance.calldate", new Date(0)]
-                              },
-                              todayEnd
-                            ]
-                          }
-                        ]
-                      }
-                    }
+        $facet: {
+          pending: [
+            {
+              $set: {
+                callregistration: {
+                  $filter: {
+                    input: "$callregistration",
+                    as: "cr",
+                    cond: { $eq: ["$$cr.formdata.status", "pending"] }
                   }
                 }
-
-                ]
-
+              }
+            },
+            { $match: { "callregistration.0": { $exists: true } } },
+            {
+              $lookup: {
+                from: "products",
+                localField: "callregistration.product",
+                foreignField: "_id",
+                as: "productDetails"
               }
             }
-          }
-        }
-      },
-
-
-      // Remove documents where the callregistration array is now empty
-      {
-        $match: {
-          "callregistration.0": { $exists: true }
-        }
-      },
-
-      // For each call in the filtered array, filter the attendedBy array to keep only today's records
-      {
-        $addFields: {
-          callregistration: {
-            $map: {
-              input: "$callregistration",
-              as: "call",
-              in: {
-                $mergeObjects: [
-                  "$$call",
-                  {
-                    formdata: {
-                      $mergeObjects: [
-                        "$$call.formdata",
+          ],
+          todaySolved: [
+            {
+              $set: {
+                callregistration: {
+                  $filter: {
+                    input: "$callregistration",
+                    as: "cr",
+                    cond: {
+                      $and: [
+                        { $eq: ["$$cr.formdata.status", "solved"] },
                         {
-                          attendedBy: {
-                            $cond: {
-                              if: {
-                                $isArray: {
-                                  $ifNull: ["$$call.formdata.attendedBy", []]
-                                }
-                              },
-                              then: {
-                                $filter: {
-                                  input: "$$call.formdata.attendedBy",
-                                  as: "attendance",
-                                  cond: {
-                                    $and: [
-                                      {
-                                        $ifNull: [
-                                          "$$attendance.calldate",
-                                          false
-                                        ]
-                                      },
-                                      {
-                                        $gte: [
-                                          {
-                                            $ifNull: [
-                                              "$$attendance.calldate",
-                                              new Date(0)
-                                            ]
-                                          },
-                                          todayStart
-                                        ]
-                                      },
-                                      {
-                                        $lt: [
-                                          {
-                                            $ifNull: [
-                                              "$$attendance.calldate",
-                                              new Date(0)
-                                            ]
-                                          },
-                                          todayEnd
-                                        ]
-                                      }
-                                    ]
+                          $anyElementTrue: {
+                            $map: {
+                              // Wrap attendedBy in array if it’s not an array
+                              input: {
+                                $cond: {
+                                  if: { $isArray: "$$cr.formdata.attendedBy" },
+                                  then: "$$cr.formdata.attendedBy",
+                                  else: {
+                                    $cond: {
+                                      if: { $eq: ["$$cr.formdata.attendedBy", null] },
+                                      then: [],
+                                      else: ["$$cr.formdata.attendedBy"]
+                                    }
                                   }
                                 }
                               },
-                              else: "$$call.formdata.attendedBy" // Keep original if not an array
+                              as: "att",
+                              in: {
+                                $and: [
+                                  { $gte: ["$$att.calldate", todayStart] },
+                                  { $lt: ["$$att.calldate", todayEnd] }
+                                ]
+                              }
                             }
                           }
                         }
                       ]
                     }
                   }
-                ]
+                }
+              }
+            },
+            { $match: { "callregistration.0": { $exists: true } } },
+            {
+              $lookup: {
+                from: "products",
+                localField: "callregistration.product",
+                foreignField: "_id",
+                as: "productDetails"
               }
             }
-          }
+          ]
         }
       },
-
-      // Lookup product details
       {
-        $lookup: {
-          from: "products",
-          localField: "callregistration.product",
-          foreignField: "_id",
-          as: "productDetails"
+        $project: {
+          data: { $concatArrays: ["$pending", "$todaySolved"] }
         }
-      }
-    ])
-    // console.log(`📊 DATA SIZE for solved: ${JSON.stringify(todayscalls).length / 1024 / 1024} MB`);
-    // Step 1: Use a Map to store unique merged entries by _id
-    const mergedMap = new Map();
-
-    pendingcalls.forEach((call) => {
-      mergedMap.set(call._id, { ...call })
-    })
-    todayscalls.forEach((call) => {
-      if (mergedMap.has(call._id)) {
-        //Merge callregistration arrays
-        const existing = mergedMap.get(call._id)
-        existing.callregistration = [...existing.callregistration,
-        ...call.callregistration]
-        mergedMap.set(call._id, existing)
-      } else {
-        mergedMap.set(call._id, { ...call })
-      }
-    })
-    // Final merged array
-    const mergedCalls = Array.from(mergedMap.values());
-    // Extract unique IDs for attendedBy and completedBy
-    const attendedByIds = new Set()
-    const completedByIds = new Set()
-    const beforeSize = JSON.stringify(mergedCalls).length / 1024 / 1024;
-    console.log(`📊 BEFORE loop: ${beforeSize.toFixed(2)} MB`);
-    mergedCalls.forEach((call) =>
-      call.callregistration.forEach((entry) => {
-        // Handle `attendedBy`
-        const attendedBy = entry.formdata.attendedBy
-        if (Array.isArray(attendedBy)) {
-          // If it's an array, iterate over it
-          attendedBy.forEach((attendee) => {
-            if (attendee.callerId) {
-              attendedByIds.add(attendee.callerId.toString())
-            } else if (attendee.name) {
-              attendedByIds.add(attendee.name)
+      },
+      { $unwind: "$data" },
+      { $replaceRoot: { newRoot: "$data" } },
+      {
+        $group: {
+          _id: "$_id",
+          callregistration: { $push: "$callregistration" },
+          root: { $first: "$$ROOT" }
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          callregistration: {
+            $reduce: {
+              input: "$callregistration",
+              initialValue: [],
+              in: { $concatArrays: ["$$value", "$$this"] }
             }
-          })
-        } else if (typeof attendedBy === "string") {
-          // If it's a string, add it directly
-          attendedByIds.add(attendedBy)
+          },
+          root: 1
         }
+      },
+      { $replaceRoot: { newRoot: { $mergeObjects: ["$root", { callregistration: "$callregistration" }] } } }
+    ]);
 
-        // Handle `completedBy`
-        const completedBy = entry.formdata.completedBy
+    // The rest of your logic (attendedBy/completedBy mapping) remains the same
+    const mergedCalls = aggregated;
+    const attendedByIds = new Set();
+    const completedByIds = new Set();
+
+    mergedCalls.forEach((call) => {
+      call.callregistration.forEach((entry) => {
+        // attendedBy
+        const attendedBy = entry.formdata.attendedBy;
+        if (Array.isArray(attendedBy)) {
+          attendedBy.forEach((attendee) => {
+            if (attendee.callerId) attendedByIds.add(attendee.callerId.toString());
+            else if (attendee.name) attendedByIds.add(attendee.name);
+          });
+        } else if (typeof attendedBy === "string") attendedByIds.add(attendedBy);
+
+        // completedBy
+        const completedBy = entry.formdata.completedBy;
         if (Array.isArray(completedBy) && completedBy.length > 0) {
-          const completedByEntry = completedBy[0]
-          if (completedByEntry.callerId) {
-            completedByIds.add(completedByEntry.callerId.toString())
-          } else if (completedByEntry.name) {
-            completedByIds.add(completedByEntry.name)
-            // Optionally, handle cases where only the name exists
-            console.warn(
-              `CompletedBy has name but no callerId: ${completedByEntry.name}`
-            )
-          }
-        } else if (typeof completedBy === "string") {
-          // If it's a string, add it directly
-          completedByIds.add(completedBy)
-        }
-      })
-    )
-    // 📊 MEASURE AFTER the loop
-    // console.log(`📊 AFTER loop: ${JSON.stringify(mergedCalls).length / 1024 / 1024} MB`);
-    // console.log(`📊 SIZE INCREASE: ${((JSON.stringify(mergedCalls).length / 1024 / 1024) - beforeSize).toFixed(2)} MB`);
+          const completedByEntry = completedBy[0];
+          if (completedByEntry.callerId) completedByIds.add(completedByEntry.callerId.toString());
+          else if (completedByEntry.name) completedByIds.add(completedByEntry.name);
+        } else if (typeof completedBy === "string") completedByIds.add(completedBy);
+      });
+    });
 
-    // Separate IDs and names from the Sets
-    const attendedByIdsArray = Array.from(attendedByIds)
-    const attendedByObjectIds = attendedByIdsArray.filter((id) =>
-      mongoose.Types.ObjectId.isValid(id)
-    )
+    const attendedByObjectIds = Array.from(attendedByIds).filter((id) => mongoose.Types.ObjectId.isValid(id));
+    const attendedByNames = Array.from(attendedByIds).filter((id) => !mongoose.Types.ObjectId.isValid(id)).map((name) => ({ name }));
+    const completedByObjectIds = Array.from(completedByIds).filter((id) => mongoose.Types.ObjectId.isValid(id));
+    const completedByNames = Array.from(completedByIds).filter((id) => !mongoose.Types.ObjectId.isValid(id)).map((name) => ({ name }));
 
-    const attendedByNames = attendedByIdsArray
-      .filter((id) => !mongoose.Types.ObjectId.isValid(id)) // Filter invalid ObjectIds (names)
-      .map((name) => ({ name })) // Transform them into objects with a "name" property
-
-    const completedByIdsArray = Array.from(completedByIds)
-    const completedByObjectIds = completedByIdsArray.filter((id) =>
-      mongoose.Types.ObjectId.isValid(id)
-    )
-
-    const completedByNames = completedByIdsArray
-      .filter((id) => !mongoose.Types.ObjectId.isValid(id)) // Filter invalid ObjectIds (names)
-      .map((name) => ({ name })) // Transform them into objects with a "name" property
-
-    // Query for ObjectIds (staff/admin users)
     const [
       attendedByStaff,
       attendedByAdmin,
       completedByStaff,
       completedByAdmin
     ] = await Promise.all([
-      // Search attendedBy IDs in Staff
-      mongoose
-        .model("Staff")
-        .find({ _id: { $in: attendedByObjectIds } })
-        .select("name _id ")
-        .lean(),
+      mongoose.model("Staff").find({ _id: { $in: attendedByObjectIds } }).select("name _id").lean(),
+      mongoose.model("Admin").find({ _id: { $in: attendedByObjectIds } }).select("name _id").lean(),
+      mongoose.model("Staff").find({ _id: { $in: completedByObjectIds } }).select("name _id").lean(),
+      mongoose.model("Admin").find({ _id: { $in: completedByObjectIds } }).select("name _id").lean()
+    ]);
 
-      // Search attendedBy IDs in Admin
-      mongoose
-        .model("Admin")
-        .find({ _id: { $in: attendedByObjectIds } })
-        .select("name _id ")
-        .lean(),
+    const attendedByCombined = [...attendedByStaff, ...attendedByAdmin, ...attendedByNames];
+    const completedByCombined = [...completedByStaff, ...completedByAdmin, ...completedByNames];
 
-      // Search completedBy IDs in Staff
-      mongoose
-        .model("Staff")
-        .find({ _id: { $in: completedByObjectIds } })
-        .select("name _id ")
-        .lean(),
+    const userMap = new Map([...attendedByCombined, ...completedByCombined].map((user) => [
+      user._id ? user._id.toString() : user.name, user.name
+    ]));
 
-      // Search completedBy IDs in Admin
-      mongoose
-        .model("Admin")
-        .find({ _id: { $in: completedByObjectIds } })
-        .select("name _id ")
-        .lean()
-    ])
-
-    // Combine results for attendedBy and completedBy
-    const attendedByUsers = [...attendedByStaff, ...attendedByAdmin]
-    const completedByUsers = [...completedByStaff, ...completedByAdmin]
-
-    // Optionally handle name-based entries as well
-    const attendedByCombined = [...attendedByUsers, ...attendedByNames]
-
-    const completedByCombined = [...completedByUsers, ...completedByNames]
-    const userMap = new Map(
-      [...attendedByCombined, ...completedByCombined].map((user) => [
-        user._id ? user._id.toString() : user.name,
-        user.name
-      ])
-    )
     mergedCalls.forEach((call) =>
       call.callregistration.forEach((entry) => {
-        // Handle attendedBy field
-        if (Array.isArray(entry?.formdata?.attendedBy)) {
-          entry.formdata.attendedBy = entry.formdata.attendedBy
-            .flat() // Flatten the array
-            .map((attendee) => {
-              const name = userMap.get(attendee?.callerId?.toString())
-              // If name is found, attach it to the callerId
-              return name ? { ...attendee, callerId: { name } } : attendee // Keep original if no name found
-            })
-        } else if (typeof entry?.formdata?.attendedBy === "string") {
-          // If attendedBy is a string (not an array), map it to the name if it exists in userMap
-          const name = userMap.get(entry?.formdata?.attendedBy)
-          entry.formdata.attendedBy = name
-            ? { callerId: { name } } // Map the string to an object with a name
-            : { callerId: entry?.formdata?.attendedBy } // Keep the original if no name found
+        // attendedBy
+        if (Array.isArray(entry.formdata.attendedBy)) {
+          entry.formdata.attendedBy = entry.formdata.attendedBy.flat().map((attendee) => {
+            const name = userMap.get(attendee?.callerId?.toString());
+            return name ? { ...attendee, callerId: { name } } : attendee;
+          });
+        } else if (typeof entry.formdata.attendedBy === "string") {
+          const name = userMap.get(entry.formdata.attendedBy);
+          entry.formdata.attendedBy = name ? { callerId: { name } } : { callerId: entry.formdata.attendedBy };
         }
 
-        // Handle completedBy field
-        if (
-          Array.isArray(entry?.formdata?.completedBy) &&
-          entry?.formdata?.completedBy.length > 0
-        ) {
-          // If completedBy is an array, map over each entry (assuming one entry)
-          const completedUser = userMap.get(
-            entry?.formdata?.completedBy[0]?.callerId?.toString()
-          )
-          entry.formdata.completedBy = completedUser
-            ? [{ ...entry?.formdata?.completedBy[0], name: completedUser }] // Add the name to the first item
-            : entry.formdata.completedBy // Keep as is if no name found
-        } else if (typeof entry?.formdata?.completedBy === "string") {
-          // If completedBy is a string, map it to the name if it exists in userMap
-          const name = userMap.get(entry?.formdata?.completedBy)
-          entry.formdata.completedBy = name
-            ? { callerId: { name } } // Map the string to an object with a name
-            : { callerId: entry?.formdata?.completedBy } // Keep the original if no name found
+        // completedBy
+        if (Array.isArray(entry.formdata.completedBy) && entry.formdata.completedBy.length > 0) {
+          const completedUser = userMap.get(entry.formdata.completedBy[0]?.callerId?.toString());
+          entry.formdata.completedBy = completedUser ? [{ ...entry.formdata.completedBy[0], name: completedUser }] : entry.formdata.completedBy;
+        } else if (typeof entry.formdata.completedBy === "string") {
+          const name = userMap.get(entry.formdata.completedBy);
+          entry.formdata.completedBy = name ? { callerId: { name } } : { callerId: entry.formdata.completedBy };
         }
       })
-    )
-    console.log(`📊 AFTER loop: ${JSON.stringify(mergedCalls).length / 1024 / 1024} MB`);
-    console.log(`📊 SIZE INCREASE: ${((JSON.stringify(mergedCalls).length / 1024 / 1024) - beforeSize).toFixed(2)} MB`);
+    );
 
-    return res.status(200).json({ message: "calllist found", data: mergedCalls })
+    return res.status(200).json({ message: "calllist found", data: mergedCalls });
   } catch (error) {
-    console.error("Error fetching call data:", error)
-    return res.status(500).json({ message: "Internal server error" })
+    console.error("Error fetching call data:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
+};
 
-}
+
+
 export const Downloadcustomerlist = async (req, res) => {
   try {
     const { customerType, branchselected, searchTerm } = req.query;
