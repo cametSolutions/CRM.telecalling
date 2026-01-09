@@ -15,193 +15,100 @@ const { Staff, Admin } = models
 import mongoose from "mongoose"
 import Holymaster from "../../model/secondaryUser/holydaymasterSchema.js"
 
+
+
+
 export const GetscrollCustomer = async (req, res) => {
   try {
-    const { page = 1, limit = 100, search = "", loggeduserBranches, customerType } = req.query;
+    const {
+      page = 1,
+      limit = 100,
+      search = "",
+      loggeduserBranches,
+      customerType = "Allcustomers"
+    } = req.query;
+
     const pageNum = Math.max(1, parseInt(page));
     const pageSize = Math.max(1, parseInt(limit));
     const skip = (pageNum - 1) * pageSize;
-    let branchId;
-    if (loggeduserBranches) {
-      branchId = new mongoose.Types.ObjectId(loggeduserBranches);
-    } else {
-      return res.status(400).json({ message: "loggeduserBranches (branch id) is required" });
-    }
-    let matchConditions
-    if (customerType === "ProductMissing") {
-      matchConditions = {
-        $or: [
-          { selected: { $exists: false } }, // no 'selected' field at all
-          { selected: { $size: 0 } }        // 'selected' exists but is empty
-        ]
-      }
-    } else {
-      matchConditions = {
-        "selected.branch_id": branchId,
-        selected: { $exists: true, $ne: [] },
-        ...(customerType !== "Allcustomers" &&
-          customerType !== "ProductinfoMissing" && {
-          isActive: customerType
-        }),// only include this if not 'allcustomers'
-        ...(customerType === "ProductinfoMissing" && {
-          selected: {
-            $elemMatch: {
-              $or: [
-                { product_id: null },
-                { product_id: { $exists: false } }]
-            }
-          }
-        })
-      };
+
+    if (!loggeduserBranches) {
+      return res
+        .status(400)
+        .json({ message: "loggeduserBranches (branch id) is required" });
     }
 
+    const branchId = new mongoose.Types.ObjectId(loggeduserBranches);
 
+    /* --------------------------------------------------
+       1️⃣ BUILD BASE MATCH (INDEX FRIENDLY)
+    -------------------------------------------------- */
 
-    const safe = escapeRegExp(String(search).trim());
-    const regex = new RegExp(safe, "i"); // substring, case-insensitive
+    let match = {};
+
     if (customerType === "ProductMissing") {
-
-      // Combine both: existing $or + search filters
-      matchConditions.$and = [
-        {
-          $or: [
-            { selected: { $exists: false } },
-            { selected: { $size: 0 } }
-          ]
-        },
-        {
-          $or: [
-            { customerName: { $regex: regex } },
-            { mobile: { $regex: regex } }
-          ]
-        }
+      match.$or = [
+        { selected: { $exists: false } },
+        { selected: { $size: 0 } }
       ];
-
     } else {
-      matchConditions = {
-        $and: [
-          {
-            "selected.branch_id": branchId,
-            selected: { $exists: true, $ne: [] },
-            ...(customerType !== "Allcustomers" &&
-              customerType !== "ProductinfoMissing" && {
-              isActive: customerType
-            }),
-            ...(customerType === "ProductinfoMissing" && {
-              selected: {
-                $elemMatch: {
-                  $or: [
-                    { product_id: null },
-                    { product_id: { $exists: false } }
-                  ]
-                }
-              }
-            })
-          },
-          {
+      match["selected.branch_id"] = branchId;
+      match.selected = { $exists: true, $ne: [] };
+
+      if (
+        customerType !== "Allcustomers" &&
+        customerType !== "ProductinfoMissing"
+      ) {
+        match.isActive = customerType;
+      }
+
+      if (customerType === "ProductinfoMissing") {
+        match.selected = {
+          $elemMatch: {
             $or: [
-              { customerName: { $regex: regex } },
-              { mobile: { $regex: regex } },
-              // ✅ Match inside selected.licensenumber
-              {
-                $expr: {
-                  $gt: [
-                    {
-                      $size: {
-                        $filter: {
-                          input: "$selected",
-                          as: "item",
-                          cond: {
-                            $regexMatch: {
-                              input: { $toString: "$$item.licensenumber" },
-                              regex: regex
-                            }
-                          }
-                        }
-                      }
-                    },
-                    0
-                  ]
-                }
-              }
+              { product_id: null },
+              { product_id: { $exists: false } }
             ]
           }
-        ]
-      };
-      // matchConditions.$or = [
-      //   { customerName: { $regex: regex } },
-      //   { mobile: { $regex: regex } },
-      //   // For licensenumber inside selected array:
-      //   {
-      //     $expr: {
-      //       $gt: [
-      //         {
-      //           $size: {
-      //             $filter: {
-      //               input: "$selected",
-      //               as: "item",
-      //               cond: {
-      //                 $regexMatch: {
-      //                   input: { $toString: "$$item.licensenumber" },
-      //                   regex: regex
-      //                 }
-      //               }
-      //             }
-      //           }
-      //         },
-      //         0
-      //       ]
-      //     }
-      //   }
-      // ];
+        };
+      }
     }
 
+    /* --------------------------------------------------
+       2️⃣ ADD SEARCH ONLY IF VALID (CRITICAL FIX)
+    -------------------------------------------------- */
 
+    const hasSearch = search && search.trim().length > 0;
 
-    // 1) Get count of distinct customers matching the same criteria
-    const countPipeline = [
-      { $match: matchConditions },
-      { $group: { _id: "$_id" } },
-      { $count: "count" }
-    ];
+    if (hasSearch) {
+      const safe = escapeRegExp(search.trim());
+      const regex = new RegExp(safe, "i");
 
-    const countResult = await Customer.aggregate(countPipeline);
-    const selectedbranchCustomercount = countResult[0]?.count || 0;
+      match.$or = [
+        { customerName: { $regex: regex } },
+        { mobile: { $regex: regex } },
+        { "selected.licensenumber": { $regex: regex } }
+      ];
+    }
 
-    // 2) Fetch paginated customers with lookup + grouping
-    let pipeline
-    if (customerType === "ProductMissing") {
-      pipeline = [
-        { $match: matchConditions },
+    /* --------------------------------------------------
+       3️⃣ COUNT QUERY (FAST & CHEAP)
+    -------------------------------------------------- */
+
+    const selectedbranchCustomercount =
+      await Customer.countDocuments(match);
+
+    /* --------------------------------------------------
+       4️⃣ DATA QUERY (PAGINATED)
+    -------------------------------------------------- */
+
+    let pipeline = [{ $match: match }];
+
+    if (customerType !== "ProductMissing") {
+      pipeline.push(
+        { $unwind: "$selected" },
         {
-          $group: {                         // group back by customer
-            _id: "$_id",
-            customerName: { $first: "$customerName" },
-            address1: { $first: "$address1" },
-            address2: { $first: "$address2" },
-            country: { $first: "$country" },
-            city: { $first: "$city" },
-            pincode: { $first: "$pincode" },
-            contactPerson: { $first: "$contactPerson" },
-            landline: { $first: "$landline" },
-            industry: { $first: "$industry" },
-            partner: { $first: "$partner" },
-            state: { $first: "$state" },
-            registrationType: { $first: "$registrationType" },
-            gstNo: { $first: "$gstNo" },
-            email: { $first: "$email" },
-            mobile: { $first: "$mobile" },
-
-          }
-        }, { $sort: { customerName: 1 } },
-        { $skip: skip },
-        { $limit: pageSize }]
-    } else {
-      pipeline = [
-        { $match: matchConditions },        // filter documents first
-        { $unwind: "$selected" },           // expand selected array (for lookup)
-        {
-          $lookup: {                        // populate product
+          $lookup: {
             from: "products",
             localField: "selected.product_id",
             foreignField: "_id",
@@ -220,7 +127,7 @@ export const GetscrollCustomer = async (req, res) => {
           }
         },
         {
-          $group: {                         // group back by customer
+          $group: {
             _id: "$_id",
             customerName: { $first: "$customerName" },
             address1: { $first: "$address1" },
@@ -239,15 +146,21 @@ export const GetscrollCustomer = async (req, res) => {
             mobile: { $first: "$mobile" },
             selected: { $push: "$selected" }
           }
-        },
-        { $sort: { customerName: 1 } },
-        { $skip: skip },
-        { $limit: pageSize }
-      ];
+        }
+      );
     }
 
+    pipeline.push(
+      { $sort: { customerName: 1 } },
+      { $skip: skip },
+      { $limit: pageSize }
+    );
 
     const customers = await Customer.aggregate(pipeline);
+
+    /* --------------------------------------------------
+       5️⃣ RESPONSE
+    -------------------------------------------------- */
 
     return res.status(200).json({
       message: customers.length ? "Customer(s) found" : "No customer found",
@@ -256,12 +169,237 @@ export const GetscrollCustomer = async (req, res) => {
         customers
       }
     });
-
   } catch (error) {
-    console.error("error:", error);
-    return res.status(500).json({ message: "Internal server error", error: error.message });
+    console.error("GetscrollCustomer error:", error);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: error.message
+    });
   }
 };
+
+// export const GetscrollCustomer = async (req, res) => {
+//   try {
+//     const { page = 1, limit = 100, search = "", loggeduserBranches, customerType } = req.query;
+//     const pageNum = Math.max(1, parseInt(page));
+//     const pageSize = Math.max(1, parseInt(limit));
+//     const skip = (pageNum - 1) * pageSize;
+//     let branchId;
+//     if (loggeduserBranches) {
+//       branchId = new mongoose.Types.ObjectId(loggeduserBranches);
+//     } else {
+//       return res.status(400).json({ message: "loggeduserBranches (branch id) is required" });
+//     }
+//     let matchConditions
+//     if (customerType === "ProductMissing") {
+//       matchConditions = {
+//         $or: [
+//           { selected: { $exists: false } }, // no 'selected' field at all
+//           { selected: { $size: 0 } }        // 'selected' exists but is empty
+//         ]
+//       }
+//     } else {
+//       matchConditions = {
+//         "selected.branch_id": branchId,
+//         selected: { $exists: true, $ne: [] },
+//         ...(customerType !== "Allcustomers" &&
+//           customerType !== "ProductinfoMissing" && {
+//           isActive: customerType
+//         }),// only include this if not 'allcustomers'
+//         ...(customerType === "ProductinfoMissing" && {
+//           selected: {
+//             $elemMatch: {
+//               $or: [
+//                 { product_id: null },
+//                 { product_id: { $exists: false } }]
+//             }
+//           }
+//         })
+//       };
+//     }
+
+
+
+//     const safe = escapeRegExp(String(search).trim());
+//     const regex = new RegExp(safe, "i"); // substring, case-insensitive
+//     if (customerType === "ProductMissing") {
+
+//       // Combine both: existing $or + search filters
+//       matchConditions.$and = [
+//         {
+//           $or: [
+//             { selected: { $exists: false } },
+//             { selected: { $size: 0 } }
+//           ]
+//         },
+//         {
+//           $or: [
+//             { customerName: { $regex: regex } },
+//             { mobile: { $regex: regex } }
+//           ]
+//         }
+//       ];
+
+//     } else {
+//       matchConditions = {
+//         $and: [
+//           {
+//             "selected.branch_id": branchId,
+//             selected: { $exists: true, $ne: [] },
+//             ...(customerType !== "Allcustomers" &&
+//               customerType !== "ProductinfoMissing" && {
+//               isActive: customerType
+//             }),
+//             ...(customerType === "ProductinfoMissing" && {
+//               selected: {
+//                 $elemMatch: {
+//                   $or: [
+//                     { product_id: null },
+//                     { product_id: { $exists: false } }
+//                   ]
+//                 }
+//               }
+//             })
+//           },
+//           {
+//             $or: [
+//               { customerName: { $regex: regex } },
+//               { mobile: { $regex: regex } },
+//               // ✅ Match inside selected.licensenumber
+//               {
+//                 $expr: {
+//                   $gt: [
+//                     {
+//                       $size: {
+//                         $filter: {
+//                           input: "$selected",
+//                           as: "item",
+//                           cond: {
+//                             $regexMatch: {
+//                               input: { $toString: "$$item.licensenumber" },
+//                               regex: regex
+//                             }
+//                           }
+//                         }
+//                       }
+//                     },
+//                     0
+//                   ]
+//                 }
+//               }
+//             ]
+//           }
+//         ]
+//       };
+
+//     }
+
+
+
+//     // 1) Get count of distinct customers matching the same criteria
+//     const countPipeline = [
+//       { $match: matchConditions },
+//       { $group: { _id: "$_id" } },
+//       { $count: "count" }
+//     ];
+
+//     const countResult = await Customer.aggregate(countPipeline);
+//     const selectedbranchCustomercount = countResult[0]?.count || 0;
+
+//     // 2) Fetch paginated customers with lookup + grouping
+//     let pipeline
+//     if (customerType === "ProductMissing") {
+//       pipeline = [
+//         { $match: matchConditions },
+//         {
+//           $group: {                         // group back by customer
+//             _id: "$_id",
+//             customerName: { $first: "$customerName" },
+//             address1: { $first: "$address1" },
+//             address2: { $first: "$address2" },
+//             country: { $first: "$country" },
+//             city: { $first: "$city" },
+//             pincode: { $first: "$pincode" },
+//             contactPerson: { $first: "$contactPerson" },
+//             landline: { $first: "$landline" },
+//             industry: { $first: "$industry" },
+//             partner: { $first: "$partner" },
+//             state: { $first: "$state" },
+//             registrationType: { $first: "$registrationType" },
+//             gstNo: { $first: "$gstNo" },
+//             email: { $first: "$email" },
+//             mobile: { $first: "$mobile" },
+
+//           }
+//         }, { $sort: { customerName: 1 } },
+//         { $skip: skip },
+//         { $limit: pageSize }]
+//     } else {
+//       pipeline = [
+//         { $match: matchConditions },        // filter documents first
+//         { $unwind: "$selected" },           // expand selected array (for lookup)
+//         {
+//           $lookup: {                        // populate product
+//             from: "products",
+//             localField: "selected.product_id",
+//             foreignField: "_id",
+//             as: "productDetails"
+//           }
+//         },
+//         {
+//           $unwind: {
+//             path: "$productDetails",
+//             preserveNullAndEmptyArrays: true
+//           }
+//         },
+//         {
+//           $addFields: {
+//             "selected.productName": "$productDetails.productName"
+//           }
+//         },
+//         {
+//           $group: {                         // group back by customer
+//             _id: "$_id",
+//             customerName: { $first: "$customerName" },
+//             address1: { $first: "$address1" },
+//             address2: { $first: "$address2" },
+//             country: { $first: "$country" },
+//             city: { $first: "$city" },
+//             pincode: { $first: "$pincode" },
+//             contactPerson: { $first: "$contactPerson" },
+//             landline: { $first: "$landline" },
+//             industry: { $first: "$industry" },
+//             partner: { $first: "$partner" },
+//             state: { $first: "$state" },
+//             registrationType: { $first: "$registrationType" },
+//             gstNo: { $first: "$gstNo" },
+//             email: { $first: "$email" },
+//             mobile: { $first: "$mobile" },
+//             selected: { $push: "$selected" }
+//           }
+//         },
+//         { $sort: { customerName: 1 } },
+//         { $skip: skip },
+//         { $limit: pageSize }
+//       ];
+//     }
+
+
+//     const customers = await Customer.aggregate(pipeline);
+
+//     return res.status(200).json({
+//       message: customers.length ? "Customer(s) found" : "No customer found",
+//       data: {
+//         selectedbranchCustomercount,
+//         customers
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error("error:", error);
+//     return res.status(500).json({ message: "Internal server error", error: error.message });
+//   }
+// };
 export const GetallCallnotes = async (req, res) => {
   try {
     const callnotes = await CallNote.find({})
