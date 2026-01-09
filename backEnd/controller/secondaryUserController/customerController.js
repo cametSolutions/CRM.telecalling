@@ -4204,12 +4204,15 @@ export const GeteditedCustomer = async (req, res) => {
 //   }
 // };
 
+
 export const Getallcallregistrationlist = async (req, res) => {
   try {
+    // Set today start/end in ISO format
     const todayStart = new Date().toISOString().split("T")[0] + "T00:00:00.000Z";
     const todayEnd = new Date().toISOString().split("T")[0] + "T23:59:59.999Z";
 
-    const aggregated = await CallRegistration.aggregate([
+    // 1️⃣ Aggregate pending + today's solved calls
+    let aggregated = await CallRegistration.aggregate([
       {
         $facet: {
           pending: [
@@ -4224,15 +4227,7 @@ export const Getallcallregistrationlist = async (req, res) => {
                 }
               }
             },
-            { $match: { "callregistration.0": { $exists: true } } },
-            {
-              $lookup: {
-                from: "products",
-                localField: "callregistration.product",
-                foreignField: "_id",
-                as: "productDetails"
-              }
-            }
+            { $match: { "callregistration.0": { $exists: true } } }
           ],
           todaySolved: [
             {
@@ -4247,7 +4242,6 @@ export const Getallcallregistrationlist = async (req, res) => {
                         {
                           $anyElementTrue: {
                             $map: {
-                              // Wrap attendedBy in array if it’s not an array
                               input: {
                                 $cond: {
                                   if: { $isArray: "$$cr.formdata.attendedBy" },
@@ -4277,18 +4271,11 @@ export const Getallcallregistrationlist = async (req, res) => {
                 }
               }
             },
-            { $match: { "callregistration.0": { $exists: true } } },
-            {
-              $lookup: {
-                from: "products",
-                localField: "callregistration.product",
-                foreignField: "_id",
-                as: "productDetails"
-              }
-            }
+            { $match: { "callregistration.0": { $exists: true } } }
           ]
         }
       },
+      // 2️⃣ Merge both arrays into one
       {
         $project: {
           data: { $concatArrays: ["$pending", "$todaySolved"] }
@@ -4316,40 +4303,54 @@ export const Getallcallregistrationlist = async (req, res) => {
           root: 1
         }
       },
-      { $replaceRoot: { newRoot: { $mergeObjects: ["$root", { callregistration: "$callregistration" }] } } }
+      { $replaceRoot: { newRoot: { $mergeObjects: ["$root", { callregistration: "$callregistration" }] } } },
+
+      // 3️⃣ Lookup products ONCE after merging
+      {
+        $lookup: {
+          from: "products",
+          localField: "callregistration.product",
+          foreignField: "_id",
+          as: "productDetails"
+        }
+      }
     ]);
 
-    // The rest of your logic (attendedBy/completedBy mapping) remains the same
     const mergedCalls = aggregated;
+
+    // 4️⃣ Collect unique attendedBy & completedBy IDs/names
     const attendedByIds = new Set();
     const completedByIds = new Set();
 
     mergedCalls.forEach((call) => {
       call.callregistration.forEach((entry) => {
         // attendedBy
-        const attendedBy = entry.formdata.attendedBy;
-        if (Array.isArray(attendedBy)) {
-          attendedBy.forEach((attendee) => {
-            if (attendee.callerId) attendedByIds.add(attendee.callerId.toString());
-            else if (attendee.name) attendedByIds.add(attendee.name);
-          });
-        } else if (typeof attendedBy === "string") attendedByIds.add(attendedBy);
+        let attendedBy = entry.formdata.attendedBy || [];
+        if (!Array.isArray(attendedBy)) attendedBy = [attendedBy];
+        attendedBy.forEach((attendee) => {
+          if (!attendee) return;
+          if (attendee.callerId) attendedByIds.add(attendee.callerId.toString());
+          else if (attendee.name) attendedByIds.add(attendee.name);
+        });
 
         // completedBy
-        const completedBy = entry.formdata.completedBy;
-        if (Array.isArray(completedBy) && completedBy.length > 0) {
-          const completedByEntry = completedBy[0];
-          if (completedByEntry.callerId) completedByIds.add(completedByEntry.callerId.toString());
-          else if (completedByEntry.name) completedByIds.add(completedByEntry.name);
-        } else if (typeof completedBy === "string") completedByIds.add(completedBy);
+        let completedBy = entry.formdata.completedBy || [];
+        if (!Array.isArray(completedBy)) completedBy = [completedBy];
+        completedBy.forEach((c) => {
+          if (!c) return;
+          if (c.callerId) completedByIds.add(c.callerId.toString());
+          else if (c.name) completedByIds.add(c.name);
+        });
       });
     });
 
+    // Separate ObjectIds vs names
     const attendedByObjectIds = Array.from(attendedByIds).filter((id) => mongoose.Types.ObjectId.isValid(id));
     const attendedByNames = Array.from(attendedByIds).filter((id) => !mongoose.Types.ObjectId.isValid(id)).map((name) => ({ name }));
     const completedByObjectIds = Array.from(completedByIds).filter((id) => mongoose.Types.ObjectId.isValid(id));
     const completedByNames = Array.from(completedByIds).filter((id) => !mongoose.Types.ObjectId.isValid(id)).map((name) => ({ name }));
 
+    // 5️⃣ Fetch staff/admin once per type
     const [
       attendedByStaff,
       attendedByAdmin,
@@ -4369,27 +4370,26 @@ export const Getallcallregistrationlist = async (req, res) => {
       user._id ? user._id.toString() : user.name, user.name
     ]));
 
+    // 6️⃣ Map names back to attendedBy/completedBy
     mergedCalls.forEach((call) =>
       call.callregistration.forEach((entry) => {
         // attendedBy
-        if (Array.isArray(entry.formdata.attendedBy)) {
-          entry.formdata.attendedBy = entry.formdata.attendedBy.flat().map((attendee) => {
-            const name = userMap.get(attendee?.callerId?.toString());
-            return name ? { ...attendee, callerId: { name } } : attendee;
-          });
-        } else if (typeof entry.formdata.attendedBy === "string") {
-          const name = userMap.get(entry.formdata.attendedBy);
-          entry.formdata.attendedBy = name ? { callerId: { name } } : { callerId: entry.formdata.attendedBy };
-        }
+        let attendedBy = entry.formdata.attendedBy || [];
+        if (!Array.isArray(attendedBy)) attendedBy = [attendedBy];
+        entry.formdata.attendedBy = attendedBy.map((att) => {
+          if (!att) return att;
+          const name = att.callerId ? userMap.get(att.callerId.toString()) : userMap.get(att.name);
+          return name ? { ...att, callerId: { name } } : att;
+        });
 
         // completedBy
-        if (Array.isArray(entry.formdata.completedBy) && entry.formdata.completedBy.length > 0) {
-          const completedUser = userMap.get(entry.formdata.completedBy[0]?.callerId?.toString());
-          entry.formdata.completedBy = completedUser ? [{ ...entry.formdata.completedBy[0], name: completedUser }] : entry.formdata.completedBy;
-        } else if (typeof entry.formdata.completedBy === "string") {
-          const name = userMap.get(entry.formdata.completedBy);
-          entry.formdata.completedBy = name ? { callerId: { name } } : { callerId: entry.formdata.completedBy };
-        }
+        let completedBy = entry.formdata.completedBy || [];
+        if (!Array.isArray(completedBy)) completedBy = [completedBy];
+        entry.formdata.completedBy = completedBy.map((c) => {
+          if (!c) return c;
+          const name = c.callerId ? userMap.get(c.callerId.toString()) : userMap.get(c.name);
+          return name ? { ...c, name } : c;
+        });
       })
     );
 
@@ -4399,6 +4399,7 @@ export const Getallcallregistrationlist = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 
 
