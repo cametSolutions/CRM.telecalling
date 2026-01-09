@@ -1,113 +1,213 @@
-import { useState, useEffect } from "react";
-import { CiEdit } from "react-icons/ci";
-import { PropagateLoader } from "react-spinners";
-import { useNavigate } from "react-router-dom";
-import api from "../../../api/api";
-import DeleteAlert from "../../../components/common/DeleteAlert";
+import { useState, useEffect } from "react"
+import { CiEdit } from "react-icons/ci"
+import ExcelJS from "exceljs"
+import { saveAs } from "file-saver"
+import { PropagateLoader } from "react-spinners"
+import { useNavigate } from "react-router-dom"
+import api from "../../../api/api"
+import DeleteAlert from "../../../components/common/DeleteAlert"
 import {
   FaUserPlus,
   FaSearch,
   FaRegFileExcel,
   FaFilePdf,
-  FaPrint,
-} from "react-icons/fa";
-import { Link } from "react-router-dom";
-import debounce from "lodash.debounce";
-import UseFetch from "../../../hooks/useFetch";
-import { getLocalStorageItem } from "../../../helper/localstorage";
+  FaPrint
+} from "react-icons/fa"
+import { Link } from "react-router-dom"
+import debounce from "lodash.debounce"
+import UseFetch from "../../../hooks/useFetch"
+import { getLocalStorageItem } from "../../../helper/localstorage"
 
 const UserListform = () => {
-  const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [users, setUser] = useState([]);
-  const [allusers, setallusers] = useState([]);
-  const [selectedBranch, setselectedBranch] = useState(null);
-  const [loggeduser, setloggeduser] = useState(null);
-  const { data, loading } = UseFetch("/auth/getallUsers");
+  const navigate = useNavigate()
+  const [searchQuery, setSearchQuery] = useState("")
+  const [users, setUser] = useState([])
+  const [allusers, setallusers] = useState([])
+  const [selectedBranch, setselectedBranch] = useState(null)
+  const [loggeduser, setloggeduser] = useState(null)
+  const { data, loading } = UseFetch("/auth/getallUsers")
   useEffect(() => {
     if (data) {
-      const logged = getLocalStorageItem("user");
-      const { allusers } = data;
+      const logged = getLocalStorageItem("user")
+      const { allusers } = data
 
-      setallusers(allusers);
+      setallusers(allusers)
       const filtereusers = allusers.filter((user) =>
         user.selected
           .map((branch) => branch.branch_id)
           .includes(logged.selected[0].branch_id)
-      );
+      )
 
-      setUser(sortByVerified(filtereusers));
-      setloggeduser(logged);
-      setselectedBranch(logged.selected[0].branch_id);
+      setUser(sortByVerified(filtereusers))
+      setloggeduser(logged)
+      setselectedBranch(logged.selected[0].branch_id)
     }
-  }, [data]);
+  }, [data])
   const sortByVerified = (arr) => {
-    return arr.sort(
-      (a, b) => (b.isVerified === true) - (a.isVerified === true)
-    );
-  };
+    return arr.sort((a, b) => (b.isVerified === true) - (a.isVerified === true))
+  }
 
   const handleSearch = debounce((query) => {
-    const { allusers } = data;
-    const input = query.trim();
-    setSearchQuery(input);
+    const { allusers } = data
+    const input = query.trim()
+    setSearchQuery(input)
 
-    const lowerCaseQuery = input.toLowerCase();
+    const lowerCaseQuery = input.toLowerCase()
 
     const filteredName = allusers.filter((user) =>
       user.name.toLowerCase().startsWith(lowerCaseQuery)
-    );
+    )
     const filteredMobile = allusers.filter((user) =>
       user.mobile.toString().toLowerCase().startsWith(lowerCaseQuery)
-    );
+    )
 
     if (filteredName.length > 0) {
       const filtereusersbranchwise = filteredName.filter((user) =>
         user.selected.map((branch) => branch.branch_id).includes(selectedBranch)
-      );
+      )
 
-      setUser(sortByVerified(filtereusersbranchwise));
+      setUser(sortByVerified(filtereusersbranchwise))
     } else if (filteredMobile.length > 0) {
       const filtereusersbranchwise = filteredMobile.filter((user) =>
         user.selected.map((branch) => branch.branch_id).includes(selectedBranch)
-      );
+      )
 
-      setUser(sortByVerified(filtereusersbranchwise));
+      setUser(sortByVerified(filtereusersbranchwise))
     }
 
     // Reset to initial count after filtering
-  }, 300);
+  }, 300)
   const handlebranchChange = (e) => {
-    const [id, label] = e.target.value.split("||");
-    setselectedBranch(id);
+    const [id, label] = e.target.value.split("||")
+    setselectedBranch(id)
     if (searchQuery) {
       const filteredbyquery = allusers.filter((user) =>
         user.name.toLowerCase().startsWith(searchQuery.toLocaleLowerCase())
-      );
+      )
       const filtereusersbranchwise = filteredbyquery.filter((user) =>
         user.selected.map((branch) => branch.branch_id).includes(id)
-      );
-      setUser(sortByVerified(filtereusersbranchwise));
+      )
+      setUser(sortByVerified(filtereusersbranchwise))
     } else {
       const filtereusersbranchwise = allusers.filter((user) =>
         user.selected.map((branch) => branch.branch_id).includes(id)
-      );
-      setUser(sortByVerified(filtereusersbranchwise));
+      )
+      setUser(sortByVerified(filtereusersbranchwise))
     }
-  };
+  }
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/auth/userDelete?id=${id}`);
+      await api.delete(`/auth/userDelete?id=${id}`)
 
       // Remove the deleted item from the items array
       setUser((prevItems) =>
         sortByVerified(prevItems.filter((item) => item._id !== id))
-      );
+      )
     } catch (error) {
-      console.error("Failed to delete item", error);
+      console.error("Failed to delete item", error)
       // toast.error("Failed to delete item. Please try again.")
     }
-  };
+  }
+  const handleDownload = (data) => {
+    
+    // Using ExcelJS instead of XLSX for better styling control
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet("UserReport")
+
+    // Define column structure with widths
+    worksheet.columns = [
+      { header: "Branch", key: "branch", width: 25 },
+      { header: "Name", key: "name", width: 25 },
+      { header: "Email", key: "email", width: 35 },
+      { header: "Dob", key: "dob", width: 15 },
+      { header: "Blood Group", key: "bloodgroup", width: 15 },
+      { header: "Gender", key: "gender", width: 15 },
+      { header: "Address", key: "address", width: 45 },
+      { header: "Pincode", key: "pincode", width: 15 },
+      { header: "Joining Date", key: "joiningdate", width: 15 },
+      { header: "Designation", key: "designation", width: 25 },
+      { header: "Department", key: "department", width: 20 },
+      { header: "Privilege leave Starts", key: "privileageleavestartfrom", width: 25 },
+      { header: "Casual leave Starts", key: "casualleavestartfrom", width: 25 },
+      { header: "AssignedTo", key: "assignedto", width: 25 }
+    ]
+
+    // Style the header row
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFFF0000" } // Light grey background
+      }
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } } // Black bold text
+      cell.alignment = { horizontal: "center", vertical: "middle" }
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" }
+      }
+    })
+
+    // Add data rows
+    data.forEach((user) => {
+      const branchNames = Array.isArray(user?.selected)
+        ? user.selected
+            .map((item) => item?.branchName)
+            .filter(Boolean) // removes null/undefined
+            .join(", ")
+        : ""
+      const row = worksheet.addRow({
+        branch: branchNames,
+        name: user?.name,
+        email: user?.email,
+        dob: user?.dateofbirth,
+        bloodgroup: user?.bloodgroup,
+        gender: user?.gender,
+        address: user?.address,
+        pincode: user.pincode,
+        joiningdate: user?.joiningdate,
+        designation: user?.designation,
+        department: user?.department?.department,
+        privileageleavestartfrom: user?.privilegeleavestartsfrom||"-",
+        casualleavestartfrom: user?.casualleavestartsfrom||"-",
+        assignedto: user?.assignedto?.name
+      })
+
+      // Style data cells
+      row.eachCell((cell, colNumber) => {
+        // Center-align all cells except the name column (first column)
+        if (colNumber > 1) {
+          cell.alignment = { horizontal: "center", vertical: "middle" }
+        }
+
+        // Add borders to all cells
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" }
+        }
+
+        // Apply zebra striping for better readability
+        if (row.number % 2 === 0) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFFAFAFA" } // Very light grey for even rows
+          }
+        }
+      })
+    })
+
+    // Write to buffer and download
+    workbook.xlsx.writeBuffer().then((buffer) => {
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      })
+      saveAs(blob, "User_Report.xlsx")
+    })
+  }
   return (
     <div className="h-full flex flex-col bg-gray-50">
       {/* Header Section - Sticky */}
@@ -153,6 +253,7 @@ const UserListform = () => {
             </Link>
 
             <button
+              onClick={() => handleDownload(users)}
               className="inline-flex items-center px-3 py-2 border border-gray-300 
                              rounded-md text-sm font-medium text-gray-700 bg-white 
                              hover:bg-gray-50 focus:outline-none focus:ring-2 
@@ -328,15 +429,15 @@ const UserListform = () => {
                                 onClick={() => {
                                   if (loggeduser?.role === "Admin") {
                                     navigate("/admin/masters/userEdit", {
-                                      state: { user, selected: item },
-                                    });
+                                      state: { user, selected: item }
+                                    })
                                   } else if (
                                     loggeduser?.role === "Staff" ||
                                     loggeduser?.role === "Manager"
                                   ) {
                                     navigate("/staff/masters/userEdit", {
-                                      state: { user, selected: item },
-                                    });
+                                      state: { user, selected: item }
+                                    })
                                   }
                                 }}
                                 className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors duration-200"
@@ -351,7 +452,7 @@ const UserListform = () => {
                             </div>
                           </td>
                         </tr>
-                      ));
+                      ))
                     } else {
                       return (
                         <tr
@@ -413,12 +514,12 @@ const UserListform = () => {
                                 onClick={() => {
                                   if (loggeduser?.role === "Admin") {
                                     navigate("/admin/masters/userEdit", {
-                                      state: { user },
-                                    });
+                                      state: { user }
+                                    })
                                   } else if (loggeduser?.role === "Staff") {
                                     navigate("/staff/masters/userEdit", {
-                                      state: { user },
-                                    });
+                                      state: { user }
+                                    })
                                   }
                                 }}
                                 className="text-blue-600 hover:text-blue-900 p-1 rounded transition-colors duration-200"
@@ -433,7 +534,7 @@ const UserListform = () => {
                             </div>
                           </td>
                         </tr>
-                      );
+                      )
                     }
                   })
                 ) : (
@@ -462,7 +563,7 @@ const UserListform = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default UserListform;
+export default UserListform

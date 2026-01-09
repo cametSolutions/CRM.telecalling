@@ -3205,6 +3205,17 @@ export const GetfollowupsummaryReport = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+export const Getallsalesfunnels = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const GetallproductwiseReport = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;

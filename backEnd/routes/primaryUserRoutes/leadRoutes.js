@@ -35,9 +35,11 @@ import {
   UpdatepaymentVerification,
   fixLeadVerifiedField,
   GetallproductwiseReport,
-GetfollowupsummaryReport
+GetfollowupsummaryReport,
+Getallsalesfunnels
 } from "../../controller/primaryUserController/leadController.js";
 const router = express.Router();
+router.get("/getsalesfunnels",authMiddleware,Getallsalesfunnels)
 router.get("/getallproductwisereport", authMiddleware, GetallproductwiseReport);
 router.get("/getfollowupsummaryReport",authMiddleware,GetfollowupsummaryReport)
 router.post("/leadRegister", authMiddleware, LeadRegister);

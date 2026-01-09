@@ -5,6 +5,7 @@ import AccountSearch from "../../../pages/primaryUser/List/AccountSearch";
 import LeaveSummary from "../../../components/primaryUser/LeaveSummary";
 import ProductWiseleadReport from "../../../pages/primaryUser/List/ProductWiseleadReport";
 import FollowupSummaryDashboard from "../../../pages/primaryUser/List/FollowupSummaryDashboard";
+import SalesFunnel from "../../../pages/primaryUser/List/SalesFunnel";
 const reportsRoutes = [
   { path: "/admin/reports/summary", component: Summary },
 
@@ -23,6 +24,7 @@ const reportsRoutes = [
     path: "/admin/reports/follow-up-summary",
     component: FollowupSummaryDashboard,
   },
+  { path: "/admin/reports/sales-funel", component: SalesFunnel }
 ];
 
 export default reportsRoutes;
