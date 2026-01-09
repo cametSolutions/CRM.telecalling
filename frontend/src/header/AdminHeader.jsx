@@ -1,63 +1,62 @@
-import { useEffect, useState, useRef } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
-import { FiLogOut } from "react-icons/fi";
-import api from "../api/api";
-import { FaChevronRight, FaChevronDown } from "react-icons/fa";
-import { FaSignOutAlt } from "react-icons/fa";
-import { FaUserCircle } from "react-icons/fa"; // Import the icon
-import { toast } from "react-toastify";
+import { useEffect, useState, useRef } from "react"
+import { Link, NavLink, useNavigate } from "react-router-dom"
+import { FiLogOut } from "react-icons/fi"
+import api from "../api/api"
+import { FaChevronRight, FaChevronDown } from "react-icons/fa"
+import { FaSignOutAlt } from "react-icons/fa"
+import { FaUserCircle } from "react-icons/fa" // Import the icon
+import { toast } from "react-toastify"
 export default function AdminHeader() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState(null);
-  const [transactionMenuOpen, setTransactionMenuOpen] = useState(false);
-  const [masterMenuOpen, setMasterMenuOpen] = useState(false);
-  const [reportsMenuOpen, setReportsMenuOpen] = useState(false);
-  const [tasksMenuOpen, setTasksMenuOpen] = useState(false);
-  const [activeSubmenu, setActiveSubmenu] = useState(null);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [user, setUser] = useState(null)
+  const [transactionMenuOpen, setTransactionMenuOpen] = useState(false)
+  const [masterMenuOpen, setMasterMenuOpen] = useState(false)
+  const [reportsMenuOpen, setReportsMenuOpen] = useState(false)
+  const [tasksMenuOpen, setTasksMenuOpen] = useState(false)
+  const [activeSubmenu, setActiveSubmenu] = useState(null)
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
 
-  const [openSubmenu, setOpenSubmenu] = useState(null);
-  const [leadMenuOpen, setLeadMenuOpen] = useState(false);
-  const [openInnerMenu, setOpenInnerMenu] = useState(null); // Inner submenu state
-  const navigate = useNavigate();
-  const menuContainerRef = useRef(null);
+  const [openSubmenu, setOpenSubmenu] = useState(null)
+  const [leadMenuOpen, setLeadMenuOpen] = useState(false)
+  const [openInnerMenu, setOpenInnerMenu] = useState(null) // Inner submenu state
+  const navigate = useNavigate()
+  const menuContainerRef = useRef(null)
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser = localStorage.getItem("user")
     if (storedUser) {
-      setUser(JSON.parse(storedUser)); // Parse the user data from string to object
+      setUser(JSON.parse(storedUser)) // Parse the user data from string to object
     }
-  }, []);
+  }, [])
   const toggleInnerMenu = (innerIndex) => {
-    setOpenInnerMenu(openInnerMenu === innerIndex ? null : innerIndex);
-  };
+    setOpenInnerMenu(openInnerMenu === innerIndex ? null : innerIndex)
+  }
   const toggleSubmenu = (index) => {
-    const newActiveSubmenu = activeSubmenu === index ? null : index;
-    setActiveSubmenu(newActiveSubmenu);
+    const newActiveSubmenu = activeSubmenu === index ? null : index
+    setActiveSubmenu(newActiveSubmenu)
 
     // Scroll to keep the active submenu in view after a small delay to allow render
     if (newActiveSubmenu !== null) {
       setTimeout(() => {
-        const menuItem = document.querySelector(`.menu-item-${index}`);
+        const menuItem = document.querySelector(`.menu-item-${index}`)
         if (menuItem && menuContainerRef.current) {
-          const containerRect =
-            menuContainerRef.current.getBoundingClientRect();
-          const itemRect = menuItem.getBoundingClientRect();
+          const containerRect = menuContainerRef.current.getBoundingClientRect()
+          const itemRect = menuItem.getBoundingClientRect()
 
           // If submenu would extend beyond visible area, scroll to show it
           if (itemRect.bottom + 200 > containerRect.bottom) {
             // 200px buffer for submenu
             menuContainerRef.current.scrollTop +=
-              itemRect.bottom + 200 - containerRect.bottom;
+              itemRect.bottom + 200 - containerRect.bottom
           }
         }
-      }, 50);
+      }, 50)
     }
-  };
+  }
 
   const logout = async () => {
     try {
-      const res = await api.post("/auth/logout"); // Call backend
+      const res = await api.post("/auth/logout") // Call backend
 
       // ✅ Check if backend returned success
       if (
@@ -65,23 +64,23 @@ export default function AdminHeader() {
         res.data?.message === "Logged out successfully"
       ) {
         // Clear localStorage only after successful logout
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("user");
-        localStorage.removeItem("timer");
-        localStorage.removeItem("wish");
+        localStorage.removeItem("authToken")
+        localStorage.removeItem("user")
+        localStorage.removeItem("timer")
+        localStorage.removeItem("wish")
 
-        toast.success("Logout successfully");
+        toast.success("Logout successfully")
 
         // Redirect to login page
-        navigate("/");
+        navigate("/")
       } else {
-        toast.error("Logout failed on server");
+        toast.error("Logout failed on server")
       }
     } catch (err) {
-      console.error("Logout API failed:", err);
-      toast.error("Logout failed, please try again");
+      console.error("Logout API failed:", err)
+      toast.error("Logout failed, please try again")
     }
-  };
+  }
 
   const links = [
     // {to:"/admin/home",label:"Home"},
@@ -89,92 +88,92 @@ export default function AdminHeader() {
     { label: "Masters" },
     { label: "Transactions" },
     { label: "Reports" },
-    { label: "Task" },
-  ];
+    { label: "Task" }
+  ]
 
   const desiredMobileMenu = [
     { label: "Transactions" },
     { label: "Reports" },
-    { label: "Task" },
-  ];
+    { label: "Task" }
+  ]
   const masters = [
     {
       to: "/admin/masters/company",
-      label: "Company",
+      label: "Company"
     },
     {
       to: "/admin/masters/branch",
-      label: "Branch",
+      label: "Branch"
     },
     {
       to: "/admin/masters/department",
-      label: "Department",
+      label: "Department"
     },
     { label: "Product & Service", hasChildren: true },
 
     {
       to: "/admin/masters/customer",
-      label: "Customer",
+      label: "Customer"
     },
     {
       label: "Employee",
-      hasChildren: true,
+      hasChildren: true
     },
 
     {
       to: "/admin/masters/leavemaster",
-      label: "Leavemaster",
+      label: "Leavemaster"
     },
     {
       to: "/admin/masters/partners",
-      label: "Partners",
-    },
-  ];
+      label: "Partners"
+    }
+  ]
   const Productandservices = [
     {
       to: "/admin/masters/product",
-      label: "Product",
+      label: "Product"
     },
     {
       to: "/admin/masters/servicesRegistration",
-      label: "Services",
+      label: "Services"
     },
     {
       to: "/admin/masters/inventory/brandRegistration",
-      label: "Brand",
+      label: "Brand"
     },
     {
       to: "/admin/masters/inventory/categoryRegistration",
-      label: "Category",
+      label: "Category"
     },
     {
       to: "/admin/masters/inventory/hsnlist",
-      label: "HSN",
+      label: "HSN"
     },
     {
       to: "/admin/masters/callnotes",
-      label: "Call Notes",
+      label: "Call Notes"
     },
-    { to: "/admin/masters/taskRegistration", label: "Task Level" },
-  ];
+    { to: "/admin/masters/taskRegistration", label: "Task Level" }
+  ]
   const Employee = [
     {
       to: "/admin/masters/users-&-passwords",
-      label: "users & Passwords",
+      label: "users & Passwords"
     },
     {
       to: "/admin/masters/menuRights",
-      label: "Menu Rights",
+      label: "Menu Rights"
     },
     {
       to: "/admin/masters/target",
-      label: "Target",
+      label: "Target"
     },
     {
       to: "/admin/masters/voucherMaster",
-      label: "Voucher Master",
-    },
-  ];
+      label: "Voucher Master"
+    }
+  ]
   //old
   // const masters = [
   //   {
@@ -242,62 +241,62 @@ export default function AdminHeader() {
 
     {
       to: "/admin/transaction/lead/leadAllocation",
-      label: "Lead Allocation",
+      label: "Lead Allocation"
     },
     {
       to: "/admin/transaction/lead/leadFollowUp",
-      label: "Lead Follow Up",
+      label: "Lead Follow Up"
     },
     {
       to: "/admin/transaction/lead/leadTask",
-      label: "Task Pending",
+      label: "Task Pending"
     },
     {
       to: "/admin/transaction/lead/leadReallocation",
-      label: "Lead Reallocation",
+      label: "Lead Reallocation"
     },
     {
       to: "/admin/transaction/lead/taskAnalysis",
-      label: "Task Analysis",
+      label: "Task Analysis"
     },
     { to: "/admin/transaction/lead/lostLeads", label: "Lost Leads" },
     {
       to: "/admin/transaction/lead/collectionUpdate",
-      label: "Collection Update",
-    },
-  ];
+      label: "Collection Update"
+    }
+  ]
 
   const transactions = [
     {
       label: "Lead",
-      hasChildren: true,
+      hasChildren: true
     },
     {
       to: "/admin/transaction/call-registration",
-      label: "Call Registration",
+      label: "Call Registration"
     },
     {
       to: "/admin/transaction/leave-application",
-      label: "Leave Application",
-    },
-  ];
+      label: "Leave Application"
+    }
+  ]
   const tasks = [
     {
       to: "/admin/tasks/signUp-customer",
-      label: "Sign Up Custmer",
+      label: "Sign Up Custmer"
     },
 
     {
       to: "/admin/tasks/leaveApproval-pending",
-      label: "Leave Approval Pending",
+      label: "Leave Approval Pending"
     },
     {
       to: "/admin/tasks/workAllocation",
-      label: "Work Allocation",
+      label: "Work Allocation"
     },
     {
       to: "/admin/tasks/excelconverter",
-      label: "Customer Converter(excel to Json)",
+      label: "Customer Converter(excel to Json)"
     },
     // {
     //   to: "/admin/tasks/excelconvertertoproductaddonly",
@@ -305,30 +304,31 @@ export default function AdminHeader() {
     // },
     {
       to: "/admin/tasks/attendanceExcelconverter",
-      label: "Attendance Converter",
-    },
-  ];
+      label: "Attendance Converter"
+    }
+  ]
   const reports = [
     {
       to: "/admin/reports/summary",
-      label: " Call Summary",
+      label: " Call Summary"
     },
     {
       to: "/admin/reports/expiry-register",
-      label: "Expiry Register",
+      label: "Expiry Register"
     },
 
     {
       to: "/admin/reports/account-search",
-      label: "Account Search",
+      label: "Account Search"
     },
     {
       to: "/admin/reports/leave-summary",
-      label: "Leave Summary",
+      label: "Leave Summary"
     },
-    // { to: "/admin/reports/product-wise-report", label: "Product Report" },
-    // { to: "/admin/reports/follow-up-summary", label: "Followup Summary" },
-  ];
+    { to: "/admin/reports/product-wise-report", label: "Product Report" },
+    { to: "/admin/reports/follow-up-summary", label: "Followup Summary" },
+    { to: "/admin/reports/sales-funel", label: "Sales Funnel" }
+  ]
   return (
     <header className="sticky top-0 z-50 flex items-center md:justify-between bg-green-600 shadow-md px-2 md:px-4 lg:px-6 h-16 md:h-18 lg:h-18">
       {/* Mobile menu button */}
@@ -428,8 +428,8 @@ export default function AdminHeader() {
                     to={link.to}
                     className="block  flex-grow"
                     onClick={(e) => {
-                      e.stopPropagation();
-                      setMobileMenuOpen(false);
+                      e.stopPropagation()
+                      setMobileMenuOpen(false)
                     }}
                   >
                     {link.label}
@@ -474,8 +474,8 @@ export default function AdminHeader() {
                                 className="cursor-pointer flex-1"
                                 onClick={() => {
                                   // setMobileMenuOpen(false)
-                                  toggleInnerMenu(masterIndex);
-                                  navigate(master.to);
+                                  toggleInnerMenu(masterIndex)
+                                  navigate(master.to)
                                 }}
                               >
                                 {master.label}
@@ -588,24 +588,24 @@ export default function AdminHeader() {
             className="relative mb-2"
             onMouseEnter={() => {
               if (link.label === "Masters") {
-                setMasterMenuOpen(true);
+                setMasterMenuOpen(true)
               } else if (link.label === "Transactions") {
-                setTransactionMenuOpen(true);
+                setTransactionMenuOpen(true)
               } else if (link.label === "Reports") {
-                setReportsMenuOpen(true);
+                setReportsMenuOpen(true)
               } else if (link.label === "Task") {
-                setTasksMenuOpen(true);
+                setTasksMenuOpen(true)
               }
             }}
             onMouseLeave={() => {
               if (link.label === "Masters") {
-                setMasterMenuOpen(false);
+                setMasterMenuOpen(false)
               } else if (link.label === "Transactions") {
-                setTransactionMenuOpen(false);
+                setTransactionMenuOpen(false)
               } else if (link.label === "Reports") {
-                setReportsMenuOpen(false);
+                setReportsMenuOpen(false)
               } else if (link.label === "Task") {
-                setTasksMenuOpen(false);
+                setTasksMenuOpen(false)
               }
             }}
           >
@@ -629,12 +629,12 @@ export default function AdminHeader() {
                     className="relative mb-2"
                     onMouseEnter={() => {
                       if (master.hasChildren) {
-                        setOpenSubmenu(master.label);
+                        setOpenSubmenu(master.label)
                       }
                     }}
                     onMouseLeave={() => {
                       if (master.hasChildren) {
-                        setOpenSubmenu(null);
+                        setOpenSubmenu(null)
                       }
                     }}
                   >
@@ -692,7 +692,7 @@ export default function AdminHeader() {
                         transaction.hasChildren &&
                         transaction.label === "Lead"
                       ) {
-                        setLeadMenuOpen(true);
+                        setLeadMenuOpen(true)
                       }
                     }}
                     onMouseLeave={() => {
@@ -700,7 +700,7 @@ export default function AdminHeader() {
                         transaction.hasChildren &&
                         transaction.label === "Lead"
                       ) {
-                        setLeadMenuOpen(false);
+                        setLeadMenuOpen(false)
                       }
                     }}
                   >
@@ -795,5 +795,5 @@ export default function AdminHeader() {
         </div>
       </div>
     </header>
-  );
+  )
 }

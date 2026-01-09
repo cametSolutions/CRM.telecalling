@@ -102,7 +102,7 @@ export default function CallRegistration() {
     }
   }, [callnotes])
   useEffect(() => {
-    if (user&&callscount) {
+    if (user && callscount) {
       if (user?.role === "Admin") {
         setCallList(callscount)
       } else {
@@ -139,7 +139,7 @@ export default function CallRegistration() {
         setCallList(filtered)
       }
     }
-  },[user,callscount])
+  }, [user, callscount])
   // useEffect(() => {
   //   if (user) {
   //     const userId = user._id
@@ -443,8 +443,8 @@ export default function CallRegistration() {
       }
 
       setcallReport(calldata)
-     
 
+      console.log("calldatadetails",calldata)
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
         calldata,
@@ -528,7 +528,8 @@ export default function CallRegistration() {
         productName: selectedProducts[0]?.productName
       }
       setcallReport(calldata)
-
+      console.log("calldatadetails",calldata)
+      
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
         calldata,
