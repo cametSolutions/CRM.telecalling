@@ -43,6 +43,7 @@ export default function CallRegistration() {
   const [searching, setSearching] = useState(false)
   const [search, setSearch] = useState("")
   const [selectedCustomer, setSelectedCustomer] = useState(null)
+console.log(selectedCustomer)
   const [selectedProducts, setSelectedProducts] = useState([])
   const [isRunning, setIsRunning] = useState(false) // Start with the timer running
   const [startTime, setStartTime] = useState(Date.now())
@@ -444,7 +445,7 @@ export default function CallRegistration() {
 
       setcallReport(calldata)
 
-      console.log("calldatadetails",calldata)
+      console.log("calldatadetails", calldata)
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
         calldata,
@@ -528,8 +529,8 @@ export default function CallRegistration() {
         productName: selectedProducts[0]?.productName
       }
       setcallReport(calldata)
-      console.log("calldatadetails",calldata)
-      
+      console.log("calldatadetails", calldata)
+
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
         calldata,
@@ -739,6 +740,26 @@ Problem:    \t${selectedText}
     }, 300) // Adjust the delay time to your preference (e.g., 300 ms)
   }, [])
   const handleRowClick = (customer) => {
+    
+    const fetchCustomer = async () => {
+      try {
+        // Replace with your actual API endpoint and customer id
+        const response = await api.get(`/customer/getselectedcustomerforCall/${customer._id}`)
+        if (!response.ok) {
+          throw new Error("Failed to fetch customer data")
+        }
+        const data = await response.json()
+
+        // Do something with the fetched data
+        console.log("Fetched customer:", data)
+        // For example, set it to state to display in a modal or another component
+        // setSelectedCustomer(data);
+      } catch (error) {
+        console.error("Error fetching customer:", error)
+      }
+    }
+
+    fetchCustomer()
     setSearching(false)
     setCallData([])
     setSelectedCustomer(customer)

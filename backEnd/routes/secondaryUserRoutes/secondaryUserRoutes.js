@@ -34,7 +34,8 @@ import {
   GetallproductmissingCustomer,
   GeteditedCustomer,
   Downloadcustomerlist,
-Getallcallregistrationlist
+Getallcallregistrationlist,
+GetselectedCustomerForCall
 } from "../../controller/secondaryUserController/customerController.js"
 
 const router = express.Router()
@@ -50,6 +51,7 @@ router.put("/callnotesEdit", authMiddleware, UpdateCallnotes)
 router.post("/customerEdit", authMiddleware, CustomerEdit)
 router.get("/getLicensenumber", authMiddleware, GetLicense)
 router.get("/getCustomer", authMiddleware, GetCustomer)
+router.get("/getselectedcustomerforCall/:id",authMiddleware,GetselectedCustomerForCall)
 router.get("/getallCustomer", authMiddleware, GetAllCustomer)
 router.post("/callRegistration", authMiddleware, customerCallRegistration)
 router.get("/getcallregister/:callId", authMiddleware, GetCallRegister)
