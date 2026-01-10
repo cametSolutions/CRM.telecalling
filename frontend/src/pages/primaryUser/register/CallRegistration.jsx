@@ -276,20 +276,20 @@ export default function CallRegistration() {
 
   const fetchCallDetails = async (callId) => {
     setLoader(true)
-    const response = await fetch(
-      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
-      {
-        method: "GET",
-        credentials: "include" // This allows cookies to be sent with the request
-      }
-    )
     // const response = await fetch(
-    //   `http://localhost:9000/api/customer/getcallregister/${callId}`,
+    //   `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
     //   {
     //     method: "GET",
     //     credentials: "include" // This allows cookies to be sent with the request
     //   }
     // )
+    const response = await fetch(
+      `http://localhost:9000/api/customer/getcallregister/${callId}`,
+      {
+        method: "GET",
+        credentials: "include" // This allows cookies to be sent with the request
+      }
+    )
     const data = await response.json()
 
     return data
@@ -655,23 +655,23 @@ Problem:    \t${selectedText}
   const fetchCustomerData = async (query) => {
     let url
     if (user.role === "Admin") {
-      // url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
-      url = `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
+      url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
+      // url = `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
     } else {
       const branches = JSON.stringify(branch)
 
-      // url =
-      //   branches &&
-      //   branches.length > 0 &&
-      //   `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
-      //     user.role
-      //   }&userBranch=${encodeURIComponent(branches)}`
       url =
         branches &&
         branches.length > 0 &&
-        `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+        `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
           user.role
         }&userBranch=${encodeURIComponent(branches)}`
+      // url =
+      //   branches &&
+      //   branches.length > 0 &&
+      //   `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+      //     user.role
+      //   }&userBranch=${encodeURIComponent(branches)}`
     }
 
     try {
