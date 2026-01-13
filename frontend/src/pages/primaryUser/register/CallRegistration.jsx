@@ -744,6 +744,7 @@ Problem:    \t${selectedText}
     setSelectedCustomer(customer)
     setSearch(customer.customerName)
     setProductDetails(customer.selected)
+console.log(customer.selected)
 
     if (customer) {
       reset({
