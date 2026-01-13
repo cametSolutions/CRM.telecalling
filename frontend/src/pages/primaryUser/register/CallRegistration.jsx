@@ -758,7 +758,7 @@ Problem:    \t${selectedText}
 
         // Do something with the fetched data
         console.log("Fetched customer:", response.data.data)
-        setProductDetails(data[0].selected.map((item) => item.productDetails))
+        setProductDetails(data[0].selected)
         // For example, set it to state to display in a modal or another component
         // setSelectedCustomer(data);
       } catch (error) {
