@@ -441,7 +441,7 @@ export default function CallRegistration() {
         customerName: selectedCustomer?.customerName,
         productName: selectedProducts[0]?.productName
       }
-
+console.log(selectedProducts[0])
       setcallReport(calldata)
 
       console.log("calldatadetails",calldata)
