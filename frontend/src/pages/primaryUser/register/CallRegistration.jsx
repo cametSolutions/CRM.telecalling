@@ -63,7 +63,8 @@ export default function CallRegistration() {
   const { data } = UseFetch(
     user._id && `/customer/getloggeduserCurrentCalls?loggedUserId=${user._id}`
   )
-  const { data: callscount } = UseFetch("/customer/getcallregistrationlist")
+console.log(data)
+  // const { data: callscount } = UseFetch("/customer/getcallregistrationlist")
   const { data: callnotes } = UseFetch("/customer/getallcallNotes")
   const handleQuillChange = (value) => {
     setValue("description", value, { shouldValidate: true }) // Update React Hook Form's value
@@ -103,45 +104,45 @@ export default function CallRegistration() {
       setCallnotes(callnotes)
     }
   }, [callnotes])
-  useEffect(() => {
-    if (user && callscount) {
-      if (user?.role === "Admin") {
-        setCallList(callscount)
-      } else {
-        const userBranchName = new Set(
-          user?.selected?.map((branch) => branch.branchName)
-        )
+  // useEffect(() => {
+  //   if (user && callscount) {
+  //     if (user?.role === "Admin") {
+  //       setCallList(callscount)
+  //     } else {
+  //       const userBranchName = new Set(
+  //         user?.selected?.map((branch) => branch.branchName)
+  //       )
 
-        const branchNamesArray = Array.from(userBranchName)
+  //       const branchNamesArray = Array.from(userBranchName)
 
-        const filtered = callscount.filter(
-          (call) =>
-            Array.isArray(call?.callregistration) && // Check if callregistration is an array
-            call.callregistration.some((registration) => {
-              const hasMatchingBranch =
-                Array.isArray(registration?.branchName) && // Check if branchName is an array
-                registration.branchName.some(
-                  (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
-                )
+  //       const filtered = callscount.filter(
+  //         (call) =>
+  //           Array.isArray(call?.callregistration) && // Check if callregistration is an array
+  //           call.callregistration.some((registration) => {
+  //             const hasMatchingBranch =
+  //               Array.isArray(registration?.branchName) && // Check if branchName is an array
+  //               registration.branchName.some(
+  //                 (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
+  //               )
 
-              // If user has only one branch, ensure it matches exactly and no extra branches
-              if (branchNamesArray.length === 1) {
-                return (
-                  hasMatchingBranch &&
-                  registration.branchName.length === 1 &&
-                  registration.branchName[0] === branchNamesArray[0]
-                )
-              }
+  //             // If user has only one branch, ensure it matches exactly and no extra branches
+  //             if (branchNamesArray.length === 1) {
+  //               return (
+  //                 hasMatchingBranch &&
+  //                 registration.branchName.length === 1 &&
+  //                 registration.branchName[0] === branchNamesArray[0]
+  //               )
+  //             }
 
-              // If user has more than one branch, just check for any match
-              return hasMatchingBranch
-            })
-        )
+  //             // If user has more than one branch, just check for any match
+  //             return hasMatchingBranch
+  //           })
+  //       )
 
-        setCallList(filtered)
-      }
-    }
-  }, [user, callscount])
+  //       setCallList(filtered)
+  //     }
+  //   }
+  // }, [user, callscount])
   // useEffect(() => {
   //   if (user) {
   //     const userId = user._id
@@ -318,7 +319,7 @@ export default function CallRegistration() {
   useEffect(() => {
     // Set the default product if there's only one
     if (productDetails?.length === 1) {
-console.log(productDetails[0])
+      console.log("productdetails", productDetails)
       setSelectedProducts([productDetails[0]])
     }
   }, [productDetails])
@@ -432,8 +433,7 @@ console.log(productDetails[0])
         }
         // Set both attendedBy and completedBy if status is solved
       }
-console.log(selectedProducts[0])
-console.log(selectedProducts[0]?.branch_id?.branchName)
+      console.log("selectedproduts",selectedProducts[0])
       const calldata = {
         product: selectedProducts[0]?.product_id,
         license: selectedProducts[0]?.licensenumber,
@@ -449,7 +449,7 @@ console.log(selectedProducts[0]?.branch_id?.branchName)
       setcallReport(calldata)
 
       console.log("calldatadetails", calldata)
-return
+
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
         calldata,
@@ -533,7 +533,7 @@ return
         productName: selectedProducts[0]?.productName
       }
       setcallReport(calldata)
-      console.log("calldatadetails", calldata)
+      console.log("calldata", calldata)
 
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
@@ -746,12 +746,12 @@ Problem:    \t${selectedText}
   const handleRowClick = (customer) => {
     const fetchCustomer = async () => {
       try {
+        setLoader(true)
         // Replace with your actual API endpoint and customer id
         const response = await api.get(
           `/customer/getselectedcustomerforCall/${customer._id}`
         )
-        console.log(response)
-
+        setLoader(false)
         const data = response.data.data
         setSelectedCustomer(data[0])
         setSearch(data[0].customerName)
@@ -788,24 +788,19 @@ Problem:    \t${selectedText}
 
     // Additional actions can be performed here (e.g., populate form fields)
   }
-  console.log(callList)
   const hanldeCheckforsamecallnoteforsamecustomer = (data) => {
-    console.log(data)
     const callnoteId = data.split("|")[0]
-    console.log(callnoteId)
-    console.log(selectedCustomer)
 
-    console.log(callnoteId)
     const checkcallnote = async () => {
       try {
         const response = await api.get(
           `/customer/checkexistsamecallnote?customerId=${selectedCustomer._id}&callNoteId=${callnoteId}`
         )
         setissamecallnote(response.data.exists)
-        setIsModalOpen(response.data.existsue)
-        console.log(response.data.exists)
-        console.log(typeof response.data.exists)
-        console.log(response)
+
+        setIsModalOpen(response.data.exists)
+
+        console.log("checkcallnotexists",response.data.exists)
       } catch (error) {
         console.log("error", error)
       }
@@ -821,6 +816,8 @@ Problem:    \t${selectedText}
         autoClose: 3000 // 3 seconds
       })
       return
+    } else if (issamecallnote) {
+      setIsModalOpen(true)
     } else {
       setIsRunning(false)
     }

@@ -1005,6 +1005,15 @@ export const GetselectedCustomerForCall = async (req, res) => {
 
       // Unwind the 'selected' array to join each branch/product separately
       { $unwind: { path: "$selected", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "companies",
+          localField: "selected.company_id",
+          foreignField: "_id",
+          as: "companyDetails"
+        }
+      },
+      { $unwind: { path: "$companyDetails", preserveNullAndEmptyArrays: true } },
 
       // Lookup branch details
       {
@@ -1028,11 +1037,12 @@ export const GetselectedCustomerForCall = async (req, res) => {
       },
       { $unwind: { path: "$productDetails", preserveNullAndEmptyArrays: true } },
 
-      // Add branch and product info into the 'selected' object
+     
       {
         $addFields: {
-          "selected.branchDetails": "$branchDetails",
-          "selected.productDetails": "$productDetails"
+          "selected.product_id": "$productDetails",
+          "selected.branch_id": "$branchDetails",
+          "selected.company_id": "$companyDetails"
         }
       },
 
@@ -1645,8 +1655,8 @@ export const customerCallRegistration = async (req, res) => {
 
     const calldata = req.body // Assuming calldata is sent in the body
     const emailsend = calldata.formdata.emailSend
-console.log("emailsenddd",emailsend)
-cosole.log("branhname",branchName)
+    console.log("emailsenddd", emailsend)
+    console.log("branhname", branchName)
 
     // Convert attendedBy.callerId to ObjectId
     const addTimes = (time1, time2) => {
@@ -4153,16 +4163,16 @@ export const existsameCallnote = async (req, res) => {
     const callnoteObjectId = new mongoose.Types.ObjectId(callNoteId)
     console.log('callnoteid', callnoteObjectId)
 
-     // Pure existence check - FASTEST method
-  const pendingCount = await CallRegistration.countDocuments({
-    customerid: customerObjectId,
-    "callregistration": {
-      $elemMatch: {
-        "formdata.status": "pending",
-        "formdata.callnote": callnoteObjectId
+    // Pure existence check - FASTEST method
+    const pendingCount = await CallRegistration.countDocuments({
+      customerid: customerObjectId,
+      "callregistration": {
+        $elemMatch: {
+          "formdata.status": "pending",
+          "formdata.callnote": callnoteObjectId
+        }
       }
-    }
-  });
+    });
 
 
     const exists = pendingCount > 0;
