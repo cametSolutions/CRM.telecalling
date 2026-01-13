@@ -324,13 +324,16 @@ export const UpdateUserandAdmin = async (req, res) => {
 
 export const Login = async (req, res) => {
   const { emailOrMobile, password } = req.body
+  console.log(emailOrMobile)
   try {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     let user
     let branch
     // Determine if the input is an email or a mobile number
     if (emailRegex.test(emailOrMobile)) {
+      const a = await Admin.find({})
       // If it's an email
+      console.log(a)
       user = await Admin.findOne({ email: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
 
       if (!user) {
@@ -2200,7 +2203,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       // Main function
       async function calculateAbsences(allholidayfulldate, attendances) {
         const isPresent = async (date, daytype, check = false) => {
-         
+
           const attendance = attendances.attendancedates[date];
 
           if (attendance) {
