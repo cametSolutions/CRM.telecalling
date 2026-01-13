@@ -69,7 +69,7 @@ const CustomerListform = () => {
         lastPage.customers.length === 100 ? allPages.length + 1 : undefined,
       enabled: !!selectedBranch
     })
-
+console.log(data)
   //intialize user
   useEffect(() => {
     const userData = getLocalStorageItem("user")

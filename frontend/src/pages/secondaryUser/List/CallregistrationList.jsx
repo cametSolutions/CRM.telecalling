@@ -34,7 +34,7 @@ const CallregistrationList = () => {
   const { data: callscount, loading: loadingcounts } = UseFetch(
     "/customer/getcallregistrationlist"
   )
- 
+
   // const socketRef = useRef(null)
   // useEffect(() => {
   //   if (!socketRef.current) {
@@ -1022,7 +1022,11 @@ const CallregistrationList = () => {
                                 item?.formdata?.status === "solved"
                                   ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
                                   : item?.formdata?.status === "pending"
-                                  ? callDate === today
+                                  ? new Date(
+                                      item?.timedata?.endTime.split("")[0]
+                                    )
+                                      .toString()
+                                      .split("T")[0] === today
                                     ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
                                     : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                   : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
