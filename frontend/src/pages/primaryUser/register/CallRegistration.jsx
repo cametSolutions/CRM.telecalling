@@ -63,7 +63,7 @@ export default function CallRegistration() {
   const { data } = UseFetch(
     user._id && `/customer/getloggeduserCurrentCalls?loggedUserId=${user._id}`
   )
-console.log(data)
+  console.log(data)
   // const { data: callscount } = UseFetch("/customer/getcallregistrationlist")
   const { data: callnotes } = UseFetch("/customer/getallcallNotes")
   const handleQuillChange = (value) => {
@@ -251,6 +251,7 @@ console.log(data)
               )
             setProductDetails(matchingproducts)
           } else {
+console.log(matchingProducts)
             setProductDetails(matchingProducts)
           }
 
@@ -433,7 +434,7 @@ console.log(data)
         }
         // Set both attendedBy and completedBy if status is solved
       }
-      console.log("selectedproduts",selectedProducts[0])
+      console.log("selectedproduts", selectedProducts[0])
       const calldata = {
         product: selectedProducts[0]?.product_id,
         license: selectedProducts[0]?.licensenumber,
@@ -525,13 +526,16 @@ console.log(data)
       const calldata = {
         product: selectedProducts[0]?.product_id,
         license: selectedProducts[0]?.licensenumber,
-        branchName: [selectedProducts[0]?.branch_id?.branchName],
+        branchName: [selectedProducts[0]?.branchName],
         timedata: timeData,
         formdata: updatedformData,
         customeremail: selectedCustomer.email,
         customerName: selectedCustomer.customerName,
         productName: selectedProducts[0]?.productName
       }
+console.log(selectedProducts[0])
+console.log(selectedCustomer)
+console.log(branchName)
       setcallReport(calldata)
       console.log("calldata", calldata)
 
@@ -589,6 +593,7 @@ Problem:    \t${selectedText}
   `.trim()
   }
   const sendWhatapp = (calldata, callnote) => {
+console.log('h')
     if (
       !calldata?.formdata?.incomingNumber ||
       calldata?.formdata?.status === "solved"
@@ -758,6 +763,7 @@ Problem:    \t${selectedText}
 
         // Do something with the fetched data
         console.log("Fetched customer:", response.data.data)
+        console.log(data[0])
         setProductDetails(data[0].selected)
         // For example, set it to state to display in a modal or another component
         // setSelectedCustomer(data);
@@ -800,7 +806,7 @@ Problem:    \t${selectedText}
 
         setIsModalOpen(response.data.exists)
 
-        console.log("checkcallnotexists",response.data.exists)
+        console.log("checkcallnotexists", response.data.exists)
       } catch (error) {
         console.log("error", error)
       }
@@ -1432,13 +1438,14 @@ Problem:    \t${selectedText}
                             htmlFor="token"
                             className="block text-sm font-medium text-gray-700"
                           >
-                            Tokens
+                            Token
                           </label>
                           <input
+                            disabled
                             type="text"
                             id="token"
                             {...register("token", {})}
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none cursor-not-allowed"
                           />
                         </div>
                       )}
