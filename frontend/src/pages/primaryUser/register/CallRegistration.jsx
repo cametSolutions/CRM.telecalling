@@ -30,6 +30,7 @@ export default function CallRegistration() {
   const [loggeduserCurrentDateCalls, setloggeduserCurrentDateCalls] = useState(
     []
   )
+  const [issamecallnote, setissamecallnote] = useState(null)
   const [loader, setLoader] = useState(false)
   const [showIncomingNumberToast, setshowinComingnumberToast] = useState(false)
   const [callreport, setcallReport] = useState({})
@@ -43,7 +44,7 @@ export default function CallRegistration() {
   const [searching, setSearching] = useState(false)
   const [search, setSearch] = useState("")
   const [selectedCustomer, setSelectedCustomer] = useState(null)
-console.log(selectedCustomer)
+  console.log(selectedCustomer)
   const [selectedProducts, setSelectedProducts] = useState([])
   const [isRunning, setIsRunning] = useState(false) // Start with the timer running
   const [startTime, setStartTime] = useState(Date.now())
@@ -317,6 +318,7 @@ console.log(selectedCustomer)
   useEffect(() => {
     // Set the default product if there's only one
     if (productDetails?.length === 1) {
+console.log(productDetails[0])
       setSelectedProducts([productDetails[0]])
     }
   }, [productDetails])
@@ -430,7 +432,8 @@ console.log(selectedCustomer)
         }
         // Set both attendedBy and completedBy if status is solved
       }
-
+console.log(selectedProducts[0])
+console.log(selectedProducts[0]?.branch_id?.branchName)
       const calldata = {
         product: selectedProducts[0]?.product_id,
         license: selectedProducts[0]?.licensenumber,
@@ -446,6 +449,7 @@ console.log(selectedCustomer)
       setcallReport(calldata)
 
       console.log("calldatadetails", calldata)
+return
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
         calldata,
@@ -740,18 +744,21 @@ Problem:    \t${selectedText}
     }, 300) // Adjust the delay time to your preference (e.g., 300 ms)
   }, [])
   const handleRowClick = (customer) => {
-    
     const fetchCustomer = async () => {
       try {
         // Replace with your actual API endpoint and customer id
-        const response = await api.get(`/customer/getselectedcustomerforCall/${customer._id}`)
-        if (!response.ok) {
-          throw new Error("Failed to fetch customer data")
-        }
-        const data = await response.json()
+        const response = await api.get(
+          `/customer/getselectedcustomerforCall/${customer._id}`
+        )
+        console.log(response)
+
+        const data = response.data.data
+        setSelectedCustomer(data[0])
+        setSearch(data[0].customerName)
 
         // Do something with the fetched data
-        console.log("Fetched customer:", data)
+        console.log("Fetched customer:", response.data.data)
+        setProductDetails(data[0].selected.map((item) => item.productDetails))
         // For example, set it to state to display in a modal or another component
         // setSelectedCustomer(data);
       } catch (error) {
@@ -762,9 +769,6 @@ Problem:    \t${selectedText}
     fetchCustomer()
     setSearching(false)
     setCallData([])
-    setSelectedCustomer(customer)
-    setSearch(customer.customerName)
-    setProductDetails(customer.selected)
 
     if (customer) {
       reset({
@@ -784,45 +788,44 @@ Problem:    \t${selectedText}
 
     // Additional actions can be performed here (e.g., populate form fields)
   }
-  const hanldeCheckforsamecallnoteforsamecustomer = (data, id) => {
-    if (!calldetails && data.status === "pending") {
-      const callnoteId = data.callnote.split("|")[0]
-      const check = callList.some(
-        (item) =>
-          item.customerid === id &&
-          item.callregistration.some(
-            (call) =>
-              call.formdata?.callnote === callnoteId &&
-              call.formdata?.status === "pending"
-          )
-      )
-      return check
+  console.log(callList)
+  const hanldeCheckforsamecallnoteforsamecustomer = (data) => {
+    console.log(data)
+    const callnoteId = data.split("|")[0]
+    console.log(callnoteId)
+    console.log(selectedCustomer)
+
+    console.log(callnoteId)
+    const checkcallnote = async () => {
+      try {
+        const response = await api.get(
+          `/customer/checkexistsamecallnote?customerId=${selectedCustomer._id}&callNoteId=${callnoteId}`
+        )
+        setissamecallnote(response.data.exists)
+        setIsModalOpen(response.data.existsue)
+        console.log(response.data.exists)
+        console.log(typeof response.data.exists)
+        console.log(response)
+      } catch (error) {
+        console.log("error", error)
+      }
     }
+    checkcallnote()
   }
 
   const onSubmit = async (data) => {
-    const check = hanldeCheckforsamecallnoteforsamecustomer(
-      data,
-      selectedCustomer._id
-    )
-
-    if (check) {
-      setIsModalOpen(true)
-      // setmes
+    if (selectedProducts && selectedProducts?.length === 0) {
+      // alert("please select aprodut")
+      toast.error("Please select a product", {
+        position: "top-center",
+        autoClose: 3000 // 3 seconds
+      })
+      return
     } else {
-      if (selectedProducts && selectedProducts?.length === 0) {
-        // alert("please select aprodut")
-        toast.error("Please select a product", {
-          position: "top-center",
-          autoClose: 3000 // 3 seconds
-        })
-        return
-      } else {
-        setIsRunning(false)
-      }
-
-      setFormData(data)
+      setIsRunning(false)
     }
+
+    setFormData(data)
   }
 
   return (
@@ -1151,7 +1154,7 @@ Problem:    \t${selectedText}
                 <div className="">
                   <h4 className="text-md font-bold text-white">Partnership</h4>
                   <p className="text-white">
-                    {selectedCustomer?.partner?.partner || "N/A"}
+                    {selectedCustomer?.partner[0]?.partner || "N/A"}
                   </p>
                 </div>
                 <div className="">
@@ -1454,7 +1457,11 @@ Problem:    \t${selectedText}
 
                         <select
                           {...register("callnote", {
-                            required: "please select a callnote"
+                            required: "please select a callnote",
+                            onChange: (e) =>
+                              hanldeCheckforsamecallnoteforsamecustomer(
+                                e.target.value
+                              )
                           })}
                           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
                           defaultValue="" // Default placeholder

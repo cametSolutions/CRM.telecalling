@@ -994,6 +994,14 @@ export const GetselectedCustomerForCall = async (req, res) => {
 
     const customer = await Customer.aggregate([
       { $match: { _id: new mongoose.Types.ObjectId(customerId) } },
+      {
+        $lookup: {
+          from: "partners",
+          localField: "partner",
+          foreignField: "_id",
+          as: "partnerDetails"
+        }
+      },
 
       // Unwind the 'selected' array to join each branch/product separately
       { $unwind: { path: "$selected", preserveNullAndEmptyArrays: true } },
@@ -1032,13 +1040,15 @@ export const GetselectedCustomerForCall = async (req, res) => {
       {
         $group: {
           _id: "$_id",
-          name: { $first: "$name" },
+          customerName: { $first: "$customerName" },
           email: { $first: "$email" },
           mobile: { $first: "$mobile" },
           address1: { $first: "$address1" },
           state: { $first: "$state" },
           pincode: { $first: "$pincode" },
           industry: { $first: "$industry" },
+
+          partner: { $first: "$partnerDetails" },
           selected: { $push: "$selected" } // push all selected with branch/product details
         }
       }
@@ -1048,7 +1058,7 @@ export const GetselectedCustomerForCall = async (req, res) => {
       return res.status(404).json({ message: "Customer not found" });
     }
 
-    return res.status(200).json(customer[0]);
+    return res.status(200).json({ messaage: "customer found", data: customer });
   } catch (error) {
     console.log("error:", error.message);
     return res.status(500).json({ message: "Internal server error" });
@@ -1635,6 +1645,8 @@ export const customerCallRegistration = async (req, res) => {
 
     const calldata = req.body // Assuming calldata is sent in the body
     const emailsend = calldata.formdata.emailSend
+console.log("emailsenddd",emailsend)
+cosole.log("branhname",branchName)
 
     // Convert attendedBy.callerId to ObjectId
     const addTimes = (time1, time2) => {
@@ -4133,7 +4145,41 @@ export const GeteditedCustomer = async (req, res) => {
 //     return res.status(500).json({ message: "Internal server error" });
 //   }
 // };
+export const existsameCallnote = async (req, res) => {
+  try {
+    const { customerId, callNoteId } = req.query
+    const customerObjectId = new mongoose.Types.ObjectId(customerId)
+    console.log("customerobjectid", customerObjectId)
+    const callnoteObjectId = new mongoose.Types.ObjectId(callNoteId)
+    console.log('callnoteid', callnoteObjectId)
 
+     // Pure existence check - FASTEST method
+  const pendingCount = await CallRegistration.countDocuments({
+    customerid: customerObjectId,
+    "callregistration": {
+      $elemMatch: {
+        "formdata.status": "pending",
+        "formdata.callnote": callnoteObjectId
+      }
+    }
+  });
+
+
+    const exists = pendingCount > 0;
+    console.log('Exists:', exists); // This WILL return true ✅
+
+
+    console.log("existsss", exists)
+
+    return res.status(200).json({
+      exists
+    });
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+
+}
 
 export const Getallcallregistrationlist = async (req, res) => {
   try {
