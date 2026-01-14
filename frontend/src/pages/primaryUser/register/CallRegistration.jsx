@@ -251,7 +251,6 @@ export default function CallRegistration() {
               )
             setProductDetails(matchingproducts)
           } else {
-console.log(matchingProducts)
             setProductDetails(matchingProducts)
           }
 
@@ -320,7 +319,6 @@ console.log(matchingProducts)
   useEffect(() => {
     // Set the default product if there's only one
     if (productDetails?.length === 1) {
-      console.log("productdetails", productDetails)
       setSelectedProducts([productDetails[0]])
     }
   }, [productDetails])
@@ -446,7 +444,6 @@ console.log(matchingProducts)
         customerName: selectedCustomer?.customerName,
         productName: selectedProducts[0]?.productName
       }
-console.log(selectedProducts[0])
       setcallReport(calldata)
 
       console.log("calldatadetails", calldata)
@@ -533,9 +530,7 @@ console.log(selectedProducts[0])
         customerName: selectedCustomer.customerName,
         productName: selectedProducts[0]?.productName
       }
-console.log(selectedProducts[0])
-console.log(selectedCustomer)
-console.log(branchName)
+
       setcallReport(calldata)
       console.log("calldata", calldata)
 
@@ -593,7 +588,6 @@ Problem:    \t${selectedText}
   `.trim()
   }
   const sendWhatapp = (calldata, callnote) => {
-console.log('h')
     if (
       !calldata?.formdata?.incomingNumber ||
       calldata?.formdata?.status === "solved"
@@ -763,7 +757,6 @@ console.log('h')
 
         // Do something with the fetched data
         console.log("Fetched customer:", response.data.data)
-        console.log(data[0])
         setProductDetails(data[0].selected)
         // For example, set it to state to display in a modal or another component
         // setSelectedCustomer(data);
@@ -830,7 +823,6 @@ console.log('h')
 
     setFormData(data)
   }
-
   return (
     <div>
       {loader && (
@@ -1157,7 +1149,7 @@ console.log('h')
                 <div className="">
                   <h4 className="text-md font-bold text-white">Partnership</h4>
                   <p className="text-white">
-                    {selectedCustomer?.partner[0]?.partner || "N/A"}
+                    {selectedCustomer?.partner?.[0]?.partner || "N/A"}
                   </p>
                 </div>
                 <div className="">

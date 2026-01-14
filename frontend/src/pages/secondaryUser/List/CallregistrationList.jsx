@@ -93,13 +93,8 @@ const CallregistrationList = () => {
       }
       setbranchids(userData.selected.map((item) => item.branch_id))
 
-      // const users = JSON.parse(userData)
-      // if (userData.role === "Admin") {
-      //   const userbranch = branches.map((item) => item.branchName)
-      //   setUserBranch(userbranch)
-      // }
-      const a = userData.selected.map((item) => item.branchName)
-      setUserBranch(a)
+      const branch = userData.selected.map((item) => item.branchName)
+      setUserBranch(branch)
 
       setUser(userData)
     }
@@ -116,12 +111,13 @@ const CallregistrationList = () => {
       )
 
       const todaysSolvedCount = getTodaysSolved(calls)
-
+console.log(todaysSolvedCount.arr)
+console.log(todaysSolvedCount)
       const todaysCallsCount = getTodaysCalls(calls)
 
       setPendingCallsCount(pending?.length)
       setTodayCallsCount(todaysCallsCount)
-      setTodaysSolvedCount(todaysSolvedCount)
+      setTodaysSolvedCount(todaysSolvedCount.todaysSolvedCount)
     },
     [users]
   )
@@ -364,20 +360,24 @@ const CallregistrationList = () => {
   }
   const getTodaysSolved = (calls) => {
     const today = new Date().toISOString().split("T")[0]
+    console.log(today)
     let todaysSolvedCount = 0
+    let arr = []
 
     calls.forEach((customer) => {
       customer.callregistration.forEach((call) => {
         if (call.formdata.status === "solved") {
           const callDate = call.timedata.endTime.split("T")[0]
+          console.log(callDate)
           if (callDate === today) {
             todaysSolvedCount++
+            arr.push(call.timedata.token)
           }
         }
       })
     })
 
-    return todaysSolvedCount
+    return {todaysSolvedCount,arr}
   }
   const getCallStats = (calls, userName) => {
     let totalCalls = 0
@@ -491,7 +491,7 @@ const CallregistrationList = () => {
     const secs = seconds % 60
     return `${hrs} hr ${mins} min ${secs} sec`
   }
-
+  console.log(filteredCalls)
   return (
     <div className=" mx-auto p-2  md:p-5 bg-white">
       <div className="w-auto shadow-lg rounded p-4 pt-1 h-full bg-neutral-50 ">
@@ -927,8 +927,12 @@ const CallregistrationList = () => {
                             .split("T")[0]
                         : null
 
-                      const isToday = callDate === today
+                      console.log(callDate)
 
+                      const isToday = callDate === today
+                      if (isSolved && isToday) {
+                        console.log(item.timedata.token)
+                      }
                       return isSolved && isToday // Filter condition for both 'solved' and 'today'
                     })
 
@@ -950,6 +954,7 @@ const CallregistrationList = () => {
                           item.branchName.includes(branch)
                         )
                       ) {
+                        console.log(item)
                         return (
                           <>
                             <tr
