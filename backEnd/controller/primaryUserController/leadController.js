@@ -920,58 +920,7 @@ export const SetDemoallocation = async (req, res) => {
         taskallocatedtoModel = "Admin";
       }
     }
-    // await LeadMaster.findByIdAndUpdate({ _id: leaddocId }, {
-    //   $push: {
-    //     activityLog: {
-    //       submissionDate: new Date(),
-    //       allocationDate: demoData.demoallocatedDate,
-    //       submittedUser: demoallocatedBy,
-    //       submissiondoneByModel: taskallocatedByModel,
-    //       taskallocatedBy: demoallocatedBy,
-    //       taskallocatedByModel: taskallocatedByModel,
-    //       taskallocatedTo: demoallocatedTo,
-    //       taskallocatedToModel: taskallocatedtoModel,
-    //       remarks: demoData.demoDescription,
-    //       taskBy: "allocated",
-    //       taskTo: demoData?.selectedType,
-    //       taskfromFollowup: true,
-    //       allocationChanged: false
-
-    //     }
-    //   },
-    //   $set: { taskfromFollowup: true }
-    // }
-    // )
-    // const updateQuery = {
-    //   $push: {
-    //     activityLog: {
-    //       submissionDate: new Date(),
-    //       allocationDate: demoData.demoallocatedDate,
-    //       submittedUser: demoallocatedBy,
-    //       submissiondoneByModel: taskallocatedByModel,
-    //       taskallocatedBy: demoallocatedBy,
-    //       taskallocatedByModel: taskallocatedByModel,
-    //       taskallocatedTo: demoallocatedTo,
-    //       taskallocatedToModel: taskallocatedtoModel,
-    //       remarks: demoData.demoDescription,
-    //       taskBy: "allocated",
-    //       taskTo: demoData?.selectedType,
-    //       taskfromFollowup: true,
-    //       allocationChanged: false
-    //     }
-    //   },
-    //   $set: { taskfromFollowup: true }
-    // };
-
-    // // Add allocationChanged update only if editIndex exists
-    // if (editIndex !== undefined && editIndex !== null) {
-    //   const index = Number(editIndex);
-    //   if (!isNaN(index)) {
-    //     updateQuery.$set[`activityLog.${index}.allocationChanged`] = true;
-    //   }
-    // }
-
-    // await LeadMaster.findByIdAndUpdate({ _id: leaddocId }, updateQuery);
+   
     await LeadMaster.bulkWrite([
       {
         updateOne: {
