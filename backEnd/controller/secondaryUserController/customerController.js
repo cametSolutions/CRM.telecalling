@@ -1037,7 +1037,7 @@ export const GetselectedCustomerForCall = async (req, res) => {
       },
       { $unwind: { path: "$productDetails", preserveNullAndEmptyArrays: true } },
 
-     
+
       {
         $addFields: {
           "selected.product_id": "$productDetails",
@@ -2763,12 +2763,19 @@ export const GetCallRegister = async (req, res) => {
       }
     } else if (callId) {
       const callDetails = await CallRegistration.findById(callId)
-        .populate("customerid")
+        .populate({
+          path: "customerid",
+          populate: {
+            path: "partner",
+            model: "Partner" // optional if ref is defined in schema
+          }
+        })
         .populate({
           path: "callregistration.product", // Populate the product field inside callregistration array
           model: "Product"
         })
         .populate({ path: "callregistration.formdata.callnote" })
+      console.log("calldetails", callDetails)
 
       const attendedByIds = new Set()
       const completedByIds = new Set()

@@ -17,12 +17,17 @@ export default function SalesFunnel() {
     lastDay: null
   })
   const [data, setData] = useState([])
-const {data:salesfunels}=UseFetch(date.startDate&&date.endDate&&`/lead/getsalesfunnels?startDate=${date.startDate}&endDate=${date.endDate}`)
-  const { data: followup } = UseFetch(
-    date.startDate &&
-      date.endDate &&
-      `/lead/getallproductwisereport?startDate=${filterRange.firstDay}&endDate=${filterRange.lastDay}`
-  )
+console.log(date.startDate)
+console.log(date.endDate)
+console.log(filterRange.firstDay)
+console.log(filterRange.lastDay)
+const {data:a}=UseFetch(filterRange.firstDay&&filterRange.lastDay&&`/lead/getsalesfunnels?startDate=${filterRange.firstDay}&endDate=${filterRange.lastDay}`)
+console.log(a)
+  // const { data: followup } = UseFetch(
+  //   date.startDate &&
+  //     date.endDate &&
+  //     `/lead/getallproductwisereport?startDate=${filterRange.firstDay}&endDate=${filterRange.lastDay}`
+  // )
   useEffect(() => {
     const endDate = new Date(
       new Date().getFullYear(),
@@ -47,21 +52,17 @@ const {data:salesfunels}=UseFetch(date.startDate&&date.endDate&&`/lead/getsalesf
     console.log(endDate)
   }, [])
   useEffect(() => {
-    if (followup) {
-      console.log(followup)
-      setData(followup)
+    if (a) {
+      console.log(a)
+      setData(a)
     }
-  }, [followup])
+  }, [a])
   console.log(date)
   const headersName = [
     "Stage",
     "Count",
     "Value",
-    "Conv.%",
-    "Follow-Ups",
-    "Future",
-    "Converted",
-    "Lost",
+    
     "Conversion %"
   ]
   const handleDateRange = (range) => {

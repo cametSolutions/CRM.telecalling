@@ -55,6 +55,7 @@ export default function CallRegistration() {
   const debounceTimeoutRef = useRef(null)
   const location = useLocation()
   const { calldetails, token } = location?.state || {}
+console.log(calldetails)
 
   const { data: registeredCall, refreshHook } = UseFetch(
     selectedCustomer?._id &&
@@ -231,6 +232,7 @@ export default function CallRegistration() {
               (product) => product?.product_id === productId
             )
           setSearch(callData?.callDetails?.customerid?.customerName)
+console.log(callData)
           setSelectedCustomer(callData?.callDetails?.customerid)
           if (matchingProducts.length === 0 && productId) {
             setProductDetails([
@@ -823,6 +825,7 @@ Problem:    \t${selectedText}
 
     setFormData(data)
   }
+console.log(selectedCustomer)
   return (
     <div>
       {loader && (
@@ -1149,7 +1152,7 @@ Problem:    \t${selectedText}
                 <div className="">
                   <h4 className="text-md font-bold text-white">Partnership</h4>
                   <p className="text-white">
-                    {selectedCustomer?.partner?.[0]?.partner || "N/A"}
+                    {selectedCustomer?.partner?.[0]?.partner||selectedCustomer?.partner?.partner || "N/A"}
                   </p>
                 </div>
                 <div className="">
