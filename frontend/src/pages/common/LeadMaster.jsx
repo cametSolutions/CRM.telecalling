@@ -1,12 +1,12 @@
-import { useEffect, useState, useMemo, useRef } from "react"
-import { Country, State } from "country-state-city"
-import BarLoader from "react-spinners/BarLoader"
-import Select from "react-select"
-import { useForm } from "react-hook-form"
-import PopUp from "../../components/common/PopUp"
-import { toast } from "react-toastify"
-import UseFetch from "../../hooks/useFetch"
-import api from "../../api/api"
+import { useEffect, useState, useMemo, useRef } from "react";
+import { Country, State } from "country-state-city";
+import BarLoader from "react-spinners/BarLoader";
+import Select from "react-select";
+import { useForm } from "react-hook-form";
+import PopUp from "../../components/common/PopUp";
+import { toast } from "react-toastify";
+import UseFetch from "../../hooks/useFetch";
+import api from "../../api/api";
 
 const LeadMaster = ({
   process,
@@ -19,7 +19,7 @@ const LeadMaster = ({
   editloadingState,
   seteditLoadingState,
   showmessage,
-  showpopupMessage
+  showpopupMessage,
 }) => {
   const {
     register: registerMain,
@@ -29,8 +29,8 @@ const LeadMaster = ({
     watch: watchMain,
 
     clearErrors: clearMainerrors,
-    formState: { errors: errorsMain }
-  } = useForm()
+    formState: { errors: errorsMain },
+  } = useForm();
   // For modal form
   const {
     register: registerModal,
@@ -41,46 +41,49 @@ const LeadMaster = ({
     setError,
     clearErrors: clearmodalErros,
     formState: { errors: errorsModal },
-    reset: resetModal
-  } = useForm()
+    reset: resetModal,
+  } = useForm();
   const [productOrserviceSelections, setProductorServiceSelections] = useState(
     {}
-  )
-  const [leadList, setLeadList] = useState([])
-  const [popupOpen, setPopupOpen] = useState(false)
-  const [formData, setFormData] = useState(null)
-  const [restrictionMessage, setrestrictMessage] = useState()
-  const [isEligible, setIseligible] = useState(false)
-  const [popupMessage, setPopupMessage] = useState("")
-  const [ispopupModalOpen, setIspopupModalOpen] = useState(false)
-  const [isSelfAllocationChangable, setselfAllocationChangable] = useState(true)
-  const [modalloader, setModalLoader] = useState(false)
-  const [selfAllocation, setselfAllocation] = useState(false)
-  const [partner, setPartner] = useState([])
-  const [editMode, setEditMode] = useState(false)
-  const [selectedCountry, setSelectedCountry] = useState(null)
+  );
+  const [leadList, setLeadList] = useState([]);
+  const [submitLoading, setsubmitLoading] = useState(false);
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [formData, setFormData] = useState(null);
+  const [restrictionMessage, setrestrictMessage] = useState();
+  const [isEligible, setIseligible] = useState(false);
+  const [popupMessage, setPopupMessage] = useState("");
+  const [ispopupModalOpen, setIspopupModalOpen] = useState(false);
+  const [isSelfAllocationChangable, setselfAllocationChangable] =
+    useState(true);
+  const [modalloader, setModalLoader] = useState(false);
+  const [selfAllocation, setselfAllocation] = useState(false);
+  const [partner, setPartner] = useState([]);
+  const [editMode, setEditMode] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState(null);
   const [licensewithoutProductSelection, setlicenseWithoutProductSelection] =
-    useState({})
-  const [iscustomerchangeandbranch, setcutomerchangeandbranch] = useState(true)
-  const [selectedState, setSelectedState] = useState(null)
-  const [selectedleadlist, setSelectedLeadList] = useState([])
-  const [selectedCustomer, setSelectedCustomer] = useState(null)
-  const [selectedLicense, setSelectedLicense] = useState(null)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [customerOptions, setCustomerOptions] = useState([])
-  const [isleadForOpen, setIsleadForOpen] = useState(false)
-  const [isLicenseOpen, setIslicenseOpen] = useState(false)
-  const [branches, setBranches] = useState([])
-  const [customerTableData, setcustomerTableData] = useState([])
-  const [validateError, setValidateError] = useState({})
-  const [loggeduser, setloggedUser] = useState(null)
-  const [allstaff, setallStaffs] = useState([])
-  const [selectedBranch, setSelectedBranch] = useState(null)
-
-  const [allcustomer, setallcustomer] = useState([])
-  const dropdownLicenseRef = useRef(null)
-  const dropdownLeadforRef = useRef(null)
-  const registrationType = watchModal("registrationType")
+    useState({});
+  const [iscustomerchangeandbranch, setcutomerchangeandbranch] = useState(true);
+  const [selectedState, setSelectedState] = useState(null);
+  const [selectedleadlist, setSelectedLeadList] = useState([]);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedLicense, setSelectedLicense] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [customerOptions, setCustomerOptions] = useState([]);
+  const [isleadForOpen, setIsleadForOpen] = useState(false);
+  const [isLicenseOpen, setIslicenseOpen] = useState(false);
+  const [branches, setBranches] = useState([]);
+  const [customerTableData, setcustomerTableData] = useState([]);
+  const [validateError, setValidateError] = useState({});
+  const [loggeduser, setloggedUser] = useState(null);
+  const [allstaff, setallStaffs] = useState([]);
+  const [selectedBranch, setSelectedBranch] = useState(null);
+  const [tasklist, settasklist] = useState([]);
+  console.log(tasklist);
+  const [allcustomer, setallcustomer] = useState([]);
+  const dropdownLicenseRef = useRef(null);
+  const dropdownLeadforRef = useRef(null);
+  const registrationType = watchModal("registrationType");
 
   const { data: productData, loading: productLoading } = UseFetch(
     loggeduser &&
@@ -89,55 +92,63 @@ const LeadMaster = ({
       `/product/getallProducts?branchselected=${encodeURIComponent(
         JSON.stringify(selectedBranch)
       )}`
-  )
-  const { data: companybranches } = UseFetch("/branch/getBranch")
-  const { data: partners } = UseFetch("/customer/getallpartners")
+  );
+  const { data: tasks } = UseFetch("lead/getallTask");
+  const { data: companybranches } = UseFetch("/branch/getBranch");
+  const { data: partners } = UseFetch("/customer/getallpartners");
   const { data: serviceData } = UseFetch(
     loggeduser &&
       selectedBranch &&
       `/product/getallServices?branchselected=${selectedBranch}`
-  )
-  const { data: alluser, loading: usersLoading } = UseFetch("/auth/getallUsers")
+  );
+  const { data: alluser, loading: usersLoading } =
+    UseFetch("/auth/getallUsers");
   const {
     data: customerData,
     loading: customerLoading,
-    refreshHook
+    refreshHook,
   } = UseFetch(
     loggeduser &&
       selectedBranch &&
       `/customer/getallCustomer?branchSelected=${selectedBranch}`
-  )
+  );
+  console.log(tasks);
   useEffect(() => {
-    const userData = localStorage.getItem("user")
+    const userData = localStorage.getItem("user");
     if (userData) {
-      const user = JSON.parse(userData)
-      setloggedUser(user)
+      const user = JSON.parse(userData);
+      setloggedUser(user);
       if (user.role === "Staff" || user.role === "Manager") {
-        const branch = user.selected.map((branch) => branch.branch_id)
-        const branches = JSON.stringify(branch)
+        const branch = user.selected.map((branch) => branch.branch_id);
+        const branches = JSON.stringify(branch);
 
-        setBranches(branches)
+        setBranches(branches);
       }
     }
-  }, [])
+  }, []);
+  useEffect(() => {
+    if (tasks) {
+      settasklist(tasks.filter((item) => item.taskName === "Followup"));
+    }
+  }, [tasks]);
   useEffect(() => {
     if (showmessage) {
-      setIspopupModalOpen(true)
+      setIspopupModalOpen(true);
     }
-  }, [showmessage])
+  }, [showmessage]);
   useEffect(() => {
     if (companybranches && companybranches.length > 0) {
-      const defaultBranch = companybranches[0]._id
+      const defaultBranch = companybranches[0]._id;
       if (Data && Data.length) {
-        const customerBranch = Data[0].leadBranch
-        setSelectedBranch([customerBranch])
-        setValueMain("leadBranch", customerBranch)
+        const customerBranch = Data[0].leadBranch;
+        setSelectedBranch([customerBranch]);
+        setValueMain("leadBranch", customerBranch);
       } else if (defaultBranch) {
-        setSelectedBranch([defaultBranch])
-        setValueMain("leadBranch", defaultBranch)
+        setSelectedBranch([defaultBranch]);
+        setValueMain("leadBranch", defaultBranch);
       }
     }
-  }, [companybranches, Data])
+  }, [companybranches, Data]);
   useEffect(() => {
     if (
       loggeduser &&
@@ -152,12 +163,19 @@ const LeadMaster = ({
         partner.relationBranches.some((branch) =>
           selectedBranch.includes(branch?.branchName?._id)
         )
-      )
-      setPartner(filteredPartners)
-      const combinedlead = [...productData, ...serviceData]
-      setLeadList(combinedlead)
+      );
+      setPartner(filteredPartners);
+      const combinedlead = [...productData, ...serviceData];
+      setLeadList(combinedlead);
     }
-  }, [loggeduser, branches, productData, serviceData, partners, selectedBranch]) //here dependency partners is not state its usefetch data for partners
+  }, [
+    loggeduser,
+    branches,
+    productData,
+    serviceData,
+    partners,
+    selectedBranch,
+  ]); //here dependency partners is not state its usefetch data for partners
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -166,27 +184,27 @@ const LeadMaster = ({
         dropdownLicenseRef.current &&
         !dropdownLicenseRef.current.contains(event.target)
       ) {
-        setIslicenseOpen(false)
+        setIslicenseOpen(false);
       }
       if (
         dropdownLeadforRef.current &&
         !dropdownLeadforRef.current.contains(event.target)
       ) {
-        setIsleadForOpen(false)
+        setIsleadForOpen(false);
       }
-    }
+    };
 
-    document.addEventListener("mousedown", handleClickOutside)
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     if (loggeduser?._id) {
-      setValueMain("leadBy", loggeduser._id) // Manually set the value
+      setValueMain("leadBy", loggeduser._id); // Manually set the value
     }
-  }, [loggeduser, setValueMain])
+  }, [loggeduser, setValueMain]);
   useEffect(() => {
     if (
       Data &&
@@ -196,7 +214,7 @@ const LeadMaster = ({
       loggeduser
     ) {
       if (Data[0]?.selfAllocation) {
-        setselfAllocationChangable(false)
+        setselfAllocationChangable(false);
       }
       // if (Data[0].activityLog.length === 2) {
       //   const allocatedtoData =
@@ -210,29 +228,29 @@ const LeadMaster = ({
       //   setselfAllocationChangable(false)
       // }
       if (Data[0].activityLog.length === 1) {
-        setcutomerchangeandbranch(true)
+        setcutomerchangeandbranch(true);
       } else if (Data[0].activityLog.length > 1) {
-        setcutomerchangeandbranch(false)
+        setcutomerchangeandbranch(false);
       }
-      setValueMain("leadId", Data[0]?.leadId)
-      setValueMain("partner", Data[0]?.partner)
+      setValueMain("leadId", Data[0]?.leadId);
+      setValueMain("partner", Data[0]?.partner);
       setValueMain(
         "selfAllocation",
         Data[0]?.selfAllocation === true ? "true" : "false"
-      )
+      );
       if (Data[0].selfAllocation === true) {
-        setselfAllocation(true)
-        setValueMain("allocationType", Data[0].selfAllocationType)
+        setselfAllocation(true);
+        setValueMain("allocationType", Data[0].selfAllocationType);
         const formattedDate = Data[0].selfAllocationDueDate
           ? Data[0].selfAllocationDueDate.split("T")[0]
-          : ""
-        setValueMain("dueDate", formattedDate)
+          : "";
+        setValueMain("dueDate", formattedDate);
       }
 
-      setValueMain("customerName", Data[0]?.customerName?._id)
-      setValueMain("mobile", Data[0]?.customerName?.mobile)
-      setValueMain("phone", Data[0]?.customerName?.phone)
-      setValueMain("email", Data[0]?.customerName?.email)
+      setValueMain("customerName", Data[0]?.customerName?._id);
+      setValueMain("mobile", Data[0]?.customerName?.mobile);
+      setValueMain("phone", Data[0]?.customerName?.phone);
+      setValueMain("email", Data[0]?.customerName?.email);
       const leadData = Data[0]?.leadFor.map((item) => ({
         licenseNumber: item?.licenseNumber,
         productorServiceName:
@@ -243,77 +261,77 @@ const LeadMaster = ({
         productPrice: item?.productPrice,
         hsn: item?.hsn,
         netAmount: item?.netAmount,
-        price: item?.price
-      }))
-      setSelectedLeadList(leadData)
+        price: item?.price,
+      }));
+      setSelectedLeadList(leadData);
       const productListwithoutlicenseOnEdit = leadList?.map((product) => {
         const match = Data[0].leadFor?.find((lead) => {
           return (
             lead.productorServiceId._id === product._id &&
             !Object.prototype.hasOwnProperty.call(lead, "licenseNumber")
-          )
-        })
+          );
+        });
 
         return {
           ...product,
           selected: !!match,
-          selectedArray: product.selected
-        }
-      })
-      setlicenseWithoutProductSelection(productListwithoutlicenseOnEdit)
-      const groupedByLicenseNumber = {}
+          selectedArray: product.selected,
+        };
+      });
+      setlicenseWithoutProductSelection(productListwithoutlicenseOnEdit);
+      const groupedByLicenseNumber = {};
       Data[0].leadFor.forEach((lead) => {
         if (lead.licenseNumber) {
           if (!groupedByLicenseNumber[lead.licenseNumber]) {
-            groupedByLicenseNumber[lead.licenseNumber] = [] // create array if not exist
+            groupedByLicenseNumber[lead.licenseNumber] = []; // create array if not exist
           }
           leadList?.forEach((product) => {
             const existingIndex = groupedByLicenseNumber[
               lead.licenseNumber
-            ].findIndex((item) => item._id === product._id)
+            ].findIndex((item) => item._id === product._id);
 
             if (existingIndex !== -1) {
               // If already exists, just update 'selected' flag
               if (lead.productorServiceId._id === product._id) {
                 groupedByLicenseNumber[lead.licenseNumber][
                   existingIndex
-                ].selected = product._id === lead.productorServiceId._id
+                ].selected = product._id === lead.productorServiceId._id;
               }
             } else {
               // If not exists, push new product with correct selected
               const item = {
                 ...product,
                 selected: product._id === lead.productorServiceId._id,
-                selectedArray: product.selected
-              }
-              groupedByLicenseNumber[lead.licenseNumber].push(item)
+                selectedArray: product.selected,
+              };
+              groupedByLicenseNumber[lead.licenseNumber].push(item);
             }
-          })
-          return groupedByLicenseNumber
+          });
+          return groupedByLicenseNumber;
         }
-      })
-      setProductorServiceSelections(groupedByLicenseNumber)
+      });
+      setProductorServiceSelections(groupedByLicenseNumber);
       const selectedcustomerlicenseandproduct =
         Data[0]?.customerName?.selected?.map((sel) => ({
           licenseNumber: sel.licensenumber || "N/A",
-          productName: sel.productName || "Unknown"
-        }))
+          productName: sel.productName || "Unknown",
+        }));
 
-      setcustomerTableData(selectedcustomerlicenseandproduct)
+      setcustomerTableData(selectedcustomerlicenseandproduct);
     }
-  }, [customerOptions, Data])
+  }, [customerOptions, Data]);
   useEffect(() => {
     if (customerData && customerData.length > 0) {
-      setallcustomer(customerData)
+      setallcustomer(customerData);
     }
-  }, [customerData])
+  }, [customerData]);
 
   useEffect(() => {
     if (customerData && customerData.length && selectedBranch) {
       const options = customerData.map((item) => {
         const matchingSelected = item.selected?.find(
           (sel) => sel.branch_id === selectedBranch[0]
-        )
+        );
         return {
           value: item?._id,
           label: item?.customerName,
@@ -321,108 +339,108 @@ const LeadMaster = ({
           mobile: item?.mobile || "",
           license: matchingSelected?.licensenumber || "",
           email: item?.email,
-          phone: item?.landline
-        }
-      })
-      setCustomerOptions(options)
+          phone: item?.landline,
+        };
+      });
+      setCustomerOptions(options);
     }
-  }, [customerData])
+  }, [customerData]);
   useEffect(() => {
     if (selectedCustomer) {
-      setValueMain("mobile", selectedCustomer.mobile)
-      setValueMain("phone", selectedCustomer.phone)
-      setValueMain("email", selectedCustomer.email)
+      setValueMain("mobile", selectedCustomer.mobile);
+      setValueMain("phone", selectedCustomer.phone);
+      setValueMain("email", selectedCustomer.email);
     }
-  }, [selectedCustomer])
+  }, [selectedCustomer]);
   useEffect(() => {
     if (alluser) {
-      const { allusers = [], allAdmins = [] } = alluser
+      const { allusers = [], allAdmins = [] } = alluser;
 
       // Combine allusers and allAdmins
-      const combinedUsers = [...allusers, ...allAdmins]
+      const combinedUsers = [...allusers, ...allAdmins];
 
       // Set combined names to state
-      setallStaffs(combinedUsers)
+      setallStaffs(combinedUsers);
     }
-  }, [alluser])
+  }, [alluser]);
 
   useEffect(() => {
-    setValueMain("netAmount", calculateTotalAmount())
-    setValueMain("taxAmount", calculatetaxAmount())
-    setValueMain("taxableAmount", calculatetaxableAmount())
-  }, [selectedleadlist])
+    setValueMain("netAmount", calculateTotalAmount());
+    setValueMain("taxAmount", calculatetaxAmount());
+    setValueMain("taxableAmount", calculatetaxableAmount());
+  }, [selectedleadlist]);
   useEffect(() => {
     if (!selectedLicense && leadList && leadList.length > 0 && !Data) {
       const initialProductListwithoutlicense = leadList?.map((product) => ({
         ...product,
         selectedArray: product.selected,
-        selected: false
-      }))
+        selected: false,
+      }));
 
-      setlicenseWithoutProductSelection(initialProductListwithoutlicense)
+      setlicenseWithoutProductSelection(initialProductListwithoutlicense);
     }
-  }, [leadList])
+  }, [leadList]);
 
   const countryOptions = useMemo(
     () =>
       Country.getAllCountries().map((country) => ({
         label: country.name,
-        value: country.isoCode
+        value: country.isoCode,
       })),
     []
-  )
+  );
   const stateOptions = selectedCountry
     ? State.getStatesOfCountry(selectedCountry.value).map((state) => ({
         label: state.name,
-        value: state.isoCode
+        value: state.isoCode,
       }))
-    : []
+    : [];
   const defaultCountry = useMemo(
     () => countryOptions.find((country) => country.value === "IN"),
     [countryOptions]
-  )
+  );
   const defaultState = useMemo(
     () => stateOptions.find((state) => state.value === "KL"),
     [stateOptions]
-  )
+  );
   useEffect(() => {
     if (defaultCountry) {
-      setSelectedCountry(defaultCountry)
-      setValueModal("country", defaultCountry.value)
+      setSelectedCountry(defaultCountry);
+      setValueModal("country", defaultCountry.value);
     }
-  }, [defaultCountry])
+  }, [defaultCountry]);
 
   useEffect(() => {
-    const currentState = getValuesModal("state")
+    const currentState = getValuesModal("state");
     if (defaultState && !currentState) {
-      setSelectedState(defaultState)
-      setValueModal("state", defaultState.value)
+      setSelectedState(defaultState);
+      setValueModal("state", defaultState.value);
     }
-  }, [defaultState, getValuesModal, setValueModal])
+  }, [defaultState, getValuesModal, setValueModal]);
 
   const Industries = [
     "Whole sailor/Distributors",
     "Retailer",
     "Manufacturer",
     "Service",
-    "Works Contact"
-  ]
+    "Works Contact",
+  ];
   const handleLicenseSelect = (license) => {
     // Ensure all products are initialized for this license if not already
     if (!productOrserviceSelections[license]) {
       const initialProductList = leadList.map((product) => ({
         ...product,
         selectedArray: product.selected,
-        selected: false
-      }))
+        selected: false,
+      }));
       setProductorServiceSelections((prev) => ({
         ...prev,
-        [license]: initialProductList
-      }))
+        [license]: initialProductList,
+      }));
     }
-    setIslicenseOpen(false) // Close dropdown
-    setSelectedLicense(license)
-  }
+    setIslicenseOpen(false); // Close dropdown
+    setSelectedLicense(license);
+  };
   const handleProductORserviceSelect = (productId) => {
     if (selectedLicense) {
       if (
@@ -432,7 +450,7 @@ const LeadMaster = ({
             item.licenseNumber === selectedLicense
         )
       )
-        return
+        return;
       const updatedProductList = productOrserviceSelections[
         selectedLicense
       ].map((product) =>
@@ -440,33 +458,33 @@ const LeadMaster = ({
           ? {
               ...product,
               selected: !product.selected,
-              selectedArray: product?.selectedArray
+              selectedArray: product?.selectedArray,
             }
           : product
-      )
+      );
       setProductorServiceSelections((prev) => ({
         ...prev,
-        [selectedLicense]: updatedProductList
-      }))
+        [selectedLicense]: updatedProductList,
+      }));
     } else {
       if (
         selectedleadlist
           .filter((items) => !items.licenseNumber)
           .some((item) => item.productId === productId)
       )
-        return
+        return;
 
       const updatedProductList = licensewithoutProductSelection.map((product) =>
         product._id === productId
           ? { ...product, selected: !product.selected }
           : product
-      )
-      setlicenseWithoutProductSelection(updatedProductList)
+      );
+      setlicenseWithoutProductSelection(updatedProductList);
     }
-  }
+  };
   const handleToggleDropdown = () => {
-    setIsleadForOpen((prev) => !prev) // Toggle dropdown visibility
-  }
+    setIsleadForOpen((prev) => !prev); // Toggle dropdown visibility
+  };
   const handleSelectedCustomer = (option) => {
     const filteredcustomerLicenseandproducts = allcustomer
       ?.filter(
@@ -480,11 +498,11 @@ const LeadMaster = ({
           .filter((sel) => String(sel.branch_id) === String(selectedBranch))
           .map((sel) => ({
             licenseNumber: sel.licensenumber || "N/A",
-            productName: sel.productName || "Unknown"
+            productName: sel.productName || "Unknown",
           }))
-      )
-    setcustomerTableData(filteredcustomerLicenseandproducts)
-  }
+      );
+    setcustomerTableData(filteredcustomerLicenseandproducts);
+  };
   const handlePriceChange = (index, newPrice) => {
     setSelectedLeadList((prevList) =>
       prevList.map((product, i) =>
@@ -495,12 +513,12 @@ const LeadMaster = ({
               netAmount: (
                 Number(newPrice) +
                 (Number(product.hsn) / 100) * Number(newPrice)
-              ).toFixed(2)
+              ).toFixed(2),
             }
           : product
       )
-    )
-  }
+    );
+  };
   const handleHsnChange = (index, newHsn) => {
     setSelectedLeadList((prevList) =>
       prevList.map((product, i) =>
@@ -511,12 +529,12 @@ const LeadMaster = ({
               netAmount: (
                 Number(product?.productPrice) +
                 (Number(newHsn) / 100) * Number(product?.productPrice)
-              ).toFixed(2)
+              ).toFixed(2),
             }
           : product
       )
-    )
-  }
+    );
+  };
 
   // const handleHsnChange=(index,newHsn)=>{
   // selectedleadlist((prevList)=>
@@ -533,87 +551,87 @@ const LeadMaster = ({
         product._id === item.productId
           ? { ...product, selected: !product.selected }
           : product
-      )
+      );
 
       setProductorServiceSelections((prev) => ({
         ...prev,
-        [item.licenseNumber]: updatedProductList
-      }))
+        [item.licenseNumber]: updatedProductList,
+      }));
     } else {
       const updatedProductList = licensewithoutProductSelection.map((product) =>
         product._id === item.productId
           ? { ...product, selected: !product.selected }
           : product
-      )
-      setlicenseWithoutProductSelection(updatedProductList)
+      );
+      setlicenseWithoutProductSelection(updatedProductList);
     }
 
     // return
     const filteredLeadlist = selectedleadlist.filter(
       (item, index) => index !== indexNum
-    )
-    setSelectedLeadList(filteredLeadlist)
-  }
+    );
+    setSelectedLeadList(filteredLeadlist);
+  };
 
   const customFilter = (option, inputValue) => {
-    if (!inputValue) return true
+    if (!inputValue) return true;
     // Convert to lowercase for case-insensitive search
-    const searchValue = inputValue.toLowerCase()
-    const label = option.label ? String(option.label).toLowerCase() : "" // Ensure label is a string
+    const searchValue = inputValue.toLowerCase();
+    const label = option.label ? String(option.label).toLowerCase() : ""; // Ensure label is a string
     // const label = option.label ? option.label.toLowerCase() : ""
-    const mobile = option.data?.mobile ? option.data?.mobile.toLowerCase() : ""
+    const mobile = option.data?.mobile ? option.data?.mobile.toLowerCase() : "";
     return (
       label.includes(searchValue) || // Search by name
       mobile.includes(searchValue) // Search by mobile number
-    )
-  }
+    );
+  };
   const calculateTotalAmount = () => {
     return selectedleadlist
       .reduce((total, product) => {
-        return total + (Number(product.netAmount) || 0) // Ensure price is a number and handle null values
+        return total + (Number(product.netAmount) || 0); // Ensure price is a number and handle null values
       }, 0)
-      .toFixed(2)
-  }
+      .toFixed(2);
+  };
   const calculatetaxAmount = () => {
     return (
       Math.round(
         selectedleadlist.reduce((total, product) => {
           return (
             total + (Number(product.netAmount) - Number(product.productPrice))
-          )
+          );
         }, 0) * 100
       ) / 100
-    )
-  }
+    );
+  };
   const calculatetaxableAmount = () => {
     return selectedleadlist.reduce((total, product) => {
-      return total + Number(product.productPrice)
-    }, 0)
-  }
+      return total + Number(product.productPrice);
+    }, 0);
+  };
   const handleAddProducts = () => {
-    setIsleadForOpen(false)
+    setIsleadForOpen(false);
     if (validateError.emptyleadData) {
       setValidateError((prev) => ({
         ...prev,
-        emptyleadData: ""
-      }))
+        emptyleadData: "",
+      }));
     }
     if (validateError.readonlyError) {
       setValidateError((prev) => ({
         ...prev,
-        readonlyError: ""
-      }))
+        readonlyError: "",
+      }));
     }
 
     setSelectedLeadList((prev) => {
-      let updatedList = [...prev]
+      let updatedList = [...prev];
 
       if (selectedLicense) {
         const selectedProducts = productOrserviceSelections[selectedLicense]
           .filter((items) => items.selected)
           .map((item) => {
             const igstRate =
-              item?.selectedArray?.[0]?.hsn_id?.onValue?.igstRate ?? 0
+              item?.selectedArray?.[0]?.hsn_id?.onValue?.igstRate ?? 0;
             return {
               licenseNumber: selectedLicense,
               productorServiceName: item.productName || item.serviceName,
@@ -626,14 +644,14 @@ const LeadMaster = ({
               netAmount: (
                 Number(item?.productPrice || 0) +
                 (Number(igstRate) / 100) * Number(item?.productPrice || 0)
-              ).toFixed(2)
+              ).toFixed(2),
               // netAmount:
               //   item?.productPrice +
               //   (Number(item?.selectedArray[0]?.hsn_id?.onValue?.igstRate) /
               //     100) *
               //     item?.productPrice
-            }
-          })
+            };
+          });
 
         // Filter out products that are already added for the selected license
         const newProducts = selectedProducts.filter(
@@ -643,15 +661,15 @@ const LeadMaster = ({
                 p.licenseNumber === selectedLicense &&
                 p.productorServiceId === product.productorServiceId
             )
-        )
+        );
 
-        updatedList = [...updatedList, ...newProducts]
+        updatedList = [...updatedList, ...newProducts];
       } else {
         const selectedProducts = licensewithoutProductSelection
           .filter((items) => items.selected)
           .map((item) => {
             const igstRate =
-              item?.selectedArray?.[0]?.hsn_id?.onValue?.igstRate ?? 0
+              item?.selectedArray?.[0]?.hsn_id?.onValue?.igstRate ?? 0;
             return {
               productorServiceName: item.productName || item.serviceName,
               productorServiceId: item._id,
@@ -662,9 +680,9 @@ const LeadMaster = ({
               netAmount: (
                 Number(item?.productPrice || 0) +
                 (Number(igstRate) / 100) * Number(item?.productPrice || 0)
-              ).toFixed(2)
-            }
-          })
+              ).toFixed(2),
+            };
+          });
 
         // Filter out products that are already added (without license)
         const newProducts = selectedProducts.filter(
@@ -674,21 +692,21 @@ const LeadMaster = ({
                 !p.licenseNumber &&
                 p.productorServiceId === product.productorServiceId
             )
-        )
+        );
 
-        updatedList = [...updatedList, ...newProducts]
+        updatedList = [...updatedList, ...newProducts];
       }
-      return updatedList
-    })
-  }
+      return updatedList;
+    });
+  };
   const validateLeadData = async (leadData, selectedleadlist, role) => {
     const result = await api.get("/lead/checkexistinglead", {
       params: {
         leadData,
         selectedleadlist,
-        role
-      }
-    })
+        role,
+      },
+    });
 
     if (
       result.data.message ===
@@ -697,19 +715,19 @@ const LeadMaster = ({
     ) {
       return {
         eligible: false,
-        message: `${result.data.message},You can't make leads`
-      }
+        message: `${result.data.message},You can't make leads`,
+      };
     } else if (
       result.data.message ===
         "This customer already has a lead with the same product." &&
       loggeduser.role !== "Staff"
     ) {
-      return { eligible: true, message: result.data.message }
+      return { eligible: true, message: result.data.message };
     } else if (
       result.data.message ===
       "No existing lead for this customer. Safe to create new lead."
     ) {
-      return { eligible: true, message: "" }
+      return { eligible: true, message: "" };
     } else if (
       result.data.message ===
       "This customer already has a lead, but with different product(s)."
@@ -717,105 +735,110 @@ const LeadMaster = ({
       return {
         eligible: true,
         message:
-          "This customer already has a lead, but with different product(s)."
-      }
+          "This customer already has a lead, but with different product(s).",
+      };
     }
-    setPopupMessage(result.data.message)
+    setPopupMessage(result.data.message);
 
-    return isEligible
-  }
+    return isEligible;
+  };
   const onSubmit = async (data) => {
+    setsubmitLoading(true);
+    if (submitLoading) {
+      return;
+    }
+
     try {
       if (process === "Registration") {
         if (selectedleadlist.length === 0) {
           setValidateError((prev) => ({
             ...prev,
-            emptyleadData: "No Lead generated do it"
-          }))
-          return
+            emptyleadData: "No Lead generated do it",
+          }));
+          return;
         }
         const validation = await validateLeadData(
           data,
           selectedleadlist,
           loggeduser.role
-        )
-        setFormData(data)
-        setPopupMessage(validation.message)
+        );
+        setFormData(data);
+        setPopupMessage(validation.message);
         if (validation.message === "") {
-          handlePopupOk(true, data)
+          handlePopupOk(true, data);
         } else {
-          setPopupOpen(true)
+          setPopupOpen(true);
         }
-        setIseligible(validation.eligible)
+        setIseligible(validation.eligible);
       } else if (process === "edit") {
         if (isReadOnly) {
           setValidateError((prev) => ({
             ...prev,
             readonlyError:
-              "Can't make changes unless the user is the leadBy or allocatedTo"
-          }))
-          return
+              "Can't make changes unless the user is the leadBy or allocatedTo",
+          }));
+          return;
         }
 
-        seteditLoadingState(true)
-        await handleEditData(data, selectedleadlist, Data[0]?._id)
+        seteditLoadingState(true);
+        await handleEditData(data, selectedleadlist, Data[0]?._id);
       }
       // Refetch the product data
     } catch (error) {
-      console.log("error on onsubmit:", error)
-      toast.error("Failed to add product!")
+      console.log("error on onsubmit:", error);
+      toast.error("Failed to add product!");
     }
-  }
+  };
   const handlePopupOk = async (ischek = false, leadData = null) => {
-    setPopupOpen(false)
+    setPopupOpen(false);
     if (isEligible && leadData === null) {
-      await handleleadData(formData, selectedleadlist, loggeduser.role)
+      await handleleadData(formData, selectedleadlist, loggeduser.role);
     } else if (ischek && leadData) {
-      await handleleadData(leadData, selectedleadlist, loggeduser.role)
+      await handleleadData(leadData, selectedleadlist, loggeduser.role);
     }
-  }
+  };
   const normalizeMobile = (number) => {
-    if (!number) return ""
-    return number.replace(/\D/g, "").slice(-10) // Keep only last 10 digits
-  }
+    if (!number) return "";
+    return number.replace(/\D/g, "").slice(-10); // Keep only last 10 digits
+  };
 
   const isMobileExists = (inputMobile, existingCustomers) => {
-    const normalizedInput = normalizeMobile(inputMobile)
+    const normalizedInput = normalizeMobile(inputMobile);
 
     return existingCustomers.some((customer) => {
-      const normalizedStored = normalizeMobile(customer.mobile)
-      return normalizedStored === normalizedInput
-    })
-  }
+      const normalizedStored = normalizeMobile(customer.mobile);
+      return normalizedStored === normalizedInput;
+    });
+  };
   const onmodalsubmit = async (data) => {
     try {
-      const checkexistingNumber = isMobileExists(data.mobile, allcustomer)
+      const checkexistingNumber = isMobileExists(data.mobile, allcustomer);
       if (checkexistingNumber) {
         setError("mobile", {
           type: "manual",
-          message: "This mobile number is already used"
-        })
-        return
+          message: "This mobile number is already used",
+        });
+        return;
       }
-      setModalLoader(true)
+      setModalLoader(true);
       const response = await api.post("/customer/customerRegistration", {
-        customerData: data
-      })
+        customerData: data,
+      });
       if (response.status === 200) {
-        refreshHook()
-        setModalLoader(false)
-        resetModal()
-        toast.success(response.data.message)
-        setModalOpen(false)
-        clearmodalErros()
-        resetModal()
+        refreshHook();
+        setModalLoader(false);
+        resetModal();
+        toast.success(response.data.message);
+        setModalOpen(false);
+        clearmodalErros();
+        resetModal();
       }
     } catch (error) {
-      console.log(error)
-      toast.error("something went wrong")
-      setModalLoader(false)
+      console.log(error);
+      toast.error("something went wrong");
+      setModalLoader(false);
     }
-  }
+  };
   return (
     <div className="bg-gray-100 h-full">
       {(modalloader ||
@@ -829,9 +852,9 @@ const LeadMaster = ({
           color="#4A90E2" // Change color as needed
         />
       )}
-      <div className=" h-full overflow-y-auto container justify-center items-center p-3 md:p-8 shadow-xl">
+      <div className="bg-white h-full overflow-y-auto flex justify-center items-center shadow-xl p-3 md:p-8 w-full">
         <div
-          className="bg-white shadow-xl rounded p-2 md:p-3 lg:p-8 mx-auto "
+          className="bg-white shadow-xl rounded mx-auto p-3 md:p-8 w-full"
           style={{
             opacity:
               productLoading || usersLoading || customerLoading ? 0.2 : 1,
@@ -839,9 +862,17 @@ const LeadMaster = ({
               productLoading || usersLoading || customerLoading
                 ? "none"
                 : "auto",
-            transition: "opacity 0.3s ease-in-out"
+            transition: "opacity 0.3s ease-in-out",
           }}
         >
+          {/* {Data && (
+            <div className="flex justify-end">
+              <span className="text-white p-2 rounded-md bg-blue-500 text-md font-bold cursor-pointer hover:bg-blue-600">
+                Edit Customer
+              </span>
+            </div>
+          )} */}
+
           <div className="flex justify-between">
             <h2 className="text-xl md:text-2xl font-semibold  mb-1 md:mb-2">
               {Data && Data?.length > 0 ? "Lead Edit" : "Lead"}
@@ -852,8 +883,8 @@ const LeadMaster = ({
             <PopUp
               isOpen={ispopupModalOpen}
               onClose={() => {
-                setIspopupModalOpen(false)
-                showpopupMessage("")
+                setIspopupModalOpen(false);
+                showpopupMessage("");
               }}
               message={showmessage}
             />
@@ -875,13 +906,13 @@ const LeadMaster = ({
                     {...registerMain("leadBranch")}
                     onChange={
                       (e) => {
-                        setSelectedBranch([e.target.value])
-                        setValueMain("customerName", "") // Clear customer in the form
-                        setSelectedCustomer(null)
-                        setcustomerTableData([])
-                        setSelectedLeadList([])
-                        setValueMain("netAmount", "")
-                        setSelectedLicense(null)
+                        setSelectedBranch([e.target.value]);
+                        setValueMain("customerName", ""); // Clear customer in the form
+                        setSelectedCustomer(null);
+                        setcustomerTableData([]);
+                        setSelectedLeadList([]);
+                        setValueMain("netAmount", "");
+                        setSelectedLicense(null);
                       } // Update state on change
                     }
                     className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none ${
@@ -925,25 +956,25 @@ const LeadMaster = ({
                       getOptionValue={(option) => option._id}
                       filterOption={customFilter} // Enable searching by name & mobile
                       {...registerMain("customerName", {
-                        required: "Customer is Required"
+                        required: "Customer is Required",
                       })}
                       onBlur={() => {
                         const selected = customerOptions.find(
                           (option) => option.value === watchMain("customerName")
-                        )
+                        );
                         if (selected) {
-                          setValueMain("customerName", selected.value)
+                          setValueMain("customerName", selected.value);
                         }
                       }}
                       onChange={(selectedOption) => {
-                        handleSelectedCustomer(selectedOption)
-                        setSelectedCustomer(selectedOption)
+                        handleSelectedCustomer(selectedOption);
+                        setSelectedCustomer(selectedOption);
                         setValueMain("customerName", selectedOption.value, {
-                          shouldValidate: true
-                        })
-                        setValueMain("netAmount", "")
-                        setSelectedLeadList([])
-                        setSelectedLicense(null)
+                          shouldValidate: true,
+                        });
+                        setValueMain("netAmount", "");
+                        setSelectedLeadList([]);
+                        setSelectedLicense(null);
                       }}
                       className={`w-full ${
                         iscustomerchangeandbranch
@@ -958,7 +989,7 @@ const LeadMaster = ({
                             ? "#f3f4f6"
                             : "white",
 
-                          opacity: state.isDisabled ? 0.7 : 1
+                          opacity: state.isDisabled ? 0.7 : 1,
                         }),
                         singleValue: (base, state) => ({
                           ...base,
@@ -966,18 +997,18 @@ const LeadMaster = ({
                           cursor: state.isDisabled ? "not-allowed" : "pointer",
                           userSelect: state.isDisabled ? "none" : "auto",
                           // ensure text doesn't show caret on hover
-                          WebkitUserSelect: state.isDisabled ? "none" : "auto"
+                          WebkitUserSelect: state.isDisabled ? "none" : "auto",
                         }),
                         menu: (provided) => ({
                           ...provided,
                           maxHeight: "200px", // Set dropdown max height
-                          overflowY: "auto" // Enable scrolling
+                          overflowY: "auto", // Enable scrolling
                         }),
                         menuList: (provided) => ({
                           ...provided,
                           maxHeight: "200px", // Ensures dropdown scrolls internally
-                          overflowY: "auto"
-                        })
+                          overflowY: "auto",
+                        }),
                       }}
                       menuPortalTarget={document.body} // Prevents nested scrolling issues
                       menuShouldScrollIntoView={false}
@@ -986,8 +1017,8 @@ const LeadMaster = ({
                     <button
                       type="button" // Prevents form submission
                       onClick={() => {
-                        setModalOpen(true)
-                        clearMainerrors()
+                        setModalOpen(true);
+                        clearMainerrors();
                       }}
                       className={` border  bg-blue-600 hover:bg-blue-700 text-white text-left rounded px-3 py-[0.30rem] text-lg  flex justify-between items-center ${
                         isReadOnly ? "cursor-not-allowed " : ""
@@ -1112,7 +1143,7 @@ const LeadMaster = ({
                               ? true
                               : "This field is requireded",
                           onChange: (e) =>
-                            setselfAllocation(e.target.value === "true")
+                            setselfAllocation(e.target.value === "true"),
                         })}
                         className={`w-full border border-gray-300 rounded-md p-2 focus:outline-none ${
                           isSelfAllocationChangable
@@ -1143,7 +1174,7 @@ const LeadMaster = ({
                         {" "}
                         <div>
                           <label
-                            htmlFor="allocationType"
+                            htmlFor=" ype"
                             className="block text-sm font-medium text-gray-700 mb-2"
                           >
                             Allocation Type
@@ -1151,7 +1182,7 @@ const LeadMaster = ({
                           <select
                             disabled={!isSelfAllocationChangable}
                             {...registerMain("allocationType", {
-                              required: "Allocation type is required"
+                              required: "Allocation type is required",
                             })}
                             className={`w-full focus:outline-none rounded-md py-1 border border-gray-300 px-2 ${
                               isSelfAllocationChangable
@@ -1160,7 +1191,12 @@ const LeadMaster = ({
                             }`}
                           >
                             {/* <option value="">Select Allocationtype</option> */}
-                            <option value="followup">Followup</option>
+
+                            {tasklist.map((task) => (
+                              <option key={task._id} value={task._id}>
+                                {task.taskName}
+                              </option>
+                            ))}
                           </select>
                           {errorsMain.allocationType && (
                             <p className="text-red-500 text-sm">
@@ -1178,7 +1214,7 @@ const LeadMaster = ({
                           <input
                             type="date"
                             {...registerMain("dueDate", {
-                              required: "Due Date is required"
+                              required: "Due Date is required",
                             })}
                             className="w-full focus:outline-none rounded-md py-1 border border-gray-300 px-2"
                           />
@@ -1205,7 +1241,7 @@ const LeadMaster = ({
                     id="partner"
                     disabled={isReadOnly}
                     {...registerMain("partner", {
-                      required: "Partnership is Required"
+                      required: "Partnership is Required",
                     })}
                     className={`mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:outline-none  ${
                       isReadOnly
@@ -1362,8 +1398,8 @@ const LeadMaster = ({
                               productOrserviceSelections[selectedLicense]?.find(
                                 (p) => p._id === item._id
                               ) || {
-                                selected: false
-                              }
+                                selected: false,
+                              };
 
                             return (
                               <label
@@ -1382,14 +1418,14 @@ const LeadMaster = ({
                                   {item.productName || item.serviceName}
                                 </span>
                               </label>
-                            )
+                            );
                           })}
                         {!selectedLicense &&
                           leadList?.map((item) => {
                             const currentProductState =
                               licensewithoutProductSelection?.find(
                                 (p) => p._id === item._id
-                              ) || { selected: false }
+                              ) || { selected: false };
                             return (
                               <label
                                 key={item._id}
@@ -1407,7 +1443,7 @@ const LeadMaster = ({
                                   {item.productName || item.serviceName}
                                 </span>
                               </label>
-                            )
+                            );
                           })}
                       </div>
                     )}
@@ -1686,7 +1722,7 @@ const LeadMaster = ({
                       <input
                         type="text"
                         {...registerModal("customerName", {
-                          required: "CustomerName is Required"
+                          required: "CustomerName is Required",
                         })}
                         onBlur={(e) =>
                           setValueModal("customerName", e.target.value.trim())
@@ -1726,12 +1762,12 @@ const LeadMaster = ({
                           validate: (value) => {
                             const cleaned = value
                               .replace(/^\+?91/, "")
-                              .replace(/\D/g, "") // remove +91 or 91 and non-digits
+                              .replace(/\D/g, ""); // remove +91 or 91 and non-digits
                             if (cleaned.length !== 10) {
-                              return "Mobile number must be exactly 10 digits after removing country code"
+                              return "Mobile number must be exactly 10 digits after removing country code";
                             }
-                            return true
-                          }
+                            return true;
+                          },
                         })}
                         onBlur={(e) =>
                           setValueModal("mobile", e.target.value.trim())
@@ -1790,8 +1826,8 @@ const LeadMaster = ({
                         getOptionValue={(option) => option.value} // Add this
                         {...registerModal("country")}
                         onChange={(option) => {
-                          setSelectedCountry(option)
-                          setValueModal("country", option.value)
+                          setSelectedCountry(option);
+                          setValueModal("country", option.value);
                           // setSelectedState(null) // Reset state when country changes
                         }}
                         className="border focus:outline-none"
@@ -1802,19 +1838,19 @@ const LeadMaster = ({
                             boxShadow: "none",
                             outline: "none",
                             "&:hover": {
-                              borderColor: "#9ca3af" // Tailwind's border-gray-400
-                            }
+                              borderColor: "#9ca3af", // Tailwind's border-gray-400
+                            },
                           }),
                           menu: (provided) => ({
                             ...provided,
                             maxHeight: "200px", // Set dropdown max height
-                            overflowY: "auto" // Enable scrolling
+                            overflowY: "auto", // Enable scrolling
                           }),
                           menuList: (provided) => ({
                             ...provided,
                             maxHeight: "200px", // Ensures dropdown scrolls internally
-                            overflowY: "auto"
-                          })
+                            overflowY: "auto",
+                          }),
                         }}
                         menuPortalTarget={document.body} // Prevents nested scrolling issues
                         menuShouldScrollIntoView={false}
@@ -1834,8 +1870,8 @@ const LeadMaster = ({
                         getOptionValue={(option) => option.value} // Add this
                         {...registerModal("state")}
                         onChange={(option) => {
-                          setSelectedState(option)
-                          setValueModal("state", option.value)
+                          setSelectedState(option);
+                          setValueModal("state", option.value);
                         }}
                         styles={{
                           control: (provided) => ({
@@ -1844,19 +1880,19 @@ const LeadMaster = ({
                             boxShadow: "none",
                             outline: "none",
                             "&:hover": {
-                              borderColor: "#9ca3af" // Tailwind's border-gray-400
-                            }
+                              borderColor: "#9ca3af", // Tailwind's border-gray-400
+                            },
                           }),
                           menu: (provided) => ({
                             ...provided,
                             maxHeight: "200px", // Set dropdown max height
-                            overflowY: "auto" // Enable scrolling
+                            overflowY: "auto", // Enable scrolling
                           }),
                           menuList: (provided) => ({
                             ...provided,
                             maxHeight: "200px", // Ensures dropdown scrolls internally
-                            overflowY: "auto"
-                          })
+                            overflowY: "auto",
+                          }),
                         }}
                         menuPortalTarget={document.body} // Prevents nested scrolling issues
                         menuShouldScrollIntoView={false}
@@ -1904,7 +1940,7 @@ const LeadMaster = ({
                       <input
                         type="text"
                         {...registerModal("contactPerson", {
-                          required: "Contact person is Required"
+                          required: "Contact person is Required",
                         })}
                         onBlur={(e) =>
                           setValueModal("contactPerson", e.target.value.trim())
@@ -1927,7 +1963,7 @@ const LeadMaster = ({
                       <select
                         id="industry"
                         {...registerModal("industry", {
-                          required: "Industry is required"
+                          required: "Industry is required",
                         })}
                         className="w-full border border-gray-400 rounded-md p-2  focus:outline-none"
                       >
@@ -1989,7 +2025,7 @@ const LeadMaster = ({
                         <input
                           id="gstNo"
                           {...registerModal("gstNo", {
-                            required: "GST is required"
+                            required: "GST is required",
                           })}
                           className="mt-1 block w-full border border-gray-400 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
                           placeholder="Enter GSTIN (e.g., 22AAAAA0000A1Z5)"
@@ -2008,9 +2044,9 @@ const LeadMaster = ({
                     <button
                       type="button"
                       onClick={() => {
-                        setModalOpen(false)
-                        clearmodalErros()
-                        resetModal()
+                        setModalOpen(false);
+                        clearmodalErros();
+                        resetModal();
                       }}
                       className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600"
                     >
@@ -2030,7 +2066,7 @@ const LeadMaster = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default LeadMaster
+export default LeadMaster;

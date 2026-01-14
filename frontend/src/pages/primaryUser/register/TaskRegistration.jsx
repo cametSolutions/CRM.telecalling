@@ -1,77 +1,78 @@
-import { IoReorderThreeSharp } from "react-icons/io5"
-import { useState } from "react"
-import DeleteAlert from "../../../components/common/DeleteAlert"
-import Edit from "../../../components/common/Edit"
-import api from "../../../api/api"
-import { toast } from "react-toastify"
-import UseFetch from "../../../hooks/useFetch"
-import { useEffect } from "react"
+import { IoReorderThreeSharp } from "react-icons/io5";
+import { useState } from "react";
+import DeleteAlert from "../../../components/common/DeleteAlert";
+import Edit from "../../../components/common/Edit";
+import api from "../../../api/api";
+import { toast } from "react-toastify";
+import UseFetch from "../../../hooks/useFetch";
+import { useEffect } from "react";
 export default function TaskRegistration() {
-  const [value, setValue] = useState("")
-  const [items, setItems] = useState([])
-  const [editId, setEditId] = useState("")
-  const [editState, seteditState] = useState(true)
-  const { data, refreshHook } = UseFetch("/lead/getallTask")
+  const [value, setValue] = useState("");
+  const [items, setItems] = useState([]);
+  const [editId, setEditId] = useState("");
+  const [editState, seteditState] = useState(true);
+  const { data, refreshHook } = UseFetch("/lead/getallTask");
   useEffect(() => {
     if (data && data.length) {
-      setItems(data)
+      setItems(data);
     }
-  }, [data])
+  }, [data]);
+
   const handleEdit = (id) => {
-    seteditState(false)
-    const itemToEdit = items.find((item) => item._id === id)
+    seteditState(false);
+    const itemToEdit = items.find((item) => item._id === id);
     if (itemToEdit) {
       // reset({ brandName: brandToEdit.brandName })
-      setValue(itemToEdit.task)
-      setEditId(id)
+      setValue(itemToEdit.task);
+      setEditId(id);
 
       // Store the ID of the brand being edited
     }
-  }
+  };
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/lead/taskDelete?id=${id}`)
+      await api.delete(`/lead/taskDelete?id=${id}`);
 
       // Remove the deleted item from the items array
-      setItems((prevItems) => prevItems.filter((item) => item._id !== id))
-      setValue("")
+      setItems((prevItems) => prevItems.filter((item) => item._id !== id));
+      setValue("");
     } catch (error) {
-      console.error("Failed to delete item", error)
+      console.error("Failed to delete item", error);
       // toast.error("Failed to delete item. Please try again.")
     }
-  }
+  };
   const handleChange = (e) => {
-    setValue(e.target.value)
-  }
+    setValue(e.target.value);
+  };
 
   const handleSubmit = async () => {
     const formData = {
-      task: value
-    }
+      task: value,
+    };
     try {
       if (editId) {
         // Update the existing item
-        await api.put(`/lead/taskEdit?id=${editId}`, formData)
+        await api.put(`/lead/taskEdit?id=${editId}`, formData);
 
-        toast.success("task updated successfully")
-        seteditState(true)
+        toast.success("task updated successfully");
+        seteditState(true);
       } else {
         // Create a new item
 
-        await api.post("/lead/taskRegistration", formData)
+        await api.post("/lead/taskRegistration", formData);
 
-        toast.success("task created successfully")
+        toast.success("task created successfully");
       }
 
-      refreshHook()
-      setValue("")
+      refreshHook();
+      setValue("");
 
-      setEditId(null)
+      setEditId(null);
     } catch (error) {
-      console.error(error)
-      toast.error("Something went wrong")
+      console.error(error);
+      toast.error("Something went wrong");
     }
-  }
+  };
   return (
     <div>
       {" "}
@@ -91,7 +92,7 @@ export default function TaskRegistration() {
           <input
             type="text"
             onChange={(e) => {
-              handleChange(e)
+              handleChange(e);
             }}
             placeholder="Enter your brand name"
             className="w-full md:w-1/2  p-1  border border-gray-300 rounded focus:border-gray-500 outline-none"
@@ -172,5 +173,5 @@ export default function TaskRegistration() {
         </section>
       </div>
     </div>
-  )
+  );
 }

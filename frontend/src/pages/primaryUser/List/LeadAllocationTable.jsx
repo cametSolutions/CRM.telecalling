@@ -1,174 +1,180 @@
-import { useState, useEffect } from "react"
-import { X, Calendar, FileText, AlertCircle, IndianRupee } from "lucide-react"
+import { useState, useEffect } from "react";
+import { X, Calendar, FileText, AlertCircle, IndianRupee } from "lucide-react";
 
-import React from "react"
-import { toast } from "react-toastify"
-import { PropagateLoader } from "react-spinners"
-import { useNavigate } from "react-router-dom"
-import BarLoader from "react-spinners/BarLoader"
-import api from "../../../api/api"
-import Select from "react-select"
-import UseFetch from "../../../hooks/useFetch"
+import React from "react";
+import { toast } from "react-toastify";
+import { PropagateLoader } from "react-spinners";
+import { useNavigate } from "react-router-dom";
+import BarLoader from "react-spinners/BarLoader";
+import api from "../../../api/api";
+import Select from "react-select";
+import UseFetch from "../../../hooks/useFetch";
 const LeadAllocationTable = () => {
-  const [status, setStatus] = useState("Pending")
-  const [submiterror, setsubmitError] = useState("")
-  const [toggleLoading, setToggleLoading] = useState(false)
-  const [selectedLeadId, setselectedLeadId] = useState(null)
-  const [showModal, setShowmodal] = useState(false)
-  const [showeventLog, setshoweventLog] = useState(false)
-  const [selectedAllocationType, setselectedAllocationType] = useState({})
-  const [validateError, setValidateError] = useState({})
-  const [validatetypeError, setValidatetypeError] = useState({})
-  const [loggedUserBranches, setLoggeduserBranches] = useState([])
-  const [selectedCompanyBranch, setSelectedCompanyBranch] = useState(null)
-  const [showFullName, setShowFullName] = useState(false)
-  const [showFullEmail, setShowFullEmail] = useState(false)
-  const [approvedToggleStatus, setapprovedToggleStatus] = useState(false)
-  const [submitLoading, setsubmitLoading] = useState(false)
-  const [allocationOptions, setAllocationOptions] = useState([])
-  const [selectedAllocates, setSelectedAllocates] = useState({})
-  const [loggedUser, setLoggedUser] = useState(null)
-  const [selectedItem, setSelectedItem] = useState(null)
-  const [tableData, setTableData] = useState([])
-  const [selectedData, setselectedData] = useState([])
-  const { data: branches } = UseFetch("/branch/getBranch")
+  const [status, setStatus] = useState("Pending");
+  const [submiterror, setsubmitError] = useState("");
+  const [toggleLoading, setToggleLoading] = useState(false);
+  const [selectedLeadId, setselectedLeadId] = useState(null);
+  const [showModal, setShowmodal] = useState(false);
+  const [showeventLog, setshoweventLog] = useState(false);
+  const [selectedAllocationType, setselectedAllocationType] = useState({});
+  const [selectedAllocationtypeNames, setselectedallocatiotypeNames] = useState(
+    {}
+  );
+  const [validateError, setValidateError] = useState({});
+  const [validatetypeError, setValidatetypeError] = useState({});
+  const [loggedUserBranches, setLoggeduserBranches] = useState([]);
+  const [selectedCompanyBranch, setSelectedCompanyBranch] = useState(null);
+  const [showFullName, setShowFullName] = useState(false);
+  const [showFullEmail, setShowFullEmail] = useState(false);
+  const [approvedToggleStatus, setapprovedToggleStatus] = useState(false);
+  const [submitLoading, setsubmitLoading] = useState(false);
+  const [allocationOptions, setAllocationOptions] = useState([]);
+  const [selectedAllocates, setSelectedAllocates] = useState({});
+  const [loggedUser, setLoggedUser] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [tableData, setTableData] = useState([]);
+  const [selectedData, setselectedData] = useState([]);
+  const { data: branches } = UseFetch("/branch/getBranch");
   const [formData, setFormData] = useState({
     allocationDate: "",
-    allocationDescription: ""
-  })
+    allocationDescription: "",
+  });
+  const { data: tasks } = UseFetch("/lead/getallTask");
+  console.log(tasks);
   const { data: leadPendinglist, loading } = UseFetch(
     status &&
       loggedUser &&
       selectedCompanyBranch &&
       `/lead/getallLead?Status=${status}&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
-  )
+  );
 
-  const { data } = UseFetch("/auth/getallUsers")
-  const navigate = useNavigate()
+  const { data } = UseFetch("/auth/getallUsers");
+  const navigate = useNavigate();
   useEffect(() => {
-    const userData = localStorage.getItem("user")
-    const user = JSON.parse(userData)
-    setLoggedUser(user)
-  }, [])
+    const userData = localStorage.getItem("user");
+    const user = JSON.parse(userData);
+    setLoggedUser(user);
+  }, []);
 
   useEffect(() => {
     if (loggedUser && branches && branches.length > 0) {
       if (loggedUser.role === "Admin") {
-        const isselctedArray = loggedUser?.selected
+        const isselctedArray = loggedUser?.selected;
         if (isselctedArray) {
           const loggeduserBranches = loggedUser.selected.map((item) => {
-            return { value: item.branch_id, label: item.branchName }
-          })
-          setLoggeduserBranches(loggeduserBranches)
-          setSelectedCompanyBranch(loggeduserBranches[0].value)
+            return { value: item.branch_id, label: item.branchName };
+          });
+          setLoggeduserBranches(loggeduserBranches);
+          setSelectedCompanyBranch(loggeduserBranches[0].value);
         } else {
           const loggeduserBranches = branches.map((item) => {
-            return { value: item._id, label: item.branchName }
-          })
-          setLoggeduserBranches(loggeduserBranches)
-          setSelectedCompanyBranch(loggeduserBranches[0].value)
+            return { value: item._id, label: item.branchName };
+          });
+          setLoggeduserBranches(loggeduserBranches);
+          setSelectedCompanyBranch(loggeduserBranches[0].value);
         }
       } else {
         const loggeduserBranches = loggedUser.selected.map((item) => {
-          return { value: item.branch_id, label: item.branchName }
-        })
-        setLoggeduserBranches(loggeduserBranches)
-        setSelectedCompanyBranch(loggeduserBranches[0].value)
+          return { value: item.branch_id, label: item.branchName };
+        });
+        setLoggeduserBranches(loggeduserBranches);
+        setSelectedCompanyBranch(loggeduserBranches[0].value);
       }
     }
-  }, [loggedUser, branches])
+  }, [loggedUser, branches]);
   useEffect(() => {
     if (data && selectedCompanyBranch) {
-      const { allusers = [], allAdmins = [] } = data
+      const { allusers = [], allAdmins = [] } = data;
 
       // Combine allusers and allAdmins
 
       const filter = allusers.filter((staff) =>
         staff.selected.some((s) => selectedCompanyBranch === s.branch_id)
-      )
-      const combinedUsers = [...filter, ...allAdmins]
+      );
+      const combinedUsers = [...filter, ...allAdmins];
       setAllocationOptions(
         combinedUsers.map((item) => ({
           value: item._id,
-          label: item.name
+          label: item.name,
         }))
-      )
+      );
     }
-  }, [data, selectedCompanyBranch])
+  }, [data, selectedCompanyBranch]);
   useEffect(() => {
     if (leadPendinglist) {
-      getgroupingData(leadPendinglist)
+      getgroupingData(leadPendinglist);
     }
-  }, [leadPendinglist])
+  }, [leadPendinglist]);
   const getgroupingData = (data) => {
-    const groupedLeads = {}
-    let grandTotal = 0
+    const groupedLeads = {};
+    let grandTotal = 0;
     data.forEach((lead) => {
-      const leadBy = lead?.leadBy?.name
-      const amount = lead?.netAmount || 0
-      grandTotal += amount
+      const leadBy = lead?.leadBy?.name;
+      const amount = lead?.netAmount || 0;
+      grandTotal += amount;
       if (!groupedLeads[leadBy]) {
-        groupedLeads[leadBy] = []
+        groupedLeads[leadBy] = [];
       }
 
-      groupedLeads[leadBy].push(lead)
-    })
+      groupedLeads[leadBy].push(lead);
+    });
 
-    setTableData(groupedLeads)
-  }
+    setTableData(groupedLeads);
+  };
+  console.log(selectedAllocationType);
   const toggleStatus = async () => {
-    setTableData([])
-    setShowFullEmail(false)
-    setShowFullName(false)
+    setTableData([]);
+    setShowFullEmail(false);
+    setShowFullName(false);
     if (approvedToggleStatus === false) {
       //for getting approved allocation,
-      setToggleLoading(true)
+      setToggleLoading(true);
       const response = await api.get(
         `/lead/getallLead?Status=Approved&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
-      )
+      );
 
       if (response.status >= 200 && response.status < 300) {
-        const data = response.data.data //gets only allocated leads with reallocatedto field false which means reallocatedto true are in the reallocation page not need to display here
-        getgroupingData(data)
+        const data = response.data.data; //gets only allocated leads with reallocatedto field false which means reallocatedto true are in the reallocation page not need to display here
+        getgroupingData(data);
         // setTableData(data)
         data.forEach((item) => {
           setselectedAllocationType((prev) => ({
             ...prev,
-            [item._id]: item.allocationType
-          }))
-        })
-        setapprovedToggleStatus(!approvedToggleStatus)
-        setToggleLoading(false)
-        const initialSelected = {}
+            [item._id]: item.allocationType,
+          }));
+        });
+        setapprovedToggleStatus(!approvedToggleStatus);
+        setToggleLoading(false);
+        const initialSelected = {};
         data.forEach((item) => {
           if (item.allocatedTo?._id) {
             const match = allocationOptions.find(
               (opt) => opt.value === item.allocatedTo._id
-            )
+            );
 
             if (match) {
-              initialSelected[item._id] = match
+              initialSelected[item._id] = match;
             }
           }
-        })
+        });
 
-        setSelectedAllocates(initialSelected)
+        setSelectedAllocates(initialSelected);
       }
     } else {
       //for getting pending allocation
-      setToggleLoading(true)
+      setToggleLoading(true);
       const response = await api.get(
         `/lead/getallLead?Status=Pending&selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
-      )
+      );
       if (response.status >= 200 && response.status < 300) {
-        setSelectedAllocates({})
-        getgroupingData(response.data.data)
+        setSelectedAllocates({});
+        getgroupingData(response.data.data);
         // setTableData(response.data.data)
-        setapprovedToggleStatus(!approvedToggleStatus)
-        setToggleLoading(false)
+        setapprovedToggleStatus(!approvedToggleStatus);
+        setToggleLoading(false);
       }
     }
-  }
+  };
   // const handleSelectedAllocates = (item, value, label) => {
   //   setTableData((prevLeads) =>
   //     prevLeads.map((lead) =>
@@ -180,8 +186,8 @@ const LeadAllocationTable = () => {
   // }
   const handleSelectedAllocates = (item, value, label) => {
     setTableData((prevData) => {
-      const leadOwner = item.leadBy?.name
-      if (!leadOwner || !prevData[leadOwner]) return prevData
+      const leadOwner = item.leadBy?.name;
+      if (!leadOwner || !prevData[leadOwner]) return prevData;
 
       return {
         ...prevData,
@@ -189,141 +195,150 @@ const LeadAllocationTable = () => {
           lead._id === item._id
             ? { ...lead, allocatedTo: value, allocatedName: label }
             : lead
-        )
-      }
-    })
-  }
+        ),
+      };
+    });
+  };
   const getRemainingDays = (dueDate) => {
-    const today = new Date()
-    const target = new Date(dueDate)
-    today.setHours(0, 0, 0, 0)
-    target.setHours(0, 0, 0, 0)
-    const diffTime = target - today
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays
-  }
+    const today = new Date();
+    const target = new Date(dueDate);
+    today.setHours(0, 0, 0, 0);
+    target.setHours(0, 0, 0, 0);
+    const diffTime = target - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+  console.log(selectedAllocationType);
+  const selected = selectedAllocationType[selectedItem?._id];
+  console.log(selected);
+  console.log(selectedAllocationType);
   const handleSubmit = async () => {
+    if (submitLoading) {
+      return;
+    }
     // sanitize all string fields
     const cleanedData = Object.fromEntries(
       Object.entries(formData).map(([key, value]) => [
         key,
-        typeof value === "string" ? value.trim() : value
+        typeof value === "string" ? value.trim() : value,
       ])
-    )
+    );
 
     // validate on cleaned data
     if (!cleanedData.allocationDescription) {
       setValidateError((prev) => ({
         ...prev,
-        descriptionError: "Please fill it"
-      }))
-      return
+        descriptionError: "Please fill it",
+      }));
+      return;
     }
     if (!cleanedData.allocationDate) {
       setValidateError((prev) => ({
         ...prev,
-        allocationDateError: "Please select a date"
-      }))
-      return
+        allocationDateError: "Please select a date",
+      }));
+      return;
     }
 
     // return
     try {
       if (selectedAllocationType) {
-        const selected = selectedAllocationType[selectedItem._id]
+        const selected = selectedAllocationType[selectedItem._id];
 
-        setsubmitLoading(true)
-        let response
+        const allocationname =
+          selectedAllocationtypeNames[selectedItem._id]?.taskName;
+        setsubmitLoading(true);
+
+        let response;
         if (approvedToggleStatus) {
           response = await api.post(
             //change allocation to another staff means reassigning to another one
-            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationType=${encodeURIComponent(
-              selected
-            )}&allocatedBy=${loggedUser._id}`,
+            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationTypeName=${encodeURIComponent(
+              allocationname
+            )}&allocationtypeId=${selected}&allocatedBy=${loggedUser._id}`,
             { selectedItem, cleanedData }
-          )
+          );
           if (response.status >= 200 && response.status < 300) {
-            getgroupingData(response.data.data)
+            getgroupingData(response.data.data);
             // setTableData(response.data.data)
-            setsubmitLoading(false)
+            setsubmitLoading(false);
           }
         } else {
           //set allocation to respected staff from allocation pending page
           response = await api.post(
-            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationType=${encodeURIComponent(
-              selected
-            )}&allocatedBy=${loggedUser._id}`,
+            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationTypeName=${encodeURIComponent(
+              allocationname
+            )}&allocationtypeId=${selected}&allocatedBy=${loggedUser._id}`,
             { selectedItem, cleanedData }
-          )
+          );
 
           if (response.status >= 200 && response.status < 300) {
             setSelectedAllocates((prev) => {
-              const updated = { ...prev }
-              delete updated[selectedItem._id]
-              return updated
-            })
-            getgroupingData(response.data.data)
+              const updated = { ...prev };
+              delete updated[selectedItem._id];
+              return updated;
+            });
+            getgroupingData(response.data.data);
             // setTableData(response.data.data)
-            setsubmitLoading(false)
+            setsubmitLoading(false);
           }
         }
-        setShowmodal(false)
-        toast.success(response.data.message)
-        setsubmitLoading(false)
+        setShowmodal(false);
+        toast.success(response.data.message);
+        setsubmitLoading(false);
       }
     } catch (error) {
       if (error.response) {
-        const { status, data } = error.response
+        const { status, data } = error.response;
 
         if (status === 409) {
           // ⚠️ custom business-rule warning
           toast.warning(
             data.message ||
               "Cannot change task name. It's already running.only possible to change the user"
-          )
-          setsubmitError({ submissionerror: data.message })
+          );
+          setsubmitError({ submissionerror: data.message });
         } else if (status === 400) {
-          toast.error(data.message || "Invalid request")
+          toast.error(data.message || "Invalid request");
         } else if (status === 500) {
-          toast.error("Internal Server Error. Please try again later.")
+          toast.error("Internal Server Error. Please try again later.");
         } else {
-          toast.error(data.message || "Something went wrong")
+          toast.error(data.message || "Something went wrong");
         }
       } else {
         // if error.response doesn’t exist (like network failure)
-        toast.error("Network error. Please check your connection.")
+        toast.error("Network error. Please check your connection.");
       }
 
-      setsubmitLoading(false)
-      console.log("error:", error.message)
+      setsubmitLoading(false);
+      console.log("error:", error.message);
     }
-  }
+  };
   const handleAllocate = (item) => {
+    console.log(item);
     if (!selectedAllocates.hasOwnProperty(item._id)) {
       setValidateError((prev) => ({
         ...prev,
-        [item._id]: "Allocate to Someone"
-      }))
-      return
+        [item._id]: "Allocate to Someone",
+      }));
+      return;
     }
     if (!selectedAllocationType.hasOwnProperty(item._id)) {
       setValidatetypeError((prev) => ({
         ...prev,
-        [item._id]: "please select a Type"
-      }))
-      return
+        [item._id]: "please select a Type",
+      }));
+      return;
     }
-    setselectedLeadId(item.leadId)
-    setShowmodal(true)
-    setSelectedItem(item)
-    if (selectedAllocationType[item._id] === "followup") {
-      setFormData((prev) => ({
-        ...prev,
-        allocationDate: new Date()
-      }))
-    }
-  }
+    setselectedLeadId(item.leadId);
+    setShowmodal(true);
+    setSelectedItem(item);
 
+    setFormData((prev) => ({
+      ...prev,
+      allocationDate: new Date(),
+    }));
+  };
   return (
     <div className="flex flex-col h-full">
       {loading && (
@@ -342,8 +357,8 @@ const LeadAllocationTable = () => {
           <select
             // value={selectedCompanyBranch || ""}
             onChange={(e) => {
-              setSelectedCompanyBranch(e.target.value)
-              setStatus(approvedToggleStatus ? "Approved" : "Pending")
+              setSelectedCompanyBranch(e.target.value);
+              setStatus(approvedToggleStatus ? "Approved" : "Pending");
             }}
             className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px] cursor-pointer"
           >
@@ -472,8 +487,8 @@ const LeadAllocationTable = () => {
                                           {
                                             state: {
                                               leadId: item._id,
-                                              isReadOnly: true
-                                            }
+                                              isReadOnly: true,
+                                            },
                                           }
                                         )
                                       : navigate(
@@ -481,8 +496,8 @@ const LeadAllocationTable = () => {
                                           {
                                             state: {
                                               leadId: item._id,
-                                              isReadOnly: true
-                                            }
+                                              isReadOnly: true,
+                                            },
                                           }
                                         )
                                   }
@@ -512,19 +527,33 @@ const LeadAllocationTable = () => {
                                 <select
                                   value={selectedAllocationType?.[item._id]}
                                   onChange={(e) => {
+                                    const selectedtask = tasks.find(
+                                      (item) => item._id === e.target.value
+                                    );
                                     setselectedAllocationType((prev) => ({
                                       ...prev,
-                                      [item._id]: e.target.value
-                                    }))
+                                      [item._id]: e.target.value,
+                                    }));
+                                    setselectedallocatiotypeNames((prev) => ({
+                                      ...prev,
+                                      [item._id]: selectedtask,
+                                    }));
+                                    console.log(selectedtask);
                                     setValidatetypeError((prev) => ({
                                       ...prev,
-                                      [item._id]: ""
-                                    }))
+                                      [item._id]: "",
+                                    }));
                                   }}
                                   className="py-0.5 border border-gray-400 rounded-md   focus:outline-none cursor-pointer"
                                 >
                                   <option>Select Type</option>
-                                  <option value="followup">Followup</option>
+                                  {tasks &&
+                                    tasks.map((task) => (
+                                      <option key={task._id} value={task._id}>
+                                        {task?.taskName}
+                                      </option>
+                                    ))}
+                                  {/* <option value="followup">Followup</option>
                                   <option value="programming">
                                     Programming
                                   </option>
@@ -544,7 +573,7 @@ const LeadAllocationTable = () => {
                                   <option value="training">Training</option>
 
                                   <option value="onsite">Onsite</option>
-                                  <option value="office">Office</option>
+                                  <option value="office">Office</option> */}
                                 </select>
                                 {validatetypeError[item._id] && (
                                   <p className="text-red-500 text-sm">
@@ -556,9 +585,9 @@ const LeadAllocationTable = () => {
                                 {approvedToggleStatus && (
                                   <button
                                     onClick={() => {
-                                      setselectedData(item?.activityLog)
-                                      setselectedLeadId(item?.leadId)
-                                      setshoweventLog(true)
+                                      setselectedData(item?.activityLog);
+                                      setselectedLeadId(item?.leadId);
+                                      setshoweventLog(true);
                                     }}
                                     type="button"
                                   >
@@ -598,17 +627,17 @@ const LeadAllocationTable = () => {
                                       onChange={(selectedOption) => {
                                         setSelectedAllocates((prev) => ({
                                           ...prev,
-                                          [item._id]: selectedOption
-                                        }))
+                                          [item._id]: selectedOption,
+                                        }));
                                         handleSelectedAllocates(
                                           item,
                                           selectedOption.value,
                                           selectedOption.label
-                                        )
+                                        );
                                         setValidateError((prev) => ({
                                           ...prev,
-                                          [item._id]: ""
-                                        }))
+                                          [item._id]: "",
+                                        }));
                                       }}
                                       className="w-44 focus:outline-red-500"
                                       styles={{
@@ -622,8 +651,8 @@ const LeadAllocationTable = () => {
                                           paddingBottom: "0px",
                                           cursor: "pointer",
                                           "&:hover": {
-                                            borderColor: "red" // optional hover styling
-                                          }
+                                            borderColor: "red", // optional hover styling
+                                          },
                                         }),
                                         option: (base, state) => ({
                                           ...base,
@@ -631,27 +660,27 @@ const LeadAllocationTable = () => {
                                           backgroundColor: state.isFocused
                                             ? "#f0f0f0"
                                             : "white", // optional styling
-                                          color: "black"
+                                          color: "black",
                                         }),
                                         valueContainer: (base) => ({
                                           ...base,
                                           paddingTop: "2px", // Reduce vertical padding
-                                          paddingBottom: "2px"
+                                          paddingBottom: "2px",
                                         }),
                                         indicatorsContainer: (base) => ({
                                           ...base,
-                                          height: "30px"
+                                          height: "30px",
                                         }),
                                         menu: (provided) => ({
                                           ...provided,
                                           maxHeight: "200px", // Set dropdown max height
-                                          overflowY: "auto" // Enable scrolling
+                                          overflowY: "auto", // Enable scrolling
                                         }),
                                         menuList: (provided) => ({
                                           ...provided,
                                           maxHeight: "200px", // Ensures dropdown scrolls internally
-                                          overflowY: "auto"
-                                        })
+                                          overflowY: "auto",
+                                        }),
                                       }}
                                       menuPlacement="auto"
                                       menuPosition="absolute"
@@ -737,17 +766,17 @@ const LeadAllocationTable = () => {
               <div className="relative border-b border-gray-200 px-4 py-3">
                 <button
                   onClick={() => {
-                    setshoweventLog(false)
+                    setshoweventLog(false);
                     setFormData((prev) => ({
                       ...prev,
                       allocationDate: "",
                       allocationDescription: "",
-                      reason: ""
-                    }))
+                      reason: "",
+                    }));
                     setsubmitError({
-                      submissionerror: ""
-                    })
-                    setsubmitLoading(false)
+                      submissionerror: "",
+                    });
+                    setsubmitLoading(false);
                   }}
                   className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-lg hover:bg-gray-100"
                 >
@@ -798,12 +827,12 @@ const LeadAllocationTable = () => {
                     onChange={(e) => {
                       setFormData((prev) => ({
                         ...prev,
-                        allocationDate: e.target.value
-                      }))
+                        allocationDate: e.target.value,
+                      }));
                       setValidateError((prev) => ({
                         ...prev,
-                        allocationDateError: ""
-                      }))
+                        allocationDateError: "",
+                      }));
                     }}
                   />
                   {validateError.allocationDateError && (
@@ -825,13 +854,13 @@ const LeadAllocationTable = () => {
                     onChange={(e) => {
                       setFormData((prev) => ({
                         ...prev,
-                        allocationDescription: e.target.value
-                      }))
+                        allocationDescription: e.target.value,
+                      }));
                       if (validateError.descriptionError) {
                         setValidateError((prev) => ({
                           ...prev,
-                          descriptionError: ""
-                        }))
+                          descriptionError: "",
+                        }));
                       }
                     }}
                     rows="3"
@@ -858,13 +887,13 @@ const LeadAllocationTable = () => {
                       onChange={(e) => {
                         setFormData((prev) => ({
                           ...prev,
-                          reason: e.target.value
-                        }))
+                          reason: e.target.value,
+                        }));
                         if (validateError.reasonError) {
                           setValidateError((prev) => ({
                             ...prev,
-                            reasonError: ""
-                          }))
+                            reasonError: "",
+                          }));
                         }
                       }}
                       rows="3"
@@ -905,16 +934,16 @@ const LeadAllocationTable = () => {
                 <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
                   <button
                     onClick={() => {
-                      setShowmodal(false)
+                      setShowmodal(false);
                       setFormData((prev) => ({
                         ...prev,
                         allocationDate: "",
                         allocationDescription: "",
-                        reason: ""
-                      }))
+                        reason: "",
+                      }));
                       setsubmitError({
-                        submiterror: ""
-                      })
+                        submiterror: "",
+                      });
                     }}
                     disabled={submitLoading}
                     className="w-full sm:w-auto px-5 py-2 text-sm border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -946,9 +975,9 @@ const LeadAllocationTable = () => {
               {/* Close Button */}
               <button
                 onClick={() => {
-                  setselectedLeadId(null)
-                  setselectedData([])
-                  setshoweventLog(false)
+                  setselectedLeadId(null);
+                  setselectedData([]);
+                  setshoweventLog(false);
                 }}
                 className="absolute top-2 right-2  text-red-500 font-bold hover:text-red-600 text-lg"
               >
@@ -988,7 +1017,7 @@ const LeadAllocationTable = () => {
                     selectedData.map((item, index) => {
                       const hasFollowerData =
                         Array.isArray(item.folowerData) &&
-                        item.folowerData.length > 0
+                        item.folowerData.length > 0;
 
                       return hasFollowerData ? (
                         item.folowerData.map((subItem, subIndex) => (
@@ -1075,7 +1104,7 @@ const LeadAllocationTable = () => {
                               : "-"}
                           </td>
                         </tr>
-                      )
+                      );
                     })
                   ) : (
                     <tr>
@@ -1094,7 +1123,7 @@ const LeadAllocationTable = () => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default LeadAllocationTable
+export default LeadAllocationTable;

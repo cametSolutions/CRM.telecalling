@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react"
-import { X } from "lucide-react"
-import { FaSpinner } from "react-icons/fa"
+import { useState, useEffect } from "react";
+import { X } from "lucide-react";
+import { FaSpinner } from "react-icons/fa";
 
-import { toast } from "react-toastify"
-import { Country, State } from "country-state-city"
+import { toast } from "react-toastify";
+import { Country, State } from "country-state-city";
 
 export const CollectionupdateModal = ({
   isClosed = false,
@@ -13,16 +13,17 @@ export const CollectionupdateModal = ({
   loggedUser,
 
   handleCollectionUpdate,
-  setishavePayment = false
+  setishavePayment = false,
 }) => {
-  const [isdropdownOpen, setIsdropdownOpen] = useState(false)
-  const [error, setError] = useState({})
-  const [noneAmount, setisnoneAmount] = useState(false)
-  const [message, setMessage] = useState({ warning: "" })
-  const [iscanupateCollection, setcanupdateCollection] = useState(false)
-  const [submitloader, setsubmitloader] = useState(false)
-  const [isreadytoVarify, setisreadyTovarify] = useState(false)
-  const [countryOptions, setcountryOptions] = useState([])
+  const [isdropdownOpen, setIsdropdownOpen] = useState(false);
+  const [error, setError] = useState({});
+  const [noneAmount, setisnoneAmount] = useState(false);
+  const [message, setMessage] = useState({ warning: "" });
+  const [iscanupateCollection, setcanupdateCollection] = useState(false);
+  const [submitloader, setsubmitloader] = useState(false);
+  const [isreadytoVarify, setisreadyTovarify] = useState(false);
+  const [countryOptions, setcountryOptions] = useState([]);
+  console.log(data?.totalPaidAmount);
   const [formData, setformData] = useState({
     leadDocId: data?._id,
     customerId: data?.customerName?._id,
@@ -49,11 +50,11 @@ export const CollectionupdateModal = ({
     receivedAmount: "",
     totalPaidAmount: data?.totalPaidAmount,
     receivedBy: loggedUser?._id,
-    receivedModel: loggedUser?.role === "Admin" ? "Admin" : "Staff"
-  })
+    receivedModel: loggedUser?.role === "Admin" ? "Admin" : "Staff",
+  });
   useEffect(() => {
     if (data?.netAmount === 0) {
-      setisnoneAmount(true)
+      setisnoneAmount(true);
     }
     if (
       data?.totalPaidAmount === data?.netAmount &&
@@ -61,68 +62,68 @@ export const CollectionupdateModal = ({
     ) {
       setMessage((prev) => ({
         ...prev,
-        warning: "There is no balance amount — all payments are completed."
-      }))
+        warning: "There is no balance amount — all payments are completed.",
+      }));
     }
-  }, [])
+  }, []);
   useEffect(() => {
     setcountryOptions(
       Country.getAllCountries().map((country) => ({
         label: country.name,
-        value: country.isoCode
+        value: country.isoCode,
       }))
-    )
-  }, [])
+    );
+  }, []);
   const handleChange = (e) => {
-    const { value, name } = e.target
+    const { value, name } = e.target;
 
-    setformData({ ...formData, [name]: value.trim() })
+    setformData({ ...formData, [name]: value.trim() });
     if (name === "email") {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (value && !emailRegex.test(value)) {
         setError((prev) => ({
           ...prev,
-          [name]: "Email id is not correct"
-        }))
+          [name]: "Email id is not correct",
+        }));
       } else {
         setError((prev) => ({
           ...prev,
-          [name]: ""
-        }))
+          [name]: "",
+        }));
       }
     } else if (name === "mobile") {
       // Allow only digits and length 10
-      const mobileRegex = /^[6-9]\d{9}$/ // starts with 6–9 and must be exactly 10 digits
+      const mobileRegex = /^[6-9]\d{9}$/; // starts with 6–9 and must be exactly 10 digits
       if (!value) {
         setError((prev) => ({
           ...prev,
-          [name]: "Mobile number is required"
-        }))
+          [name]: "Mobile number is required",
+        }));
       } else if (!/^\d+$/.test(value)) {
         setError((prev) => ({
           ...prev,
-          [name]: "Mobile number must contain only digits"
-        }))
+          [name]: "Mobile number must contain only digits",
+        }));
       } else if (value.length < 10) {
         setError((prev) => ({
           ...prev,
-          [name]: "Mobile number must be 10 digits"
-        }))
+          [name]: "Mobile number must be 10 digits",
+        }));
       } else if (value.length > 10) {
         setError((prev) => ({
           ...prev,
-          [name]: "Mobile number cannot exceed 10 digits"
-        }))
+          [name]: "Mobile number cannot exceed 10 digits",
+        }));
       } else if (!mobileRegex.test(value)) {
         setError((prev) => ({
           ...prev,
-          [name]: "Mobile number is not valid"
-        }))
+          [name]: "Mobile number is not valid",
+        }));
       } else {
         setError((prev) => ({
           ...prev,
-          [name]: ""
-        }))
+          [name]: "",
+        }));
       }
     } else if (name === "pincode") {
       const postalCodePatterns = {
@@ -135,56 +136,59 @@ export const CollectionupdateModal = ({
         DE: /^\d{5}$/, // Germany
         FR: /^\d{5}$/, // France
         JP: /^\d{3}-?\d{4}$/, // Japan
-        SG: /^\d{6}$/ // Singapore
-      }
+        SG: /^\d{6}$/, // Singapore
+      };
 
       if (formData.country === "" || formData.country === undefined) {
         setError((prev) => ({
           ...prev,
-          pincode: "please fill country before pincode"
-        }))
-        return
+          pincode: "please fill country before pincode",
+        }));
+        return;
       }
-      const pattern = postalCodePatterns[formData.country.toUpperCase()]
-      if (!pattern) return true
+      const pattern = postalCodePatterns[formData.country.toUpperCase()];
+      if (!pattern) return true;
       if (!pattern.test(value)) {
         setError((prev) => ({
           ...prev,
-          [name]: "Invalid pincode"
-        }))
+          [name]: "Invalid pincode",
+        }));
       } else {
         setError((prev) => ({
           ...prev,
-          [name]: ""
-        }))
+          [name]: "",
+        }));
       }
     } else {
       setformData((prev) => ({
         ...prev,
-        [name]: value
-      }))
+        [name]: value,
+      }));
       setError((prev) => ({
         ...prev,
-        [name]: ""
-      }))
+        [name]: "",
+      }));
     }
-  }
+  };
   const handleSubmit = async () => {
     try {
+      console.log("uuuu");
       if (error.submitError) {
         setError((prev) => ({
           ...prev,
-          submitError: ""
-        }))
+          submitError: "",
+        }));
       }
+      console.log("uuuii");
       if (noneAmount) {
         setMessage((prev) => ({
           ...prev,
           noneAmount:
-            "Please add netAmount or add amount on product before update collection "
-        }))
-        return
+            "Please add netAmount or add amount on product before update collection ",
+        }));
+        return;
       }
+      console.log("ppp");
       if (message.warning) {
       } else if (
         error &&
@@ -192,56 +196,59 @@ export const CollectionupdateModal = ({
           (val) => val !== null && val !== undefined && val !== ""
         )
       ) {
-        return
+        console.log(error);
+        console.log("hh");
+        return;
       }
-      setsubmitloader(true)
+      setsubmitloader(true);
 
       // Clone formData fields
-      const { bankRemarks, receivedAmount, ...newdata } = formData
-      const fields = Object.entries(formData)
-      let newErrors = {}
-      let isValid = true
+      const { bankRemarks, receivedAmount, ...newdata } = formData;
+      const fields = Object.entries(formData);
+      let newErrors = {};
+      let isValid = true;
 
       // Loop through all fields
       for (const [key, value] of fields) {
         if (value === "" || value === null || value === undefined) {
-          newErrors[key] = `${key.replace(/([A-Z])/g, " $1")} is required`
-          isValid = false
+          newErrors[key] = `${key.replace(/([A-Z])/g, " $1")} is required`;
+          isValid = false;
         }
       }
 
       // If any errors, stop submission
       if (!isValid) {
-        setError(newErrors)
-        setsubmitloader(false)
-        return
+        console.log("ooooooo");
+        setError(newErrors);
+        setsubmitloader(false);
+        return;
       }
       const cleanedData = Object.fromEntries(
         Object.entries(formData).map(([key, value]) => [
           key,
-          typeof value === "string" ? value.trim() : value
+          typeof value === "string" ? value.trim() : value,
         ])
-      )
-      
-      const response = await handleCollectionUpdate(cleanedData)
+      );
+      console.log("hhh");
+      const response = await handleCollectionUpdate(cleanedData);
       if (response.status === 200) {
         isClosed
           ? toast.success("Lead is closed and payment updated successfully")
-          : toast.success("Payment updated successfully")
-        setsubmitloader(false)
-        closemodal(false)
+          : toast.success("Payment updated successfully");
+        setsubmitloader(false);
+        closemodal(false);
         // refreshHook()
       }
     } catch (error) {
-      console.log(error.message)
-      setsubmitloader(false)
+      console.log(error.message);
+      setsubmitloader(false);
       // toast.error("something went wrong")
       setError((prev) => ({
         ...prev,
-        submitError: "something went wrong"
-      }))
+        submitError: "something went wrong",
+      }));
     }
-  }
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -269,9 +276,9 @@ export const CollectionupdateModal = ({
           <button
             type="button"
             onClick={() => {
-              closemodal(false)
+              closemodal(false);
               if (setishavePayment) {
-                setishavePayment(false)
+                setishavePayment(false);
               }
             }}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -332,7 +339,7 @@ export const CollectionupdateModal = ({
                     onChange={(e) =>
                       setformData((prev) => ({
                         ...prev,
-                        address: e.target.value()
+                        address: e.target.value(),
                       }))
                     }
                     className="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium focus:outline-none"
@@ -415,13 +422,13 @@ export const CollectionupdateModal = ({
                     if (error.partner) {
                       setError((prev) => ({
                         ...prev,
-                        partner: ""
-                      }))
+                        partner: "",
+                      }));
                     }
                     setformData((prev) => ({
                       ...prev,
-                      partner: e.target.value
-                    }))
+                      partner: e.target.value,
+                    }));
                   }}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none bg-gray-50 cursor-pointer"
                 >
@@ -488,8 +495,8 @@ export const CollectionupdateModal = ({
                       if (error.state) {
                         setformData((prev) => ({
                           ...prev,
-                          state: e.target.value.trim()
-                        }))
+                          state: e.target.value.trim(),
+                        }));
                       }
                     }}
                     className="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium  focus:outline-none"
@@ -511,13 +518,13 @@ export const CollectionupdateModal = ({
                       if (error.city) {
                         setError((prev) => ({
                           ...prev,
-                          city: ""
-                        }))
+                          city: "",
+                        }));
                       }
                       setformData((prev) => ({
                         ...prev,
-                        city: e.target.value.trim()
-                      }))
+                        city: e.target.value.trim(),
+                      }));
                     }}
                     className="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium  focus:outline-none"
                   />
@@ -588,21 +595,21 @@ export const CollectionupdateModal = ({
                           if (error.receivedAmount) {
                             setError((prev) => ({
                               ...prev,
-                              receivedAmount: ""
-                            }))
+                              receivedAmount: "",
+                            }));
                           }
                           if (e.target.value === "0") {
                             setError((prev) => ({
                               ...prev,
                               receivedAmount:
-                                "please input greater than interger 1"
-                            }))
-                            return
+                                "please input greater than interger 1",
+                            }));
+                            return;
                           }
                           setformData((prev) => ({
                             ...prev,
-                            receivedAmount: e.target.value.trim()
-                          }))
+                            receivedAmount: e.target.value.trim(),
+                          }));
                           if (isClosed) {
                             setTimeout(() => {
                               if (
@@ -611,18 +618,18 @@ export const CollectionupdateModal = ({
                                 setError((prev) => ({
                                   ...prev,
                                   receivedAmount:
-                                    "Received amount is less than balance amount check it"
-                                }))
+                                    "Received amount is less than balance amount check it",
+                                }));
                               } else if (
                                 e.target.value.trim() > formData?.balanceAmount
                               ) {
                                 setError((prev) => ({
                                   ...prev,
                                   receivedAmount:
-                                    "Received amount is more than balance amount check it"
-                                }))
+                                    "Received amount is more than balance amount check it",
+                                }));
                               }
-                            }, 2000)
+                            }, 2000);
                           }
                         }}
                         className="w-full px-4 py-1 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -651,13 +658,13 @@ export const CollectionupdateModal = ({
                       if (error.bankRemarks) {
                         setError((prev) => ({
                           ...prev,
-                          bankRemarks: ""
-                        }))
+                          bankRemarks: "",
+                        }));
                       } else {
                         setformData((prev) => ({
                           ...prev,
-                          bankRemarks: e.target.value
-                        }))
+                          bankRemarks: e.target.value,
+                        }));
                       }
                     }}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -682,13 +689,13 @@ export const CollectionupdateModal = ({
                     if (error.remarks) {
                       setError((prev) => ({
                         ...prev,
-                        remarks: ""
-                      }))
+                        remarks: "",
+                      }));
                     } else {
                       setformData((prev) => ({
                         ...prev,
-                        remarks: e.target.value
-                      }))
+                        remarks: e.target.value,
+                      }));
                     }
                   }}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -725,14 +732,14 @@ export const CollectionupdateModal = ({
           <button
             type="button"
             onClick={() => {
-              closemodal(false)
+              closemodal(false);
               if (setishavePayment) {
-                setishavePayment(false)
+                setishavePayment(false);
               }
               setMessage({
                 warning: "",
-                noneAmount: ""
-              })
+                noneAmount: "",
+              });
             }}
             className="px-6 py-1.5 border-2 border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-100 hover:border-gray-400 transition-all"
           >
@@ -757,5 +764,5 @@ export const CollectionupdateModal = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
