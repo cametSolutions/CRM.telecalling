@@ -55,7 +55,7 @@ export default function CollectionUpdate() {
       `/lead/collectionLeads?selectedBranch=${selectedCompanyBranch}&verified=${verifiedLead}`
   )
   const { data: partners } = UseFetch("/customer/getallpartners")
-
+console.log("h")
   useEffect(() => {
     if (companybranches && companybranches.length > 0) {
       const userData = getLocalStorageItem("user")

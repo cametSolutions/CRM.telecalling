@@ -11,7 +11,7 @@ import {
   Mail,
   User,
   Calendar,
-  ArrowRight,
+  
   Clock,
   UserPlus,
   UserCheck,
@@ -30,6 +30,7 @@ export default function LeadTaskComponent({
   refresh,
   pending
 }) {
+console.log("H")
   const [showFullName, setShowFullName] = useState(false)
   const [selectedData, setselectedData] = useState({})
   const [historyList, setHistoryList] = useState([])
@@ -57,6 +58,7 @@ export default function LeadTaskComponent({
     setselectedleadId(Item.leadId)
     sethistoryModal(true)
   }
+console.log(historyList)
  
   const handlecloseModal = () => {
     setselectedData([])
@@ -64,7 +66,8 @@ export default function LeadTaskComponent({
     sethistoryModal(false)
     setselectedleadId(null)
   }
- 
+console.log(Data)
+ console.log("hh")
   const renderTable = (data) => (
     <table className="border-collapse border border-gray-300 w-full text-sm">
       <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30 text-xs">

@@ -73,6 +73,8 @@ export default function TaskRegistration() {
       toast.error("Something went wrong");
     }
   };
+console.log(
+"kk")
   return (
     <div>
       {" "}

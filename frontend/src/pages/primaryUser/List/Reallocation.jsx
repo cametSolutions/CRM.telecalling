@@ -55,7 +55,7 @@ const Reallocation = () => {
     const user = JSON.parse(userData);
     setLoggedUser(user);
   }, []);
-
+console.log('hhhh')
   useEffect(() => {
     if (loggedUser && branches && branches.length > 0) {
       if (loggedUser.role === "Admin") {

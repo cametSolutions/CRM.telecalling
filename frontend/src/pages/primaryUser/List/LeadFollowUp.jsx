@@ -1,19 +1,18 @@
-import { useState, useEffect, useRef } from "react";
-import React from "react";
-import { formatDate } from "../../../utils/dateUtils";
-import MyDatePicker from "../../../components/common/MyDatePicker";
-import { FaSpinner } from "react-icons/fa";
-import { LeadhistoryModal } from "../../../components/primaryUser/LeadhistoryModal";
-import { CollectionupdateModal } from "../../../components/primaryUser/CollectionupdateModal";
+import { useState, useEffect, useRef } from "react"
+import React from "react"
+import { formatDate } from "../../../utils/dateUtils"
+import MyDatePicker from "../../../components/common/MyDatePicker"
+import { FaSpinner } from "react-icons/fa"
+import { LeadhistoryModal } from "../../../components/primaryUser/LeadhistoryModal"
+import { CollectionupdateModal } from "../../../components/primaryUser/CollectionupdateModal"
 
-import { BsFilterLeft } from "react-icons/bs";
+import { BsFilterLeft } from "react-icons/bs"
 import {
   Eye,
   Phone,
   Mail,
   User,
   Calendar,
-  
   Clock,
   UserPlus,
   UserCheck,
@@ -21,185 +20,188 @@ import {
   BellRing, // Follow-up
   History, // Event Log,
   ChevronDown,
-  X,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import BarLoader from "react-spinners/BarLoader";
-import api from "../../../api/api";
-import { toast } from "react-toastify";
-import UseFetch from "../../../hooks/useFetch";
+  X
+} from "lucide-react"
+import { useNavigate } from "react-router-dom"
+import BarLoader from "react-spinners/BarLoader"
+import api from "../../../api/api"
+import { toast } from "react-toastify"
+import UseFetch from "../../../hooks/useFetch"
 const LeadFollowUp = () => {
-  const [selectedLeadId, setSelectedLeadId] = useState(null);
+  const [selectedLeadId, setSelectedLeadId] = useState(null)
 
   const [demoerror, setDemoError] = useState({
     selectStaff: "",
     allocationDate: "",
-    demoDescription: "",
-  });
-  const [selectedData, setselectedData] = useState(null);
-  const [collectionupdateModal, setcollectionUpdateModal] = useState(false);
-  const [partner, setPartner] = useState([]);
-  const [isdemofollownotClosed, setisdemofollowedNotClosed] = useState(false);
-  const [ishavePayment, setishavePayment] = useState(false);
-  const [showfollowupModal, setshowFollowupModal] = useState(false);
-  const [isdropdownOpen, setIsdropdownOpen] = useState(false);
-  const [taskClosed, setfollowupClosed] = useState(false);
-  const [dates, setDates] = useState({ startDate: "", endDate: "" });
-  const [editdemoIndex, setdemoEditIndex] = useState(null);
+    demoDescription: ""
+  })
+  const [selectedData, setselectedData] = useState(null)
+  const [collectionupdateModal, setcollectionUpdateModal] = useState(false)
+  const [partner, setPartner] = useState([])
+  const [isdemofollownotClosed, setisdemofollowedNotClosed] = useState(false)
+  const [ishavePayment, setishavePayment] = useState(false)
+  const [showfollowupModal, setshowFollowupModal] = useState(false)
+  const [isdropdownOpen, setIsdropdownOpen] = useState(false)
+  const [taskClosed, setfollowupClosed] = useState(false)
+  const [dates, setDates] = useState({ startDate: "", endDate: "" })
+  const [editdemoIndex, setdemoEditIndex] = useState(null)
   const [
     editfollowUpDatesandRemarksEditIndex,
-    setfollowUpDatesandRemarksEditIndex,
-  ] = useState(null);
-  const [netTotalAmount, setnetTotalAmount] = useState(0);
-  const [filterOpen, setfilterOpen] = useState(false);
-  const [statusAll, setstatusAll] = useState(false);
-  const [isAllocated, setIsAllocated] = useState(false); //for set allocation or not
-  const [isOwner, setOwner] = useState(false);
-  const [statusAllocated, setstatusAllocated] = useState(false);
-  const [pending, setPending] = useState(true);
-  const [allocatedLeads, setAllocatedLeads] = useState([]);
-  const [loader, setLoader] = useState(false);
-  const [allocationOptions, setAllocationOptions] = useState([]);
-  const [selectedCompanyBranch, setselectedCompanyBranch] = useState("");
-  const [isHaveEditchoice, setIsEditable] = useState(false);
-  const [selectedDocId, setselectedDocid] = useState(null);
-  const [selectedTab, setselectedTab] = useState("");
-  const [hasOwnLeads, setHasownLeads] = useState(false);
-  const [ownFollowUp, setOwnFollowUp] = useState(true);
-  const [historyList, setHistoryList] = useState([]);
-  const [loggedUser, setloggedUser] = useState(null);
-  const [loggedUserBranches, setloggedUserBranches] = useState([]);
-  const [followupDateLoader, setfollowupDateLoader] = useState(false);
-  const [input, setInput] = useState("");
-  const [showFullRemarks, setShowFullRemarks] = useState("");
+    setfollowUpDatesandRemarksEditIndex
+  ] = useState(null)
+  const [netTotalAmount, setnetTotalAmount] = useState(0)
+  const [filterOpen, setfilterOpen] = useState(false)
+  const [statusAll, setstatusAll] = useState(false)
+  const [isAllocated, setIsAllocated] = useState(false) //for set allocation or not
+  const [isOwner, setOwner] = useState(false)
+  const [statusAllocated, setstatusAllocated] = useState(false)
+  const [pending, setPending] = useState(true)
+  const [allocatedLeads, setAllocatedLeads] = useState([])
+  const [loader, setLoader] = useState(false)
+  const [allocationOptions, setAllocationOptions] = useState([])
+  const [selectedCompanyBranch, setselectedCompanyBranch] = useState("")
+  const [isHaveEditchoice, setIsEditable] = useState(false)
+  const [selectedDocId, setselectedDocid] = useState(null)
+  const [selectedTab, setselectedTab] = useState("")
+  const [hasOwnLeads, setHasownLeads] = useState(false)
+  const [ownFollowUp, setOwnFollowUp] = useState(true)
+  const [historyList, setHistoryList] = useState([])
+  const [loggedUser, setloggedUser] = useState(null)
+  const [loggedUserBranches, setloggedUserBranches] = useState([])
+  const [followupDateLoader, setfollowupDateLoader] = useState(false)
+  const [input, setInput] = useState("")
+  const [showFullRemarks, setShowFullRemarks] = useState("")
   // const [selectedAllocates, setSelectedAllocates] = useState({})
-  const [errors, setErrors] = useState({});
-  const [demosubmitError, setDemofollowersubmitError] = useState({});
-  const [showModal, setShowModal] = useState(false);
-  const [debouncedValue, setDebouncedValue] = useState("");
-  const [followupDateModal, setfollowupDateModal] = useState(false);
-  const [showFullName, setShowFullName] = useState(false);
-  const [showFullEmail, setShowFullEmail] = useState(false);
-  const [selectedLead, setselectedLead] = useState([]);
-  const dropdownRef = useRef(null);
-  const [tableData, setTableData] = useState([]);
+  const [errors, setErrors] = useState({})
+  const [demosubmitError, setDemofollowersubmitError] = useState({})
+  const [showModal, setShowModal] = useState(false)
+  const [debouncedValue, setDebouncedValue] = useState("")
+  const [followupDateModal, setfollowupDateModal] = useState(false)
+  const [showFullName, setShowFullName] = useState(false)
+  const [showFullEmail, setShowFullEmail] = useState(false)
+  const [selectedLead, setselectedLead] = useState([])
+  const dropdownRef = useRef(null)
+  const [tableData, setTableData] = useState([])
   const [formData, setFormData] = useState({
     followUpDate: "",
     nextfollowUpDate: "",
     followedId: "",
     followupType: "infollowup",
-    Remarks: "",
-  });
+    Remarks: ""
+  })
 
   const [demoData, setDemodata] = useState({
     demoallocatedTo: "",
     demoallocatedDate: "",
     demoDescription: "",
     selectedType: "",
-  });
-  const navigate = useNavigate();
-  const { data: partners } = UseFetch("/customer/getallpartners");
-  const { data: branches } = UseFetch("/branch/getBranch");
-  const { data } = UseFetch("/auth/getallUsers");
+    selectedTypeName: ""
+  })
+  const navigate = useNavigate()
+  const { data: tasks } = UseFetch("/lead/getallTask")
+  console.log(tasks)
+  const { data: partners } = UseFetch("/customer/getallpartners")
+  const { data: branches } = UseFetch("/branch/getBranch")
+  const { data } = UseFetch("/auth/getallUsers")
   const {
     data: loggedusersallocatedleads,
     loading,
-    refreshHook,
+    refreshHook
   } = UseFetch(
     loggedUser &&
       selectedCompanyBranch &&
       `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}&pendingfollowup=${pending}`
-  );
-  console.log(loggedusersallocatedleads);
+  )
+  console.log(loggedusersallocatedleads)
   useEffect(() => {
-    const now = new Date();
-    const startDate = new Date(now.getFullYear(), now.getMonth(), 1); // 1st day of current month
-    const endDate = new Date(); // 0th day of next month = last day of current
+    const now = new Date()
+    const startDate = new Date(now.getFullYear(), now.getMonth(), 1) // 1st day of current month
+    const endDate = new Date() // 0th day of next month = last day of current
 
-    setDates({ startDate, endDate });
-  }, [statusAll]);
+    setDates({ startDate, endDate })
+  }, [statusAll])
   useEffect(() => {
     if (data && selectedCompanyBranch && partners && partners.length > 0) {
-      setPartner(partners);
-      const { allusers = [], allAdmins = [] } = data;
+      setPartner(partners)
+      const { allusers = [], allAdmins = [] } = data
 
       const filteredSelectedBranchStaffs = allusers.filter((user) =>
         user.selected.some((sel) => sel.branch_id === selectedCompanyBranch)
-      );
+      )
       const filtereduserandadmin = [
         ...filteredSelectedBranchStaffs,
-        ...allAdmins,
-      ];
+        ...allAdmins
+      ]
       setAllocationOptions(
         filtereduserandadmin.map((item) => ({
           value: item?._id,
-          label: item?.name,
+          label: item?.name
         }))
-      );
+      )
     }
-  }, [data, selectedCompanyBranch, partners]);
+  }, [data, selectedCompanyBranch, partners])
   useEffect(() => {
     if (branches) {
-      const userData = localStorage.getItem("user");
-      const user = JSON.parse(userData);
+      const userData = localStorage.getItem("user")
+      const user = JSON.parse(userData)
       if (user.role === "Admin") {
         if (user?.selected) {
           const branches = user.selected.map((branch) => {
             return {
               value: branch.branch_id,
-              label: branch.branchName,
-            };
-          });
-          setloggedUserBranches(branches);
+              label: branch.branchName
+            }
+          })
+          setloggedUserBranches(branches)
         } else {
           const staffbranches = branches.map((branch) => {
             return {
               value: branch._id,
-              label: branch.branchName,
-            };
-          });
+              label: branch.branchName
+            }
+          })
 
-          setloggedUserBranches(staffbranches);
+          setloggedUserBranches(staffbranches)
         }
       } else {
         const branches = user.selected.map((branch) => {
           return {
             value: branch.branch_id,
-            label: branch.branchName,
-          };
-        });
-        setloggedUserBranches(branches);
+            label: branch.branchName
+          }
+        })
+        setloggedUserBranches(branches)
       }
 
-      setloggedUser(user);
+      setloggedUser(user)
     }
-  }, [branches]);
+  }, [branches])
   // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setfilterOpen(false);
+        setfilterOpen(false)
       }
-    };
+    }
 
-    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside)
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
   useEffect(() => {
     if (loggedUserBranches && loggedUserBranches.length > 0) {
-      const defaultbranch = loggedUserBranches[0];
-      setselectedCompanyBranch(defaultbranch.value);
+      const defaultbranch = loggedUserBranches[0]
+      setselectedCompanyBranch(defaultbranch.value)
     }
-  }, [loggedUserBranches, dates]);
+  }, [loggedUserBranches, dates])
   // Close when clicking outside
-  const formatdate = (date) => new Date(date).toISOString().split("T")[0];
+  const formatdate = (date) => new Date(date).toISOString().split("T")[0]
   const getLocalDate = (date) => {
-    const local = new Date(date);
-    local.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-    return local.toISOString().split("T")[0]; // e.g., "2025-06-12"
-  };
+    const local = new Date(date)
+    local.setMinutes(date.getMinutes() - date.getTimezoneOffset())
+    return local.toISOString().split("T")[0] // e.g., "2025-06-12"
+  }
 
   useEffect(() => {
     if (loggedusersallocatedleads && dates.endDate && loggedUser) {
@@ -213,124 +215,119 @@ const LeadFollowUp = () => {
                 log.followupClosed === false &&
                 log.allocationChanged === false
             )
-        );
-        const currentDate = new Date();
-        const endDateLocal = getLocalDate(new Date(dates.endDate));
-        formatdate(currentDate);
+        )
+        const currentDate = new Date()
+        const endDateLocal = getLocalDate(new Date(dates.endDate))
+        formatdate(currentDate)
         const fulldatecurrent =
           formatdate(currentDate) === endDateLocal
             ? // formatdate(dates.endDate)
               formatdate(currentDate)
-            : endDateLocal;
+            : endDateLocal
         const neverfollowupedLeads = ownFollow.filter(
           (lead) => lead.neverfollowuped && lead.allocatedfollowup == false
-        );
-        const havenextFollowup = ownFollow.filter((lead) => lead.Nextfollowup);
+        )
+        const havenextFollowup = ownFollow.filter((lead) => lead.Nextfollowup)
         const filteredcurrentdatefollowupLeads = havenextFollowup.filter(
           (lead) => formatdate(lead.nextFollowUpDate) === fulldatecurrent
-        );
+        )
         const iscurrent =
-          fulldatecurrent === endDateLocal ? fulldatecurrent : endDateLocal;
+          fulldatecurrent === endDateLocal ? fulldatecurrent : endDateLocal
         const overdueFollowups = havenextFollowup.filter(
           (lead) => formatdate(lead.nextFollowUpDate) < iscurrent
-        );
+        )
         const postdatefollowup = havenextFollowup.filter(
           (lead) => formatdate(lead.nextFollowUpDate) > iscurrent
-        );
+        )
         const uniqueoverdueAndcurrentdate = [
-          ...new Set([
-            ...overdueFollowups,
-            ...filteredcurrentdatefollowupLeads,
-          ]),
-        ];
+          ...new Set([...overdueFollowups, ...filteredcurrentdatefollowupLeads])
+        ]
         const taskSubmittedLeads = ownFollow.filter(
           (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
-        );
+        )
+console.log(ownFollow)
         const nonsubmittedtakleads = ownFollow.filter(
           (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed === false
-        );
-        const allocatedData = normalizeTableData(nonsubmittedtakleads);
-        setAllocatedLeads(allocatedData);
+        )
+        const allocatedData = normalizeTableData(nonsubmittedtakleads)
+        setAllocatedLeads(allocatedData)
 
         const mergedall = [
           ...neverfollowupedLeads,
           ...uniqueoverdueAndcurrentdate,
           ...postdatefollowup,
-          ...taskSubmittedLeads,
-        ];
-        const Data = normalizeTableData(mergedall);
+          ...taskSubmittedLeads
+        ]
+        const Data = normalizeTableData(mergedall)
         // then store it in state
-        setnetTotalAmount(TotalAmount(mergedall));
-
+        setnetTotalAmount(TotalAmount(mergedall))
+        console.log(Data)
         // mergedall.forEach((item)=>)
-        setTableData(Data);
+        setTableData(Data)
       } else if (pending && !ownFollowUp) {
-        const currentDate = new Date();
-        const endDateLocal = getLocalDate(new Date(dates.endDate));
-        formatdate(currentDate);
+        const currentDate = new Date()
+        const endDateLocal = getLocalDate(new Date(dates.endDate))
+        formatdate(currentDate)
         const fulldatecurrent =
           formatdate(currentDate) === endDateLocal
             ? // formatdate(dates.endDate)
               formatdate(currentDate)
-            : endDateLocal;
+            : endDateLocal
         const neverfollowupedLeads =
           loggedusersallocatedleads.followupLeads.filter(
             (lead) => lead.neverfollowuped
-          );
+          )
         const havenextFollowup = loggedusersallocatedleads.followupLeads.filter(
           (lead) => lead.Nextfollowup
-        );
+        )
         const filteredcurrentdatefollowupLeads = havenextFollowup.filter(
           (lead) => formatdate(lead.nextFollowUpDate) === fulldatecurrent
-        );
+        )
 
         const iscurrent =
-          fulldatecurrent === endDateLocal ? fulldatecurrent : endDateLocal;
+          fulldatecurrent === endDateLocal ? fulldatecurrent : endDateLocal
         const overdueFollowups = havenextFollowup.filter(
           (lead) => formatdate(lead.nextFollowUpDate) < iscurrent
-        );
+        )
         const postdatefollowup = havenextFollowup.filter(
           (lead) => formatdate(lead.nextFollowUpDate) > iscurrent
-        );
+        )
         const uniqueoverdueAndcurrentdate = [
-          ...new Set([
-            ...overdueFollowups,
-            ...filteredcurrentdatefollowupLeads,
-          ]),
-        ];
+          ...new Set([...overdueFollowups, ...filteredcurrentdatefollowupLeads])
+        ]
 
         const taskSubmittedLeads =
           loggedusersallocatedleads.followupLeads.filter(
             (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
-          );
+          )
         const nonsubmittedtakleads =
           loggedusersallocatedleads.followupLeads.filter(
             (lead) =>
               lead.allocatedfollowup && lead.allocatedTaskClosed === false
-          );
-        setAllocatedLeads(nonsubmittedtakleads);
+          )
+        setAllocatedLeads(nonsubmittedtakleads)
 
         const mergedall = [
           ...neverfollowupedLeads,
           ...uniqueoverdueAndcurrentdate,
           ...postdatefollowup,
-          ...taskSubmittedLeads,
-        ];
-        const groupedLeads = {};
-        let grandTotal = 0;
+          ...taskSubmittedLeads
+        ]
+        const groupedLeads = {}
+        let grandTotal = 0
         mergedall.forEach((lead) => {
-          const assignedTo = lead?.allocatedTo?.name;
-          const amount = lead?.netAmount || 0;
-          grandTotal += amount;
+          const assignedTo = lead?.allocatedTo?.name
+          const amount = lead?.netAmount || 0
+          grandTotal += amount
           if (!groupedLeads[assignedTo]) {
-            groupedLeads[assignedTo] = [];
+            groupedLeads[assignedTo] = []
           }
-          groupedLeads[assignedTo].push(lead);
-        });
-        const groupedData = normalizeTableData(groupedLeads);
+          groupedLeads[assignedTo].push(lead)
+        })
+        const groupedData = normalizeTableData(groupedLeads)
 
-        setnetTotalAmount(TotalAmount(mergedall));
-        setTableData(groupedData);
+        setnetTotalAmount(TotalAmount(mergedall))
+        setTableData(groupedData)
       } else if (!pending && ownFollowUp) {
         const ownFollow = loggedusersallocatedleads.followupLeads.filter(
           (lead) =>
@@ -340,7 +337,7 @@ const LeadFollowUp = () => {
                 log.taskallocatedTo._id === loggedUser._id &&
                 log.followupClosed === true
             )
-        );
+        )
         const clearedLeads = ownFollow.filter(
           (lead) =>
             Array.isArray(lead.activityLog) &&
@@ -348,11 +345,11 @@ const LeadFollowUp = () => {
               (entry) =>
                 entry.taskTo === "followup" && entry.followupClosed === true
             )
-        );
+        )
 
         // then store it in state
-        setnetTotalAmount(TotalAmount(clearedLeads));
-        setTableData(clearedLeads);
+        setnetTotalAmount(TotalAmount(clearedLeads))
+        setTableData(clearedLeads)
       } else if (!pending && !ownFollowUp) {
         const clearedLeads = loggedusersallocatedleads.followupLeads.filter(
           (lead) =>
@@ -361,14 +358,14 @@ const LeadFollowUp = () => {
               (entry) =>
                 entry.taskTo === "followup" && entry.followupClosed === true
             )
-        );
+        )
 
         // then store it in state
-        setnetTotalAmount(TotalAmount(clearedLeads));
-        setTableData(clearedLeads);
+        setnetTotalAmount(TotalAmount(clearedLeads))
+        setTableData(clearedLeads)
       }
 
-      setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads);
+      setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
     }
   }, [
     loggedusersallocatedleads,
@@ -376,80 +373,80 @@ const LeadFollowUp = () => {
     pending,
     ownFollowUp,
     loggedUser,
-    statusAllocated,
-  ]);
+    statusAllocated
+  ])
 
   useEffect(() => {
     if (loggedUser) {
       setFormData((prev) => ({
         ...prev,
-        followedId: loggedUser?._id,
-      }));
+        followedId: loggedUser?._id
+      }))
     }
-  }, [loggedUser]);
+  }, [loggedUser])
 
   useEffect(() => {
     const handler = setTimeout(() => {
-      setDebouncedValue(input); // this is your debounced result
-    }, 2000); // 500ms debounce delay
+      setDebouncedValue(input) // this is your debounced result
+    }, 2000) // 500ms debounce delay
 
     return () => {
-      clearTimeout(handler); // cleanup
-    };
-  }, [input]);
+      clearTimeout(handler) // cleanup
+    }
+  }, [input])
 
   const TotalAmount = (data) => {
     const total = data.reduce((total, lead) => {
-      if (!Array.isArray(lead.leadFor)) return total;
+      if (!Array.isArray(lead.leadFor)) return total
 
       // safely sum all valid netAmount values
       const leadTotal = lead.leadFor.reduce((sum, item) => {
-        const amount = Number(item?.netAmount ?? 0);
-        return sum + (isNaN(amount) ? 0 : amount);
-      }, 0);
+        const amount = Number(item?.netAmount ?? 0)
+        return sum + (isNaN(amount) ? 0 : amount)
+      }, 0)
 
-      return total + leadTotal;
-    }, 0);
-    return Number(total.toFixed(2));
-  };
+      return total + leadTotal
+    }, 0)
+    return Number(total.toFixed(2))
+  }
 
   const handleDataChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
-    }));
+      [name]: value
+    }))
     if (isAllocated) {
       setDemodata((prev) => ({
         ...prev,
         ...(name === "nextfollowUpDate" || name === "allocationDate"
           ? { demoallocatedDate: value }
-          : { demoDescription: value }),
-      }));
+          : { demoDescription: value })
+      }))
     }
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" })); //Clear error
+      setErrors((prev) => ({ ...prev, [name]: "" })) //Clear error
     }
     if (name === "Remarks") {
       if (demoerror.demoDescription) {
-        setDemoError((prev) => ({ ...prev, demoDescription: "" }));
+        setDemoError((prev) => ({ ...prev, demoDescription: "" }))
       }
     } else if (name === "nextfollowUpDate") {
       if (errors.nextfollowUpDate) {
         setErrors((prev) => ({
           ...prev,
-          nextfollowUpDate: "",
-        }));
+          nextfollowUpDate: ""
+        }))
       }
     } else if (name === "allocationDate") {
       if (demoerror.allocationDate) {
         setDemoError((prev) => ({
           ...prev,
-          allocationDate: "",
-        }));
+          allocationDate: ""
+        }))
       }
     }
-  };
+  }
   const handleHistory = (
     history,
     leadid,
@@ -457,159 +454,162 @@ const LeadFollowUp = () => {
     allocatedTo,
     taskfromFollowup
   ) => {
-    const owner = loggedUser._id === allocatedTo;
-    setOwner(owner);
-    const isHaveDemo = taskfromFollowup ? history[history.length - 1] : null;
+    const owner = loggedUser._id === allocatedTo
+    setOwner(owner)
+    const isHaveDemo = taskfromFollowup ? history[history.length - 1] : null
     if (isHaveDemo) {
-      const demoassignedDate = formatDate(isHaveDemo.submissionDate);
-      setdemoEditIndex(history.length - 1);
-      setfollowUpDatesandRemarksEditIndex(history.length - 1);
+      const demoassignedDate = formatDate(isHaveDemo.submissionDate)
+      setdemoEditIndex(history.length - 1)
+      setfollowUpDatesandRemarksEditIndex(history.length - 1)
       setDemodata({
         selectedType: isHaveDemo?.taskTo,
         demoallocatedTo: isHaveDemo?.taskallocatedTo?._id,
         demoallocatedDate: isHaveDemo?.allocationDate.toString().split("T")[0],
         demoassignedDate,
-        demoDescription: isHaveDemo?.remarks,
-      });
+        demoDescription: isHaveDemo?.remarks
+      })
 
       // setisdemofollowedNotClosed(true)
-      setIsEditable(true);
-      setIsAllocated(true);
+      setIsEditable(true)
+      setIsAllocated(true)
     }
 
     const userFollowups = history.filter(
       (item) =>
         item.submittedUser._id === loggedUser._id && item.taskBy === "followup"
-    );
+    )
 
     const isAllFollowupsClosed =
       userFollowups.length > 0 &&
-      userFollowups.every((item) => item.taskClosed === true);
-    setfollowupClosed(!pending);
+      userFollowups.every((item) => item.taskClosed === true)
+    setfollowupClosed(!pending)
 
-    setselectedDocid(docId);
-    setselectedTab("History");
-    setShowModal(!showModal);
-    setHistoryList(history);
-    setSelectedLeadId(leadid);
-  };
+    setselectedDocid(docId)
+    setselectedTab("History")
+    setShowModal(!showModal)
+    setHistoryList(history)
+    setSelectedLeadId(leadid)
+  }
   const handlefollowupdate = (Id, docId) => {
-    setfollowupDateModal(true);
-    setSelectedLeadId(Id);
-    setselectedDocid(docId);
+    setfollowupDateModal(true)
+    setSelectedLeadId(Id)
+    setselectedDocid(docId)
     if (!demoData.demoallocatedTo) {
       setFormData((prev) => ({
         ...prev,
-        followUpDate: new Date().toISOString().split("T")[0],
-      }));
+        followUpDate: new Date().toISOString().split("T")[0]
+      }))
     }
-  };
+  }
   const handleCollectionUpdate = async (formData) => {
     try {
-      console.log(formData);
+      console.log(formData)
 
-      const response = await api.post("/lead/collectionUPdate", formData);
+      const response = await api.post("/lead/collectionUPdate", formData)
       if (response.status === 200) {
-        return response;
+        return response
       }
     } catch (error) {
-      toast.error("something went wrong");
-      console.log("error", error.message);
+      toast.error("something went wrong")
+      console.log("error", error.message)
     }
-  };
+  }
+  console.log(demoData)
   const handleDemoSubmit = async () => {
     if (isdemofollownotClosed) {
       setDemoError((prev) => ({
         ...prev,
         submiterror: "Cant submit, demo is not closed",
-        demoDescription: "",
-      }));
-      return;
+        demoDescription: ""
+      }))
+      return
     }
-    const newError = {};
+
+    const newError = {}
     if (demoData.demoallocatedDate === "") {
-      newError.allocationDate = "Completion Date is  Required";
+      newError.allocationDate = "Completion Date is  Required"
     }
     if (demoData.demoDescription === "") {
-      newError.demoDescription = "Remarks is Required";
+      newError.demoDescription = "Remarks is Required"
     }
     if (demoData.demoallocatedTo === "") {
-      newError.selectStaff = "Staff is Required";
+      newError.selectStaff = "Staff is Required"
     }
     if (demoData.selectedType === "") {
-      newError.allocationTyperror = "Allocation Type is Required";
+      newError.allocationTyperror = "Allocation Type is Required"
     }
     if (Object.keys(newError).length > 0) {
-      setDemoError(newError);
-      return;
+      setDemoError(newError)
+      return
     }
 
     try {
-      setLoader(true);
+      setLoader(true)
+      console.log(demoData)
 
       const response = await api.post(
         `/lead/setdemolead?demoallocatedBy=${loggedUser._id}&leaddocId=${selectedDocId}&editIndex=${editdemoIndex}`,
 
         demoData
-      );
+      )
 
-      setLoader(false);
+      setLoader(false)
       setFormData((prev) => ({
         ...prev,
         followUpDate: "",
         nextfollowUpDate: "",
         followedId: "",
-        Remarks: "",
-      }));
-      setIsAllocated(false);
+        Remarks: ""
+      }))
+      setIsAllocated(false)
       setDemodata((prev) => ({
         ...prev,
         demoallocatedTo: "",
         demoallocatedDate: "",
         demoDescription: "",
-        selectedType: "",
-      }));
-      refreshHook();
-      toast.success(response.data.message);
-      setshowFollowupModal(false);
+        selectedType: ""
+      }))
+      refreshHook()
+      toast.success(response.data.message)
+      setshowFollowupModal(false)
     } catch (error) {
-      toast.error("something went wrong ");
-      console.log(error);
+      toast.error("something went wrong ")
+      console.log(error)
     }
-  };
+  }
   const handleFollowUpDateSubmit = async () => {
     try {
-      let newErrors = {};
+      let newErrors = {}
       if (!formData.followUpDate)
-        newErrors.followUpDate = "Follow Up Date is required";
+        newErrors.followUpDate = "Follow Up Date is required"
       if (formData.followupType === "infollowup") {
         if (!formData.nextfollowUpDate) {
-          newErrors.nextfollowUpDate = "Next Follow Up Date Is Required";
+          newErrors.nextfollowUpDate = "Next Follow Up Date Is Required"
         }
       }
 
-      if (!formData.Remarks) newErrors.Remarks = "Remarks is Required";
+      if (!formData.Remarks) newErrors.Remarks = "Remarks is Required"
 
       if (Object.keys(newErrors).length > 0) {
-        setErrors(newErrors);
-        return;
+        setErrors(newErrors)
+        return
       }
-      setfollowupDateLoader(!followupDateLoader);
+      setfollowupDateLoader(!followupDateLoader)
 
       const response = await api.put(
         `/lead/followupDateUpdate?selectedleaddocId=${selectedDocId}&loggeduserid=${loggedUser._id}`,
         formData
-      );
+      )
       if (response.status === 200) {
-        toast.success("Followup updated successfully");
+        toast.success("Followup updated successfully")
 
-        setIsEditable(false);
+        setIsEditable(false)
 
-        setselectedDocid(null);
-        setSelectedLeadId(null);
-        setHistoryList([]);
-        setshowFollowupModal(false);
-        setfollowupDateModal(false);
+        setselectedDocid(null)
+        setSelectedLeadId(null)
+        setHistoryList([])
+        setshowFollowupModal(false)
+        setfollowupDateModal(false)
         setFormData((prev) => ({
           ...prev,
           followUpDate: "",
@@ -617,38 +617,39 @@ const LeadFollowUp = () => {
           netAmount: "",
           balanceAmount: "",
           followupType: "infollowup",
-          Remarks: "",
-        }));
-        refreshHook();
-        setfollowupDateLoader(false);
-        return response;
+          Remarks: ""
+        }))
+        setTableData([])
+        refreshHook()
+        setfollowupDateLoader(false)
+        return response
       } else {
-        setfollowupDateLoader(false);
-        toast.error("something went wrong");
+        setfollowupDateLoader(false)
+        toast.error("something went wrong")
       }
     } catch (error) {
-      console.log("sometig");
-      toast.error("Something went wrong");
-      setIsEditable(false);
-      setfollowupDateLoader(false);
-      console.log("error:", error.message);
+      console.log("sometig")
+      toast.error("Something went wrong")
+      setIsEditable(false)
+      setfollowupDateLoader(false)
+      console.log("error:", error.message)
     }
-  };
+  }
   const handleFollowUp = (Item) => {
-    setshowFollowupModal(true);
+    setshowFollowupModal(true)
     setFormData((prev) => ({
       ...prev,
       netAmount: Item.netAmount,
       balanceAmount: Item.balanceAmount,
-      followUpDate: new Date().toISOString().split("T")[0],
-    }));
-    setselectedData(Item);
+      followUpDate: new Date().toISOString().split("T")[0]
+    }))
+    setselectedData(Item)
 
     const ishaveAllocation = Item.taskfromFollowup
       ? Item.activityLog[Item.activityLog.length - 1]
-      : null;
+      : null
     if (ishaveAllocation) {
-      setdemoEditIndex(Item.activityLog.length - 1);
+      setdemoEditIndex(Item.activityLog.length - 1)
       setDemodata({
         selectedType: ishaveAllocation?.taskTo,
         demoallocatedTo: ishaveAllocation?.taskallocatedTo?._id,
@@ -656,32 +657,32 @@ const LeadFollowUp = () => {
           .toString()
           .split("T")[0],
         demoassignedDate: formatDate(ishaveAllocation.submissionDate),
-        demoDescription: ishaveAllocation?.remarks,
-      });
+        demoDescription: ishaveAllocation?.remarks
+      })
       // setisdemofollowedNotClosed(true)
-      setIsEditable(true);
-      setIsAllocated(true);
+      setIsEditable(true)
+      setIsAllocated(true)
     }
-    setfollowupClosed(!pending);
-    setselectedDocid(Item._id);
-    setSelectedLeadId(Item.leadId);
-  };
+    setfollowupClosed(!pending)
+    setselectedDocid(Item._id)
+    setSelectedLeadId(Item.leadId)
+  }
   const normalizeTableData = (data) => {
     if (Array.isArray(data)) {
-      return [{ staffName: null, leads: data }];
+      return [{ staffName: null, leads: data }]
     } else if (typeof data === "object" && data !== null) {
       return Object.entries(data).map(([staffName, leads]) => ({
         staffName,
-        leads,
-      }));
+        leads
+      }))
     }
-    return [];
-  };
+    return []
+  }
   const handlecloseModal = () => {
-    setSelectedLeadId(null);
-    setShowModal(false);
-    setHistoryList([]);
-  };
+    setSelectedLeadId(null)
+    setShowModal(false)
+    setHistoryList([])
+  }
 
   const renderTable = (data) => (
     <table className="border-collapse border border-gray-300 w-full text-sm">
@@ -825,21 +826,21 @@ const LeadFollowUp = () => {
                         (it) =>
                           it?.taskallocatedTo?._id === loggedUser._id &&
                           it?.taskClosed === false
-                      );
+                      )
 
                       loggedUser.role === "Admin"
                         ? navigate("/admin/transaction/lead/leadEdit", {
                             state: {
                               leadId: item._id,
-                              isReadOnly: !isAllocatedToeditable,
-                            },
+                              isReadOnly: !isAllocatedToeditable
+                            }
                           })
                         : navigate("/staff/transaction/lead/leadEdit", {
                             state: {
                               leadId: item._id,
-                              isReadOnly: !isAllocatedToeditable,
-                            },
-                          });
+                              isReadOnly: !isAllocatedToeditable
+                            }
+                          })
                     }}
                     className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors w-full justify-center"
                   >
@@ -931,7 +932,7 @@ const LeadFollowUp = () => {
         )}
       </tbody>
     </table>
-  );
+  )
   return (
     <div className="h-full flex flex-col ">
       {loading && (
@@ -975,43 +976,43 @@ const LeadFollowUp = () => {
                     label: statusAll ? "All Leads" : "Filtered Leads",
                     value: statusAll,
                     toggle: () => {
-                      setstatusAll(!statusAll);
-                      setTableData([]);
-                      setAllocatedLeads([]);
+                      setstatusAll(!statusAll)
+                      setTableData([])
+                      setAllocatedLeads([])
                     },
-                    show: false,
+                    show: false
                   },
                   {
                     label: "Task Allocated Followups",
 
                     value: statusAllocated,
                     toggle: () => {
-                      setstatusAllocated(!statusAllocated);
-                      setTableData([]);
-                      setAllocatedLeads([]);
+                      setstatusAllocated(!statusAllocated)
+                      setTableData([])
+                      setAllocatedLeads([])
                     },
-                    show: pending === true, // 👈 show only when pending is true
+                    show: pending === true // 👈 show only when pending is true
                   },
                   {
                     label: pending ? "Pending Followup" : "Cleared Followup",
                     value: pending,
                     toggle: () => {
-                      setPending(!pending);
-                      setTableData([]);
-                      setAllocatedLeads([]);
+                      setPending(!pending)
+                      setTableData([])
+                      setAllocatedLeads([])
                     },
-                    show: true,
+                    show: true
                   },
                   {
                     label: ownFollowUp ? "Own Followup" : "All Followup",
                     value: ownFollowUp,
                     toggle: () => {
-                      setOwnFollowUp(!ownFollowUp);
-                      setTableData([]);
-                      setAllocatedLeads([]);
+                      setOwnFollowUp(!ownFollowUp)
+                      setTableData([])
+                      setAllocatedLeads([])
                     },
-                    show: loggedUser?.role !== "Staff", //hide for staff
-                  },
+                    show: loggedUser?.role !== "Staff" //hide for staff
+                  }
                 ]
                   .filter((item) => item.show) //only show allowed toggles
                   .map((item, idx) => (
@@ -1086,19 +1087,20 @@ const LeadFollowUp = () => {
       <div className="flex-1 overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3">
         <>
           {(() => {
-            const currentData = statusAllocated ? allocatedLeads : tableData;
+            const currentData = statusAllocated ? allocatedLeads : tableData
+            console.log(statusAllocated)
             const hasLeads =
               Array.isArray(currentData) &&
               currentData.some(
                 (group) => Array.isArray(group.leads) && group.leads.length > 0
-              );
+              )
 
             if (!hasLeads) {
               return (
                 <div className="text-center text-gray-500 py-6">
                   No Leads Available
                 </div>
-              );
+              )
             }
 
             return currentData.map(({ staffName, leads }, index) => (
@@ -1121,7 +1123,7 @@ const LeadFollowUp = () => {
                   </div>
                 )}
               </div>
-            ));
+            ))
           })()}
         </>
       </div>
@@ -1203,7 +1205,7 @@ const LeadFollowUp = () => {
                         onChange={(e) =>
                           setFormData((prev) => ({
                             ...prev,
-                            followupType: e.target.value,
+                            followupType: e.target.value
                           }))
                         }
                         onFocus={() => setIsdropdownOpen(true)}
@@ -1236,13 +1238,13 @@ const LeadFollowUp = () => {
                             formData.followupType === "closed" ||
                             formData.followupType === "lost"
                           )
-                            return;
-                          setIsAllocated(!isAllocated);
+                            return
+                          setIsAllocated(!isAllocated)
                           setFormData((prev) => ({
                             ...prev,
                             Remarks: "",
-                            nextfollowUpDate: "",
-                          }));
+                            nextfollowUpDate: ""
+                          }))
                         }}
                         className="mt-0.5 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
                       />
@@ -1273,35 +1275,36 @@ const LeadFollowUp = () => {
                         </label>
                         <select
                           // disabled={isdemofollownotClosed}
-                          value={demoData.selectedType}
+                          value={
+                            demoData.selectedType && demoData.selectedTypeName
+                              ? `${demoData.selectedType}||${demoData.selectedTypeName}`
+                              : ""
+                          }
                           onChange={(e) => {
+                            const [id, name] = e.target.value.split("||")
+                            console.log(id, name)
                             setDemodata((prev) => ({
                               ...prev,
-                              selectedType: e.target.value,
-                            }));
+                              selectedType: id,
+                              selectedTypeName: name
+                            }))
                             setDemoError((prev) => ({
                               ...prev,
-                              allocationTyperror: "",
-                            }));
+                              allocationTyperror: ""
+                            }))
                           }}
                           className="w-full px-4 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                         >
-                          <option value="">Select allocation type...</option>
-                          <option value="programming">Programming</option>
-                          <option value="testing-&-implementation">
-                            Testing & Implementation
-                          </option>
-                          <option value="coding-&-testing">
-                            Coding & Testing
-                          </option>
-                          <option value="software-services">
-                            Software Service
-                          </option>
-                          <option value="customermeet">Customer Meet</option>
-                          <option value="demo">Demo</option>
-                          <option value="training">Training</option>
-                          <option value="onsite">Onsite</option>
-                          <option value="office">Office</option>
+                          <option>Select Type</option>
+                          {tasks &&
+                            tasks.map((task) => (
+                              <option
+                                key={task._id}
+                                value={`${task._id}||${task.taskName}`}
+                              >
+                                {task?.taskName}
+                              </option>
+                            ))}
                         </select>
                         {demoerror.allocationTyperror && (
                           <p className="mt-1.5 text-xs text-red-600 font-medium">
@@ -1320,12 +1323,12 @@ const LeadFollowUp = () => {
                           onChange={(e) => {
                             setDemodata((prev) => ({
                               ...prev,
-                              demoallocatedTo: e.target.value,
-                            }));
+                              demoallocatedTo: e.target.value
+                            }))
                             setDemoError((prev) => ({
                               ...prev,
-                              selectStaff: "",
-                            }));
+                              selectStaff: ""
+                            }))
                           }}
                           className="w-full px-4 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                         >
@@ -1395,8 +1398,8 @@ const LeadFollowUp = () => {
                         type="checkbox"
                         checked={ishavePayment}
                         onChange={() => {
-                          setcollectionUpdateModal(true);
-                          setishavePayment(!ishavePayment);
+                          setcollectionUpdateModal(true)
+                          setishavePayment(!ishavePayment)
                         }}
                         className="mt-0.5 w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-2 focus:ring-green-500"
                       />
@@ -1488,7 +1491,7 @@ const LeadFollowUp = () => {
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-export default LeadFollowUp;
+export default LeadFollowUp

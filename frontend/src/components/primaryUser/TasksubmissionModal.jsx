@@ -8,6 +8,7 @@ export default function TasksubmissionModal({
   pending,
   setShowComponent
 }) {
+  console.log(task)
   const [isOpen, setIsOpen] = useState(true)
   const [submitloading, setsubmitLoading] = useState(false)
   const [taskDetails, setTaskDetails] = useState({
@@ -16,7 +17,7 @@ export default function TasksubmissionModal({
     taskassignedmodel: task?.matchedlog?.submissiondoneByModel,
     taskassignedDate: task?.matchedlog?.allocationDate,
     taskDescriptionByassigner: task?.matchedlog?.remarks,
-    taskName: task?.matchedlog?.taskTo,
+    taskName: task?.matchedlog?.taskId?._id,
     submissionDate: new Date(),
     leadDocId: task?.leadDocId,
     allocatedTo: task?.allocatedTo,
@@ -35,6 +36,8 @@ export default function TasksubmissionModal({
       return
     }
     try {
+      console.log(taskDetails)
+    
       setsubmitLoading(true)
       const response = await api.post("/lead/taskSubmission", taskDetails)
       toast.success(response.data.message)
@@ -47,7 +50,6 @@ export default function TasksubmissionModal({
     }
     setIsOpen(false)
   }
-
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -206,9 +208,7 @@ export default function TasksubmissionModal({
         <div className="sticky bottom-0 bg-gray-50 px-6 py-4 rounded-b-xl border-t border-gray-200">
           <div className="flex justify-end gap-3">
             <button
-              onClick={() => 
-                setShowComponent(false)
-              }
+              onClick={() => setShowComponent(false)}
               className="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
             >
               Cancel

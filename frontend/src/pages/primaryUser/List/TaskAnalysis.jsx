@@ -1,85 +1,91 @@
-import UseFetch from "../../../hooks/useFetch";
-import { useEffect, useState } from "react";
-import { AiOutlineProfile } from "react-icons/ai";
-import { useNavigate } from "react-router-dom";
-import BarLoader from "react-spinners/BarLoader";
-import { CardSkeletonLoader } from "../../../components/common/CardSkeletonLoader";
-import CurrentDate from "../../../components/common/CurrentDate";
+import UseFetch from "../../../hooks/useFetch"
+import { useEffect, useState } from "react"
+import { AiOutlineProfile } from "react-icons/ai"
+import { useNavigate } from "react-router-dom"
+import BarLoader from "react-spinners/BarLoader"
+import { CardSkeletonLoader } from "../../../components/common/CardSkeletonLoader"
+import CurrentDate from "../../../components/common/CurrentDate"
 const TaskAnalysis = () => {
-  const navigate = useNavigate();
-  const [gridList, setgridList] = useState([]);
-  const [loggedUser, setLoggedUser] = useState(null);
-  const [loggedUserBranches, setLoggeduserBranches] = useState([]);
-  const [selectedCompanyBranch, setSelectedCompanyBranch] = useState(null);
+  const navigate = useNavigate()
+  const [gridList, setgridList] = useState([])
+  const [loggedUser, setLoggedUser] = useState(null)
+  const [loggedUserBranches, setLoggeduserBranches] = useState([])
+  const [selectedCompanyBranch, setSelectedCompanyBranch] = useState(null)
   const { data: analysisleads, loading } = UseFetch(
     selectedCompanyBranch &&
       `/lead/getalltaskAnalysisLeads?selectedBranch=${selectedCompanyBranch}`
-  );
-  const { data: branches } = UseFetch("/branch/getBranch");
+  )
+  const { data: branches } = UseFetch("/branch/getBranch")
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    const user = JSON.parse(userData);
-    setLoggedUser(user);
-  }, []);
+    const userData = localStorage.getItem("user")
+    const user = JSON.parse(userData)
+    setLoggedUser(user)
+  }, [])
+  console.log("h")
   useEffect(() => {
     if (loggedUser && branches && branches.length > 0) {
       if (loggedUser.role === "Admin") {
-        const isselctedArray = loggedUser?.selected;
+        const isselctedArray = loggedUser?.selected
         if (isselctedArray) {
           const loggeduserBranches = loggedUser.selected.map((item) => {
-            return { value: item.branch_id, label: item.branchName };
-          });
-          setLoggeduserBranches(loggeduserBranches);
-          setSelectedCompanyBranch(loggeduserBranches[0].value);
+            return { value: item.branch_id, label: item.branchName }
+          })
+          setLoggeduserBranches(loggeduserBranches)
+          setSelectedCompanyBranch(loggeduserBranches[0].value)
         } else {
           const loggeduserBranches = branches.map((item) => {
-            return { value: item._id, label: item.branchName };
-          });
-          setLoggeduserBranches(loggeduserBranches);
-          setSelectedCompanyBranch(loggeduserBranches[0].value);
+            return { value: item._id, label: item.branchName }
+          })
+          setLoggeduserBranches(loggeduserBranches)
+          setSelectedCompanyBranch(loggeduserBranches[0].value)
         }
       } else {
         const loggeduserBranches = loggedUser.selected.map((item) => {
-          return { value: item.branch_id, label: item.branchName };
-        });
-        setLoggeduserBranches(loggeduserBranches);
-        setSelectedCompanyBranch(loggeduserBranches[0].value);
+          return { value: item.branch_id, label: item.branchName }
+        })
+        setLoggeduserBranches(loggeduserBranches)
+        setSelectedCompanyBranch(loggeduserBranches[0].value)
       }
     }
-  }, [loggedUser, branches]);
-  console.log("a");
+  }, [loggedUser, branches])
+  console.log("a")
   useEffect(() => {
     if (analysisleads && analysisleads.length > 0) {
-      const a = analysisleads.map((item) => item.leadId);
-      console.log(a);
+      const a = analysisleads.map((item) => item.leadId)
+      console.log(a)
       const taskByList = analysisleads.reduce((acc, lead) => {
-        const logs = lead.activityLog;
-        if (logs.length === 0) return acc;
+        const logs = lead.activityLog
+        if (logs.length === 0) return acc
 
         logs.forEach((log) => {
           // Only include logs that are not closed and have a taskTo field
           if (
             log.taskId &&
             (log.taskClosed === false || log.followupClosed === false) &&
-            log?.allocatedClosed === false
+            log.taskClosed !== true &&
+            log.followupClosed !== true &&
+            log?.allocatedClosed === false &&
+            (!("allocationlist" in log) || log.allocationlist === false)
           ) {
-            console.log(lead.leadId, log.taskId);
-            acc[log.taskId.taskName] = (acc[log.taskId.taskName] || 0) + 1;
+            console.log(log.taskId.taskName)
+            console.log(log.taskClosed)
+            console.log(lead.leadId, log.taskId)
+            acc[log.taskId.taskName] = (acc[log.taskId.taskName] || 0) + 1
           }
-        });
+        })
 
-        return acc;
-      }, {});
+        return acc
+      }, {})
       // Convert to array of objects with label and value
       const taskByCountArray = Object.entries(taskByList).map(
         ([label, value]) => ({
           label,
-          value,
+          value
         })
-      );
-      setgridList(taskByCountArray);
+      )
+      setgridList(taskByCountArray)
     }
-  }, [analysisleads]);
+  }, [analysisleads])
   return (
     <div className="flex flex-col h-full bg-white">
       <div>
@@ -99,8 +105,8 @@ const TaskAnalysis = () => {
         <select
           // value={selectedCompanyBranch || ""}
           onChange={(e) => {
-            setSelectedCompanyBranch(e.target.value);
-            setgridList([]);
+            setSelectedCompanyBranch(e.target.value)
+            setgridList([])
             // setStatus(approvedToggleStatus ? "Approved" : "Pending")
           }}
           className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px]"
@@ -114,7 +120,9 @@ const TaskAnalysis = () => {
       </div>
 
       <div className="flex-1 border border-gray-100 p-3 mx-4 rounded-xl shadow-xl bg-white mb-3">
-        {gridList && gridList.length > 0 ? (
+        {loading ? (
+          <CardSkeletonLoader count={5} />
+        ) : gridList && gridList.length > 0 ? (
           gridList.map((item, index) => {
             return (
               <div
@@ -135,7 +143,7 @@ const TaskAnalysis = () => {
                             item.label
                           )}`,
                       {
-                        state: { branchid: selectedCompanyBranch },
+                        state: { branchid: selectedCompanyBranch }
                       }
                     )
                   }
@@ -145,13 +153,32 @@ const TaskAnalysis = () => {
                   <span className="text-gray-600">{item.value}</span>
                 </div>
               </div>
-            );
+            )
           })
         ) : (
-          <CardSkeletonLoader count={5} />
+          <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-sm border border-dashed border-gray-300">
+            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
+              <AiOutlineProfile className="text-blue-500 text-3xl" />
+            </div>
+
+            <h3 className="text-xl font-semibold text-gray-700">
+              No Data Found
+            </h3>
+
+            <p className="text-gray-500 mt-1 text-sm">
+              There are no records available for the selected criteria.
+            </p>
+
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-5 px-5 py-2 rounded-lg bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition"
+            >
+              Refresh
+            </button>
+          </div>
         )}
       </div>
     </div>
-  );
-};
-export default TaskAnalysis;
+  )
+}
+export default TaskAnalysis
