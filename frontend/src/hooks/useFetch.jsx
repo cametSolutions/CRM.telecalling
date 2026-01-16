@@ -8,7 +8,7 @@ console.log("usefethchhhhhhhh")
   const [refresh, setRefresh] = useState(false)
   const [data, setData] = useState(null)
   const [fulldateholiday, setfulldateHoliday] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -17,7 +17,7 @@ console.log("usefethchhhhhhhh")
     }
 
     const fetchData = async () => {
-      setLoading(true)
+      // setLoading(true)
       setData(null)
       setError(null)
 

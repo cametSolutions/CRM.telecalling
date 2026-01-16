@@ -1100,26 +1100,23 @@ export const SetDemoallocation = async (req, res) => {
         },
       },
     });
-
-    // 2️⃣ Insert arrayFilters op via raw collection (no timestamps)
-    const arrayFilterResult = await LeadMaster.collection.bulkWrite([
+    const objId = new mongoose.Types.ObjectId(leaddocId);  // ✅ Force ObjectId
+    const result = await LeadMaster.collection.updateOne(
+      { _id: objId },  // Filter
       {
-        updateOne: {
-          filter: { _id: leaddocId },
-          update: {
-            $set: {
-              "activityLog.$[log].allocationlist": true
-            }
-          },
-          arrayFilters: [
-            {
-              "log.taskTo": "followup",
-              "log.followupClosed": false
-            }
-          ]
+        $set: {
+          "activityLog.$[log].allocationlist": true  // Creates field!
         }
+      },
+      {
+        arrayFilters: [
+          {
+            "log.taskTo": "followup",
+            "log.followupClosed": false
+          }
+        ]
       }
-    ]);
+    );
 
     // Execute main bulkWrite
     await LeadMaster.bulkWrite(bulkOps);
@@ -1611,6 +1608,7 @@ export const GetalltaskanalysisLeads = async (req, res) => {
     const result = await LeadMaster.find({
       leadBranch: selectedBranch,
       leadClosed: false,
+      leadLost: false,
       reallocatedTo: false,
     })
       .populate({ path: "customerName", select: "customerName" })
@@ -2497,6 +2495,24 @@ export const UpdateLeadTask = async (req, res) => {
     await LeadMaster.updateOne({ _id: leadObjectId }, { $set: updateFields });
     const isTaskfromFollowup = taskDetails.taskfromFollowup ? true : false;
     console.log("taskdetails", taskDetails)
+    // 2️⃣ 🔑 UPDATE allocationlist = false for matching followup tasks
+    await LeadMaster.collection.updateOne(
+      { _id: leadObjectId },
+      {
+        $set: {
+          "activityLog.$[log].allocationlist": false  // Set to false
+        }
+      },
+      {
+        arrayFilters: [
+          {
+            "log.taskTo": "followup",
+            "log.taskClosed": false,      // ✅ Your condition
+            "log.allocationlist": true    // ✅ Your condition
+          }
+        ]
+      }
+    );
 
     // Build the activity log entry
     const activityLogEntry = {
@@ -3019,6 +3035,12 @@ export const GetlostLeads = async (req, res) => {
                   .findById(activity.taskallocatedTo)
                   .select("name")
                   .lean();
+            }
+            if (activity.taskBy && isValidObjectId(activity.taskBy)) {
+              populatedActivity.taskBy = await Task.findById(activity.taskBy).select("taskName").lean()
+            }
+            if (activity.taskId && isValidObjectId(activity.taskId)) {
+              populatedActivity.taskId = await Task.findById(activity.taskId).select("taskName").lean()
             }
 
             return populatedActivity;

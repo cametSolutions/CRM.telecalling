@@ -67,6 +67,10 @@ const TaskAnalysisTable = () => {
 
   useEffect(() => {
     if (taskAnalysisLeads && taskAnalysisLeads.length > 0) {
+      console.log(taskAnalysisLeads)
+const a=taskAnalysisLeads.map((item)=>item.leadId)
+console.log(a)
+      console.log(taskAnalysisLeads.length)
       console.log(label)
       const filteredLeads = filterLeadsByLastTaskLabel(taskAnalysisLeads, label)
       const groupedLeads = {}
@@ -92,8 +96,15 @@ const TaskAnalysisTable = () => {
       const logs = lead.activityLog
       if (!logs || logs.length === 0) return false
 
-      const lastLog = logs[logs.length - 1]
-      return lastLog.taskTo?.toLowerCase() === label.toLowerCase()
+      // 🔍 Find LAST log that HAS taskTo field
+      const lastTaskLog = logs
+        .filter((log) => log.taskTo !== undefined && log.taskTo !== null&&log.taskClosed===false&&log.followupClosed===false) // Only logs WITH taskTo
+        .pop() // Get the LAST one
+
+      // If no logs have taskTo, return false
+      if (!lastTaskLog) return false
+
+      return lastTaskLog.taskId?.taskName.toLowerCase() === label.toLowerCase()
     })
   }
 
