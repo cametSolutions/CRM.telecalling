@@ -132,6 +132,7 @@ const leadSchema = new mongoose.Schema(
         taskClosed: { type: Boolean, default: false }, //if the user submitted the task completion then only its true ,to check the task is completed or pending
         followupClosed: { type: Boolean, default: false }, //to check the followup is closed or its in running
         allocatedClosed: { type: Boolean, default: false }, //block for previously allocated user
+        allocationlist: { type: Boolean },
         followUpDate: { type: Date }, //date by the followup happens
         nextFollowUpDate: { type: Date }, //set the date for next followup date
         allocationDate: { type: Date }, //its the completion date given to the user to complete the task

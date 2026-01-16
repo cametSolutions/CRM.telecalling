@@ -926,23 +926,183 @@ export const SetDemoallocation = async (req, res) => {
       }
     }
     const allocationtask = await Task.findOne({ taskName: "Allocation" });
-    await LeadMaster.bulkWrite([
-      {
+    // await LeadMaster.bulkWrite([
+    //   {
+    //     updateOne: {
+    //       filter: { _id: leaddocId },
+    //       update:
+    //         editIndex !== undefined && editIndex !== null
+    //           ? {
+    //             $set: {
+    //               [`activityLog.${Number(
+    //                 editIndex
+    //               )}.allocationChanged`]: true,
+    //             },
+    //           }
+    //           : {},
+    //     },
+    //   },
+    //   // 2️⃣ Set allocationlist = true for matching followup entry
+    //   {
+    //     updateOne: {
+    //       filter: { _id: leaddocId },
+    //       update: {
+    //         $set: {
+    //           "activityLog.$[log].allocationlist": true
+    //         }
+    //       },
+    //       arrayFilters: [
+    //         {
+    //           "log.taskTo": "followup",
+    //           "log.followupClosed": false
+    //         }
+    //       ]
+    //     }
+    //   },
+
+    //   {
+    //     updateOne: {
+    //       filter: { _id: leaddocId },
+    //       update: {
+    //         $push: {
+    //           activityLog: {
+    //             submissionDate: new Date(),
+    //             allocationDate: demoData.demoallocatedDate,
+    //             submittedUser: demoallocatedBy,
+    //             submissiondoneByModel: taskallocatedByModel,
+    //             taskallocatedBy: demoallocatedBy,
+    //             taskallocatedByModel: taskallocatedByModel,
+    //             taskallocatedTo: demoallocatedTo,
+    //             taskallocatedToModel: taskallocatedtoModel,
+    //             remarks: demoData.demoDescription,
+    //             taskBy: allocationtask,
+    //             taskTo: demoData?.selectedTypeName,
+    //             taskId: demoData?.selectedType,
+    //             taskfromFollowup: true,
+    //             allocationChanged: false,
+    //           },
+    //         },
+    //         $set: { taskfromFollowup: true },
+    //       },
+    //     },
+    //   },
+    // ]);
+    // const operations = [];
+
+    // // 1️⃣ Mark previous allocationChanged = true (ONLY if editIndex exists)
+    // if (editIndex !== undefined && editIndex !== null) {
+    //   operations.push({
+    //     updateOne: {
+    //       filter: { _id: new mongoose.Types.ObjectId(leaddocId) },
+    //       update: {
+    //         $set: {
+    //           [`activityLog.${Number(editIndex)}.allocationChanged`]: true
+    //         }
+    //       }
+    //     }
+    //   });
+    // }
+
+    // // 2️⃣ Set allocationlist = true for FOLLOWUP entry (SAFE arrayFilters)
+    // operations.push({
+    //   updateOne: {
+    //     filter: { _id: new mongoose.Types.ObjectId(leaddocId) },
+    //     update: {
+    //       $set: {
+    //         "activityLog.$[log].allocationlist": true
+    //       }
+    //     },
+    //     arrayFilters: [
+    //       {
+    //         "log.taskTo": "followup",
+    //         "log.followupClosed": false
+    //       }
+    //     ]
+    //   }
+    // });
+
+    // // 3️⃣ Push new allocation activity
+    // operations.push({
+    //   updateOne: {
+    //     filter: { _id: new mongoose.Types.ObjectId(leaddocId) },
+    //     update: {
+    //       $push: {
+    //         activityLog: {
+    //           submissionDate: new Date(),
+    //           allocationDate: demoData.demoallocatedDate,
+    //           submittedUser: demoallocatedBy,
+    //           submissiondoneByModel: taskallocatedByModel,
+    //           taskallocatedBy: demoallocatedBy,
+    //           taskallocatedByModel: taskallocatedByModel,
+    //           taskallocatedTo: demoallocatedTo,
+    //           taskallocatedToModel: taskallocatedtoModel,
+    //           remarks: demoData.demoDescription,
+    //           taskBy: allocationtask?._id,
+    //           taskTo: demoData?.selectedTypeName,
+    //           taskId: demoData?.selectedType,
+    //           taskfromFollowup: true,
+    //           allocationChanged: false
+    //         }
+    //       },
+    //       $set: {
+    //         taskfromFollowup: true
+    //       }
+    //     }
+    //   }
+    // });
+
+    // // 4️⃣ Execute bulkWrite (DISABLE timestamps to avoid conflicts)
+    // await LeadMaster.bulkWrite(operations, {
+    //   timestamps: false
+    // });
+
+
+    const bulkOps = [];
+
+    // 1️⃣ First update (keep with Mongoose)
+    if (editIndex !== undefined && editIndex !== null) {
+      bulkOps.push({
         updateOne: {
           filter: { _id: leaddocId },
-          update:
-            editIndex !== undefined && editIndex !== null
-              ? {
-                $set: {
-                  [`activityLog.${Number(
-                    editIndex
-                  )}.allocationChanged`]: true,
-                },
-              }
-              : {},
+          update: {
+            $set: {
+              [`activityLog.${Number(editIndex)}.allocationChanged`]: true,
+            },
+          },
+        },
+      });
+    }
+
+    // 3️⃣ Third update (keep with Mongoose)
+    bulkOps.push({
+      updateOne: {
+        filter: { _id: leaddocId },
+        update: {
+          $push: {
+            activityLog: {
+              submissionDate: new Date(),
+              allocationDate: demoData.demoallocatedDate,
+              submittedUser: demoallocatedBy,
+              submissiondoneByModel: taskallocatedByModel,
+              taskallocatedBy: demoallocatedBy,
+              taskallocatedByModel: taskallocatedByModel,
+              taskallocatedTo: demoallocatedTo,
+              taskallocatedToModel: taskallocatedtoModel,
+              remarks: demoData.demoDescription,
+              taskBy: allocationtask?._id,
+              taskTo: demoData?.selectedTypeName,
+              taskId: demoData?.selectedType,
+              taskfromFollowup: true,
+              allocationChanged: false,
+            },
+          },
+          $set: { taskfromFollowup: true },
         },
       },
-      // 2️⃣ Set allocationlist = true for matching followup entry
+    });
+
+    // 2️⃣ Insert arrayFilters op via raw collection (no timestamps)
+    const arrayFilterResult = await LeadMaster.collection.bulkWrite([
       {
         updateOne: {
           filter: { _id: leaddocId },
@@ -958,35 +1118,11 @@ export const SetDemoallocation = async (req, res) => {
             }
           ]
         }
-      },
-
-      {
-        updateOne: {
-          filter: { _id: leaddocId },
-          update: {
-            $push: {
-              activityLog: {
-                submissionDate: new Date(),
-                allocationDate: demoData.demoallocatedDate,
-                submittedUser: demoallocatedBy,
-                submissiondoneByModel: taskallocatedByModel,
-                taskallocatedBy: demoallocatedBy,
-                taskallocatedByModel: taskallocatedByModel,
-                taskallocatedTo: demoallocatedTo,
-                taskallocatedToModel: taskallocatedtoModel,
-                remarks: demoData.demoDescription,
-                taskBy: allocationtask,
-                taskTo: demoData?.selectedTypeName,
-                taskId: demoData?.selectedType,
-                taskfromFollowup: true,
-                allocationChanged: false,
-              },
-            },
-            $set: { taskfromFollowup: true },
-          },
-        },
-      },
+      }
     ]);
+
+    // Execute main bulkWrite
+    await LeadMaster.bulkWrite(bulkOps);
 
     return res.status(200).json({ message: "Demo added succesfully" });
   } catch (error) {
@@ -1846,7 +1982,13 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         },
 
         reallocatedTo: formData.followupType === "closed",
-        leadLost: formData.followupType === "lost",
+        ...(formData.followupType === "closed" && {
+          leadConvertedDate: new Date()
+        }),
+        ...(formData.followupType === "lost" && {
+          leadLostDate: new Date(),
+          leadLost: true
+        }),
       },
 
       { upsert: true }
