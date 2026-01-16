@@ -28,6 +28,7 @@ const TaskAnalysisTable = () => {
       selectedCompanyBranch &&
       `/lead/getalltaskAnalysisLeads?selectedBranch=${selectedCompanyBranch}`
   )
+console.log(selectedData)
   console.log(taskAnalysisLeads)
   const location = useLocation()
   const { branchid } = location.state || {}
@@ -497,12 +498,12 @@ console.log(a)
                                 <>
                                   <span>{item?.taskBy?.taskName || "N/A"}</span>
                                   <span className="text-red-500">
-                                    {" "}
+                                    
                                     - {item?.taskallocatedTo?.name || ""}
                                   </span>
                                   <br />
                                   <span className="text-red-500">
-                                    {item?.taskId?.taskName}
+                                    {item?.taskId?.taskName||"o"}
                                   </span>
                                   {item.allocationDate && (
                                     <span>
@@ -516,6 +517,7 @@ console.log(a)
                                   )}
                                 </>
                               ) : (
+
                                 <span>{item?.taskBy?.taskName}</span>
                               )}
                             </div>

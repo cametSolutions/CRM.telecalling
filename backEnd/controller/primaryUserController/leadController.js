@@ -140,7 +140,7 @@ export const LeadRegister = async (req, res) => {
     const leadidonly = new LeadId({
       leadId: newLeadId,
       leadBy,
-      leadByModel, // Now set dynamically
+      assignedtoleadByModel: leadByModel, // Now set dynamically
     });
     await leadidonly.save({ session });
     await session.commitTransaction();
