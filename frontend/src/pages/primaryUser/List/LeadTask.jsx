@@ -26,19 +26,18 @@ const LeadTask = () => {
     setDates({ startDate, endDate: now })
   }, [])
   useEffect(() => {
-      const userData = getLocalStorageItem("user")
-      const branch = userData?.selected?.map((branch) => {
-        return {
-          value: branch.branch_id,
-          label: branch.branchName
-        }
-      })
-      setloggedUserBranches(branch)
-      setselectedCompanyBranch(branch[0].value)
+    const userData = getLocalStorageItem("user")
+    const branch = userData?.selected?.map((branch) => {
+      return {
+        value: branch.branch_id,
+        label: branch.branchName
+      }
+    })
+    setloggedUserBranches(branch)
+    setselectedCompanyBranch(branch[0].value)
 
-      setloggedUser(userData)
-    
-  },[] )
+    setloggedUser(userData)
+  }, [])
 
   const { data, error, loading, refreshHook } = UseFetch(
     loggedUser &&
@@ -53,7 +52,6 @@ const LeadTask = () => {
   }
   useEffect(() => {
     if (data && pending && loggedUser && dates && dates.endDate) {
-      
       const finalOutput = []
       data.forEach((entry) => {
         const activitylog = entry.activityLog
@@ -65,10 +63,11 @@ const LeadTask = () => {
             log.taskTo &&
             log.taskTo !== "followup"
           ) {
+            console.log(log.taskallocatedTo)
             finalOutput.push({
               leadId: entry.leadId,
               leadDocId: entry._id,
-              allocatedTo: entry?.allocatedTo?._id,
+              allocatedTo: log?.taskallocatedTo?._id,
               leadDate: entry.leadDate,
               customerName:
                 entry?.customerName?.customerName || entry?.customerName,
@@ -120,12 +119,10 @@ const LeadTask = () => {
         Data = normalizeTableData(groupedLeads)
       }
 
-    
       setFilteredData(Data)
     } else if (data && !pending) {
-     
       const finalOutput = []
-      
+
       data.forEach((entry) => {
         const activitylog = entry.activityLog
 
@@ -154,7 +151,6 @@ const LeadTask = () => {
         }
       })
 
-    
       const totalNetAmount = data
         .reduce((total, lead) => {
           const leadTotal =
@@ -200,6 +196,7 @@ const LeadTask = () => {
     }
     return []
   }
+  console.log("hhhh")
   return (
     <div className="h-full flex flex-col ">
       {loading && (

@@ -140,7 +140,7 @@ export const LeadRegister = async (req, res) => {
     const leadidonly = new LeadId({
       leadId: newLeadId,
       leadBy,
-      leadByModel, // Now set dynamically
+      assignedtoleadByModel: leadByModel, // Now set dynamically
     });
     await leadidonly.save({ session });
     await session.commitTransaction();
@@ -374,7 +374,6 @@ export const UpdateCollection = async (req, res) => {
     }
 
     session.startTransaction();
-
     const updatecustomer = await Customer.findByIdAndUpdate(
       customerId,
       {
@@ -658,6 +657,9 @@ export const GetallfollowupList = async (req, res) => {
         !lastAlloc.taskallocatedByModel ||
         !mongoose.models[lastAlloc.taskallocatedByModel]
       ) {
+        console.log("leadby", lead.leadByModel)
+        console.log("taskallocatedtomodel", lastAlloc.taskallocatedToModel)
+        console.log("taskallocatedy", lastAlloc.taskallocatedByModel)
         console.error(
           `Model missing for lead ${lead._id}:`,
           lead.leadByModel,
@@ -697,6 +699,7 @@ export const GetallfollowupList = async (req, res) => {
           let populatedSubmittedUser = null;
           let populatedTaskAllocatedTo = null;
           let populatedTask = null;
+          let populatedTaskBy = null
           if (
             log.submittedUser &&
             log.submissiondoneByModel &&
@@ -728,9 +731,13 @@ export const GetallfollowupList = async (req, res) => {
               .lean()
               .catch(() => null);
           }
+          if (log?.taskBy) {
+            populatedTaskBy = await Task.findById(log.taskBy)
+          }
 
           return {
             ...log,
+            taskBy: populatedTaskBy,
             submittedUser: populatedSubmittedUser || log.submittedUser,
             taskallocatedTo: populatedTaskAllocatedTo || log.taskallocatedTo,
             taskId: populatedTask,
@@ -918,100 +925,201 @@ export const SetDemoallocation = async (req, res) => {
         taskallocatedtoModel = "Admin";
       }
     }
-    // await LeadMaster.findByIdAndUpdate({ _id: leaddocId }, {
-    //   $push: {
-    //     activityLog: {
-    //       submissionDate: new Date(),
-    //       allocationDate: demoData.demoallocatedDate,
-    //       submittedUser: demoallocatedBy,
-    //       submissiondoneByModel: taskallocatedByModel,
-    //       taskallocatedBy: demoallocatedBy,
-    //       taskallocatedByModel: taskallocatedByModel,
-    //       taskallocatedTo: demoallocatedTo,
-    //       taskallocatedToModel: taskallocatedtoModel,
-    //       remarks: demoData.demoDescription,
-    //       taskBy: "allocated",
-    //       taskTo: demoData?.selectedType,
-    //       taskfromFollowup: true,
-    //       allocationChanged: false
-
+    const allocationtask = await Task.findOne({ taskName: "Allocation" });
+    // await LeadMaster.bulkWrite([
+    //   {
+    //     updateOne: {
+    //       filter: { _id: leaddocId },
+    //       update:
+    //         editIndex !== undefined && editIndex !== null
+    //           ? {
+    //             $set: {
+    //               [`activityLog.${Number(
+    //                 editIndex
+    //               )}.allocationChanged`]: true,
+    //             },
+    //           }
+    //           : {},
+    //     },
+    //   },
+    //   // 2️⃣ Set allocationlist = true for matching followup entry
+    //   {
+    //     updateOne: {
+    //       filter: { _id: leaddocId },
+    //       update: {
+    //         $set: {
+    //           "activityLog.$[log].allocationlist": true
+    //         }
+    //       },
+    //       arrayFilters: [
+    //         {
+    //           "log.taskTo": "followup",
+    //           "log.followupClosed": false
+    //         }
+    //       ]
     //     }
     //   },
-    //   $set: { taskfromFollowup: true }
-    // }
-    // )
-    // const updateQuery = {
-    //   $push: {
-    //     activityLog: {
-    //       submissionDate: new Date(),
-    //       allocationDate: demoData.demoallocatedDate,
-    //       submittedUser: demoallocatedBy,
-    //       submissiondoneByModel: taskallocatedByModel,
-    //       taskallocatedBy: demoallocatedBy,
-    //       taskallocatedByModel: taskallocatedByModel,
-    //       taskallocatedTo: demoallocatedTo,
-    //       taskallocatedToModel: taskallocatedtoModel,
-    //       remarks: demoData.demoDescription,
-    //       taskBy: "allocated",
-    //       taskTo: demoData?.selectedType,
-    //       taskfromFollowup: true,
-    //       allocationChanged: false
-    //     }
-    //   },
-    //   $set: { taskfromFollowup: true }
-    // };
 
-    // // Add allocationChanged update only if editIndex exists
+    //   {
+    //     updateOne: {
+    //       filter: { _id: leaddocId },
+    //       update: {
+    //         $push: {
+    //           activityLog: {
+    //             submissionDate: new Date(),
+    //             allocationDate: demoData.demoallocatedDate,
+    //             submittedUser: demoallocatedBy,
+    //             submissiondoneByModel: taskallocatedByModel,
+    //             taskallocatedBy: demoallocatedBy,
+    //             taskallocatedByModel: taskallocatedByModel,
+    //             taskallocatedTo: demoallocatedTo,
+    //             taskallocatedToModel: taskallocatedtoModel,
+    //             remarks: demoData.demoDescription,
+    //             taskBy: allocationtask,
+    //             taskTo: demoData?.selectedTypeName,
+    //             taskId: demoData?.selectedType,
+    //             taskfromFollowup: true,
+    //             allocationChanged: false,
+    //           },
+    //         },
+    //         $set: { taskfromFollowup: true },
+    //       },
+    //     },
+    //   },
+    // ]);
+    // const operations = [];
+
+    // // 1️⃣ Mark previous allocationChanged = true (ONLY if editIndex exists)
     // if (editIndex !== undefined && editIndex !== null) {
-    //   const index = Number(editIndex);
-    //   if (!isNaN(index)) {
-    //     updateQuery.$set[`activityLog.${index}.allocationChanged`] = true;
-    //   }
+    //   operations.push({
+    //     updateOne: {
+    //       filter: { _id: new mongoose.Types.ObjectId(leaddocId) },
+    //       update: {
+    //         $set: {
+    //           [`activityLog.${Number(editIndex)}.allocationChanged`]: true
+    //         }
+    //       }
+    //     }
+    //   });
     // }
 
-    // await LeadMaster.findByIdAndUpdate({ _id: leaddocId }, updateQuery);
-    await LeadMaster.bulkWrite([
-      {
-        updateOne: {
-          filter: { _id: leaddocId },
-          update:
-            editIndex !== undefined && editIndex !== null
-              ? {
-                  $set: {
-                    [`activityLog.${Number(
-                      editIndex
-                    )}.allocationChanged`]: true,
-                  },
-                }
-              : {},
-        },
-      },
-      {
+    // // 2️⃣ Set allocationlist = true for FOLLOWUP entry (SAFE arrayFilters)
+    // operations.push({
+    //   updateOne: {
+    //     filter: { _id: new mongoose.Types.ObjectId(leaddocId) },
+    //     update: {
+    //       $set: {
+    //         "activityLog.$[log].allocationlist": true
+    //       }
+    //     },
+    //     arrayFilters: [
+    //       {
+    //         "log.taskTo": "followup",
+    //         "log.followupClosed": false
+    //       }
+    //     ]
+    //   }
+    // });
+
+    // // 3️⃣ Push new allocation activity
+    // operations.push({
+    //   updateOne: {
+    //     filter: { _id: new mongoose.Types.ObjectId(leaddocId) },
+    //     update: {
+    //       $push: {
+    //         activityLog: {
+    //           submissionDate: new Date(),
+    //           allocationDate: demoData.demoallocatedDate,
+    //           submittedUser: demoallocatedBy,
+    //           submissiondoneByModel: taskallocatedByModel,
+    //           taskallocatedBy: demoallocatedBy,
+    //           taskallocatedByModel: taskallocatedByModel,
+    //           taskallocatedTo: demoallocatedTo,
+    //           taskallocatedToModel: taskallocatedtoModel,
+    //           remarks: demoData.demoDescription,
+    //           taskBy: allocationtask?._id,
+    //           taskTo: demoData?.selectedTypeName,
+    //           taskId: demoData?.selectedType,
+    //           taskfromFollowup: true,
+    //           allocationChanged: false
+    //         }
+    //       },
+    //       $set: {
+    //         taskfromFollowup: true
+    //       }
+    //     }
+    //   }
+    // });
+
+    // // 4️⃣ Execute bulkWrite (DISABLE timestamps to avoid conflicts)
+    // await LeadMaster.bulkWrite(operations, {
+    //   timestamps: false
+    // });
+
+
+    const bulkOps = [];
+
+    // 1️⃣ First update (keep with Mongoose)
+    if (editIndex !== undefined && editIndex !== null) {
+      bulkOps.push({
         updateOne: {
           filter: { _id: leaddocId },
           update: {
-            $push: {
-              activityLog: {
-                submissionDate: new Date(),
-                allocationDate: demoData.demoallocatedDate,
-                submittedUser: demoallocatedBy,
-                submissiondoneByModel: taskallocatedByModel,
-                taskallocatedBy: demoallocatedBy,
-                taskallocatedByModel: taskallocatedByModel,
-                taskallocatedTo: demoallocatedTo,
-                taskallocatedToModel: taskallocatedtoModel,
-                remarks: demoData.demoDescription,
-                taskBy: "allocated",
-                taskTo: demoData?.selectedType,
-                taskfromFollowup: true,
-                allocationChanged: false,
-              },
+            $set: {
+              [`activityLog.${Number(editIndex)}.allocationChanged`]: true,
             },
-            $set: { taskfromFollowup: true },
           },
         },
+      });
+    }
+
+    // 3️⃣ Third update (keep with Mongoose)
+    bulkOps.push({
+      updateOne: {
+        filter: { _id: leaddocId },
+        update: {
+          $push: {
+            activityLog: {
+              submissionDate: new Date(),
+              allocationDate: demoData.demoallocatedDate,
+              submittedUser: demoallocatedBy,
+              submissiondoneByModel: taskallocatedByModel,
+              taskallocatedBy: demoallocatedBy,
+              taskallocatedByModel: taskallocatedByModel,
+              taskallocatedTo: demoallocatedTo,
+              taskallocatedToModel: taskallocatedtoModel,
+              remarks: demoData.demoDescription,
+              taskBy: allocationtask?._id,
+              taskTo: demoData?.selectedTypeName,
+              taskId: demoData?.selectedType,
+              taskfromFollowup: true,
+              allocationChanged: false,
+            },
+          },
+          $set: { taskfromFollowup: true },
+        },
       },
-    ]);
+    });
+    const objId = new mongoose.Types.ObjectId(leaddocId);  // ✅ Force ObjectId
+    const result = await LeadMaster.collection.updateOne(
+      { _id: objId },  // Filter
+      {
+        $set: {
+          "activityLog.$[log].allocationlist": true  // Creates field!
+        }
+      },
+      {
+        arrayFilters: [
+          {
+            "log.taskTo": "followup",
+            "log.followupClosed": false
+          }
+        ]
+      }
+    );
+
+    // Execute main bulkWrite
+    await LeadMaster.bulkWrite(bulkOps);
 
     return res.status(200).json({ message: "Demo added succesfully" });
   } catch (error) {
@@ -1409,7 +1517,7 @@ export const GetrepecteduserDemo = async (req, res) => {
     return res
       .status(200)
       .json({ message: "Matched demo found", data: matchedLeads });
-  } catch (error) {}
+  } catch (error) { }
 };
 export const UpdateOrSubmittaskByfollower = async (req, res) => {
   try {
@@ -1500,6 +1608,7 @@ export const GetalltaskanalysisLeads = async (req, res) => {
     const result = await LeadMaster.find({
       leadBranch: selectedBranch,
       leadClosed: false,
+      leadLost: false,
       reallocatedTo: false,
     })
       .populate({ path: "customerName", select: "customerName" })
@@ -1850,7 +1959,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
       submittedUser: loggeduserid,
       submissiondoneByModel: followedByModel,
       taskBy: allocationTask?._id,
-      nextFollowUpDate: formData.nextfollowUpDate,
+      nextFollowUpDate: formData?.nextfollowUpDate,
       remarks: formData.Remarks,
       taskfromFollowup: false,
     };
@@ -1871,7 +1980,13 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         },
 
         reallocatedTo: formData.followupType === "closed",
-        leadLost: formData.followupType === "lost",
+        ...(formData.followupType === "closed" && {
+          leadConvertedDate: new Date()
+        }),
+        ...(formData.followupType === "lost" && {
+          leadLostDate: new Date(),
+          leadLost: true
+        }),
       },
 
       { upsert: true }
@@ -2063,10 +2178,12 @@ export const UpdateOrleadallocationTask = async (req, res) => {
 };
 export const updateReallocation = async (req, res) => {
   try {
-    const { allocatedBy, selectedbranch, allocationType } = req.query;
+    const { allocatedBy, selectedbranch, allocationTypeId, allocationName } = req.query;
+    console.log("allocationname", allocationName)
     const allocatedbyObjectid = new mongoose.Types.ObjectId(allocatedBy);
     // const branchObjectId = new mongoose.Types.ObjectId(selectedbranch)
     const { selectedItem, formData } = req.body;
+    console.log(selectedItem)
     let allocatedToModel;
     let allocatedByModel;
     const isStaffallocatedtomodel = await Staff.findOne({
@@ -2082,6 +2199,7 @@ export const updateReallocation = async (req, res) => {
         allocatedToModel = "Admin";
       }
     }
+    console.log("allocedtomodel", allocatedToModel)
     const isStaffallocatedbymodel = await Staff.findOne({
       _id: allocatedbyObjectid,
     });
@@ -2095,13 +2213,14 @@ export const updateReallocation = async (req, res) => {
         allocatedByModel = "Admin";
       }
     }
-
+    console.log("allocstedbymodel", allocatedByModel)
     if (!allocatedToModel || !allocatedByModel) {
       return res
         .status(400)
         .json({ message: "Invalid allocated/allocatedby reference" });
     }
 
+    const matchedTask = await Task.findOne({ taskName: "Reallocation" })
     const activityLogEntry = {
       submissionDate: new Date(),
       submittedUser: allocatedBy,
@@ -2112,12 +2231,13 @@ export const updateReallocation = async (req, res) => {
       taskallocatedToModel: allocatedToModel,
       allocationDate: formData?.allocationDate,
       remarks: formData.allocationDescription,
-      taskBy: "reallocated",
-      taskTo: allocationType,
+      taskBy: matchedTask?._id,
+      taskTo: allocationName.toLowerCase(),
+      taskId: allocationTypeId,
       allocationChanged: false,
       taskfromFollowup: false,
     };
-    if (allocationType === "followup") {
+    if (allocationName.toLowerCase() === "followup") {
       activityLogEntry.followupClosed = false;
     }
     // return
@@ -2131,7 +2251,7 @@ export const updateReallocation = async (req, res) => {
           activityLog: activityLogEntry,
         },
         $set: {
-          allocationType: allocationType, // Set outside the activityLog array
+          allocationType: allocationTypeId, // Set outside the activityLog array
           reallocatedTo: false,
           dueDate: formData.allocationDate,
         },
@@ -2374,6 +2494,26 @@ export const UpdateLeadTask = async (req, res) => {
     }
     await LeadMaster.updateOne({ _id: leadObjectId }, { $set: updateFields });
     const isTaskfromFollowup = taskDetails.taskfromFollowup ? true : false;
+    console.log("taskdetails", taskDetails)
+    // 2️⃣ 🔑 UPDATE allocationlist = false for matching followup tasks
+    await LeadMaster.collection.updateOne(
+      { _id: leadObjectId },
+      {
+        $set: {
+          "activityLog.$[log].allocationlist": false  // Set to false
+        }
+      },
+      {
+        arrayFilters: [
+          {
+            "log.taskTo": "followup",
+            "log.taskClosed": false,      // ✅ Your condition
+            "log.allocationlist": true    // ✅ Your condition
+          }
+        ]
+      }
+    );
+
     // Build the activity log entry
     const activityLogEntry = {
       submissionDate: taskDetails.submissionDate,
@@ -2443,51 +2583,55 @@ export const GetrespectedleadTask = async (req, res) => {
               lastAllocatedItem = item;
             }
 
-            // ✅ Populate for non-followup logs only
-            if (item?.taskallocatedTo && item?.taskTo !== "followup") {
-              let populatedSubmittedUser = null;
-              let populatedTaskAllocatedTo = null;
-              let populatedTask;
 
-              if (
-                item.submittedUser &&
-                item.submissiondoneByModel &&
-                mongoose.models[item.submissiondoneByModel]
-              ) {
-                const model = mongoose.model(item.submissiondoneByModel);
-                populatedSubmittedUser = await model
-                  .findById(item.submittedUser)
-                  .select("name")
-                  .lean();
-              }
+            let populatedSubmittedUser = null;
+            let populatedTaskAllocatedTo = null;
+            let populatedTask = null
+            let populatedtaskBy = null;
 
-              if (
-                item.taskallocatedTo &&
-                item.taskallocatedToModel &&
-                mongoose.models[item.taskallocatedToModel]
-              ) {
-                const model = mongoose.model(item.taskallocatedToModel);
-                populatedTaskAllocatedTo = await model
-                  .findById(item.taskallocatedTo)
-                  .select("name")
-                  .lean();
-              }
-              if (item?.taskId) {
-                populatedTask = await Task.findById(item.taskId)
-                  .select("taskName")
-                  .lean();
-              }
-
-              return {
-                ...item,
-                taskId: populatedTask,
-                submittedUser: populatedSubmittedUser || item.submittedUser,
-                taskallocatedTo:
-                  populatedTaskAllocatedTo || item.taskallocatedTo,
-              };
-            } else {
-              return item;
+            if (
+              item.submittedUser &&
+              item.submissiondoneByModel &&
+              mongoose.models[item.submissiondoneByModel]
+            ) {
+              const model = mongoose.model(item.submissiondoneByModel);
+              populatedSubmittedUser = await model
+                .findById(item.submittedUser)
+                .select("name")
+                .lean();
             }
+
+            if (
+              item.taskallocatedTo &&
+              item.taskallocatedToModel &&
+              mongoose.models[item.taskallocatedToModel]
+            ) {
+              const model = mongoose.model(item.taskallocatedToModel);
+              populatedTaskAllocatedTo = await model
+                .findById(item.taskallocatedTo)
+                .select("name")
+                .lean();
+            }
+            if (item?.taskId) {
+              populatedTask = await Task.findById(item.taskId)
+                .select("taskName")
+                .lean();
+            }
+            console.log(item?.taskBy)
+            if (item?.taskBy && isValidObjectId(item?.taskBy)) {
+              populatedtaskBy = await Task.findById(item?.taskBy)
+                .select("taskName")
+                .lean();
+            }
+
+            return {
+              ...item,
+              taskBy: populatedtaskBy,
+              taskId: populatedTask,
+              submittedUser: populatedSubmittedUser || item.submittedUser,
+              taskallocatedTo:
+                populatedTaskAllocatedTo || item.taskallocatedTo,
+            };
           })
         );
 
@@ -2574,7 +2718,7 @@ export const GetrespectedleadTask = async (req, res) => {
               let populatedSubmittedUser = null;
               let populatedTaskAllocatedTo = null;
               let populatedTask = null;
-              let populatedleadBy = null;
+              let populatedtaskBy = null;
 
               if (
                 log.submittedUser &&
@@ -2605,13 +2749,13 @@ export const GetrespectedleadTask = async (req, res) => {
                   .lean();
               }
               if (log?.taskBy && isValidObjectId(log.taskBy)) {
-                populatedleadBy = await Task.findById(log.taskBy)
+                populatedtaskBy = await Task.findById(log.taskBy)
                   .select("taskName")
                   .lean();
               }
               return {
                 ...log,
-                taskBy: populatedleadBy,
+                taskBy: populatedtaskBy,
                 taskId: populatedTask,
                 submittedUser: populatedSubmittedUser || log.submittedUser,
                 taskallocatedTo:
@@ -2742,8 +2886,9 @@ export const GetcollectionLeads = async (req, res) => {
           .findById(lead.leadBy)
           .select("name")
           .lean();
-        let lasttaskallocatedto;
-        let lasttaskallocatedBy;
+        let lasttaskallocatedto = null;
+        let lasttaskallocatedBy = null;
+
         // ✅ Populate activityLog fields
         const populatedActivityLog = await Promise.all(
           (lead.activityLog || []).map(async (activity) => {
@@ -2777,6 +2922,13 @@ export const GetcollectionLeads = async (req, res) => {
                   .select("name")
                   .lean();
             }
+            if (activity.taskBy && isValidObjectId(activity.taskBy)) {
+
+              populatedActivity.taskBy = await Task.findById(activity.taskBy).select("taskName").lean()
+            }
+            if (activity.taskId && isValidObjectId(activity.taskId)) {
+              populatedActivity.taskId = await Task.findById(activity.taskId).select("taskName").lean()
+            }
 
             return populatedActivity;
           })
@@ -2784,18 +2936,18 @@ export const GetcollectionLeads = async (req, res) => {
 
         const populatedpaymentHistory = lead?.paymentHistory?.length
           ? await Promise.all(
-              lead.paymentHistory.map(async (history) => {
-                const populatedhistory = { ...history }; // if it's a mongoose subdoc
-                if (history.receivedModel && history.receivedBy) {
-                  const model = mongoose.model(history.receivedModel);
-                  populatedhistory.receivedBy = await model
-                    .findById(history.receivedBy)
-                    .select("name")
-                    .lean();
-                }
-                return populatedhistory;
-              })
-            )
+            lead.paymentHistory.map(async (history) => {
+              const populatedhistory = { ...history }; // if it's a mongoose subdoc
+              if (history.receivedModel && history.receivedBy) {
+                const model = mongoose.model(history.receivedModel);
+                populatedhistory.receivedBy = await model
+                  .findById(history.receivedBy)
+                  .select("name")
+                  .lean();
+              }
+              return populatedhistory;
+            })
+          )
           : [];
 
         // ✅ Get last activity
@@ -2883,6 +3035,12 @@ export const GetlostLeads = async (req, res) => {
                   .findById(activity.taskallocatedTo)
                   .select("name")
                   .lean();
+            }
+            if (activity.taskBy && isValidObjectId(activity.taskBy)) {
+              populatedActivity.taskBy = await Task.findById(activity.taskBy).select("taskName").lean()
+            }
+            if (activity.taskId && isValidObjectId(activity.taskId)) {
+              populatedActivity.taskId = await Task.findById(activity.taskId).select("taskName").lean()
             }
 
             return populatedActivity;
@@ -2985,6 +3143,12 @@ export const GetownLeadList = async (req, res) => {
                 .findById(activity.taskallocatedTo)
                 .select("name")
                 .lean();
+            }
+            if (activity.taskBy && isValidObjectId(activity.taskBy)) {
+              populatedActivity.taskBy = await Task.findById(activity.taskBy).select("taskName").lean()
+            }
+            if (activity.taskId && isValidObjectId(activity.taskId)) {
+              populatedActivity.taskId = await Task.findById(activity.taskId).select("taskName").lean()
             }
 
             return populatedActivity;

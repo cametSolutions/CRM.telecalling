@@ -339,6 +339,7 @@ const LeadAllocationTable = () => {
       allocationDate: new Date(),
     }));
   };
+console.log(tasks)
   return (
     <div className="flex flex-col h-full">
       {loading && (
@@ -553,27 +554,7 @@ const LeadAllocationTable = () => {
                                         {task?.taskName}
                                       </option>
                                     ))}
-                                  {/* <option value="followup">Followup</option>
-                                  <option value="programming">
-                                    Programming
-                                  </option>
-                                  <option value="testing-&-implementation">
-                                    Testing & Implementation
-                                  </option>
-                                  <option value="coding-&-testing">
-                                    Coding & Testing
-                                  </option>
-                                  <option value="software-services">
-                                    Software Service
-                                  </option>
-                                  <option value="customermeet">
-                                    Customer Meet
-                                  </option>
-                                  <option value="demo">Demo</option>
-                                  <option value="training">Training</option>
-
-                                  <option value="onsite">Onsite</option>
-                                  <option value="office">Office</option> */}
+                                  
                                 </select>
                                 {validatetypeError[item._id] && (
                                   <p className="text-red-500 text-sm">

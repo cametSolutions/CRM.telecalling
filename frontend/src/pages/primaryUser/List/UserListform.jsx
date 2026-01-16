@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react"
 import { CiEdit } from "react-icons/ci"
+import ExcelJS from "exceljs"
+import { saveAs } from "file-saver"
 import { PropagateLoader } from "react-spinners"
 import { useNavigate } from "react-router-dom"
 import api from "../../../api/api"
@@ -106,6 +108,106 @@ const UserListform = () => {
       // toast.error("Failed to delete item. Please try again.")
     }
   }
+  const handleDownload = (data) => {
+    
+    // Using ExcelJS instead of XLSX for better styling control
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet("UserReport")
+
+    // Define column structure with widths
+    worksheet.columns = [
+      { header: "Branch", key: "branch", width: 25 },
+      { header: "Name", key: "name", width: 25 },
+      { header: "Email", key: "email", width: 35 },
+      { header: "Dob", key: "dob", width: 15 },
+      { header: "Blood Group", key: "bloodgroup", width: 15 },
+      { header: "Gender", key: "gender", width: 15 },
+      { header: "Address", key: "address", width: 45 },
+      { header: "Pincode", key: "pincode", width: 15 },
+      { header: "Joining Date", key: "joiningdate", width: 15 },
+      { header: "Designation", key: "designation", width: 25 },
+      { header: "Department", key: "department", width: 20 },
+      { header: "Privilege leave Starts", key: "privileageleavestartfrom", width: 25 },
+      { header: "Casual leave Starts", key: "casualleavestartfrom", width: 25 },
+      { header: "AssignedTo", key: "assignedto", width: 25 }
+    ]
+
+    // Style the header row
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFFF0000" } // Light grey background
+      }
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" } } // Black bold text
+      cell.alignment = { horizontal: "center", vertical: "middle" }
+      cell.border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" }
+      }
+    })
+
+    // Add data rows
+    data.forEach((user) => {
+      const branchNames = Array.isArray(user?.selected)
+        ? user.selected
+            .map((item) => item?.branchName)
+            .filter(Boolean) // removes null/undefined
+            .join(", ")
+        : ""
+      const row = worksheet.addRow({
+        branch: branchNames,
+        name: user?.name,
+        email: user?.email,
+        dob: user?.dateofbirth,
+        bloodgroup: user?.bloodgroup,
+        gender: user?.gender,
+        address: user?.address,
+        pincode: user.pincode,
+        joiningdate: user?.joiningdate,
+        designation: user?.designation,
+        department: user?.department?.department,
+        privileageleavestartfrom: user?.privilegeleavestartsfrom||"-",
+        casualleavestartfrom: user?.casualleavestartsfrom||"-",
+        assignedto: user?.assignedto?.name
+      })
+
+      // Style data cells
+      row.eachCell((cell, colNumber) => {
+        // Center-align all cells except the name column (first column)
+        if (colNumber > 1) {
+          cell.alignment = { horizontal: "center", vertical: "middle" }
+        }
+
+        // Add borders to all cells
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" }
+        }
+
+        // Apply zebra striping for better readability
+        if (row.number % 2 === 0) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFFAFAFA" } // Very light grey for even rows
+          }
+        }
+      })
+    })
+
+    // Write to buffer and download
+    workbook.xlsx.writeBuffer().then((buffer) => {
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      })
+      saveAs(blob, "User_Report.xlsx")
+    })
+  }
   return (
     <div className="h-full flex flex-col bg-gray-50">
       {/* Header Section - Sticky */}
@@ -151,6 +253,7 @@ const UserListform = () => {
             </Link>
 
             <button
+              onClick={() => handleDownload(users)}
               className="inline-flex items-center px-3 py-2 border border-gray-300 
                              rounded-md text-sm font-medium text-gray-700 bg-white 
                              hover:bg-gray-50 focus:outline-none focus:ring-2 
@@ -278,14 +381,15 @@ const UserListform = () => {
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                              {user?.designation}
+                              {user?.department?.department}
                             </span>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                              {user?.department?.department}
+                              {user?.designation}
                             </span>
                           </td>
+
                           <td className="px-4 py-4 whitespace-nowrap">
                             <span
                               className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${

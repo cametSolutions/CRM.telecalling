@@ -13,8 +13,8 @@ import UseFetch from "../../../hooks/useFetch"
 import Timer from "../../../components/primaryUser/Timer"
 import PopUp from "../../../components/common/PopUp"
 import { toast } from "react-toastify"
-const socket = io("https://www.crm.camet.in")
-// const socket = io("http://localhost:9000")
+// const socket = io("https://www.crm.camet.in")
+const socket = io("http://localhost:9000")
 
 export default function CallRegistration() {
   const {
@@ -30,6 +30,7 @@ export default function CallRegistration() {
   const [loggeduserCurrentDateCalls, setloggeduserCurrentDateCalls] = useState(
     []
   )
+  const [issamecallnote, setissamecallnote] = useState(null)
   const [loader, setLoader] = useState(false)
   const [showIncomingNumberToast, setshowinComingnumberToast] = useState(false)
   const [callreport, setcallReport] = useState({})
@@ -43,6 +44,7 @@ export default function CallRegistration() {
   const [searching, setSearching] = useState(false)
   const [search, setSearch] = useState("")
   const [selectedCustomer, setSelectedCustomer] = useState(null)
+  console.log(selectedCustomer)
   const [selectedProducts, setSelectedProducts] = useState([])
   const [isRunning, setIsRunning] = useState(false) // Start with the timer running
   const [startTime, setStartTime] = useState(Date.now())
@@ -53,6 +55,7 @@ export default function CallRegistration() {
   const debounceTimeoutRef = useRef(null)
   const location = useLocation()
   const { calldetails, token } = location?.state || {}
+console.log(calldetails)
 
   const { data: registeredCall, refreshHook } = UseFetch(
     selectedCustomer?._id &&
@@ -61,6 +64,8 @@ export default function CallRegistration() {
   const { data } = UseFetch(
     user._id && `/customer/getloggeduserCurrentCalls?loggedUserId=${user._id}`
   )
+  console.log(data)
+  // const { data: callscount } = UseFetch("/customer/getcallregistrationlist")
   const { data: callnotes } = UseFetch("/customer/getallcallNotes")
   const handleQuillChange = (value) => {
     setValue("description", value, { shouldValidate: true }) // Update React Hook Form's value
@@ -100,56 +105,95 @@ export default function CallRegistration() {
       setCallnotes(callnotes)
     }
   }, [callnotes])
-  useEffect(() => {
-    if (user) {
-      const userId = user._id
-      socket.emit("updatedCalls", userId)
-      // Listen for initial data from the server
-      socket.on("updatedCalls", ({ calls, user }) => {
-        if (user?.role === "Admin") {
-          setCallList(calls)
-        } else {
-          const userBranchName = new Set(
-            user?.selected?.map((branch) => branch.branchName)
-          )
+  // useEffect(() => {
+  //   if (user && callscount) {
+  //     if (user?.role === "Admin") {
+  //       setCallList(callscount)
+  //     } else {
+  //       const userBranchName = new Set(
+  //         user?.selected?.map((branch) => branch.branchName)
+  //       )
 
-          const branchNamesArray = Array.from(userBranchName)
+  //       const branchNamesArray = Array.from(userBranchName)
 
-          const filtered = calls.filter(
-            (call) =>
-              Array.isArray(call?.callregistration) && // Check if callregistration is an array
-              call.callregistration.some((registration) => {
-                const hasMatchingBranch =
-                  Array.isArray(registration?.branchName) && // Check if branchName is an array
-                  registration.branchName.some(
-                    (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
-                  )
+  //       const filtered = callscount.filter(
+  //         (call) =>
+  //           Array.isArray(call?.callregistration) && // Check if callregistration is an array
+  //           call.callregistration.some((registration) => {
+  //             const hasMatchingBranch =
+  //               Array.isArray(registration?.branchName) && // Check if branchName is an array
+  //               registration.branchName.some(
+  //                 (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
+  //               )
 
-                // If user has only one branch, ensure it matches exactly and no extra branches
-                if (branchNamesArray.length === 1) {
-                  return (
-                    hasMatchingBranch &&
-                    registration.branchName.length === 1 &&
-                    registration.branchName[0] === branchNamesArray[0]
-                  )
-                }
+  //             // If user has only one branch, ensure it matches exactly and no extra branches
+  //             if (branchNamesArray.length === 1) {
+  //               return (
+  //                 hasMatchingBranch &&
+  //                 registration.branchName.length === 1 &&
+  //                 registration.branchName[0] === branchNamesArray[0]
+  //               )
+  //             }
 
-                // If user has more than one branch, just check for any match
-                return hasMatchingBranch
-              })
-          )
+  //             // If user has more than one branch, just check for any match
+  //             return hasMatchingBranch
+  //           })
+  //       )
 
-          setCallList(filtered)
-        }
-      })
+  //       setCallList(filtered)
+  //     }
+  //   }
+  // }, [user, callscount])
+  // useEffect(() => {
+  //   if (user) {
+  //     const userId = user._id
+  //     socket.emit("updatedCalls", userId)
+  //     // Listen for initial data from the server
+  //     socket.on("updatedCalls", ({ calls, user }) => {
+  //       if (user?.role === "Admin") {
+  //         setCallList(calls)
+  //       } else {
+  //         const userBranchName = new Set(
+  //           user?.selected?.map((branch) => branch.branchName)
+  //         )
 
-      //Cleanup the socket connection when the component unmounts
-      return () => {
-        socket.off("updatedCalls")
-        socket.disconnect()
-      }
-    }
-  }, [user])
+  //         const branchNamesArray = Array.from(userBranchName)
+
+  //         const filtered = calls.filter(
+  //           (call) =>
+  //             Array.isArray(call?.callregistration) && // Check if callregistration is an array
+  //             call.callregistration.some((registration) => {
+  //               const hasMatchingBranch =
+  //                 Array.isArray(registration?.branchName) && // Check if branchName is an array
+  //                 registration.branchName.some(
+  //                   (branch) => branchNamesArray.includes(branch) // Check if any branch matches user's branches
+  //                 )
+
+  //               // If user has only one branch, ensure it matches exactly and no extra branches
+  //               if (branchNamesArray.length === 1) {
+  //                 return (
+  //                   hasMatchingBranch &&
+  //                   registration.branchName.length === 1 &&
+  //                   registration.branchName[0] === branchNamesArray[0]
+  //                 )
+  //               }
+
+  //               // If user has more than one branch, just check for any match
+  //               return hasMatchingBranch
+  //             })
+  //         )
+
+  //         setCallList(filtered)
+  //       }
+  //     })
+
+  //     //Cleanup the socket connection when the component unmounts
+  //     return () => {
+  //       socket.off("updatedCalls")
+  //       socket.disconnect()
+  //     }
+  //   }
+  // }, [user])
   // Cleanup the timeout if the component unmounts
   useEffect(() => {
     return () => clearTimeout(debounceTimeoutRef.current)
@@ -188,6 +232,7 @@ export default function CallRegistration() {
               (product) => product?.product_id === productId
             )
           setSearch(callData?.callDetails?.customerid?.customerName)
+console.log(callData)
           setSelectedCustomer(callData?.callDetails?.customerid)
           if (matchingProducts.length === 0 && productId) {
             setProductDetails([
@@ -236,20 +281,20 @@ export default function CallRegistration() {
 
   const fetchCallDetails = async (callId) => {
     setLoader(true)
-    // const response = await fetch(
-    //   `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
-    //   {
-    //     method: "GET",
-    //     credentials: "include" // This allows cookies to be sent with the request
-    //   }
-    // )
     const response = await fetch(
-      `http://localhost:9000/api/customer/getcallregister/${callId}`,
+      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
       {
         method: "GET",
         credentials: "include" // This allows cookies to be sent with the request
       }
     )
+    // const response = await fetch(
+    //   `http://localhost:9000/api/customer/getcallregister/${callId}`,
+    //   {
+    //     method: "GET",
+    //     credentials: "include" // This allows cookies to be sent with the request
+    //   }
+    // )
     const data = await response.json()
 
     return data
@@ -335,7 +380,6 @@ export default function CallRegistration() {
     return `${date} ${time}` // Example: "03/02/2025 02:48:57 PM"
   }
 
-
   const stopTimer = async (time, product) => {
     if (!product) {
       toast.error("No product selected.")
@@ -349,7 +393,7 @@ export default function CallRegistration() {
 
     const endTime = new Date().toISOString()
     const durationInSeconds = timeStringToSeconds(time)
-
+    console.log("token", token)
     // Save timer value in local storage
     if (!token) {
       const branchName = product.branchName
@@ -390,20 +434,21 @@ export default function CallRegistration() {
         }
         // Set both attendedBy and completedBy if status is solved
       }
-
+      console.log("selectedproduts", selectedProducts[0])
       const calldata = {
         product: selectedProducts[0]?.product_id,
         license: selectedProducts[0]?.licensenumber,
-        branchName:[selectedProducts[0]?.branch_id?.branchName],
-          
+        branchName: [selectedProducts[0]?.branch_id?.branchName],
+
         timedata: timeData,
         formdata: updatedformData,
         customeremail: selectedCustomer?.email,
         customerName: selectedCustomer?.customerName,
         productName: selectedProducts[0]?.productName
       }
-
       setcallReport(calldata)
+
+      console.log("calldatadetails", calldata)
 
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
@@ -424,7 +469,7 @@ export default function CallRegistration() {
         setSelectedCustomer(null)
         setCustomerData([])
         setSearching(false)
-        socket.emit("updatedCalls")
+        // socket.emit("updatedCalls")
         sendWhatapp(calldata, selectedText)
         setSearch("")
       } else if (response.status === 207) {
@@ -434,7 +479,7 @@ export default function CallRegistration() {
         setSelectedCustomer(null)
         setCustomerData([])
         setSearching(false)
-        socket.emit("updatedCalls")
+        // socket.emit("updatedCalls")
         sendWhatapp(calldata, selectedText)
         setSearch("")
       } else {
@@ -480,14 +525,17 @@ export default function CallRegistration() {
       const calldata = {
         product: selectedProducts[0]?.product_id,
         license: selectedProducts[0]?.licensenumber,
-        branchName:[selectedProducts[0]?.branch_id?.branchName],
+        branchName: [selectedProducts[0]?.branchName],
         timedata: timeData,
         formdata: updatedformData,
         customeremail: selectedCustomer.email,
         customerName: selectedCustomer.customerName,
         productName: selectedProducts[0]?.productName
       }
+
       setcallReport(calldata)
+      console.log("calldata", calldata)
+
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
         calldata,
@@ -506,7 +554,7 @@ export default function CallRegistration() {
         setSearching(false)
         setSelectedCustomer(null)
         setSelectedProducts([])
-        socket.emit("updatedCalls")
+        // socket.emit("updatedCalls")
         sendWhatapp(calldata, selectedText)
       } else if (response.status === 207) {
         setSubmitLoading(false)
@@ -515,7 +563,7 @@ export default function CallRegistration() {
         setSearching(false)
         setSelectedCustomer(null)
         setSelectedProducts([])
-        socket.emit("updatedCalls")
+        // socket.emit("updatedCalls")
         sendWhatapp(calldata, selectedText)
         toast.success(response.data.message)
       } else {
@@ -613,23 +661,23 @@ Problem:    \t${selectedText}
   const fetchCustomerData = async (query) => {
     let url
     if (user.role === "Admin") {
-      url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
-      // url = `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
+      // url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
+      url = `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
     } else {
       const branches = JSON.stringify(branch)
 
-      url =
-        branches &&
-        branches.length > 0 &&
-        `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
-          user.role
-        }&userBranch=${encodeURIComponent(branches)}`
       // url =
       //   branches &&
       //   branches.length > 0 &&
-      //   `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+      //   `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
       //     user.role
       //   }&userBranch=${encodeURIComponent(branches)}`
+      url =
+        branches &&
+        branches.length > 0 &&
+        `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+          user.role
+        }&userBranch=${encodeURIComponent(branches)}`
     }
 
     try {
@@ -697,11 +745,31 @@ Problem:    \t${selectedText}
     }, 300) // Adjust the delay time to your preference (e.g., 300 ms)
   }, [])
   const handleRowClick = (customer) => {
+    const fetchCustomer = async () => {
+      try {
+        setLoader(true)
+        // Replace with your actual API endpoint and customer id
+        const response = await api.get(
+          `/customer/getselectedcustomerforCall/${customer._id}`
+        )
+        setLoader(false)
+        const data = response.data.data
+        setSelectedCustomer(data[0])
+        setSearch(data[0].customerName)
+
+        // Do something with the fetched data
+        console.log("Fetched customer:", response.data.data)
+        setProductDetails(data[0].selected)
+        // For example, set it to state to display in a modal or another component
+        // setSelectedCustomer(data);
+      } catch (error) {
+        console.error("Error fetching customer:", error)
+      }
+    }
+
+    fetchCustomer()
     setSearching(false)
     setCallData([])
-    setSelectedCustomer(customer)
-    setSearch(customer.customerName)
-    setProductDetails(customer.selected)
 
     if (customer) {
       reset({
@@ -721,47 +789,43 @@ Problem:    \t${selectedText}
 
     // Additional actions can be performed here (e.g., populate form fields)
   }
-  const hanldeCheckforsamecallnoteforsamecustomer = (data, id) => {
-    if (!calldetails && data.status === "pending") {
-      const callnoteId = data.callnote.split("|")[0]
-      const check = callList.some(
-        (item) =>
-          item.customerid === id &&
-          item.callregistration.some(
-            (call) =>
-              call.formdata?.callnote === callnoteId &&
-              call.formdata?.status === "pending"
-          )
-      )
-      return check
+  const hanldeCheckforsamecallnoteforsamecustomer = (data) => {
+    const callnoteId = data.split("|")[0]
+
+    const checkcallnote = async () => {
+      try {
+        const response = await api.get(
+          `/customer/checkexistsamecallnote?customerId=${selectedCustomer._id}&callNoteId=${callnoteId}`
+        )
+        setissamecallnote(response.data.exists)
+
+        setIsModalOpen(response.data.exists)
+
+        console.log("checkcallnotexists", response.data.exists)
+      } catch (error) {
+        console.log("error", error)
+      }
     }
+    checkcallnote()
   }
 
   const onSubmit = async (data) => {
-    const check = hanldeCheckforsamecallnoteforsamecustomer(
-      data,
-      selectedCustomer._id
-    )
-
-    if (check) {
+    if (selectedProducts && selectedProducts?.length === 0) {
+      // alert("please select aprodut")
+      toast.error("Please select a product", {
+        position: "top-center",
+        autoClose: 3000 // 3 seconds
+      })
+      return
+    } else if (issamecallnote) {
       setIsModalOpen(true)
-      // setmes
     } else {
-      if (selectedProducts && selectedProducts?.length === 0) {
-        // alert("please select aprodut")
-        toast.error("Please select a product", {
-          position: "top-center",
-          autoClose: 3000 // 3 seconds
-        })
-        return
-      } else {
-        setIsRunning(false)
-      }
-
-      setFormData(data)
+      setIsRunning(false)
     }
-  }
 
+    setFormData(data)
+  }
+console.log(selectedCustomer)
   return (
     <div>
       {loader && (
@@ -771,7 +835,7 @@ Problem:    \t${selectedText}
           // loader={true}
         />
       )}
-      <div className="container  justify-center items-center p-8 h-auto">
+      <div className=" justify-center items-center p-8 h-auto">
         <div className="w-auto bg-white shadow-lg rounded  p-8 mx-auto h-auto">
           <div className="flex justify-between ">
             <h2 className="text-2xl font-semibold mb-4">Call Registration</h2>
@@ -1088,7 +1152,7 @@ Problem:    \t${selectedText}
                 <div className="">
                   <h4 className="text-md font-bold text-white">Partnership</h4>
                   <p className="text-white">
-                    {selectedCustomer?.partner?.partner || "N/A"}
+                    {selectedCustomer?.partner?.[0]?.partner||selectedCustomer?.partner?.partner || "N/A"}
                   </p>
                 </div>
                 <div className="">
@@ -1209,7 +1273,6 @@ Problem:    \t${selectedText}
                           <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                             <input
                               className="form-checkbox h-4 w-4 text-blue-600 hover:bg-blue-200 focus:ring-blue-500 cursor-pointer"
-                            
                               checked={selectedProducts.some(
                                 (p) => p.productName === product?.productName
                               )}
@@ -1264,7 +1327,6 @@ Problem:    \t${selectedText}
                                       ) === "Expired"
                                         ? "red"
                                         : "black"
-                                        
                                   }}
                                 >
                                   {calculateRemainingDays(product?.amcendDate)}
@@ -1364,21 +1426,25 @@ Problem:    \t${selectedText}
                           </span>
                         )}
                       </div>
-                      <div>
-                        {/* Adjust width and padding for spacing */}
-                        <label
-                          htmlFor="token"
-                          className="block text-sm font-medium text-gray-700"
-                        >
-                          Token
-                        </label>
-                        <input
-                          type="text"
-                          id="token"
-                          {...register("token", {})}
-                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
-                        />
-                      </div>
+                      {token && (
+                        <div>
+                          {/* Adjust width and padding for spacing */}
+                          <label
+                            htmlFor="token"
+                            className="block text-sm font-medium text-gray-700"
+                          >
+                            Token
+                          </label>
+                          <input
+                            disabled
+                            type="text"
+                            id="token"
+                            {...register("token", {})}
+                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none cursor-not-allowed"
+                          />
+                        </div>
+                      )}
+
                       <div>
                         {/* Adjust width and padding for spacing */}
                         <label
@@ -1390,7 +1456,11 @@ Problem:    \t${selectedText}
 
                         <select
                           {...register("callnote", {
-                            required: "please select a callnote"
+                            required: "please select a callnote",
+                            onChange: (e) =>
+                              hanldeCheckforsamecallnoteforsamecustomer(
+                                e.target.value
+                              )
                           })}
                           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 sm:text-sm outline-none"
                           defaultValue="" // Default placeholder

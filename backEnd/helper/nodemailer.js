@@ -17,6 +17,7 @@ export const sendEmail = async (
   const problem = new mongoose.Types.ObjectId(calldata.formdata.callnote)
 
   const customerproblem = await Callnote.find(problem)
+console.log("branch",branchName)
   const result = await Branch.findOne({ branchName })
 
   const notificationemail = result.notificationemail

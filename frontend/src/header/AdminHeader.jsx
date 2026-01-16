@@ -265,20 +265,7 @@ export default function AdminHeader() {
       label: "Collection Update"
     }
   ]
-  // const inventorys = [
-  //   {
-  //     to: "/admin/masters/inventory/brandRegistration",
-  //     label: "Brand"
-  //   },
-  //   {
-  //     to: "/admin/masters/inventory/categoryRegistration",
-  //     label: "Category"
-  //   },
-  //   {
-  //     to: "/admin/masters/inventory/hsnlist",
-  //     label: "HSN"
-  //   }
-  // ]
+
   const transactions = [
     {
       label: "Lead",
@@ -337,7 +324,10 @@ export default function AdminHeader() {
     {
       to: "/admin/reports/leave-summary",
       label: "Leave Summary"
-    }
+    },
+    // { to: "/admin/reports/product-wise-report", label: "Product Report" },
+    // { to: "/admin/reports/follow-up-summary", label: "Followup Summary" },
+    // { to: "/admin/reports/sales-funel", label: "Sales Funnel" }
   ]
   return (
     <header className="sticky top-0 z-50 flex items-center md:justify-between bg-green-600 shadow-md px-2 md:px-4 lg:px-6 h-16 md:h-18 lg:h-18">

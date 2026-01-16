@@ -1,14 +1,11 @@
 import models from "../model/auth/authSchema.js"
 import Leavemaster from "../model/secondaryUser/leavemasterSchema.js"
 import Customer from "../model/secondaryUser/customerSchema.js"
-import QuarterlyAchiever from "../model/primaryUser/quarterlyAchieversSchema.js"
-import YearlyAchiever from "../model/primaryUser/yearylyAchieversSchema.js"
+
 import { getStaffSolvedCallCounts } from "../helper/staffHighestandlowestsolvedcallscount.js"
 import LeadMaster from "../model/primaryUser/leadmasterSchema.js"
-import { checkAcheivementlist } from "../helper/achievementCheck.js"
 import { PreviousmonthLeavesummary } from "../helper/previousMonthleaveSummary.js"
 import mongoose from "mongoose"
-import Branch from "../model/primaryUser/branchSchema.js"
 import Attendance from "../model/primaryUser/attendanceSchema.js"
 import Holymaster from "../model/secondaryUser/holydaymasterSchema.js"
 import Onsite from "../model/primaryUser/onsiteSchema.js"
@@ -327,13 +324,16 @@ export const UpdateUserandAdmin = async (req, res) => {
 
 export const Login = async (req, res) => {
   const { emailOrMobile, password } = req.body
+  console.log(emailOrMobile)
   try {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     let user
     let branch
     // Determine if the input is an email or a mobile number
     if (emailRegex.test(emailOrMobile)) {
+      const a = await Admin.find({})
       // If it's an email
+      console.log(a)
       user = await Admin.findOne({ email: emailOrMobile }).populate({ path: "department", select: "department" }).lean()
 
       if (!user) {
@@ -1015,11 +1015,14 @@ export const OnsiteApply = async (req, res) => {
       return res.status(404).json({ message: "no table content" })
     }
     const { onsiteDate, onsiteType, description, halfDayPeriod } = formData
+    let existingOnsite = null
+    if (formData?.onsiteId) {
+      existingOnsite = await Onsite.findOne({
+        _id: new mongoose.Types.ObjectId(formData.onsiteId),
+        userId: selectedObjectId
+      })
+    }
 
-    const existingOnsite = await Onsite.findOne({
-      onsiteDate,
-      userId: selectedObjectId
-    })
 
     if (existingOnsite) {
       // Merge existing and current onsiteData
@@ -1033,65 +1036,89 @@ export const OnsiteApply = async (req, res) => {
 
         return existingEntry ? { ...existingEntry, ...newEntry } : newEntry
       })
-      const formerLeaveType = existingOnsite.onsiteType
-      const currentLeaveType = onsiteType
 
-      if (formerLeaveType === "Full Day" && currentLeaveType === "Half Day") {
-        const year = new Date(onsiteDate).getFullYear()
 
-        const compensatoryLeave = await CompensatoryLeave.find({
-          userId: selectedid,
-          value: { $gt: 0 },
-          year
-        }).sort({ createdAt: 1 })
-        if (compensatoryLeave.length === 0) {
+      const formeronsiteType = existingOnsite.onsiteType
+      const currentonsiteType = onsiteType
+      if (compensatoryLeave === "true") {
+        if (formeronsiteType === "Full Day" && currentonsiteType === "Half Day") {
+          const year = new Date(onsiteDate).getFullYear()
+
+          const compensatoryLeave = await CompensatoryLeave.find({
+            userId: selectedid,
+            value: { $gt: 0 },
+            year
+          }).sort({ createdAt: 1 })
+          if (compensatoryLeave.length === 0) {
+            return res.status(409).json({
+              message:
+                "You can't edit this — a full-day compensatory leave has already been taken for this site"
+            })
+          }
+          let ValueReduced = 0.5
+          for (const comp of compensatoryLeave) {
+            if (ValueReduced <= 0) break
+            const deduct = Math.min(comp.value, ValueReduced)
+            comp.value -= deduct
+            comp.leaveUsed = comp.value === 0 ? true : comp.leaveUsed
+            ValueReduced -= deduct
+            await comp.save()
+          }
+        } else if (
+          formeronsiteType === "Half Day" &&
+          currentonsiteType === "Full Day"
+        ) {
+          let ValueAdded = 0.5
+          const year = new Date(onsiteDate).getFullYear()
+
+          const compensatoryLeaves = await CompensatoryLeave.find({
+            userId: selectedid,
+            year,
+            value: { $lt: 1 }
+          }).sort({ value: -1 })
+          for (const leave of compensatoryLeaves) {
+            const current = leave.value ?? 0
+            const spaceLeft = 1 - current
+
+            const addNow = Math.min(spaceLeft, ValueAdded)
+            leave.value = current + addNow
+            leave.leaveUsed = leave.value < 1
+            await leave.save()
+
+            ValueAdded -= addNow
+            if (ValueAdded <= 0) break
+          }
+        }
+      } else {
+        const checkcompenstoryUsed = await CompensatoryLeave.findOne({
+          onsiteId: existingOnsite._id,
+          userId: selectedObjectId
+
+        })
+        if (checkcompenstoryUsed.leaveUsed) {
+
           return res.status(409).json({
-            message:
-              "You can't edit this — a full-day compensatory leave has already been taken for this site"
+            success: false,
+            message: "Cannot update onsite. A leave is already used against this."
+          });
+        } else {
+          await CompensatoryLeave.deleteOne({
+            onsiteId: existingOnsite._id,
+            userId: selectedObjectId
           })
         }
-        let ValueReduced = 0.5
-        for (const comp of compensatoryLeave) {
-          if (ValueReduced <= 0) break
-          const deduct = Math.min(comp.value, ValueReduced)
-          comp.value -= deduct
-          comp.leaveUsed = comp.value === 0 ? true : comp.leaveUsed
-          ValueReduced -= deduct
-          await comp.save()
-        }
-      } else if (
-        formerLeaveType === "Half Day" &&
-        currentLeaveType === "Full Day"
-      ) {
-        let ValueAdded = 0.5
-        const year = new Date(onsiteDate).getFullYear()
 
-        const compensatoryLeaves = await CompensatoryLeave.find({
-          userId: selectedid,
-          year,
-          value: { $lt: 1 }
-        }).sort({ value: -1 })
-        for (const leave of compensatoryLeaves) {
-          const current = leave.value ?? 0
-          const spaceLeft = 1 - current
-
-          const addNow = Math.min(spaceLeft, ValueAdded)
-          leave.value = current + addNow
-          leave.leaveUsed = leave.value < 1
-          await leave.save()
-
-          ValueAdded -= addNow
-          if (ValueAdded <= 0) break
-        }
       }
+
 
       // Update record
       const updatedOnsite = await Onsite.findOneAndUpdate(
         {
-          onsiteDate,
+          _id: new mongoose.Types.ObjectId(formData.onsiteId),
           userId: selectedObjectId
         },
         {
+          onsiteDate,
           onsiteType,
           ...(onsiteType === "Half Day" && { halfDayPeriod }),
           description,
@@ -1187,7 +1214,8 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           privileageLeave: "",
           compensatoryLeave: "",
           otherLeave: "",
-          leaveDetails: {}
+          leaveDetails: {},
+          cantchange: false
         } // Initialize empty object for each date
       }
 
@@ -1477,6 +1505,10 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             arr.push(day)
 
             stats.attendancedates[dayTime].notMarked = 1
+            if (!isOnsite && !isLeave) {
+
+              stats.attendancedates[dayTime].cantchange = true
+            }
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.attendancedates[dayTime].present = 1
               stats.attendancedates[dayTime].notMarked = ""
@@ -2170,24 +2202,75 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
       // Main function
       async function calculateAbsences(allholidayfulldate, attendances) {
-        const isPresent = async (date) => {
-          const attendance = attendances.attendancedates[date];
-          if (attendance) {
-            return (
-              attendances.attendancedates[date].present === 1 && (attendance.otherLeave === "" ||
-                attendance.privileageLeave === "" ||
-                attendance.casualLeave === "" ||
-                attendance.compensatoryLeave === "")
+        const isPresent = async (date, daytype, check = false) => {
 
-            );
+          const attendance = attendances.attendancedates[date];
+
+          if (attendance) {
+            if (attendance.otherLeave === (0.5 || "0.5") || attendance.casualLeave === (0.5 || "0.5") || attendance.privileageLeave === (0.5 || "0.5") || attendance.compensatoryLeave === (0.5 || "0.5")) {
+              if (daytype === "previous") {
+                if (attendance.otherLeave === (0.5 || "0.5") || attendance.privileageLeave === (0.5 || "0.5") || attendance.casualLeave === (0.5 || "0.5") || attendance.compensatoryLeave === (0.5 || "0.5")) {
+                  if (attendance.halfDayperiod === "Afternoon") {
+                    return { status: false, cantchange: false }
+                  } else if (attendance.halfDayperiod === "Morning") {
+                    return { status: true, cantchange: false }
+                  }
+                }
+              } else if (daytype === "after") {
+                if (attendance.otherLeave === (0.5 || "0.5") || attendance.privileageLeave === (0.5 || "0.5") || attendance.casualLeave === (0.5 || "0.5") || attendance.compensatoryLeave === (0.5 || "0.5")) {
+                  if (attendance.halfDayperiod === "Afternoon") {
+                    return { status: true, cantchange: false }
+                  } else if (attendance.halfDayperiod === "Morning") {
+                    if (check) {
+                      return { status: true, cantchange: false }
+                    } else {
+                      return { status: false, cantchange: false }
+                    }
+                  }
+                }
+              } else {
+                console.log("taekennd")
+              }
+            } else if (attendance.otherLeave === (1 || "1") || attendance.casualLeave === (1 || "1") || attendance.privileageLeave === (1 || "1") || attendance.compensatoryLeave === (1 || "1")) {
+              return { status: false, cantchange: false }
+
+            } else if (attendance.present === 0 && attendance.casualLeave === "" && attendance.privileageLeave === "" && attendance.compensatoryLeave === "") {
+              return { status: false, cantchange: true }
+            } else {
+              return {
+                status: (
+                  attendance.present === 1 && (attendance.otherLeave === "" ||
+                    attendance.privileageLeave === "" ||
+                    attendance.casualLeave === "" ||
+                    attendance.compensatoryLeave === "")
+
+                ), cantchange: false
+              }
+            }
+
+
           } else {
             const previousMonth = month - 1;
-            const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, year, stats.userId);
-            if (previousmonthlastdayleavestatus) {
-              return false
-            } else {
-              return true
+            const d = new Date(date);
+            const matchingmonth = d.getMonth() + 1; // takes month only
+            const matchingYear = new Date(date).getFullYear()
+            if (matchingmonth < month) {
+              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, matchingYear, stats.userId, "previous");
+              if (previousmonthlastdayleavestatus) {
+                return { status: false, cantchange: false }
+              } else {
+                return { status: true, cantchange: false }
+              }
+            } else if (matchingmonth > month) {
+              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(matchingmonth, matchingYear, stats.userId, "next");
+              if (previousmonthlastdayleavestatus) {
+                return { status: false, cantchange: false }
+              } else {
+                return { status: true, cantchange: false }
+              }
             }
+
+
 
           }
 
@@ -2205,12 +2288,12 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           const prevDay = getPreviousDate(first);
           const nextDay = getNextDate(last);
 
-          const prevPresent = await isPresent(prevDay);
-          const nextPresent = await isPresent(nextDay);
+          const prevPresent = await isPresent(prevDay, "previous");
+          const nextPresent = await isPresent(nextDay, "after", prevPresent);
 
 
 
-          if (prevPresent || nextPresent) {
+          if ((prevPresent.status || nextPresent.status) && prevPresent.cantchange === false) {
             // ✅ Mark all holidays as present
             group.forEach((date) => {
               if (attendances.attendancedates[date]) {
@@ -2328,7 +2411,7 @@ export const Getallcompensatoryleave = async (req, res) => {
     const { userid } = req.query
     const objectId = new mongoose.Types.ObjectId(userid)
 
-    // const compensatoryleave = await CompensatoryLeave.find({ userId: userid })
+
     const result = await CompensatoryLeave.aggregate([
       { $match: { userId: objectId } },
       { $group: { _id: null, total: { $sum: "$value" } } }
@@ -5400,22 +5483,62 @@ export const GetsomeAllsummary = async (
         const isPresent = async (date) => {
           const attendance = attendances.attendancedates[date];
           if (attendance) {
-            return (
-              attendances.attendancedates[date].present === 1 && (attendance.otherLeave === "" ||
-                attendance.privileageLeave === "" ||
-                attendance.casualLeave === "" ||
-                attendance.compensatoryLeave === "")
 
-            );
+            if (attendance.otherLeave === (0.5 || "0.5") || attendance.casualLeave === (0.5 || "0.5") || attendance.privileageLeave === (0.5 || "0.5") || attendance.compensatoryLeave === (0.5 || "0.5")) {
+              if (daytype === "previous") {
+                if (attendance.otherLeave === (0.5 || "0.5") || attendance.privileageLeave === (0.5 || "0.5") || attendance.casualLeave === (0.5 || "0.5") || attendance.compensatoryLeave === (0.5 || "0.5")) {
+                  if (attendance.halfDayPeriod === "Afternoon") {
+                    return false
+                  } else if (attendance.halfDayPeriod === "Morning") {
+                    return true
+                  }
+                }
+              } else if (daytype === "after") {
+                if (attendance.otherLeave === (0.5 || "0.5") || attendance.privileageLeave === (0.5 || "0.5") || attendance.casualLeave === (0.5 || "0.5") || attendance.compensatoryLeave === (0.5 || "0.5")) {
+                  if (attendance.halfDayPeriod === "Afternoon") {
+                    return true
+                  } else if (attendance.halfDayPeriod === "Morning") {
+                    if (check) {
+                      return true
+                    } else {
+                      return false
+                    }
+                  }
+                }
+              }
+            } else {
+              return (
+                attendances.attendancedates[date].present === 1 && (attendance.otherLeave === "" ||
+                  attendance.privileageLeave === "" ||
+                  attendance.casualLeave === "" ||
+                  attendance.compensatoryLeave === "")
+
+              );
+            }
+
 
           } else {
             const previousMonth = month - 1;
-            const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, year, stats.userId);
-            if (previousmonthlastdayleavestatus) {
-              return { status: false };
-            } else {
-              return { status: true };
+            const d = new Date(date);
+            const matchingmonth = d.getMonth() + 1; // takes month only
+            const matchingYear = new Date(date).getFullYear()
+            if (matchingmonth < month) {
+              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(previousMonth, matchingYear, stats.userId);
+              if (previousmonthlastdayleavestatus) {
+                return { status: false }
+              } else {
+                return { status: true }
+              }
+            } else if (matchingmonth > month) {
+              const previousmonthlastdayleavestatus = await PreviousmonthLeavesummary(matchingmonth, matchingYear, stats.userId);
+              if (previousmonthlastdayleavestatus) {
+                return { status: false }
+              } else {
+                return { status: true }
+              }
             }
+
+
           }
         };
 
@@ -5615,10 +5738,9 @@ export const DeleteEvent = async (req, res) => {
       }
     } else if (type === "onsite") {
       const onsiteRequest = await Onsite.findOne({
+        _id: new mongoose.Types.ObjectId(payload?.docId),
         userId: objectId,
-        onsiteType: payload.onsiteType,
-        description: payload.description,
-        onsiteDate: payload.onsiteDate
+
       })
 
       if (!onsiteRequest) {
@@ -5634,15 +5756,10 @@ export const DeleteEvent = async (req, res) => {
           .status(400)
           .json({ message: "Cannot delete an approved onsite request" })
       }
-      const matchedOnsite = await Onsite.findOne({
-        userId: objectId,
-        onsiteType: payload.onsiteType,
-        description: payload.description,
-        onsiteDate: payload.onsiteDate
-      })
-      if (matchedOnsite) {
+
+      if (onsiteRequest) {
         const matchedCompensatoryLeave = await CompensatoryLeave.findOne({
-          onsiteId: matchedOnsite._id
+          onsiteId: onsiteRequest._id
         })
         if (matchedCompensatoryLeave?.leaveUsed) {
           return res.status(409).json({
@@ -5651,19 +5768,19 @@ export const DeleteEvent = async (req, res) => {
         }
       }
       const isDeleteOnsite = await Onsite.deleteOne({
+        _id: new mongoose.Types.ObjectId(payload?.docId),
         userId: objectId,
-        onsiteType: payload.onsiteType,
-        description: payload.description,
-        onsiteDate: payload.onsiteDate
+
       })
       if (isDeleteOnsite.deletedCount > 0) {
         const findifcompensatoryleave = await CompensatoryLeave.findOne({
           onsiteId: onsiteRequest._id
         })
         if (findifcompensatoryleave) {
-          await CompensatoryLeave.deleteOne({
+          const updatecompensatory = await CompensatoryLeave.deleteOne({
             _id: findifcompensatoryleave._id
           })
+
         }
         const onsites = await Onsite.find({ userId: objectId })
         // Check if no records found

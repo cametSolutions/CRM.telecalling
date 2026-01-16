@@ -6,11 +6,9 @@ import Tiles from "../../../components/common/Tiles" // Import the Tile componen
 import { useNavigate } from "react-router-dom"
 import { PropagateLoader } from "react-spinners"
 import UseFetch from "../../../hooks/useFetch"
-import { setBranches } from "../../../../slices/companyBranchSlice"
-import BranchDropdown from "../../../components/primaryUser/BranchDropdown"
 import { getLocalStorageItem } from "../../../helper/localstorage"
-const socket = io("https://www.crm.camet.in")
-// const socket = io("http://localhost:9000") // Adjust the URL to your backend
+// const socket = io("https://www.crm.camet.in");
+const socket = io("http://localhost:9000") // Adjust the URL to your backend
 
 const CallregistrationList = () => {
   const navigate = useNavigate()
@@ -33,23 +31,40 @@ const CallregistrationList = () => {
   // State to track the active filter
   const [activeFilter, setActiveFilter] = useState("All")
   const { data: branches } = UseFetch("/branch/getbranch")
-  const socketRef = useRef(null)
-  useEffect(() => {
-    if (!socketRef.current) {
-      socketRef.current = io("http://localhost:9000", {
-        transports: ["websocket"], //helps avoid polling issues
-        reconnection: true //auto reconnect if dropped
-      })
-    }
-    const socket = socketRef.current
-    socket.on("connect", () => {
-      console.log("Connected", socket.id)
-    })
-    socket.on("disconnect", () => {
-      socket.off("connect")
-      socket.off("disconnect")
-    })
-  }, [])
+  const { data: callscount, loading: loadingcounts } = UseFetch(
+    "/customer/getcallregistrationlist"
+  )
+
+  // const socketRef = useRef(null)
+  // useEffect(() => {
+  //   if (!socketRef.current) {
+  //     socketRef.current = io("http://localhost:9000", {
+  //       transports: ["websocket"], //helps avoid polling issues
+  //       reconnection: true, //auto reconnect if dropped
+  //       reconnectionAttempts: 5,
+  //       timeout: 20000,
+  //       // SURVIVES REFRESH - key fix
+  //       autoConnect: true
+  //     })
+  //   }
+  //   const socket = socketRef.current
+  //   socket.on("connect", () => {
+  //     console.log("Connected", socket.id)
+  //   })
+  //   // socket.on("disconnect", () => {
+  //   //   console.log("h")
+  //   //   socket.off("connect")
+  //   //   socket.off("disconnect")
+  //   //   socket.off("updatedCalls")
+  //   // })
+  //   return () => {
+  //     socket.off("connect")
+  //     socket.off("disconnect")
+  //     socket.off("updatedCalls") // CLEANUP ALL
+  //     socket.off("connect_error")
+  //     socket.disconnect()
+  //   }
+  // }, [])
   useEffect(() => {
     if (branches && branches.length > 0) {
       const userData = getLocalStorageItem("user")
@@ -78,13 +93,8 @@ const CallregistrationList = () => {
       }
       setbranchids(userData.selected.map((item) => item.branch_id))
 
-      // const users = JSON.parse(userData)
-      // if (userData.role === "Admin") {
-      //   const userbranch = branches.map((item) => item.branchName)
-      //   setUserBranch(userbranch)
-      // }
-      const a = userData.selected.map((item) => item.branchName)
-      setUserBranch(a)
+      const branch = userData.selected.map((item) => item.branchName)
+      setUserBranch(branch)
 
       setUser(userData)
     }
@@ -101,58 +111,119 @@ const CallregistrationList = () => {
       )
 
       const todaysSolvedCount = getTodaysSolved(calls)
-
+console.log(todaysSolvedCount.arr)
+console.log(todaysSolvedCount)
       const todaysCallsCount = getTodaysCalls(calls)
 
       setPendingCallsCount(pending?.length)
       setTodayCallsCount(todaysCallsCount)
-      setTodaysSolvedCount(todaysSolvedCount)
+      setTodaysSolvedCount(todaysSolvedCount.todaysSolvedCount)
     },
     [users]
   )
   useEffect(() => {
-    if (users && selectedCompanyBranch) {
-      setLoading(true)
-      const userId = users._id
-      socket.emit("updatedCalls", userId)
+    if (selectedCompanyBranch && callscount) {
       const brancharray = [selectedCompanyBranch]
-      // Listen for initial data from the server
-      socket.on("updatedCalls", ({ mergedCalls }) => {
-        
+      const filtered = callscount.filter(
+        (call) =>
+          Array.isArray(call?.callregistration) && // Check if callregistration is an array
+          call.callregistration.some((registration) => {
+            const hasMatchingBranch =
+              Array.isArray(registration?.branchName) && // Check if branchName is an array
+              registration.branchName.some(
+                (branch) => brancharray.includes(branch) // Check if any branch matches user's branches
+              )
 
-        const filtered = mergedCalls.filter(
-          (call) =>
-            Array.isArray(call?.callregistration) && // Check if callregistration is an array
-            call.callregistration.some((registration) => {
-              const hasMatchingBranch =
-                Array.isArray(registration?.branchName) && // Check if branchName is an array
-                registration.branchName.some(
-                  (branch) => brancharray.includes(branch) // Check if any branch matches user's branches
-                )
+            // If user has only one branch, ensure it matches exactly and no extra branches
+            if (brancharray.length === 1) {
+              return (
+                hasMatchingBranch &&
+                registration.branchName.length === 1 &&
+                registration.branchName[0] === brancharray[0]
+              )
+            }
 
-              // If user has only one branch, ensure it matches exactly and no extra branches
-              if (brancharray.length === 1) {
-                return (
-                  hasMatchingBranch &&
-                  registration.branchName.length === 1 &&
-                  registration.branchName[0] === brancharray[0]
-                )
-              }
-
-              // If user has more than one branch, just check for any match
-              return hasMatchingBranch
-            })
-        )
-        setLoading(false)
-        setCallList(filtered)
-      })
-      //Cleanup the socket connection when the component unmounts
-      // return () => {
-      //   socket.off("updatedCalls")
-      //   socket.disconnect()
-      // }
+            // If user has more than one branch, just check for any match
+            return hasMatchingBranch
+          })
+      )
+      // setLoading(false)
+      setCallList(filtered)
     }
-  }, [users, branchids, selectedCompanyBranch])
+  }, [callscount, selectedCompanyBranch])
+  // useEffect(() => {
+  //   if (users && selectedCompanyBranch) {
+  //     console.log("hh")
+  //     setLoading(true)
+  //     const userId = users._id
+  //     socket.emit("updatedCalls", userId)
+  //     const brancharray = [selectedCompanyBranch]
+  //     // Debounce emits (wait 500ms)
+  //     const timeoutId = setTimeout(() => {
+  //       socketRef.current?.emit("updatedCalls", { userId, brancharray })
+  //     }, 500)
+  //     // Listen for initial data from the server
+  //     // socket.on("updatedCalls", ({ mergedCalls }) => {
+  //     //   const filtered = mergedCalls.filter(
+  //     //     (call) =>
+  //     //       Array.isArray(call?.callregistration) && // Check if callregistration is an array
+  //     //       call.callregistration.some((registration) => {
+  //     //         const hasMatchingBranch =
+  //     //           Array.isArray(registration?.branchName) && // Check if branchName is an array
+  //     //           registration.branchName.some(
+  //     //             (branch) => brancharray.includes(branch) // Check if any branch matches user's branches
+  //     //           )
+
+  //     //         // If user has only one branch, ensure it matches exactly and no extra branches
+  //     //         if (brancharray.length === 1) {
+  //     //           return (
+  //     //             hasMatchingBranch &&
+  //     //             registration.branchName.length === 1 &&
+  //     //             registration.branchName[0] === brancharray[0]
+  //     //           )
+  //     //         }
+
+  //     //         // If user has more than one branch, just check for any match
+  //     //         return hasMatchingBranch
+  //     //       })
+  //     //   )
+  //     //   setLoading(false)
+  //     //   setCallList(filtered)
+  //     // })
+  //     // Listen ONCE per effect
+  //     const handleUpdatedCalls = ({ mergedCalls }) => {
+  //       const filtered = mergedCalls.filter(
+  //         (call) =>
+  //           Array.isArray(call?.callregistration) &&
+  //           call.callregistration.some((registration) => {
+  //             const hasMatchingBranch =
+  //               Array.isArray(registration?.branchName) &&
+  //               registration.branchName.some((branch) =>
+  //                 brancharray.includes(branch)
+  //               )
+
+  //             if (brancharray.length === 1) {
+  //               return (
+  //                 hasMatchingBranch &&
+  //                 registration.branchName.length === 1 &&
+  //                 registration.branchName[0] === brancharray[0]
+  //               )
+  //             }
+  //             return hasMatchingBranch
+  //           })
+  //       )
+  //       setLoading(false)
+  //       setCallList(filtered)
+  //     }
+  //     socketRef.current?.on("updatedCalls", handleUpdatedCalls)
+
+  //     // CLEANUP
+  //     return () => {
+  //       clearTimeout(timeoutId)
+  //       socketRef.current?.off("updatedCalls", handleUpdatedCalls)
+  //     }
+  //   }
+  // }, [users, branchids, selectedCompanyBranch])
 
   useEffect(() => {
     if (callList && callList.length > 0 && users) {
@@ -169,107 +240,109 @@ const CallregistrationList = () => {
     }
   }, [callList])
 
-//   const handleSearch = debounce((search) => {
-//     if(!search||search.toString().trim()===''){
-//       setFilteredCalls(callList)
-//       return
-//     }
-//     setSearchTerm(search)
-//     const searchText = search.toString().toLowerCase().trim()
-// console.log(searchText)
-//     const filteredData = callList.filter((customer) => {
-//       // Check customerName
-//       if(customer.customerName
-//         ?.toLowerCase()
-//         .includes(searchText)){
-//           return true
-//         }
-//         console.log(searchText)
-//         console.log(customer.customerName)
-//       // Check mobile (if exists)
-//       if(customer.mobile?.toString().includes(searchText)){
-//         return true
-//       }
+  //   const handleSearch = debounce((search) => {
+  //     if(!search||search.toString().trim()===''){
+  //       setFilteredCalls(callList)
+  //       return
+  //     }
+  //     setSearchTerm(search)
+  //     const searchText = search.toString().toLowerCase().trim()
+  // console.log(searchText)
+  //     const filteredData = callList.filter((customer) => {
+  //       // Check customerName
+  //       if(customer.customerName
+  //         ?.toLowerCase()
+  //         .includes(searchText)){
+  //           return true
+  //         }
+  //         console.log(searchText)
+  //         console.log(customer.customerName)
+  //       // Check mobile (if exists)
+  //       if(customer.mobile?.toString().includes(searchText)){
+  //         return true
+  //       }
 
-//       // Check callregistration.incomingNumber or license
-//       if(customer.callregistration?.some((call) => {
-//         if(call.formdata?.incomingNumber
-//           ?.toString()
-//           .includes(searchText)){
-//             return true
-//           }
-        
-//         if(call.branchName?.some((branch) =>
-//           branch.toLowerCase().includes(searchText)
-//         )){
-//           return true
-//         }
-        
-//         if(call.license?.toString().includes(searchText)){
-//           return true
-//         }
-//         return false
-        
-//         })){
-//           return true
-//         }
+  //       // Check callregistration.incomingNumber or license
+  //       if(customer.callregistration?.some((call) => {
+  //         if(call.formdata?.incomingNumber
+  //           ?.toString()
+  //           .includes(searchText)){
+  //             return true
+  //           }
 
-//     })
-//     console.log(filteredData)
+  //         if(call.branchName?.some((branch) =>
+  //           branch.toLowerCase().includes(searchText)
+  //         )){
+  //           return true
+  //         }
 
-//     setFilteredCalls(filteredData)
-//   }, 300)
-const handleSearch = debounce((search) => {
-  if (!search || search.toString().trim() === '') {
-    setFilteredCalls(callList); // Show all if empty search
-    return;
-  }
+  //         if(call.license?.toString().includes(searchText)){
+  //           return true
+  //         }
+  //         return false
 
-  const searchText = search.toString().toLowerCase().trim();
+  //         })){
+  //           return true
+  //         }
 
-  const filteredData = callList.filter((customer) => {
-    // 1. Customer name match
-    if (customer.customerName?.toLowerCase().includes(searchText)) {
-      return true;
+  //     })
+  //     console.log(filteredData)
+
+  //     setFilteredCalls(filteredData)
+  //   }, 300)
+  const handleSearch = debounce((search) => {
+    if (!search || search.toString().trim() === "") {
+      setFilteredCalls(callList) // Show all if empty search
+      return
     }
 
-    // 2. Mobile match
-    if (customer.mobile?.toString().includes(searchText)) {
-      return true;
-    }
+    const searchText = search.toString().toLowerCase().trim()
 
-    // 3. Call registration match
-    if (customer.callregistration?.some((call) => {
-      // Incoming number
-      if (call.formdata?.incomingNumber?.toString().includes(searchText)) {
-        return true;
+    const filteredData = callList.filter((customer) => {
+      // 1. Customer name match
+      if (customer.customerName?.toLowerCase().includes(searchText)) {
+        return true
       }
-      
-      // License
-      if (call.license?.toString().includes(searchText)) {
-        return true;
-      }
-      
-      // Branch names
-      if (call.branchName?.some((branch) => 
-        branch?.toLowerCase().includes(searchText)
-      )) {
-        return true;
-      }
-      
-      return false;
-    })) {
-      return true;
-    }
 
-    return false;
-  });
-console.log(filteredData)
-console.log(filteredData.length)
-  setSearchTerm(search);
-  setFilteredCalls(filteredData);
-}, 300);
+      // 2. Mobile match
+      if (customer.mobile?.toString().includes(searchText)) {
+        return true
+      }
 
+      // 3. Call registration match
+      if (
+        customer.callregistration?.some((call) => {
+          // Incoming number
+          if (call.formdata?.incomingNumber?.toString().includes(searchText)) {
+            return true
+          }
+
+          // License
+          if (call.license?.toString().includes(searchText)) {
+            return true
+          }
+
+          // Branch names
+          if (
+            call.branchName?.some((branch) =>
+              branch?.toLowerCase().includes(searchText)
+            )
+          ) {
+            return true
+          }
+
+          return false
+        })
+      ) {
+        return true
+      }
+
+      return false
+    })
+
+    setSearchTerm(search)
+    setFilteredCalls(filteredData)
+  }, 300)
 
   const handleChange = (e) => handleSearch(e.target.value)
   const setDateandTime = (dateString) => {
@@ -287,20 +360,24 @@ console.log(filteredData.length)
   }
   const getTodaysSolved = (calls) => {
     const today = new Date().toISOString().split("T")[0]
+    console.log(today)
     let todaysSolvedCount = 0
+    let arr = []
 
     calls.forEach((customer) => {
       customer.callregistration.forEach((call) => {
         if (call.formdata.status === "solved") {
           const callDate = call.timedata.endTime.split("T")[0]
+          console.log(callDate)
           if (callDate === today) {
             todaysSolvedCount++
+            arr.push(call.timedata.token)
           }
         }
       })
     })
 
-    return todaysSolvedCount
+    return {todaysSolvedCount,arr}
   }
   const getCallStats = (calls, userName) => {
     let totalCalls = 0
@@ -314,7 +391,7 @@ console.log(filteredData.length)
     calls.forEach((call) => {
       call.callregistration.forEach((registration) => {
         const { formdata, timedata } = registration
-        const callDate = timedata.endTime.split("T")[0]
+        const callDate = timedata?.endTime?.split("T")[0]
         if (callDate === today) {
           const lastAttended = formdata?.attendedBy?.length
             ? formdata?.attendedBy[formdata.attendedBy.length - 1]
@@ -379,7 +456,7 @@ console.log(filteredData.length)
 
     calls.forEach((customer) => {
       customer.callregistration.forEach((call) => {
-        const callDate = call.timedata.endTime.split("T")[0] // Get the call date in 'YYYY-MM-DD' format
+        const callDate = call?.timedata?.endTime?.split("T")[0] // Get the call date in 'YYYY-MM-DD' format
         if (callDate === today) {
           todaysCallsCount++
         }
@@ -414,7 +491,7 @@ console.log(filteredData.length)
     const secs = seconds % 60
     return `${hrs} hr ${mins} min ${secs} sec`
   }
-
+  console.log(filteredCalls)
   return (
     <div className=" mx-auto p-2  md:p-5 bg-white">
       <div className="w-auto shadow-lg rounded p-4 pt-1 h-full bg-neutral-50 ">
@@ -650,12 +727,23 @@ console.log(filteredData.length)
                     .filter((item) => item?.formdata?.status === "pending")
                     .sort((a, b) => {
                       const today = new Date().toISOString().split("T")[0]
-                      const aDate = new Date(a?.timedata?.endTime)
-                        .toISOString()
-                        .split("T")[0]
-                      const bDate = new Date(b?.timedata?.endTime)
-                        .toISOString()
-                        .split("T")[0]
+                      // const aDate = new Date(a?.timedata?.endTime)
+                      //   ?.toISOString()
+                      //   .split("T")[0];
+                      // const bDate = new Date(b?.timedata?.endTime)
+                      //   ?.toISOString()
+                      //   .split("T")[0];
+                      // Safe date extraction with validation
+                      const getDateString = (item) => {
+                        if (!item?.timedata?.endTime) return null
+                        const date = new Date(item.timedata.endTime)
+                        return isNaN(date.getTime())
+                          ? null
+                          : date.toISOString().split("T")[0]
+                      }
+
+                      const aDate = getDateString(a)
+                      const bDate = getDateString(b)
 
                       // Prioritize today's date
                       if (aDate === today && bDate !== today) return -1
@@ -696,7 +784,7 @@ console.log(filteredData.length)
                               </td>
 
                               <td className="px-2 py-2 text-sm w-12 text-[#010101]">
-                                {item?.timedata.token}
+                                {item?.timedata?.token || "abu"}
                               </td>
                               <td className="px-2 py-2 text-sm w-12 text-[#010101]">
                                 {item.calls?.customerName}
@@ -839,8 +927,12 @@ console.log(filteredData.length)
                             .split("T")[0]
                         : null
 
-                      const isToday = callDate === today
+                      console.log(callDate)
 
+                      const isToday = callDate === today
+                      if (isSolved && isToday) {
+                        console.log(item.timedata.token)
+                      }
                       return isSolved && isToday // Filter condition for both 'solved' and 'today'
                     })
 
@@ -862,6 +954,7 @@ console.log(filteredData.length)
                           item.branchName.includes(branch)
                         )
                       ) {
+                        console.log(item)
                         return (
                           <>
                             <tr
@@ -934,7 +1027,11 @@ console.log(filteredData.length)
                                 item?.formdata?.status === "solved"
                                   ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
                                   : item?.formdata?.status === "pending"
-                                  ? callDate === today
+                                  ? new Date(
+                                      item?.timedata?.endTime.split("")[0]
+                                    )
+                                      .toString()
+                                      .split("T")[0] === today
                                     ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
                                     : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                   : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
@@ -993,7 +1090,7 @@ console.log(filteredData.length)
                     colSpan="12"
                     className="px-4 py-4 text-center text-sm text-gray-500"
                   >
-                    {loading ? (
+                    {loadingcounts ? (
                       <div className="justify center">
                         <PropagateLoader color="#3b82f6" size={10} />
                       </div>

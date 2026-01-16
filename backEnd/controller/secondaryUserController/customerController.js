@@ -15,253 +15,209 @@ const { Staff, Admin } = models
 import mongoose from "mongoose"
 import Holymaster from "../../model/secondaryUser/holydaymasterSchema.js"
 
+//CUSTOMELIST PAGE
 export const GetscrollCustomer = async (req, res) => {
   try {
-    const { page = 1, limit = 100, search = "", loggeduserBranches, customerType } = req.query;
+    const { page = 1, limit = 100, search = "", loggeduserBranches, customerType = "Allcustomers" } = req.query;
+
+    if (!loggeduserBranches) {
+      return res.status(400).json({ message: "loggeduserBranches (branch id) is required" });
+    }
+
+    const branchId = new mongoose.Types.ObjectId(loggeduserBranches);
     const pageNum = Math.max(1, parseInt(page));
     const pageSize = Math.max(1, parseInt(limit));
     const skip = (pageNum - 1) * pageSize;
-    let branchId;
-    if (loggeduserBranches) {
-      branchId = new mongoose.Types.ObjectId(loggeduserBranches);
-    } else {
-      return res.status(400).json({ message: "loggeduserBranches (branch id) is required" });
-    }
-    let matchConditions
+
+    // -------------------------- Build base match -----------------------
+    let match = {};
+
     if (customerType === "ProductMissing") {
-      matchConditions = {
-        $or: [
-          { selected: { $exists: false } }, // no 'selected' field at all
-          { selected: { $size: 0 } }        // 'selected' exists but is empty
-        ]
-      }
-    } else {
-      matchConditions = {
-        "selected.branch_id": branchId,
-        selected: { $exists: true, $ne: [] },
-        ...(customerType !== "Allcustomers" &&
-          customerType !== "ProductinfoMissing" && {
-          isActive: customerType
-        }),// only include this if not 'allcustomers'
-        ...(customerType === "ProductinfoMissing" && {
-          selected: {
-            $elemMatch: {
-              $or: [
-                { product_id: null },
-                { product_id: { $exists: false } }]
-            }
-          }
-        })
-      };
-    }
-
-
-
-    const safe = escapeRegExp(String(search).trim());
-    const regex = new RegExp(safe, "i"); // substring, case-insensitive
-    if (customerType === "ProductMissing") {
-
-      // Combine both: existing $or + search filters
-      matchConditions.$and = [
-        {
-          $or: [
-            { selected: { $exists: false } },
-            { selected: { $size: 0 } }
-          ]
-        },
-        {
-          $or: [
-            { customerName: { $regex: regex } },
-            { mobile: { $regex: regex } }
-          ]
-        }
+      match.$or = [
+        { selected: { $exists: false } },
+        { selected: { $size: 0 } }
       ];
-
     } else {
-      matchConditions = {
-        $and: [
-          {
-            "selected.branch_id": branchId,
-            selected: { $exists: true, $ne: [] },
-            ...(customerType !== "Allcustomers" &&
-              customerType !== "ProductinfoMissing" && {
-              isActive: customerType
-            }),
-            ...(customerType === "ProductinfoMissing" && {
-              selected: {
-                $elemMatch: {
-                  $or: [
-                    { product_id: null },
-                    { product_id: { $exists: false } }
-                  ]
-                }
-              }
-            })
-          },
-          {
+      match["selected.branch_id"] = branchId;
+      match.selected = { $exists: true, $ne: [] };
+
+      if (customerType !== "Allcustomers" && customerType !== "ProductinfoMissing") {
+        match.isActive = customerType;
+      }
+
+      if (customerType === "ProductinfoMissing") {
+        match.selected = {
+          $elemMatch: {
             $or: [
-              { customerName: { $regex: regex } },
-              { mobile: { $regex: regex } },
-              // ✅ Match inside selected.licensenumber
-              {
-                $expr: {
-                  $gt: [
-                    {
-                      $size: {
-                        $filter: {
-                          input: "$selected",
-                          as: "item",
-                          cond: {
-                            $regexMatch: {
-                              input: { $toString: "$$item.licensenumber" },
-                              regex: regex
-                            }
-                          }
-                        }
-                      }
-                    },
-                    0
-                  ]
-                }
-              }
+              { product_id: null },
+              { product_id: { $exists: false } }
             ]
           }
-        ]
-      };
-      // matchConditions.$or = [
-      //   { customerName: { $regex: regex } },
-      //   { mobile: { $regex: regex } },
-      //   // For licensenumber inside selected array:
-      //   {
-      //     $expr: {
-      //       $gt: [
-      //         {
-      //           $size: {
-      //             $filter: {
-      //               input: "$selected",
-      //               as: "item",
-      //               cond: {
-      //                 $regexMatch: {
-      //                   input: { $toString: "$$item.licensenumber" },
-      //                   regex: regex
-      //                 }
-      //               }
-      //             }
-      //           }
-      //         },
-      //         0
-      //       ]
-      //     }
-      //   }
-      // ];
+        };
+      }
     }
 
+    // -------------------------- Search conditions -----------------------
+    const hasSearch = search && search.trim().length > 0;
+    if (hasSearch) {
+      const safe = search.trim();
+      const regex = new RegExp(escapeRegExp(safe), "i");
 
-  
-    // 1) Get count of distinct customers matching the same criteria
-    const countPipeline = [
-      { $match: matchConditions },
-      { $group: { _id: "$_id" } },
-      { $count: "count" }
+      const searchConditions = [
+        { customerName: { $regex: regex } },
+        { mobile: { $regex: regex } }
+      ];
+
+      const searchNumber = Number(safe);
+      if (!isNaN(searchNumber)) {
+        searchConditions.push({ "selected.licensenumber": searchNumber });
+      }
+
+      match.$or = searchConditions;
+    }
+
+    // ✅ COMPLETE OPTIMIZED PIPELINE WITH $facet
+    const pipeline = [
+      { $match: match }, // Filter customers first
+
+      // Branch-specific $facet for count + paginated data
+      {
+        $facet: {
+          metadata: [
+            // Count distinct customers (handles unwind for accuracy)
+            ...(customerType !== "ProductMissing" ? [
+              {
+                $addFields: {
+                  selected: {
+                    $filter: {
+                      input: "$selected",
+                      cond: { $eq: ["$$this.branch_id", branchId] }
+                    }
+                  }
+                }
+              },
+              { $unwind: { path: "$selected", preserveNullAndEmptyArrays: true } },
+              { $group: { _id: "$_id" } }
+            ] : []),
+            { $count: "selectedbranchCustomercount" }
+          ],
+          customers: [
+            ...(customerType !== "ProductMissing" ? [
+              // Filter selected array by branch
+              {
+                $addFields: {
+                  selected: {
+                    $filter: {
+                      input: "$selected",
+                      cond: { $eq: ["$$this.branch_id", branchId] }
+                    }
+                  }
+                }
+              },
+              // Unwind filtered selected array
+              { $unwind: { path: "$selected", preserveNullAndEmptyArrays: true } },
+
+              // ✅ FIXED LOOKUP - Direct field reference
+              {
+                $lookup: {
+                  from: "products",
+                  localField: "selected.product_id",
+                  foreignField: "_id",
+                  as: "productDetails"
+                }
+              },
+              { $unwind: { path: "$productDetails", preserveNullAndEmptyArrays: true } },
+
+              // Add productName to selected
+              {
+                $addFields: {
+                  "selected.productName": {
+                    $ifNull: ["$productDetails.productName", null]
+                  }
+                }
+              },
+
+              // Group back to original customer structure
+              {
+                $group: {
+                  _id: "$_id",
+                  customerName: { $first: "$customerName" },
+                  address1: { $first: "$address1" },
+                  address2: { $first: "$address2" },
+                  country: { $first: "$country" },
+                  city: { $first: "$city" },
+                  pincode: { $first: "$pincode" },
+                  contactPerson: { $first: "$contactPerson" },
+                  landline: { $first: "$landline" },
+                  industry: { $first: "$industry" },
+                  partner: { $first: "$partner" },
+                  state: { $first: "$state" },
+                  registrationType: { $first: "$registrationType" },
+                  gstNo: { $first: "$gstNo" },
+                  email: { $first: "$email" },
+                  mobile: { $first: "$mobile" },
+                  selected: { $push: "$selected" }
+                }
+              }
+            ] : [
+              // ProductMissing case - just project basic fields
+              {
+                $project: {
+                  customerName: 1,
+                  address1: 1,
+                  address2: 1,
+                  country: 1,
+                  city: 1,
+                  pincode: 1,
+                  contactPerson: 1,
+                  landline: 1,
+                  industry: 1,
+                  partner: 1,
+                  state: 1,
+                  registrationType: 1,
+                  gstNo: 1,
+                  email: 1,
+                  mobile: 1
+                }
+              }
+            ]),
+
+            // Pagination (applies to final customers only)
+            { $sort: { customerName: 1 } },
+            { $skip: skip },
+            { $limit: pageSize }
+          ]
+        }
+      },
+      {
+        $project: {
+          selectedbranchCustomercount: {
+            $ifNull: [{ $arrayElemAt: ["$metadata.selectedbranchCustomercount", 0] }, 0]
+          },
+          customers: "$customers"
+        }
+      }
     ];
 
-    const countResult = await Customer.aggregate(countPipeline);
-    const selectedbranchCustomercount = countResult[0]?.count || 0;
-
-    // 2) Fetch paginated customers with lookup + grouping
-    let pipeline
-    if (customerType === "ProductMissing") {
-      pipeline = [
-        { $match: matchConditions },
-        {
-          $group: {                         // group back by customer
-            _id: "$_id",
-            customerName: { $first: "$customerName" },
-            address1: { $first: "$address1" },
-            address2: { $first: "$address2" },
-            country: { $first: "$country" },
-            city: { $first: "$city" },
-            pincode: { $first: "$pincode" },
-            contactPerson: { $first: "$contactPerson" },
-            landline: { $first: "$landline" },
-            industry: { $first: "$industry" },
-            partner: { $first: "$partner" },
-            state: { $first: "$state" },
-            registrationType: { $first: "$registrationType" },
-            gstNo: { $first: "$gstNo" },
-            email: { $first: "$email" },
-            mobile: { $first: "$mobile" },
-
-          }
-        }, { $sort: { customerName: 1 } },
-        { $skip: skip },
-        { $limit: pageSize }]
-    } else {
-      pipeline = [
-        { $match: matchConditions },        // filter documents first
-        { $unwind: "$selected" },           // expand selected array (for lookup)
-        {
-          $lookup: {                        // populate product
-            from: "products",
-            localField: "selected.product_id",
-            foreignField: "_id",
-            as: "productDetails"
-          }
-        },
-        {
-          $unwind: {
-            path: "$productDetails",
-            preserveNullAndEmptyArrays: true
-          }
-        },
-        {
-          $addFields: {
-            "selected.productName": "$productDetails.productName"
-          }
-        },
-        {
-          $group: {                         // group back by customer
-            _id: "$_id",
-            customerName: { $first: "$customerName" },
-            address1: { $first: "$address1" },
-            address2: { $first: "$address2" },
-            country: { $first: "$country" },
-            city: { $first: "$city" },
-            pincode: { $first: "$pincode" },
-            contactPerson: { $first: "$contactPerson" },
-            landline: { $first: "$landline" },
-            industry: { $first: "$industry" },
-            partner: { $first: "$partner" },
-            state: { $first: "$state" },
-            registrationType: { $first: "$registrationType" },
-            gstNo: { $first: "$gstNo" },
-            email: { $first: "$email" },
-            mobile: { $first: "$mobile" },
-            selected: { $push: "$selected" }
-          }
-        },
-        { $sort: { customerName: 1 } },
-        { $skip: skip },
-        { $limit: pageSize }
-      ];
-    }
-
-
-    const customers = await Customer.aggregate(pipeline);
+    const result = await Customer.aggregate(pipeline);
+    const responseData = result[0] || { selectedbranchCustomercount: 0, customers: [] };
 
     return res.status(200).json({
-      message: customers.length ? "Customer(s) found" : "No customer found",
-      data: {
-        selectedbranchCustomercount,
-        customers
-      }
+      message: responseData.customers.length ? "Customer(s) found" : "No customer found",
+      data: responseData
     });
 
   } catch (error) {
-    console.error("error:", error);
+    console.error("GetscrollCustomer error:", error);
     return res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
+
+///
+
+
+
+
 export const GetallCallnotes = async (req, res) => {
   try {
     const callnotes = await CallNote.find({})
@@ -278,6 +234,7 @@ export const GetallCallnotes = async (req, res) => {
 }
 export const GetallPartners = async (req, res) => {
   try {
+    console.log("ffffffffffffffffff")
     const partners = await Partner.find({}).populate({
       path: 'relationBranches.companyName',
       select: 'companyName' // Only populate these fields
@@ -1029,6 +986,96 @@ export const GetAllCustomer = async (req, res) => {
 }
 
 
+
+export const GetselectedCustomerForCall = async (req, res) => {
+  try {
+    const customerId = req.params.id;
+    console.log("ciddddd", customerId);
+
+    const customer = await Customer.aggregate([
+      { $match: { _id: new mongoose.Types.ObjectId(customerId) } },
+      {
+        $lookup: {
+          from: "partners",
+          localField: "partner",
+          foreignField: "_id",
+          as: "partnerDetails"
+        }
+      },
+
+      // Unwind the 'selected' array to join each branch/product separately
+      { $unwind: { path: "$selected", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: "companies",
+          localField: "selected.company_id",
+          foreignField: "_id",
+          as: "companyDetails"
+        }
+      },
+      { $unwind: { path: "$companyDetails", preserveNullAndEmptyArrays: true } },
+
+      // Lookup branch details
+      {
+        $lookup: {
+          from: "branches",
+          localField: "selected.branch_id",
+          foreignField: "_id",
+          as: "branchDetails"
+        }
+      },
+      { $unwind: { path: "$branchDetails", preserveNullAndEmptyArrays: true } },
+
+      // Lookup product details
+      {
+        $lookup: {
+          from: "products",
+          localField: "selected.product_id",
+          foreignField: "_id",
+          as: "productDetails"
+        }
+      },
+      { $unwind: { path: "$productDetails", preserveNullAndEmptyArrays: true } },
+
+
+      {
+        $addFields: {
+          "selected.product_id": "$productDetails",
+          "selected.branch_id": "$branchDetails",
+          "selected.company_id": "$companyDetails"
+        }
+      },
+
+      // Group back to restore original customer document structure
+      {
+        $group: {
+          _id: "$_id",
+          customerName: { $first: "$customerName" },
+          email: { $first: "$email" },
+          mobile: { $first: "$mobile" },
+          address1: { $first: "$address1" },
+          state: { $first: "$state" },
+          pincode: { $first: "$pincode" },
+          industry: { $first: "$industry" },
+
+          partner: { $first: "$partnerDetails" },
+          selected: { $push: "$selected" } // push all selected with branch/product details
+        }
+      }
+    ]);
+
+    if (!customer || customer.length === 0) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
+
+    return res.status(200).json({ messaage: "customer found", data: customer });
+  } catch (error) {
+    console.log("error:", error.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
 export const GetCustomer = async (req, res) => {
   const search = req.query?.search
   const role = req.query?.role
@@ -1102,31 +1149,32 @@ export const GetCustomer = async (req, res) => {
             .json({ message: "Customer(s) found", data: customers })
         }
       } else {
+
         // Search by customer name
         const searchRegex = new RegExp(`^${search}`, "i")
-        console.log("searchregex",searchRegex)
+        console.log("searchregex", searchRegex)
         const customers = await Customer.aggregate([
-           // 1. FIRST: Populate partner to search by partner name
-  {
-    $lookup: {
-      from: "partners",
-      localField: "partner",
-      foreignField: "_id",
-      as: "partnerDetails"
-    }
-  },
-  {
-    $addFields: {
-      partnerName: { $arrayElemAt: ["$partnerDetails.partner", 0] }
-    }
-  },
-  //match customername or partnername
+          // 1. FIRST: Populate partner to search by partner name
+          {
+            $lookup: {
+              from: "partners",
+              localField: "partner",
+              foreignField: "_id",
+              as: "partnerDetails"
+            }
+          },
+          {
+            $addFields: {
+              partnerName: { $arrayElemAt: ["$partnerDetails.partner", 0] }
+            }
+          },
+          //match customername or partnername
 
           {
             $match: {
-              $or:[
-                {customerName:searchRegex},
-               { partnerName:searchRegex}
+              $or: [
+                { customerName: searchRegex },
+                { partnerName: searchRegex }
               ],
               "selected.branch_id": { $in: objectIds } // Match branch_id within the selected array
             }
@@ -1176,14 +1224,7 @@ export const GetCustomer = async (req, res) => {
               as: "productDetails" // Alias for the resulting joined product documents
             }
           },
-          // {
-          //   $lookup: {
-          //     from: "partners", // Name of the Product collection
-          //     localField: "partnerObjectId", // Field from the customer document
-          //     foreignField: "_id", // Match the _id field from the Product collection
-          //     as: "partnerDetails" // Alias for the resulting joined product documents
-          //   }
-          // },
+
           {
             $addFields: {
               partner: { $arrayElemAt: ["$partnerDetails", 0] },
@@ -1402,95 +1443,143 @@ export const GetCustomer = async (req, res) => {
         }
       } else {
         // Search by customer name
+        console.log("hhh")
+        // const searchRegex = new RegExp(`^${search}`, "i")
+        // const customers = await Customer.aggregate([
+        //   {
+        //     $lookup: {
+        //       from: "partners",
+        //       localField: "partner",
+        //       foreignField: "_id",
+        //       as: "partnerDetails"
+        //     }
+        //   },
+        //   {
+        //     $addFields: {
+        //       partnerName: { $arrayElemAt: ["$partnerDetails.partner", 0] }
+        //     }
+        //   },
 
-        const searchRegex = new RegExp(`^${search}`, "i")
+        //   {
+        //     $match: {
+        //       $or: [
+        //         { customerName: searchRegex },
+        //         { partnerName: searchRegex }
+        //       ]
+        //     }
+        //   },
+        //   {
+        //     $unwind: {
+        //       path: "$selected", // Unwind the selected array to access individual items
+        //       preserveNullAndEmptyArrays: true // Keep empty arrays if any
+        //     }
+        //   },
+        //   {
+        //     $addFields: {
+        //       "selected.branchObjectId": { $toObjectId: "$selected.branch_id" },
+        //       "selected.companyObjectId": {
+        //         $toObjectId: "$selected.company_id"
+        //       },
+        //       "selected.productObjectId": {
+        //         $toObjectId: "$selected.product_id"
+        //       }
+        //     }
+        //   },
+
+        //   {
+        //     $lookup: {
+        //       from: "branches", // Name of the Branch collection
+        //       localField: "selected.branchObjectId", // Field from the customer document
+        //       foreignField: "_id", // Match the _id field from the Branch collection
+        //       as: "branchDetails" // Alias for the resulting joined branch documents
+        //     }
+        //   },
+        //   {
+        //     $lookup: {
+        //       from: "companies", // Name of the Company collection
+        //       localField: "selected.companyObjectId", // Field from the customer document
+        //       foreignField: "_id", // Match the _id field from the Company collection
+        //       as: "companyDetails" // Alias for the resulting joined company documents
+        //     }
+        //   },
+        //   {
+        //     $lookup: {
+        //       from: "products", // Name of the Product collection
+        //       localField: "selected.productObjectId", // Field from the customer document
+        //       foreignField: "_id", // Match the _id field from the Product collection
+        //       as: "productDetails" // Alias for the resulting joined product documents
+        //     }
+        //   },
+        //   {
+        //     $addFields: {
+        //       "selected.product_id": { $arrayElemAt: ["$productDetails", 0] },
+        //       "selected.branch_id": { $arrayElemAt: ["$branchDetails", 0] },
+        //       "selected.company_id": { $arrayElemAt: ["$companyDetails", 0] } // Replace product_id with populated product data
+        //     }
+        //   },
+
+        //   {
+        //     $group: {
+        //       _id: "$_id", // Group by the customer's _id
+        //       customerName: { $first: "$customerName" }, // Keep customer name
+        //       address1: { $first: "$address1" },
+        //       state: { $first: "$state" },
+        //       pincode: { $first: "$pincode" },
+        //       email: { $first: "$email" },
+        //       mobile: { $first: "$mobile" },
+        //       industry: { $first: "$industry" },
+        //       selected: { $push: "$selected" } // Push the selected data
+        //     }
+        //   }
+        // ])
+
+        // testing code
+        const partnerRegex = new RegExp(`^${search}`, "i");
+
+        const partnerIds = await Partner.find(
+          { partner: partnerRegex },
+          { _id: 1 }
+        ).lean();
+        const matchedPartnerIds = partnerIds.map(p => p._id);
+        const searchRegex = new RegExp(`^${search}`, "i");
+        const licenseNumber = Number(search);
+
         const customers = await Customer.aggregate([
           {
-    $lookup: {
-      from: "partners",
-      localField: "partner",
-      foreignField: "_id",
-      as: "partnerDetails"
-    }
-  },
-   {
-    $addFields: {
-      partnerName: { $arrayElemAt: ["$partnerDetails.partner", 0] }
-    }
-  },
-
-          {
             $match: {
-              $or:[
-                {customerName:searchRegex},
-                {partnerName:searchRegex}
+              $or: [
+                { customerName: searchRegex },
+                { mobile: searchRegex },
+                ...(Number.isInteger(licenseNumber)
+                  ? [{ "selected.licensenumber": licenseNumber }]
+                  : []),
+                ...(matchedPartnerIds.length
+                  ? [{ partner: { $in: matchedPartnerIds } }]
+                  : [])
               ]
             }
           },
+
           {
-            $unwind: {
-              path: "$selected", // Unwind the selected array to access individual items
-              preserveNullAndEmptyArrays: true // Keep empty arrays if any
-            }
-          },
-          {
-            $addFields: {
-              "selected.branchObjectId": { $toObjectId: "$selected.branch_id" },
-              "selected.companyObjectId": {
-                $toObjectId: "$selected.company_id"
-              },
-              "selected.productObjectId": {
-                $toObjectId: "$selected.product_id"
+            $project: {
+              customerName: 1,
+              mobile: 1,
+              partner: 1,
+              selected: {
+                $map: {
+                  input: "$selected",
+                  as: "s",
+                  in: {
+                    licensenumber: "$$s.licensenumber"
+                  }
+                }
               }
             }
           },
 
-          {
-            $lookup: {
-              from: "branches", // Name of the Branch collection
-              localField: "selected.branchObjectId", // Field from the customer document
-              foreignField: "_id", // Match the _id field from the Branch collection
-              as: "branchDetails" // Alias for the resulting joined branch documents
-            }
-          },
-          {
-            $lookup: {
-              from: "companies", // Name of the Company collection
-              localField: "selected.companyObjectId", // Field from the customer document
-              foreignField: "_id", // Match the _id field from the Company collection
-              as: "companyDetails" // Alias for the resulting joined company documents
-            }
-          },
-          {
-            $lookup: {
-              from: "products", // Name of the Product collection
-              localField: "selected.productObjectId", // Field from the customer document
-              foreignField: "_id", // Match the _id field from the Product collection
-              as: "productDetails" // Alias for the resulting joined product documents
-            }
-          },
-          {
-            $addFields: {
-              "selected.product_id": { $arrayElemAt: ["$productDetails", 0] },
-              "selected.branch_id": { $arrayElemAt: ["$branchDetails", 0] },
-              "selected.company_id": { $arrayElemAt: ["$companyDetails", 0] } // Replace product_id with populated product data
-            }
-          },
+          { $limit: 20 }
+        ]);
 
-          {
-            $group: {
-              _id: "$_id", // Group by the customer's _id
-              customerName: { $first: "$customerName" }, // Keep customer name
-              address1: { $first: "$address1" },
-              state: { $first: "$state" },
-              pincode: { $first: "$pincode" },
-              email: { $first: "$email" },
-              mobile: { $first: "$mobile" },
-              industry: { $first: "$industry" },
-              selected: { $push: "$selected" } // Push the selected data
-            }
-          }
-        ])
 
         if (customers.length > 0) {
           return res
@@ -1566,6 +1655,8 @@ export const customerCallRegistration = async (req, res) => {
 
     const calldata = req.body // Assuming calldata is sent in the body
     const emailsend = calldata.formdata.emailSend
+    console.log("emailsenddd", emailsend)
+    console.log("branhname", branchName)
 
     // Convert attendedBy.callerId to ObjectId
     const addTimes = (time1, time2) => {
@@ -1999,7 +2090,7 @@ export const customerCallRegistration = async (req, res) => {
 
 
         }
-
+        console.log("calldata", calldata)
         user.callregistration.push(calldata)
         const updatedCall = await user.save()
         const Id = calldata.formdata.attendedBy.callerId
@@ -2672,12 +2763,19 @@ export const GetCallRegister = async (req, res) => {
       }
     } else if (callId) {
       const callDetails = await CallRegistration.findById(callId)
-        .populate("customerid")
+        .populate({
+          path: "customerid",
+          populate: {
+            path: "partner",
+            model: "Partner" // optional if ref is defined in schema
+          }
+        })
         .populate({
           path: "callregistration.product", // Populate the product field inside callregistration array
           model: "Product"
         })
         .populate({ path: "callregistration.formdata.callnote" })
+      console.log("calldetails", callDetails)
 
       const attendedByIds = new Set()
       const completedByIds = new Set()
@@ -2918,7 +3016,7 @@ export const getallExpiredCustomerCalls = async (req, res) => {
         }
       }
     })
-    console.log("expiredcustomere",expiredCustomers.length)
+    console.log("expiredcustomere", expiredCustomers.length)
     const expiredCustomerIds = expiredCustomers.map((customer) => customer._id)
     const calls = await CallRegistration.find({
       customerid: { $in: expiredCustomerIds } // Assuming 'customerId' field in CallRegistration matches customer IDs
@@ -3448,6 +3546,856 @@ export const GeteditedCustomer = async (req, res) => {
 //     return res.status(500).json({ message: "Internal server error" })
 //   }
 // }
+//api code
+// export const Getallcallregistrationlist = async (req, res) => {
+//   try {
+// const todayStart =
+//   new Date().toISOString().split("T")[0] + "T00:00:00.000Z"
+// const todayEnd = new Date().toISOString().split("T")[0] + "T23:59:59.999Z"
+
+// const pendingcalls = await CallRegistration.aggregate([
+//   {
+//     $set: {
+//       callregistration: {
+//         $filter: {
+//           input: "$callregistration",
+//           as: "cr",
+//           cond: { $eq: ["$$cr.formdata.status", "pending"] }
+//         }
+//       }
+//     }
+//   },
+//   {
+//     $match: { "callregistration.0": { $exists: true } } // Ensures only documents with at least one pending call remain
+//   },
+//   {
+//     $lookup: {
+//       from: "products", // Replace with actual product collection name
+//       localField: "callregistration.product", // Field in CallRegistration referencing products
+//       foreignField: "_id", // Matching field in the Product collection
+//       as: "productDetails"
+//     }
+//   }
+// ],
+
+// )
+// // ADD THIS LINE:
+// // console.log(`📊 DATA SIZE for pending: ${JSON.stringify(pendingcalls).length / 1024 / 1024} MB`);
+
+// const todayscalls = await CallRegistration.aggregate([
+//   // Filter the callregistration array to keep only entries with today's attendance
+//   {
+//     $addFields: {
+//       callregistration: {
+//         $filter: {
+//           input: "$callregistration",
+//           as: "call",
+//           cond: {
+//             $and: [{ $eq: ["$$call.formdata.status", "solved"] },
+//             {
+//               $anyElementTrue: {
+//                 $map: {
+//                   input: {
+//                     $cond: {
+//                       if: {
+//                         $isArray: {
+//                           $ifNull: ["$$call.formdata.attendedBy", []]
+//                         }
+//                       },
+//                       then: { $ifNull: ["$$call.formdata.attendedBy", []] },
+//                       else: []
+//                     }
+//                   },
+//                   as: "attendance",
+//                   in: {
+//                     $and: [
+//                       { $ifNull: ["$$attendance.calldate", false] },
+//                       {
+//                         $gte: [
+//                           {
+//                             $ifNull: ["$$attendance.calldate", new Date(0)]
+//                           },
+//                           todayStart
+//                         ]
+//                       },
+//                       {
+//                         $lt: [
+//                           {
+//                             $ifNull: ["$$attendance.calldate", new Date(0)]
+//                           },
+//                           todayEnd
+//                         ]
+//                       }
+//                     ]
+//                   }
+//                 }
+//               }
+//             }
+
+//             ]
+
+//           }
+//         }
+//       }
+//     }
+//   },
+
+
+//   // Remove documents where the callregistration array is now empty
+//   {
+//     $match: {
+//       "callregistration.0": { $exists: true }
+//     }
+//   },
+
+//   // For each call in the filtered array, filter the attendedBy array to keep only today's records
+//   {
+//     $addFields: {
+//       callregistration: {
+//         $map: {
+//           input: "$callregistration",
+//           as: "call",
+//           in: {
+//             $mergeObjects: [
+//               "$$call",
+//               {
+//                 formdata: {
+//                   $mergeObjects: [
+//                     "$$call.formdata",
+//                     {
+//                       attendedBy: {
+//                         $cond: {
+//                           if: {
+//                             $isArray: {
+//                               $ifNull: ["$$call.formdata.attendedBy", []]
+//                             }
+//                           },
+//                           then: {
+//                             $filter: {
+//                               input: "$$call.formdata.attendedBy",
+//                               as: "attendance",
+//                               cond: {
+//                                 $and: [
+//                                   {
+//                                     $ifNull: [
+//                                       "$$attendance.calldate",
+//                                       false
+//                                     ]
+//                                   },
+//                                   {
+//                                     $gte: [
+//                                       {
+//                                         $ifNull: [
+//                                           "$$attendance.calldate",
+//                                           new Date(0)
+//                                         ]
+//                                       },
+//                                       todayStart
+//                                     ]
+//                                   },
+//                                   {
+//                                     $lt: [
+//                                       {
+//                                         $ifNull: [
+//                                           "$$attendance.calldate",
+//                                           new Date(0)
+//                                         ]
+//                                       },
+//                                       todayEnd
+//                                     ]
+//                                   }
+//                                 ]
+//                               }
+//                             }
+//                           },
+//                           else: "$$call.formdata.attendedBy" // Keep original if not an array
+//                         }
+//                       }
+//                     }
+//                   ]
+//                 }
+//               }
+//             ]
+//           }
+//         }
+//       }
+//     }
+//   },
+
+//   // Lookup product details
+//   {
+//     $lookup: {
+//       from: "products",
+//       localField: "callregistration.product",
+//       foreignField: "_id",
+//       as: "productDetails"
+//     }
+//   }
+// ])
+// // console.log(`📊 DATA SIZE for solved: ${JSON.stringify(todayscalls).length / 1024 / 1024} MB`);
+// // Step 1: Use a Map to store unique merged entries by _id
+// const mergedMap = new Map();
+
+// pendingcalls.forEach((call) => {
+//   mergedMap.set(call._id, { ...call })
+// })
+// todayscalls.forEach((call) => {
+//   if (mergedMap.has(call._id)) {
+//     //Merge callregistration arrays
+//     const existing = mergedMap.get(call._id)
+//     existing.callregistration = [...existing.callregistration,
+//     ...call.callregistration]
+//     mergedMap.set(call._id, existing)
+//   } else {
+//     mergedMap.set(call._id, { ...call })
+//   }
+// })
+// // Final merged array
+// const mergedCalls = Array.from(mergedMap.values());
+// // Extract unique IDs for attendedBy and completedBy
+// const attendedByIds = new Set()
+// const completedByIds = new Set()
+// const beforeSize = JSON.stringify(mergedCalls).length / 1024 / 1024;
+// console.log(`📊 BEFORE loop: ${beforeSize.toFixed(2)} MB`);
+// mergedCalls.forEach((call) =>
+//   call.callregistration.forEach((entry) => {
+//     // Handle `attendedBy`
+//     const attendedBy = entry.formdata.attendedBy
+//     if (Array.isArray(attendedBy)) {
+//       // If it's an array, iterate over it
+//       attendedBy.forEach((attendee) => {
+//         if (attendee.callerId) {
+//           attendedByIds.add(attendee.callerId.toString())
+//         } else if (attendee.name) {
+//           attendedByIds.add(attendee.name)
+//         }
+//       })
+//     } else if (typeof attendedBy === "string") {
+//       // If it's a string, add it directly
+//       attendedByIds.add(attendedBy)
+//     }
+
+//     // Handle `completedBy`
+//     const completedBy = entry.formdata.completedBy
+//     if (Array.isArray(completedBy) && completedBy.length > 0) {
+//       const completedByEntry = completedBy[0]
+//       if (completedByEntry.callerId) {
+//         completedByIds.add(completedByEntry.callerId.toString())
+//       } else if (completedByEntry.name) {
+//         completedByIds.add(completedByEntry.name)
+//         // Optionally, handle cases where only the name exists
+//         console.warn(
+//           `CompletedBy has name but no callerId: ${completedByEntry.name}`
+//         )
+//       }
+//     } else if (typeof completedBy === "string") {
+//       // If it's a string, add it directly
+//       completedByIds.add(completedBy)
+//     }
+//   })
+// )
+// // 📊 MEASURE AFTER the loop
+// // console.log(`📊 AFTER loop: ${JSON.stringify(mergedCalls).length / 1024 / 1024} MB`);
+// // console.log(`📊 SIZE INCREASE: ${((JSON.stringify(mergedCalls).length / 1024 / 1024) - beforeSize).toFixed(2)} MB`);
+
+// // Separate IDs and names from the Sets
+// const attendedByIdsArray = Array.from(attendedByIds)
+// const attendedByObjectIds = attendedByIdsArray.filter((id) =>
+//   mongoose.Types.ObjectId.isValid(id)
+// )
+
+// const attendedByNames = attendedByIdsArray
+//   .filter((id) => !mongoose.Types.ObjectId.isValid(id)) // Filter invalid ObjectIds (names)
+//   .map((name) => ({ name })) // Transform them into objects with a "name" property
+
+// const completedByIdsArray = Array.from(completedByIds)
+// const completedByObjectIds = completedByIdsArray.filter((id) =>
+//   mongoose.Types.ObjectId.isValid(id)
+// )
+
+// const completedByNames = completedByIdsArray
+//   .filter((id) => !mongoose.Types.ObjectId.isValid(id)) // Filter invalid ObjectIds (names)
+//   .map((name) => ({ name })) // Transform them into objects with a "name" property
+
+// // Query for ObjectIds (staff/admin users)
+// const [
+//   attendedByStaff,
+//   attendedByAdmin,
+//   completedByStaff,
+//   completedByAdmin
+// ] = await Promise.all([
+//   // Search attendedBy IDs in Staff
+//   mongoose
+//     .model("Staff")
+//     .find({ _id: { $in: attendedByObjectIds } })
+//     .select("name _id ")
+//     .lean(),
+
+//   // Search attendedBy IDs in Admin
+//   mongoose
+//     .model("Admin")
+//     .find({ _id: { $in: attendedByObjectIds } })
+//     .select("name _id ")
+//     .lean(),
+
+//   // Search completedBy IDs in Staff
+//   mongoose
+//     .model("Staff")
+//     .find({ _id: { $in: completedByObjectIds } })
+//     .select("name _id ")
+//     .lean(),
+
+//   // Search completedBy IDs in Admin
+//   mongoose
+//     .model("Admin")
+//     .find({ _id: { $in: completedByObjectIds } })
+//     .select("name _id ")
+//     .lean()
+// ])
+
+// // Combine results for attendedBy and completedBy
+// const attendedByUsers = [...attendedByStaff, ...attendedByAdmin]
+// const completedByUsers = [...completedByStaff, ...completedByAdmin]
+
+// // Optionally handle name-based entries as well
+// const attendedByCombined = [...attendedByUsers, ...attendedByNames]
+
+// const completedByCombined = [...completedByUsers, ...completedByNames]
+// const userMap = new Map(
+//   [...attendedByCombined, ...completedByCombined].map((user) => [
+//     user._id ? user._id.toString() : user.name,
+//     user.name
+//   ])
+// )
+// mergedCalls.forEach((call) =>
+//   call.callregistration.forEach((entry) => {
+//     // Handle attendedBy field
+//     if (Array.isArray(entry?.formdata?.attendedBy)) {
+//       entry.formdata.attendedBy = entry.formdata.attendedBy
+//         .flat() // Flatten the array
+//         .map((attendee) => {
+//           const name = userMap.get(attendee?.callerId?.toString())
+//           // If name is found, attach it to the callerId
+//           return name ? { ...attendee, callerId: { name } } : attendee // Keep original if no name found
+//         })
+//     } else if (typeof entry?.formdata?.attendedBy === "string") {
+//       // If attendedBy is a string (not an array), map it to the name if it exists in userMap
+//       const name = userMap.get(entry?.formdata?.attendedBy)
+//       entry.formdata.attendedBy = name
+//         ? { callerId: { name } } // Map the string to an object with a name
+//         : { callerId: entry?.formdata?.attendedBy } // Keep the original if no name found
+//     }
+
+//     // Handle completedBy field
+//     if (
+//       Array.isArray(entry?.formdata?.completedBy) &&
+//       entry?.formdata?.completedBy.length > 0
+//     ) {
+//       // If completedBy is an array, map over each entry (assuming one entry)
+//       const completedUser = userMap.get(
+//         entry?.formdata?.completedBy[0]?.callerId?.toString()
+//       )
+//       entry.formdata.completedBy = completedUser
+//         ? [{ ...entry?.formdata?.completedBy[0], name: completedUser }] // Add the name to the first item
+//         : entry.formdata.completedBy // Keep as is if no name found
+//     } else if (typeof entry?.formdata?.completedBy === "string") {
+//       // If completedBy is a string, map it to the name if it exists in userMap
+//       const name = userMap.get(entry?.formdata?.completedBy)
+//       entry.formdata.completedBy = name
+//         ? { callerId: { name } } // Map the string to an object with a name
+//         : { callerId: entry?.formdata?.completedBy } // Keep the original if no name found
+//     }
+//   })
+// )
+// console.log(`📊 AFTER loop: ${JSON.stringify(mergedCalls).length / 1024 / 1024} MB`);
+// console.log(`📊 SIZE INCREASE: ${((JSON.stringify(mergedCalls).length / 1024 / 1024) - beforeSize).toFixed(2)} MB`);
+
+// return res.status(200).json({ message: "calllist found", data: mergedCalls })
+//   } catch (error) {
+//     console.error("Error fetching call data:", error)
+//     return res.status(500).json({ message: "Internal server error" })
+//   }
+
+// }
+// //new api code
+// export const Getallcallregistrationlist = async (req, res) => {
+//   try {
+//     const today = new Date().toISOString().split("T")[0];
+//     const todayStart = new Date(`${today}T00:00:00.000Z`);
+//     const todayEnd = new Date(`${today}T23:59:59.999Z`);
+//     const result = await CallRegistration.aggregate([
+//       {
+//         $facet: {
+//           pending: [
+//             {
+//               $match: {
+//                 "callregistration.formdata.status": "pending"
+//               }
+//             },
+//             {
+//               $project: {
+//                 callregistration: {
+//                   $filter: {
+//                     input: "$callregistration",
+//                     as: "cr",
+//                     cond: { $eq: ["$$cr.formdata.status", "pending"] }
+//                   }
+//                 }
+//               }
+//             }
+//           ],
+
+//           todaySolved: [
+//             {
+//               $match: {
+//                 "callregistration.formdata.status": "solved",
+//                 "callregistration.formdata.attendedBy.calldate": {
+//                   $gte: todayStart,
+//                   $lt: todayEnd
+//                 }
+//               }
+//             },
+//             {
+//               $project: {
+//                 callregistration: {
+//                   $filter: {
+//                     input: "$callregistration",
+//                     as: "cr",
+//                     cond: {
+//                       $and: [
+//                         { $eq: ["$$cr.formdata.status", "solved"] },
+//                         {
+//                           $anyElementTrue: {
+//                             $map: {
+//                               input: { $ifNull: ["$$cr.formdata.attendedBy", []] },
+//                               as: "att",
+//                               in: {
+//                                 $and: [
+//                                   { $gte: ["$$att.calldate", todayStart] },
+//                                   { $lt: ["$$att.calldate", todayEnd] }
+//                                 ]
+//                               }
+//                             }
+//                           }
+//                         }
+//                       ]
+//                     }
+//                   }
+//                 }
+//               }
+//             }
+//           ]
+//         }
+//       },
+
+//       /* 🔥 MERGE BOTH ARRAYS */
+//       {
+//         $project: {
+//           data: { $concatArrays: ["$pending", "$todaySolved"] }
+//         }
+//       },
+//       { $unwind: "$data" },
+//       { $replaceRoot: { newRoot: "$data" } },
+
+//       /* ✅ RESTORE ORIGINAL SHAPE */
+//       {
+//         $group: {
+//           _id: "$_id",
+//           callregistration: { $push: "$callregistration" },
+//           root: { $first: "$$ROOT" }
+//         }
+//       },
+//       {
+//         $project: {
+//           _id: 1,
+//           callregistration: {
+//             $reduce: {
+//               input: "$callregistration",
+//               initialValue: [],
+//               in: { $concatArrays: ["$$value", "$$this"] }
+//             }
+//           },
+//           root: 1
+//         }
+//       },
+//       {
+//         $replaceRoot: {
+//           newRoot: {
+//             $mergeObjects: ["$root", { callregistration: "$callregistration" }]
+//           }
+//         }
+//       }
+//     ]);
+
+//     // const result = await CallRegistration.aggregate([
+//     //   {
+//     //     $facet: {
+//     //       pending: [
+//     //         {
+//     //           $match: {
+//     //             "callregistration.formdata.status": "pending"
+//     //           }
+//     //         },
+//     //         {
+//     //           $project: {
+//     //             callregistration: {
+//     //               $filter: {
+//     //                 input: "$callregistration",
+//     //                 as: "cr",
+//     //                 cond: { $eq: ["$$cr.formdata.status", "pending"] }
+//     //               }
+//     //             }
+//     //           }
+//     //         }
+//     //       ],
+
+//     //       todaySolved: [
+//     //         {
+//     //           $match: {
+//     //             "callregistration.formdata.status": "solved",
+//     //             "callregistration.formdata.attendedBy.calldate": {
+//     //               $gte: todayStart,
+//     //               $lt: todayEnd
+//     //             }
+//     //           }
+//     //         },
+//     //         {
+//     //           $project: {
+//     //             callregistration: {
+//     //               $filter: {
+//     //                 input: "$callregistration",
+//     //                 as: "cr",
+//     //                 cond: {
+//     //                   $and: [
+//     //                     { $eq: ["$$cr.formdata.status", "solved"] },
+//     //                     {
+//     //                       $anyElementTrue: {
+//     //                         $map: {
+//     //                           input: { $ifNull: ["$$cr.formdata.attendedBy", []] },
+//     //                           as: "att",
+//     //                           in: {
+//     //                             $and: [
+//     //                               { $gte: ["$$att.calldate", todayStart] },
+//     //                               { $lt: ["$$att.calldate", todayEnd] }
+//     //                             ]
+//     //                           }
+//     //                         }
+//     //                       }
+//     //                     }
+//     //                   ]
+//     //                 }
+//     //               }
+//     //             }
+//     //           }
+//     //         }
+//     //       ]
+//     //     }
+//     //   },
+//     //   {
+//     //     $project: {
+//     //       merged: { $concatArrays: ["$pending", "$todaySolved"] }
+//     //     }
+//     //   },
+//     //   { $unwind: "$merged" },
+//     //   { $replaceRoot: { newRoot: "$merged" } }
+//     // ]);
+
+//     /* ------------------------------------
+//        EXTRACT UNIQUE USER IDS
+//     ------------------------------------ */
+
+//     const userIds = new Set();
+
+//     result.forEach(doc =>
+//       doc.callregistration.forEach(cr => {
+//         const attended = cr.formdata.attendedBy || [];
+//         const completed = cr.formdata.completedBy || [];
+
+//         attended.forEach(a => a?.callerId && userIds.add(a.callerId.toString()));
+//         completed.forEach(c => c?.callerId && userIds.add(c.callerId.toString()));
+//       })
+//     );
+
+//     const ids = [...userIds].filter(id => mongoose.Types.ObjectId.isValid(id));
+
+//     /* ------------------------------------
+//        FETCH USERS ONCE
+//     ------------------------------------ */
+
+//     const [staff, admin] = await Promise.all([
+//       mongoose.model("Staff").find({ _id: { $in: ids } }).select("name").lean(),
+//       mongoose.model("Admin").find({ _id: { $in: ids } }).select("name").lean()
+//     ]);
+
+//     const userMap = new Map(
+//       [...staff, ...admin].map(u => [u._id.toString(), u.name])
+//     );
+
+//     /* ------------------------------------
+//        ATTACH NAMES
+//     ------------------------------------ */
+
+//     result.forEach(doc =>
+//       doc.callregistration.forEach(cr => {
+//         if (Array.isArray(cr.formdata.attendedBy)) {
+//           cr.formdata.attendedBy = cr.formdata.attendedBy.map(a => ({
+//             ...a,
+//             callerId: { name: userMap.get(a.callerId?.toString()) || "Unknown" }
+//           }));
+//         }
+
+//         if (Array.isArray(cr.formdata.completedBy)) {
+//           cr.formdata.completedBy = cr.formdata.completedBy.map(c => ({
+//             ...c,
+//             name: userMap.get(c.callerId?.toString()) || "Unknown"
+//           }));
+//         }
+//       })
+//     );
+
+//     return res.status(200).json({
+//       message: "calllist found",
+//       data: result
+//     });
+//   } catch (error) {
+//     console.error("Error fetching call data:", error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
+export const existsameCallnote = async (req, res) => {
+  try {
+    const { customerId, callNoteId } = req.query
+    const customerObjectId = new mongoose.Types.ObjectId(customerId)
+    console.log("customerobjectid", customerObjectId)
+    const callnoteObjectId = new mongoose.Types.ObjectId(callNoteId)
+    console.log('callnoteid', callnoteObjectId)
+
+    // Pure existence check - FASTEST method
+    const pendingCount = await CallRegistration.countDocuments({
+      customerid: customerObjectId,
+      "callregistration": {
+        $elemMatch: {
+          "formdata.status": "pending",
+          "formdata.callnote": callnoteObjectId
+        }
+      }
+    });
+
+
+    const exists = pendingCount > 0;
+    console.log('Exists:', exists); // This WILL return true ✅
+
+
+    console.log("existsss", exists)
+
+    return res.status(200).json({
+      exists
+    });
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+
+}
+
+export const Getallcallregistrationlist = async (req, res) => {
+  try {
+    // Set today start/end in ISO format
+    const todayStart = new Date().toISOString().split("T")[0] + "T00:00:00.000Z";
+    const todayEnd = new Date().toISOString().split("T")[0] + "T23:59:59.999Z";
+
+    // 1️⃣ Aggregate pending + today's solved calls
+    let aggregated = await CallRegistration.aggregate([
+      {
+        $facet: {
+          pending: [
+            {
+              $set: {
+                callregistration: {
+                  $filter: {
+                    input: "$callregistration",
+                    as: "cr",
+                    cond: { $eq: ["$$cr.formdata.status", "pending"] }
+                  }
+                }
+              }
+            },
+            { $match: { "callregistration.0": { $exists: true } } }
+          ],
+          todaySolved: [
+            {
+              $set: {
+                callregistration: {
+                  $filter: {
+                    input: "$callregistration",
+                    as: "cr",
+                    cond: {
+                      $and: [
+                        { $eq: ["$$cr.formdata.status", "solved"] },
+                        {
+                          $anyElementTrue: {
+                            $map: {
+                              input: {
+                                $cond: {
+                                  if: { $isArray: "$$cr.formdata.attendedBy" },
+                                  then: "$$cr.formdata.attendedBy",
+                                  else: {
+                                    $cond: {
+                                      if: { $eq: ["$$cr.formdata.attendedBy", null] },
+                                      then: [],
+                                      else: ["$$cr.formdata.attendedBy"]
+                                    }
+                                  }
+                                }
+                              },
+                              as: "att",
+                              in: {
+                                $and: [
+                                  { $gte: ["$$att.calldate", todayStart] },
+                                  { $lt: ["$$att.calldate", todayEnd] }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            { $match: { "callregistration.0": { $exists: true } } }
+          ]
+        }
+      },
+      // 2️⃣ Merge both arrays into one
+      {
+        $project: {
+          data: { $concatArrays: ["$pending", "$todaySolved"] }
+        }
+      },
+      { $unwind: "$data" },
+      { $replaceRoot: { newRoot: "$data" } },
+      {
+        $group: {
+          _id: "$_id",
+          callregistration: { $push: "$callregistration" },
+          root: { $first: "$$ROOT" }
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          callregistration: {
+            $reduce: {
+              input: "$callregistration",
+              initialValue: [],
+              in: { $concatArrays: ["$$value", "$$this"] }
+            }
+          },
+          root: 1
+        }
+      },
+      { $replaceRoot: { newRoot: { $mergeObjects: ["$root", { callregistration: "$callregistration" }] } } },
+
+      // 3️⃣ Lookup products ONCE after merging
+      {
+        $lookup: {
+          from: "products",
+          localField: "callregistration.product",
+          foreignField: "_id",
+          as: "productDetails"
+        }
+      }
+    ]);
+
+    const mergedCalls = aggregated;
+
+    // 4️⃣ Collect unique attendedBy & completedBy IDs/names
+    const attendedByIds = new Set();
+    const completedByIds = new Set();
+
+    mergedCalls.forEach((call) => {
+      call.callregistration.forEach((entry) => {
+        // attendedBy
+        let attendedBy = entry.formdata.attendedBy || [];
+        if (!Array.isArray(attendedBy)) attendedBy = [attendedBy];
+        attendedBy.forEach((attendee) => {
+          if (!attendee) return;
+          if (attendee.callerId) attendedByIds.add(attendee.callerId.toString());
+          else if (attendee.name) attendedByIds.add(attendee.name);
+        });
+
+        // completedBy
+        let completedBy = entry.formdata.completedBy || [];
+        if (!Array.isArray(completedBy)) completedBy = [completedBy];
+        completedBy.forEach((c) => {
+          if (!c) return;
+          if (c.callerId) completedByIds.add(c.callerId.toString());
+          else if (c.name) completedByIds.add(c.name);
+        });
+      });
+    });
+
+    // Separate ObjectIds vs names
+    const attendedByObjectIds = Array.from(attendedByIds).filter((id) => mongoose.Types.ObjectId.isValid(id));
+    const attendedByNames = Array.from(attendedByIds).filter((id) => !mongoose.Types.ObjectId.isValid(id)).map((name) => ({ name }));
+    const completedByObjectIds = Array.from(completedByIds).filter((id) => mongoose.Types.ObjectId.isValid(id));
+    const completedByNames = Array.from(completedByIds).filter((id) => !mongoose.Types.ObjectId.isValid(id)).map((name) => ({ name }));
+
+    // 5️⃣ Fetch staff/admin once per type
+    const [
+      attendedByStaff,
+      attendedByAdmin,
+      completedByStaff,
+      completedByAdmin
+    ] = await Promise.all([
+      mongoose.model("Staff").find({ _id: { $in: attendedByObjectIds } }).select("name _id").lean(),
+      mongoose.model("Admin").find({ _id: { $in: attendedByObjectIds } }).select("name _id").lean(),
+      mongoose.model("Staff").find({ _id: { $in: completedByObjectIds } }).select("name _id").lean(),
+      mongoose.model("Admin").find({ _id: { $in: completedByObjectIds } }).select("name _id").lean()
+    ]);
+
+    const attendedByCombined = [...attendedByStaff, ...attendedByAdmin, ...attendedByNames];
+    const completedByCombined = [...completedByStaff, ...completedByAdmin, ...completedByNames];
+
+    const userMap = new Map([...attendedByCombined, ...completedByCombined].map((user) => [
+      user._id ? user._id.toString() : user.name, user.name
+    ]));
+
+    // 6️⃣ Map names back to attendedBy/completedBy
+    mergedCalls.forEach((call) =>
+      call.callregistration.forEach((entry) => {
+        // attendedBy
+        let attendedBy = entry.formdata.attendedBy || [];
+        if (!Array.isArray(attendedBy)) attendedBy = [attendedBy];
+        entry.formdata.attendedBy = attendedBy.map((att) => {
+          if (!att) return att;
+          const name = att.callerId ? userMap.get(att.callerId.toString()) : userMap.get(att.name);
+          return name ? { ...att, callerId: { name } } : att;
+        });
+
+        // completedBy
+        let completedBy = entry.formdata.completedBy || [];
+        if (!Array.isArray(completedBy)) completedBy = [completedBy];
+        entry.formdata.completedBy = completedBy.map((c) => {
+          if (!c) return c;
+          const name = c.callerId ? userMap.get(c.callerId.toString()) : userMap.get(c.name);
+          return name ? { ...c, name } : c;
+        });
+      })
+    );
+
+    return res.status(200).json({ message: "calllist found", data: mergedCalls });
+  } catch (error) {
+    console.error("Error fetching call data:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+
+
 export const Downloadcustomerlist = async (req, res) => {
   try {
     const { customerType, branchselected, searchTerm } = req.query;

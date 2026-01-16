@@ -33,7 +33,10 @@ import {
   DeletepartnerBranch,
   GetallproductmissingCustomer,
   GeteditedCustomer,
-  Downloadcustomerlist
+  Downloadcustomerlist,
+  Getallcallregistrationlist,
+  GetselectedCustomerForCall,
+  existsameCallnote
 } from "../../controller/secondaryUserController/customerController.js"
 
 const router = express.Router()
@@ -49,6 +52,7 @@ router.put("/callnotesEdit", authMiddleware, UpdateCallnotes)
 router.post("/customerEdit", authMiddleware, CustomerEdit)
 router.get("/getLicensenumber", authMiddleware, GetLicense)
 router.get("/getCustomer", authMiddleware, GetCustomer)
+router.get("/getselectedcustomerforCall/:id", authMiddleware, GetselectedCustomerForCall)
 router.get("/getallCustomer", authMiddleware, GetAllCustomer)
 router.post("/callRegistration", authMiddleware, customerCallRegistration)
 router.get("/getcallregister/:callId", authMiddleware, GetCallRegister)
@@ -58,6 +62,8 @@ router.get(
   authMiddleware,
   loggeduserCallsCurrentDateCalls
 )
+router.get("/checkexistsamecallnote", authMiddleware, existsameCallnote)
+router.get("/getcallregistrationlist", authMiddleware, Getallcallregistrationlist)
 router.get("/getselectedDateCalls", authMiddleware, GetselectedDateCalls)
 router.delete("/deleteCustomer", authMiddleware, DeleteCustomer)
 router.post("/partnerRegistration", authMiddleware, PartnerRegistration)
