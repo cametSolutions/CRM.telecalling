@@ -8,7 +8,7 @@ import { PropagateLoader } from "react-spinners"
 import UseFetch from "../../../hooks/useFetch"
 import { getLocalStorageItem } from "../../../helper/localstorage"
 // const socket = io("https://www.crm.camet.in");
-const socket = io("http://localhost:9000") // Adjust the URL to your backend
+// const socket = io("http://localhost:9000") // Adjust the URL to your backend
 
 const CallregistrationList = () => {
   const navigate = useNavigate()

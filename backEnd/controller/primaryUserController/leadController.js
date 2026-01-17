@@ -208,7 +208,14 @@ export const Checkexistinglead = async (req, res) => {
 };
 export const GetallTask = async (req, res) => {
   try {
-    const tasks = await Task.find({ listed: true });
+    const { istaskregistration = false } = req.query
+    console.log("check:", istaskregistration, typeof istaskregistration)
+    let query = {}
+    if (istaskregistration === "false" || istaskregistration === false) {
+      query = { listed: true }
+    }
+    console.log("query", query)
+    const tasks = await Task.find(query);
     if (tasks) {
       return res.status(200).json({ message: "Task found", data: tasks });
     } else {
@@ -472,6 +479,24 @@ export const UpdateCollection = async (req, res) => {
       .json({ successs: false, message: "Internal server error" });
   }
 };
+export const ChecktodeleteTask = async (req, res) => {
+  try {
+    const { id } = req.query
+    const objectId = new mongoose.Types.ObjectId(id)
+    const result = await LeadMaster.find({
+      "activityLog.taskId": objectId
+    })
+    if (result && result.length > 0) {
+      return res.status(200).json({ message: "found task", data: false })
+    } else {
+      return res.status(200).json({ message: "not found to delete", data: true })
+    }
+
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const TaskRegistration = async (req, res) => {
   try {
     const formData = req.body;
