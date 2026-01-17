@@ -1829,7 +1829,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         },
 
         reallocatedTo: formData.followupType === "closed",
-        leadLost: formData.followupType === "lost",
+
         ...(formData.followupType === "closed" && {
           leadConvertedDate: new Date()
         }),
@@ -3205,19 +3205,125 @@ export const GetfollowupsummaryReport = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+
 export const Getallsalesfunnels = async (req, res) => {
   try {
-    const { startDate, endDate } = req.query
-    const start = new Date(startDate)
-    const end = new Date(endDate)
+    const { startDate, endDate } = req.query;
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const result = await LeadMaster.aggregate([
+      // 1️⃣ Unwind activityLog
+      { $unwind: "$activityLog" },
+
+      // 2️⃣ Match month range using submissionDate
+      {
+        $match: {
+          "activityLog.submissionDate": {
+            $gte: start,
+            $lte: end
+          }
+        }
+      },
+
+      // 3️⃣ Classify funnel stage
+      {
+        $addFields: {
+          stage: {
+            $switch: {
+              branches: [
+                {
+                  case: {
+                    $and: [
+                      { $eq: ["$activityLog.allocationChanged", false] },
+                      { $eq: ["$activityLog.taskTo", "followup"] }
+                    ]
+                  },
+                  then: "Contacted"
+                },
+                {
+                  case: { $eq: ["$activityLog.taskfromFollowup", true] },
+                  then: "System Study"
+                },
+                {
+                  case: { $eq: ["$leadLost", true] },
+                  then: "Lost"
+                },
+                {
+                  case: { $eq: ["$activityLog.followupClosed", true] },
+                  then: "Converted"
+                }
+              ],
+              default: "New Leads"
+            }
+          }
+        }
+      },
+
+      // 4️⃣ Group by stage
+      {
+        $group: {
+          _id: "$stage",
+          count: { $sum: 1 },
+          value: { $sum: "$netAmount" }
+        }
+      },
+
+      // 5️⃣ Sort in funnel order
+      {
+        $addFields: {
+          order: {
+            $indexOfArray: [
+              ["New Leads", "Contacted", "System Study", "Lost", "Converted"],
+              "$_id"
+            ]
+          }
+        }
+      },
+      { $sort: { order: 1 } }
+    ]);
+
+    // 6️⃣ Calculate Conversion %
+    let previousCount = null;
+    const formatted = result.map((item) => {
+      const conv =
+        previousCount === null
+          ? "–"
+          : `${((item.count / previousCount) * 100).toFixed(1)}%`;
+
+      previousCount = item.count;
+
+      return {
+        stage: item._id,
+        count: item.count,
+        value: item.value,
+        conversion: conv
+      };
+    });
+console.log("formateeddd",formatted)
+    return res.status(200).json({message:"data found",data:formatted});
 
   } catch (error) {
-    console.log("error:", error.message)
-    return res.status(500).json({ message: "Internal server error" })
+    console.log("error:", error.message);
+    return res.status(500).json({ message: "Internal server error" });
   }
-}
+};
+
+// export const Getallsalesfunnels = async (req, res) => {
+//   try {
+//     const { startDate, endDate } = req.query
+//     const start = new Date(startDate)
+//     const end = new Date(endDate)
+
+//   } catch (error) {
+//     console.log("error:", error.message)
+//     return res.status(500).json({ message: "Internal server error" })
+//   }
+// }
 export const GetallproductwiseReport = async (req, res) => {
   try {
+    console.log("hhhhhhhhhhhhhh")
     const { startDate, endDate } = req.query;
     console.log(startDate, endDate)
 

@@ -15,7 +15,7 @@ import {
   Mail,
   User,
   Calendar,
-  ArrowRight,
+  
   Clock,
   UserPlus,
   UserCheck,
