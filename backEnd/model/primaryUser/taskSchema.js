@@ -1,7 +1,9 @@
 import mongoose from "mongoose"
 
 const taskSchema = new mongoose.Schema({
-  taskName: { type: String, required: true }
+  taskName: { type: String, required: true },
+  code: { type: String },
+  listed: { type: Boolean, default: true }
   // cmp_id: { type: String, required: true },
   // Primary_user_id: { type: String, required: true }
 })
