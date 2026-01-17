@@ -2,6 +2,7 @@ import Swal from "sweetalert2"
 import { MdDelete } from "react-icons/md"
 
 function DeleteAlert({ onDelete, Id, category, branchId }) {
+console.log(category)
 
   //catergory used in leaveapplication delete
   const handleDelete = async () => {
@@ -21,6 +22,7 @@ function DeleteAlert({ onDelete, Id, category, branchId }) {
       let success
       if (category === null || category === undefined) {
         success = await onDelete(Id, branchId)
+console.log(success)
       } else {
         success = await onDelete(Id, category)
       }
