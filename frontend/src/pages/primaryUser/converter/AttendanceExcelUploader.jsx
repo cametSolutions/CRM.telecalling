@@ -1,4 +1,4 @@
-import  { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import io from "socket.io-client"
 import * as XLSX from "xlsx" // Import XLSX for creating the Excel file
 
@@ -16,7 +16,6 @@ const AttendanceExcelUploader = () => {
   const [success, setSuccess] = useState(false)
   const [nonsavedData, setNonsavedData] = useState([])
   const [duplicateData, setDuplicateData] = useState([])
-
   const handleFileUpload = (e) => {
     const selectedFile = e.target.files[0]
     if (selectedFile) {
@@ -151,7 +150,7 @@ const AttendanceExcelUploader = () => {
             </button>
           </div>
         )}
-
+*/}
         {nonsavedData.length > 0 && (
           <div className="mt-4 flex">
             <p className="text-red-400">{failMessage}</p>
@@ -162,7 +161,7 @@ const AttendanceExcelUploader = () => {
               Failed Data
             </button>
           </div>
-        )} */}
+        )}
       </div>
     </div>
   )
