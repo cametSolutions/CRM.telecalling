@@ -40,9 +40,10 @@ ChecktodeleteTask
 // Getallsalesfunnels
 } from "../../controller/primaryUserController/leadController.js";
 const router = express.Router();
-// router.get("/getsalesfunnels",authMiddleware,Getallsalesfunnels)
-// router.get("/getallproductwisereport", authMiddleware, GetallproductwiseReport);
-// router.get("/getfollowupsummaryReport",authMiddleware,GetfollowupsummaryReport)
+router.get("/getsalesfunnels",authMiddleware,Getallsalesfunnels)
+router.get("/getallproductwisereport", authMiddleware, GetallproductwiseReport);
+router.get("/getfollowupsummaryReport",authMiddleware,GetfollowupsummaryReport)
+router.get("/getstaffdailyreports",authMiddleware,)
 router.get("/checktodelete",authMiddleware,ChecktodeleteTask)
 router.post("/leadRegister", authMiddleware, LeadRegister);
 router.put("/fix-leadverified", authMiddleware, fixLeadVerifiedField);
