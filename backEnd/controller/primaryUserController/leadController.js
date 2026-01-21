@@ -6,6 +6,8 @@ import Customer from "../../model/secondaryUser/customerSchema.js";
 import Task from "../../model/primaryUser/taskSchema.js";
 import LeadId from "../../model/primaryUser/leadIdSchema.js";
 import Service from "../../model/primaryUser/servicesSchema.js";
+import getLeadMetricsForSingleDay from "../../helper/leadandtaskcount.js";
+import { getCallMetricsForSingleDay } from "../../helper/callcount.js";
 import { formatDate } from "../../../frontend/src/utils/dateUtils.js";
 export const LeadRegister = async (req, res) => {
   try {
@@ -3205,6 +3207,78 @@ export const GetfollowupsummaryReport = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+export const Getalltasktoreport = async (req, res) => {
+  try {
+    const result = await Task.find({ listed: true })
+    return res.status(200).json({ message: "result found", data: result })
+  } catch (error) {
+    console.log("error:", error.message)
+    res.status(500).json({ message: "Internal server error" })
+  }
+}
+export const Getdailystaffreport = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query
+    console.log("sta", startDate)
+    console.log("end", endDate)
+    if (!startDate || !endDate) {
+      return res.status(400).json({ message: "startDate and endDate required" });
+    }
+    const allTasks = await Task.find({ listed: true }, { taskName: 1, _id: 0 }).lean();
+    const taskNames = allTasks.map(t => t.taskName);
+
+    // Use FULL date range from req.query
+    const reportStart = new Date(startDate);
+    const reportEnd = new Date(endDate);
+    reportEnd.setHours(23, 59, 59, 999);
+
+    console.log(`Full range: ${startDate} to ${endDate}`);
+
+    // **DAILY LOOP** - Process each day between startDate & endDate
+    const dailyReports = [];
+    let currentDate = new Date(reportStart);
+
+
+    const dateStr = currentDate.toLocaleDateString('en-IN'); // "25-1-2026"
+
+    // Pass ONLY the day's date to helper - it handles start/end of day
+    const leadMetrics = await getLeadMetricsForSingleDay(currentDate, reportEnd);
+    console.log("leadmetidds", leadMetrics)
+    const callMetrics = await getCallMetricsForSingleDay(currentDate, reportEnd)
+    console.log("callmetrics", callMetrics)
+
+    const dayReport = leadMetrics.map(lead => {
+      const callsData = callMetrics.find(
+        call => String(call.staffId) === String(lead.staffId)
+      );
+
+
+      // 🔹 Base object
+      const row = {
+        Date: dateStr,
+        staffName: lead.staffName,
+        Calls: callsData ? callsData.Calls : 0,
+        newlead: lead.newlead || 0
+      };
+
+      // 🔹 Add ALL tasks dynamically
+      taskNames.forEach(taskName => {
+        row[taskName] = lead.tasks?.[taskName] || 0;
+      });
+
+      return row;
+    });
+
+    dailyReports.push(...dayReport);
+    currentDate.setDate(currentDate.getDate() + 1);
+    console.log("dalyrropoerts", dailyReports)
+    return res.status(200).json({ messaage: "daily report found", data: dailyReports })
+
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 
 export const Getallsalesfunnels = async (req, res) => {
   try {
@@ -3213,11 +3287,13 @@ export const Getallsalesfunnels = async (req, res) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
+
+    // 1️⃣ Aggregation Pipeline
     const result = await LeadMaster.aggregate([
-      // 1️⃣ Unwind activityLog
+      // Unwind activityLog
       { $unwind: "$activityLog" },
 
-      // 2️⃣ Match month range using submissionDate
+      // Filter by date range
       {
         $match: {
           "activityLog.submissionDate": {
@@ -3227,7 +3303,7 @@ export const Getallsalesfunnels = async (req, res) => {
         }
       },
 
-      // 3️⃣ Classify funnel stage
+      // Classify funnel stage
       {
         $addFields: {
           stage: {
@@ -3261,48 +3337,146 @@ export const Getallsalesfunnels = async (req, res) => {
         }
       },
 
-      // 4️⃣ Group by stage
+      // Group by stage
       {
         $group: {
           _id: "$stage",
           count: { $sum: 1 },
           value: { $sum: "$netAmount" }
         }
-      },
-
-      // 5️⃣ Sort in funnel order
-      {
-        $addFields: {
-          order: {
-            $indexOfArray: [
-              ["New Leads", "Contacted", "System Study", "Lost", "Converted"],
-              "$_id"
-            ]
-          }
-        }
-      },
-      { $sort: { order: 1 } }
+      }
     ]);
 
-    // 6️⃣ Calculate Conversion %
-    let previousCount = null;
-    const formatted = result.map((item) => {
-      const conv =
-        previousCount === null
-          ? "–"
-          : `${((item.count / previousCount) * 100).toFixed(1)}%`;
+    // 2️⃣ Define funnel order
+    const FUNNEL_STAGES = [
+      "New Leads",
+      "Contacted",
+      "System Study",
+      "Lost",
+      "Converted"
+    ];
 
-      previousCount = item.count;
+    // 3️⃣ Convert aggregation result to map
+    const stageMap = result.reduce((acc, item) => {
+      acc[item._id] = {
+        count: item.count,
+        value: item.value
+      };
+      return acc;
+    }, {});
+
+    // 4️⃣ Build final response with default 0 values
+    let previousCount = null;
+
+    const formatted = FUNNEL_STAGES.map((stage) => {
+      const count = stageMap[stage]?.count || 0;
+      const value = stageMap[stage]?.value || 0;
+
+      const conversion =
+        previousCount === null || previousCount === 0
+          ? "0%"
+          : `${((count / previousCount) * 100).toFixed(1)}%`;
+
+      previousCount = count;
 
       return {
-        stage: item._id,
-        count: item.count,
-        value: item.value,
-        conversion: conv
+        stage,
+        count,
+        value,
+        conversion
       };
     });
-console.log("formateeddd",formatted)
-    return res.status(200).json({message:"data found",data:formatted});
+
+    // const result = await LeadMaster.aggregate([
+    //   // 1️⃣ Unwind activityLog
+    //   { $unwind: "$activityLog" },
+
+    //   // 2️⃣ Match month range using submissionDate
+    //   {
+    //     $match: {
+    //       "activityLog.submissionDate": {
+    //         $gte: start,
+    //         $lte: end
+    //       }
+    //     }
+    //   },
+
+    //   // 3️⃣ Classify funnel stage
+    //   {
+    //     $addFields: {
+    //       stage: {
+    //         $switch: {
+    //           branches: [
+    //             {
+    //               case: {
+    //                 $and: [
+    //                   { $eq: ["$activityLog.allocationChanged", false] },
+    //                   { $eq: ["$activityLog.taskTo", "followup"] }
+    //                 ]
+    //               },
+    //               then: "Contacted"
+    //             },
+    //             {
+    //               case: { $eq: ["$activityLog.taskfromFollowup", true] },
+    //               then: "System Study"
+    //             },
+    //             {
+    //               case: { $eq: ["$leadLost", true] },
+    //               then: "Lost"
+    //             },
+    //             {
+    //               case: { $eq: ["$activityLog.followupClosed", true] },
+    //               then: "Converted"
+    //             }
+    //           ],
+    //           default: "New Leads"
+    //         }
+    //       }
+    //     }
+    //   },
+
+    //   // 4️⃣ Group by stage
+    //   {
+    //     $group: {
+    //       _id: "$stage",
+    //       count: { $sum: 1 },
+    //       value: { $sum: "$netAmount" }
+    //     }
+    //   },
+
+    //   // 5️⃣ Sort in funnel order
+    //   {
+    //     $addFields: {
+    //       order: {
+    //         $indexOfArray: [
+    //           ["New Leads", "Contacted", "System Study", "Lost", "Converted"],
+    //           "$_id"
+    //         ]
+    //       }
+    //     }
+    //   },
+    //   { $sort: { order: 1 } }
+    // ]);
+
+    // // 6️⃣ Calculate Conversion %
+    // let previousCount = null;
+    // const formatted = result.map((item) => {
+    //   const conv =
+    //     previousCount === null
+    //       ? "–"
+    //       : `${((item.count / previousCount) * 100).toFixed(1)}%`;
+
+    //   previousCount = item.count;
+
+    //   return {
+    //     stage: item._id,
+    //     count: item.count,
+    //     value: item.value,
+    //     conversion: conv
+    //   };
+    // });
+    console.log("formateeddd", formatted)
+    return res.status(200).json({ message: "data found", data: formatted });
 
   } catch (error) {
     console.log("error:", error.message);

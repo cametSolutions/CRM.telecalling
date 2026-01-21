@@ -35,13 +35,16 @@ import {
   UpdatepaymentVerification,
   fixLeadVerifiedField,
   GetallproductwiseReport,
-GetfollowupsummaryReport,
-Getallsalesfunnels
+  GetfollowupsummaryReport,
+  Getallsalesfunnels,
+  Getdailystaffreport,
+Getalltasktoreport
 } from "../../controller/primaryUserController/leadController.js";
 const router = express.Router();
-router.get("/getsalesfunnels",authMiddleware,Getallsalesfunnels)
+router.get("/getstaffdailyreports", authMiddleware, Getdailystaffreport)
+router.get("/getsalesfunnels", authMiddleware, Getallsalesfunnels)
 router.get("/getallproductwisereport", authMiddleware, GetallproductwiseReport);
-router.get("/getfollowupsummaryReport",authMiddleware,GetfollowupsummaryReport)
+router.get("/getfollowupsummaryReport", authMiddleware, GetfollowupsummaryReport)
 router.post("/leadRegister", authMiddleware, LeadRegister);
 router.put("/fix-leadverified", authMiddleware, fixLeadVerifiedField);
 router.put("/paymentverification", authMiddleware, UpdatepaymentVerification);
@@ -51,6 +54,7 @@ router.post("/taskRegistration", authMiddleware, TaskRegistration);
 router.get("/checkexistinglead", authMiddleware, Checkexistinglead);
 router.put("/leadRegisterUpdate", authMiddleware, UpdateLeadRegister);
 router.get("/getallTask", authMiddleware, GetallTask);
+router.get("/getalltasktoreport",authMiddleware,Getalltasktoreport)
 router.delete("/taskDelete", authMiddleware, TaskDelete);
 router.put("/taskEdit", authMiddleware, TaskEdit);
 router.post("/leadClosingAmount", authMiddleware, LeadClosing);
