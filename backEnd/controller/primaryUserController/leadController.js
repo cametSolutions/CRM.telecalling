@@ -3207,6 +3207,69 @@ export const GetownLeadList = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+export const Getdailystaffreport = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query
+    console.log("sta", startDate)
+    console.log("end", endDate)
+    if (!startDate || !endDate) {
+      return res.status(400).json({ message: "startDate and endDate required" });
+    }
+    const allTasks = await Task.find({ listed: true }, { taskName: 1, _id: 0 }).lean();
+    const taskNames = allTasks.map(t => t.taskName);
+
+    // Use FULL date range from req.query
+    const reportStart = new Date(startDate);
+    const reportEnd = new Date(endDate);
+    reportEnd.setHours(23, 59, 59, 999);
+
+    console.log(`Full range: ${startDate} to ${endDate}`);
+
+    // **DAILY LOOP** - Process each day between startDate & endDate
+    const dailyReports = [];
+    let currentDate = new Date(reportStart);
+
+
+    const dateStr = currentDate.toLocaleDateString('en-IN'); // "25-1-2026"
+
+    // Pass ONLY the day's date to helper - it handles start/end of day
+    const leadMetrics = await getLeadMetricsForSingleDay(currentDate, reportEnd);
+    console.log("leadmetidds", leadMetrics)
+    const callMetrics = await getCallMetricsForSingleDay(currentDate, reportEnd)
+    console.log("callmetrics", callMetrics)
+
+    const dayReport = leadMetrics.map(lead => {
+      const callsData = callMetrics.find(
+        call => String(call.staffId) === String(lead.staffId)
+      );
+
+
+      // 🔹 Base object
+      const row = {
+        Date: dateStr,
+        staffName: lead.staffName,
+        Calls: callsData ? callsData.Calls : 0,
+        newlead: lead.newlead || 0
+      };
+
+      // 🔹 Add ALL tasks dynamically
+      taskNames.forEach(taskName => {
+        row[taskName] = lead.tasks?.[taskName] || 0;
+      });
+
+      return row;
+    });
+
+    dailyReports.push(...dayReport);
+    currentDate.setDate(currentDate.getDate() + 1);
+    console.log("dalyrropoerts", dailyReports)
+    return res.status(200).json({ messaage: "daily report found", data: dailyReports })
+
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const fixLeadVerifiedField = async (req, res) => {
   try {
     // 1️⃣ Rename the field 'leadVarified' -> 'leadVerified'
