@@ -7,6 +7,8 @@ import Customer from "../../model/secondaryUser/customerSchema.js";
 import Task from "../../model/primaryUser/taskSchema.js";
 import LeadId from "../../model/primaryUser/leadIdSchema.js";
 import Service from "../../model/primaryUser/servicesSchema.js";
+import getLeadMetricsForSingleDay from "../../helper/leadandtaskcount.js";
+import { getCallMetricsForSingleDay } from "../../helper/callcount.js";
 import { formatDate } from "../../../frontend/src/utils/dateUtils.js";
 export const LeadRegister = async (req, res) => {
   try {
@@ -346,6 +348,122 @@ export const UpdatepaymentVerification = async (req, res) => {
 
     await lead.save();
     return res.status(204).json({ message: "successfully done" });
+  } catch (error) {
+    console.log("error:", error.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+export const Getallsalesfunnels = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+
+    // 1️⃣ Aggregation Pipeline
+    const result = await LeadMaster.aggregate([
+      // Unwind activityLog
+      { $unwind: "$activityLog" },
+
+      // Filter by date range
+      {
+        $match: {
+          "activityLog.submissionDate": {
+            $gte: start,
+            $lte: end
+          }
+        }
+      },
+
+      // Classify funnel stage
+      {
+        $addFields: {
+          stage: {
+            $switch: {
+              branches: [
+                {
+                  case: {
+                    $and: [
+                      { $eq: ["$activityLog.allocationChanged", false] },
+                      { $eq: ["$activityLog.taskTo", "followup"] }
+                    ]
+                  },
+                  then: "Contacted"
+                },
+                {
+                  case: { $eq: ["$activityLog.taskfromFollowup", true] },
+                  then: "System Study"
+                },
+                {
+                  case: { $eq: ["$leadLost", true] },
+                  then: "Lost"
+                },
+                {
+                  case: { $eq: ["$activityLog.followupClosed", true] },
+                  then: "Converted"
+                }
+              ],
+              default: "New Leads"
+            }
+          }
+        }
+      },
+
+      // Group by stage
+      {
+        $group: {
+          _id: "$stage",
+          count: { $sum: 1 },
+          value: { $sum: "$netAmount" }
+        }
+      }
+    ]);
+
+    // 2️⃣ Define funnel order
+    const FUNNEL_STAGES = [
+      "New Leads",
+      "Contacted",
+      "System Study",
+      "Lost",
+      "Converted"
+    ];
+
+    // 3️⃣ Convert aggregation result to map
+    const stageMap = result.reduce((acc, item) => {
+      acc[item._id] = {
+        count: item.count,
+        value: item.value
+      };
+      return acc;
+    }, {});
+
+    // 4️⃣ Build final response with default 0 values
+    let previousCount = null;
+
+    const formatted = FUNNEL_STAGES.map((stage) => {
+      const count = stageMap[stage]?.count || 0;
+      const value = stageMap[stage]?.value || 0;
+
+      const conversion =
+        previousCount === null || previousCount === 0
+          ? "0%"
+          : `${((count / previousCount) * 100).toFixed(1)}%`;
+
+      previousCount = count;
+
+      return {
+        stage,
+        count,
+        value,
+        conversion
+      };
+    });
+
+    
+    console.log("formateeddd", formatted)
+    return res.status(200).json({ message: "data found", data: formatted });
+
   } catch (error) {
     console.log("error:", error.message);
     return res.status(500).json({ message: "Internal server error" });
@@ -2887,6 +3005,226 @@ export const GetselectedLeadData = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+export const GetfollowupsummaryReport = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query
+    console.log(startDate, endDate)
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const result = await LeadMaster.aggregate([
+      /* 1️⃣ Get last activityLog */
+      {
+        $addFields: {
+          lastActivity: { $arrayElemAt: ["$activityLog", -1] },
+        },
+      },
+
+      /* 2️⃣ Only followups with allocated staff */
+      {
+        $match: {
+          "lastActivity.taskallocatedTo": { $exists: true, $ne: null },
+          "lastActivity.taskTo": "followup",
+        },
+      },
+
+      /* 3️⃣ Unwind products */
+      { $unwind: "$leadFor" },
+
+      /* 4️⃣ Staff × Product level */
+      {
+        $group: {
+          _id: {
+            staffId: "$lastActivity.taskallocatedTo",
+            productId: "$leadFor.productorServiceId",
+            productModel: "$leadFor.productorServicemodel",
+            leadId: "$_id",
+          },
+          nextFollowupDate: { $first: "$lastActivity.nextFollowupDate" },
+          leadConvertedDate: { $first: "$leadConvertedDate" },
+          leadLostDate: { $first: "$leadLostDate" },
+          netAmount: { $first: "$leadFor.netAmount" },
+        },
+      },
+
+      /* 5️⃣ Status flags */
+      {
+        $addFields: {
+          dueToday: {
+            $cond: [
+              {
+                $and: [
+                  { $gte: ["$nextFollowupDate", todayStart] },
+                  { $lte: ["$nextFollowupDate", todayEnd] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+          overdue: {
+            $cond: [
+              { $lt: ["$nextFollowupDate", todayStart] },
+              1,
+              0,
+            ],
+          },
+          future: {
+            $cond: [
+              { $gt: ["$nextFollowupDate", todayEnd] },
+              1,
+              0,
+            ],
+          },
+          isConverted: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ["$leadConvertedDate", null] },
+                  { $gte: ["$leadConvertedDate", start] },
+                  { $lte: ["$leadConvertedDate", end] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+          isLost: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ["$leadLostDate", null] },
+                  { $gte: ["$leadLostDate", start] },
+                  { $lte: ["$leadLostDate", end] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+          convertedNetAmount: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ["$leadConvertedDate", null] },
+                  { $gte: ["$leadConvertedDate", start] },
+                  { $lte: ["$leadConvertedDate", end] },
+                ],
+              },
+              { $ifNull: ["$netAmount", 0] },
+              0,
+            ],
+          },
+        },
+      },
+
+      /* 6️⃣ Final staff × product aggregation */
+      {
+        $group: {
+          _id: {
+            staffId: "$_id.staffId",
+            productId: "$_id.productId",
+            productModel: "$_id.productModel",
+          },
+          leadCount: { $sum: 1 },
+          totalConverted: { $sum: "$isConverted" },
+          totalLost: { $sum: "$isLost" },
+          totalDueToday: { $sum: "$dueToday" },
+          totalOverdue: { $sum: "$overdue" },
+          totalFuture: { $sum: "$future" },
+          convertedNetAmount: { $sum: "$convertedNetAmount" },
+        },
+      },
+
+      /* 7️⃣ Staff lookup */
+      {
+        $lookup: {
+          from: "staffs",
+          localField: "_id.staffId",
+          foreignField: "_id",
+          as: "staff",
+        },
+      },
+      { $unwind: "$staff" },
+
+      /* 8️⃣ Product / Service lookup */
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id.productId",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+      {
+        $lookup: {
+          from: "services",
+          localField: "_id.productId",
+          foreignField: "_id",
+          as: "service",
+        },
+      },
+
+      /* 9️⃣ Resolve product name */
+      {
+        $addFields: {
+          productName: {
+            $cond: [
+              { $eq: ["$_id.productModel", "Product"] },
+              { $arrayElemAt: ["$product.productName", 0] },
+              { $arrayElemAt: ["$service.serviceName", 0] },
+            ],
+          },
+        },
+      },
+
+      /* 🔟 Final shape */
+      {
+        $project: {
+          _id: 0,
+          staffName: "$staff.name",
+          productName: 1,
+          leadCount: 1,
+          totalConverted: 1,
+          totalLost: 1,
+          totalDueToday: 1,
+          totalOverdue: 1,
+          totalFuture: 1,
+          convertedNetAmount: 1,
+        },
+      },
+    ]);
+    // console.log(result)
+    const structuredData = result.map((item) => ({
+      staffName: item.staffName,
+      leadCount: item.leadCount,
+      dueToday: item.totalDueToday,
+      overDue: item.totalOverdue,
+      future: item.totalFuture,
+      converted: item.totalConverted,
+      lost: item.totalLost,
+      convertedPercentage: (item.totalConverted / item.leadCount) * 100
+    }))
+    // console.log(structuredData)
+    if (structuredData && structuredData.length > 0) {
+      return res.status(200).json({ message: "summary found", data: structuredData })
+    }
+
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+
 export const GetcollectionLeads = async (req, res) => {
   try {
     const { selectedBranch, verified } = req.query;
@@ -3100,6 +3438,224 @@ export const GetlostLeads = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+export const GetallproductwiseReport = async (req, res) => {
+  try {
+    console.log("hhhhhhhhhhhhhh")
+    const { startDate, endDate } = req.query;
+    console.log(startDate, endDate)
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const result = await LeadMaster.aggregate([
+      // 1️⃣ Unwind activityLog
+      { $unwind: "$activityLog" },
+
+      // 2️⃣ Match followup allocations
+      {
+        $match: {
+          "activityLog.taskallocatedTo": { $exists: true, $ne: null },
+          "activityLog.taskTo": "followup",
+          "activityLog.allocationChanged": false,
+        },
+      },
+
+      // 3️⃣ Unwind leadFor
+      { $unwind: "$leadFor" },
+
+      // 4️⃣ Deduplicate: Lead + Staff + Product
+      {
+        $group: {
+          _id: {
+            leadId: "$leadId",
+            staffId: "$activityLog.taskallocatedTo",
+            productId: "$leadFor.productorServiceId",
+            productModel: "$leadFor.productorServicemodel",
+          },
+          leadConvertedDate: { $first: "$leadConvertedDate" },
+          leadLostDate: { $first: "$leadLostDate" },
+          netAmount: { $first: "$leadFor.netAmount" }, // ✅ IMPORTANT
+        },
+      },
+
+      // 5️⃣ Status flags (date-based)
+      {
+        $addFields: {
+          isConverted: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ["$leadConvertedDate", null] },
+                  { $gte: ["$leadConvertedDate", start] },
+                  { $lte: ["$leadConvertedDate", end] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+          isLost: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ["$leadLostDate", null] },
+                  { $gte: ["$leadLostDate", start] },
+                  { $lte: ["$leadLostDate", end] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+          convertedNetAmount: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ["$leadConvertedDate", null] },
+                  { $gte: ["$leadConvertedDate", start] },
+                  { $lte: ["$leadConvertedDate", end] },
+                ],
+              },
+              { $ifNull: ["$netAmount", 0] },
+              0,
+            ],
+          },
+        },
+      },
+
+      // 6️⃣ Pending
+      {
+        $addFields: {
+          isPending: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$isConverted", 0] },
+                  { $eq: ["$isLost", 0] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+      },
+
+      // 7️⃣ Group per Staff × Product
+      {
+        $group: {
+          _id: {
+            staffId: "$_id.staffId",
+            productId: "$_id.productId",
+            productModel: "$_id.productModel",
+          },
+          leadCount: { $sum: 1 },
+          totalConverted: { $sum: "$isConverted" },
+          totalLost: { $sum: "$isLost" },
+          totalPending: { $sum: "$isPending" },
+          // ✅ CONVERTED VALUE
+          convertedNetAmount: { $sum: "$convertedNetAmount" },
+          // ✅ NET AMOUNT
+          totalNetAmount: { $sum: { $ifNull: ["$netAmount", 0] } },
+        },
+      },
+
+      // 8️⃣ Lookup Staff
+      {
+        $lookup: {
+          from: "staffs",
+          localField: "_id.staffId",
+          foreignField: "_id",
+          as: "staff",
+        },
+      },
+      { $unwind: "$staff" },
+
+      // 9️⃣ Lookup Product
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id.productId",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+
+      // 🔟 Lookup Service
+      {
+        $lookup: {
+          from: "services",
+          localField: "_id.productId",
+          foreignField: "_id",
+          as: "service",
+        },
+      },
+
+      // 1️⃣1️⃣ Resolve Product / Service name
+      {
+        $addFields: {
+          productName: {
+            $cond: [
+              { $eq: ["$_id.productModel", "Product"] },
+              { $arrayElemAt: ["$product.productName", 0] },
+              { $arrayElemAt: ["$service.serviceName", 0] },
+            ],
+          },
+        },
+      },
+
+      // 1️⃣2️⃣ Final projection
+      {
+        $project: {
+          _id: 0,
+
+          staffName: { $ifNull: ["$staff.name", "Unknown"] },
+
+          productName: 1,
+
+          leadCount: 1,
+          totalConverted: 1,
+          totalLost: 1,
+          totalPending: 1,
+          totalNetAmount: 1, // ✅ FINAL FIELD
+          convertedNetAmount: 1, // ✅ FINAL
+        },
+      },
+
+      // 1️⃣3️⃣ Sort
+      {
+        $sort: {
+          staffName: 1,
+          productName: 1,
+        },
+      },
+    ]);
+
+    const a = result.map((item) => ({
+      staffName: item.staffName,
+      productName: item.productName,
+      leadCount: item.leadCount,
+      totalConverted: item.totalConverted,
+      totalLost: item.totalLost,
+      totalPending: item.totalPending,
+      totalNetAmount: item.totalNetAmount,
+      convertedNetAmount: item.convertedNetAmount,
+
+
+    }))
+    console.log(a)
+
+    console.log("ppppppppp");
+    console.log("startdate", startDate);
+    console.log("enddate", endDate);
+    if (result && result.length > 0) {
+      return res.status(200).json({ message: "lead found", data: a })
+    }
+  } catch (error) {
+    console.log("error", error.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 export const GetownLeadList = async (req, res) => {
   try {
     const { userId, selectedBranch, role, ownlead } = req.query;
@@ -3207,6 +3763,69 @@ export const GetownLeadList = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+export const Getdailystaffreport = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query
+    console.log("sta", startDate)
+    console.log("end", endDate)
+    if (!startDate || !endDate) {
+      return res.status(400).json({ message: "startDate and endDate required" });
+    }
+    const allTasks = await Task.find({ listed: true }, { taskName: 1, _id: 0 }).lean();
+    const taskNames = allTasks.map(t => t.taskName);
+
+    // Use FULL date range from req.query
+    const reportStart = new Date(startDate);
+    const reportEnd = new Date(endDate);
+    reportEnd.setHours(23, 59, 59, 999);
+
+    console.log(`Full range: ${startDate} to ${endDate}`);
+
+    // **DAILY LOOP** - Process each day between startDate & endDate
+    const dailyReports = [];
+    let currentDate = new Date(reportStart);
+
+
+    const dateStr = currentDate.toLocaleDateString('en-IN'); // "25-1-2026"
+
+    // Pass ONLY the day's date to helper - it handles start/end of day
+    const leadMetrics = await getLeadMetricsForSingleDay(currentDate, reportEnd);
+    console.log("leadmetidds", leadMetrics)
+    const callMetrics = await getCallMetricsForSingleDay(currentDate, reportEnd)
+    console.log("callmetrics", callMetrics)
+
+    const dayReport = leadMetrics.map(lead => {
+      const callsData = callMetrics.find(
+        call => String(call.staffId) === String(lead.staffId)
+      );
+
+
+      // 🔹 Base object
+      const row = {
+        Date: dateStr,
+        staffName: lead.staffName,
+        Calls: callsData ? callsData.Calls : 0,
+        newlead: lead.newlead || 0
+      };
+
+      // 🔹 Add ALL tasks dynamically
+      taskNames.forEach(taskName => {
+        row[taskName] = lead.tasks?.[taskName] || 0;
+      });
+
+      return row;
+    });
+
+    dailyReports.push(...dayReport);
+    currentDate.setDate(currentDate.getDate() + 1);
+    console.log("dalyrropoerts", dailyReports)
+    return res.status(200).json({ messaage: "daily report found", data: dailyReports })
+
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const fixLeadVerifiedField = async (req, res) => {
   try {
     // 1️⃣ Rename the field 'leadVarified' -> 'leadVerified'

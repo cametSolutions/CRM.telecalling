@@ -84,7 +84,7 @@ export default function ProductWiseleadReport() {
     setData(filtered)
     setsearch(e)
   }
-
+console.log(data)
   return (
     <div className="h-full bg-gray-50 overflow-hidden items-center">
       <div className="flex">
@@ -108,3 +108,4 @@ export default function ProductWiseleadReport() {
     </div>
   )
 }
+

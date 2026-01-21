@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import ReportTable from "../../../components/primaryUser/ReportTable"
 import UseFetch from "../../../hooks/useFetch"
@@ -75,31 +76,7 @@ console.log(a)
     <div className="h-full bg-gray-100">
       <MonthRangePicker onChange={handleDateRange} />
 
-      {/* <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
-        <div className="flex flex-col">
-          <label className="text-sm font-medium text-gray-600 mb-1">
-            Start Date
-          </label>
-          <input
-            type="date"
-            value={date.startDate}
-            onChange={(e) => console.log(e.target.value)}
-            className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-
-        <div className="flex flex-col">
-          <label className="text-sm font-medium text-gray-600 mb-1">
-            End Date
-          </label>
-          <input
-            type="date"
-            value={date.endDate}
-            className="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-      </div> */}
-
+     
       <ReportTable
         headers={headersName}
         reportName="Sales Funnel"
@@ -108,3 +85,4 @@ console.log(a)
     </div>
   )
 }
+

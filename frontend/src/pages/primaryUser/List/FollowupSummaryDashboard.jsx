@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react"
 import ReportTable from "../../../components/primaryUser/ReportTable"
 import UseFetch from "../../../hooks/useFetch"
@@ -48,21 +49,7 @@ export default function FollowupSummaryDashboard() {
   console.log("jjjjjd")
   return (
     <div className="h-full bg-gray-100">
-      {/* <div className="date-range">
-        <label>
-          Start Date
-          <input
-            onChange={(e) => console.log(e.target.value)}
-            type="date"
-            className="date-input"
-          />
-        </label>
-
-        <label>
-          End Date
-          <input type="date" className="date-input" />
-        </label>
-      </div> */}
+     
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
         <div className="flex flex-col">
           <label className="text-sm font-medium text-gray-600 mb-1">
@@ -96,3 +83,4 @@ export default function FollowupSummaryDashboard() {
     </div>
   )
 }
+
