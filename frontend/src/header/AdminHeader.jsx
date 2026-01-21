@@ -328,7 +328,7 @@ export default function AdminHeader() {
     { to: "/admin/reports/product-wise-report", label: "Product Report" },
     { to: "/admin/reports/follow-up-summary", label: "Followup Summary" },
     { to: "/admin/reports/sales-funel", label: "Sales Funnel" },
-{to:"/admin/reports/dailystaffactivity",lebel:"Daily Staff Activity"}
+{to:"/admin/reports/dailystaffactivity",label:"Daily Staff Activity"}
   ]
   return (
     <header className="sticky top-0 z-50 flex items-center md:justify-between bg-green-600 shadow-md px-2 md:px-4 lg:px-6 h-16 md:h-18 lg:h-18">
