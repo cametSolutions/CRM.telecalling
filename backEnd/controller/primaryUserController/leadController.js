@@ -3003,6 +3003,225 @@ export const GetselectedLeadData = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+export const GetfollowupsummaryReport = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query
+    console.log(startDate, endDate)
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const result = await LeadMaster.aggregate([
+      /* 1️⃣ Get last activityLog */
+      {
+        $addFields: {
+          lastActivity: { $arrayElemAt: ["$activityLog", -1] },
+        },
+      },
+
+      /* 2️⃣ Only followups with allocated staff */
+      {
+        $match: {
+          "lastActivity.taskallocatedTo": { $exists: true, $ne: null },
+          "lastActivity.taskTo": "followup",
+        },
+      },
+
+      /* 3️⃣ Unwind products */
+      { $unwind: "$leadFor" },
+
+      /* 4️⃣ Staff × Product level */
+      {
+        $group: {
+          _id: {
+            staffId: "$lastActivity.taskallocatedTo",
+            productId: "$leadFor.productorServiceId",
+            productModel: "$leadFor.productorServicemodel",
+            leadId: "$_id",
+          },
+          nextFollowupDate: { $first: "$lastActivity.nextFollowupDate" },
+          leadConvertedDate: { $first: "$leadConvertedDate" },
+          leadLostDate: { $first: "$leadLostDate" },
+          netAmount: { $first: "$leadFor.netAmount" },
+        },
+      },
+
+      /* 5️⃣ Status flags */
+      {
+        $addFields: {
+          dueToday: {
+            $cond: [
+              {
+                $and: [
+                  { $gte: ["$nextFollowupDate", todayStart] },
+                  { $lte: ["$nextFollowupDate", todayEnd] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+          overdue: {
+            $cond: [
+              { $lt: ["$nextFollowupDate", todayStart] },
+              1,
+              0,
+            ],
+          },
+          future: {
+            $cond: [
+              { $gt: ["$nextFollowupDate", todayEnd] },
+              1,
+              0,
+            ],
+          },
+          isConverted: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ["$leadConvertedDate", null] },
+                  { $gte: ["$leadConvertedDate", start] },
+                  { $lte: ["$leadConvertedDate", end] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+          isLost: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ["$leadLostDate", null] },
+                  { $gte: ["$leadLostDate", start] },
+                  { $lte: ["$leadLostDate", end] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+          convertedNetAmount: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ["$leadConvertedDate", null] },
+                  { $gte: ["$leadConvertedDate", start] },
+                  { $lte: ["$leadConvertedDate", end] },
+                ],
+              },
+              { $ifNull: ["$netAmount", 0] },
+              0,
+            ],
+          },
+        },
+      },
+
+      /* 6️⃣ Final staff × product aggregation */
+      {
+        $group: {
+          _id: {
+            staffId: "$_id.staffId",
+            productId: "$_id.productId",
+            productModel: "$_id.productModel",
+          },
+          leadCount: { $sum: 1 },
+          totalConverted: { $sum: "$isConverted" },
+          totalLost: { $sum: "$isLost" },
+          totalDueToday: { $sum: "$dueToday" },
+          totalOverdue: { $sum: "$overdue" },
+          totalFuture: { $sum: "$future" },
+          convertedNetAmount: { $sum: "$convertedNetAmount" },
+        },
+      },
+
+      /* 7️⃣ Staff lookup */
+      {
+        $lookup: {
+          from: "staffs",
+          localField: "_id.staffId",
+          foreignField: "_id",
+          as: "staff",
+        },
+      },
+      { $unwind: "$staff" },
+
+      /* 8️⃣ Product / Service lookup */
+      {
+        $lookup: {
+          from: "products",
+          localField: "_id.productId",
+          foreignField: "_id",
+          as: "product",
+        },
+      },
+      {
+        $lookup: {
+          from: "services",
+          localField: "_id.productId",
+          foreignField: "_id",
+          as: "service",
+        },
+      },
+
+      /* 9️⃣ Resolve product name */
+      {
+        $addFields: {
+          productName: {
+            $cond: [
+              { $eq: ["$_id.productModel", "Product"] },
+              { $arrayElemAt: ["$product.productName", 0] },
+              { $arrayElemAt: ["$service.serviceName", 0] },
+            ],
+          },
+        },
+      },
+
+      /* 🔟 Final shape */
+      {
+        $project: {
+          _id: 0,
+          staffName: "$staff.name",
+          productName: 1,
+          leadCount: 1,
+          totalConverted: 1,
+          totalLost: 1,
+          totalDueToday: 1,
+          totalOverdue: 1,
+          totalFuture: 1,
+          convertedNetAmount: 1,
+        },
+      },
+    ]);
+    // console.log(result)
+    const structuredData = result.map((item) => ({
+      staffName: item.staffName,
+      leadCount: item.leadCount,
+      dueToday: item.totalDueToday,
+      overDue: item.totalOverdue,
+      future: item.totalFuture,
+      converted: item.totalConverted,
+      lost: item.totalLost,
+      convertedPercentage: (item.totalConverted / item.leadCount) * 100
+    }))
+    // console.log(structuredData)
+    if (structuredData && structuredData.length > 0) {
+      return res.status(200).json({ message: "summary found", data: structuredData })
+    }
+
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const GetcollectionLeads = async (req, res) => {
   try {
     const { selectedBranch, verified } = req.query;
