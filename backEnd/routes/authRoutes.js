@@ -42,7 +42,8 @@ import {
   GetallusersOnsite,
   GetAllstaffs,
   Getadminpanelcount,
-  Logout
+  Logout,
+  
 } from "../controller/authController.js"
 const router = express.Router()
 

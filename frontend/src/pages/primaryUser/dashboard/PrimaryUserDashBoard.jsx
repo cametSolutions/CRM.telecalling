@@ -74,7 +74,7 @@ export default function PrimaryUserDashBoard() {
       setcurrentyearHoliday(currentMonthHolidays)
     }
   }, [holydata])
-
+  console.log("hhh")
   useEffect(() => {
     const wishValue = JSON.parse(localStorage.getItem("wish"))
     if (wishValue) {

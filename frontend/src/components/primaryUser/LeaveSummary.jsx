@@ -38,6 +38,7 @@ const LeaveSummary = () => {
 
     loading
   } = UseFetch(`/auth/getsomeall?year=${selectedYear}&month=${selectedMonth}`)
+
   useEffect(() => {
     const userData = getLocalStorageItem("user")
     if (userData.selected && userData.selected.length > 1) {
