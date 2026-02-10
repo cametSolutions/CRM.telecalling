@@ -44,7 +44,6 @@ export default function CallRegistration() {
   const [searching, setSearching] = useState(false)
   const [search, setSearch] = useState("")
   const [selectedCustomer, setSelectedCustomer] = useState(null)
-  console.log(selectedCustomer)
   const [selectedProducts, setSelectedProducts] = useState([])
   const [isRunning, setIsRunning] = useState(false) // Start with the timer running
   const [startTime, setStartTime] = useState(Date.now())
@@ -55,7 +54,6 @@ export default function CallRegistration() {
   const debounceTimeoutRef = useRef(null)
   const location = useLocation()
   const { calldetails, token } = location?.state || {}
-console.log(calldetails)
 
   const { data: registeredCall, refreshHook } = UseFetch(
     selectedCustomer?._id &&
@@ -64,7 +62,6 @@ console.log(calldetails)
   const { data } = UseFetch(
     user._id && `/customer/getloggeduserCurrentCalls?loggedUserId=${user._id}`
   )
-  console.log(data)
   // const { data: callscount } = UseFetch("/customer/getcallregistrationlist")
   const { data: callnotes } = UseFetch("/customer/getallcallNotes")
   const handleQuillChange = (value) => {
@@ -232,7 +229,6 @@ console.log(calldetails)
               (product) => product?.product_id === productId
             )
           setSearch(callData?.callDetails?.customerid?.customerName)
-console.log(callData)
           setSelectedCustomer(callData?.callDetails?.customerid)
           if (matchingProducts.length === 0 && productId) {
             setProductDetails([
@@ -393,7 +389,6 @@ console.log(callData)
 
     const endTime = new Date().toISOString()
     const durationInSeconds = timeStringToSeconds(time)
-    console.log("token", token)
     // Save timer value in local storage
     if (!token) {
       const branchName = product.branchName
@@ -434,11 +429,12 @@ console.log(callData)
         }
         // Set both attendedBy and completedBy if status is solved
       }
-      console.log("selectedproduts", selectedProducts[0])
       const calldata = {
         product: selectedProducts[0]?.product_id,
         license: selectedProducts[0]?.licensenumber,
-        branchName: [selectedProducts[0]?.branch_id?.branchName],
+        branchName: Array.isArray(selectedProducts[0]?.branch_id?.branchName)
+          ? selectedProducts[0]?.branch_id?.branchName
+          : [selectedProducts[0]?.branch_id?.branchName],
 
         timedata: timeData,
         formdata: updatedformData,
@@ -446,9 +442,15 @@ console.log(callData)
         customerName: selectedCustomer?.customerName,
         productName: selectedProducts[0]?.productName
       }
+
       setcallReport(calldata)
 
-      console.log("calldatadetails", calldata)
+      if (!calldata.branchName) {
+        console.log(calldata.branchName)
+        alert("Unable to load branch details. Please refresh and try again.")
+
+        return
+      }
 
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
@@ -525,7 +527,10 @@ console.log(callData)
       const calldata = {
         product: selectedProducts[0]?.product_id,
         license: selectedProducts[0]?.licensenumber,
-        branchName: [selectedProducts[0]?.branchName],
+
+        branchName: Array.isArray(selectedProducts[0]?.branchName)
+          ? selectedProducts[0]?.branchName
+          : [selectedProducts[0]?.branchName],
         timedata: timeData,
         formdata: updatedformData,
         customeremail: selectedCustomer.email,
@@ -534,8 +539,12 @@ console.log(callData)
       }
 
       setcallReport(calldata)
-      console.log("calldata", calldata)
+      if (!calldata.branchName) {
+        console.log("if branchname is null",calldata.branchName)
+        alert("Unable to load branch details. Please refresh and try again.")
 
+        return
+      }
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
         calldata,
@@ -681,7 +690,6 @@ Problem:    \t${selectedText}
     }
 
     try {
-      console.log("h")
       const response = await fetch(url, {
         method: "GET",
         credentials: "include"
@@ -825,7 +833,6 @@ Problem:    \t${selectedText}
 
     setFormData(data)
   }
-console.log(selectedCustomer)
   return (
     <div>
       {loader && (
@@ -972,10 +979,10 @@ console.log(selectedCustomer)
                                       call.formdata?.status === "solved"
                                         ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
                                         : call.formdata?.status === "pending"
-                                        ? callDate === today
-                                          ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                          ? callDate === today
+                                            ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                            : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                           : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                        : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                     }`}
                                   >
                                     <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
@@ -1024,10 +1031,10 @@ console.log(selectedCustomer)
                                       call.formdata?.status === "solved"
                                         ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
                                         : call.formdata?.status === "pending"
-                                        ? callDate === today
-                                          ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                          ? callDate === today
+                                            ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                            : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                           : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                        : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                     }`}
                                     style={{ height: "5px" }}
                                   >
@@ -1152,7 +1159,9 @@ console.log(selectedCustomer)
                 <div className="">
                   <h4 className="text-md font-bold text-white">Partnership</h4>
                   <p className="text-white">
-                    {selectedCustomer?.partner?.[0]?.partner||selectedCustomer?.partner?.partner || "N/A"}
+                    {selectedCustomer?.partner?.[0]?.partner ||
+                      selectedCustomer?.partner?.partner ||
+                      "N/A"}
                   </p>
                 </div>
                 <div className="">
@@ -1684,10 +1693,10 @@ console.log(selectedCustomer)
                                       call.formdata?.status === "solved"
                                         ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
                                         : call?.formdata?.status === "pending"
-                                        ? callDate === today
-                                          ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                          ? callDate === today
+                                            ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                            : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                           : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                        : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                     }`}
                                   >
                                     <td className="px-6 py-3 whitespace-nowrap text-sm text-black">
@@ -1749,10 +1758,10 @@ console.log(selectedCustomer)
                                       call?.formdata?.status === "solved"
                                         ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
                                         : call?.formdata?.status === "pending"
-                                        ? callDate === today
-                                          ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                          ? callDate === today
+                                            ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                            : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                           : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                        : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                     }`}
                                     style={{ height: "5px" }}
                                   >

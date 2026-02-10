@@ -1780,7 +1780,10 @@ export const customerCallRegistration = async (req, res) => {
 
           }
           callToUpdate.license = calldata.license
-          callToUpdate.branchName = calldata.branchName
+        
+          callToUpdate.branchName = Array.isArray(calldata.branchName)
+            ? calldata.branchName
+            : [calldata.branchName];
 
           // Save the updated document
           const updatedCall = await user.save()
