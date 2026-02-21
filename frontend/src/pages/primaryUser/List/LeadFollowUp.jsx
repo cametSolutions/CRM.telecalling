@@ -15,7 +15,6 @@ import {
   Mail,
   User,
   Calendar,
-  
   Clock,
   UserPlus,
   UserCheck,
@@ -23,6 +22,7 @@ import {
   BellRing, // Follow-up
   History, // Event Log,
   ChevronDown,
+  ChevronRight,
   X
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
@@ -38,6 +38,8 @@ const LeadFollowUp = () => {
     allocationDate: "",
     demoDescription: ""
   })
+  // Add this state (outside component or use useState)
+  const [expandedRows, setExpandedRows] = useState(new Set())
   const [selectedData, setselectedData] = useState(null)
   const [collectionupdateModal, setcollectionUpdateModal] = useState(false)
   const [partner, setPartner] = useState([])
@@ -673,7 +675,236 @@ const LeadFollowUp = () => {
     setShowModal(false)
     setHistoryList([])
   }
+// const renderTable = (data) => {
+//   const LeadRow = ({ item, index }) => {
+//     const [open, setOpen] = useState(false)
 
+//     const lastLog = item.activityLog[item.activityLog.length - 1]
+//     const followupDate =
+//       pending && lastLog?.nextFollowUpDate
+//         ? new Date(lastLog.nextFollowUpDate)
+//             .toLocaleDateString("en-GB")
+//             .split("/")
+//             .join("-")
+//         : "-"
+
+//     const isAllocatedToeditable = item.activityLog.some(
+//       (it) =>
+//         it?.taskallocatedTo?._id === loggedUser._id &&
+//         it?.taskClosed === false
+//     )
+
+//     // Total columns = 1(chevron) + 1(name) + 1(mobile) + 1(remark) + 1(followup)
+//     //               + 1(eventlog) + 1(view) + (ownFollowUp?1:0) + 1(amount)
+//     const totalCols = ownFollowUp ? 9 : 8
+
+//     return (
+//       <>
+//         {/* ── Main row ── */}
+//         <tr
+//           onClick={() => setOpen((v) => !v)}
+//           className="cursor-pointer bg-white hover:bg-blue-50 transition-colors border border-gray-300"
+//         >
+//           <td className="pl-2 pr-1 py-2 w-5 border border-gray-300">
+//             {open
+//               ? <ChevronDown className="w-3.5 h-3.5 text-blue-500" />
+//               : <ChevronRight className="w-3.5 h-3.5 text-gray-400" />}
+//           </td>
+//           <td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap">
+//             {item.customerName.customerName}
+//           </td>
+//           <td className="px-3 py-2 text-gray-700 text-sm border border-gray-300 whitespace-nowrap">
+//             {item?.mobile}
+//           </td>
+//           <td className="px-3 py-2 text-sm border border-gray-300 max-w-[200px]">
+//             <span className="text-red-600 font-medium truncate block" title={lastLog?.remarks}>
+//               {lastLog?.remarks || "-"}
+//             </span>
+//           </td>
+//           <td className="px-3 py-2 text-sm text-gray-700 border border-gray-300 whitespace-nowrap">
+//             {followupDate}
+//           </td>
+//           <td className="px-2 py-2 border border-gray-300" onClick={(e) => e.stopPropagation()}>
+//             <button
+//               type="button"
+//               onClick={() => handleHistory(item?.activityLog, item.leadId, item?._id, item?.allocatedTo?._id, item?.taskfromFollowup)}
+//               className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-white bg-indigo-600 rounded hover:bg-indigo-700 transition-colors w-full justify-center"
+//             >
+//               <BellRing className="w-3.5 h-3.5" />
+//             </button>
+//           </td>
+//           <td className="px-2 py-2 border border-gray-300" onClick={(e) => e.stopPropagation()}>
+//             <button
+//               type="button"
+//               onClick={() =>
+//                 loggedUser.role === "Admin"
+//                   ? navigate("/admin/transaction/lead/leadEdit", { state: { leadId: item._id, isReadOnly: !isAllocatedToeditable } })
+//                   : navigate("/staff/transaction/lead/leadEdit", { state: { leadId: item._id, isReadOnly: !isAllocatedToeditable } })
+//               }
+//               className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors w-full justify-center"
+//             >
+//               <Eye className="w-3.5 h-3.5" /> 
+//             </button>
+//           </td>
+//           {ownFollowUp && (
+//             <td className="px-2 py-2 border border-gray-300" onClick={(e) => e.stopPropagation()}>
+//               <button
+//                 type="button"
+//                 onClick={() => handleFollowUp(item)}
+//                 className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-white bg-amber-500 rounded hover:bg-amber-600 transition-colors w-full justify-center"
+//               >
+//                 <History className="w-3.5 h-3.5" /> 
+//               </button>
+//             </td>
+//           )}
+//           <td className="px-3 py-2 text-sm font-semibold text-green-700 border border-gray-300 whitespace-nowrap text-right">
+//             <span className="inline-flex items-center gap-0.5 justify-end">
+//               <IndianRupee className="w-3.5 h-3.5" />
+//               {item.netAmount?.toLocaleString("en-IN")}
+//             </span>
+//           </td>
+//         </tr>
+
+//         {/* ── Expanded rows ── */}
+//         {open && (
+//           <>
+//             {/* Sub-header row */}
+//             {/* Columns: chevron | leadby | assignedto | assignedby | followups | leaddate | leadid(blue) | phone(blue) | email(blue) */}
+//             <tr className="text-xs font-medium border border-gray-300">
+//               <td className="border border-gray-300 bg-gray-100" />
+//               <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
+//                 <div className="flex items-center gap-1">
+//                   <User className="w-3.5 h-3.5 text-blue-600" />
+//                   <span>Lead by</span>
+//                 </div>
+//               </td>
+//               <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
+//                 <div className="flex items-center gap-1">
+//                   <UserCheck className="w-3.5 h-3.5 text-green-600" />
+//                   <span>Assigned to</span>
+//                 </div>
+//               </td>
+//               <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
+//                 <div className="flex items-center gap-1">
+//                   <UserPlus className="w-3.5 h-3.5 text-purple-600" />
+//                   <span>Assigned by</span>
+//                 </div>
+//               </td>
+//               <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
+//                 <div className="flex items-center gap-1">
+//                   <Clock className="w-3.5 h-3.5 text-orange-600" />
+//                   <span>No. of Followups</span>
+//                 </div>
+//               </td>
+//               <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
+//                 <div className="flex items-center gap-1">
+//                   <Calendar className="w-3.5 h-3.5 text-blue-500" />
+//                   <span>Lead Date</span>
+//                 </div>
+//               </td>
+//               <td className="px-3 py-1 border border-gray-300 bg-blue-600 text-white">
+//                 <span>Lead ID</span>
+//               </td>
+//               <td className="px-3 py-1 border border-gray-300 bg-blue-600 text-white">
+//                 <div className="flex items-center gap-1">
+//                   <Phone className="w-3.5 h-3.5" />
+//                   <span>Phone</span>
+//                 </div>
+//               </td>
+//               <td className="px-3 py-1 border border-gray-300 bg-blue-600 text-white">
+//                 <div className="flex items-center gap-1">
+//                   <Mail className="w-3.5 h-3.5" />
+//                   <span>Email</span>
+//                 </div>
+//               </td>
+//             </tr>
+
+//             {/* Sub-data row */}
+//             <tr className="bg-white text-xs border border-b-2 border-gray-300 border-b-gray-400">
+//               <td className="border border-gray-300" />
+//               <td className="px-3 py-1.5 border border-gray-300 text-gray-800 font-medium">
+//                 {item?.leadBy?.name || "-"}
+//               </td>
+//               <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
+//                 {item?.allocatedTo?.name || "-"}
+//               </td>
+//               <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
+//                 {item?.allocatedBy?.name || "-"}
+//               </td>
+//               <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
+//                 {item.activityLog.length}
+//               </td>
+//               <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
+//                 {item.leadDate?.toString().split("T")[0] || "-"}
+//               </td>
+//               <td className="px-3 py-1.5 border border-gray-300 font-bold text-blue-700">
+//                 {item?.leadId}
+//               </td>
+//               <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
+//                 {item?.phone || "-"}
+//               </td>
+//               <td className="px-3 py-1.5 border border-gray-300 text-gray-600">
+//                 {item?.email || "-"}
+//               </td>
+//             </tr>
+//           </>
+//         )}
+//       </>
+//     )
+//   }
+
+//   return (
+//     <table className="border-collapse border border-gray-300 w-full text-sm">
+//       <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30 text-xs">
+//         <tr>
+//           <th className="border border-gray-300 w-5" />
+//           <th className="border border-gray-300 px-3 py-1 text-left">
+//             <div className="flex items-center gap-1.5"><User className="w-3 h-3" /><span>Name</span></div>
+//           </th>
+//           <th className="border border-gray-300 px-3 py-1 text-left min-w-[130px]">
+//             <div className="flex items-center gap-1.5"><Phone className="w-3 h-3" /><span>Mobile</span></div>
+//           </th>
+//           <th className="border border-gray-300 px-3 py-1 text-left">
+//             <span>Last Remark</span>
+//           </th>
+//           <th className="border border-gray-300 px-3 py-1 text-left">
+//             <div className="flex items-center gap-1.5"><Calendar className="w-3 h-3" /><span>Followup Date</span></div>
+//           </th>
+//           <th className="border border-gray-300 px-3 py-1 text-center">Event Log</th>
+//           <th className="border border-gray-300 px-3 py-1 text-center">View/Modify</th>
+//           {ownFollowUp && <th className="border border-gray-300 px-3 py-1 text-center">Follow Up</th>}
+//           <th className="border border-gray-300 px-3 py-1 text-right">
+//             <div className="flex items-center gap-1.5 justify-end"><IndianRupee className="w-3 h-3" /><span>Net Amount</span></div>
+//           </th>
+//         </tr>
+//       </thead>
+//       <tbody>
+//         {data?.length > 0 ? (
+//           data.map((item, index) => (
+//             <LeadRow key={item._id ?? index} item={item} index={index} />
+//           ))
+//         ) : (
+//           <tr>
+//             <td colSpan={9} className="text-center text-gray-500 py-6">
+//               {loading ? (
+//                 <div className="flex justify-center">
+//                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600" />
+//                 </div>
+//               ) : (
+//                 <div>No Leads</div>
+//               )}
+//             </td>
+//           </tr>
+//         )}
+//       </tbody>
+//     </table>
+//   )
+// }//selected wtih lead datae
+
+
+  
+
+  ///
   const renderTable = (data) => (
     <table className="border-collapse border border-gray-300 w-full text-sm">
       <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30 text-xs">
@@ -923,6 +1154,8 @@ const LeadFollowUp = () => {
       </tbody>
     </table>
   )
+  
+
   return (
     <div className="h-full flex flex-col ">
       {loading && (
@@ -1169,10 +1402,10 @@ const LeadFollowUp = () => {
                           demoData.demoassignedDate
                             ? demoData.demoassignedDate.toString().split("T")[0]
                             : formData?.followUpDate
-                            ? new Date(formData.followUpDate)
-                                .toLocaleDateString("en-GB") // this gives dd/mm/yyyy
-                                .replace(/\//g, "-") // change / to -
-                            : ""
+                              ? new Date(formData.followUpDate)
+                                  .toLocaleDateString("en-GB") // this gives dd/mm/yyyy
+                                  .replace(/\//g, "-") // change / to -
+                              : ""
                         }
                         className="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium cursor-not-allowed focus:outline-none"
                       />
