@@ -1,17 +1,8 @@
-<<<<<<< HEAD
-import { useState, useEffect } from "react";
-import { X } from "lucide-react";
-import { FaSpinner } from "react-icons/fa";
-
-import { toast } from "react-toastify";
-import { Country, State } from "country-state-city";
-=======
 import { useState, useEffect, useMemo } from "react"
 import { X } from "lucide-react"
 import { FaSpinner } from "react-icons/fa"
 import { Country, State } from "country-state-city"
 import { toast } from "react-toastify"
->>>>>>> main
 
 export const CollectionupdateModal = ({
   isClosed = false,
@@ -23,17 +14,6 @@ export const CollectionupdateModal = ({
   handleCollectionUpdate,
   setishavePayment = false,
 }) => {
-<<<<<<< HEAD
-  const [isdropdownOpen, setIsdropdownOpen] = useState(false);
-  const [error, setError] = useState({});
-  const [noneAmount, setisnoneAmount] = useState(false);
-  const [message, setMessage] = useState({ warning: "" });
-  const [iscanupateCollection, setcanupdateCollection] = useState(false);
-  const [submitloader, setsubmitloader] = useState(false);
-  const [isreadytoVarify, setisreadyTovarify] = useState(false);
-  const [countryOptions, setcountryOptions] = useState([]);
-  console.log(data?.totalPaidAmount);
-=======
   const [isdropdownOpen, setIsdropdownOpen] = useState(false)
   const [error, setError] = useState({})
   const [noneAmount, setisnoneAmount] = useState(false)
@@ -44,7 +24,6 @@ export const CollectionupdateModal = ({
   const [submitloader, setsubmitloader] = useState(false)
   const [isreadytoVarify, setisreadyTovarify] = useState(false)
   // const [countryOptions, setcountryOptions] = useState([])
->>>>>>> main
   const [formData, setformData] = useState({
     leadDocId: data?._id,
     customerId: data?.customerName?._id,
@@ -71,14 +50,9 @@ export const CollectionupdateModal = ({
     receivedAmount: "",
     totalPaidAmount: data?.totalPaidAmount,
     receivedBy: loggedUser?._id,
-<<<<<<< HEAD
-    receivedModel: loggedUser?.role === "Admin" ? "Admin" : "Staff",
-  });
-=======
     receivedModel: loggedUser?.role === "Admin" ? "Admin" : "Staff"
   })
   console.log(formData.state)
->>>>>>> main
   useEffect(() => {
     if (data?.netAmount === 0) {
       setisnoneAmount(true);
@@ -92,17 +66,6 @@ export const CollectionupdateModal = ({
         warning: "There is no balance amount — all payments are completed.",
       }));
     }
-<<<<<<< HEAD
-  }, []);
-  useEffect(() => {
-    setcountryOptions(
-      Country.getAllCountries().map((country) => ({
-        label: country.name,
-        value: country.isoCode,
-      }))
-    );
-  }, []);
-=======
   }, [])
   // useEffect(() => {
   //   setcountryOptions(
@@ -142,7 +105,6 @@ console.log(countryOptions)
 console.log(stateOptions)
 
   console.log(defaultCountry)
->>>>>>> main
   const handleChange = (e) => {
     const { value, name } = e.target;
 
@@ -238,14 +200,10 @@ console.log(stateOptions)
         [name]: "",
       }));
     }
-<<<<<<< HEAD
-  };
-=======
   }
   const isShortCode = (value) => {
     return value && value.length <= 3
   }
->>>>>>> main
   const handleSubmit = async () => {
     try {
       console.log("uuuu");
@@ -304,15 +262,9 @@ console.log(stateOptions)
           key,
           typeof value === "string" ? value.trim() : value,
         ])
-<<<<<<< HEAD
-      );
-      console.log("hhh");
-      const response = await handleCollectionUpdate(cleanedData);
-=======
       )
 
       const response = await handleCollectionUpdate(cleanedData)
->>>>>>> main
       if (response.status === 200) {
         isClosed
           ? toast.success("Lead is closed and payment updated successfully")
@@ -330,16 +282,11 @@ console.log(stateOptions)
         submitError: "something went wrong",
       }));
     }
-<<<<<<< HEAD
-  };
-
-=======
   }
   console.log(stateOptions)
   console.log(countryOptions)
 console.log(isShortCode(formData.state))
 console.log(formData.state)
->>>>>>> main
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl shadow-2xl w-full  max-h-[95vh] flex flex-col overflow-hidden">
@@ -429,11 +376,7 @@ console.log(formData.state)
                     onChange={(e) =>
                       setformData((prev) => ({
                         ...prev,
-<<<<<<< HEAD
-                        address: e.target.value(),
-=======
                         address: e.target.value
->>>>>>> main
                       }))
                     }
                     className="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium focus:outline-none"
@@ -592,16 +535,6 @@ console.log(formData.state)
 
                   <select
                     value={formData.state}
-<<<<<<< HEAD
-                    onChange={(e) => {
-                      if (error.state) {
-                        setformData((prev) => ({
-                          ...prev,
-                          state: e.target.value.trim(),
-                        }));
-                      }
-                    }}
-=======
                     onChange={(e) =>
                       setformData((prev) => ({
                         ...prev,
@@ -635,7 +568,6 @@ console.log(formData.state)
                     name="country"
                     value={formData.state}
                     onChange={(e) => handleChange(e)}
->>>>>>> main
                     className="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium  focus:outline-none"
                   />
                   {error.state && (
