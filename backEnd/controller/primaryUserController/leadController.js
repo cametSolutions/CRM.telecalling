@@ -3416,6 +3416,7 @@ export const GetcollectionLeads = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 export const GetlostLeads = async (req, res) => {
   try {
     const { selectedBranch } = req.query;
@@ -3432,146 +3433,51 @@ export const GetlostLeads = async (req, res) => {
           return lead;
         }
 
-      // Group by stage
-      {
-        $group: {
-          _id: "$stage",
-          count: { $sum: 1 },
-          value: { $sum: "$netAmount" }
-        }
-      }
-    ]);
+        // Fetch leadBy name
+        const assignedModel = mongoose.model(lead.leadByModel);
+        const populatedLeadBy = await assignedModel
+          .findById(lead.leadBy)
+          .select("name")
+          .lean();
+        let lasttaskallocatedto;
+        let lasttaskallocatedBy;
+        // ✅ Populate activityLog fields
+        const populatedActivityLog = await Promise.all(
+          (lead.activityLog || []).map(async (activity) => {
+            const populatedActivity = { ...activity };
 
-    // 2️⃣ Define funnel order
-    const FUNNEL_STAGES = [
-      "New Leads",
-      "Contacted",
-      "System Study",
-      "Lost",
-      "Converted"
-    ];
+            // Populate taskallocatedTo
+            if (activity.submissiondoneByModel && activity.submittedUser) {
+              const model = mongoose.model(activity.submissiondoneByModel);
+              populatedActivity.submittedUser = await model
+                .findById(activity.submittedUser)
+                .select("name")
+                .lean();
+            }
 
-    // 3️⃣ Convert aggregation result to map
-    const stageMap = result.reduce((acc, item) => {
-      acc[item._id] = {
-        count: item.count,
-        value: item.value
-      };
-      return acc;
-    }, {});
+            // // Populate taskallocatedBy
+            if (activity.taskallocatedByModel && activity.taskallocatedBy) {
+              const model = mongoose.model(activity.taskallocatedByModel);
+              lasttaskallocatedBy = populatedActivity.taskallocatedBy =
+                await model
+                  .findById(activity.taskallocatedBy)
+                  .select("name")
+                  .lean();
+            }
 
-    // 4️⃣ Build final response with default 0 values
-    let previousCount = null;
+            // ✅ Populate submissionDoneBy
+            if (activity.taskallocatedToModel && activity.taskallocatedTo) {
+              const model = mongoose.model(activity.taskallocatedToModel);
+              lasttaskallocatedto = populatedActivity.taskallocatedTo =
+                await model
+                  .findById(activity.taskallocatedTo)
+                  .select("name")
+                  .lean();
+            }
 
-    const formatted = FUNNEL_STAGES.map((stage) => {
-      const count = stageMap[stage]?.count || 0;
-      const value = stageMap[stage]?.value || 0;
-
-      const conversion =
-        previousCount === null || previousCount === 0
-          ? "0%"
-          : `${((count / previousCount) * 100).toFixed(1)}%`;
-
-      previousCount = count;
-
-      return {
-        stage,
-        count,
-        value,
-        conversion
-      };
-    });
-
-    // const result = await LeadMaster.aggregate([
-    //   // 1️⃣ Unwind activityLog
-    //   { $unwind: "$activityLog" },
-
-    //   // 2️⃣ Match month range using submissionDate
-    //   {
-    //     $match: {
-    //       "activityLog.submissionDate": {
-    //         $gte: start,
-    //         $lte: end
-    //       }
-    //     }
-    //   },
-
-    //   // 3️⃣ Classify funnel stage
-    //   {
-    //     $addFields: {
-    //       stage: {
-    //         $switch: {
-    //           branches: [
-    //             {
-    //               case: {
-    //                 $and: [
-    //                   { $eq: ["$activityLog.allocationChanged", false] },
-    //                   { $eq: ["$activityLog.taskTo", "followup"] }
-    //                 ]
-    //               },
-    //               then: "Contacted"
-    //             },
-    //             {
-    //               case: { $eq: ["$activityLog.taskfromFollowup", true] },
-    //               then: "System Study"
-    //             },
-    //             {
-    //               case: { $eq: ["$leadLost", true] },
-    //               then: "Lost"
-    //             },
-    //             {
-    //               case: { $eq: ["$activityLog.followupClosed", true] },
-    //               then: "Converted"
-    //             }
-    //           ],
-    //           default: "New Leads"
-    //         }
-    //       }
-    //     }
-    //   },
-
-    //   // 4️⃣ Group by stage
-    //   {
-    //     $group: {
-    //       _id: "$stage",
-    //       count: { $sum: 1 },
-    //       value: { $sum: "$netAmount" }
-    //     }
-    //   },
-
-    //   // 5️⃣ Sort in funnel order
-    //   {
-    //     $addFields: {
-    //       order: {
-    //         $indexOfArray: [
-    //           ["New Leads", "Contacted", "System Study", "Lost", "Converted"],
-    //           "$_id"
-    //         ]
-    //       }
-    //     }
-    //   },
-    //   { $sort: { order: 1 } }
-    // ]);
-
-    // // 6️⃣ Calculate Conversion %
-    // let previousCount = null;
-    // const formatted = result.map((item) => {
-    //   const conv =
-    //     previousCount === null
-    //       ? "–"
-    //       : `${((item.count / previousCount) * 100).toFixed(1)}%`;
-
-    //   previousCount = item.count;
-
-    //   return {
-    //     stage: item._id,
-    //     count: item.count,
-    //     value: item.value,
-    //     conversion: conv
-    //   };
-    // });
-    console.log("formateeddd", formatted)
-    return res.status(200).json({ message: "data found", data: formatted });
+            return populatedActivity;
+          })
+        );
 
         // ✅ Get last activity
         const lastActivity =
