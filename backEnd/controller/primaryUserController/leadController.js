@@ -3306,9 +3306,9 @@ export const Getdailystaffreport = async (req, res) => {
   }
 }
 
+
 export const GetcollectionLeads = async (req, res) => {
   try {
-<<<<<<< HEAD
     const { selectedBranch, verified } = req.query;
     const query = {
       leadBranch: new mongoose.Types.ObjectId(selectedBranch),
@@ -3323,38 +3323,16 @@ export const GetcollectionLeads = async (req, res) => {
         if (!lead.leadByModel || !mongoose.models[lead.leadByModel]) {
           console.error(`Model ${lead.leadByModel} is not registered`);
           return lead;
-=======
-    const { startDate, endDate } = req.query;
-
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-
-    // 1️⃣ Aggregation Pipeline
-    const result = await LeadMaster.aggregate([
-      // Unwind activityLog
-      { $unwind: "$activityLog" },
-
-      // Filter by date range
-      {
-        $match: {
-          "activityLog.submissionDate": {
-            $gte: start,
-            $lte: end
-          }
->>>>>>> main
         }
 
-<<<<<<< HEAD
         // Fetch leadBy name
         const assignedModel = mongoose.model(lead.leadByModel);
         const populatedLeadBy = await assignedModel
           .findById(lead.leadBy)
           .select("name")
           .lean();
-        let lasttaskallocatedto = null;
-        let lasttaskallocatedBy = null;
-
+        let lasttaskallocatedto;
+        let lasttaskallocatedBy;
         // ✅ Populate activityLog fields
         const populatedActivityLog = await Promise.all(
           (lead.activityLog || []).map(async (activity) => {
@@ -3367,37 +3345,6 @@ export const GetcollectionLeads = async (req, res) => {
                 .findById(activity.submittedUser)
                 .select("name")
                 .lean();
-=======
-      // Classify funnel stage
-      {
-        $addFields: {
-          stage: {
-            $switch: {
-              branches: [
-                {
-                  case: {
-                    $and: [
-                      { $eq: ["$activityLog.allocationChanged", false] },
-                      { $eq: ["$activityLog.taskTo", "followup"] }
-                    ]
-                  },
-                  then: "Contacted"
-                },
-                {
-                  case: { $eq: ["$activityLog.taskfromFollowup", true] },
-                  then: "System Study"
-                },
-                {
-                  case: { $eq: ["$leadLost", true] },
-                  then: "Lost"
-                },
-                {
-                  case: { $eq: ["$activityLog.followupClosed", true] },
-                  then: "Converted"
-                }
-              ],
-              default: "New Leads"
->>>>>>> main
             }
 
             // // Populate taskallocatedBy
@@ -3418,13 +3365,6 @@ export const GetcollectionLeads = async (req, res) => {
                   .findById(activity.taskallocatedTo)
                   .select("name")
                   .lean();
-            }
-            if (activity.taskBy && isValidObjectId(activity.taskBy)) {
-
-              populatedActivity.taskBy = await Task.findById(activity.taskBy).select("taskName").lean()
-            }
-            if (activity.taskId && isValidObjectId(activity.taskId)) {
-              populatedActivity.taskId = await Task.findById(activity.taskId).select("taskName").lean()
             }
 
             return populatedActivity;
@@ -3476,6 +3416,7 @@ export const GetcollectionLeads = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 export const GetlostLeads = async (req, res) => {
   try {
     const { selectedBranch } = req.query;
@@ -3492,7 +3433,6 @@ export const GetlostLeads = async (req, res) => {
           return lead;
         }
 
-<<<<<<< HEAD
         // Fetch leadBy name
         const assignedModel = mongoose.model(lead.leadByModel);
         const populatedLeadBy = await assignedModel
@@ -3534,158 +3474,10 @@ export const GetlostLeads = async (req, res) => {
                   .select("name")
                   .lean();
             }
-            if (activity.taskBy && isValidObjectId(activity.taskBy)) {
-              populatedActivity.taskBy = await Task.findById(activity.taskBy).select("taskName").lean()
-            }
-            if (activity.taskId && isValidObjectId(activity.taskId)) {
-              populatedActivity.taskId = await Task.findById(activity.taskId).select("taskName").lean()
-            }
 
             return populatedActivity;
           })
         );
-=======
-      // Group by stage
-      {
-        $group: {
-          _id: "$stage",
-          count: { $sum: 1 },
-          value: { $sum: "$netAmount" }
-        }
-      }
-    ]);
-
-    // 2️⃣ Define funnel order
-    const FUNNEL_STAGES = [
-      "New Leads",
-      "Contacted",
-      "System Study",
-      "Lost",
-      "Converted"
-    ];
-
-    // 3️⃣ Convert aggregation result to map
-    const stageMap = result.reduce((acc, item) => {
-      acc[item._id] = {
-        count: item.count,
-        value: item.value
-      };
-      return acc;
-    }, {});
-
-    // 4️⃣ Build final response with default 0 values
-    let previousCount = null;
-
-    const formatted = FUNNEL_STAGES.map((stage) => {
-      const count = stageMap[stage]?.count || 0;
-      const value = stageMap[stage]?.value || 0;
-
-      const conversion =
-        previousCount === null || previousCount === 0
-          ? "0%"
-          : `${((count / previousCount) * 100).toFixed(1)}%`;
-
-      previousCount = count;
-
-      return {
-        stage,
-        count,
-        value,
-        conversion
-      };
-    });
-
-    // const result = await LeadMaster.aggregate([
-    //   // 1️⃣ Unwind activityLog
-    //   { $unwind: "$activityLog" },
-
-    //   // 2️⃣ Match month range using submissionDate
-    //   {
-    //     $match: {
-    //       "activityLog.submissionDate": {
-    //         $gte: start,
-    //         $lte: end
-    //       }
-    //     }
-    //   },
-
-    //   // 3️⃣ Classify funnel stage
-    //   {
-    //     $addFields: {
-    //       stage: {
-    //         $switch: {
-    //           branches: [
-    //             {
-    //               case: {
-    //                 $and: [
-    //                   { $eq: ["$activityLog.allocationChanged", false] },
-    //                   { $eq: ["$activityLog.taskTo", "followup"] }
-    //                 ]
-    //               },
-    //               then: "Contacted"
-    //             },
-    //             {
-    //               case: { $eq: ["$activityLog.taskfromFollowup", true] },
-    //               then: "System Study"
-    //             },
-    //             {
-    //               case: { $eq: ["$leadLost", true] },
-    //               then: "Lost"
-    //             },
-    //             {
-    //               case: { $eq: ["$activityLog.followupClosed", true] },
-    //               then: "Converted"
-    //             }
-    //           ],
-    //           default: "New Leads"
-    //         }
-    //       }
-    //     }
-    //   },
-
-    //   // 4️⃣ Group by stage
-    //   {
-    //     $group: {
-    //       _id: "$stage",
-    //       count: { $sum: 1 },
-    //       value: { $sum: "$netAmount" }
-    //     }
-    //   },
-
-    //   // 5️⃣ Sort in funnel order
-    //   {
-    //     $addFields: {
-    //       order: {
-    //         $indexOfArray: [
-    //           ["New Leads", "Contacted", "System Study", "Lost", "Converted"],
-    //           "$_id"
-    //         ]
-    //       }
-    //     }
-    //   },
-    //   { $sort: { order: 1 } }
-    // ]);
-
-    // // 6️⃣ Calculate Conversion %
-    // let previousCount = null;
-    // const formatted = result.map((item) => {
-    //   const conv =
-    //     previousCount === null
-    //       ? "–"
-    //       : `${((item.count / previousCount) * 100).toFixed(1)}%`;
-
-    //   previousCount = item.count;
-
-    //   return {
-    //     stage: item._id,
-    //     count: item.count,
-    //     value: item.value,
-    //     conversion: conv
-    //   };
-    // });
-    console.log("formateeddd", formatted)
-    return res.status(200).json({ message: "data found", data: formatted });
->>>>>>> main
 
         // ✅ Get last activity
         const lastActivity =
@@ -3715,11 +3507,8 @@ export const GetlostLeads = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-<<<<<<< HEAD
-=======
 
 
->>>>>>> main
 export const GetallproductwiseReport = async (req, res) => {
   try {
     console.log("hhhhhhhhhhhhhh")
