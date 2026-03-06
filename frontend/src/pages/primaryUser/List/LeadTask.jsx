@@ -318,6 +318,7 @@ const LeadTask = () => {
           </h3>
         </div>
       ) : filteredData?.length > 0 ? (
+
         <LeadTaskComponent
           type={type}
           Data={filteredData}

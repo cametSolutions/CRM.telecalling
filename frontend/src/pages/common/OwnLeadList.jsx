@@ -1,38 +1,38 @@
-import React, { useEffect, useState } from "react";
-import UseFetch from "../../hooks/useFetch";
-import { useNavigate } from "react-router-dom";
-import { LeadhistoryModal } from "../../components/primaryUser/LeadhistoryModal";
+
+import { useEffect, useState } from "react"
+import UseFetch from "../../hooks/useFetch"
+import { useNavigate } from "react-router-dom"
+import { LeadhistoryModal } from "../../components/primaryUser/LeadhistoryModal"
 import {
   Eye,
-  Phone,
-  Mail,
-  User,
-  Calendar,
-  Clock,
-  UserPlus,
-  UserCheck,
   IndianRupee,
-  BellRing, // Follow-up
-  History, // Event Log
-} from "lucide-react";
-import { getLocalStorageItem } from "../../helper/localstorage";
-import { PropagateLoader } from "react-spinners";
+  ChevronDown,
+  ChevronRight,
+  BellRing
+} from "lucide-react"
+import { getLocalStorageItem } from "../../helper/localstorage"
+import { PropagateLoader } from "react-spinners"
 
 export default function OwnLeadList() {
-  const [showFullName, setShowFullName] = useState(false);
-  const [tableData, setTableData] = useState([]);
-  const [loggedUser, setLoggedUser] = useState(null);
-  const [showFullEmail, setShowFullEmail] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [selectedData, setselectedData] = useState([]);
-  const [selectedLeadId, setselectedLeadId] = useState(null);
-  const [ownLead, setownLead] = useState(true);
-  const [companyBranches, setcompanyBranches] = useState(null);
-  const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null);
-  const [showhistoryModal, sethistoryModal] = useState(false);
-  const [historyList, setHistoryList] = useState([]);
-  const navigate = useNavigate();
-  const { data: companybranches } = UseFetch("/branch/getBranch");
+  const [showFullName, setShowFullName] = useState(false)
+  const [tableData, setTableData] = useState([])
+  const [loggedUser, setLoggedUser] = useState(null)
+  const [showFullEmail, setShowFullEmail] = useState(false)
+  const [showModal, setShowModal] = useState(false)
+  const [selectedData, setselectedData] = useState([])
+  const [anyOpen, setAnyOpen] = useState(false)
+  const [selectedLeadId, setselectedLeadId] = useState(null)
+  const [ownLead, setownLead] = useState(true)
+  const [companyBranches, setcompanyBranches] = useState(null)
+  const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
+  const [showhistoryModal, sethistoryModal] = useState(false)
+  const [historyList, setHistoryList] = useState([])
+  const [openRow, setOpenRow] = useState(null)
+
+  const navigate = useNavigate()
+
+  const { data: companybranches } = UseFetch("/branch/getBranch")
+
   const { data: ownedlead, loading } = UseFetch(
     loggedUser &&
       selectedCompanyBranch &&
@@ -41,16 +41,14 @@ export default function OwnLeadList() {
   console.log(ownedlead?.length);
   useEffect(() => {
     if (companybranches && companybranches.length > 0) {
-      const userData = getLocalStorageItem("user");
-      const branch = companybranches?.map((branch) => {
-        return {
-          value: branch._id,
-          label: branch.branchName,
-        };
-      });
-      setcompanyBranches(branch);
-      setselectedCompanyBranch(branch[0].value);
-      setLoggedUser(userData);
+      const userData = getLocalStorageItem("user")
+      const branch = companybranches.map((branch) => ({
+        value: branch._id,
+        label: branch.branchName
+      }))
+      setcompanyBranches(branch)
+      setselectedCompanyBranch(branch[0].value)
+      setLoggedUser(userData)
     }
   }, [companybranches]);
 
@@ -60,241 +58,247 @@ export default function OwnLeadList() {
         const Data = normalizeTableData(ownedlead);
         setTableData(Data);
       } else {
-        const groupedLeads = {};
-        let grandTotal = 0;
+        const groupedLeads = {}
         ownedlead.forEach((lead) => {
-          const assignedTo = lead?.leadBy?.name;
-          const amount = lead?.netAmount || 0;
-          grandTotal += amount;
-          if (!groupedLeads[assignedTo]) {
-            groupedLeads[assignedTo] = [];
-          }
-          groupedLeads[assignedTo].push(lead);
-        });
-        const Data = normalizeTableData(groupedLeads);
-        setTableData(Data);
+          const assignedTo = lead?.leadBy?.name
+          if (!groupedLeads[assignedTo]) groupedLeads[assignedTo] = []
+          groupedLeads[assignedTo].push(lead)
+        })
+        setTableData(normalizeTableData(groupedLeads))
       }
     }
-  }, [ownedlead]);
+  }, [ownedlead])
+
   const normalizeTableData = (data) => {
-    if (Array.isArray(data)) {
-      return [{ staffName: null, leads: data }];
-    } else if (typeof data === "object" && data !== null) {
+    if (Array.isArray(data)) return [{ staffName: null, leads: data }]
+    if (typeof data === "object")
       return Object.entries(data).map(([staffName, leads]) => ({
         staffName,
-        leads,
-      }));
-    }
-    return [];
-  };
-  const handlecloseModal = () => {
-    setHistoryList([]);
-    sethistoryModal(false);
-    setselectedLeadId(null);
-  };
-  console.log(historyList);
+        leads
+      }))
+    return []
+  }
+
   const handleHistory = (Item) => {
-    setselectedData(Item.activityLog);
-    setHistoryList(Item.activityLog);
-    setselectedLeadId(Item.leadId);
-    sethistoryModal(true);
-  };
-  const renderTable = (data) => (
-    <table className="border-collapse border border-gray-300 w-full text-sm">
-      <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30 text-xs">
-        <tr>
-          <th className="border border-gray-300 px-3 py-1 text-left">
-            <div className="flex items-center gap-1.5">
-              <User className="w-3 h-3" />
-              <span>Name</span>
-            </div>
-          </th>
-          <th className="border border-gray-300 px-3 py-2 min-w-[140px] text-left">
-            <div className="flex items-center gap-1.5">
-              <Phone className="w-3 h-3" />
-              <span>Mobile</span>
-            </div>
-          </th>
-          <th className="border border-gray-300 px-3 py-2 text-left">
-            <div className="flex items-center gap-1.5">
-              <Phone className="w-3 h-3" />
-              <span>Phone</span>
-            </div>
-          </th>
-          <th className="border border-gray-300 px-3 py-1 text-left">
-            <div className="flex items-center gap-1.5">
-              <Mail className="w-3 h-3" />
-              <span>Email</span>
-            </div>
-          </th>
-          <th className="border border-gray-300 px-3 py-1 min-w-[90px] text-left">
-            Lead Id
-          </th>
+    setselectedData(Item.activityLog)
+    setHistoryList(Item.activityLog)
+    setselectedLeadId(Item.leadId)
+    sethistoryModal(true)
+  }
 
-          <th className="border border-gray-300 px-3 py-1 min-w-[90px]">
-            Action
-          </th>
-          <th className="border border-gray-300 px-3 py-1">Net Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-        {data?.length > 0 ? (
-          data.map((item, index) => (
-            <React.Fragment key={index}>
-              <tr className="bg-white border border-b-0 border-gray-300 hover:bg-blue-50 transition-colors">
-                <td
-                  onClick={() => setShowFullName(!showFullName)}
-                  className={`px-3 min-w-[120px] py-1 cursor-pointer overflow-hidden font-medium text-gray-900 ${
-                    showFullName
-                      ? "whitespace-normal max-h-[3em]"
-                      : "truncate whitespace-nowrap max-w-[120px]"
-                  }`}
-                  style={{ lineHeight: "1.5em" }}
-                >
-                  {item?.customerName?.customerName || item?.customerName}
-                </td>
-                <td className="px-3 py-1 text-gray-700">{item?.mobile}</td>
-                <td className="px-3 py-1 text-gray-700">{item?.phone}</td>
-                <td className="px-3 py-1 text-gray-600 truncate max-w-[180px]">
-                  {item?.email}
-                </td>
-                <td className="px-3 py-1 font-medium text-blue-700">
-                  {item?.leadId}
-                </td>
+  const renderTable = (data) => {
+    const LeadRow = ({ item }) => {
+      const open = openRow === item._id
 
-                <td className="border border-b-0 border-gray-300 px-2 py-1 text-center">
-                  <button
-                    type="button"
-                    onClick={() => handleHistory(item)}
-                    className="inline-flex items-center gap-1 px-2  py-1 text-xs font-semibold text-white bg-indigo-600 rounded hover:bg-indigo-700 transition-colors w-full justify-center"
-                  >
-                    <BellRing className="w-3.5 h-3.5" />
-                    Event Log
-                  </button>
-                </td>
-                <td className="border border-b-0 border-gray-300 px-3 py-1"></td>
-              </tr>
+      const lastLog = item.activityLog[item.activityLog.length - 1]
 
-              <tr className="font-medium bg-gradient-to-r from-gray-100 to-gray-50 text-xs text-gray-600">
-                <td className="px-3 py-1 border-t border-gray-200">
-                  <div className="flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Lead by</span>
-                  </div>
-                </td>
-                <td className="px-3 py-1 border-t border-gray-200">
-                  <div className="flex items-center gap-1.5">
-                    <UserCheck className="w-3.5 h-3.5 text-green-600" />
-                    <span>Assigned to</span>
-                  </div>
-                </td>
-                <td className="px-3 py-1 border-t border-gray-200 text-nowrap">
-                  <div className="flex items-center gap-1.5">
-                    <UserPlus className="w-3.5 h-3.5 text-purple-600" />
-                    <span>Assigned by</span>
-                  </div>
-                </td>
-                <td className="px-3 py-1 border-t border-gray-200">
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-orange-600" />
-                    <span>No. of Followups</span>
-                  </div>
-                </td>
-                <td className="px-3 py-1 border-t border-gray-200 min-w-[120px]">
-                  <div className="flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Lead Date</span>
-                  </div>
-                </td>
+      const followupDate = lastLog?.nextFollowUpDate
+        ? new Date(lastLog.nextFollowUpDate)
+            .toLocaleDateString("en-GB")
+            .split("/")
+            .join("-")
+        : "-"
 
-                <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1 bg-white">
-                  <button
-                    onClick={() => {
-                      const isAllocatedToeditable = item.activityLog.some(
-                        (it) =>
-                          it?.taskallocatedTo?._id === loggedUser._id &&
-                          it?.taskClosed === false
-                      );
-
-                      loggedUser.role === "Admin"
-                        ? navigate("/admin/transaction/lead/leadEdit", {
-                            state: {
-                              leadId: item._id,
-                              isReadOnly: !isAllocatedToeditable,
-                            },
-                          })
-                        : navigate("/staff/transaction/lead/leadEdit", {
-                            state: {
-                              leadId: item._id,
-                              isReadOnly: !isAllocatedToeditable,
-                            },
-                          });
-                    }}
-                    className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors w-full justify-center"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    View/Modify
-                  </button>
-                </td>
-                <td className="border border-t-0 border-b-0 border-gray-300 px-3  bg-white font-semibold">
-                  <div className="flex items-center justify-start">
-                    <IndianRupee className="w-4 h-3.5 text-green-600 mr-1" />
-                    <span className="text-lg font-semibold">
-                      {" "}
-                      {item.netAmount}
-                    </span>
-                  </div>
-                </td>
-              </tr>
-
-              <tr className="bg-white">
-                <td className="border border-t-0 border-gray-300 px-3 py-1 text-gray-900">
-                  {item?.leadBy?.name}
-                </td>
-                <td className="border border-t-0 border-gray-300 px-3 py-1 text-gray-700">
-                  {item?.taskallocatedTo?.name || "-"}
-                </td>
-                <td className="border border-t-0 border-gray-300 px-3 py-1 text-gray-700">
-                  {item?.taskallocatedBy?.name || "-"}
-                </td>
-                <td className="border border-t-0 border-gray-300 px-3 py-1 text-gray-700"></td>
-                <td className="border border-t-0 border-gray-300 px-3 py-1 text-gray-900">
-                  {item.leadDate?.toString().split("T")[0]}
-                </td>
-
-                <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1">
-                  {" "}
-                </td>
-                <td className="border border-t-0 border-b-0 border-gray-300 px-3 py-1"></td>
-              </tr>
-
-              {index !== data.length - 1 && (
-                <tr>
-                  <td colSpan="9" className="bg-gray-300">
-                    <div className="h-[2px]"></div>
-                  </td>
-                </tr>
-              )}
-            </React.Fragment>
-          ))
-        ) : (
-          <tr>
-            <td colSpan={8} className="text-center text-gray-500 py-6">
-              {loading ? (
-                <div className="flex justify-center">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                </div>
+      return (
+        <>
+          {/* ================= MAIN ROW ================= */}
+          <tr
+            onClick={() =>
+              setOpenRow((prev) => (prev === item._id ? null : item._id))
+            }
+            className="cursor-pointer bg-white hover:bg-blue-50 border border-gray-300"
+          >
+            {/* Arrow */}
+            <td className="pl-2 pr-1 py-2 w-5 border border-gray-300">
+              {open ? (
+                <ChevronDown className="w-3.5 h-3.5 text-blue-500" />
               ) : (
-                <div>No Leads</div>
+                <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
               )}
             </td>
+
+            {/* Name */}
+            <td className="px-3 py-2 border border-gray-300 whitespace-nowrap uppercase">
+              {item.customerName?.customerName || item.customerName}
+            </td>
+
+            {/* Mobile */}
+            <td className="px-3 py-2 border border-gray-300">{item?.mobile}</td>
+
+            {/* Last Remark */}
+            <td className="px-3 py-2 border border-gray-300 max-w-[200px]">
+              <span
+                className="text-red-600 font-medium truncate block"
+                title={lastLog?.remarks}
+              >
+                {lastLog?.remarks || "-"}
+              </span>
+            </td>
+
+            {/* Followup */}
+            <td className="px-3 py-2 border border-gray-300">{followupDate}</td>
+
+            {/* ✅ GAP AFTER FOLLOWUP */}
+            <td
+              className={`transition-all duration-200 ${
+                open
+                  ? "w-6 border border-gray-200 bg-white"
+                  : "w-0 p-0 border-0"
+              }`}
+            />
+
+            {/* Event Log */}
+            <td
+              className="px-2 py-2 border border-gray-300 text-right"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => handleHistory(item)}
+                className="bg-indigo-600 text-white px-2 py-1 rounded w-full flex justify-center"
+              >
+                <BellRing className="w-4 h-4" />
+              </button>
+            </td>
+
+            {/* View / Modify */}
+            <td
+              className="px-2 py-2 border border-gray-300 text-right"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() =>
+                  loggedUser.role === "Admin"
+                    ? navigate("/admin/transaction/lead/leadEdit", {
+                        state: { leadId: item._id }
+                      })
+                    : navigate("/staff/transaction/lead/leadEdit", {
+                        state: { leadId: item._id }
+                      })
+                }
+                className="bg-blue-600 text-white px-2 py-1 rounded w-full flex justify-center"
+              >
+                <Eye className="w-4 h-4" />
+              </button>
+            </td>
+
+            {/* Net Amount */}
+            <td className="px-3 py-2 text-right border border-gray-300">
+              <span className="inline-flex items-center gap-1">
+                <IndianRupee className="w-3.5 h-3.5" />
+                {item.netAmount?.toLocaleString("en-IN")}
+              </span>
+            </td>
           </tr>
-        )}
-      </tbody>
-    </table>
-  );
+
+          {/* ================= SECONDARY ROWS ================= */}
+          {open && (
+            <>
+              {/* Secondary Header */}
+              <tr className="text-xs font-semibold border border-gray-300">
+                <td className="border border-gray-300 px-3 py-1 bg-blue-50"></td>
+                <td className="border border-gray-300 px-3 py-1 bg-blue-50">
+                  Lead By
+                </td>
+                <td className="border border-gray-300 px-3 py-1 bg-blue-50">
+                  Assigned To
+                </td>
+                <td className="border border-gray-300 px-3 py-1 bg-blue-50">
+                  Assigned By
+                </td>
+                <td className="border border-gray-300 px-3 py-1 bg-blue-50">
+                  No. of Followups
+                </td>
+                <td className="border border-gray-300 px-3 py-1 bg-blue-50">
+                  Lead Date
+                </td>
+                <td className="border border-gray-300 px-3 py-1 bg-blue-600 text-white">
+                  Lead ID
+                </td>
+                <td className="border border-gray-300 px-3 py-1 bg-blue-600 text-white">
+                  Phone
+                </td>
+                <td className="border border-gray-300 px-3 py-1 bg-blue-600 text-white">
+                  Email
+                </td>
+              </tr>
+
+              {/* Secondary Values */}
+              <tr className="bg-slate-50 text-xs text-gray-700 border border-gray-300 whitespace-nowrap">
+                <td className="border border-gray-300 px-3 py-1"></td>
+                <td className="border border-gray-300 px-3 py-1">
+                  {item?.leadBy?.name || "-"}
+                </td>
+                <td className="border border-gray-300 px-3 py-1">
+                  {item?.taskallocatedTo?.name || "-"}
+                </td>
+                <td className="border border-gray-300 px-3 py-1">
+                  {item?.taskallocatedBy?.name || "-"}
+                </td>
+                <td className="border border-gray-300 px-3 py-1">
+                  {item.activityLog.length}
+                </td>
+                <td className="border border-gray-300 px-3 py-1">
+                  {item.leadDate?.toString().split("T")[0] || "-"}
+                </td>
+                <td className="border border-gray-300 px-3 py-1">
+                  {item?.leadId || "-"}
+                </td>
+                <td className="border border-gray-300 px-3 py-1">
+                  {item?.phone || "-"}
+                </td>
+                <td className="border border-gray-300 px-3 py-1">
+                  {item?.email || "-"}
+                </td>
+              </tr>
+            </>
+          )}
+        </>
+      )
+    }
+
+    return (
+      <table className="border-collapse border border-gray-300 w-full text-sm">
+        <thead className="bg-blue-600 text-white text-xs">
+          <tr>
+            <th className="border border-gray-300 w-5" />
+            <th className="border border-gray-300 px-3 py-1 text-left">Name</th>
+            <th className="border border-gray-300 px-3 py-1 text-left">
+              Mobile
+            </th>
+            <th className="border border-gray-300 px-3 py-1 text-left">
+              Last Remark
+            </th>
+            <th className="border border-gray-300 px-3 py-1 text-left">
+              Followup
+            </th>
+
+            {/* GAP HEADER */}
+            <th className="border border-gray-300 w-6"></th>
+
+            <th className="border border-gray-300 px-3 py-1 text-right">
+              Event
+            </th>
+            <th className="border border-gray-300 px-3 py-1 text-right">
+              View / Modify
+            </th>
+            <th className="border border-gray-300 px-3 py-1 text-right">
+              Net Amount
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {data.map((item) => (
+            <LeadRow key={item._id} item={item} />
+          ))}
+        </tbody>
+      </table>
+    )
+  }
+ 
+
   return (
-    <div className="h-full ">
+    <div className="h-full">
       <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3">
         <h2 className="text-lg font-bold">
           {ownLead ? "Own Lead" : "All Lead"}
@@ -349,7 +353,7 @@ export default function OwnLeadList() {
           </button>
         </div>
       </div>
-      {/* Responsive Table Container this is the newest design*/}
+
       <div className="flex-1 overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3">
         <>
           {(() => {
@@ -381,8 +385,6 @@ export default function OwnLeadList() {
                     </span>
                   </h3>
                 )}
-
-                {/* only render table if there are leads */}
                 {leads.length > 0 ? (
                   renderTable(leads)
                 ) : (
@@ -396,11 +398,11 @@ export default function OwnLeadList() {
         </>
       </div>
 
-      {showhistoryModal && historyList && historyList.length > 0 && (
+      {showhistoryModal && historyList.length > 0 && (
         <LeadhistoryModal
           selectedLeadId={selectedLeadId}
           historyList={historyList}
-          handlecloseModal={handlecloseModal}
+          handlecloseModal={() => sethistoryModal(false)}
         />
       )}
     </div>

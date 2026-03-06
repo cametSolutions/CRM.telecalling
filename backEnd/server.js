@@ -633,7 +633,10 @@ io.on("connection", (socket) => {
   socket.on("startattendanceConversion", (fileData) => {
     AttendanceExceltoJson(socket, fileData)
   })
+<<<<<<< HEAD
 
+=======
+>>>>>>> main
   socket.on("disconnect", () => {
     console.log("Client disconnected")
   })

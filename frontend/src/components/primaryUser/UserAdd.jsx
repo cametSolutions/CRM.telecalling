@@ -16,6 +16,8 @@ const UserAdd = ({
   handleUserData,
   handleEditedData
 }) => {
+console.log(User)
+console.log(Selected)
   const {
     register,
     handleSubmit,
@@ -124,7 +126,7 @@ const UserAdd = ({
         label: state.name,
         value: state.isoCode
       }))
-    : []
+    : [selectedCountry]
 
   const handleTableData = () => {
     if (tableObject.company_id.trim() === "") {
@@ -227,6 +229,7 @@ const UserAdd = ({
       setValue("email", User.email)
       setValue("mobile", User.mobile)
       setValue("privilegeleavestartsfrom", User.privilegeleavestartsfrom)
+console.log(User.casualleavestartsfrom)
       setValue("casualleavestartsfrom", User.casualleavestartsfrom)
       setValue("sickleavestartsfrom", User.sickleavestartsfrom)
       setValue("address", User.address)

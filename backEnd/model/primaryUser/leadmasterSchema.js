@@ -27,6 +27,7 @@ const leadSchema = new mongoose.Schema(
     dueDate: { type: Date },
     //for checking payment is completely due
     paymentVerified: { type: Boolean, default: false },
+    source: { type: String },
     //product tagged in the individual leads
     leadFor: [
       {
