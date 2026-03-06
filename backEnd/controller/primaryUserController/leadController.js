@@ -12,6 +12,8 @@ import { formatDate } from "../../../frontend/src/utils/dateUtils.js";
 export const LeadRegister = async (req, res) => {
   try {
     const { leadData, selectedtableLeadData, role } = req.body;
+
+console.log("tablee",selectedtableLeadData)
     // return
     const {
       customerName,
@@ -19,6 +21,7 @@ export const LeadRegister = async (req, res) => {
       phone,
       email,
       location,
+source,
       pincode,
       trade,
       remark,
@@ -101,7 +104,7 @@ export const LeadRegister = async (req, res) => {
       pincode,
       dueDate,
       trade,
-
+      source,
       partner,
       leadBranch,
       remark,
@@ -144,7 +147,7 @@ export const LeadRegister = async (req, res) => {
       message: "Lead created successfully",
     });
   } catch (error) {
-    console.log("error:", error.message);
+    console.log("error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -152,7 +155,10 @@ export const Checkexistinglead = async (req, res) => {
   try {
     const { leadData, role, selectedleadlist } = req.query;
 
-    const productIds = selectedleadlist.map((item) => item.productorServiceId);
+    const productIds = selectedleadlist
+      .filter(item => item.productorServiceId && item.productorServiceId !== "")
+      .map(item => item.productorServiceId);
+
 
     const [customerLeads, anyLeads] = await Promise.all([
       LeadMaster.find(
@@ -174,6 +180,7 @@ export const Checkexistinglead = async (req, res) => {
     );
 
     if (duplicateProducts.length > 0) {
+      console.log("duplicate found")
       // Same customer + same product
       return res.status(200).json({
         message: "This customer already has a lead with the same product.",
@@ -181,6 +188,7 @@ export const Checkexistinglead = async (req, res) => {
         eligible: false,
       });
     } else if (anyLeads) {
+      console.log("have lead with different produts")
       // Same customer + different products
       return res.status(200).json({
         message:
@@ -188,6 +196,7 @@ export const Checkexistinglead = async (req, res) => {
         exists: false,
       });
     } else {
+      console.log("noneeeeeeeee")
       // No lead at all for this customer
       return res.status(200).json({
         message: "No existing lead for this customer. Safe to create new lead.",

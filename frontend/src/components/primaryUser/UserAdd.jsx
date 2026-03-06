@@ -16,6 +16,8 @@ const UserAdd = ({
   handleUserData,
   handleEditedData
 }) => {
+console.log(User)
+console.log(Selected)
   const {
     register,
     handleSubmit,
@@ -124,7 +126,7 @@ const UserAdd = ({
         label: state.name,
         value: state.isoCode
       }))
-    : []
+    : [selectedCountry]
 
   const handleTableData = () => {
     if (tableObject.company_id.trim() === "") {
