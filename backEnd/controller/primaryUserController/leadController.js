@@ -3308,22 +3308,6 @@ export const Getdailystaffreport = async (req, res) => {
 
 export const GetcollectionLeads = async (req, res) => {
   try {
-<<<<<<< HEAD
-    const { selectedBranch, verified } = req.query;
-    const query = {
-      leadBranch: new mongoose.Types.ObjectId(selectedBranch),
-      paymentVerified: verified === "true" ? true : false,
-    };
-    const matchedCollectionlead = await LeadMaster.find(query)
-      .populate({ path: "customerName" })
-      .populate({ path: "partner" })
-      .lean();
-    const populatedcollectionLeads = await Promise.all(
-      matchedCollectionlead.map(async (lead) => {
-        if (!lead.leadByModel || !mongoose.models[lead.leadByModel]) {
-          console.error(`Model ${lead.leadByModel} is not registered`);
-          return lead;
-=======
     const { startDate, endDate } = req.query;
 
     const start = new Date(startDate);
@@ -3342,32 +3326,8 @@ export const GetcollectionLeads = async (req, res) => {
             $gte: start,
             $lte: end
           }
->>>>>>> main
-        }
+        },
 
-<<<<<<< HEAD
-        // Fetch leadBy name
-        const assignedModel = mongoose.model(lead.leadByModel);
-        const populatedLeadBy = await assignedModel
-          .findById(lead.leadBy)
-          .select("name")
-          .lean();
-        let lasttaskallocatedto = null;
-        let lasttaskallocatedBy = null;
-
-        // ✅ Populate activityLog fields
-        const populatedActivityLog = await Promise.all(
-          (lead.activityLog || []).map(async (activity) => {
-            const populatedActivity = { ...activity };
-
-            // Populate taskallocatedTo
-            if (activity.submissiondoneByModel && activity.submittedUser) {
-              const model = mongoose.model(activity.submissiondoneByModel);
-              populatedActivity.submittedUser = await model
-                .findById(activity.submittedUser)
-                .select("name")
-                .lean();
-=======
       // Classify funnel stage
       {
         $addFields: {
@@ -3397,7 +3357,6 @@ export const GetcollectionLeads = async (req, res) => {
                 }
               ],
               default: "New Leads"
->>>>>>> main
             }
 
             // // Populate taskallocatedBy
@@ -3492,59 +3451,6 @@ export const GetlostLeads = async (req, res) => {
           return lead;
         }
 
-<<<<<<< HEAD
-        // Fetch leadBy name
-        const assignedModel = mongoose.model(lead.leadByModel);
-        const populatedLeadBy = await assignedModel
-          .findById(lead.leadBy)
-          .select("name")
-          .lean();
-        let lasttaskallocatedto;
-        let lasttaskallocatedBy;
-        // ✅ Populate activityLog fields
-        const populatedActivityLog = await Promise.all(
-          (lead.activityLog || []).map(async (activity) => {
-            const populatedActivity = { ...activity };
-
-            // Populate taskallocatedTo
-            if (activity.submissiondoneByModel && activity.submittedUser) {
-              const model = mongoose.model(activity.submissiondoneByModel);
-              populatedActivity.submittedUser = await model
-                .findById(activity.submittedUser)
-                .select("name")
-                .lean();
-            }
-
-            // // Populate taskallocatedBy
-            if (activity.taskallocatedByModel && activity.taskallocatedBy) {
-              const model = mongoose.model(activity.taskallocatedByModel);
-              lasttaskallocatedBy = populatedActivity.taskallocatedBy =
-                await model
-                  .findById(activity.taskallocatedBy)
-                  .select("name")
-                  .lean();
-            }
-
-            // ✅ Populate submissionDoneBy
-            if (activity.taskallocatedToModel && activity.taskallocatedTo) {
-              const model = mongoose.model(activity.taskallocatedToModel);
-              lasttaskallocatedto = populatedActivity.taskallocatedTo =
-                await model
-                  .findById(activity.taskallocatedTo)
-                  .select("name")
-                  .lean();
-            }
-            if (activity.taskBy && isValidObjectId(activity.taskBy)) {
-              populatedActivity.taskBy = await Task.findById(activity.taskBy).select("taskName").lean()
-            }
-            if (activity.taskId && isValidObjectId(activity.taskId)) {
-              populatedActivity.taskId = await Task.findById(activity.taskId).select("taskName").lean()
-            }
-
-            return populatedActivity;
-          })
-        );
-=======
       // Group by stage
       {
         $group: {
@@ -3685,7 +3591,6 @@ export const GetlostLeads = async (req, res) => {
     // });
     console.log("formateeddd", formatted)
     return res.status(200).json({ message: "data found", data: formatted });
->>>>>>> main
 
         // ✅ Get last activity
         const lastActivity =
@@ -3715,11 +3620,8 @@ export const GetlostLeads = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-<<<<<<< HEAD
-=======
 
 
->>>>>>> main
 export const GetallproductwiseReport = async (req, res) => {
   try {
     console.log("hhhhhhhhhhhhhh")
