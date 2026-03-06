@@ -3306,57 +3306,45 @@ export const Getdailystaffreport = async (req, res) => {
   }
 }
 
+
 export const GetcollectionLeads = async (req, res) => {
   try {
-    const { startDate, endDate } = req.query;
+    const { selectedBranch, verified } = req.query;
+    const query = {
+      leadBranch: new mongoose.Types.ObjectId(selectedBranch),
+      paymentVerified: verified === "true" ? true : false,
+    };
+    const matchedCollectionlead = await LeadMaster.find(query)
+      .populate({ path: "customerName" })
+      .populate({ path: "partner" })
+      .lean();
+    const populatedcollectionLeads = await Promise.all(
+      matchedCollectionlead.map(async (lead) => {
+        if (!lead.leadByModel || !mongoose.models[lead.leadByModel]) {
+          console.error(`Model ${lead.leadByModel} is not registered`);
+          return lead;
+        }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+        // Fetch leadBy name
+        const assignedModel = mongoose.model(lead.leadByModel);
+        const populatedLeadBy = await assignedModel
+          .findById(lead.leadBy)
+          .select("name")
+          .lean();
+        let lasttaskallocatedto;
+        let lasttaskallocatedBy;
+        // ✅ Populate activityLog fields
+        const populatedActivityLog = await Promise.all(
+          (lead.activityLog || []).map(async (activity) => {
+            const populatedActivity = { ...activity };
 
-
-    // 1️⃣ Aggregation Pipeline
-    const result = await LeadMaster.aggregate([
-      // Unwind activityLog
-      { $unwind: "$activityLog" },
-
-      // Filter by date range
-      {
-        $match: {
-          "activityLog.submissionDate": {
-            $gte: start,
-            $lte: end
-          }
-        },
-
-      // Classify funnel stage
-      {
-        $addFields: {
-          stage: {
-            $switch: {
-              branches: [
-                {
-                  case: {
-                    $and: [
-                      { $eq: ["$activityLog.allocationChanged", false] },
-                      { $eq: ["$activityLog.taskTo", "followup"] }
-                    ]
-                  },
-                  then: "Contacted"
-                },
-                {
-                  case: { $eq: ["$activityLog.taskfromFollowup", true] },
-                  then: "System Study"
-                },
-                {
-                  case: { $eq: ["$leadLost", true] },
-                  then: "Lost"
-                },
-                {
-                  case: { $eq: ["$activityLog.followupClosed", true] },
-                  then: "Converted"
-                }
-              ],
-              default: "New Leads"
+            // Populate taskallocatedTo
+            if (activity.submissiondoneByModel && activity.submittedUser) {
+              const model = mongoose.model(activity.submissiondoneByModel);
+              populatedActivity.submittedUser = await model
+                .findById(activity.submittedUser)
+                .select("name")
+                .lean();
             }
 
             // // Populate taskallocatedBy
@@ -3377,13 +3365,6 @@ export const GetcollectionLeads = async (req, res) => {
                   .findById(activity.taskallocatedTo)
                   .select("name")
                   .lean();
-            }
-            if (activity.taskBy && isValidObjectId(activity.taskBy)) {
-
-              populatedActivity.taskBy = await Task.findById(activity.taskBy).select("taskName").lean()
-            }
-            if (activity.taskId && isValidObjectId(activity.taskId)) {
-              populatedActivity.taskId = await Task.findById(activity.taskId).select("taskName").lean()
             }
 
             return populatedActivity;
