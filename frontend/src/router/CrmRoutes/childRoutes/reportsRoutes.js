@@ -25,8 +25,8 @@ const reportsRoutes = [
     path: "/admin/reports/follow-up-summary",
     component: FollowupSummaryDashboard,
   },
-  { path: "/admin/reports/sales-funel", component: SalesFunnel }
-  , { path: "/admin/reports/dailystaffactivity", component: DailyStaffActivity }
+  { path: "/admin/reports/sales-funel", component: SalesFunnel },
+  { path: "/admin/reports/dailystaffactivity", component: DailyStaffActivity }
 ];
 
 export default reportsRoutes;

@@ -95,6 +95,7 @@ export const AttendanceExceltoJson = async (socket, fileData) => {
   //Parse the uploaded Excel file
   const workbook = XLSX.read(fileData, { type: "buffer" })
   const sheet = workbook.Sheets[workbook.SheetNames[0]]
+ 
   const allRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" })
 
   // Step 2: Find the row index that contains actual headers

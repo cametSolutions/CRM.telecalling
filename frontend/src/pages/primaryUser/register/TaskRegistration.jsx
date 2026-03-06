@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect, useCallback } from "react"
 import DeleteAlert from "../../../components/common/DeleteAlert"
 import Edit from "../../../components/common/Edit"
@@ -13,20 +11,19 @@ export default function TaskRegistration() {
   const [editId, setEditId] = useState(null)
   const [isEditMode, setIsEditMode] = useState(false)
   const [loading, setLoading] = useState(false)
-  const { data, refreshHook } = UseFetch(
-    "/lead/getallTask?istaskregistration=true"
-  )
+  const { data, refreshHook } = UseFetch("/lead/getallTask")
+  console.log(data)
   // Sync data from hook
   useEffect(() => {
     if (data && data.length > 0) {
       setItems(data)
     }
   }, [data])
+  console.log(items)
   // Handle Edit
   const handleEdit = useCallback(
     (id) => {
       const itemToEdit = items.find((item) => item._id === id)
-
       if (itemToEdit) {
         setValue(itemToEdit.task || itemToEdit.taskName || "")
         setEditId(id)
@@ -39,12 +36,6 @@ export default function TaskRegistration() {
   // Handle Delete
   const handleDelete = async (id) => {
     try {
-      const ispossibleDelete = await api.get(`/lead/checktodelete?id=${id}`)
-      if (!ispossibleDelete.data.data) {
-        toast.error("Task is in use and cannot be deleted.")
-        return
-      }
-
       await api.delete(`/lead/taskDelete?id=${id}`)
       setItems((prev) => prev.filter((item) => item._id !== id))
       return true
@@ -96,6 +87,7 @@ export default function TaskRegistration() {
     setEditId(null)
     setIsEditMode(false)
   }
+  console.log(items)
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {/* Main Content */}
@@ -171,24 +163,22 @@ export default function TaskRegistration() {
                       >
                         <td className="px-6 py-4 whitespace-pre-wrap max-w-md">
                           <div className="text-sm font-medium text-gray-900">
-                            {item.taskName}
+                            {item.taskName || "Unnamed Task"}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
                           <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                            {item.taskName !== "Lead" &&item.taskName!=="Followup"&&
-                              item.taskName !== "Allocation" &&
-                              item.taskName !== "Reallocation" && (
-                                <Edit onEdit={handleEdit} Id={item._id} />
-                              )}
-
                             {item.taskName !== "Lead" &&
                               item.taskName !== "Allocation" &&
-                              item.taskName !== "Reallocation" &&item.taskName !=="Followup" &&(
-                                <DeleteAlert
-                                  onDelete={handleDelete}
-                                  Id={item._id}
-                                />
+                              item.taskName !== "Reallocation" &&
+                              item.taskName !== "Followup" && (
+                                <>
+                                  <Edit onEdit={handleEdit} Id={item._id} />
+                                  <DeleteAlert
+                                    onDelete={handleDelete}
+                                    Id={item._id}
+                                  />
+                                </>
                               )}
                           </div>
                         </td>

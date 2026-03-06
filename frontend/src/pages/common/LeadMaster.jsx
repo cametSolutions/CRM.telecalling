@@ -54,6 +54,8 @@ const LeadMaster = ({
   const [formData, setFormData] = useState(null)
   const [restrictionMessage, setrestrictMessage] = useState()
   const [isEligible, setIseligible] = useState(false)
+  const [openLicenseDropdown, setOpenLicenseDropdown] = useState(null)
+  const [openProductDropdown, setOpenProductDropdown] = useState(null)
   const [popupMessage, setPopupMessage] = useState("")
   const [ispopupModalOpen, setIspopupModalOpen] = useState(false)
   const [isSelfAllocationChangable, setselfAllocationChangable] = useState(true)
@@ -467,10 +469,11 @@ const LeadMaster = ({
       )
         return
 
-      const updatedProductList = licensewithoutProductSelection.map((product) =>
-        product._id === productId
-          ? { ...product, selected: !product.selected }
-          : product
+      const updatedProductList = licensewithoutProductSelection.map(
+        (product) =>
+          product._id === productId
+            ? { ...product, selected: !product.selected }
+            : product
       )
       setlicenseWithoutProductSelection(updatedProductList)
     }
@@ -551,10 +554,11 @@ const LeadMaster = ({
         [item.licenseNumber]: updatedProductList
       }))
     } else {
-      const updatedProductList = licensewithoutProductSelection.map((product) =>
-        product._id === item.productId
-          ? { ...product, selected: !product.selected }
-          : product
+      const updatedProductList = licensewithoutProductSelection.map(
+        (product) =>
+          product._id === item.productId
+            ? { ...product, selected: !product.selected }
+            : product
       )
       setlicenseWithoutProductSelection(updatedProductList)
     }
@@ -601,6 +605,7 @@ const LeadMaster = ({
       return total + Number(product.productPrice)
     }, 0)
   }
+  console.log(selectedleadlist)
   const handleAddProducts = () => {
     setIsleadForOpen(false)
     if (validateError.emptyleadData) {
@@ -692,7 +697,10 @@ const LeadMaster = ({
       return updatedList
     })
   }
+  console.log("hhhh")
+  console.log(selectedleadlist)
   const validateLeadData = async (leadData, selectedleadlist, role) => {
+    console.log("HHhhh")
     const result = await api.get("/lead/checkexistinglead", {
       params: {
         leadData,
@@ -700,6 +708,7 @@ const LeadMaster = ({
         role
       }
     })
+    console.log(result.data)
 
     if (
       result.data.message ===
@@ -731,10 +740,12 @@ const LeadMaster = ({
           "This customer already has a lead, but with different product(s)."
       }
     }
+    console.log(result.data.message)
     setPopupMessage(result.data.message)
 
     return isEligible
   }
+  console.log(selectedleadlist)
   const onSubmit = async (data) => {
     setsubmitLoading(true)
     if (submitLoading) {
@@ -750,11 +761,16 @@ const LeadMaster = ({
           }))
           return
         }
+        const filteredleadlist = selectedleadlist.filter(
+          (item) => item.productorServiceId && item.productorServiceId !== ""
+        )
+        console.log(filteredleadlist)
         const validation = await validateLeadData(
           data,
-          selectedleadlist,
+          filteredleadlist,
           loggeduser.role
         )
+        console.log(validation.message)
         setFormData(data)
         setPopupMessage(validation.message)
         if (validation.message === "") {
@@ -784,10 +800,13 @@ const LeadMaster = ({
   }
   const handlePopupOk = async (ischek = false, leadData = null) => {
     setPopupOpen(false)
+    const filteredleadlist = selectedleadlist.filter(
+      (item) => item.productorServiceId && item.productorServiceId !== ""
+    )
     if (isEligible && leadData === null) {
-      await handleleadData(formData, selectedleadlist, loggeduser.role)
+      await handleleadData(formData, filteredleadlist, loggeduser.role)
     } else if (ischek && leadData) {
-      await handleleadData(leadData, selectedleadlist, loggeduser.role)
+      await handleleadData(leadData, filteredleadlist, loggeduser.role)
     }
   }
   const normalizeMobile = (number) => {
@@ -833,7 +852,7 @@ const LeadMaster = ({
     }
   }
   return (
-    <div className="bg-gray-100 h-full">
+    <div className="bg-gray-100 h-auto">
       {(modalloader ||
         loadingState ||
         editloadingState ||
@@ -845,9 +864,10 @@ const LeadMaster = ({
           color="#4A90E2" // Change color as needed
         />
       )}
-      <div className="bg-white h-full overflow-y-auto flex justify-center items-center shadow-xl p-3 md:p-8 w-full">
+
+      <div className="overflow-y-auto flex justify-center items-center p-3 shadow-xl ">
         <div
-          className="bg-white shadow-xl rounded mx-auto p-3 md:p-8 w-full"
+          className="bg-white shadow-xl rounded md:w-3/5 "
           style={{
             opacity:
               productLoading || usersLoading || customerLoading ? 0.2 : 1,
@@ -858,20 +878,6 @@ const LeadMaster = ({
             transition: "opacity 0.3s ease-in-out"
           }}
         >
-          {/* {Data && (
-            <div className="flex justify-end">
-              <span className="text-white p-2 rounded-md bg-blue-500 text-md font-bold cursor-pointer hover:bg-blue-600">
-                Edit Customer
-              </span>
-            </div>
-          )} */}
-
-          <div className="flex justify-between">
-            <h2 className="text-xl md:text-2xl font-semibold  mb-1 md:mb-2">
-              {Data && Data?.length > 0 ? "Lead Edit" : "Lead"}
-            </h2>
-          </div>
-
           {showmessage && (
             <PopUp
               isOpen={ispopupModalOpen}
@@ -883,7 +889,7 @@ const LeadMaster = ({
             />
           )}
 
-          <form onSubmit={handleSubmitMain(onSubmit)} className="">
+          {/* <form onSubmit={handleSubmitMain(onSubmit)} className="">
             <div className="md:flex items-start">
               <div className="md:w-1/2  grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 md:mr-2">
                 <div>
@@ -923,7 +929,7 @@ const LeadMaster = ({
                   </select>
                 </div>
 
-                {/* Customer Select Dropdown */}
+              
                 <div>
                   <label
                     htmlFor="customerName"
@@ -1146,7 +1152,6 @@ const LeadMaster = ({
                     `}
                       >
                         <option value="">Select</option>
-                        {/*only for admin and marketing teams*/}
                         {(loggeduser?.department?._id ===
                           "670c866552847bbebbd35748" ||
                           loggeduser?.department?._id ===
@@ -1183,13 +1188,7 @@ const LeadMaster = ({
                                 : "bg-gray-200 cursor-not-allowed"
                             }`}
                           >
-                            {/* <option value="">Select Allocationtype</option> */}
-
-                            {tasklist.map((task) => (
-                              <option key={task._id} value={task._id}>
-                                {task.taskName}
-                              </option>
-                            ))}
+                            <option value="followup">Followup</option>
                           </select>
                           {errorsMain.allocationType && (
                             <p className="text-red-500 text-sm">
@@ -1285,7 +1284,6 @@ const LeadMaster = ({
                     <label className="block text-sm font-medium text-gray-700">
                       Select License
                     </label>
-                    {/* Button to open dropdown and show selected value */}
                     <button
                       type="button"
                       disabled={isReadOnly}
@@ -1311,11 +1309,9 @@ const LeadMaster = ({
                       </svg>
                     </button>
 
-                    {/* Dropdown List */}
                     {isLicenseOpen && (
                       <div className=" w-full mt-1 bg-white border rounded-md shadow-lg z-30  max-h-60 absolute overflow-y-auto ">
                         <ul className="">
-                          {/* Option to unselect license */}
                           <li
                             className="p-2 hover:bg-gray-200 cursor-pointer font-semibold text-red-500"
                             onClick={() => handleLicenseSelect(null)}
@@ -1323,7 +1319,6 @@ const LeadMaster = ({
                             No License
                           </li>
 
-                          {/* List of available licenses */}
                           {customerTableData?.map((item, index) => (
                             <li
                               key={item.licenseNumber || index}
@@ -1348,7 +1343,6 @@ const LeadMaster = ({
                     </label>
 
                     <div className="flex items-center ">
-                      {/* Toggle Dropdown Button */}
                       <button
                         type="button"
                         disabled={isReadOnly}
@@ -1382,7 +1376,6 @@ const LeadMaster = ({
                         ADD
                       </button>
                     </div>
-                    {/* Product List (Visible when isOpen is true) */}
                     {isleadForOpen && (
                       <div className="absolute w-full z-30 left-0 mt-2 md:w-80 border bg-white shadow-lg rounded-md p-2 max-h-40 overflow-y-auto">
                         {selectedLicense &&
@@ -1504,7 +1497,6 @@ const LeadMaster = ({
                                   {item.productorServiceName}
                                 </td>
 
-                                {/* Price */}
                                 <td className="border border-gray-300 px-2 py-2">
                                   <input
                                     type="number"
@@ -1522,7 +1514,6 @@ const LeadMaster = ({
                                   />
                                 </td>
 
-                                {/* Tax */}
                                 <td className="border border-gray-300 px-2 py-2">
                                   <input
                                     type="number"
@@ -1538,7 +1529,6 @@ const LeadMaster = ({
                                   />
                                 </td>
 
-                                {/* Net Amount */}
                                 <td className="border border-gray-300 px-2 py-2">
                                   <input
                                     type="text"
@@ -1549,7 +1539,6 @@ const LeadMaster = ({
                                   />
                                 </td>
 
-                                {/* Action */}
                                 <td className="border border-gray-300 px-3 py-2 text-center">
                                   <button
                                     type="button"
@@ -1688,7 +1677,997 @@ const LeadMaster = ({
                 )}
               </button>
             </div>
+          </form> */}
+
+          <form
+            onSubmit={handleSubmitMain(onSubmit)}
+            className="bg-white p-4"
+            style={{ fontFamily: "'Segoe UI', sans-serif" }}
+          >
+            <div className="bg-white rounded-lg border border-gray-300 shadow-md overflow-hidden">
+              {/* ── Header ── */}
+              <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-300">
+                <div className="text-sm font-bold px-4 py-1 rounded border-2 text-red-600 border-red-500 bg-white">
+                  {process === "Registration" ? "New Lead" : "Edit Lead"}
+                </div>
+              </div>
+
+              <div className="p-3 md:p-4 space-y-3">
+                {/* ── Row 1: Customer Name | Email | Phone | Mobile ── */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3">
+                  <div className="sm:col-span-2 lg:col-span-1">
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Customer Name
+                    </label>
+                    <div className="flex gap-1">
+                      <div className="flex-1 text-sm min-w-0">
+                        <Select
+                          options={customerOptions}
+                          isDisabled={!iscustomerchangeandbranch}
+                          value={
+                            customerOptions.length > 0
+                              ? (customerOptions.find(
+                                  (o) => o.value === watchMain("customerName")
+                                ) ?? null)
+                              : null
+                          }
+                          getOptionLabel={(o) =>
+                            `${o.label}-(${o.mobile})-(${o.license})`
+                          }
+                          getOptionValue={(o) => o._id}
+                          filterOption={customFilter}
+                          {...registerMain("customerName", {
+                            required: "Customer is Required"
+                          })}
+                          onBlur={() => {
+                            const selected = customerOptions.find(
+                              (o) => o.value === watchMain("customerName")
+                            )
+                            if (selected)
+                              setValueMain("customerName", selected.value)
+                          }}
+                          onChange={(sel) => {
+                            handleSelectedCustomer(sel)
+                            setSelectedCustomer(sel)
+                            setValueMain("customerName", sel.value, {
+                              shouldValidate: true
+                            })
+                            setValueMain("netAmount", "")
+                            setSelectedLeadList([])
+                            setSelectedLicense(null)
+                          }}
+                          styles={{
+                            control: (base, state) => ({
+                              ...base,
+                              backgroundColor: "#EEF2F8",
+                              borderColor: "#D1D5DB",
+                              minHeight: 34,
+                              cursor: state.isDisabled
+                                ? "not-allowed"
+                                : "pointer",
+                              opacity: state.isDisabled ? 0.7 : 1
+                            }),
+                            menuList: (base) => ({ ...base, maxHeight: 200 })
+                          }}
+                          menuPortalTarget={document.body}
+                          menuShouldScrollIntoView={false}
+                          className="w-full"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setModalOpen(true)
+                          clearMainerrors()
+                        }}
+                        disabled={isReadOnly}
+                        className={`bg-[#1B2A4A] hover:bg-[#243660] text-white text-xs font-bold px-3 rounded flex-shrink-0 ${isReadOnly ? "cursor-not-allowed opacity-70" : ""}`}
+                      >
+                        NEW
+                      </button>
+                    </div>
+                    {errorsMain.customerName && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errorsMain.customerName.message}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <select
+                      {...registerMain("leadBranch")}
+                      disabled={!iscustomerchangeandbranch}
+                      onChange={(e) => {
+                        setSelectedBranch([e.target.value])
+                        setValueMain("customerName", "")
+                        setSelectedCustomer(null)
+                        setcustomerTableData([])
+                        setSelectedLeadList([])
+                        setValueMain("netAmount", "")
+                        setSelectedLicense(null)
+                      }}
+                      className="border border-gray-300 rounded px-3 py-[6px] text-sm mt-5 bg-[#1B2A4A] hover:bg-[#243660] text-white outline-none min-w-[100px] cursor-pointer"
+                    >
+                      {companybranches?.map((b, i) => (
+                        <option key={i} value={b._id}>
+                          {b.branchName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* ── Row 2: Source | Trade | Associate ── */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Email id
+                    </label>
+                    <input
+                      {...registerMain("email")}
+                      disabled={isReadOnly}
+                      placeholder="Email..."
+                      className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${isReadOnly ? "cursor-not-allowed opacity-70" : ""}`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      {...registerMain("phone")}
+                      disabled={isReadOnly}
+                      placeholder="Landline..."
+                      className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${isReadOnly ? "cursor-not-allowed opacity-70" : ""}`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Mobile Number
+                    </label>
+                    <input
+                      {...registerMain("mobile")}
+                      readOnly={isReadOnly}
+                      placeholder="Mobile..."
+                      className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${isReadOnly ? "cursor-not-allowed opacity-70" : ""}`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Source of Lead
+                    </label>
+                    <select
+                      {...registerMain("source", {
+                        required: "Source is Required"
+                      })}
+                      className="w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8]"
+                    >
+                      <option value="">Select Source</option>
+                      <option value="whatsapp">WhatsApp</option>
+                      <option value="instagram">Instagram</option>
+                      <option value="facebook">Facebook</option>
+                      <option value="Direct">Direct</option>
+                    </select>
+                    {errorsMain.source && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errorsMain.source.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Trade
+                    </label>
+                    <input
+                      {...registerMain("trade")}
+                      disabled
+                      placeholder="Trade..."
+                      className="w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] cursor-not-allowed opacity-70"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Associate with
+                    </label>
+                    <select
+                      {...registerMain("partner", {
+                        required: "Partnership is Required"
+                      })}
+                      disabled={isReadOnly}
+                      className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${isReadOnly ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+                    >
+                      <option value="">Select Partner</option>
+                      {partner?.map((p, i) => (
+                        <option key={i} value={p._id}>
+                          {p.partner}
+                        </option>
+                      ))}
+                    </select>
+                    {errorsMain.partner && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errorsMain.partner.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* ── Self allocation sub-fields ── */}
+                {process !== "edit" && selfAllocation && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">
+                        Allocation Type
+                      </label>
+                      <select
+                        disabled={!isSelfAllocationChangable}
+                        {...registerMain("allocationType", {
+                          required: "Allocation type is required"
+                        })}
+                        className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${!isSelfAllocationChangable ? "cursor-not-allowed opacity-70" : ""}`}
+                      >
+                        <option value="followup">Followup</option>
+                      </select>
+                      {errorsMain.allocationType && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errorsMain.allocationType.message}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">
+                        Due Date
+                      </label>
+                      <input
+                        type="date"
+                        {...registerMain("dueDate", {
+                          required: "Due Date is required"
+                        })}
+                        className="w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8]"
+                      />
+                      {errorsMain.dueDate && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errorsMain.dueDate.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Product Table ── */}
+                <div className="border border-gray-300 rounded overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-[#1B2A4A] text-white">
+                          <th
+                            rowSpan="2"
+                            className="border border-blue-900 px-3 py-2 text-left whitespace-nowrap min-w-[160px]"
+                          >
+                            License No
+                          </th>
+                          <th
+                            rowSpan="2"
+                            className="border border-blue-900 px-3 py-2 text-left whitespace-nowrap min-w-[160px]"
+                          >
+                            Product / Service
+                          </th>
+                          <th
+                            colSpan="3"
+                            className="border border-blue-900 px-3 py-2 text-center"
+                          >
+                            Price Details
+                          </th>
+                          <th
+                            rowSpan="2"
+                            className="border border-blue-900 px-3 py-2 text-center w-10"
+                          >
+                            <button
+                              type="button"
+                              disabled={isReadOnly}
+                              onClick={() =>
+                                setSelectedLeadList((prev) => [
+                                  ...(prev || []),
+                                  {
+                                    licenseNumber: "",
+                                    productorServiceId: "",
+                                    productorServiceName: "",
+                                    productPrice: "",
+                                    hsn: "",
+                                    netAmount: ""
+                                  }
+                                ])
+                              }
+                              title="Add Row"
+                              className={`mx-auto flex items-center justify-center w-6 h-6 rounded-full bg-white bg-opacity-20 hover:bg-opacity-40 transition ${isReadOnly ? "cursor-not-allowed opacity-50" : ""}`}
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4 text-white"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M12 4v16m8-8H4"
+                                />
+                              </svg>
+                            </button>
+                          </th>
+                        </tr>
+                        <tr className="bg-[#1B2A4A] text-white">
+                          <th className="border border-blue-900 px-3 py-1 text-center whitespace-nowrap min-w-[80px]">
+                            Amount
+                          </th>
+                          <th className="border border-blue-900 px-3 py-1 text-center whitespace-nowrap min-w-[70px]">
+                            Tax %
+                          </th>
+                          <th className="border border-blue-900 px-3 py-1 text-center whitespace-nowrap min-w-[80px]">
+                            Net Amount
+                          </th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {(selectedleadlist && selectedleadlist.length > 0
+                          ? selectedleadlist
+                          : [
+                              {
+                                licenseNumber: "",
+                                productorServiceId: "",
+                                productorServiceName: "",
+                                productPrice: "",
+                                hsn: "",
+                                netAmount: ""
+                              }
+                            ]
+                        ).map((item, index) => (
+                          <tr
+                            key={index}
+                            className="border-b even:bg-blue-50 bg-white hover:bg-blue-50 transition-colors"
+                          >
+                            {/* ── License No dropdown ── */}
+                            <td className="border border-gray-300 px-2 py-1">
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  disabled={isReadOnly}
+                                  onClick={() =>
+                                    setOpenLicenseDropdown((prev) =>
+                                      prev === index ? null : index
+                                    )
+                                  }
+                                  className={`w-full border border-gray-200 rounded px-2 py-[5px] text-xs bg-[#EEF2F8] flex justify-between items-center gap-1 ${isReadOnly ? "cursor-not-allowed opacity-70" : ""}`}
+                                >
+                                  <span
+                                    className={`truncate ${item.licenseNumber ? "text-gray-700" : "text-gray-400"}`}
+                                  >
+                                    {item.licenseNumber || "Select License"}
+                                  </span>
+                                  <svg
+                                    className="w-3 h-3 flex-shrink-0"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                </button>
+
+                                {openLicenseDropdown === index && (
+                                  <div className="absolute left-0 top-full mt-1 w-full min-w-[200px] bg-white border rounded shadow-lg z-[100] max-h-48 overflow-y-auto">
+                                    <ul>
+                                      <li
+                                        className="p-2 hover:bg-gray-100 cursor-pointer text-xs font-semibold text-red-500"
+                                        onClick={() => {
+                                          const updated = [
+                                            ...(selectedleadlist?.length
+                                              ? selectedleadlist
+                                              : [
+                                                  {
+                                                    licenseNumber: "",
+                                                    productorServiceId: "",
+                                                    productorServiceName: "",
+                                                    productPrice: "",
+                                                    hsn: "",
+                                                    netAmount: ""
+                                                  },
+                                                  {
+                                                    licenseNumber: "",
+                                                    productorServiceId: "",
+                                                    productorServiceName: "",
+                                                    productPrice: "",
+                                                    hsn: "",
+                                                    netAmount: ""
+                                                  }
+                                                ])
+                                          ]
+                                          updated[index] = {
+                                            ...updated[index],
+                                            licenseNumber: "",
+                                            productorServiceId: "",
+                                            productorServiceName: "",
+                                            productPrice: "",
+                                            hsn: "",
+                                            netAmount: ""
+                                          }
+                                          setSelectedLeadList(updated)
+                                          handleLicenseSelect(null)
+                                          setOpenLicenseDropdown(null)
+                                        }}
+                                      >
+                                        No License
+                                      </li>
+                                      {customerTableData?.map((lic, i) => (
+                                        <li
+                                          key={lic.licenseNumber || i}
+                                          className="p-2 hover:bg-gray-100 cursor-pointer text-xs text-gray-700"
+                                          onClick={() => {
+                                            const updated = [
+                                              ...(selectedleadlist?.length
+                                                ? selectedleadlist
+                                                : [
+                                                    {
+                                                      licenseNumber: "",
+                                                      productorServiceId: "",
+                                                      productorServiceName: "",
+                                                      productPrice: "",
+                                                      hsn: "",
+                                                      netAmount: ""
+                                                    },
+                                                    {
+                                                      licenseNumber: "",
+                                                      productorServiceId: "",
+                                                      productorServiceName: "",
+                                                      productPrice: "",
+                                                      hsn: "",
+                                                      netAmount: ""
+                                                    }
+                                                  ])
+                                            ]
+                                            updated[index] = {
+                                              ...updated[index],
+                                              licenseNumber: lic.licenseNumber,
+                                              productorServiceId: "",
+                                              productorServiceName: ""
+                                            }
+                                            setSelectedLeadList(updated)
+                                            handleLicenseSelect(
+                                              lic.licenseNumber
+                                            )
+                                            setOpenLicenseDropdown(null)
+                                          }}
+                                        >
+                                          {lic.licenseNumber} —{" "}
+                                          {lic.productName}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* ── Product / Service dropdown with custom blue checkboxes ── */}
+                            <td className="border border-gray-300 px-2 py-1">
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  disabled={isReadOnly}
+                                  onClick={() =>
+                                    setOpenProductDropdown((prev) =>
+                                      prev === index ? null : index
+                                    )
+                                  }
+                                  className={`w-full border border-gray-200 rounded px-2 py-[5px] text-xs bg-[#EEF2F8] flex justify-between items-center gap-1 ${isReadOnly ? "cursor-not-allowed opacity-70" : ""}`}
+                                >
+                                  <span
+                                    className={`truncate ${item.productorServiceName ? "text-gray-700" : "text-gray-400"}`}
+                                  >
+                                    {item.productorServiceName ||
+                                      "Select Product / Service"}
+                                  </span>
+                                  <svg
+                                    className="w-3 h-3 flex-shrink-0"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
+                                </button>
+
+                                {openProductDropdown === index && (
+                                  <div className="absolute left-0 top-full mt-1 w-full min-w-[200px] bg-white border rounded shadow-lg z-[100] max-h-48 overflow-y-auto p-2">
+                                    {item.licenseNumber
+                                      ? leadList?.map((prod) => {
+                                          const state =
+                                            productOrserviceSelections[
+                                              item.licenseNumber
+                                            ]?.find(
+                                              (p) => p._id === prod._id
+                                            ) || { selected: false }
+                                          return (
+                                            <label
+                                              key={prod._id}
+                                              className="flex items-center gap-2 mb-1 text-xs cursor-pointer hover:bg-gray-50 px-1 py-0.5 rounded"
+                                            >
+                                              <span
+                                                onClick={() => {
+                                                  handleProductORserviceSelect(
+                                                    prod._id
+                                                  )
+                                                  if (!state.selected) {
+                                                    const igstRate =
+                                                      prod?.selectedArray?.[0]
+                                                        ?.hsn_id?.onValue
+                                                        ?.igstRate ?? 0
+                                                    const newItem = {
+                                                      licenseNumber:
+                                                        item.licenseNumber,
+                                                      productorServiceName:
+                                                        prod.productName ||
+                                                        prod.serviceName,
+                                                      productorServiceId:
+                                                        prod._id,
+                                                      itemType: prod.productName
+                                                        ? "Product"
+                                                        : "Service",
+                                                      productPrice:
+                                                        prod.productPrice,
+                                                      hsn: igstRate,
+                                                      price: prod.productPrice,
+                                                      netAmount: (
+                                                        Number(
+                                                          prod?.productPrice ||
+                                                            0
+                                                        ) +
+                                                        (Number(igstRate) /
+                                                          100) *
+                                                          Number(
+                                                            prod?.productPrice ||
+                                                              0
+                                                          )
+                                                      ).toFixed(2)
+                                                    }
+                                                    setSelectedLeadList(
+                                                      (prev) => {
+                                                        const exists =
+                                                          prev.some(
+                                                            (p) =>
+                                                              p.licenseNumber ===
+                                                                item.licenseNumber &&
+                                                              p.productorServiceId ===
+                                                                prod._id
+                                                          )
+                                                        if (exists) return prev
+                                                        const updated = [
+                                                          ...prev
+                                                        ]
+                                                        const emptyRowIndex =
+                                                          updated.findIndex(
+                                                            (r, i) =>
+                                                              i === index &&
+                                                              !r.productorServiceId
+                                                          )
+                                                        if (
+                                                          emptyRowIndex !== -1
+                                                        ) {
+                                                          updated[
+                                                            emptyRowIndex
+                                                          ] = newItem
+                                                          return updated
+                                                        }
+                                                        return [
+                                                          ...updated,
+                                                          newItem
+                                                        ]
+                                                      }
+                                                    )
+                                                  } else {
+                                                    setSelectedLeadList(
+                                                      (prev) =>
+                                                        prev.filter(
+                                                          (p) =>
+                                                            !(
+                                                              p.licenseNumber ===
+                                                                item.licenseNumber &&
+                                                              p.productorServiceId ===
+                                                                prod._id
+                                                            )
+                                                        )
+                                                    )
+                                                  }
+                                                }}
+                                                className={`w-4 h-4 flex-shrink-0 rounded border-2 flex items-center justify-center cursor-pointer transition-colors ${
+                                                  state.selected
+                                                    ? "bg-[#1B2A4A] border-[#1B2A4A]"
+                                                    : "bg-white border-gray-300 hover:border-[#1B2A4A]"
+                                                }`}
+                                              >
+                                                {state.selected && (
+                                                  <svg
+                                                    className="w-2.5 h-2.5 text-white"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                    strokeWidth="3"
+                                                  >
+                                                    <path
+                                                      strokeLinecap="round"
+                                                      strokeLinejoin="round"
+                                                      d="M5 13l4 4L19 7"
+                                                    />
+                                                  </svg>
+                                                )}
+                                              </span>
+                                              <span
+                                                className={
+                                                  state.selected
+                                                    ? "font-semibold text-[#1B2A4A]"
+                                                    : "text-gray-700"
+                                                }
+                                              >
+                                                {prod.productName ||
+                                                  prod.serviceName}
+                                              </span>
+                                            </label>
+                                          )
+                                        })
+                                      : leadList?.map((prod) => {
+                                          const state =
+                                            licensewithoutProductSelection?.find(
+                                              (p) => p._id === prod._id
+                                            ) || { selected: false }
+                                          return (
+                                            <label
+                                              key={prod._id}
+                                              className="flex items-center gap-2 mb-1 text-xs cursor-pointer hover:bg-gray-50 px-1 py-0.5 rounded"
+                                            >
+                                              <span
+                                                onClick={() => {
+                                                  handleProductORserviceSelect(
+                                                    prod._id
+                                                  )
+                                                  if (!state.selected) {
+                                                    const igstRate =
+                                                      prod?.selectedArray?.[0]
+                                                        ?.hsn_id?.onValue
+                                                        ?.igstRate ?? 0
+                                                    const newItem = {
+                                                      productorServiceName:
+                                                        prod.productName ||
+                                                        prod.serviceName,
+                                                      productorServiceId:
+                                                        prod._id,
+                                                      itemType: prod.productName
+                                                        ? "Product"
+                                                        : "Service",
+                                                      productPrice:
+                                                        prod.productPrice,
+                                                      hsn: igstRate,
+                                                      price: prod.productPrice,
+                                                      netAmount: (
+                                                        Number(
+                                                          prod?.productPrice ||
+                                                            0
+                                                        ) +
+                                                        (Number(igstRate) /
+                                                          100) *
+                                                          Number(
+                                                            prod?.productPrice ||
+                                                              0
+                                                          )
+                                                      ).toFixed(2)
+                                                    }
+                                                    setSelectedLeadList(
+                                                      (prev) => {
+                                                        const exists =
+                                                          prev.some(
+                                                            (p) =>
+                                                              !p.licenseNumber &&
+                                                              p.productorServiceId ===
+                                                                prod._id
+                                                          )
+                                                        if (exists) return prev
+                                                        const updated = [
+                                                          ...prev
+                                                        ]
+                                                        const emptyRowIndex =
+                                                          updated.findIndex(
+                                                            (r, i) =>
+                                                              i === index &&
+                                                              !r.productorServiceId
+                                                          )
+                                                        if (
+                                                          emptyRowIndex !== -1
+                                                        ) {
+                                                          updated[
+                                                            emptyRowIndex
+                                                          ] = newItem
+                                                          return updated
+                                                        }
+                                                        return [
+                                                          ...updated,
+                                                          newItem
+                                                        ]
+                                                      }
+                                                    )
+                                                  } else {
+                                                    setSelectedLeadList(
+                                                      (prev) =>
+                                                        prev.filter(
+                                                          (p) =>
+                                                            !(
+                                                              !p.licenseNumber &&
+                                                              p.productorServiceId ===
+                                                                prod._id
+                                                            )
+                                                        )
+                                                    )
+                                                  }
+                                                }}
+                                                className={`w-4 h-4 flex-shrink-0 rounded border-2 flex items-center justify-center cursor-pointer transition-colors ${
+                                                  state.selected
+                                                    ? "bg-[#1B2A4A] border-[#1B2A4A]"
+                                                    : "bg-white border-gray-300 hover:border-[#1B2A4A]"
+                                                }`}
+                                              >
+                                                {state.selected && (
+                                                  <svg
+                                                    className="w-2.5 h-2.5 text-white"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                    strokeWidth="3"
+                                                  >
+                                                    <path
+                                                      strokeLinecap="round"
+                                                      strokeLinejoin="round"
+                                                      d="M5 13l4 4L19 7"
+                                                    />
+                                                  </svg>
+                                                )}
+                                              </span>
+                                              <span
+                                                className={
+                                                  state.selected
+                                                    ? "font-semibold text-[#1B2A4A]"
+                                                    : "text-gray-700"
+                                                }
+                                              >
+                                                {prod.productName ||
+                                                  prod.serviceName}
+                                              </span>
+                                            </label>
+                                          )
+                                        })}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Amount */}
+                            <td className="border border-gray-300 px-2 py-1">
+                              <input
+                                type="number"
+                                readOnly={isReadOnly}
+                                value={item.productPrice}
+                                onChange={(e) =>
+                                  handlePriceChange(index, e.target.value)
+                                }
+                                placeholder="0.00"
+                                className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none ${isReadOnly ? "cursor-not-allowed bg-gray-100" : "bg-white"}`}
+                              />
+                            </td>
+
+                            {/* Tax % */}
+                            <td className="border border-gray-300 px-2 py-1">
+                              <input
+                                type="number"
+                                readOnly={isReadOnly}
+                                value={item.hsn}
+                                onChange={(e) =>
+                                  handleHsnChange(index, e.target.value)
+                                }
+                                placeholder="Tax %"
+                                className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none bg-gray-100 ${isReadOnly ? "cursor-not-allowed" : ""}`}
+                              />
+                            </td>
+
+                            {/* Net Amount */}
+                            <td className="border border-gray-300 px-2 py-1">
+                              <input
+                                type="text"
+                                readOnly
+                                value={item.netAmount}
+                                placeholder="0.00"
+                                className="w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none cursor-not-allowed bg-gray-100"
+                              />
+                            </td>
+
+                            {/* Delete */}
+                            <td className="border border-gray-300 px-2 py-1 text-center">
+                              <button
+                                type="button"
+                                disabled={isReadOnly}
+                                onClick={() =>
+                                  handleDeletetableData(item, index)
+                                }
+                                className={`text-red-400 hover:text-red-600 p-1 rounded transition-colors ${isReadOnly ? "cursor-not-allowed opacity-30" : ""}`}
+                                title="Delete row"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                >
+                                  <path d="M3 6h18" />
+                                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                                </svg>
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* ── Remark + Amount summary ── */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Remark
+                    </label>
+                    <textarea
+                      {...registerMain("remark")}
+                      rows={4}
+                      disabled={isReadOnly}
+                      placeholder="Remarks..."
+                      className={`w-full border border-gray-300 rounded px-3 py-2 text-sm outline-none bg-[#EEF2F8] resize-none ${isReadOnly ? "cursor-not-allowed opacity-70" : ""}`}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2 md:justify-end md:pt-5">
+                    {[
+                      { label: "Taxable Amount", field: "taxableAmount" },
+                      { label: "Tax Amount", field: "taxAmount" },
+                      { label: "Net Amount", field: "netAmount" }
+                    ].map(({ label, field }) => (
+                      <div key={field} className="flex items-center">
+                        <span className="text-xs font-bold text-white px-3 py-[7px] bg-[#1B2A4A] rounded-l w-[130px] text-right whitespace-nowrap flex-shrink-0">
+                          {label}
+                        </span>
+                        <input
+                          type="number"
+                          {...registerMain(field)}
+                          readOnly
+                          className="flex-1 min-w-0 border border-gray-300 rounded-r px-3 py-[6px] text-sm bg-white outline-none cursor-not-allowed"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ── Self Allocation / Lead ID ── */}
+                {process !== "edit" ? (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Self Allocation / Other
+                    </label>
+                    <select
+                      disabled={!isSelfAllocationChangable}
+                      {...registerMain("selfAllocation", {
+                        setValueAs: (v) => v === "true",
+                        validate: (v) =>
+                          v === true || v === false
+                            ? true
+                            : "This field is required",
+                        onChange: (e) =>
+                          setselfAllocation(e.target.value === "true")
+                      })}
+                      className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${!isSelfAllocationChangable ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+                    >
+                      <option value="">Select</option>
+                      {(loggeduser?.department?._id ===
+                        "670c866552847bbebbd35748" ||
+                        loggeduser?.department?._id ===
+                          "670c867352847bbebbd35750") && (
+                        <option value="true">Self Allocate</option>
+                      )}
+                      <option value="false">Allocate To Other</option>
+                    </select>
+                    {errorsMain.selfAllocation && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errorsMain.selfAllocation.message}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Lead Id
+                    </label>
+                    <input
+                      {...registerMain("leadId")}
+                      disabled
+                      placeholder="Lead Id..."
+                      className="w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] cursor-not-allowed opacity-70"
+                    />
+                  </div>
+                )}
+
+                {/* ── Submit + Lead By ── */}
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 pt-2">
+                  <div>
+                    {validateError?.emptyleadData && (
+                      <p className="text-red-500 text-xs">
+                        {validateError.emptyleadData}
+                      </p>
+                    )}
+                    {validateError?.readonlyError && (
+                      <p className="text-red-500 text-xs">
+                        {validateError.readonlyError}
+                      </p>
+                    )}
+                    <button
+                      type="submit"
+                      className="bg-[#1B2A4A] hover:bg-[#243660] text-white py-2 px-8 rounded text-sm font-semibold tracking-wide transition-colors mt-1"
+                    >
+                      {process === "Registration" ? "SUBMIT" : "UPDATE"}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {editMode ? (
+                      <>
+                        <label className="text-xs font-semibold text-gray-600 italic whitespace-nowrap">
+                          Lead by:
+                        </label>
+                        <select
+                          {...registerMain("leadBy")}
+                          className="border border-gray-300 rounded px-2 py-1 text-sm bg-[#EEF2F8] outline-none"
+                        >
+                          {allstaff?.map((u) => (
+                            <option key={u._id} value={u._id}>
+                              {u.name}
+                            </option>
+                          ))}
+                        </select>
+                      </>
+                    ) : (
+                      <>
+                        <input type="hidden" {...registerMain("leadBy")} />
+                        <p className="text-sm italic text-gray-500">
+                          Lead by:{" "}
+                          <span className="font-semibold text-[#1B2A4A]">
+                            {loggeduser?.name}
+                          </span>
+                        </p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           </form>
+
           {popupOpen && (
             <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40">
               <div className="bg-white p-4 rounded shadow-md text-center">
@@ -1704,54 +2683,436 @@ const LeadMaster = ({
             </div>
           )}
           {modalOpen && (
-            <div className="fixed top-16 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center px-4">
-              <div className="bg-white px-6 pt-2 pb-4 rounded-lg shadow-lg max-w-2xl w-full max-h-[80vh] z-50 overflow-auto">
-                <h2 className="text-lg font-semibold mb-4 text-center">
-                  Add New Customer
-                </h2>
+            // <div className="fixed top-16 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center px-4">
+            //   <div className="bg-white px-6 pt-2 pb-4 rounded-lg shadow-lg max-w-2xl w-full max-h-[80vh] z-50 overflow-auto">
+            //     <h2 className="text-lg font-semibold mb-4 text-center">
+            //       Add New Customer
+            //     </h2>
 
-                <form onSubmit={handleSubmitModal(onmodalsubmit)}>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {/* Customer Name */}
+            //     <form onSubmit={handleSubmitModal(onmodalsubmit)}>
+            //       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            //         {/* Customer Name */}
+            //         <div>
+            //           <label className="block text-sm font-medium text-gray-700">
+            //             Customer Name
+            //           </label>
+            //           <input
+            //             type="text"
+            //             {...registerModal("customerName", {
+            //               required: "CustomerName is Required"
+            //             })}
+            //             onBlur={(e) =>
+            //               setValueModal("customerName", e.target.value.trim())
+            //             }
+            //             className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
+            //             placeholder="Customer Name"
+            //           />
+            //           {errorsModal.customerName && (
+            //             <p className="text-red-500 text-sm">
+            //               {errorsModal.customerName.message}
+            //             </p>
+            //           )}
+            //         </div>
+
+            //         {/* Email */}
+            //         <div>
+            //           <label className="block text-sm font-medium text-gray-700">
+            //             Email
+            //           </label>
+            //           <input
+            //             type="email"
+            //             {...registerModal("email")}
+            //             className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
+            //             placeholder="Email"
+            //           />
+            //         </div>
+
+            //         <div>
+            //           <label className="block text-sm font-medium text-gray-700">
+            //             Mobile
+            //           </label>
+            //           <input
+            //             type="tel"
+            //             {...registerModal("mobile", {
+            //               required: "Mobile is Required",
+            //               validate: (value) => {
+            //                 const cleaned = value
+            //                   .replace(/^\+?91/, "")
+            //                   .replace(/\D/g, "") // remove +91 or 91 and non-digits
+            //                 if (cleaned.length !== 10) {
+            //                   return "Mobile number must be exactly 10 digits after removing country code"
+            //                 }
+            //                 return true
+            //               }
+            //             })}
+            //             onBlur={(e) =>
+            //               setValueModal("mobile", e.target.value.trim())
+            //             }
+            //             className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
+            //             placeholder="Mobile"
+            //           />
+            //           {errorsModal.mobile && (
+            //             <p className="text-red-500 text-sm">
+            //               {errorsModal.mobile.message}
+            //             </p>
+            //           )}
+            //         </div>
+
+            //         <div>
+            //           <label className="block text-sm font-medium text-gray-700">
+            //             Landline
+            //           </label>
+            //           <input
+            //             type="tel"
+            //             {...registerModal("landline")}
+            //             onBlur={(e) =>
+            //               setValueModal("landline", e.target.value.trim())
+            //             }
+            //             className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
+            //             placeholder="Phone"
+            //           />
+            //         </div>
+
+            //         <div className="col-span-1 md:col-span-2">
+            //           <label className="block text-sm font-medium text-gray-700">
+            //             Address
+            //           </label>
+            //           <textarea
+            //             {...registerModal("address1")}
+            //             onBlur={(e) =>
+            //               setValueModal("address1", e.target.value.trim())
+            //             }
+            //             className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
+            //             placeholder="Address"
+            //           />
+            //         </div>
+
+            //         <div>
+            //           <label className="block text-sm font-medium text-gray-700">
+            //             Country
+            //           </label>
+            //           <Select
+            //             options={countryOptions}
+            //             value={selectedCountry}
+            //             // value={User && User.assignedto._id}
+            //             getOptionLabel={(option) => option.label} // Add this
+            //             getOptionValue={(option) => option.value} // Add this
+            //             {...registerModal("country")}
+            //             onChange={(option) => {
+            //               setSelectedCountry(option)
+            //               setValueModal("country", option.value)
+            //               // setSelectedState(null) // Reset state when country changes
+            //             }}
+            //             className="border focus:outline-none"
+            //             styles={{
+            //               control: (provided) => ({
+            //                 ...provided,
+            //                 border: "1px solid #d1d5db", // Tailwind's border-gray-300
+            //                 boxShadow: "none",
+            //                 outline: "none",
+            //                 "&:hover": {
+            //                   borderColor: "#9ca3af" // Tailwind's border-gray-400
+            //                 }
+            //               }),
+            //               menu: (provided) => ({
+            //                 ...provided,
+            //                 maxHeight: "200px", // Set dropdown max height
+            //                 overflowY: "auto" // Enable scrolling
+            //               }),
+            //               menuList: (provided) => ({
+            //                 ...provided,
+            //                 maxHeight: "200px", // Ensures dropdown scrolls internally
+            //                 overflowY: "auto"
+            //               })
+            //             }}
+            //             menuPortalTarget={document.body} // Prevents nested scrolling issues
+            //             menuShouldScrollIntoView={false}
+            //           />
+            //         </div>
+
+            //         <div>
+            //           <label className="block text-sm font-medium text-gray-700">
+            //             State
+            //           </label>
+
+            //           <Select
+            //             options={stateOptions}
+            //             value={selectedState}
+            //             getOptionLabel={(option) => option.label} // Add this
+            //             getOptionValue={(option) => option.value} // Add this
+            //             {...registerModal("state")}
+            //             onChange={(option) => {
+            //               setSelectedState(option)
+            //               setValueModal("state", option.value)
+            //             }}
+            //             styles={{
+            //               control: (provided) => ({
+            //                 ...provided,
+            //                 border: "1px solid #d1d5db", // Tailwind's border-gray-300
+            //                 boxShadow: "none",
+            //                 outline: "none",
+            //                 "&:hover": {
+            //                   borderColor: "#9ca3af" // Tailwind's border-gray-400
+            //                 }
+            //               }),
+            //               menu: (provided) => ({
+            //                 ...provided,
+            //                 maxHeight: "200px", // Set dropdown max height
+            //                 overflowY: "auto" // Enable scrolling
+            //               }),
+            //               menuList: (provided) => ({
+            //                 ...provided,
+            //                 maxHeight: "200px", // Ensures dropdown scrolls internally
+            //                 overflowY: "auto"
+            //               })
+            //             }}
+            //             menuPortalTarget={document.body} // Prevents nested scrolling issues
+            //             menuShouldScrollIntoView={false}
+            //             isDisabled={!selectedCountry}
+            //           />
+            //         </div>
+
+            //         <div>
+            //           <label className="block text-sm font-medium text-gray-700">
+            //             City
+            //           </label>
+            //           <input
+            //             type="text"
+            //             {...registerModal("city")}
+            //             onBlur={(e) =>
+            //               setValueModal("city", e.target.value.trim())
+            //             }
+            //             className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
+            //             placeholder="City"
+            //           />
+            //         </div>
+
+            //         <div>
+            //           <label className="block text-sm font-medium text-gray-700">
+            //             Pincode
+            //           </label>
+            //           <input
+            //             type="text"
+            //             {...registerModal("pincode")}
+            //             onBlur={(e) =>
+            //               setValueModal("pincode", e.target.value.trim())
+            //             }
+            //             className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
+            //             placeholder="Pincode"
+            //           />
+            //         </div>
+
+            //         <div>
+            //           <label className="block text-sm font-medium text-gray-700">
+            //             Contact Person
+            //           </label>
+            //           <input
+            //             type="text"
+            //             {...registerModal("contactPerson", {
+            //               required: "Contact person is Required"
+            //             })}
+            //             onBlur={(e) =>
+            //               setValueModal("contactPerson", e.target.value.trim())
+            //             }
+            //             className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
+            //             placeholder="Contact Person"
+            //           />
+            //           {errorsModal.contactPerson && (
+            //             <p className="text-red-500 text-sm">
+            //               {errorsModal.contactPerson.message}
+            //             </p>
+            //           )}
+            //         </div>
+
+            //         <div>
+            //           <label className="block text-sm font-medium text-gray-700">
+            //             Types of Industry
+            //           </label>
+            //           <select
+            //             id="industry"
+            //             {...registerModal("industry", {
+            //               required: "Industry is required"
+            //             })}
+            //             className="w-full border border-gray-400 rounded-md p-2  focus:outline-none"
+            //           >
+            //             <option value="">Select Industry</option>
+            //             {Industries.map((industry, index) => (
+            //               <option key={index} value={industry}>
+            //                 {industry}
+            //               </option>
+            //             ))}
+            //           </select>
+            //           {errorsModal.industry && (
+            //             <p className="text-red-500 text-sm">
+            //               {errorsModal.industry.message}
+            //             </p>
+            //           )}
+            //         </div>
+
+            //         <div>
+            //           <label className="block text-sm font-medium text-gray-700">
+            //             Partnership Type
+            //           </label>
+
+            //           <select
+            //             id="partner"
+            //             {...registerModal("partner")}
+            //             className="mt-1 block w-full border border-gray-400 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+            //           >
+            //             <option value="">Select Partner</option>
+            //             {partner?.map((partnr, index) => (
+            //               <option key={index} value={partnr._id}>
+            //                 {partnr.partner}
+            //               </option>
+            //             ))}
+            //           </select>
+            //         </div>
+            //         <div>
+            //           <label className="block text-sm font-medium text-gray-700">
+            //             RegistrationType
+            //           </label>
+
+            //           <select
+            //             id="registrationType"
+            //             {...registerModal("registrationType")}
+            //             className="mt-1 block w-full border border-gray-400 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+            //           >
+            //             <option value="">Select RegistrationType</option>
+            //             <option value="unregistered">
+            //               Unregistered/Consumer
+            //             </option>
+            //             <option value="regular">Regular</option>
+            //           </select>
+            //         </div>
+            //         {registrationType === "regular" && (
+            //           <div>
+            //             <label className="block text-sm font-medium text-gray-700">
+            //               GSTIN/UIN
+            //             </label>
+            //             <input
+            //               id="gstNo"
+            //               {...registerModal("gstNo", {
+            //                 required: "GST is required"
+            //               })}
+            //               className="mt-1 block w-full border border-gray-400 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+            //               placeholder="Enter GSTIN (e.g., 22AAAAA0000A1Z5)"
+            //             />
+            //             {errorsModal.gstNo && (
+            //               <p className="text-red-500 text-sm">
+            //                 {errorsModal.gstNo.message}
+            //               </p>
+            //             )}
+            //           </div>
+            //         )}
+            //       </div>
+
+            //       {/* Buttons */}
+            //       <div className="mt-6 flex justify-center space-x-3">
+            //         <button
+            //           type="button"
+            //           onClick={() => {
+            //             setModalOpen(false)
+            //             clearmodalErros()
+            //             resetModal()
+            //           }}
+            //           className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600"
+            //         >
+            //           Cancel
+            //         </button>
+            //         <button
+            //           type="submit"
+            //           className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
+            //         >
+            //           Submit
+            //         </button>
+            //       </div>
+            //     </form>
+            //   </div>
+            // </div>
+            <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center px-4 z-50">
+              <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+                {/* ── Header ── */}
+                <div className="bg-[#1B2A4A] px-6 py-4 flex items-center justify-between flex-shrink-0">
+                  <div>
+                    <h2 className="text-white text-base font-bold tracking-wide">
+                      Add New Customer
+                    </h2>
+                    <p className="text-blue-300 text-xs mt-0.5">
+                      Fill in the details to register a new customer
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModalOpen(false)
+                      clearmodalErros()
+                      resetModal()
+                    }}
+                    className="text-blue-200 hover:text-white hover:bg-white hover:bg-opacity-10 rounded-full p-1.5 transition-colors"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* ── Body ── */}
+                <form
+                  onSubmit={handleSubmitModal(onmodalsubmit)}
+                  className="overflow-y-auto flex-1 px-6 py-4"
+                >
+                  {/* Section: Basic Info */}
+                  <p className="text-[10px] font-bold text-[#1B2A4A] uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">
+                    Basic Information
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Customer Name
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">
+                        Customer Name <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         {...registerModal("customerName", {
-                          required: "CustomerName is Required"
+                          required: "Customer Name is required"
                         })}
                         onBlur={(e) =>
                           setValueModal("customerName", e.target.value.trim())
                         }
-                        className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
                         placeholder="Customer Name"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
                       />
                       {errorsModal.customerName && (
-                        <p className="text-red-500 text-sm">
+                        <p className="text-red-500 text-xs mt-1">
                           {errorsModal.customerName.message}
                         </p>
                       )}
                     </div>
 
-                    {/* Email */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">
                         Email
                       </label>
                       <input
                         type="email"
                         {...registerModal("email")}
-                        className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
                         placeholder="Email"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
                       />
                     </div>
 
-                    {/* Mobile */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Mobile
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">
+                        Mobile <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="tel"
@@ -1760,29 +3121,27 @@ const LeadMaster = ({
                           validate: (value) => {
                             const cleaned = value
                               .replace(/^\+?91/, "")
-                              .replace(/\D/g, "") // remove +91 or 91 and non-digits
-                            if (cleaned.length !== 10) {
-                              return "Mobile number must be exactly 10 digits after removing country code"
-                            }
+                              .replace(/\D/g, "")
+                            if (cleaned.length !== 10)
+                              return "Must be 10 digits after country code"
                             return true
                           }
                         })}
                         onBlur={(e) =>
                           setValueModal("mobile", e.target.value.trim())
                         }
-                        className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
                         placeholder="Mobile"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
                       />
                       {errorsModal.mobile && (
-                        <p className="text-red-500 text-sm">
+                        <p className="text-red-500 text-xs mt-1">
                           {errorsModal.mobile.message}
                         </p>
                       )}
                     </div>
 
-                    {/* Phone */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">
                         Landline
                       </label>
                       <input
@@ -1791,149 +3150,14 @@ const LeadMaster = ({
                         onBlur={(e) =>
                           setValueModal("landline", e.target.value.trim())
                         }
-                        className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
-                        placeholder="Phone"
+                        placeholder="Landline"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
                       />
                     </div>
 
-                    {/* Address */}
-                    <div className="col-span-1 md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700">
-                        Address
-                      </label>
-                      <textarea
-                        {...registerModal("address1")}
-                        onBlur={(e) =>
-                          setValueModal("address1", e.target.value.trim())
-                        }
-                        className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
-                        placeholder="Address"
-                      />
-                    </div>
-
-                    {/* Country */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Country
-                      </label>
-                      <Select
-                        options={countryOptions}
-                        value={selectedCountry}
-                        // value={User && User.assignedto._id}
-                        getOptionLabel={(option) => option.label} // Add this
-                        getOptionValue={(option) => option.value} // Add this
-                        {...registerModal("country")}
-                        onChange={(option) => {
-                          setSelectedCountry(option)
-                          setValueModal("country", option.value)
-                          // setSelectedState(null) // Reset state when country changes
-                        }}
-                        className="border focus:outline-none"
-                        styles={{
-                          control: (provided) => ({
-                            ...provided,
-                            border: "1px solid #d1d5db", // Tailwind's border-gray-300
-                            boxShadow: "none",
-                            outline: "none",
-                            "&:hover": {
-                              borderColor: "#9ca3af" // Tailwind's border-gray-400
-                            }
-                          }),
-                          menu: (provided) => ({
-                            ...provided,
-                            maxHeight: "200px", // Set dropdown max height
-                            overflowY: "auto" // Enable scrolling
-                          }),
-                          menuList: (provided) => ({
-                            ...provided,
-                            maxHeight: "200px", // Ensures dropdown scrolls internally
-                            overflowY: "auto"
-                          })
-                        }}
-                        menuPortalTarget={document.body} // Prevents nested scrolling issues
-                        menuShouldScrollIntoView={false}
-                      />
-                    </div>
-
-                    {/* State */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        State
-                      </label>
-
-                      <Select
-                        options={stateOptions}
-                        value={selectedState}
-                        getOptionLabel={(option) => option.label} // Add this
-                        getOptionValue={(option) => option.value} // Add this
-                        {...registerModal("state")}
-                        onChange={(option) => {
-                          setSelectedState(option)
-                          setValueModal("state", option.value)
-                        }}
-                        styles={{
-                          control: (provided) => ({
-                            ...provided,
-                            border: "1px solid #d1d5db", // Tailwind's border-gray-300
-                            boxShadow: "none",
-                            outline: "none",
-                            "&:hover": {
-                              borderColor: "#9ca3af" // Tailwind's border-gray-400
-                            }
-                          }),
-                          menu: (provided) => ({
-                            ...provided,
-                            maxHeight: "200px", // Set dropdown max height
-                            overflowY: "auto" // Enable scrolling
-                          }),
-                          menuList: (provided) => ({
-                            ...provided,
-                            maxHeight: "200px", // Ensures dropdown scrolls internally
-                            overflowY: "auto"
-                          })
-                        }}
-                        menuPortalTarget={document.body} // Prevents nested scrolling issues
-                        menuShouldScrollIntoView={false}
-                        isDisabled={!selectedCountry}
-                      />
-                    </div>
-
-                    {/* City */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        City
-                      </label>
-                      <input
-                        type="text"
-                        {...registerModal("city")}
-                        onBlur={(e) =>
-                          setValueModal("city", e.target.value.trim())
-                        }
-                        className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
-                        placeholder="City"
-                      />
-                    </div>
-
-                    {/* Pincode */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Pincode
-                      </label>
-                      <input
-                        type="text"
-                        {...registerModal("pincode")}
-                        onBlur={(e) =>
-                          setValueModal("pincode", e.target.value.trim())
-                        }
-                        className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
-                        placeholder="Pincode"
-                      />
-                    </div>
-
-                    {/* Contact Person */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Contact Person
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">
+                        Contact Person <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -1943,27 +3167,149 @@ const LeadMaster = ({
                         onBlur={(e) =>
                           setValueModal("contactPerson", e.target.value.trim())
                         }
-                        className="w-full border border-gray-400 rounded-md p-2 focus:outline-none"
                         placeholder="Contact Person"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
                       />
                       {errorsModal.contactPerson && (
-                        <p className="text-red-500 text-sm">
+                        <p className="text-red-500 text-xs mt-1">
                           {errorsModal.contactPerson.message}
                         </p>
                       )}
                     </div>
 
-                    {/* Types of Industry Dropdown */}
+                    <div className="md:col-span-2">
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">
+                        Address
+                      </label>
+                      <textarea
+                        {...registerModal("address1")}
+                        onBlur={(e) =>
+                          setValueModal("address1", e.target.value.trim())
+                        }
+                        placeholder="Address"
+                        rows={2}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition resize-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Section: Location */}
+                  <p className="text-[10px] font-bold text-[#1B2A4A] uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">
+                    Location
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Types of Industry
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">
+                        Country
+                      </label>
+                      <Select
+                        options={countryOptions}
+                        value={selectedCountry}
+                        getOptionLabel={(o) => o.label}
+                        getOptionValue={(o) => o.value}
+                        {...registerModal("country")}
+                        onChange={(option) => {
+                          setSelectedCountry(option)
+                          setValueModal("country", option.value)
+                        }}
+                        menuPortalTarget={document.body}
+                        menuShouldScrollIntoView={false}
+                        styles={{
+                          control: (base) => ({
+                            ...base,
+                            border: "1px solid #D1D5DB",
+                            borderRadius: "0.5rem",
+                            backgroundColor: "#F9FAFB",
+                            boxShadow: "none",
+                            minHeight: 38,
+                            fontSize: 14,
+                            "&:hover": { borderColor: "#1B2A4A" }
+                          }),
+                          menuList: (base) => ({ ...base, maxHeight: 200 })
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">
+                        State
+                      </label>
+                      <Select
+                        options={stateOptions}
+                        value={selectedState}
+                        getOptionLabel={(o) => o.label}
+                        getOptionValue={(o) => o.value}
+                        {...registerModal("state")}
+                        onChange={(option) => {
+                          setSelectedState(option)
+                          setValueModal("state", option.value)
+                        }}
+                        isDisabled={!selectedCountry}
+                        menuPortalTarget={document.body}
+                        menuShouldScrollIntoView={false}
+                        styles={{
+                          control: (base, state) => ({
+                            ...base,
+                            border: "1px solid #D1D5DB",
+                            borderRadius: "0.5rem",
+                            backgroundColor: state.isDisabled
+                              ? "#F3F4F6"
+                              : "#F9FAFB",
+                            boxShadow: "none",
+                            minHeight: 38,
+                            fontSize: 14,
+                            "&:hover": { borderColor: "#1B2A4A" }
+                          }),
+                          menuList: (base) => ({ ...base, maxHeight: 200 })
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        {...registerModal("city")}
+                        onBlur={(e) =>
+                          setValueModal("city", e.target.value.trim())
+                        }
+                        placeholder="City"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">
+                        Pincode
+                      </label>
+                      <input
+                        type="text"
+                        {...registerModal("pincode")}
+                        onBlur={(e) =>
+                          setValueModal("pincode", e.target.value.trim())
+                        }
+                        placeholder="Pincode"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Section: Business Info */}
+                  <p className="text-[10px] font-bold text-[#1B2A4A] uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">
+                    Business Information
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-2">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">
+                        Industry <span className="text-red-500">*</span>
                       </label>
                       <select
-                        id="industry"
                         {...registerModal("industry", {
                           required: "Industry is required"
                         })}
-                        className="w-full border border-gray-400 rounded-md p-2  focus:outline-none"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] bg-gray-50 cursor-pointer transition"
                       >
                         <option value="">Select Industry</option>
                         {Industries.map((industry, index) => (
@@ -1973,63 +3319,59 @@ const LeadMaster = ({
                         ))}
                       </select>
                       {errorsModal.industry && (
-                        <p className="text-red-500 text-sm">
+                        <p className="text-red-500 text-xs mt-1">
                           {errorsModal.industry.message}
                         </p>
                       )}
                     </div>
 
-                    {/* Partnership Dropdown */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700">
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">
                         Partnership Type
                       </label>
-
                       <select
-                        id="partner"
                         {...registerModal("partner")}
-                        className="mt-1 block w-full border border-gray-400 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] bg-gray-50 cursor-pointer transition"
                       >
                         <option value="">Select Partner</option>
-                        {partner?.map((partnr, index) => (
-                          <option key={index} value={partnr._id}>
-                            {partnr.partner}
+                        {partner?.map((p, i) => (
+                          <option key={i} value={p._id}>
+                            {p.partner}
                           </option>
                         ))}
                       </select>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        RegistrationType
-                      </label>
 
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1">
+                        Registration Type
+                      </label>
                       <select
-                        id="registrationType"
                         {...registerModal("registrationType")}
-                        className="mt-1 block w-full border border-gray-400 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] bg-gray-50 cursor-pointer transition"
                       >
-                        <option value="">Select RegistrationType</option>
+                        <option value="">Select Type</option>
                         <option value="unregistered">
-                          Unregistered/Consumer
+                          Unregistered / Consumer
                         </option>
                         <option value="regular">Regular</option>
                       </select>
                     </div>
+
                     {registrationType === "regular" && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700">
-                          GSTIN/UIN
+                        <label className="block text-xs font-semibold text-gray-600 mb-1">
+                          GSTIN / UIN <span className="text-red-500">*</span>
                         </label>
                         <input
-                          id="gstNo"
                           {...registerModal("gstNo", {
                             required: "GST is required"
                           })}
-                          className="mt-1 block w-full border border-gray-400 rounded-md shadow-sm p-2 sm:text-sm focus:border-gray-500 outline-none"
-                          placeholder="Enter GSTIN (e.g., 22AAAAA0000A1Z5)"
+                          placeholder="e.g. 22AAAAA0000A1Z5"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
                         />
                         {errorsModal.gstNo && (
-                          <p className="text-red-500 text-sm">
+                          <p className="text-red-500 text-xs mt-1">
                             {errorsModal.gstNo.message}
                           </p>
                         )}
@@ -2037,8 +3379,8 @@ const LeadMaster = ({
                     )}
                   </div>
 
-                  {/* Buttons */}
-                  <div className="mt-6 flex justify-center space-x-3">
+                  {/* ── Footer buttons ── */}
+                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-100 mt-3">
                     <button
                       type="button"
                       onClick={() => {
@@ -2046,13 +3388,13 @@ const LeadMaster = ({
                         clearmodalErros()
                         resetModal()
                       }}
-                      className="bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600"
+                      className="px-5 py-2 rounded-lg border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
+                      className="px-6 py-2 rounded-lg bg-[#1B2A4A] hover:bg-[#243660] text-white text-sm font-semibold tracking-wide transition"
                     >
                       Submit
                     </button>
