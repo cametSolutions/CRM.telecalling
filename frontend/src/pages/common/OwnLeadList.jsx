@@ -42,10 +42,12 @@ export default function OwnLeadList() {
   useEffect(() => {
     if (companybranches && companybranches.length > 0) {
       const userData = getLocalStorageItem("user")
-      const branch = companybranches.map((branch) => ({
-        value: branch._id,
+console.log(userData)
+      const branch = userData?.selected?.map((branch) => ({
+        value: branch.branch_id,
         label: branch.branchName
       }))
+console.log(branch)
       setcompanyBranches(branch)
       setselectedCompanyBranch(branch[0].value)
       setLoggedUser(userData)
@@ -298,8 +300,8 @@ export default function OwnLeadList() {
  
 
   return (
-    <div className="h-full">
-      <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3">
+    <div className="h-full bg-blue-50">
+      <div className="flex justify-between items-center  md:p-5 p-3">
         <h2 className="text-lg font-bold">
           {ownLead ? "Own Lead" : "All Lead"}
         </h2>
@@ -354,7 +356,7 @@ export default function OwnLeadList() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3">
+      <div className="flex-1 overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
         <>
           {(() => {
             const hasLeads =
