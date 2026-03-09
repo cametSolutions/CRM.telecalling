@@ -26,19 +26,23 @@ const UserListform = () => {
   const [selectedBranch, setselectedBranch] = useState(null)
   const [loggeduser, setloggeduser] = useState(null)
   const { data, loading } = UseFetch("/auth/getallUsers")
+console.log(data)
   useEffect(() => {
     if (data) {
       const logged = getLocalStorageItem("user")
       const { allusers } = data
 
       setallusers(allusers)
-      const filtereusers = allusers.filter((user) =>
+      const filteredusers = allusers.filter((user) =>
         user.selected
           .map((branch) => branch.branch_id)
           .includes(logged.selected[0].branch_id)
       )
+console.log(filteredusers)
+const a=filteredusers.filter((item)=>item.name==="abhidas")
+console.log(a)
 
-      setUser(sortByVerified(filtereusers))
+      setUser(sortByVerified(filteredusers))
       setloggeduser(logged)
       setselectedBranch(logged.selected[0].branch_id)
     }

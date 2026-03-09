@@ -798,3 +798,647 @@ export default function AdminHeader() {
     </header>
   )
 }
+// import { useEffect, useState, useRef } from "react"
+// import { Link, NavLink, useNavigate } from "react-router-dom"
+// import {
+//   FiLogOut,
+// } from "react-icons/fi"
+// import {
+//   FaChevronRight,
+//   FaChevronDown,
+//   FaSignOutAlt,
+//   FaUserCircle,
+// } from "react-icons/fa"
+// import api from "../api/api"
+// import { toast } from "react-toastify"
+
+// export default function AdminHeader() {
+//   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+//   const [user, setUser] = useState(null)
+//   const [transactionMenuOpen, setTransactionMenuOpen] = useState(false)
+//   const [masterMenuOpen, setMasterMenuOpen] = useState(false)
+//   const [reportsMenuOpen, setReportsMenuOpen] = useState(false)
+//   const [tasksMenuOpen, setTasksMenuOpen] = useState(false)
+//   const [activeSubmenu, setActiveSubmenu] = useState(null)
+//   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+
+//   const [openSubmenu, setOpenSubmenu] = useState(null)
+//   const [leadMenuOpen, setLeadMenuOpen] = useState(false)
+//   const [openInnerMenu, setOpenInnerMenu] = useState(null)
+//   const navigate = useNavigate()
+//   const menuContainerRef = useRef(null)
+
+//   useEffect(() => {
+//     const storedUser = localStorage.getItem("user")
+//     if (storedUser) {
+//       setUser(JSON.parse(storedUser))
+//     }
+//   }, [])
+
+//   const toggleInnerMenu = (innerIndex) => {
+//     setOpenInnerMenu(openInnerMenu === innerIndex ? null : innerIndex)
+//   }
+
+//   const toggleSubmenu = (index) => {
+//     const newActiveSubmenu = activeSubmenu === index ? null : index
+//     setActiveSubmenu(newActiveSubmenu)
+
+//     if (newActiveSubmenu !== null) {
+//       setTimeout(() => {
+//         const menuItem = document.querySelector(`.menu-item-${index}`)
+//         if (menuItem && menuContainerRef.current) {
+//           const containerRect = menuContainerRef.current.getBoundingClientRect()
+//           const itemRect = menuItem.getBoundingClientRect()
+//           if (itemRect.bottom + 200 > containerRect.bottom) {
+//             menuContainerRef.current.scrollTop +=
+//               itemRect.bottom + 200 - containerRect.bottom
+//           }
+//         }
+//       }, 50)
+//     }
+//   }
+
+//   const logout = async () => {
+//     try {
+//       const res = await api.post("/auth/logout")
+
+//       if (
+//         res.status === 200 &&
+//         res.data?.message === "Logged out successfully"
+//       ) {
+//         localStorage.removeItem("authToken")
+//         localStorage.removeItem("user")
+//         localStorage.removeItem("timer")
+//         localStorage.removeItem("wish")
+
+//         toast.success("Logout successfully")
+//         navigate("/")
+//       } else {
+//         toast.error("Logout failed on server")
+//       }
+//     } catch (err) {
+//       console.error("Logout API failed:", err)
+//       toast.error("Logout failed, please try again")
+//     }
+//   }
+
+//   const links = [
+//     { to: "/admin/dashBoard", label: "Dashboard" },
+//     { label: "Masters" },
+//     { label: "Transactions" },
+//     { label: "Reports" },
+//     { label: "Task" },
+//   ]
+
+//   const desiredMobileMenu = [
+//     { label: "Transactions" },
+//     { label: "Reports" },
+//     { label: "Task" },
+//   ]
+
+//   const masters = [
+//     { to: "/admin/masters/company", label: "Company" },
+//     { to: "/admin/masters/branch", label: "Branch" },
+//     { to: "/admin/masters/department", label: "Department" },
+//     { label: "Product & Service", hasChildren: true },
+//     { to: "/admin/masters/customer", label: "Customer" },
+//     { label: "Employee", hasChildren: true },
+//     { to: "/admin/masters/leavemaster", label: "Leavemaster" },
+//     { to: "/admin/masters/partners", label: "Partners" },
+//   ]
+
+//   const Productandservices = [
+//     { to: "/admin/masters/product", label: "Product" },
+//     { to: "/admin/masters/servicesRegistration", label: "Services" },
+//     { to: "/admin/masters/inventory/brandRegistration", label: "Brand" },
+//     {
+//       to: "/admin/masters/inventory/categoryRegistration",
+//       label: "Category",
+//     },
+//     { to: "/admin/masters/inventory/hsnlist", label: "HSN" },
+//     { to: "/admin/masters/callnotes", label: "Call Notes" },
+//     { to: "/admin/masters/taskRegistration", label: "Task Level" },
+//   ]
+
+//   const Employee = [
+//     {
+//       to: "/admin/masters/users-&-passwords",
+//       label: "users & Passwords",
+//     },
+//     { to: "/admin/masters/menuRights", label: "Menu Rights" },
+//     { to: "/admin/masters/target", label: "Target" },
+//     { to: "/admin/masters/voucherMaster", label: "Voucher Master" },
+//   ]
+
+//   const leads = [
+//     { to: "/admin/transaction/lead", label: "New Lead" },
+//     { to: "/admin/transaction/lead/ownedLeadlist", label: "Own Lead" },
+//     {
+//       to: "/admin/transaction/lead/leadAllocation",
+//       label: "Lead Allocation",
+//     },
+//     {
+//       to: "/admin/transaction/lead/leadFollowUp",
+//       label: "Lead Follow Up",
+//     },
+//     { to: "/admin/transaction/lead/leadTask", label: "Task Pending" },
+//     {
+//       to: "/admin/transaction/lead/leadReallocation",
+//       label: "Lead Reallocation",
+//     },
+//     { to: "/admin/transaction/lead/taskAnalysis", label: "Task Analysis" },
+//     { to: "/admin/transaction/lead/lostLeads", label: "Lost Leads" },
+//     {
+//       to: "/admin/transaction/lead/collectionUpdate",
+//       label: "Collection Update",
+//     },
+//   ]
+
+//   const transactions = [
+//     { label: "Lead", hasChildren: true },
+//     {
+//       to: "/admin/transaction/call-registration",
+//       label: "Call Registration",
+//     },
+//     {
+//       to: "/admin/transaction/leave-application",
+//       label: "Leave Application",
+//     },
+//   ]
+
+//   const tasks = [
+//     { to: "/admin/tasks/signUp-customer", label: "Sign Up Custmer" },
+//     {
+//       to: "/admin/tasks/leaveApproval-pending",
+//       label: "Leave Approval Pending",
+//     },
+//     { to: "/admin/tasks/workAllocation", label: "Work Allocation" },
+//     {
+//       to: "/admin/tasks/excelconverter",
+//       label: "Customer Converter(excel to Json)",
+//     },
+//     {
+//       to: "/admin/tasks/attendanceExcelconverter",
+//       label: "Attendance Converter",
+//     },
+//   ]
+
+//   const reports = [
+//     { to: "/admin/reports/summary", label: " Call Summary" },
+//     {
+//       to: "/admin/reports/expiry-register",
+//       label: "Expiry Register",
+//     },
+//     {
+//       to: "/admin/reports/account-search",
+//       label: "Account Search",
+//     },
+//     {
+//       to: "/admin/reports/leave-summary",
+//       label: "Leave Summary",
+//     },
+//     { to: "/admin/reports/product-wise-report", label: "Product Report" },
+//     {
+//       to: "/admin/reports/follow-up-summary",
+//       label: "Followup Summary",
+//     },
+//     { to: "/admin/reports/sales-funel", label: "Sales Funnel" },
+//     {
+//       to: "/admin/reports/dailystaffactivity",
+//       label: "Daily Staff Activity",
+//     },
+//   ]
+
+//   return (
+//     <header className="sticky top-0 z-50 bg-slate-900 text-slate-100 shadow-md">
+//       <div className="mx-auto max-w-7xl px-3 md:px-5">
+//         <div className="flex h-14 items-center justify-between gap-3">
+//           {/* Mobile: menu button */}
+//           <div className="flex items-center md:hidden">
+//             <button
+//               onClick={() => setMobileMenuOpen((o) => !o)}
+//               className="inline-flex items-center justify-center rounded-md p-2 text-slate-100 hover:bg-slate-800 transition-colors"
+//             >
+//               <svg
+//                 className="h-6 w-6"
+//                 fill="none"
+//                 stroke="currentColor"
+//                 viewBox="0 0 24 24"
+//               >
+//                 <path
+//                   strokeLinecap="round"
+//                   strokeLinejoin="round"
+//                   strokeWidth={2}
+//                   d={
+//                     mobileMenuOpen
+//                       ? "M6 18L18 6M6 6l12 12"
+//                       : "M4 6h16M4 12h16M4 18h10"
+//                   }
+//                 />
+//               </svg>
+//             </button>
+//           </div>
+
+//           {/* Left: Logo + title */}
+//           <div className="flex items-center gap-2">
+//             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-teal-500 text-xs font-semibold tracking-widest text-slate-900">
+//               CRM
+//             </div>
+//             <div className="flex flex-col leading-tight">
+//               <span className="text-sm md:text-base font-semibold tracking-wide">
+//                 MANAGEMENT
+//               </span>
+//               <span className="hidden md:block text-[11px] text-slate-400">
+//                 Admin Panel
+//               </span>
+//             </div>
+//           </div>
+
+//           {/* Desktop nav */}
+//           <nav className="hidden lg:flex items-center gap-5 text-sm">
+//             {links.map((link) => (
+//               <div
+//                 key={link.label}
+//                 className="relative"
+//                 onMouseEnter={() => {
+//                   if (link.label === "Masters") setMasterMenuOpen(true)
+//                   else if (link.label === "Transactions")
+//                     setTransactionMenuOpen(true)
+//                   else if (link.label === "Reports") setReportsMenuOpen(true)
+//                   else if (link.label === "Task") setTasksMenuOpen(true)
+//                 }}
+//                 onMouseLeave={() => {
+//                   if (link.label === "Masters") setMasterMenuOpen(false)
+//                   else if (link.label === "Transactions")
+//                     setTransactionMenuOpen(false)
+//                   else if (link.label === "Reports") setReportsMenuOpen(false)
+//                   else if (link.label === "Task") setTasksMenuOpen(false)
+//                 }}
+//               >
+//                 {link.to ? (
+//                   <NavLink
+//                     to={link.to}
+//                     className={({ isActive }) =>
+//                       `relative px-1 text-sm transition-colors ${
+//                         isActive
+//                           ? "text-teal-400"
+//                           : "text-slate-200 hover:text-teal-300"
+//                       }`
+//                     }
+//                   >
+//                     {link.label}
+//                     <span className="absolute left-0 -bottom-1 h-0.5 w-full scale-x-0 bg-teal-400 transition-transform duration-200 origin-center group-hover:scale-x-100" />
+//                   </NavLink>
+//                 ) : (
+//                   <button className="text-slate-200 hover:text-teal-300 text-sm">
+//                     {link.label}
+//                   </button>
+//                 )}
+
+//                 {/* Masters */}
+//                 {link.label === "Masters" && masterMenuOpen && (
+//                   <div className="absolute left-0 mt-2 w-56 rounded-md bg-slate-800 border border-slate-700 shadow-lg">
+//                     {masters.map((master) => (
+//                       <div
+//                         key={master.label}
+//                         className="relative"
+//                         onMouseEnter={() =>
+//                           master.hasChildren && setOpenSubmenu(master.label)
+//                         }
+//                         onMouseLeave={() =>
+//                           master.hasChildren && setOpenSubmenu(null)
+//                         }
+//                       >
+//                         <Link
+//                           to={master.to || "#"}
+//                           className="flex items-center justify-between px-4 py-2 text-xs hover:bg-slate-700"
+//                         >
+//                           <span>{master.label}</span>
+//                           {master.hasChildren && (
+//                             <FaChevronRight className="h-3 w-3 text-slate-400" />
+//                           )}
+//                         </Link>
+
+//                         {master.hasChildren &&
+//                           openSubmenu === "Employee" &&
+//                           master.label === "Employee" && (
+//                             <div className="absolute top-0 left-full ml-1 w-52 rounded-md bg-slate-800 border border-slate-700 shadow-lg">
+//                               {Employee.map((employee) => (
+//                                 <Link
+//                                   key={employee.to}
+//                                   to={employee.to}
+//                                   className="block px-4 py-2 text-xs hover:bg-slate-700"
+//                                 >
+//                                   {employee.label}
+//                                 </Link>
+//                               ))}
+//                             </div>
+//                           )}
+
+//                         {master.hasChildren &&
+//                           openSubmenu === "Product & Service" &&
+//                           master.label === "Product & Service" && (
+//                             <div className="absolute top-0 left-full ml-1 w-56 rounded-md bg-slate-800 border border-slate-700 shadow-lg">
+//                               {Productandservices.map((prod) => (
+//                                 <Link
+//                                   key={prod.to}
+//                                   to={prod.to}
+//                                   className="block px-4 py-2 text-xs hover:bg-slate-700"
+//                                 >
+//                                   {prod.label}
+//                                 </Link>
+//                               ))}
+//                             </div>
+//                           )}
+//                       </div>
+//                     ))}
+//                   </div>
+//                 )}
+
+//                 {/* Transactions */}
+//                 {link.label === "Transactions" && transactionMenuOpen && (
+//                   <div className="absolute left-0 mt-2 w-56 rounded-md bg-slate-800 border border-slate-700 shadow-lg">
+//                     {transactions.map((transaction) => (
+//                       <div
+//                         key={transaction.label}
+//                         className="relative"
+//                         onMouseEnter={() =>
+//                           transaction.hasChildren &&
+//                           transaction.label === "Lead" &&
+//                           setLeadMenuOpen(true)
+//                         }
+//                         onMouseLeave={() =>
+//                           transaction.hasChildren &&
+//                           transaction.label === "Lead" &&
+//                           setLeadMenuOpen(false)
+//                         }
+//                       >
+//                         <Link
+//                           to={transaction.to || "#"}
+//                           className="flex items-center justify-between px-4 py-2 text-xs hover:bg-slate-700"
+//                         >
+//                           <span>{transaction.label}</span>
+//                           {transaction.hasChildren && (
+//                             <FaChevronRight className="h-3 w-3 text-slate-400" />
+//                           )}
+//                         </Link>
+//                         {transaction.hasChildren && leadMenuOpen && (
+//                           <div className="absolute top-0 left-full ml-1 w-56 rounded-md bg-slate-800 border border-slate-700 shadow-lg">
+//                             {leads.map((lead) => (
+//                               <Link
+//                                 key={lead.to}
+//                                 to={lead.to}
+//                                 className="block px-4 py-2 text-xs hover:bg-slate-700"
+//                               >
+//                                 {lead.label}
+//                               </Link>
+//                             ))}
+//                           </div>
+//                         )}
+//                       </div>
+//                     ))}
+//                   </div>
+//                 )}
+
+//                 {/* Reports */}
+//                 {link.label === "Reports" && reportsMenuOpen && (
+//                   <div className="absolute left-0 mt-2 w-56 rounded-md bg-slate-800 border border-slate-700 shadow-lg">
+//                     {reports.map((report) => (
+//                       <Link
+//                         key={report.to}
+//                         to={report.to}
+//                         className="block px-4 py-2 text-xs hover:bg-slate-700"
+//                       >
+//                         {report.label}
+//                       </Link>
+//                     ))}
+//                   </div>
+//                 )}
+
+//                 {/* Tasks */}
+//                 {link.label === "Task" && tasksMenuOpen && (
+//                   <div className="absolute left-0 mt-2 w-56 rounded-md bg-slate-800 border border-slate-700 shadow-lg">
+//                     {tasks.map((task) => (
+//                       <Link
+//                         key={task.to}
+//                         to={task.to}
+//                         className="block px-4 py-2 text-xs hover:bg-slate-700"
+//                       >
+//                         {task.label}
+//                       </Link>
+//                     ))}
+//                   </div>
+//                 )}
+//               </div>
+//             ))}
+//           </nav>
+
+//           {/* Right: profile + logout (desktop) */}
+//           <div className="hidden md:flex items-center gap-3">
+//             <div className="relative">
+//               <button
+//                 onMouseEnter={() => setProfileMenuOpen(true)}
+//                 onMouseLeave={() => setProfileMenuOpen(false)}
+//                 className="flex items-center gap-2 rounded-full bg-slate-800 px-2 py-1 text-xs"
+//               >
+//                 {user?.profileUrl ? (
+//                   <img
+//                     src={user.profileUrl}
+//                     className="h-8 w-8 rounded-full object-cover"
+//                   />
+//                 ) : (
+//                   <FaUserCircle className="h-7 w-7 text-slate-100" />
+//                 )}
+//                 {/* Keep name in single line with ellipsis */}
+//                 <span className="max-w-[130px] truncate font-medium">
+//                   {user?.name || "Profile"}
+//                 </span>
+//               </button>
+
+//               {profileMenuOpen && (
+//                 <div
+//                   onMouseEnter={() => setProfileMenuOpen(true)}
+//                   onMouseLeave={() => setProfileMenuOpen(false)}
+//                   className="absolute right-0 mt-1 w-52 rounded-md bg-slate-800 border border-slate-700 shadow-lg text-xs"
+//                 >
+//                   <div className="px-4 py-3 border-b border-slate-700">
+//                     <p className="font-semibold truncate">{user?.name}</p>
+//                     <p className="text-slate-400 text-[11px]">
+//                       {user?.role}
+//                     </p>
+//                     <p className="mt-1 text-[11px] text-slate-300 line-clamp-2">
+//                       {user?.branchName?.join(" | ")}
+//                     </p>
+//                   </div>
+//                   <button
+//                     onClick={logout}
+//                     className="flex w-full items-center gap-2 px-4 py-2 text-red-300 hover:bg-slate-700"
+//                   >
+//                     <FiLogOut className="h-4 w-4" />
+//                     <span>Logout</span>
+//                   </button>
+//                 </div>
+//               )}
+//             </div>
+
+//             <button
+//               onClick={logout}
+//               className="hidden lg:inline-flex items-center gap-1 rounded-md border border-red-400 bg-red-500/10 px-3 py-1.5 text-xs font-medium text-red-200 hover:bg-red-500/20"
+//             >
+//               <FiLogOut className="h-4 w-4" />
+//               <span>Logout</span>
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* Mobile overlay */}
+//       {mobileMenuOpen && (
+//         <div
+//           className="fixed inset-0 z-40 bg-black/40 md:hidden"
+//           onClick={() => setMobileMenuOpen(false)}
+//         />
+//       )}
+
+//       {/* Mobile drawer */}
+//       <div
+//         className={`fixed top-0 left-0 z-50 h-screen w-4/5 max-w-xs bg-slate-900 text-slate-100 shadow-lg transform transition-transform duration-300 md:hidden flex flex-col ${
+//           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+//         }`}
+//       >
+//         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
+//           <div className="flex items-center gap-2">
+//             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500 text-[11px] font-semibold tracking-widest text-slate-900">
+//               CRM
+//             </div>
+//             <span className="text-sm font-semibold tracking-wide">
+//               MANAGEMENT
+//             </span>
+//           </div>
+//           <button
+//             onClick={() => setMobileMenuOpen(false)}
+//             className="rounded-md p-1.5 hover:bg-slate-800"
+//           >
+//             ✕
+//           </button>
+//         </div>
+
+//         <div className="px-4 py-3 border-b border-slate-800 text-sm">
+//           <div className="flex items-center gap-2">
+//             <FaUserCircle className="h-6 w-6 text-slate-100" />
+//             <div className="flex flex-col leading-tight">
+//               <span className="font-medium truncate max-w-[160px]">
+//                 {user?.name}
+//               </span>
+//               <span className="text-[11px] text-slate-400">{user?.role}</span>
+//             </div>
+//           </div>
+//           <p className="mt-1 text-[11px] text-slate-400 line-clamp-2">
+//             {user?.branchName?.join(" | ")}
+//           </p>
+//         </div>
+
+//         <div className="flex-1 overflow-y-auto text-sm">
+//           {desiredMobileMenu.map((link, index) => (
+//             <div key={index} className={`relative menu-item-${index}`}>
+//               <div
+//                 className="flex items-center justify-between px-4 py-2 hover:bg-slate-800 cursor-pointer"
+//                 onClick={() => toggleSubmenu(index)}
+//               >
+//                 <span>{link.label}</span>
+//                 {activeSubmenu === index ? (
+//                   <FaChevronDown className="h-3 w-3 text-slate-400" />
+//                 ) : (
+//                   <FaChevronRight className="h-3 w-3 text-slate-400" />
+//                 )}
+//               </div>
+
+//               {activeSubmenu === index && (
+//                 <div
+//                   ref={menuContainerRef}
+//                   className="bg-slate-800 border-l border-slate-700 max-h-64 overflow-y-auto"
+//                 >
+//                   {["Transactions", "Reports", "Task"].includes(link.label)
+//                     ? (link.label === "Transactions"
+//                         ? transactions
+//                         : link.label === "Reports"
+//                         ? reports
+//                         : tasks
+//                       )
+//                         .filter(
+//                           (m) =>
+//                             m.label === "Lead" ||
+//                             m.label === "Leave Application" ||
+//                             m.label === "Leave Summary" ||
+//                             m.label === "Leave Approval Pending"
+//                         )
+//                         .map((master, masterIndex) => (
+//                           <div key={master.label} className="relative py-1">
+//                             <div className="flex justify-between items-center px-5 text-xs hover:bg-slate-700">
+//                               <span
+//                                 className="cursor-pointer flex-1"
+//                                 onClick={() => {
+//                                   toggleInnerMenu(masterIndex)
+//                                   if (master.to) {
+//                                     navigate(master.to)
+//                                     setMobileMenuOpen(false)
+//                                   }
+//                                 }}
+//                               >
+//                                 {master.label}
+//                               </span>
+//                               {master.hasChildren && (
+//                                 <span className="ml-2">
+//                                   {openInnerMenu === masterIndex ? (
+//                                     <FaChevronDown className="h-3 w-3 text-slate-400" />
+//                                   ) : (
+//                                     <FaChevronRight className="h-3 w-3 text-slate-400" />
+//                                   )}
+//                                 </span>
+//                               )}
+//                             </div>
+
+//                             {openInnerMenu === masterIndex &&
+//                               master.hasChildren &&
+//                               master.label === "Lead" && (
+//                                 <div className="ml-4 mt-1 border-l border-slate-700 bg-slate-900">
+//                                   {leads.map((child) => (
+//                                     <NavLink
+//                                       key={child.to}
+//                                       to={child.to}
+//                                       end
+//                                       onClick={() => setMobileMenuOpen(false)}
+//                                       className={({ isActive }) =>
+//                                         `block px-4 py-1 text-xs ${
+//                                           isActive
+//                                             ? "bg-teal-600 text-white"
+//                                             : "hover:bg-slate-800"
+//                                         }`
+//                                       }
+//                                     >
+//                                       {child.label}
+//                                     </NavLink>
+//                                   ))}
+//                                 </div>
+//                               )}
+//                           </div>
+//                         ))
+//                     : null}
+//                 </div>
+//               )}
+//             </div>
+//           ))}
+//         </div>
+
+//         <button
+//           onClick={logout}
+//           className="mt-auto flex items-center gap-2 px-4 py-3 text-sm text-red-200 bg-slate-800 hover:bg-slate-700"
+//         >
+//           <FaSignOutAlt className="h-4 w-4" />
+//           <span>Logout</span>
+//         </button>
+//       </div>
+//     </header>
+//   )
+// }
+

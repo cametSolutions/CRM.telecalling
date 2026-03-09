@@ -2432,6 +2432,7 @@ function LicenseDropdown({
   }
 
   const handleInputChange = (e) => {
+console.log("h")
     const value = e.target.value
     setSearch(value)
     setOpen(true)
@@ -2583,6 +2584,9 @@ function ProductDropdown({
       setSearch("")
     } else {
       const igstRate = prod?.selectedArray?.[0]?.hsn_id?.onValue?.igstRate ?? 0
+console.log(igstRate)
+console.log(prod?.selectedArray)
+console.log(prod.productPrice)
       const netAmount = (
         Number(prod?.productPrice || 0) +
         (Number(igstRate || 0) / 100) * Number(prod?.productPrice || 0)
@@ -2901,6 +2905,7 @@ const LeadMaster = ({
       customerOptions.length &&
       loggeduser
     ) {
+console.log("h")
       if (Data[0]?.selfAllocation) {
         setselfAllocationChangable(false)
       }
@@ -3530,9 +3535,10 @@ const LeadMaster = ({
   }
 
   const tableRows = selectedleadlist || []
+console.log(tableRows)
 
   return (
-    <div className="bg-gray-100 h-auto">
+    <div className="bg-blue-50 h-auto">
       {(modalloader ||
         loadingState ||
         editloadingState ||

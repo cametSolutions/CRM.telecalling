@@ -37,11 +37,12 @@ export default function TasksubmissionModal({
     }
     try {
       console.log(taskDetails)
-    
+
       setsubmitLoading(true)
       const response = await api.post("/lead/taskSubmission", taskDetails)
       toast.success(response.data.message)
       setsubmitLoading(false)
+      setShowComponent(false)
       refresh()
     } catch (error) {
       setsubmitLoading(false)
