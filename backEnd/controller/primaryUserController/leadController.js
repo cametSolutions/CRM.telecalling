@@ -14,7 +14,7 @@ export const LeadRegister = async (req, res) => {
   try {
     const { leadData, selectedtableLeadData, role } = req.body;
 
-console.log("tablee",selectedtableLeadData)
+    console.log("tablee", selectedtableLeadData)
     // return
     const {
       customerName,
@@ -22,7 +22,7 @@ console.log("tablee",selectedtableLeadData)
       phone,
       email,
       location,
-source,
+      source,
       pincode,
       trade,
       remark,
@@ -469,7 +469,7 @@ export const Getallsalesfunnels = async (req, res) => {
       };
     });
 
-    
+
     console.log("formateeddd", formatted)
     return res.status(200).json({ message: "data found", data: formatted });
 
@@ -850,6 +850,7 @@ export const GetallfollowupList = async (req, res) => {
         activity.map(async (log) => {
           let populatedSubmittedUser = null;
           let populatedTaskAllocatedTo = null;
+          let populatedTaskAllocatedBy = null
           let populatedTask = null;
           let populatedTaskBy = null
           if (
@@ -863,6 +864,15 @@ export const GetallfollowupList = async (req, res) => {
               .select("name")
               .lean()
               .catch(() => null);
+          }
+          if (log.taskallocatedBy && log.taskallocatedByModel && mongoose.models[log.taskallocatedByModel]) {
+            const model = mongoose.model(log.taskallocatedByModel);
+            populatedTaskAllocatedBy = await model
+              .findById(log.taskallocatedBy)
+              .select("name")
+              .lean()
+              .catch(() => null);
+
           }
 
           if (
@@ -891,6 +901,7 @@ export const GetallfollowupList = async (req, res) => {
             ...log,
             taskBy: populatedTaskBy,
             submittedUser: populatedSubmittedUser || log.submittedUser,
+            taskallocatedBy: populatedTaskAllocatedBy || log.taskallocatedBy,
             taskallocatedTo: populatedTaskAllocatedTo || log.taskallocatedTo,
             taskId: populatedTask,
           };

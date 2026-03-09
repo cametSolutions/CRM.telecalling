@@ -9,6 +9,7 @@ console.log("usefethchhhhhhhh")
   const [data, setData] = useState(null)
   const [fulldateholiday, setfulldateHoliday] = useState(null)
   const [loading, setLoading] = useState(true)
+console.log(loading)
   const [error, setError] = useState(null)
 
   useEffect(() => {

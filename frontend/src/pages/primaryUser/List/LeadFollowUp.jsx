@@ -249,7 +249,7 @@ const LeadFollowUp = () => {
         const taskSubmittedLeads = ownFollow.filter(
           (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
         )
-console.log(ownFollow)
+        console.log(ownFollow)
         const nonsubmittedtakleads = ownFollow.filter(
           (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed === false
         )
@@ -359,18 +359,51 @@ console.log(ownFollow)
         const Data = normalizeTableData(clearedLeads)
         setTableData(Data)
       } else if (!pending && !ownFollowUp) {
-        const clearedLeads = loggedusersallocatedleads.followupLeads.filter(
-          (lead) =>
-            Array.isArray(lead.activityLog) &&
-            lead.activityLog.some(
-              (entry) =>
-                entry.taskTo === "followup" && entry.followupClosed === true
-            )
-        )
+        console.log("H")
 
+        console.log(loggedusersallocatedleads)
+        // helpers
+        const isFollowupActivity = (log) =>
+          log?.taskBy?.taskName === "Followup" &&
+          log?.followupClosed === true &&
+          log?.submissionDate
+
+        const getLatestSubmissionDate = (lead) => {
+          const dates = (lead.activityLog || [])
+            .filter(isFollowupActivity)
+            .map((log) => new Date(log.submissionDate).getTime())
+          if (!dates.length) return null
+          return Math.max(...dates) // latest
+        }
+        const followupLeads = loggedusersallocatedleads.followupLeads || []
+        const clearedLeads = []
+        followupLeads.forEach((lead) => {
+          const latest = getLatestSubmissionDate(lead)
+          if (latest) {
+            // cleared
+            clearedLeads.push({ ...lead, latestSubmissionTime: latest })
+          }
+        })
+
+        // sort cleared leads: latest cleared first
+        clearedLeads.sort(
+          (a, b) => b.latestSubmissionTime - a.latestSubmissionTime
+        )
+        // optional: group by allocatedTo
+        const groupedLeads = {}
+        let grandTotal = 0
+        clearedLeads.forEach((lead) => {
+          const assignedTo = lead?.allocatedTo?.name || "Unassigned"
+          const amount = lead?.netAmount || 0
+          grandTotal += amount
+          if (!groupedLeads[assignedTo]) groupedLeads[assignedTo] = []
+          groupedLeads[assignedTo].push(lead)
+        })
+        const groupedData = normalizeTableData(groupedLeads)
+        console.log(groupedData)
         // then store it in state
         setnetTotalAmount(TotalAmount(clearedLeads))
-        setTableData(clearedLeads)
+        setTableData(groupedData)
       }
 
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
@@ -706,6 +739,7 @@ console.log(ownFollow)
       const [open, setOpen] = useState(false)
 
       const lastLog = item.activityLog[item.activityLog.length - 1]
+      console.log(lastLog)
       const followupDate =
         pending && lastLog?.nextFollowUpDate
           ? new Date(lastLog.nextFollowUpDate)
@@ -719,10 +753,12 @@ console.log(ownFollow)
           it?.taskallocatedTo?._id === loggedUser._id &&
           it?.taskClosed === false
       )
+      const remarkBy =
+        lastLog?.taskAllocatedBy?.name ??
+        lastLog?.taskAllocatedTo?.name ??
+        lastLog?.submittedUser?.name ??
+        ""
 
-      // Total columns = 1(chevron) + 1(name) + 1(mobile) + 1(remark) + 1(followup)
-      //               + 1(eventlog) + 1(view) + (ownFollowUp?1:0) + 1(amount)
-      const totalCols = ownFollowUp ? 9 : 8
 
       return (
         <>
@@ -744,21 +780,31 @@ console.log(ownFollow)
             <td className="px-3 py-2 text-gray-700 text-sm border border-gray-300 whitespace-nowrap">
               {item?.mobile}
             </td>
-            <td className="px-3 py-2 text-sm border border-gray-300 max-w-[200px]">
+            <td className="px-3 py-2 text-sm border border-gray-300 max-w-[200px] whitespace-nowrap truncate">
+             
               <span
-                className="text-red-600 font-medium truncate block"
+                className="block truncate text-sm uppercase"
                 title={lastLog?.remarks}
               >
-                {lastLog?.remarks || "-"}
+                <span className="text-red-600 font-medium">
+                  {lastLog?.remarks || "-"}
+                </span>
+
+                {remarkBy && (
+                  <span className="ml-2 text-sm text-slate-500 uppercase">
+                    (
+                    <span className="font-semibold text-blue-600">
+                      {remarkBy}
+                    </span>
+                    )
+                  </span>
+                )}
               </span>
             </td>
-            <td className="px-3 py-2 text-sm text-gray-700 border border-gray-300 whitespace-nowrap">
+            <td className="px-3 py-2 text-sm text-gray-700 border border-gray-300 whitespace-nowrap text-center">
               {followupDate}
             </td>
-            {/* {!pending && (
-              <td className="px-3 py-2 text-sm text-gray-700 border border-gray-300 whitespace-nowrap">
-              </td>
-            )} */}
+        
 
             <td
               className="px-2 py-2 border border-gray-300"
@@ -1717,7 +1763,7 @@ console.log(ownFollow)
                 )}
 
                 {/* Payment Section */}
-                {formData.followupType !== "lost" && (
+                {formData.followupType === "closed" && (
                   <div className="border-2 border-green-200 rounded-xl p-5 bg-gradient-to-br from-green-50 to-emerald-50">
                     <label className="flex items-start cursor-pointer group mb-4">
                       <input

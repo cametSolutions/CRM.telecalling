@@ -2287,6 +2287,7 @@ import { toast } from "react-toastify"
 import UseFetch from "../../hooks/useFetch"
 import api from "../../api/api"
 import { Loader } from "lucide-react"
+import { selectedBranch } from "../../../slices/companyBranchSlice"
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DropdownPortal — keeps dropdown aligned on scroll/resize
@@ -2432,6 +2433,7 @@ function LicenseDropdown({
   }
 
   const handleInputChange = (e) => {
+    console.log("h")
     const value = e.target.value
     setSearch(value)
     setOpen(true)
@@ -2526,8 +2528,10 @@ function ProductDropdown({
   isReadOnly,
   leadList,
   selectedleadlist,
-  setSelectedLeadList
+  setSelectedLeadList,
+  selectedBranch
 }) {
+console.log(selectedBranch)
   const emptyRow = {
     licenseNumber: "",
     productorServiceId: "",
@@ -2564,14 +2568,19 @@ function ProductDropdown({
       prod.productName?.toLowerCase() || prod.serviceName?.toLowerCase() || ""
     return name.includes(q)
   })
-
+  console.log(selectedBranch)
   const applySelection = (prod) => {
     const base = selectedleadlist?.length
       ? [...selectedleadlist]
       : [{ ...emptyRow }]
     const updated = [...base]
-
+    console.log(prod)
+    const filteredbranch = prod?.selected.filter((item)=>item.branch_id===selectedBranch[0])
+console.log(filteredbranch)
+const igstRate=filteredbranch?.[0]?.hsn_id?.onValue?.igstRate
+console.log("hhh")
     if (!prod) {
+      console.log(prod)
       updated[index] = {
         ...updated[index],
         productorServiceId: "",
@@ -2582,7 +2591,10 @@ function ProductDropdown({
       }
       setSearch("")
     } else {
-      const igstRate = prod?.selectedArray?.[0]?.hsn_id?.onValue?.igstRate ?? 0
+      
+      console.log(igstRate)
+      console.log(prod?.selectedArray)
+      console.log(prod.productPrice)
       const netAmount = (
         Number(prod?.productPrice || 0) +
         (Number(igstRate || 0) / 100) * Number(prod?.productPrice || 0)
@@ -2611,6 +2623,7 @@ function ProductDropdown({
     const exact = (leadList || []).find(
       (p) => p.productName === value || p.serviceName === value
     )
+    console.log("hh")
     if (exact) applySelection(exact)
     else if (!value) applySelection(null)
   }
@@ -2662,6 +2675,7 @@ function ProductDropdown({
                     className="px-3 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-2 text-gray-700"
                     onMouseDown={(e) => {
                       e.preventDefault()
+                      console.log("hhh")
                       applySelection(prod)
                       setOpen(false)
                     }}
@@ -2776,6 +2790,7 @@ const LeadMaster = ({
       `/product/getallServices?branchselected=${selectedBranch}`
   )
   const { data: alluser, loading: usersLoading } = UseFetch("/auth/getallUsers")
+  console.log(selectedBranch)
   const {
     data: customerData,
     loading: customerLoading,
@@ -2901,6 +2916,7 @@ const LeadMaster = ({
       customerOptions.length &&
       loggeduser
     ) {
+      console.log("h")
       if (Data[0]?.selfAllocation) {
         setselfAllocationChangable(false)
       }
@@ -3530,9 +3546,10 @@ const LeadMaster = ({
   }
 
   const tableRows = selectedleadlist || []
+  console.log(tableRows)
 
   return (
-    <div className="bg-gray-100 h-auto">
+    <div className="bg-blue-50 h-auto">
       {(modalloader ||
         loadingState ||
         editloadingState ||
@@ -3939,6 +3956,7 @@ const LeadMaster = ({
                               isReadOnly={isReadOnly}
                               leadList={leadList}
                               selectedleadlist={selectedleadlist}
+                              selectedBranch={selectedBranch}
                               setSelectedLeadList={setSelectedLeadList}
                             />
                           </td>
