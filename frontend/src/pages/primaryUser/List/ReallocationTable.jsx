@@ -268,8 +268,9 @@ console.log(formData)
         </div>
       </div>
 
+
       {/* Responsive Table Container */}
-      <div className="flex-1  overflow-x-auto rounded-lg text-center overflow-y-auto border  shadow-xl mx-3 md:mx-5 mb-3">
+      <div className="flex-1  overflow-x-auto rounded-lg text-center overflow-y-auto border  shadow-xl mx-3 md:mx-5 mb-3 bg-white">
         <table className="w-full text-sm">
           <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
             <tr>
@@ -375,7 +376,7 @@ console.log(formData)
                           const selectedtask = tasks.find(
                             (item) => item._id === e.target.value
                           )
-console.log(selectedtask)
+
                           setselectedAllocationType((prev) => ({
                             ...prev,
                             [item._id]: e.target.value
