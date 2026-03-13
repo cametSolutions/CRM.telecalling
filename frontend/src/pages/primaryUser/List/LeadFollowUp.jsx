@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import React from "react"
+import { useLocation } from "react-router-dom"
 import { formatDate } from "../../../utils/dateUtils"
 import MyDatePicker from "../../../components/common/MyDatePicker"
 import { FaSpinner } from "react-icons/fa"
@@ -30,7 +30,7 @@ import { toast } from "react-toastify"
 import UseFetch from "../../../hooks/useFetch"
 const LeadFollowUp = () => {
   const [selectedLeadId, setSelectedLeadId] = useState(null)
-
+  const location = useLocation()
   const [demoerror, setDemoError] = useState({
     selectStaff: "",
     allocationDate: "",
@@ -61,13 +61,14 @@ const LeadFollowUp = () => {
   const [pending, setPending] = useState(true)
   const [allocatedLeads, setAllocatedLeads] = useState([])
   const [loader, setLoader] = useState(false)
+  const [productwiseloader, setproductwiseloader] = useState(false)
   const [allocationOptions, setAllocationOptions] = useState([])
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState("")
   const [isHaveEditchoice, setIsEditable] = useState(false)
   const [selectedDocId, setselectedDocid] = useState(null)
   const [selectedTab, setselectedTab] = useState("")
   const [hasOwnLeads, setHasownLeads] = useState(false)
-  const [ownFollowUp, setOwnFollowUp] = useState(true)
+  const [ownFollowUp, setOwnFollowUp] = useState(location?.state?.pending?false:true)
   const [historyList, setHistoryList] = useState([])
   const [loggedUser, setloggedUser] = useState(null)
   const [loggedUserBranches, setloggedUserBranches] = useState([])
@@ -85,6 +86,7 @@ const LeadFollowUp = () => {
   const [selectedLead, setselectedLead] = useState([])
   const dropdownRef = useRef(null)
   const [tableData, setTableData] = useState([])
+  console.log(tableData)
   const [formData, setFormData] = useState({
     followUpDate: "",
     nextfollowUpDate: "",
@@ -106,16 +108,797 @@ const LeadFollowUp = () => {
   const { data: partners } = UseFetch("/customer/getallpartners")
   const { data: branches } = UseFetch("/branch/getBranch")
   const { data } = UseFetch("/auth/getallUsers")
+  // const {
+  //   data: loggedusersallocatedleads,
+  //   loading,
+  //   refreshHook
+  // } = UseFetch(
+  //   !location?.state?.staffId &&
+  //     loggedUser &&
+  //     selectedCompanyBranch &&
+  //     `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}&pendingfollowup=${pending}`
+  // )
+  const handletoogle = (status) => {
+    console.log(status)
+    console.log(location.state)
+    const selectedbranch = location?.state?.branchId
+    console.log(selectedbranch)
+
+    setselectedCompanyBranch(selectedbranch)
+    console.log(selectedCompanyBranch)
+
+    const fetchFollowups = async () => {
+      const staffIdFromState = location.state.staffId
+      const pendingorcleared = !status
+      const selectedproductId = location.state.productId
+      console.log(selectedproductId)
+      console.log(pendingorcleared)
+      setPending(pendingorcleared)
+      // keep full loggedUser object, just compare ids
+      setOwnFollowUp(staffIdFromState === loggedUser._id)
+      setproductwiseloader(true)
+      try {
+        const res = await api.get(
+          `/lead/getallLeadFollowUpforselectedProduct?branchSelected=${selectedbranch}` +
+            `&loggeduserid=${staffIdFromState}` +
+            `&role=${loggedUser.role}` +
+            `&pendingfollowup=${pendingorcleared}` +
+            `&selectedproductId=${selectedproductId}`
+        )
+        console.log(res.data.followupLeads)
+        const productwisedata = res.data.followupLeads
+        if (productwisedata && dates.endDate && loggedUser) {
+          setproductwiseloader(false)
+          if (pending && ownFollowUp) {
+            const ownFollow = loggedusersallocatedleads.followupLeads.filter(
+              (lead) =>
+                lead.activityLog?.some(
+                  (log) =>
+                    log.taskTo === "followup" &&
+                    log.taskallocatedTo?._id === loggedUser._id &&
+                    log.followupClosed === false &&
+                    log.allocationChanged === false
+                )
+            )
+            const currentDate = new Date()
+            const endDateLocal = getLocalDate(new Date(dates.endDate))
+            formatdate(currentDate)
+            const fulldatecurrent =
+              formatdate(currentDate) === endDateLocal
+                ? // formatdate(dates.endDate)
+                  formatdate(currentDate)
+                : endDateLocal
+            const neverfollowupedLeads = ownFollow.filter(
+              (lead) => lead.neverfollowuped && lead.allocatedfollowup == false
+            )
+            const havenextFollowup = ownFollow.filter(
+              (lead) => lead.Nextfollowup
+            )
+            const filteredcurrentdatefollowupLeads = havenextFollowup.filter(
+              (lead) => formatdate(lead.nextFollowUpDate) === fulldatecurrent
+            )
+            const iscurrent =
+              fulldatecurrent === endDateLocal ? fulldatecurrent : endDateLocal
+            const overdueFollowups = havenextFollowup.filter(
+              (lead) => formatdate(lead.nextFollowUpDate) < iscurrent
+            )
+            const postdatefollowup = havenextFollowup.filter(
+              (lead) => formatdate(lead.nextFollowUpDate) > iscurrent
+            )
+            const uniqueoverdueAndcurrentdate = [
+              ...new Set([
+                ...overdueFollowups,
+                ...filteredcurrentdatefollowupLeads
+              ])
+            ]
+            const taskSubmittedLeads = ownFollow.filter(
+              (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
+            )
+            console.log(ownFollow)
+            const nonsubmittedtakleads = ownFollow.filter(
+              (lead) =>
+                lead.allocatedfollowup && lead.allocatedTaskClosed === false
+            )
+            const allocatedData = normalizeTableData(nonsubmittedtakleads)
+            setAllocatedLeads(allocatedData)
+
+            const mergedall = [
+              ...neverfollowupedLeads,
+              ...uniqueoverdueAndcurrentdate,
+              ...postdatefollowup,
+              ...taskSubmittedLeads
+            ]
+            const Data = normalizeTableData(mergedall)
+            // then store it in state
+            setnetTotalAmount(TotalAmount(mergedall))
+            console.log(Data)
+            // mergedall.forEach((item)=>)
+            setTableData(Data)
+          } else if (pending && !ownFollowUp) {
+            console.log("h")
+            const currentDate = new Date()
+            const endDateLocal = getLocalDate(new Date(dates.endDate))
+            formatdate(currentDate)
+            const fulldatecurrent =
+              formatdate(currentDate) === endDateLocal
+                ? // formatdate(dates.endDate)
+                  formatdate(currentDate)
+                : endDateLocal
+            const neverfollowupedLeads = productwisedata.filter(
+              (lead) => lead.neverfollowuped
+            )
+            const havenextFollowup = productwisedata.filter(
+              (lead) => lead.Nextfollowup
+            )
+            const filteredcurrentdatefollowupLeads = havenextFollowup.filter(
+              (lead) => formatdate(lead.nextFollowUpDate) === fulldatecurrent
+            )
+
+            const iscurrent =
+              fulldatecurrent === endDateLocal ? fulldatecurrent : endDateLocal
+            const overdueFollowups = havenextFollowup.filter(
+              (lead) => formatdate(lead.nextFollowUpDate) < iscurrent
+            )
+            const postdatefollowup = havenextFollowup.filter(
+              (lead) => formatdate(lead.nextFollowUpDate) > iscurrent
+            )
+            const uniqueoverdueAndcurrentdate = [
+              ...new Set([
+                ...overdueFollowups,
+                ...filteredcurrentdatefollowupLeads
+              ])
+            ]
+
+            const taskSubmittedLeads = productwisedata.filter(
+              (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
+            )
+            const nonsubmittedtakleads = productwisedata.filter(
+              (lead) =>
+                lead.allocatedfollowup && lead.allocatedTaskClosed === false
+            )
+            setAllocatedLeads(nonsubmittedtakleads)
+
+            const mergedall = [
+              ...neverfollowupedLeads,
+              ...uniqueoverdueAndcurrentdate,
+              ...postdatefollowup,
+              ...taskSubmittedLeads
+            ]
+            const groupedLeads = {}
+            let grandTotal = 0
+            mergedall.forEach((lead) => {
+              const assignedTo = lead?.allocatedTo?.name
+              const amount = lead?.netAmount || 0
+              grandTotal += amount
+              if (!groupedLeads[assignedTo]) {
+                groupedLeads[assignedTo] = []
+              }
+              groupedLeads[assignedTo].push(lead)
+            })
+            const groupedData = normalizeTableData(groupedLeads)
+
+            setnetTotalAmount(TotalAmount(mergedall))
+            setTableData(groupedData)
+            console.log(groupedData)
+          } else if (!pending && ownFollowUp) {
+            console.log("h")
+            const ownFollow = loggedusersallocatedleads.followupLeads.filter(
+              (lead) =>
+                lead.activityLog?.some(
+                  (log) =>
+                    log.taskTo === "followup" &&
+                    log.taskallocatedTo._id === loggedUser._id &&
+                    log.followupClosed === true
+                )
+            )
+            console.log(ownFollow)
+            const clearedLeads = ownFollow.filter(
+              (lead) =>
+                Array.isArray(lead.activityLog) &&
+                lead.activityLog.some(
+                  (entry) =>
+                    entry.taskTo === "followup" && entry.followupClosed === true
+                )
+            )
+            console.log(clearedLeads)
+
+            // then store it in state
+            setnetTotalAmount(TotalAmount(clearedLeads))
+            const Data = normalizeTableData(clearedLeads)
+            setTableData(Data)
+          } else if (!pending && !ownFollowUp) {
+            console.log("H")
+
+            console.log(loggedusersallocatedleads)
+            // helpers
+            const isFollowupActivity = (log) =>
+              log?.taskBy?.taskName === "Followup" &&
+              log?.followupClosed === true &&
+              log?.submissionDate
+
+            const getLatestSubmissionDate = (lead) => {
+              const dates = (lead.activityLog || [])
+                .filter(isFollowupActivity)
+                .map((log) => new Date(log.submissionDate).getTime())
+              if (!dates.length) return null
+              return Math.max(...dates) // latest
+            }
+            const followupLeads = loggedusersallocatedleads.followupLeads || []
+            const clearedLeads = []
+            followupLeads.forEach((lead) => {
+              const latest = getLatestSubmissionDate(lead)
+              if (latest) {
+                // cleared
+                clearedLeads.push({ ...lead, latestSubmissionTime: latest })
+              }
+            })
+
+            // sort cleared leads: latest cleared first
+            clearedLeads.sort(
+              (a, b) => b.latestSubmissionTime - a.latestSubmissionTime
+            )
+            // optional: group by allocatedTo
+            const groupedLeads = {}
+            let grandTotal = 0
+            clearedLeads.forEach((lead) => {
+              const assignedTo = lead?.allocatedTo?.name || "Unassigned"
+              const amount = lead?.netAmount || 0
+              grandTotal += amount
+              if (!groupedLeads[assignedTo]) groupedLeads[assignedTo] = []
+              groupedLeads[assignedTo].push(lead)
+            })
+            const groupedData = normalizeTableData(groupedLeads)
+            console.log(groupedData)
+            // then store it in state
+            setnetTotalAmount(TotalAmount(clearedLeads))
+            setTableData(groupedData)
+          }
+
+          setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
+        }
+        console.log(pending)
+        console.log(ownFollowUp)
+        console.log(res.data.followupLeads.length)
+        // handle res.data here (set state, etc.)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
+    fetchFollowups()
+  }
+  const shouldFetch =
+    !location?.state?.staffId && // only when no staffId in state
+    loggedUser &&
+    selectedCompanyBranch
+
+  const url = shouldFetch
+    ? `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}&pendingfollowup=${location?.state?.pending?true:pending}`
+    : null
+
   const {
     data: loggedusersallocatedleads,
     loading,
+    error,
     refreshHook
-  } = UseFetch(
-    loggedUser &&
-      selectedCompanyBranch &&
-      `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}&pendingfollowup=${pending}`
-  )
+  } = UseFetch(url)
+  console.log(!location?.state?.staffId)
   console.log(loggedusersallocatedleads)
+  console.log(loading)
+  console.log(loggedusersallocatedleads)
+  console.log(!location?.state?.staffId)
+  //   useEffect(() => {
+  //     if (location?.state?.staffId) {
+  //       setPending(location?.state?.pending)
+  //       setloggedUser(location?.state?.staffId)
+  //       setOwnFollowUp(location?.state?.staffId === loggedUser._id)
+  // const a=await api.get(   `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${location?.state?.staffId}&role=${loggedUser.role}&pendingfollowup=${location?.state?.pending}`)
+
+  //     }
+  //   }, [])
+  console.log("hhh")
+  // useEffect(() => {
+  //   if (location?.state?.from) {
+  //     const selectedbranch = location?.state?.branchId
+  //     console.log(selectedbranch)
+
+  //     setselectedCompanyBranch(selectedbranch)
+  //     console.log(selectedCompanyBranch)
+
+  //     const fetchFollowups = async () => {
+  //       const staffIdFromState = location.state.staffId
+  //       const pendingFromState = location.state.pending
+  //       const selectedproductId = location.state.productId
+  //       console.log(selectedproductId)
+  //       console.log(pendingFromState)
+  //       setPending(pendingFromState)
+  //       // keep full loggedUser object, just compare ids
+  //       setOwnFollowUp(false)
+  //       setproductwiseloader(true)
+  //       try {
+  //         const res = await api.get(
+  //           `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}&pendingfollowup=${pending}`
+  //         )
+  //         console.log(res.data.followupLeads)
+  //         const productwisedata = res.data.followupLeads
+  //         if (productwisedata && dates.endDate && loggedUser) {
+  //           setproductwiseloader(false)
+  //           if (pending && ownFollowUp) {
+  //             const ownFollow = loggedusersallocatedleads.followupLeads.filter(
+  //               (lead) =>
+  //                 lead.activityLog?.some(
+  //                   (log) =>
+  //                     log.taskTo === "followup" &&
+  //                     log.taskallocatedTo?._id === loggedUser._id &&
+  //                     log.followupClosed === false &&
+  //                     log.allocationChanged === false
+  //                 )
+  //             )
+  //             const currentDate = new Date()
+  //             const endDateLocal = getLocalDate(new Date(dates.endDate))
+  //             formatdate(currentDate)
+  //             const fulldatecurrent =
+  //               formatdate(currentDate) === endDateLocal
+  //                 ? // formatdate(dates.endDate)
+  //                   formatdate(currentDate)
+  //                 : endDateLocal
+  //             const neverfollowupedLeads = ownFollow.filter(
+  //               (lead) =>
+  //                 lead.neverfollowuped && lead.allocatedfollowup == false
+  //             )
+  //             const havenextFollowup = ownFollow.filter(
+  //               (lead) => lead.Nextfollowup
+  //             )
+  //             const filteredcurrentdatefollowupLeads = havenextFollowup.filter(
+  //               (lead) => formatdate(lead.nextFollowUpDate) === fulldatecurrent
+  //             )
+  //             const iscurrent =
+  //               fulldatecurrent === endDateLocal
+  //                 ? fulldatecurrent
+  //                 : endDateLocal
+  //             const overdueFollowups = havenextFollowup.filter(
+  //               (lead) => formatdate(lead.nextFollowUpDate) < iscurrent
+  //             )
+  //             const postdatefollowup = havenextFollowup.filter(
+  //               (lead) => formatdate(lead.nextFollowUpDate) > iscurrent
+  //             )
+  //             const uniqueoverdueAndcurrentdate = [
+  //               ...new Set([
+  //                 ...overdueFollowups,
+  //                 ...filteredcurrentdatefollowupLeads
+  //               ])
+  //             ]
+  //             const taskSubmittedLeads = ownFollow.filter(
+  //               (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
+  //             )
+  //             console.log(ownFollow)
+  //             const nonsubmittedtakleads = ownFollow.filter(
+  //               (lead) =>
+  //                 lead.allocatedfollowup && lead.allocatedTaskClosed === false
+  //             )
+  //             const allocatedData = normalizeTableData(nonsubmittedtakleads)
+  //             setAllocatedLeads(allocatedData)
+
+  //             const mergedall = [
+  //               ...neverfollowupedLeads,
+  //               ...uniqueoverdueAndcurrentdate,
+  //               ...postdatefollowup,
+  //               ...taskSubmittedLeads
+  //             ]
+  //             const Data = normalizeTableData(mergedall)
+  //             // then store it in state
+  //             setnetTotalAmount(TotalAmount(mergedall))
+  //             console.log(Data)
+  //             // mergedall.forEach((item)=>)
+  //             setTableData(Data)
+  //           } else if (pending && !ownFollowUp) {
+  //             console.log("h")
+  //             const currentDate = new Date()
+  //             const endDateLocal = getLocalDate(new Date(dates.endDate))
+  //             formatdate(currentDate)
+  //             const fulldatecurrent =
+  //               formatdate(currentDate) === endDateLocal
+  //                 ? // formatdate(dates.endDate)
+  //                   formatdate(currentDate)
+  //                 : endDateLocal
+  //             const neverfollowupedLeads = productwisedata.filter(
+  //               (lead) => lead.neverfollowuped
+  //             )
+  //             const havenextFollowup = productwisedata.filter(
+  //               (lead) => lead.Nextfollowup
+  //             )
+  //             const filteredcurrentdatefollowupLeads = havenextFollowup.filter(
+  //               (lead) => formatdate(lead.nextFollowUpDate) === fulldatecurrent
+  //             )
+
+  //             const iscurrent =
+  //               fulldatecurrent === endDateLocal
+  //                 ? fulldatecurrent
+  //                 : endDateLocal
+  //             const overdueFollowups = havenextFollowup.filter(
+  //               (lead) => formatdate(lead.nextFollowUpDate) < iscurrent
+  //             )
+  //             const postdatefollowup = havenextFollowup.filter(
+  //               (lead) => formatdate(lead.nextFollowUpDate) > iscurrent
+  //             )
+  //             const uniqueoverdueAndcurrentdate = [
+  //               ...new Set([
+  //                 ...overdueFollowups,
+  //                 ...filteredcurrentdatefollowupLeads
+  //               ])
+  //             ]
+
+  //             const taskSubmittedLeads = productwisedata.filter(
+  //               (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
+  //             )
+  //             const nonsubmittedtakleads = productwisedata.filter(
+  //               (lead) =>
+  //                 lead.allocatedfollowup && lead.allocatedTaskClosed === false
+  //             )
+  //             setAllocatedLeads(nonsubmittedtakleads)
+
+  //             const mergedall = [
+  //               ...neverfollowupedLeads,
+  //               ...uniqueoverdueAndcurrentdate,
+  //               ...postdatefollowup,
+  //               ...taskSubmittedLeads
+  //             ]
+  //             const groupedLeads = {}
+  //             let grandTotal = 0
+  //             mergedall.forEach((lead) => {
+  //               const assignedTo = lead?.allocatedTo?.name
+  //               const amount = lead?.netAmount || 0
+  //               grandTotal += amount
+  //               if (!groupedLeads[assignedTo]) {
+  //                 groupedLeads[assignedTo] = []
+  //               }
+  //               groupedLeads[assignedTo].push(lead)
+  //             })
+  //             const groupedData = normalizeTableData(groupedLeads)
+
+  //             setnetTotalAmount(TotalAmount(mergedall))
+  //             setTableData(groupedData)
+  //             console.log(groupedData)
+  //           } else if (!pending && ownFollowUp) {
+  //             console.log("h")
+  //             const ownFollow = loggedusersallocatedleads.followupLeads.filter(
+  //               (lead) =>
+  //                 lead.activityLog?.some(
+  //                   (log) =>
+  //                     log.taskTo === "followup" &&
+  //                     log.taskallocatedTo._id === loggedUser._id &&
+  //                     log.followupClosed === true
+  //                 )
+  //             )
+  //             console.log(ownFollow)
+  //             const clearedLeads = ownFollow.filter(
+  //               (lead) =>
+  //                 Array.isArray(lead.activityLog) &&
+  //                 lead.activityLog.some(
+  //                   (entry) =>
+  //                     entry.taskTo === "followup" &&
+  //                     entry.followupClosed === true
+  //                 )
+  //             )
+  //             console.log(clearedLeads)
+
+  //             // then store it in state
+  //             setnetTotalAmount(TotalAmount(clearedLeads))
+  //             const Data = normalizeTableData(clearedLeads)
+  //             setTableData(Data)
+  //           } else if (!pending && !ownFollowUp) {
+  //             console.log("H")
+
+  //             console.log(productwisedata)
+  //             // helpers
+  //             const isFollowupActivity = (log) =>
+  //               log?.taskBy?.taskName === "Followup" &&
+  //               log?.followupClosed === true &&
+  //               log?.submissionDate
+
+  //             const getLatestSubmissionDate = (lead) => {
+  //               const dates = (lead.activityLog || [])
+  //                 .filter(isFollowupActivity)
+  //                 .map((log) => new Date(log.submissionDate).getTime())
+  //               if (!dates.length) return null
+  //               return Math.max(...dates) // latest
+  //             }
+  //             const followupLeads = productwisedata || []
+  //             const clearedLeads = []
+  //             followupLeads.forEach((lead) => {
+  //               const latest = getLatestSubmissionDate(lead)
+  //               if (latest) {
+  //                 // cleared
+  //                 clearedLeads.push({ ...lead, latestSubmissionTime: latest })
+  //               }
+  //             })
+
+  //             // sort cleared leads: latest cleared first
+  //             clearedLeads.sort(
+  //               (a, b) => b.latestSubmissionTime - a.latestSubmissionTime
+  //             )
+  //             // optional: group by allocatedTo
+  //             const groupedLeads = {}
+  //             let grandTotal = 0
+  //             clearedLeads.forEach((lead) => {
+  //               const assignedTo = lead?.allocatedTo?.name || "Unassigned"
+  //               const amount = lead?.netAmount || 0
+  //               grandTotal += amount
+  //               if (!groupedLeads[assignedTo]) groupedLeads[assignedTo] = []
+  //               groupedLeads[assignedTo].push(lead)
+  //             })
+  //             const groupedData = normalizeTableData(groupedLeads)
+  //             console.log(groupedData)
+  //             // then store it in state
+  //             setnetTotalAmount(TotalAmount(clearedLeads))
+  //             setTableData(groupedData)
+  //           }
+
+  //           setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
+  //         }
+  //         console.log(pending)
+  //         console.log(ownFollowUp)
+  //         console.log(res.data.followupLeads.length)
+  //         // handle res.data here (set state, etc.)
+  //       } catch (err) {
+  //         console.error(err)
+  //       }
+  //     }
+
+  //     fetchFollowups()
+  //   }
+  // }, [])
+  useEffect(() => {
+    // run only when location.state or selectedCompanyBranch / loggedUser change
+    if (!location?.state?.staffId || !loggedUser) return
+    console.log(location.state)
+    const selectedbranch = location?.state?.branchId
+    console.log(selectedbranch)
+
+    setselectedCompanyBranch(selectedbranch)
+    console.log(selectedCompanyBranch)
+
+    const fetchFollowups = async () => {
+      const staffIdFromState = location.state.staffId
+      const pendingFromState = location.state.pending
+      const selectedproductId = location.state.productId
+      console.log(selectedproductId)
+      console.log(pendingFromState)
+      setPending(pendingFromState)
+      // keep full loggedUser object, just compare ids
+      setOwnFollowUp(staffIdFromState === loggedUser._id)
+      setproductwiseloader(true)
+      try {
+        const res = await api.get(
+          `/lead/getallLeadFollowUpforselectedProduct?branchSelected=${selectedbranch}` +
+            `&loggeduserid=${staffIdFromState}` +
+            `&role=${loggedUser.role}` +
+            `&pendingfollowup=${pendingFromState}` +
+            `&selectedproductId=${selectedproductId}`
+        )
+        console.log(res.data.followupLeads)
+        const productwisedata = res.data.followupLeads
+        if (productwisedata && dates.endDate && loggedUser) {
+          setproductwiseloader(false)
+          if (pending && ownFollowUp) {
+            const ownFollow = loggedusersallocatedleads.followupLeads.filter(
+              (lead) =>
+                lead.activityLog?.some(
+                  (log) =>
+                    log.taskTo === "followup" &&
+                    log.taskallocatedTo?._id === loggedUser._id &&
+                    log.followupClosed === false &&
+                    log.allocationChanged === false
+                )
+            )
+            const currentDate = new Date()
+            const endDateLocal = getLocalDate(new Date(dates.endDate))
+            formatdate(currentDate)
+            const fulldatecurrent =
+              formatdate(currentDate) === endDateLocal
+                ? // formatdate(dates.endDate)
+                  formatdate(currentDate)
+                : endDateLocal
+            const neverfollowupedLeads = ownFollow.filter(
+              (lead) => lead.neverfollowuped && lead.allocatedfollowup == false
+            )
+            const havenextFollowup = ownFollow.filter(
+              (lead) => lead.Nextfollowup
+            )
+            const filteredcurrentdatefollowupLeads = havenextFollowup.filter(
+              (lead) => formatdate(lead.nextFollowUpDate) === fulldatecurrent
+            )
+            const iscurrent =
+              fulldatecurrent === endDateLocal ? fulldatecurrent : endDateLocal
+            const overdueFollowups = havenextFollowup.filter(
+              (lead) => formatdate(lead.nextFollowUpDate) < iscurrent
+            )
+            const postdatefollowup = havenextFollowup.filter(
+              (lead) => formatdate(lead.nextFollowUpDate) > iscurrent
+            )
+            const uniqueoverdueAndcurrentdate = [
+              ...new Set([
+                ...overdueFollowups,
+                ...filteredcurrentdatefollowupLeads
+              ])
+            ]
+            const taskSubmittedLeads = ownFollow.filter(
+              (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
+            )
+            console.log(ownFollow)
+            const nonsubmittedtakleads = ownFollow.filter(
+              (lead) =>
+                lead.allocatedfollowup && lead.allocatedTaskClosed === false
+            )
+            const allocatedData = normalizeTableData(nonsubmittedtakleads)
+            setAllocatedLeads(allocatedData)
+
+            const mergedall = [
+              ...neverfollowupedLeads,
+              ...uniqueoverdueAndcurrentdate,
+              ...postdatefollowup,
+              ...taskSubmittedLeads
+            ]
+            const Data = normalizeTableData(mergedall)
+            // then store it in state
+            setnetTotalAmount(TotalAmount(mergedall))
+            console.log(Data)
+            // mergedall.forEach((item)=>)
+            setTableData(Data)
+          } else if (pending && !ownFollowUp) {
+            console.log("h")
+            const currentDate = new Date()
+            const endDateLocal = getLocalDate(new Date(dates.endDate))
+            formatdate(currentDate)
+            const fulldatecurrent =
+              formatdate(currentDate) === endDateLocal
+                ? // formatdate(dates.endDate)
+                  formatdate(currentDate)
+                : endDateLocal
+            const neverfollowupedLeads = productwisedata.filter(
+              (lead) => lead.neverfollowuped
+            )
+            const havenextFollowup = productwisedata.filter(
+              (lead) => lead.Nextfollowup
+            )
+            const filteredcurrentdatefollowupLeads = havenextFollowup.filter(
+              (lead) => formatdate(lead.nextFollowUpDate) === fulldatecurrent
+            )
+
+            const iscurrent =
+              fulldatecurrent === endDateLocal ? fulldatecurrent : endDateLocal
+            const overdueFollowups = havenextFollowup.filter(
+              (lead) => formatdate(lead.nextFollowUpDate) < iscurrent
+            )
+            const postdatefollowup = havenextFollowup.filter(
+              (lead) => formatdate(lead.nextFollowUpDate) > iscurrent
+            )
+            const uniqueoverdueAndcurrentdate = [
+              ...new Set([
+                ...overdueFollowups,
+                ...filteredcurrentdatefollowupLeads
+              ])
+            ]
+
+            const taskSubmittedLeads = productwisedata.filter(
+              (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
+            )
+            const nonsubmittedtakleads = productwisedata.filter(
+              (lead) =>
+                lead.allocatedfollowup && lead.allocatedTaskClosed === false
+            )
+            setAllocatedLeads(nonsubmittedtakleads)
+
+            const mergedall = [
+              ...neverfollowupedLeads,
+              ...uniqueoverdueAndcurrentdate,
+              ...postdatefollowup,
+              ...taskSubmittedLeads
+            ]
+            const groupedLeads = {}
+            let grandTotal = 0
+            mergedall.forEach((lead) => {
+              const assignedTo = lead?.allocatedTo?.name
+              const amount = lead?.netAmount || 0
+              grandTotal += amount
+              if (!groupedLeads[assignedTo]) {
+                groupedLeads[assignedTo] = []
+              }
+              groupedLeads[assignedTo].push(lead)
+            })
+            const groupedData = normalizeTableData(groupedLeads)
+
+            setnetTotalAmount(TotalAmount(mergedall))
+            setTableData(groupedData)
+            console.log(groupedData)
+          } else if (!pending && ownFollowUp) {
+            console.log("h")
+            const ownFollow = loggedusersallocatedleads.followupLeads.filter(
+              (lead) =>
+                lead.activityLog?.some(
+                  (log) =>
+                    log.taskTo === "followup" &&
+                    log.taskallocatedTo._id === loggedUser._id &&
+                    log.followupClosed === true
+                )
+            )
+            console.log(ownFollow)
+            const clearedLeads = ownFollow.filter(
+              (lead) =>
+                Array.isArray(lead.activityLog) &&
+                lead.activityLog.some(
+                  (entry) =>
+                    entry.taskTo === "followup" && entry.followupClosed === true
+                )
+            )
+            console.log(clearedLeads)
+
+            // then store it in state
+            setnetTotalAmount(TotalAmount(clearedLeads))
+            const Data = normalizeTableData(clearedLeads)
+            setTableData(Data)
+          } else if (!pending && !ownFollowUp) {
+            console.log("H")
+
+            console.log(productwisedata)
+            // helpers
+            const isFollowupActivity = (log) =>
+              log?.taskBy?.taskName === "Followup" &&
+              log?.followupClosed === true &&
+              log?.submissionDate
+
+            const getLatestSubmissionDate = (lead) => {
+              const dates = (lead.activityLog || [])
+                .filter(isFollowupActivity)
+                .map((log) => new Date(log.submissionDate).getTime())
+              if (!dates.length) return null
+              return Math.max(...dates) // latest
+            }
+            const followupLeads = productwisedata || []
+            const clearedLeads = []
+            followupLeads.forEach((lead) => {
+              const latest = getLatestSubmissionDate(lead)
+              if (latest) {
+                // cleared
+                clearedLeads.push({ ...lead, latestSubmissionTime: latest })
+              }
+            })
+
+            // sort cleared leads: latest cleared first
+            clearedLeads.sort(
+              (a, b) => b.latestSubmissionTime - a.latestSubmissionTime
+            )
+            // optional: group by allocatedTo
+            const groupedLeads = {}
+            let grandTotal = 0
+            clearedLeads.forEach((lead) => {
+              const assignedTo = lead?.allocatedTo?.name || "Unassigned"
+              const amount = lead?.netAmount || 0
+              grandTotal += amount
+              if (!groupedLeads[assignedTo]) groupedLeads[assignedTo] = []
+              groupedLeads[assignedTo].push(lead)
+            })
+            const groupedData = normalizeTableData(groupedLeads)
+            console.log(groupedData)
+            // then store it in state
+            setnetTotalAmount(TotalAmount(clearedLeads))
+            setTableData(groupedData)
+          }
+
+          setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
+        }
+        console.log(pending)
+        console.log(ownFollowUp)
+        console.log(res.data.followupLeads.length)
+        // handle res.data here (set state, etc.)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
+    fetchFollowups()
+  }, [location?.state, selectedCompanyBranch, loggedUser])
+
   useEffect(() => {
     const now = new Date()
     const startDate = new Date(now.getFullYear(), now.getMonth(), 1) // 1st day of current month
@@ -193,7 +976,11 @@ const LeadFollowUp = () => {
     }
   }, [])
   useEffect(() => {
-    if (loggedUserBranches && loggedUserBranches.length > 0) {
+    if (
+      loggedUserBranches &&
+      loggedUserBranches.length > 0 &&
+      !location?.state?.staffId
+    ) {
       const defaultbranch = loggedUserBranches[0]
       setselectedCompanyBranch(defaultbranch.value)
     }
@@ -759,7 +1546,6 @@ const LeadFollowUp = () => {
         lastLog?.submittedUser?.name ??
         ""
 
-
       return (
         <>
           {/* ── Main row ── */}
@@ -781,7 +1567,6 @@ const LeadFollowUp = () => {
               {item?.mobile}
             </td>
             <td className="px-3 py-2 text-sm border border-gray-300 max-w-[200px] whitespace-nowrap truncate">
-             
               <span
                 className="block truncate text-sm uppercase"
                 title={lastLog?.remarks}
@@ -804,7 +1589,6 @@ const LeadFollowUp = () => {
             <td className="px-3 py-2 text-sm text-gray-700 border border-gray-300 whitespace-nowrap text-center">
               {followupDate}
             </td>
-        
 
             <td
               className="px-2 py-2 border border-gray-300"
@@ -1306,14 +2090,14 @@ const LeadFollowUp = () => {
   // )
 
   return (
-    <div className="h-full flex flex-col ">
-      {loading && (
+    <div className="h-full flex flex-col bg-blue-50">
+      {(loading || productwiseloader) && (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
           color="#4A90E2" // Change color as needed
         />
       )}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mx-3 md:mx-5 mt-3 mb-3 gap-4">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center p-3 md:p-5 pt-3 pb-3 gap-4 bg-blue-50">
         {/* Title */}
         <h2 className="text-lg font-bold">Lead Follow Up</h2>
 
@@ -1363,7 +2147,7 @@ const LeadFollowUp = () => {
                       setTableData([])
                       setAllocatedLeads([])
                     },
-                    show: pending === true // 👈 show only when pending is true
+                    show: location?.state?.staffId ? false : pending === true // 👈 show only when pending is true
                   },
                   {
                     label: pending ? "Pending Followup" : "Cleared Followup",
@@ -1372,6 +2156,9 @@ const LeadFollowUp = () => {
                       setPending(!pending)
                       setTableData([])
                       setAllocatedLeads([])
+                      if (location?.state?.staffId) {
+                        handletoogle(pending)
+                      }
                     },
                     show: true
                   },
@@ -1383,7 +2170,9 @@ const LeadFollowUp = () => {
                       setTableData([])
                       setAllocatedLeads([])
                     },
-                    show: loggedUser?.role !== "Staff" //hide for staff
+                    show: location?.state?.staffId
+                      ? false
+                      : loggedUser?.role !== "Staff" //hide for staff
                   }
                 ]
                   .filter((item) => item.show) //only show allowed toggles

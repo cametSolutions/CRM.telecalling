@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from "react"
 import UseFetch from "../../hooks/useFetch"
+import { useLocation } from "react-router-dom"
 import { useNavigate } from "react-router-dom"
 import { LeadhistoryModal } from "../../components/primaryUser/LeadhistoryModal"
 import {
@@ -15,6 +16,7 @@ import { PropagateLoader } from "react-spinners"
 
 export default function OwnLeadList() {
   const [showFullName, setShowFullName] = useState(false)
+  const location = useLocation()
   const [tableData, setTableData] = useState([])
   const [loggedUser, setLoggedUser] = useState(null)
   const [showFullEmail, setShowFullEmail] = useState(false)
@@ -22,7 +24,7 @@ export default function OwnLeadList() {
   const [selectedData, setselectedData] = useState([])
   const [anyOpen, setAnyOpen] = useState(false)
   const [selectedLeadId, setselectedLeadId] = useState(null)
-  const [ownLead, setownLead] = useState(true)
+  const [ownLead, setownLead] = useState(location?.state?.role?false:true)
   const [companyBranches, setcompanyBranches] = useState(null)
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
   const [showhistoryModal, sethistoryModal] = useState(false)
@@ -36,8 +38,12 @@ export default function OwnLeadList() {
   const { data: ownedlead, loading } = UseFetch(
     loggedUser &&
       selectedCompanyBranch &&
-      `/lead/ownregisteredLead?userId=${loggedUser._id}&role=${loggedUser.role}&selectedBranch=${selectedCompanyBranch}&ownlead=${ownLead}`
+      `/lead/ownregisteredLead?userId=${loggedUser._id}&role=${location?.state?.role?location?.state?.role:loggedUser.role}&selectedBranch=${selectedCompanyBranch}&ownlead=${location?.state?.role?false:ownLead}`
   );
+console.log(location?.state?.role)
+console.log(location?.state)
+console.log(ownLead)
+console.log(ownLead)
   console.log(ownedlead?.length);
   useEffect(() => {
     if (companybranches && companybranches.length > 0) {

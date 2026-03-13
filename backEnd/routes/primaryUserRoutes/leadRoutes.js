@@ -39,7 +39,8 @@ import {
   GetfollowupsummaryReport,
   Getallsalesfunnels,
   Getdailystaffreport,
-Getalltasktoreport
+  Getalltasktoreport,
+  GetallselectedproductFollowup
 } from "../../controller/primaryUserController/leadController.js";
 const router = express.Router();
 router.get("/getstaffdailyreports", authMiddleware, Getdailystaffreport)
@@ -55,7 +56,7 @@ router.post("/taskRegistration", authMiddleware, TaskRegistration);
 router.get("/checkexistinglead", authMiddleware, Checkexistinglead);
 router.put("/leadRegisterUpdate", authMiddleware, UpdateLeadRegister);
 router.get("/getallTask", authMiddleware, GetallTask);
-router.get("/getalltasktoreport",authMiddleware,Getalltasktoreport)
+router.get("/getalltasktoreport", authMiddleware, Getalltasktoreport)
 router.delete("/taskDelete", authMiddleware, TaskDelete);
 router.put("/taskEdit", authMiddleware, TaskEdit);
 router.post("/leadClosingAmount", authMiddleware, LeadClosing);
@@ -69,6 +70,7 @@ router.get("/getAllleadowned", authMiddleware, GetallleadOwned); //for getting a
 router.get("/getallreallocatedLead", authMiddleware, GetallReallocatedLead);
 router.get("/getalltaskAnalysisLeads", authMiddleware, GetalltaskanalysisLeads);
 router.get("/getallLeadFollowUp", authMiddleware, GetallfollowupList);
+router.get("/getallLeadFollowUpforselectedProduct", authMiddleware, GetallselectedproductFollowup)
 router.get("/getallServices", authMiddleware, GetAllservices);
 router.get("/ownregisteredLead", authMiddleware, GetownLeadList);
 router.get("/lostlead", authMiddleware, GetlostLeads);
