@@ -4,21 +4,23 @@ import { useEffect, useState } from "react"
 import { fetchDataFromApi } from "../api/fetchDataFromApi"
 
 const UseFetch = (url) => {
+console.log(url)
 console.log("usefethchhhhhhhh")
   const [refresh, setRefresh] = useState(false)
   const [data, setData] = useState(null)
   const [fulldateholiday, setfulldateHoliday] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 console.log(loading)
   const [error, setError] = useState(null)
 
   useEffect(() => {
+console.log(url)
     if (!url) {
       return
     }
 
     const fetchData = async () => {
-      // setLoading(true)
+      setLoading(true)
       setData(null)
       setError(null)
 
@@ -46,7 +48,7 @@ console.log(result)
   const refreshHook = () => {
     setRefresh(!refresh)
   }
-
+console.log(loading)
   return { data, loading, error, refreshHook, fulldateholiday }
 }
 

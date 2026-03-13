@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react"
 import UseFetch from "../../hooks/useFetch"
 import { useNavigate } from "react-router-dom"
+import { useLocation } from "react-router-dom"
 import { LeadhistoryModal } from "../../components/primaryUser/LeadhistoryModal"
 import { PropagateLoader } from "react-spinners"
 import {
@@ -20,6 +21,7 @@ import { getLocalStorageItem } from "../../helper/localstorage"
 
 export default function LostLeads() {
   const [showFullName, setShowFullName] = useState(false)
+const location=useLocation()
   const [tableData, setTableData] = useState([])
   const [TotalAmount, settotalAmount] = useState(0)
   const [loggedUser, setLoggedUser] = useState(null)
@@ -34,11 +36,27 @@ export default function LostLeads() {
   const [historyList, setHistoryList] = useState([])
   const navigate = useNavigate()
   const { data: companybranches } = UseFetch("/branch/getBranch")
-  const { data: lostlead, loading } = UseFetch(
+ const shouldFetch =
+    
     loggedUser &&
-      selectedCompanyBranch &&
-      `/lead/lostlead?userId=${loggedUser._id}&role=${loggedUser.role}&selectedBranch=${selectedCompanyBranch}&ownlead=${ownLead}`
-  )
+    selectedCompanyBranch
+
+  const url = shouldFetch
+    ?  location?.state?.staffId?  `/lead/lostlead?userId=${loggedUser._id}&role=${loggedUser.role}&selectedBranch=${location?.state?.branchId}&ownlead=${ownLead}`:`/lead/lostlead?userId=${loggedUser._id}&role=${loggedUser.role}&selectedBranch=${selectedCompanyBranch}&ownlead=${ownLead}`
+    : null
+
+  const {
+    data: lostlead,
+    loading,
+    error,
+    refreshHook
+  } = UseFetch(url)
+console.log(lostlead)
+  // const { data: lostlead, loading } = UseFetch(
+  //   loggedUser &&
+  //     selectedCompanyBranch &&
+  //     `/lead/lostlead?userId=${loggedUser._id}&role=${loggedUser.role}&selectedBranch=${selectedCompanyBranch}&ownlead=${ownLead}`
+  // )
 
   useEffect(() => {
     if (companybranches && companybranches.length > 0) {

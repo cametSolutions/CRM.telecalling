@@ -272,6 +272,7 @@ export default function StaffHeader() {
       // control: user.permissions[0].HSN
     }
   ]
+console.log(user?.permission?.[0])
   const reports = [
     {
       to: "/staff/reports/summary",
@@ -293,6 +294,11 @@ export default function StaffHeader() {
       to: "/staff/reports/leave-summary",
       label: "Leave Summary",
       control: user?.permissions?.[0]?.LeaveSummary ?? false
+    },
+    {
+      to: "/staff/transaction/lead/collectionUpdate",
+      label: "Collection Update",
+      control: user?.permissions?.[0]?.CollectionUpdate ?? false
     }
   ]
   const transactions = [
@@ -468,10 +474,10 @@ export default function StaffHeader() {
                     ? (link.label === "Transactions"
                         ? transactions
                         : link.label === "Reports"
-                        ? reports
-                        : link.label === "Task"
-                        ? tasks
-                        : null
+                          ? reports
+                          : link.label === "Task"
+                            ? tasks
+                            : null
                       )
                         .filter(
                           (master) =>
