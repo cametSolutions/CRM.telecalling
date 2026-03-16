@@ -42,6 +42,7 @@ export default function PrimaryUserDashBoard() {
   const { data: acheivementlist, refreshHook } = UseFetch(
     "/dashboard/getcurrentquarterlyAchiever"
   )
+console.log("hh")
   const { data: holydata } = UseFetch("/customer/getallholy")
   const { data: announcementlist } = UseFetch(
     "/dashboard/getcurrentAnnouncement"

@@ -333,6 +333,7 @@ console.log("H")
   
   const renderTable = (data) => {
     const LeadRow = ({ item, index }) => {
+console.log(item)
       const [open, setOpen] = useState(false)
 
       const lastLog = item.activityLog[item.activityLog.length - 1]
@@ -378,12 +379,12 @@ console.log("H")
               <>
                 <td className="px-3 py-2 text-sm border border-gray-300">
                   <span className="text-red-600 font-medium">
-                    {new Date(item.dueDate).toLocaleDateString("en-GB")}
+                    {new Date(item?.matchedlog?.allocationDate).toLocaleDateString("en-GB")}
                   </span>
                 </td>
 
                 <td className="px-3 py-2 text-sm text-blue-600 border border-gray-300 whitespace-nowrap">
-                  {getRemainingDays(item.dueDate)} days left
+                  {getRemainingDays(item?.matchedlog?.allocationDate)} days left
                 </td>
 
                 <td className="px-3 py-2 text-sm text-red-600 border border-gray-300 whitespace-nowrap">
@@ -412,16 +413,17 @@ console.log("H")
               <button
                 type="button"
                 onClick={() => {
+console.log(isAllocatedToeditable)
                   loggedUser.role === "Admin"
                     ? navigate("/admin/transaction/lead/leadEdit", {
                         state: {
-                          leadId: item._id,
+                          leadId: item.leadDocId,
                           isReadOnly: !isAllocatedToeditable
                         }
                       })
                     : navigate("/staff/transaction/lead/leadEdit", {
                         state: {
-                          leadId: item._id,
+                          leadId: item.leadDocId,
                           isReadOnly: !isAllocatedToeditable
                         }
                       })

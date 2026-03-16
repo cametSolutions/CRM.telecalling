@@ -12,11 +12,13 @@ function LeadEdit() {
 
   const location = useLocation()
   const { leadId, isReadOnly } = location.state || {}
+console.log(location?.state)
   const userData = localStorage.getItem("user")
   const user = JSON.parse(userData)
-
+console.log(leadId)
   useEffect(() => {
     if (leadId) {
+console.log(leadId)
       const fetchselectedLeadData = async () => {
         const response = await api.get(`/lead/getSelectedLead?leadId=${leadId}`)
 
