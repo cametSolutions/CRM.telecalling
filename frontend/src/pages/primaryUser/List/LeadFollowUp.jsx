@@ -52,7 +52,8 @@ const LeadFollowUp = () => {
     editfollowUpDatesandRemarksEditIndex,
     setfollowUpDatesandRemarksEditIndex
   ] = useState(null)
-  const [netTotalAmount, setnetTotalAmount] = useState(0)
+  const [netTotalAmount, setnetTotalAmount] = useState(0) //for non allocated leads
+  const [allocatednetAmount, setallocatednetAmount] = useState(0)
   const [filterOpen, setfilterOpen] = useState(false)
   const [statusAll, setstatusAll] = useState(false)
   const [isAllocated, setIsAllocated] = useState(false) //for set allocation or not
@@ -68,7 +69,9 @@ const LeadFollowUp = () => {
   const [selectedDocId, setselectedDocid] = useState(null)
   const [selectedTab, setselectedTab] = useState("")
   const [hasOwnLeads, setHasownLeads] = useState(false)
-  const [ownFollowUp, setOwnFollowUp] = useState(location?.state?.pending?false:true)
+  const [ownFollowUp, setOwnFollowUp] = useState(
+    location?.state?.pending ? false : true
+  )
   const [historyList, setHistoryList] = useState([])
   const [loggedUser, setloggedUser] = useState(null)
   const [loggedUserBranches, setloggedUserBranches] = useState([])
@@ -102,6 +105,7 @@ const LeadFollowUp = () => {
     selectedType: "",
     selectedTypeName: ""
   })
+  console.log(demoData)
   const navigate = useNavigate()
   const { data: tasks } = UseFetch("/lead/getallTask")
   console.log(tasks)
@@ -373,7 +377,7 @@ const LeadFollowUp = () => {
     selectedCompanyBranch
 
   const url = shouldFetch
-    ? `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}&pendingfollowup=${location?.state?.pending?true:pending}`
+    ? `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}&loggeduserid=${loggedUser._id}&role=${loggedUser.role}&pendingfollowup=${location?.state?.pending ? true : pending}`
     : null
 
   const {
@@ -650,6 +654,7 @@ const LeadFollowUp = () => {
   // }, [])
   useEffect(() => {
     // run only when location.state or selectedCompanyBranch / loggedUser change
+    //this from productwisereport
     if (!location?.state?.staffId || !loggedUser) return
     console.log(location.state)
     const selectedbranch = location?.state?.branchId
@@ -994,6 +999,10 @@ const LeadFollowUp = () => {
   }
   console.log(loggedusersallocatedleads)
   console.log(ownFollowUp)
+  console.log(pending)
+  console.log(statusAllocated)
+  console.log(allocatedLeads)
+  console.log(tableData)
   useEffect(() => {
     if (loggedusersallocatedleads && dates.endDate && loggedUser) {
       if (pending && ownFollowUp) {
@@ -1041,6 +1050,8 @@ const LeadFollowUp = () => {
           (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed === false
         )
         const allocatedData = normalizeTableData(nonsubmittedtakleads)
+        setallocatednetAmount(TotalAmount(nonsubmittedtakleads))
+        console.log(TotalAmount(nonsubmittedtakleads))
         setAllocatedLeads(allocatedData)
 
         const mergedall = [
@@ -1096,8 +1107,21 @@ const LeadFollowUp = () => {
             (lead) =>
               lead.allocatedfollowup && lead.allocatedTaskClosed === false
           )
-        setAllocatedLeads(nonsubmittedtakleads)
 
+        setallocatednetAmount(TotalAmount(nonsubmittedtakleads))
+        console.log(nonsubmittedtakleads)
+        const groupedallocatedleads = {}
+        nonsubmittedtakleads.forEach((lead) => {
+          const assignedTo = lead?.allocatedTo?.name
+
+          if (!groupedallocatedleads[assignedTo]) {
+            groupedallocatedleads[assignedTo] = []
+          }
+          groupedallocatedleads[assignedTo].push(lead)
+        })
+        const groupedallocatedData = normalizeTableData(groupedallocatedleads)
+        setAllocatedLeads(groupedallocatedData)
+        console.log(groupedallocatedData)
         const mergedall = [
           ...neverfollowupedLeads,
           ...uniqueoverdueAndcurrentdate,
@@ -1352,6 +1376,7 @@ const LeadFollowUp = () => {
   }
   console.log(demoData)
   const handleDemoSubmit = async () => {
+    console.log("hh")
     if (isdemofollownotClosed) {
       setDemoError((prev) => ({
         ...prev,
@@ -1367,6 +1392,7 @@ const LeadFollowUp = () => {
     }
     if (demoData.demoDescription === "") {
       newError.demoDescription = "Remarks is Required"
+      toast.error("Remark is required")
     }
     if (demoData.demoallocatedTo === "") {
       newError.selectStaff = "Staff is Required"
@@ -1414,6 +1440,7 @@ const LeadFollowUp = () => {
     }
   }
   const handleFollowUpDateSubmit = async () => {
+    console.log("hhh")
     try {
       let newErrors = {}
       if (!formData.followUpDate)
@@ -1474,11 +1501,13 @@ const LeadFollowUp = () => {
   console.log(statusAllocated)
   console.log(tableData)
   const handleFollowUp = (Item) => {
+    console.log(Item)
     setshowFollowupModal(true)
     setFormData((prev) => ({
       ...prev,
       netAmount: Item.netAmount,
       balanceAmount: Item.balanceAmount,
+      customerName: Item?.customerName?.customerName,
       followUpDate: new Date().toISOString().split("T")[0]
     }))
     setselectedData(Item)
@@ -1488,8 +1517,10 @@ const LeadFollowUp = () => {
       : null
     if (ishaveAllocation) {
       setdemoEditIndex(Item.activityLog.length - 1)
+      console.log(ishaveAllocation)
       setDemodata({
-        selectedType: ishaveAllocation?.taskTo,
+        selectedType: ishaveAllocation?.taskId?._id,
+        selectedTypeName: ishaveAllocation?.taskTo,
         demoallocatedTo: ishaveAllocation?.taskallocatedTo?._id,
         demoallocatedDate: ishaveAllocation?.allocationDate
           .toString()
@@ -2088,7 +2119,7 @@ const LeadFollowUp = () => {
   //     </tbody>
   //   </table>
   // )
-
+  console.log(demoData)
   return (
     <div className="h-full flex flex-col bg-blue-50">
       {(loading || productwiseloader) && (
@@ -2241,7 +2272,7 @@ const LeadFollowUp = () => {
         <span className="text-blue-700">Total Amount -</span>
         <div className="flex items-center ml-1">
           <IndianRupee className="w-3 h-3 text-green-600 mr-1" />
-          <span>{netTotalAmount}</span>
+          <span>{statusAllocated ? allocatednetAmount : netTotalAmount}</span>
         </div>
       </div>
       {/* Responsive Table Container */}
@@ -2249,6 +2280,9 @@ const LeadFollowUp = () => {
         <>
           {(() => {
             const currentData = statusAllocated ? allocatedLeads : tableData
+            console.log(statusAllocated)
+            console.log(tableData)
+            console.log(allocatedLeads)
             console.log(currentData)
             const hasLeads =
               Array.isArray(currentData) &&
@@ -2298,18 +2332,16 @@ const LeadFollowUp = () => {
 
       {showfollowupModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+          <div className="bg-[#ADD8E6] rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-2 border-b border-gray-200 bg-gradient-to-r from-slate-50 to-gray-50">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800">
-                  Follow-Up Management
-                </h2>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  Update and manage follow-up details
+            <div className=" bg-[#ADD8E6] flex items-center justify-between px-6 py-2 border-b border-gray-200 ">
+              <div> 
+                <h2 className="text-2xl font-bold text-gray-800">Follow-Up</h2>
+                <p className="text-sm text-blue-600 mt-0.5 font-semibold">
+                  {formData?.customerName}
                 </p>
               </div>
-              <div className="text-lg font-semibol">
+              <div className="text-lg font-semibol flex-grow text-end font-bold">
                 <span>Lead ID :</span>
 
                 <span className="ml-1">{selectedLeadId}</span>
@@ -2620,7 +2652,7 @@ const LeadFollowUp = () => {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-end gap-3 px-6 py-2 border-t border-gray-200 bg-gray-50">
+            <div className="flex items-center justify-end gap-3 px-6 py-2 border-t border-gray-200 bg-[#ADD8E6]">
               <button
                 type="button"
                 onClick={() => setshowFollowupModal(false)}

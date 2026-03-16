@@ -2531,7 +2531,7 @@ function ProductDropdown({
   setSelectedLeadList,
   selectedBranch
 }) {
-console.log(selectedBranch)
+  console.log(selectedBranch)
   const emptyRow = {
     licenseNumber: "",
     productorServiceId: "",
@@ -2575,10 +2575,12 @@ console.log(selectedBranch)
       : [{ ...emptyRow }]
     const updated = [...base]
     console.log(prod)
-    const filteredbranch = prod?.selected.filter((item)=>item.branch_id===selectedBranch[0])
-console.log(filteredbranch)
-const igstRate=filteredbranch?.[0]?.hsn_id?.onValue?.igstRate
-console.log("hhh")
+    const filteredbranch = prod?.selected.filter(
+      (item) => item.branch_id === selectedBranch[0]
+    )
+    console.log(filteredbranch)
+    const igstRate = filteredbranch?.[0]?.hsn_id?.onValue?.igstRate
+    console.log("hhh")
     if (!prod) {
       console.log(prod)
       updated[index] = {
@@ -2591,7 +2593,6 @@ console.log("hhh")
       }
       setSearch("")
     } else {
-      
       console.log(igstRate)
       console.log(prod?.selectedArray)
       console.log(prod.productPrice)
@@ -2939,6 +2940,8 @@ const LeadMaster = ({
           : ""
         setValueMain("dueDate", formattedDate)
       }
+      console.log(Data[0])
+      setValueMain("source", Data[0]?.source || "")
       setValueMain("customerName", Data[0]?.customerName?._id)
       setValueMain("mobile", Data[0]?.customerName?.mobile)
       setValueMain("phone", Data[0]?.customerName?.phone)
@@ -3970,7 +3973,7 @@ const LeadMaster = ({
                                 handlePriceChange(index, e.target.value)
                               }
                               placeholder="0.00"
-                              className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none ${
+                              className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-center ${
                                 isReadOnly
                                   ? "cursor-not-allowed bg-gray-100"
                                   : "bg-white"
@@ -3987,7 +3990,7 @@ const LeadMaster = ({
                                 handleHsnChange(index, e.target.value)
                               }
                               placeholder="Tax %"
-                              className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none bg-gray-100 ${
+                              className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-center bg-gray-100 ${
                                 isReadOnly ? "cursor-not-allowed" : ""
                               }`}
                             />
@@ -3999,7 +4002,7 @@ const LeadMaster = ({
                               readOnly
                               value={item.netAmount}
                               placeholder="0.00"
-                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none cursor-not-allowed bg-gray-100"
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-center cursor-not-allowed bg-gray-100"
                             />
                           </td>
 
@@ -4066,7 +4069,7 @@ const LeadMaster = ({
                           type="number"
                           {...registerMain(field)}
                           readOnly
-                          className="flex-1 min-w-0 border border-gray-300 rounded-r px-3 py-[6px] text-sm bg-white outline-none cursor-not-allowed"
+                          className="flex-1 min-w-0 border border-gray-300 rounded-r px-3 py-[6px] text-sm text-center bg-white outline-none cursor-not-allowed"
                         />
                       </div>
                     ))}

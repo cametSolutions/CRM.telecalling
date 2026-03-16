@@ -152,5 +152,6 @@ export default function SalesFunnel() {
         </div>
       </div>
     </div>
+
   )
 }
