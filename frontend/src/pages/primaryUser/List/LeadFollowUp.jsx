@@ -5,6 +5,7 @@ import MyDatePicker from "../../../components/common/MyDatePicker"
 import { FaSpinner } from "react-icons/fa"
 import { LeadhistoryModal } from "../../../components/primaryUser/LeadhistoryModal"
 import { CollectionupdateModal } from "../../../components/primaryUser/CollectionupdateModal"
+import SkeletonTable from "../../../components/loader/SkeletonTable "
 
 import { BsFilterLeft } from "react-icons/bs"
 import {
@@ -1597,26 +1598,44 @@ const LeadFollowUp = () => {
             <td className="px-3 py-2 text-gray-700 text-sm border border-gray-300 whitespace-nowrap">
               {item?.mobile}
             </td>
-            <td className="px-3 py-2 text-sm border border-gray-300 max-w-[200px] whitespace-nowrap truncate">
+            {/* <td className="px-3 py-2 text-sm border border-gray-300 max-w-[200px] whitespace-nowrap truncate">
               <span
-                className="block truncate text-sm uppercase"
+                className="block truncate text-xs uppercase bg-[#ADD8E6]"
                 title={lastLog?.remarks}
               >
-                <span className="text-red-600 font-medium">
+                <span className="text-red-600 font-medium ">
+                  {lastLog?.remarks || "-"}
+                </span>
+              
+              </span>
+            </td> */}
+            <td className="px-3 py-2 text-sm border border-gray-300 max-w-[200px] whitespace-nowrap">
+              <div className="relative group">
+                <span className="block truncate text-xs uppercase text-red-600 font-medium">
                   {lastLog?.remarks || "-"}
                 </span>
 
-                {remarkBy && (
-                  <span className="ml-2 text-sm text-slate-500 uppercase">
-                    (
-                    <span className="font-semibold text-blue-600">
-                      {remarkBy}
-                    </span>
-                    )
-                  </span>
+                {lastLog?.remarks && (
+                  <div
+                    className="
+          pointer-events-none
+          absolute left-1/2 top-full mt-1
+          -translate-x-1/2
+          z-20
+          hidden
+          group-hover:block
+        "
+                  >
+                    <div className="max-w-xs rounded-md bg-[#ADD8E6] px-2.5 py-1.5 shadow-lg border border-blue-200">
+                      <p className="text-[11px] leading-snug text-slate-700">
+                        {lastLog.remarks}
+                      </p>
+                    </div>
+                  </div>
                 )}
-              </span>
+              </div>
             </td>
+
             <td className="px-3 py-2 text-sm text-gray-700 border border-gray-300 whitespace-nowrap text-center">
               {followupDate}
             </td>
@@ -2121,14 +2140,14 @@ const LeadFollowUp = () => {
   // )
   console.log(demoData)
   return (
-    <div className="h-full flex flex-col bg-blue-50">
+    <div className="h-full flex flex-col bg-[#ADD8E6]">
       {(loading || productwiseloader) && (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
           color="#4A90E2" // Change color as needed
         />
       )}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center p-3 md:p-5 pt-3 pb-3 gap-4 bg-blue-50">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center p-3 md:p-5 pt-3 pb-3 gap-4 bg-[#ADD8E6]">
         {/* Title */}
         <h2 className="text-lg font-bold">Lead Follow Up</h2>
 
@@ -2276,7 +2295,7 @@ const LeadFollowUp = () => {
         </div>
       </div>
       {/* Responsive Table Container */}
-      <div className="flex-1 overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3">
+      {/* <div className="flex-1 overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
         <>
           {(() => {
             const currentData = statusAllocated ? allocatedLeads : tableData
@@ -2309,7 +2328,7 @@ const LeadFollowUp = () => {
                   </h3>
                 )}
 
-                {/* only render table if there are leads */}
+                
                 {leads.length > 0 ? (
                   renderTable(leads)
                 ) : (
@@ -2321,7 +2340,55 @@ const LeadFollowUp = () => {
             ))
           })()}
         </>
+      </div> */}
+      <div className="h-auto overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
+        {loading ? (
+          <SkeletonTable rows={5} columns={6} />
+        ) : (
+          <>
+            {(() => {
+              const currentData = statusAllocated ? allocatedLeads : tableData
+
+              const hasLeads =
+                Array.isArray(currentData) &&
+                currentData.some(
+                  (group) =>
+                    Array.isArray(group.leads) && group.leads.length > 0
+                )
+
+              if (!hasLeads) {
+                return (
+                  <div className="text-center text-gray-500 py-6">
+                    No Leads Available
+                  </div>
+                )
+              }
+
+              return currentData.map(({ staffName, leads }, index) => (
+                <div key={staffName || `group-${index}`} className="mb-6">
+                  {staffName && (
+                    <h3 className="text-base font-semibold text-gray-800 mb-2">
+                      {staffName}{" "}
+                      <span className="text-sm text-gray-500">
+                        ({leads?.length || 0} Leads)
+                      </span>
+                    </h3>
+                  )}
+
+                  {leads.length > 0 ? (
+                    renderTable(leads)
+                  ) : (
+                    <div className="text-center text-gray-400 py-3 text-sm">
+                      No leads under {staffName || "this group"}.
+                    </div>
+                  )}
+                </div>
+              ))
+            })()}
+          </>
+        )}
       </div>
+
       {showModal && (
         <LeadhistoryModal
           historyList={historyList}
@@ -2335,7 +2402,7 @@ const LeadFollowUp = () => {
           <div className="bg-[#ADD8E6] rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
             {/* Header */}
             <div className=" bg-[#ADD8E6] flex items-center justify-between px-6 py-2 border-b border-gray-200 ">
-              <div> 
+              <div>
                 <h2 className="text-2xl font-bold text-gray-800">Follow-Up</h2>
                 <p className="text-sm text-blue-600 mt-0.5 font-semibold">
                   {formData?.customerName}

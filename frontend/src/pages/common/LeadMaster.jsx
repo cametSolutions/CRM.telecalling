@@ -2281,7 +2281,7 @@ import { Country, State } from "country-state-city"
 import BarLoader from "react-spinners/BarLoader"
 import { FaSpinner } from "react-icons/fa"
 import Select from "react-select"
-import { useForm } from "react-hook-form"
+import { useForm, Controller } from "react-hook-form"
 import PopUp from "../../components/common/PopUp"
 import { toast } from "react-toastify"
 import UseFetch from "../../hooks/useFetch"
@@ -2716,10 +2716,11 @@ const LeadMaster = ({
     handleSubmit: handleSubmitMain,
     setValue: setValueMain,
     watch: watchMain,
+    control: controlMain,
     clearErrors: clearMainerrors,
     formState: { errors: errorsMain }
   } = useForm()
-
+console.log("h")
   const {
     register: registerModal,
     handleSubmit: handleSubmitModal,
@@ -2739,6 +2740,7 @@ const LeadMaster = ({
   const [submitLoading, setsubmitLoading] = useState(false)
   const [popupOpen, setPopupOpen] = useState(false)
   const [formData, setFormData] = useState(null)
+console.log("hhh")
   const [restrictionMessage, setrestrictMessage] = useState()
   const [isEligible, setIseligible] = useState(false)
   const [openLicenseDropdown, setOpenLicenseDropdown] = useState(null)
@@ -2902,7 +2904,7 @@ const LeadMaster = ({
       document.removeEventListener("mousedown", handleClickOutside)
     }
   }, [])
-
+  console.log("hhh")
   useEffect(() => {
     if (loggeduser?._id) {
       setValueMain("leadBy", loggeduser._id)
@@ -2928,6 +2930,7 @@ const LeadMaster = ({
       }
       setValueMain("leadId", Data[0]?.leadId)
       setValueMain("partner", Data[0]?.partner)
+      setValueMain("trade", Data[0]?.trade)
       setValueMain(
         "selfAllocation",
         Data[0]?.selfAllocation === true ? "true" : "false"
@@ -3547,12 +3550,103 @@ const LeadMaster = ({
       setModalLoader(false)
     }
   }
+  const tradeOptions = [
+    { value: "Wholesale Trading", label: "Wholesale Trading" },
+    { value: "Retail Trading", label: "Retail Trading" },
+    { value: "Import & Export", label: "Import & Export" },
+    { value: "Distribution / Dealers", label: "Distribution / Dealers" },
+    {
+      value: "E-commerce / Online Trading",
+      label: "E-commerce / Online Trading"
+    },
+    { value: "IT Services", label: "IT Services" },
+    { value: "Web Design & Development", label: "Web Design & Development" },
+    { value: "Cyber Security Services", label: "Cyber Security Services" },
+    { value: "Hardware & Networking", label: "Hardware & Networking" },
+    { value: "Construction Companies", label: "Construction Companies" },
+    {
+      value: "Pharmaceutical Manufacturing",
+      label: "Pharmaceutical Manufacturing"
+    },
+    { value: "Food Manufacturing", label: "Food Manufacturing" },
+    {
+      value: "Textile / Garment Manufacturing",
+      label: "Textile / Garment Manufacturing"
+    },
+    { value: "Chemical Manufacturing", label: "Chemical Manufacturing" },
+    { value: "Plastic Manufacturing", label: "Plastic Manufacturing" },
+    {
+      value: "Steel / Metal Manufacturing",
+      label: "Steel / Metal Manufacturing"
+    },
+    { value: "Furniture Manufacturing", label: "Furniture Manufacturing" },
+    { value: "Building Contractors", label: "Building Contractors" },
+    { value: "Real Estate Developers", label: "Real Estate Developers" },
+    {
+      value: "Electrical Equipment Manufacturing",
+      label: "Electrical Equipment Manufacturing"
+    },
+    { value: "Electronics Manufacturing", label: "Electronics Manufacturing" },
+    { value: "Automobile Manufacturing", label: "Automobile Manufacturing" },
+    { value: "Hospitals", label: "Hospitals" },
+    { value: "Clinics", label: "Clinics" },
+    { value: "Medical Laboratories", label: "Medical Laboratories" },
+    {
+      value: "Medical Equipment Suppliers",
+      label: "Medical Equipment Suppliers"
+    },
+    {
+      value: "Pharmacies / Medical Stores",
+      label: "Pharmacies / Medical Stores"
+    },
+    { value: "Interior Design", label: "Interior Design" },
+    { value: "Vehicle Dealers", label: "Vehicle Dealers" },
+    {
+      value: "Automobile Service Centres",
+      label: "Automobile Service Centres"
+    },
+    { value: "Insurance Companies", label: "Insurance Companies" },
+    { value: "Spare Parts Dealers", label: "Spare Parts Dealers" },
+    { value: "Transport & Logistics", label: "Transport & Logistics" },
+    { value: "Banks", label: "Banks" },
+    { value: "Finance Companies", label: "Finance Companies" },
+    { value: "Hotels & Resorts", label: "Hotels & Resorts" },
+    { value: "Schools", label: "Schools" },
+    { value: "Colleges", label: "Colleges" },
+    { value: "Training Institutes", label: "Training Institutes" },
+    { value: "Coaching Centers", label: "Coaching Centers" },
+    { value: "Educational Consultants", label: "Educational Consultants" },
+    { value: "Software Development", label: "Software Development" },
+    { value: "Restaurants / Cafes", label: "Restaurants / Cafes" },
+    { value: "Travel Agencies", label: "Travel Agencies" },
+    { value: "Tourism Operators", label: "Tourism Operators" },
+    {
+      value: "Advertising & Marketing Agencies",
+      label: "Advertising & Marketing Agencies"
+    },
+    { value: "Event Management", label: "Event Management" },
+    { value: "Security Services", label: "Security Services" },
+    {
+      value: "Cleaning / Facility Management",
+      label: "Cleaning / Facility Management"
+    },
+    {
+      value: "Chartered Accountants / Audit Firms",
+      label: "Chartered Accountants / Audit Firms"
+    },
+    { value: "Tax Consultants", label: "Tax Consultants" },
+    {
+      value: "NGOs / Non-Profit Organizations",
+      label: "NGOs / Non-Profit Organizations"
+    },
+    { value: "Government Organizations", label: "Government Organizations" }
+  ]
 
   const tableRows = selectedleadlist || []
   console.log(tableRows)
 
   return (
-    <div className="bg-blue-50 h-auto">
+    <div className="bg-[#ADD8E6] h-auto">
       {(modalloader ||
         loadingState ||
         editloadingState ||
@@ -3773,12 +3867,60 @@ const LeadMaster = ({
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
                       Trade
                     </label>
-                    <input
-                      {...registerMain("trade")}
-                      disabled
-                      placeholder="Trade..."
-                      className="w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] cursor-not-allowed opacity-70"
+                    <Controller
+                      name="trade"
+                      control={controlMain}
+                      rules={{ required: "Trade is required" }}
+                      render={({ field }) => (
+                        <Select
+                          {...field}
+                          options={tradeOptions}
+                          isDisabled={isReadOnly}
+                          placeholder="Select Trade"
+                          classNamePrefix="react-select"
+                          className={`
+          text-sm
+          ${isReadOnly ? "cursor-not-allowed opacity-70" : "cursor-pointer"}
+        `}
+                          styles={{
+                            control: (base, state) => ({
+                              ...base,
+                              minHeight: "34px",
+                              borderColor: errorsMain.trade
+                                ? "#ef4444"
+                                : "#d1d5db",
+                              backgroundColor: "#EEF2F8",
+                              boxShadow: state.isFocused
+                                ? "0 0 0 1px #3b82f6"
+                                : "none",
+                              "&:hover": {
+                                borderColor: errorsMain.trade
+                                  ? "#ef4444"
+                                  : "#9ca3af"
+                              }
+                            }),
+                            menuPortal: (base) => ({ ...base, zIndex: 9999 })
+                          }}
+                          menuPortalTarget={document.body}
+                          // react-select expects { value, label }, but your form needs just the value:
+                          onChange={(option) =>
+                            field.onChange(option?.value || "")
+                          }
+                          value={
+                            tradeOptions.find(
+                              (opt) => opt.value === field.value
+                            ) || null
+                          }
+                          isClearable
+                        />
+                      )}
                     />
+
+                    {errorsMain.trade && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errorsMain.trade.message}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
@@ -3973,7 +4115,7 @@ const LeadMaster = ({
                                 handlePriceChange(index, e.target.value)
                               }
                               placeholder="0.00"
-                              className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-center ${
+                              className={`w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-right ${
                                 isReadOnly
                                   ? "cursor-not-allowed bg-gray-100"
                                   : "bg-white"
@@ -4002,7 +4144,7 @@ const LeadMaster = ({
                               readOnly
                               value={item.netAmount}
                               placeholder="0.00"
-                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-center cursor-not-allowed bg-gray-100"
+                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs outline-none text-right cursor-not-allowed bg-gray-100"
                             />
                           </td>
 
@@ -4055,7 +4197,7 @@ const LeadMaster = ({
                       }`}
                     />
                   </div>
-                  <div className="flex flex-col gap-2 md:justify-end md:pt-5">
+                  <div className="flex flex-col gap-2 md:justify-end md:pt-5 w-64">
                     {[
                       { label: "Taxable Amount", field: "taxableAmount" },
                       { label: "Tax Amount", field: "taxAmount" },
@@ -4069,11 +4211,12 @@ const LeadMaster = ({
                           type="number"
                           {...registerMain(field)}
                           readOnly
-                          className="flex-1 min-w-0 border border-gray-300 rounded-r px-3 py-[6px] text-sm text-center bg-white outline-none cursor-not-allowed"
+                          className="flex-1 min-w-0 border border-gray-300 rounded-r px-3 py-[6px] text-sm text-right bg-white outline-none cursor-not-allowed"
                         />
                       </div>
                     ))}
                   </div>
+                 
                 </div>
 
                 {validateError?.duplicate && (
@@ -4263,35 +4406,6 @@ const LeadMaster = ({
                       {process === "Registration" ? "SUBMIT" : "UPDATE"}
                     </button>
                   </div>
-                  {/* <div className="flex items-center gap-2">
-                    {editMode ? (
-                      <>
-                        <label className="text-xs font-semibold text-gray-600 italic whitespace-nowrap">
-                          Lead by:
-                        </label>
-                        <select
-                          {...registerMain("leadBy")}
-                          className="border border-gray-300 rounded px-2 py-1 text-sm bg-[#EEF2F8] outline-none"
-                        >
-                          {allstaff?.map((u) => (
-                            <option key={u._id} value={u._id}>
-                              {u.name}
-                            </option>
-                          ))}
-                        </select>
-                      </>
-                    ) : (
-                      <>
-                        <input type="hidden" {...registerMain("leadBy")} />
-                        <p className="text-sm italic text-gray-500">
-                          Lead by:{" "}
-                          <span className="font-semibold text-[#1B2A4A]">
-                            {loggeduser?.name}
-                          </span>
-                        </p>
-                      </>
-                    )}
-                  </div> */}
                 </div>
               </div>
             </div>

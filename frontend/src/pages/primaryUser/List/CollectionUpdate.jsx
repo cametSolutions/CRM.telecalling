@@ -27,9 +27,12 @@ import { PropagateLoader } from "react-spinners"
 import { toast } from "react-toastify"
 
 export default function CollectionUpdate() {
+  console.log("hh")
   const [showFullName, setShowFullName] = useState(false)
   const [tableData, setTableData] = useState([])
+console.log(tableData)
   const [isdepartmentisAccountant, setisdepartmentAccountant] = useState(false)
+  console.log(isdepartmentisAccountant)
   const [loggedUser, setLoggedUser] = useState(null)
   const [leadId, setleadId] = useState(null)
   const [leadDocId, setleadDocId] = useState(null)
@@ -59,10 +62,11 @@ export default function CollectionUpdate() {
       `/lead/collectionLeads?selectedBranch=${selectedCompanyBranch}&verified=${verifiedLead}`
   )
   const { data: partners } = UseFetch("/customer/getallpartners")
-console.log("h")
+  console.log("h")
   useEffect(() => {
     if (companybranches && companybranches.length > 0) {
       const userData = getLocalStorageItem("user")
+      console.log(userData.department?.department)
       if (
         userData.department?.department === "Accountant" ||
         userData.department?._id === "670c863652847bbebbd35743"
@@ -122,6 +126,7 @@ console.log("h")
         const filteredCollectionleads = collectionlead.filter(
           (item) => item.paymentHistory?.length > 0
         )
+console.log(collectionlead)
         const sortedLeads = filteredCollectionleads.sort((a, b) => {
           const getOldest = (lead) =>
             lead.paymentHistory?.length
@@ -181,7 +186,6 @@ console.log("h")
     }
   }
 
-  
   const renderTable = (data) => {
     const LeadRow = ({ item, index }) => {
       const [open, setOpen] = useState(false)
@@ -280,7 +284,6 @@ console.log("h")
                   className="inline-flex items-center gap-1  py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600 transition-colors w-full justify-center"
                 >
                   <ClipboardCheck className="w-3.5 h-3.5" />
-                  
                 </button>
               )}
             </td>
@@ -450,8 +453,8 @@ console.log("h")
     )
   }
   return (
-    <div className="max-h-full flex flex-col ">
-      <div className="flex justify-between items-center p-3 md:p-5 mb-3 sticky top-0 z-30 bg-white">
+    <div className="h-full flex flex-col bg-[#ADD8E6]">
+      <div className="flex justify-between items-center p-3 md:p-5 mb-3 sticky top-0 z-30 ">
         <h2 className="text-lg font-bold">
           {isdepartmentisAccountant
             ? verifiedLead
@@ -466,21 +469,24 @@ console.log("h")
               <span className="text-sm whitespace-nowrap font-semibold">
                 {verifiedLead ? "All payment Verified" : "Pending Verified"}
               </span>
-              <button
-                onClick={() => {
-                  setTableData([])
-                  setverifiedLead(!verifiedLead)
-                }}
-                className={`${
-                  verifiedLead ? "bg-green-500" : "bg-gray-300"
-                } w-11 h-6 flex items-center rounded-full transition-colors duration-300 mx-2`}
-              >
-                <div
+              <div className="">
+                {" "}
+                <button
+                  onClick={() => {
+                    setTableData([])
+                    setverifiedLead(!verifiedLead)
+                  }}
                   className={`${
-                    verifiedLead ? "translate-x-5" : "translate-x-0"
-                  } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                ></div>
-              </button>
+                    verifiedLead ? "bg-green-500" : "bg-gray-300"
+                  } w-11 h-6 flex items-center rounded-full transition-colors duration-300 mx-2`}
+                >
+                  <div
+                    className={`${
+                      verifiedLead ? "translate-x-5" : "translate-x-0"
+                    } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                  ></div>
+                </button>
+              </div>
             </>
           )}
           <select
@@ -511,7 +517,7 @@ console.log("h")
         </div>
       </div>
       {/* Responsive Table Container this is the newest design*/}
-      <div className="flex-1 overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3">
+      <div className="h-auto overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
         <>
           {(() => {
             const hasLeads =

@@ -4743,6 +4743,7 @@ export const Getdailystaffreport = async (req, res) => {
 export const GetcollectionLeads = async (req, res) => {
   try {
     const { selectedBranch, verified } = req.query;
+console.log("verfieddddd",verified)
     const query = {
       leadBranch: new mongoose.Types.ObjectId(selectedBranch),
       paymentVerified: verified === "true" ? true : false,

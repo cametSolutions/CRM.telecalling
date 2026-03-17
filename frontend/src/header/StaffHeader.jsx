@@ -255,6 +255,8 @@ export default function StaffHeader() {
     //   control: true
     // }
   ]
+console.log(user?.permissions?.[0])
+console.log(user?.permissions?.[0]?.CollectionUpdate)
   const inventorys = [
     {
       to: "/staff/masters/inventory/brandRegistration",
@@ -295,11 +297,7 @@ console.log(user?.permission?.[0])
       label: "Leave Summary",
       control: user?.permissions?.[0]?.LeaveSummary ?? false
     },
-    {
-      to: "/staff/transaction/lead/collectionUpdate",
-      label: "Collection Update",
-      control: user?.permissions?.[0]?.CollectionUpdate ?? false
-    }
+   
   ]
   const transactions = [
     {
