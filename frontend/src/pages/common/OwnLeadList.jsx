@@ -1,9 +1,10 @@
-
 import { useEffect, useState } from "react"
 import UseFetch from "../../hooks/useFetch"
 import { useLocation } from "react-router-dom"
 import { useNavigate } from "react-router-dom"
 import { LeadhistoryModal } from "../../components/primaryUser/LeadhistoryModal"
+import SkeletonTable from "../../components/loader/SkeletonTable "
+import NodataAvailable from "../../components/NodataAvailable"
 import {
   Eye,
   IndianRupee,
@@ -24,7 +25,7 @@ export default function OwnLeadList() {
   const [selectedData, setselectedData] = useState([])
   const [anyOpen, setAnyOpen] = useState(false)
   const [selectedLeadId, setselectedLeadId] = useState(null)
-  const [ownLead, setownLead] = useState(location?.state?.role?false:true)
+  const [ownLead, setownLead] = useState(location?.state?.role ? false : true)
   const [companyBranches, setcompanyBranches] = useState(null)
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
   const [showhistoryModal, sethistoryModal] = useState(false)
@@ -38,13 +39,13 @@ export default function OwnLeadList() {
   const { data: ownedlead, loading } = UseFetch(
     loggedUser &&
       selectedCompanyBranch &&
-      `/lead/ownregisteredLead?userId=${loggedUser._id}&role=${location?.state?.role?location?.state?.role:loggedUser.role}&selectedBranch=${selectedCompanyBranch}&ownlead=${location?.state?.role?false:ownLead}`
-  );
-console.log(location?.state?.role)
-console.log(location?.state)
-console.log(ownLead)
-console.log(ownLead)
-  console.log(ownedlead?.length);
+      `/lead/ownregisteredLead?userId=${loggedUser._id}&role=${location?.state?.role ? location?.state?.role : loggedUser.role}&selectedBranch=${selectedCompanyBranch}&ownlead=${location?.state?.role ? false : ownLead}`
+  )
+  console.log(location?.state?.role)
+  console.log(location?.state)
+  console.log(ownLead)
+  console.log(ownLead)
+  console.log(ownedlead?.length)
   useEffect(() => {
     if (companybranches && companybranches.length > 0) {
       const userData = getLocalStorageItem("user")
@@ -56,13 +57,13 @@ console.log(ownLead)
       setselectedCompanyBranch(branch[0].value)
       setLoggedUser(userData)
     }
-  }, [companybranches]);
+  }, [companybranches])
 
   useEffect(() => {
     if (ownedlead && ownedlead.length > 0) {
       if (ownLead) {
-        const Data = normalizeTableData(ownedlead);
-        setTableData(Data);
+        const Data = normalizeTableData(ownedlead)
+        setTableData(Data)
       } else {
         const groupedLeads = {}
         ownedlead.forEach((lead) => {
@@ -301,10 +302,9 @@ console.log(ownLead)
       </table>
     )
   }
- 
 
   return (
-    <div className="h-full bg-blue-50">
+    <div className="h-full bg-[#ADD8E6]">
       <div className="flex justify-between items-center md:p-5  p-3">
         <h2 className="text-lg font-bold">
           {ownLead ? "Own Lead" : "All Lead"}
@@ -317,8 +317,8 @@ console.log(ownLead)
               </span>
               <button
                 onClick={() => {
-                  setTableData([]);
-                  setownLead(!ownLead);
+                  setTableData([])
+                  setownLead(!ownLead)
                 }}
                 className={`${
                   ownLead ? "bg-green-500" : "bg-gray-300"
@@ -335,8 +335,8 @@ console.log(ownLead)
           <select
             value={selectedCompanyBranch || ""}
             onChange={(e) => {
-              setTableData([]);
-              setselectedCompanyBranch(e.target.value);
+              setTableData([])
+              setselectedCompanyBranch(e.target.value)
             }}
             className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[150px] mr-2 cursor-pointer"
           >
@@ -362,7 +362,61 @@ console.log(ownLead)
 
       <div className="flex-1 overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
         <>
-          {(() => {
+          {loading ? (
+            // While fetching → show skeleton loader only
+            <div className="mx-2 md:mx-4">
+              <SkeletonTable rows={5} columns={6} />
+            </div>
+          ) : (
+            (() => {
+              const hasLeads =
+                Array.isArray(tableData) &&
+                tableData.some(
+                  (group) =>
+                    Array.isArray(group.leads) && group.leads.length > 0
+                )
+
+              // After fetch, but no data
+              if (!hasLeads || tableData.length === 0) {
+                return (
+                  <div className="mx-2 md:mx-4">
+                    <NodataAvailable
+                      title="No Lead Available"
+                      message="There are no leads to display for the selected filters or date range."
+                    />
+                  </div>
+                )
+              }
+
+              // After fetch, with data → render groups
+              return (
+                <div className="mx-2 md:mx-4 space-y-4">
+                  {tableData.map(({ staffName, leads }, index) => (
+                    <div key={staffName || `group-${index}`} className="mb-4">
+                      {staffName && (
+                        <h3 className="text-base font-semibold text-gray-800 mb-2">
+                          {staffName}{" "}
+                          <span className="text-sm text-gray-500">
+                            ({leads?.length || 0} Leads)
+                          </span>
+                        </h3>
+                      )}
+
+                      {Array.isArray(leads) && leads.length > 0 ? (
+                        renderTable(leads)
+                      ) : (
+                        <div className="text-center text-gray-400 py-3 text-sm">
+                          No Lead under {staffName || "this group"}.
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )
+            })()
+          )}
+
+          {/* {(() => {
             const hasLeads =
               Array.isArray(tableData) &&
               tableData.some(
@@ -400,7 +454,7 @@ console.log(ownLead)
                 )}
               </div>
             ));
-          })()}
+          })()} */}
         </>
       </div>
 
@@ -412,5 +466,5 @@ console.log(ownLead)
         />
       )}
     </div>
-  );
+  )
 }

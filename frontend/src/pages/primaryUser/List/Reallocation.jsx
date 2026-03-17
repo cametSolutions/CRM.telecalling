@@ -305,7 +305,7 @@ const GridSkeleton = ({ rows = 6 }) => (
     //     )}
     //   </div>
     // </div>
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-[#ADD8E6]">
       {(submitLoading || loading) && (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }}

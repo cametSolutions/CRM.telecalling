@@ -343,7 +343,7 @@ console.log(lostlead)
   )
 
   return (
-    <div className="max-h-full h-full p-3 bg-white">
+    <div className="max-h-full h-full p-3 bg-[#ADD8E6]">
       <div className="flex justify-between items-center mx-3 md:mx-5  mb-3">
         <h2 className="text-lg font-bold">Lost Leads</h2>
         <div className="flex justify-end items-center">
@@ -382,7 +382,7 @@ console.log(lostlead)
       )}
 
       {/* Responsive Table Container this is the newest design*/}
-      <div className="flex-1 overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3">
+      <div className="flex-1 overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
         <>
           {(() => {
             const hasLeads =

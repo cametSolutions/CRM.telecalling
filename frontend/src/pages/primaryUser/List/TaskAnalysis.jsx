@@ -87,7 +87,7 @@ const TaskAnalysis = () => {
     }
   }, [analysisleads])
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-[#ADD8E6]">
       <div>
         {loading && (
           <BarLoader
@@ -119,7 +119,7 @@ const TaskAnalysis = () => {
         </select>
       </div>
 
-      <div className="flex-1 border border-gray-100 p-3 mx-4 rounded-xl shadow-xl bg-white mb-3">
+      <div className="h-auto border border-gray-100 p-3 mx-4 rounded-xl shadow-xl bg-white mb-3">
         {loading ? (
           <CardSkeletonLoader count={5} />
         ) : gridList && gridList.length > 0 ? (

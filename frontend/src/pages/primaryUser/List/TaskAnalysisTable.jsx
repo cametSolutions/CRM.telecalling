@@ -127,10 +127,10 @@ console.log(loading)
     return diffDays
   }
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className=" h-full bg-[#ADD8E6]">
       {loading && <div className="w-full h-1 bg-blue-500 animate-pulse"></div>}
 
-      <div className="mx-auto px-3 sm:px-6 lg:px-8 py-2 bg-blue-100 w-full">
+      <div className="mx-auto px-3 sm:px-6 lg:px-8 py-2  w-full">
         {/* Header Row */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
           {/* Left Section: Title + Task Type + Actions */}

@@ -5,6 +5,7 @@ import BarLoader from "react-spinners/BarLoader"
 import LeadTaskComponent from "../../../components/primaryUser/LeadTaskComponent"
 import { useState, useEffect } from "react"
 import { getLocalStorageItem } from "../../../helper/localstorage"
+
 import { FaFileInvoiceDollar } from "react-icons/fa"
 import { PropagateLoader } from "react-spinners"
 const LeadTask = () => {
@@ -198,7 +199,7 @@ const LeadTask = () => {
   }
   console.log("hhhh")
   return (
-    <div className="h-full flex flex-col ">
+    <div className="h-full flex flex-col bg-[#ADD8E6]">
       {loading && (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
@@ -331,6 +332,7 @@ const LeadTask = () => {
           <p className="text-sm"></p>
         </div>
       )}
+    
     </div>
   )
 }

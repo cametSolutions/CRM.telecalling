@@ -602,7 +602,7 @@ console.log(isAllocatedToeditable)
   }
 
   return (
-    <div className="flex-1 overflow-x-auto rounded-lg  overflow-y-auto  shadow-xl md:mx-5 mx-3 mb-3">
+    <div className="h-auto overflow-x-auto rounded-lg  overflow-y-auto  shadow-xl md:mx-5 mx-3 mb-3 bg-white">
       <>
         {(() => {
           const hasLeads =
