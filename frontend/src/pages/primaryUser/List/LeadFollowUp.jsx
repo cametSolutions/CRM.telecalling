@@ -2147,7 +2147,7 @@ const LeadFollowUp = () => {
           color="#4A90E2" // Change color as needed
         />
       )}
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center p-3 md:p-5 pt-3 pb-3 gap-4 bg-[#ADD8E6]">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center mx-3 md:mx-5 mt-2 gap-4 bg-[#ADD8E6]">
         {/* Title */}
         <h2 className="text-lg font-bold">Lead Follow Up</h2>
 
@@ -2288,7 +2288,7 @@ const LeadFollowUp = () => {
         </div>
       </div>
       <div className="flex justify-end mr-5">
-        <span className="text-blue-700">Total Amount -</span>
+        <span className="text-blue-700 font-semibold">Total Amount -</span>
         <div className="flex items-center ml-1">
           <IndianRupee className="w-3 h-3 text-green-600 mr-1" />
           <span>{statusAllocated ? allocatednetAmount : netTotalAmount}</span>

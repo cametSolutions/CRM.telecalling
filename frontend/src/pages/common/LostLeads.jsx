@@ -344,7 +344,7 @@ console.log(lostlead)
 
   return (
     <div className="max-h-full h-full p-3 bg-[#ADD8E6]">
-      <div className="flex justify-between items-center mx-3 md:mx-5  mb-3">
+      <div className="flex justify-between items-center mx-3 md:mx-5">
         <h2 className="text-lg font-bold">Lost Leads</h2>
         <div className="flex justify-end items-center">
           <select
@@ -375,7 +375,7 @@ console.log(lostlead)
         </div>
       </div>
       {tableData && tableData.length > 0 && (
-        <div className="flex justify-end md:mx-5 text-blue-500">
+        <div className="flex justify-end md:mx-5 text-blue-700 font-semibold">
           <span>Total Amount :</span>
           <span className="ml-1">{TotalAmount}</span>
         </div>

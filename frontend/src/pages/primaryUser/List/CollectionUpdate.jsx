@@ -454,7 +454,7 @@ console.log(collectionlead)
   }
   return (
     <div className="h-full flex flex-col bg-[#ADD8E6]">
-      <div className="flex justify-between items-center p-3 md:p-5 mb-3 sticky top-0 z-30 ">
+      <div className="flex justify-between items-center p-3 md:p-5 md:pb-2 sticky top-0 z-30">
         <h2 className="text-lg font-bold">
           {isdepartmentisAccountant
             ? verifiedLead

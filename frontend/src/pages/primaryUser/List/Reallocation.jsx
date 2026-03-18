@@ -332,7 +332,7 @@ const GridSkeleton = ({ rows = 6 }) => (
       </div>
 
       {/* Card that fills leftover height */}
-      <div className="border border-gray-100 p-3 mx-4 rounded-xl shadow-xl bg-white flex-1 overflow-auto">
+      <div className="border border-gray-100 p-3 mx-4 rounded-xl shadow-xl bg-white h-auto overflow-auto">
         {loading ? (
           // dynamic height comes from flex-1 + h-full, rows is just count
           <GridSkeleton rows={6} />
