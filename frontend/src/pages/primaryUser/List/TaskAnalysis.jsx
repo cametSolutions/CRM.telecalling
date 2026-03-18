@@ -98,25 +98,24 @@ const TaskAnalysis = () => {
       </div>
       <div className="flex justify-between m-2 mx-4">
         <h2 className="text-lg font-bold">Task Analysis</h2>
-        <CurrentDate />
-      </div>
-
-      <div className="m-2 mx-4 flex justify-end">
-        <select
-          // value={selectedCompanyBranch || ""}
-          onChange={(e) => {
-            setSelectedCompanyBranch(e.target.value)
-            setgridList([])
-            // setStatus(approvedToggleStatus ? "Approved" : "Pending")
-          }}
-          className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px]"
-        >
-          {loggedUserBranches?.map((branch) => (
-            <option key={branch._id} value={branch.value}>
-              {branch.label}
-            </option>
-          ))}
-        </select>
+        <div className="flex justify-between ">
+          <select
+            // value={selectedCompanyBranch || ""}
+            onChange={(e) => {
+              setSelectedCompanyBranch(e.target.value)
+              setgridList([])
+              // setStatus(approvedToggleStatus ? "Approved" : "Pending")
+            }}
+            className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px] md:mr-5 mr-2"
+          >
+            {loggedUserBranches?.map((branch) => (
+              <option key={branch._id} value={branch.value}>
+                {branch.label}
+              </option>
+            ))}
+          </select>
+          <CurrentDate />
+        </div>
       </div>
 
       <div className="h-auto border border-gray-100 p-3 mx-4 rounded-xl shadow-xl bg-white mb-3">
