@@ -888,7 +888,7 @@ export default function ProductWiseleadReport() {
   const [viewMode, setViewMode] = useState("staff") // "staff" | "product"
   const [selectedStaff, setSelectedStaff] = useState(null)
   const [drillDown, setDrillDown] = useState(false)
-
+  const [istooglepause, setistooglepause] = useState(true)
   const [userbranches, setuserBranches] = useState([])
   const [selectedBranch, setselectedBranch] = useState(null)
 
@@ -1054,6 +1054,8 @@ export default function ProductWiseleadReport() {
     if (!report || !Array.isArray(report) || !selectedBranch) return
 
     if (viewMode === "staff") {
+      console.log(report)
+
       const staffMap = {} // <<< HERE
 
       report.forEach((row) => {
@@ -1092,7 +1094,7 @@ export default function ProductWiseleadReport() {
       setDrillDown(false)
     } else {
       const productMap = {} // and similarly here
-
+      console.log(report)
       report.forEach((row) => {
         if (String(row.branch) !== String(selectedBranch)) return
         const productKey = row.productId
@@ -1100,8 +1102,8 @@ export default function ProductWiseleadReport() {
 
         if (!productMap[productKey]) {
           productMap[productKey] = {
-            staffId: null,
-            staffRole: null,
+            staffId: row.staffId,
+            staffRole: row.staffRole,
             productId: row.productId,
             branchId: row.branch,
             Staff: "",
@@ -1159,6 +1161,7 @@ export default function ProductWiseleadReport() {
     if (!report) return
 
     setSelectedStaff(staffName)
+    setistooglepause(false)
     setDrillDown(true)
     setViewMode("product") // drill-down is product-wise for this staff
 
@@ -1190,11 +1193,15 @@ export default function ProductWiseleadReport() {
   }
 
   const handleTotalLeadsClick = (row, header) => {
+    console.log(row)
     if (header === "Converted" && row.totalConverted <= 0) return
     if (header === "Pending" && row.totalPending <= 0) return
     if (header === "Lost" && row.totalLost <= 0) return
 
-    if (header === "Lost") {
+    if (
+      header === "Lost" ||
+      (row.totalConverted === 0 && row.totalPending === 0 && row.totalLost > 0)
+    ) {
       navigate("/admin/transaction/lead/lostLeads", {
         state: {
           staffId: row.staffId,
@@ -1203,14 +1210,24 @@ export default function ProductWiseleadReport() {
         }
       })
     } else {
+      console.log(
+        (row.totalPending > 0 && row.totalConverted === 0) ||
+          header === "Pending"
+      )
+      console.log(drillDown)
+      console.log(istooglepause)
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: {
           staffId: row.staffId,
-          pending: header === "Pending",
+          pending:
+            (row.totalPending > 0 && row.totalConverted === 0) ||
+            header === "Pending",
           productId: row.productId,
           branchId: row.branchId,
           istotal: !drillDown,
-          staffRole: row.staffRole
+          staffRole: row.staffRole,
+          viewMode: viewMode,
+          istooglepause: istooglepause
         }
       })
     }
