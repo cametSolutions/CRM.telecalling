@@ -1,20 +1,18 @@
-
-
 import { useEffect, useState } from "react"
 import { fetchDataFromApi } from "../api/fetchDataFromApi"
 
 const UseFetch = (url) => {
-console.log(url)
-console.log("usefethchhhhhhhh")
+  console.log(url)
+  console.log("usefethchhhhhhhh")
   const [refresh, setRefresh] = useState(false)
   const [data, setData] = useState(null)
   const [fulldateholiday, setfulldateHoliday] = useState(null)
   const [loading, setLoading] = useState(false)
-console.log(loading)
+  console.log(loading)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-console.log(url)
+    console.log(url)
     if (!url) {
       return
     }
@@ -25,12 +23,18 @@ console.log(url)
       setError(null)
 
       try {
-console.log("hhhhh")
+        console.log("hhhhh")
         const result = await fetchDataFromApi(url)
-console.log(result)
+        if (url === "/branch/getBranch") {
+          console.log(result)
+        }
+        console.log(result)
         if (result) {
-console.log(result)
+          console.log(result)
           setData(result.data)
+          if (url === "/branch/getBranch") {
+            console.log(result.data)
+          }
           setLoading(false)
         } else {
           setError("Expected data to be an array")
@@ -48,7 +52,7 @@ console.log(result)
   const refreshHook = () => {
     setRefresh(!refresh)
   }
-console.log(loading)
+  console.log(loading)
   return { data, loading, error, refreshHook, fulldateholiday }
 }
 

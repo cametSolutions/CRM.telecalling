@@ -30,6 +30,7 @@ export const LeadRegister = async (req, res) => {
       taxAmount,
       taxableAmount,
       netAmount,
+      roundOff,
       partner,
       allocationType = null,
       selfAllocation,
@@ -121,6 +122,7 @@ export const LeadRegister = async (req, res) => {
       taxAmount: Number(taxAmount),
       taxableAmount: Number(taxableAmount),
       netAmount: Number(netAmount),
+      roundOff: Number(roundOff),
       balanceAmount: Number(netAmount),
       selfAllocation: selfAllocation,
       ...(allocationType && { allocationType }),
@@ -217,6 +219,19 @@ export const Checkexistinglead = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+export const getAlltasktoTarget = async (req, res) => {
+  try {
+
+    const tasks = await Task.find({});
+    if (tasks) {
+      return res.status(200).json({ message: "Task found", data: tasks });
+    } else {
+      return res.status(404).json({ message: "NO tasks found" });
+    }
+  } catch (error) {
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
 export const GetallTask = async (req, res) => {
   try {
     const { istaskregistration = false } = req.query
@@ -501,6 +516,7 @@ export const UpdateCollection = async (req, res) => {
     // };
     // const followupClosed = toBoolean(req.query.followupclosed);
     const customerId = formData?.customerId;
+    console.log("custromerid", customerId)
     const leadDocId = formData?.leadDocId;
 
     if (!formData.leadDocId) {
@@ -531,10 +547,13 @@ export const UpdateCollection = async (req, res) => {
     }
     // 2️⃣ Calculate updated totals
     const newTotalPaid =
-      Number(formData.totalPaidAmount || 0) + Number(formData?.receivedAmount);
+      Number(formData.totalpaidAmountBefore || 0) + Number(formData?.receivedAmount);
 
-    const newBalance = Math.max(0, (formData?.netAmount || 0) - newTotalPaid);
-
+    const newBalance = Math.max(0, (formData?.projectAmount || 0) - newTotalPaid);
+    console.log("totalpaidamountbefor", formData?.totalpaidAmountBefore)
+    console.log("recievedaountt", formData?.receivedAmount)
+    console.log("newbalanceamount", newBalance)
+    console.log("newtotalpaid", newTotalPaid)
     // 3️⃣ Create payment record
     const paymentRecord = {
       paymentDate: new Date(),
@@ -4743,7 +4762,7 @@ export const Getdailystaffreport = async (req, res) => {
 export const GetcollectionLeads = async (req, res) => {
   try {
     const { selectedBranch, verified } = req.query;
-console.log("verfieddddd",verified)
+    console.log("verfieddddd", verified)
     const query = {
       leadBranch: new mongoose.Types.ObjectId(selectedBranch),
       paymentVerified: verified === "true" ? true : false,
@@ -5492,6 +5511,216 @@ export const GetallproductwiseReport = async (req, res) => {
     //   },
     // ])
 
+    // const result = await LeadMaster.aggregate([
+    //   // 1️⃣ Unwind activityLog
+    //   { $unwind: "$activityLog" },
+
+    //   // 2️⃣ Match followup allocations
+    //   {
+    //     $match: {
+    //       "activityLog.taskallocatedTo": { $exists: true, $ne: null },
+    //       "activityLog.taskTo": "followup",
+    //       "activityLog.allocationChanged": false,
+    //     },
+    //   },
+
+    //   // 3️⃣ Unwind leadFor
+    //   { $unwind: "$leadFor" },
+
+    //   // 4️⃣ Deduplicate: Lead + Staff + Product/Service
+    //   {
+    //     $group: {
+    //       _id: {
+    //         leadId: "$leadId",
+    //         staffId: "$activityLog.taskallocatedTo",
+    //         productId: "$leadFor.productorServiceId",
+    //         productModel: "$leadFor.productorServicemodel", // "Product" | "Service"
+    //       },
+    //       leadConvertedDate: { $first: "$leadConvertedDate" },
+    //       leadLostDate: { $first: "$leadLostDate" },
+    //       netAmount: { $first: "$leadFor.netAmount" },
+    //     },
+    //   },
+
+    //   // 5️⃣ Status flags (date-based)
+    //   {
+    //     $addFields: {
+    //       isConverted: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $ne: ["$leadConvertedDate", null] },
+    //               { $ne: ["$leadLost", true] },
+    //               { $gte: ["$leadConvertedDate", start] },
+    //               { $lte: ["$leadConvertedDate", end] },
+    //             ],
+    //           },
+    //           1,
+    //           0,
+    //         ],
+    //       },
+    //       isLost: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $ne: ["$leadLostDate", null] },
+    //               { $gte: ["$leadLostDate", start] },
+    //               { $lte: ["$leadLostDate", end] },
+    //             ],
+    //           },
+    //           1,
+    //           0,
+    //         ],
+    //       },
+    //       convertedNetAmount: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $ne: ["$leadConvertedDate", null] },
+    //               { $gte: ["$leadConvertedDate", start] },
+    //               { $lte: ["$leadConvertedDate", end] },
+    //             ],
+    //           },
+    //           { $ifNull: ["$netAmount", 0] },
+    //           0,
+    //         ],
+    //       },
+    //     },
+    //   },
+
+    //   // 6️⃣ Pending
+    //   {
+    //     $addFields: {
+    //       isPending: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $eq: ["$isConverted", 0] },
+    //               { $eq: ["$isLost", 0] },
+    //             ],
+    //           },
+    //           1,
+    //           0,
+    //         ],
+    //       },
+    //     },
+    //   },
+
+    //   // 7️⃣ Group per Staff × Product/Service
+    //   {
+    //     $group: {
+    //       _id: {
+    //         staffId: "$_id.staffId",
+    //         productId: "$_id.productId",
+    //         productModel: "$_id.productModel",
+    //         leadId: "$_id.leadId",
+    //       },
+    //       leadCount: { $sum: 1 },
+    //       totalConverted: { $sum: "$isConverted" },
+    //       totalLost: { $sum: "$isLost" },
+    //       totalPending: { $sum: "$isPending" },
+    //       convertedNetAmount: { $sum: "$convertedNetAmount" },
+    //       totalNetAmount: { $sum: { $ifNull: ["$netAmount", 0] } },
+    //     },
+    //   },
+
+    //   // 8️⃣ Lookup Staff
+    //   {
+    //     $lookup: {
+    //       from: "staffs",
+    //       localField: "_id.staffId",
+    //       foreignField: "_id",
+    //       as: "staff",
+    //     },
+    //   },
+    //   { $unwind: "$staff" },
+
+    //   // 9️⃣ Lookup Product
+    //   {
+    //     $lookup: {
+    //       from: "products",
+    //       localField: "_id.productId",
+    //       foreignField: "_id",
+    //       as: "product",
+    //     },
+    //   },
+
+    //   // 🔟 Lookup Service
+    //   {
+    //     $lookup: {
+    //       from: "services",
+    //       localField: "_id.productId",
+    //       foreignField: "_id",
+    //       as: "service",
+    //     },
+    //   },
+
+    //   // 1️⃣1️⃣ Resolve Product / Service name and branch
+    //   {
+    //     $addFields: {
+    //       productName: {
+    //         $cond: [
+    //           { $eq: ["$_id.productModel", "Product"] },
+    //           { $arrayElemAt: ["$product.productName", 0] },
+    //           { $arrayElemAt: ["$service.serviceName", 0] },
+    //         ],
+    //       },
+
+    //       // branchId:
+    //       // - Product: product.selected[0].branch_id
+    //       // - Service: service.branch
+    //       branch: {
+    //         $cond: [
+    //           { $eq: ["$_id.productModel", "Product"] },
+    //           {
+    //             $arrayElemAt: [
+    //               {
+    //                 $map: {
+    //                   input: { $ifNull: [{ $arrayElemAt: ["$product.selected", 0] }, []] },
+    //                   as: "sel",
+    //                   in: "$$sel.branch_id",
+    //                 },
+    //               },
+    //               0,
+    //             ],
+    //           },
+    //           { $arrayElemAt: ["$service.branch", 0] },
+    //         ],
+    //       },
+    //     },
+    //   },
+
+    //   // 1️⃣2️⃣ Final projection
+    //   {
+    //     $project: {
+    //       _id: 0,
+    //       leadid: "$_id.leadId",
+    //       staffId: "$_id.staffId",
+    //       productId: "$_id.productId",
+    //       productModel: "$_id.productModel",
+
+    //       staffName: { $ifNull: ["$staff.name", "Unknown"] },
+    //       staffRole: "$staff.role",
+    //       productName: 1,
+    //       branch: 1, // branch id
+
+    //       leadCount: 1,
+    //       totalConverted: 1,
+    //       totalLost: 1,
+    //       totalPending: 1,
+    //       totalNetAmount: 1,
+    //       convertedNetAmount: 1,
+    //     },
+    //   },
+
+    //   // 1️⃣3️⃣ Sort
+    //   {
+    //     $sort: {
+    //       staffName: 1,
+    //       productName: 1,
+    //     },
+    //   },
+    // ])
     const result = await LeadMaster.aggregate([
       // 1️⃣ Unwind activityLog
       { $unwind: "$activityLog" },
@@ -5512,13 +5741,14 @@ export const GetallproductwiseReport = async (req, res) => {
       {
         $group: {
           _id: {
-            leadId: "$leadId",
+            leadId: "$leadId",                                // NEW: carry leadId
             staffId: "$activityLog.taskallocatedTo",
             productId: "$leadFor.productorServiceId",
-            productModel: "$leadFor.productorServicemodel", // "Product" | "Service"
+            productModel: "$leadFor.productorServicemodel",   // "Product" | "Service"
           },
           leadConvertedDate: { $first: "$leadConvertedDate" },
           leadLostDate: { $first: "$leadLostDate" },
+          leadLostFlag: { $first: "$leadLost" },             // NEW: keep leadLost flag
           netAmount: { $first: "$leadFor.netAmount" },
         },
       },
@@ -5531,6 +5761,7 @@ export const GetallproductwiseReport = async (req, res) => {
               {
                 $and: [
                   { $ne: ["$leadConvertedDate", null] },
+                  { $ne: ["$leadLostFlag", true] },           // NEW: use grouped flag
                   { $gte: ["$leadConvertedDate", start] },
                   { $lte: ["$leadConvertedDate", end] },
                 ],
@@ -5557,6 +5788,7 @@ export const GetallproductwiseReport = async (req, res) => {
               {
                 $and: [
                   { $ne: ["$leadConvertedDate", null] },
+                  { $ne: ["$leadLostFlag", true] },           // NEW: same guard for amount
                   { $gte: ["$leadConvertedDate", start] },
                   { $lte: ["$leadConvertedDate", end] },
                 ],
@@ -5586,13 +5818,14 @@ export const GetallproductwiseReport = async (req, res) => {
         },
       },
 
-      // 7️⃣ Group per Staff × Product/Service
+      // 7️⃣ Group per Staff × Product/Service × Lead
       {
         $group: {
           _id: {
             staffId: "$_id.staffId",
             productId: "$_id.productId",
             productModel: "$_id.productModel",
+            leadId: "$_id.leadId",                           // NEW: keep leadId here
           },
           leadCount: { $sum: 1 },
           totalConverted: { $sum: "$isConverted" },
@@ -5655,7 +5888,9 @@ export const GetallproductwiseReport = async (req, res) => {
                 $arrayElemAt: [
                   {
                     $map: {
-                      input: { $ifNull: [{ $arrayElemAt: ["$product.selected", 0] }, []] },
+                      input: {
+                        $ifNull: [{ $arrayElemAt: ["$product.selected", 0] }, []],
+                      },
                       as: "sel",
                       in: "$$sel.branch_id",
                     },
@@ -5673,13 +5908,15 @@ export const GetallproductwiseReport = async (req, res) => {
       {
         $project: {
           _id: 0,
+          leadId: "$_id.leadId",                             // NEW: expose leadId
           staffId: "$_id.staffId",
           productId: "$_id.productId",
           productModel: "$_id.productModel",
 
           staffName: { $ifNull: ["$staff.name", "Unknown"] },
+          staffRole: "$staff.role",
           productName: 1,
-          branch: 1, // branch id
+          branch: 1,
 
           leadCount: 1,
           totalConverted: 1,
@@ -5700,11 +5937,15 @@ export const GetallproductwiseReport = async (req, res) => {
     ])
 
 
+    const a = result.filter((it) => it.staffName === "EBBY MANJOORAN")
+    console.log("abhissssssssssss", a)
+
     const mappeddata = result.map((item) => ({
       staffId: item.staffId,
       productId: item.productId,
       branch: item?.branch,
       staffName: item.staffName,
+      staffRole: item.staffRole,
       productName: item.productName,
       leadCount: item.leadCount,
       totalConverted: item.totalConverted,
@@ -5715,7 +5956,6 @@ export const GetallproductwiseReport = async (req, res) => {
 
 
     }))
-    console.log("result", mappeddata)
 
 
     if (result && result.length > 0) {
@@ -5740,7 +5980,7 @@ export const GetownLeadList = async (req, res) => {
     } else if (ownlead === "false" && role !== "Staff") {
       query = { leadBranch: new mongoose.Types.ObjectId(selectedBranch) };
     }
-console.log("query",query)
+    console.log("query", query)
 
     const matchedLead = await LeadMaster.find(query)
       .populate({ path: "customerName", select: "customerName" })

@@ -1550,2747 +1550,6 @@
 //   )
 // }
 
-// import { useState, useEffect } from "react"
-// import { X, IndianRupee, ClipboardCheck } from "lucide-react"
-
-// export function CollectionupdateModal({
-//   data,
-//   closemodal,
-//   partnerlist,
-//   loggedUser,
-//   handleCollectionUpdate
-// }) {
-// console.log(partnerlist)
-//   const [formData, setFormData] = useState({
-//     submissionDate: "",
-//     status: "",
-//     projectAmount: "",
-//     receivedAmount: "",
-//     bankRemark: ""
-//   })
-
-//   const balanceAmount =
-//     (parseFloat(formData.projectAmount) || 0) -
-//     (parseFloat(formData.receivedAmount) || 0)
-
-//   useEffect(() => {
-//     if (data) {
-//       setFormData((prev) => ({
-//         ...prev,
-//         projectAmount: data.netAmount ?? "",
-//         receivedAmount: data.receivedAmount ?? "",
-//         submissionDate: data.submissionDate
-//           ? data.submissionDate.toString().split("T")[0]
-//           : "",
-//         status: data.status ?? "",
-//         bankRemark: data.bankRemark ?? ""
-//       }))
-//     }
-//   }, [data])
-
-//   const handleChange = (e) => {
-//     const { name, value } = e.target
-//     setFormData((prev) => ({ ...prev, [name]: value }))
-//   }
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault()
-//     const payload = {
-//       leadId: data?.leadId,
-//       leadDocId: data?._id,
-//       ...formData,
-//       balanceAmount,
-//       updatedBy: loggedUser?._id
-//     }
-//     const res = await handleCollectionUpdate(payload)
-//     if (res?.status === 200) closemodal(false)
-//   }
-
-//   /* ── field helpers ── */
-//   const Field = ({ label, children, className = "" }) => (
-//     <div className={`flex flex-col gap-1 ${className}`}>
-//       <label
-//         style={{
-//           fontSize: 10,
-//           fontWeight: 600, // slightly lighter
-//           letterSpacing: "0.05em",
-//           textTransform: "uppercase",
-//           color: "#000000" // black label text
-//         }}
-//       >
-//         {label}
-//       </label>
-//       {children}
-//     </div>
-//   )
-
-//   const inputCls = {
-//     width: "100%",
-//     padding: "6px 10px", // reduced a bit
-//     fontSize: 13,
-//     borderRadius: 8,
-//     border: "1.5px solid #e2e8f0",
-//     background: "#f8fafc",
-//     color: "#0f172a",
-//     outline: "none",
-//     transition: "border-color 0.15s, box-shadow 0.15s"
-//   }
-
-//   const readonlyInputCls = {
-//     ...inputCls,
-//     background: "#f1f5f9",
-//     color: "#475569",
-//     cursor: "not-allowed"
-//   }
-
-//   const onFocus = (e) => {
-//     e.target.style.borderColor = "#3b82f6"
-//     e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.12)"
-//     e.target.style.background = "#fff"
-//   }
-//   const onBlur = (e) => {
-//     e.target.style.borderColor = "#e2e8f0"
-//     e.target.style.boxShadow = "none"
-//     e.target.style.background = "#f8fafc"
-//   }
-
-//   return (
-//     /* ── Overlay ── */
-//     <div
-//       className="fixed inset-0 z-50 flex items-center justify-center"
-//       style={{ background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)" }}
-//       onClick={() => closemodal(false)}
-//     >
-//       {/* ── Modal card ── */}
-//       <div
-//         className="relative w-full flex flex-col bg-[#ADD8E6]"
-//         style={{
-//           maxWidth: 820,
-//           maxHeight: "92vh",
-//           margin: "0 12px", // slightly less side margin
-//           borderRadius: 18,
-//           boxShadow:
-//             "0 0 0 1px rgba(0,0,0,0.05), 0 8px 32px rgba(0,0,0,0.18), 0 32px 80px rgba(0,0,0,0.14)",
-//           overflow: "hidden"
-//         }}
-//         onClick={(e) => e.stopPropagation()}
-//       >
-//         {/* ══════════ HEADER ══════════ */}
-//         <div
-//           className="flex-shrink-0 flex items-center justify-between px-5 py-3" // reduced padding
-//           style={{
-//             background:
-//               "linear-gradient(130deg,#0c1e3d 0%,#1a3560 55%,#1e4480 100%)",
-//             borderBottom: "1px solid rgba(255,255,255,0.07)"
-//           }}
-//         >
-//           <div className="flex items-center gap-2.5">
-//             <div
-//               style={{
-//                 width: 32,
-//                 height: 32,
-//                 borderRadius: 10,
-//                 background: "rgba(255,255,255,0.1)",
-//                 border: "1px solid rgba(255,255,255,0.14)",
-//                 display: "flex",
-//                 alignItems: "center",
-//                 justifyContent: "center",
-//                 flexShrink: 0
-//               }}
-//             >
-//               <ClipboardCheck size={15} color="rgba(255,255,255,0.85)" />
-//             </div>
-//             <div>
-//               <div
-//                 style={{
-//                   fontSize: 14, // reduced heading size
-//                   fontWeight: 700,
-//                   color: "#f1f5f9",
-//                   letterSpacing: "0.01em"
-//                 }}
-//               >
-//                 Collection Update
-//               </div>
-//               <div
-//                 style={{
-//                   fontSize: 10,
-//                   color: "rgba(255,255,255,0.4)",
-//                   marginTop: 1
-//                 }}
-//               >
-//                 Update payment and collection details
-//               </div>
-//             </div>
-//           </div>
-
-//           <div className="flex items-center gap-2.5">
-//             {/* Lead ID badge */}
-//             <div
-//               style={{
-//                 display: "flex",
-//                 alignItems: "center",
-//                 gap: 4,
-//                 padding: "4px 11px",
-//                 borderRadius: 99,
-//                 background: "rgba(255,255,255,0.1)",
-//                 border: "1px solid rgba(255,255,255,0.15)",
-//                 fontSize: 11,
-//                 fontWeight: 700,
-//                 color: "#7dd3fc",
-//                 letterSpacing: "0.04em"
-//               }}
-//             >
-//               Lead ID :{" "}
-//               <span style={{ color: "#38bdf8" }}>{data?.leadId ?? "—"}</span>
-//             </div>
-
-//             <button
-//               onClick={() => closemodal(false)}
-//               style={{
-//                 width: 28,
-//                 height: 28,
-//                 borderRadius: "50%",
-//                 background: "rgba(255,255,255,0.1)",
-//                 border: "1px solid rgba(255,255,255,0.15)",
-//                 display: "flex",
-//                 alignItems: "center",
-//                 justifyContent: "center",
-//                 cursor: "pointer",
-//                 transition: "background 0.15s"
-//               }}
-//               onMouseEnter={(e) => {
-//                 e.currentTarget.style.background = "rgba(255,255,255,0.2)"
-//               }}
-//               onMouseLeave={(e) => {
-//                 e.currentTarget.style.background = "rgba(255,255,255,0.1)"
-//               }}
-//             >
-//               <X size={14} color="rgba(255,255,255,0.8)" />
-//             </button>
-//           </div>
-//         </div>
-
-//         {/* ══════════ BODY ══════════ */}
-//         <div
-//           className="flex-1 overflow-y-auto"
-//           style={{ padding: "18px 18px 0" }} // reduced padding
-//         >
-//           <form onSubmit={handleSubmit} id="collection-form">
-//             <div className="flex gap-4">
-//               {/* ── LEFT COLUMN ── */}
-//               <div
-//                 className="flex flex-col gap-2.5"
-//                 style={{
-//                   flex: "0 0 calc(55% - 10px)",
-//                   padding: "14px 14px",
-//                   background: "#f8fafc",
-//                   borderRadius: 12,
-//                   border: "1px solid #e2e8f0"
-//                 }}
-//               >
-//                 <div
-//                   style={{
-//                     fontSize: 10,
-//                     fontWeight: 700,
-//                     letterSpacing: "0.08em",
-//                     textTransform: "uppercase",
-//                     color: "#000000", // black
-//                     marginBottom: 2,
-//                     display: "flex",
-//                     alignItems: "center",
-//                     gap: 6
-//                   }}
-//                 >
-//                   <span
-//                     style={{
-//                       flex: 1,
-//                       height: 1,
-//                       background: "linear-gradient(90deg,#e2e8f0,transparent)"
-//                     }}
-//                   />
-//                   Customer Information
-//                   <span
-//                     style={{
-//                       flex: 1,
-//                       height: 1,
-//                       background: "linear-gradient(270deg,#e2e8f0,transparent)"
-//                     }}
-//                   />
-//                 </div>
-
-//                 <Field label="Customer Name">
-//                   <input
-//                     style={readonlyInputCls}
-//                     value={data?.customerName?.customerName ?? ""}
-//                     readOnly
-//                   />
-//                 </Field>
-
-//                 <Field label="Address">
-//                   <input
-//                     style={readonlyInputCls}
-//                     value={data?.customerName?.address ?? ""}
-//                     readOnly
-//                   />
-//                 </Field>
-
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="Mobile">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.mobile ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                   <Field label="Email">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.email ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                 </div>
-
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="Pin">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.customerName?.pincode ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                   <Field label="Country">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.customerName?.country ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                 </div>
-
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="State">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.customerName?.state ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                   <Field label="City">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.customerName?.city ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                 </div>
-
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="Registration Type">
-//                     <select
-//                       name="registrationType"
-//                       value={formData.registrationType}
-//                       onChange={handleChange}
-//                       className="mt-0 block w-full border border-gray-300 rounded-md shadow-sm p-1.5 text-xs focus:outline-none cursor-pointer bg-gray-50"
-//                     >
-//                       <option value="">Select RegistrationType</option>
-//                       <option value="unregistered">
-//                         Unregistered/Consumer
-//                       </option>
-//                       <option value="regular">Regular</option>
-//                     </select>
-//                   </Field>
-//                   <Field label="Registration No">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.customerName?.registrationNo ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                 </div>
-//               </div>
-
-//               {/* ── RIGHT COLUMN ── */}
-//               <div
-//                 className="flex flex-col gap-2.5"
-//                 style={{
-//                   flex: "0 0 calc(45% - 10px)",
-//                   padding: "14px 14px",
-//                   background: "#fff",
-//                   borderRadius: 12,
-//                   border: "1px solid #e2e8f0"
-//                 }}
-//               >
-//                 <div
-//                   style={{
-//                     fontSize: 10,
-//                     fontWeight: 700,
-//                     letterSpacing: "0.08em",
-//                     textTransform: "uppercase",
-//                     color: "#000000",
-//                     marginBottom: 2,
-//                     display: "flex",
-//                     alignItems: "center",
-//                     gap: 6
-//                   }}
-//                 >
-//                   <span
-//                     style={{
-//                       flex: 1,
-//                       height: 1,
-//                       background: "linear-gradient(90deg,#e2e8f0,transparent)"
-//                     }}
-//                   />
-//                   Payment Details
-//                   <span
-//                     style={{
-//                       flex: 1,
-//                       height: 1,
-//                       background: "linear-gradient(270deg,#e2e8f0,transparent)"
-//                     }}
-//                   />
-//                 </div>
-
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="Submission Date">
-//                     <input
-//                       type="date"
-//                       name="submissionDate"
-//                       value={formData.submissionDate}
-//                       onChange={handleChange}
-//                       onFocus={onFocus}
-//                       onBlur={onBlur}
-//                       style={inputCls}
-//                       required
-//                     />
-//                   </Field>
-//                   <Field label="Status">
-//                     <select
-//                       name="status"
-//                       value={formData.status}
-//                       onChange={handleChange}
-//                       onFocus={onFocus}
-//                       onBlur={onBlur}
-//                       style={inputCls}
-//                     >
-//                       <option value="">Select</option>
-//                       <option value="Pending">Pending</option>
-//                       <option value="Partial">Partial</option>
-//                       <option value="Completed">Completed</option>
-//                     </select>
-//                   </Field>
-//                 </div>
-
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="Project Amount">
-//                     <div style={{ position: "relative" }}>
-//                       <IndianRupee
-//                         size={12}
-//                         style={{
-//                           position: "absolute",
-//                           left: 8,
-//                           top: "50%",
-//                           transform: "translateY(-50%)",
-//                           color: "#94a3b8"
-//                         }}
-//                       />
-//                       <input
-//                         type="number"
-//                         name="projectAmount"
-//                         value={formData.projectAmount}
-//                         onChange={handleChange}
-//                         onFocus={onFocus}
-//                         onBlur={onBlur}
-//                         style={{ ...inputCls, paddingLeft: 24 }}
-//                         placeholder="0.00"
-//                       />
-//                     </div>
-//                   </Field>
-//                   <Field label="Received Amount">
-//                     <div style={{ position: "relative" }}>
-//                       <IndianRupee
-//                         size={12}
-//                         style={{
-//                           position: "absolute",
-//                           left: 8,
-//                           top: "50%",
-//                           transform: "translateY(-50%)",
-//                           color: "#94a3b8"
-//                         }}
-//                       />
-//                       <input
-//                         type="number"
-//                         name="receivedAmount"
-//                         value={formData.receivedAmount}
-//                         onChange={handleChange}
-//                         onFocus={onFocus}
-//                         onBlur={onBlur}
-//                         style={{ ...inputCls, paddingLeft: 24 }}
-//                         placeholder="0.00"
-//                         required
-//                       />
-//                     </div>
-//                   </Field>
-//                 </div>
-
-//                 <Field label="Balance Amount">
-//                   <div
-//                     style={{
-//                       ...readonlyInputCls,
-//                       display: "flex",
-//                       alignItems: "center",
-//                       gap: 6,
-//                       fontWeight: 700,
-//                       color:
-//                         balanceAmount > 0
-//                           ? "#b45309"
-//                           : balanceAmount < 0
-//                             ? "#be123c"
-//                             : "#166534",
-//                       background:
-//                         balanceAmount > 0
-//                           ? "#fffbeb"
-//                           : balanceAmount < 0
-//                             ? "#fff1f2"
-//                             : "#f0fdf4",
-//                       border: `1.5px solid ${
-//                         balanceAmount > 0
-//                           ? "#fde047"
-//                           : balanceAmount < 0
-//                             ? "#fda4af"
-//                             : "#86efac"
-//                       }`
-//                     }}
-//                   >
-//                     <IndianRupee size={12} />
-//                     {Math.abs(balanceAmount).toLocaleString("en-IN", {
-//                       minimumFractionDigits: 2,
-//                       maximumFractionDigits: 2
-//                     })}
-//                     {balanceAmount < 0 && (
-//                       <span
-//                         style={{
-//                           fontSize: 10,
-//                           fontWeight: 600,
-//                           color: "#be123c",
-//                           marginLeft: 4
-//                         }}
-//                       >
-//                         (Excess)
-//                       </span>
-//                     )}
-//                   </div>
-//                 </Field>
-
-//                 {partnerlist?.length > 0 && (
-//                   <Field label="Partner">
-//                     <select
-//                       name="partner"
-//                       onChange={handleChange}
-//                       onFocus={onFocus}
-//                       onBlur={onBlur}
-//                       style={inputCls}
-//                     >
-//                       <option value="">Select partner</option>
-//                       {partnerlist.map((p) => (
-//                         <option key={p._id} value={p._id}>
-//                           {p.partner}
-//                         </option>
-//                       ))}
-//                     </select>
-//                   </Field>
-//                 )}
-
-//                 <Field label="Bank Remark" className="flex-1">
-//                   <textarea
-//                     name="bankRemark"
-//                     value={formData.bankRemark}
-//                     onChange={handleChange}
-//                     onFocus={onFocus}
-//                     onBlur={(e) => {
-//                       e.target.style.borderColor = "#e2e8f0"
-//                       e.target.style.boxShadow = "none"
-//                       e.target.style.background = "#f8fafc"
-//                     }}
-//                     placeholder="Enter bank remarks or notes..."
-//                     rows={3}
-//                     style={{
-//                       ...inputCls,
-//                       resize: "vertical",
-//                       lineHeight: 1.45,
-//                       minHeight: 70
-//                     }}
-//                   />
-//                 </Field>
-//               </div>
-//             </div>
-//           </form>
-//         </div>
-
-//         {/* ══════════ FOOTER ══════════ */}
-//         <div
-//           className="flex-shrink-0 flex items-center justify-between gap-3 px-5 py-3 bg-[#ADD8E6]"
-//           style={{
-//             borderTop: "1px solid #e2e8f0",
-//             marginTop: 14 // slightly reduced
-//           }}
-//         >
-//           <div className="flex items-center gap-2 flex-wrap">
-//             {formData.receivedAmount && (
-//               <span
-//                 style={{
-//                   display: "inline-flex",
-//                   alignItems: "center",
-//                   gap: 4,
-//                   fontSize: 11,
-//                   fontWeight: 700,
-//                   color: "#166534",
-//                   background: "#dcfce7",
-//                   border: "1.5px solid #86efac",
-//                   borderRadius: 99,
-//                   padding: "3px 10px 3px 7px"
-//                 }}
-//               >
-//                 <IndianRupee size={11} />
-//                 Received:{" "}
-//                 {parseFloat(formData.receivedAmount).toLocaleString("en-IN")}
-//               </span>
-//             )}
-//             {formData.projectAmount && (
-//               <span
-//                 style={{
-//                   display: "inline-flex",
-//                   alignItems: "center",
-//                   gap: 4,
-//                   fontSize: 11,
-//                   fontWeight: 700,
-//                   color: "#1e40af",
-//                   background: "#dbeafe",
-//                   border: "1.5px solid #93c5fd",
-//                   borderRadius: 99,
-//                   padding: "3px 10px 3px 7px"
-//                 }}
-//               >
-//                 <IndianRupee size={11} />
-//                 Project:{" "}
-//                 {parseFloat(formData.projectAmount).toLocaleString("en-IN")}
-//               </span>
-//             )}
-//           </div>
-
-//           <div className="flex items-center gap-2.5">
-//             <button
-//               type="button"
-//               onClick={() => closemodal(false)}
-//               style={{
-//                 padding: "7px 18px",
-//                 borderRadius: 9,
-//                 fontSize: 12,
-//                 fontWeight: 600,
-//                 color: "#475569",
-//                 background: "#fff",
-//                 border: "1.5px solid #e2e8f0",
-//                 cursor: "pointer",
-//                 transition: "all 0.15s"
-//               }}
-//               onMouseEnter={(e) => {
-//                 e.currentTarget.style.background = "#f1f5f9"
-//               }}
-//               onMouseLeave={(e) => {
-//                 e.currentTarget.style.background = "#fff"
-//               }}
-//             >
-//               Cancel
-//             </button>
-//             <button
-//               type="submit"
-//               form="collection-form"
-//               style={{
-//                 display: "flex",
-//                 alignItems: "center",
-//                 gap: 6,
-//                 padding: "7px 20px",
-//                 borderRadius: 9,
-//                 fontSize: 12,
-//                 fontWeight: 700,
-//                 color: "#fff",
-//                 background: "linear-gradient(135deg,#1d4ed8,#2563eb)",
-//                 border: "none",
-//                 cursor: "pointer",
-//                 boxShadow: "0 2px 8px rgba(37,99,235,0.35)",
-//                 transition: "all 0.15s"
-//               }}
-//               onMouseEnter={(e) => {
-//                 e.currentTarget.style.background =
-//                   "linear-gradient(135deg,#1e40af,#1d4ed8)"
-//                 e.currentTarget.style.boxShadow =
-//                   "0 4px 14px rgba(37,99,235,0.45)"
-//               }}
-//               onMouseLeave={(e) => {
-//                 e.currentTarget.style.background =
-//                   "linear-gradient(135deg,#1d4ed8,#2563eb)"
-//                 e.currentTarget.style.boxShadow =
-//                   "0 2px 8px rgba(37,99,235,0.35)"
-//               }}
-//             >
-//               <ClipboardCheck size={14} />
-//               Update Collection
-//             </button>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   )
-// }
-// import { useState, useEffect } from "react"
-// import { X, IndianRupee, ClipboardCheck } from "lucide-react"
-
-// export function CollectionupdateModal({
-//   data,
-//   closemodal,
-//   partnerlist,
-//   loggedUser,
-//   handleCollectionUpdate
-// }) {
-//   const [formData, setFormData] = useState({
-//     submissionDate: "",
-//     projectAmount: "",
-//     receivedAmount: "",
-//     bankRemark: ""
-//   })
-
-//   // always current date in yyyy-mm-dd
-//   useEffect(() => {
-//     const today = new Date()
-//     const yyyy = today.getFullYear()
-//     const mm = String(today.getMonth() + 1).padStart(2, "0")
-//     const dd = String(today.getDate()).padStart(2, "0")
-//     const current = `${yyyy}-${mm}-${dd}`
-//     setFormData((prev) => ({
-//       ...prev,
-//       submissionDate: current
-//     }))
-//   }, [])
-
-//   // prefill amounts from data
-//   useEffect(() => {
-//     if (data) {
-//       setFormData((prev) => ({
-//         ...prev,
-//         projectAmount: data.netAmount ?? "",
-//         receivedAmount: data.receivedAmount ?? "",
-//         bankRemark: data.bankRemark ?? ""
-//       }))
-//     }
-//   }, [data])
-
-//   const balanceAmount =
-//     (parseFloat(formData.projectAmount) || 0) -
-//     (parseFloat(formData.receivedAmount) || 0)
-
-//   const handleChange = (e) => {
-//     const { name, value } = e.target
-//     setFormData((prev) => ({ ...prev, [name]: value }))
-//   }
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault()
-//     const payload = {
-//       leadId: data?.leadId,
-//       leadDocId: data?._id,
-//       ...formData,
-//       balanceAmount,
-//       updatedBy: loggedUser?._id
-//     }
-//     const res = await handleCollectionUpdate(payload)
-//     if (res?.status === 200) closemodal(false)
-//   }
-
-//   const Field = ({ label, children, className = "" }) => (
-//     <div className={`flex flex-col gap-1 ${className}`}>
-//       <label
-//         style={{
-//           fontSize: 10,
-//           fontWeight: 600,
-//           letterSpacing: "0.05em",
-//           textTransform: "uppercase",
-//           color: "#000000"
-//         }}
-//       >
-//         {label}
-//       </label>
-//       {children}
-//     </div>
-//   )
-
-//   const inputCls = {
-//     width: "100%",
-//     padding: "6px 10px",
-//     fontSize: 13,
-//     borderRadius: 8,
-//     border: "1.5px solid #e2e8f0",
-//     background: "#f8fafc",
-//     color: "#0f172a",
-//     outline: "none",
-//     transition: "border-color 0.15s, box-shadow 0.15s"
-//   }
-
-//   const readonlyInputCls = {
-//     ...inputCls,
-//     background: "#f1f5f9",
-//     color: "#475569",
-//     cursor: "not-allowed"
-//   }
-
-//   const onFocus = (e) => {
-//     e.target.style.borderColor = "#3b82f6"
-//     e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.12)"
-//     e.target.style.background = "#fff"
-//   }
-//   const onBlur = (e) => {
-//     e.target.style.borderColor = "#e2e8f0"
-//     e.target.style.boxShadow = "none"
-//     e.target.style.background = "#f8fafc"
-//   }
-
-//   return (
-//     <div
-//       className="fixed inset-0 z-50 flex items-center justify-center"
-//       style={{ background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)" }}
-//       onClick={() => closemodal(false)}
-//     >
-//       <div
-//         className="relative w-full flex flex-col bg-[#ADD8E6]"
-//         style={{
-//           maxWidth: 820,
-//           maxHeight: "92vh",
-//           margin: "0 12px",
-//           borderRadius: 18,
-//           boxShadow:
-//             "0 0 0 1px rgba(0,0,0,0.05), 0 8px 32px rgba(0,0,0,0.18), 0 32px 80px rgba(0,0,0,0.14)",
-//           overflow: "hidden"
-//         }}
-//         onClick={(e) => e.stopPropagation()}
-//       >
-//         {/* HEADER */}
-//         <div
-//           className="flex-shrink-0 flex items-center justify-between px-5 py-3"
-//           style={{
-//             background:
-//               "linear-gradient(130deg,#0c1e3d 0%,#1a3560 55%,#1e4480 100%)",
-//             borderBottom: "1px solid rgba(255,255,255,0.07)"
-//           }}
-//         >
-//           <div className="flex items-center gap-2.5">
-//             <div
-//               style={{
-//                 width: 32,
-//                 height: 32,
-//                 borderRadius: 10,
-//                 background: "rgba(255,255,255,0.1)",
-//                 border: "1px solid rgba(255,255,255,0.14)",
-//                 display: "flex",
-//                 alignItems: "center",
-//                 justifyContent: "center",
-//                 flexShrink: 0
-//               }}
-//             >
-//               <ClipboardCheck size={15} color="rgba(255,255,255,0.85)" />
-//             </div>
-//             <div>
-//               <div
-//                 style={{
-//                   fontSize: 14,
-//                   fontWeight: 700,
-//                   color: "#f1f5f9",
-//                   letterSpacing: "0.01em"
-//                 }}
-//               >
-//                 Collection Update
-//               </div>
-//               <div
-//                 style={{
-//                   fontSize: 10,
-//                   color: "rgba(255,255,255,0.4)",
-//                   marginTop: 1
-//                 }}
-//               >
-//                 Update payment and collection details
-//               </div>
-//             </div>
-//           </div>
-
-//           <div className="flex items-center gap-2.5">
-//             <div
-//               style={{
-//                 display: "flex",
-//                 alignItems: "center",
-//                 gap: 4,
-//                 padding: "4px 11px",
-//                 borderRadius: 99,
-//                 background: "rgba(255,255,255,0.1)",
-//                 border: "1px solid rgba(255,255,255,0.15)",
-//                 fontSize: 11,
-//                 fontWeight: 700,
-//                 color: "#7dd3fc",
-//                 letterSpacing: "0.04em"
-//               }}
-//             >
-//               Lead ID :{" "}
-//               <span style={{ color: "#38bdf8" }}>{data?.leadId ?? "—"}</span>
-//             </div>
-
-//             <button
-//               onClick={() => closemodal(false)}
-//               style={{
-//                 width: 28,
-//                 height: 28,
-//                 borderRadius: "50%",
-//                 background: "rgba(255,255,255,0.1)",
-//                 border: "1px solid rgba(255,255,255,0.15)",
-//                 display: "flex",
-//                 alignItems: "center",
-//                 justifyContent: "center",
-//                 cursor: "pointer",
-//                 transition: "background 0.15s"
-//               }}
-//               onMouseEnter={(e) => {
-//                 e.currentTarget.style.background = "rgba(255,255,255,0.2)"
-//               }}
-//               onMouseLeave={(e) => {
-//                 e.currentTarget.style.background = "rgba(255,255,255,0.1)"
-//               }}
-//             >
-//               <X size={14} color="rgba(255,255,255,0.8)" />
-//             </button>
-//           </div>
-//         </div>
-
-//         {/* BODY */}
-//         <div
-//           className="flex-1 overflow-y-auto"
-//           style={{ padding: "18px 18px 0" }}
-//         >
-//           <form onSubmit={handleSubmit} id="collection-form">
-//             <div className="flex gap-4">
-//               {/* LEFT COLUMN (unchanged readonly fields) */}
-//               <div
-//                 className="flex flex-col gap-2.5"
-//                 style={{
-//                   flex: "0 0 calc(55% - 10px)",
-//                   padding: "14px 14px",
-//                   background: "#f8fafc",
-//                   borderRadius: 12,
-//                   border: "1px solid #e2e8f0"
-//                 }}
-//               >
-//                 <div
-//                   style={{
-//                     fontSize: 10,
-//                     fontWeight: 700,
-//                     letterSpacing: "0.08em",
-//                     textTransform: "uppercase",
-//                     color: "#000000",
-//                     marginBottom: 2,
-//                     display: "flex",
-//                     alignItems: "center",
-//                     gap: 6
-//                   }}
-//                 >
-//                   <span
-//                     style={{
-//                       flex: 1,
-//                       height: 1,
-//                       background: "linear-gradient(90deg,#e2e8f0,transparent)"
-//                     }}
-//                   />
-//                   Customer Information
-//                   <span
-//                     style={{
-//                       flex: 1,
-//                       height: 1,
-//                       background: "linear-gradient(270deg,#e2e8f0,transparent)"
-//                     }}
-//                   />
-//                 </div>
-
-//                 <Field label="Customer Name">
-//                   <input
-//                     style={readonlyInputCls}
-//                     value={data?.customerName?.customerName ?? ""}
-//                     readOnly
-//                   />
-//                 </Field>
-
-//                 <Field label="Address">
-//                   <input
-//                     style={readonlyInputCls}
-//                     value={data?.customerName?.address ?? ""}
-//                     readOnly
-//                   />
-//                 </Field>
-
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="Mobile">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.mobile ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                   <Field label="Email">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.email ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                 </div>
-
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="Pin">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.customerName?.pincode ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                   <Field label="Country">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.customerName?.country ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                 </div>
-
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="State">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.customerName?.state ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                   <Field label="City">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.customerName?.city ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                 </div>
-
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="Registration Type">
-//                     <select
-//                       name="registrationType"
-//                       value={formData.registrationType}
-//                       onChange={handleChange}
-//                       className="mt-0 block w-full border border-gray-300 rounded-md shadow-sm p-1.5 text-xs focus:outline-none cursor-pointer bg-gray-50"
-//                     >
-//                       <option value="">Select RegistrationType</option>
-//                       <option value="unregistered">
-//                         Unregistered/Consumer
-//                       </option>
-//                       <option value="regular">Regular</option>
-//                     </select>
-//                   </Field>
-//                   <Field label="Registration No">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.customerName?.registrationNo ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                 </div>
-//               </div>
-
-//               {/* RIGHT COLUMN (editable + readonly amounts) */}
-//               <div
-//                 className="flex flex-col gap-2.5"
-//                 style={{
-//                   flex: "0 0 calc(45% - 10px)",
-//                   padding: "14px 14px",
-//                   background: "#fff",
-//                   borderRadius: 12,
-//                   border: "1px solid #e2e8f0"
-//                 }}
-//               >
-//                 <div
-//                   style={{
-//                     fontSize: 10,
-//                     fontWeight: 700,
-//                     letterSpacing: "0.08em",
-//                     textTransform: "uppercase",
-//                     color: "#000000",
-//                     marginBottom: 2,
-//                     display: "flex",
-//                     alignItems: "center",
-//                     gap: 6
-//                   }}
-//                 >
-//                   <span
-//                     style={{
-//                       flex: 1,
-//                       height: 1,
-//                       background: "linear-gradient(90deg,#e2e8f0,transparent)"
-//                     }}
-//                   />
-//                   Payment Details
-//                   <span
-//                     style={{
-//                       flex: 1,
-//                       height: 1,
-//                       background: "linear-gradient(270deg,#e2e8f0,transparent)"
-//                     }}
-//                   />
-//                 </div>
-
-//                 {/* Submission date (read only current date) */}
-//                 <Field label="Submission Date">
-//                   <input
-//                     type="date"
-//                     name="submissionDate"
-//                     value={formData.submissionDate}
-//                     readOnly
-//                     style={readonlyInputCls}
-//                   />
-//                 </Field>
-
-//                 {/* Project Amount + Received Amount */}
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="Project Amount (Net Amount)">
-//                     <div style={{ position: "relative" }}>
-//                       <IndianRupee
-//                         size={12}
-//                         style={{
-//                           position: "absolute",
-//                           left: 8,
-//                           top: "50%",
-//                           transform: "translateY(-50%)",
-//                           color: "#94a3b8"
-//                         }}
-//                       />
-//                       <input
-//                         type="number"
-//                         name="projectAmount"
-//                         value={formData.projectAmount}
-//                         onChange={handleChange}
-//                         onFocus={onFocus}
-//                         onBlur={onBlur}
-//                         style={{ ...inputCls, paddingLeft: 24 }}
-//                         placeholder="0.00"
-//                       />
-//                     </div>
-//                   </Field>
-//                   <Field label="Received Amount">
-//                     <div style={{ position: "relative" }}>
-//                       <IndianRupee
-//                         size={12}
-//                         style={{
-//                           position: "absolute",
-//                           left: 8,
-//                           top: "50%",
-//                           transform: "translateY(-50%)",
-//                           color: "#94a3b8"
-//                         }}
-//                       />
-//                       <input
-//                         type="number"
-//                         name="receivedAmount"
-//                         value={formData.receivedAmount}
-//                         onChange={handleChange}
-//                         onFocus={onFocus}
-//                         onBlur={onBlur}
-//                         style={{ ...inputCls, paddingLeft: 24 }}
-//                         placeholder="0.00"
-//                         required
-//                       />
-//                     </div>
-//                   </Field>
-//                 </div>
-
-//                 {/* Balance Amount (read only) */}
-//                 <Field label="Balance Amount">
-//                   <div
-//                     style={{
-//                       ...readonlyInputCls,
-//                       display: "flex",
-//                       alignItems: "center",
-//                       gap: 6,
-//                       fontWeight: 700,
-//                       color:
-//                         balanceAmount > 0
-//                           ? "#b45309"
-//                           : balanceAmount < 0
-//                             ? "#be123c"
-//                             : "#166534",
-//                       background:
-//                         balanceAmount > 0
-//                           ? "#fffbeb"
-//                           : balanceAmount < 0
-//                             ? "#fff1f2"
-//                             : "#f0fdf4",
-//                       border: `1.5px solid ${
-//                         balanceAmount > 0
-//                           ? "#fde047"
-//                           : balanceAmount < 0
-//                             ? "#fda4af"
-//                             : "#86efac"
-//                       }`
-//                     }}
-//                   >
-//                     <IndianRupee size={12} />
-//                     {Math.abs(balanceAmount).toLocaleString("en-IN", {
-//                       minimumFractionDigits: 2,
-//                       maximumFractionDigits: 2
-//                     })}
-//                     {balanceAmount < 0 && (
-//                       <span
-//                         style={{
-//                           fontSize: 10,
-//                           fontWeight: 600,
-//                           color: "#be123c",
-//                           marginLeft: 4
-//                         }}
-//                       >
-//                         (Excess)
-//                       </span>
-//                     )}
-//                   </div>
-//                 </Field>
-
-//                 {partnerlist?.length > 0 && (
-//                   <Field label="Partner">
-//                     <select
-//                       name="partner"
-//                       onChange={handleChange}
-//                       onFocus={onFocus}
-//                       onBlur={onBlur}
-//                       style={inputCls}
-//                     >
-//                       <option value="">Select partner</option>
-//                       {partnerlist.map((p) => (
-//                         <option key={p._id} value={p._id}>
-//                           {p.partnerName}
-//                         </option>
-//                       ))}
-//                     </select>
-//                   </Field>
-//                 )}
-
-//                 <Field label="Bank Remark" className="flex-1">
-//                   <textarea
-//                     name="bankRemark"
-//                     value={formData.bankRemark}
-//                     onChange={handleChange}
-//                     onFocus={onFocus}
-//                     onBlur={(e) => {
-//                       e.target.style.borderColor = "#e2e8f0"
-//                       e.target.style.boxShadow = "none"
-//                       e.target.style.background = "#f8fafc"
-//                     }}
-//                     placeholder="Enter bank remarks or notes..."
-//                     rows={3}
-//                     style={{
-//                       ...inputCls,
-//                       resize: "vertical",
-//                       lineHeight: 1.45,
-//                       minHeight: 70
-//                     }}
-//                   />
-//                 </Field>
-//               </div>
-//             </div>
-//           </form>
-//         </div>
-
-//         {/* FOOTER */}
-//         <div
-//           className="flex-shrink-0 flex items-center justify-between gap-3 px-5 py-3 bg-[#ADD8E6]"
-//           style={{
-//             borderTop: "1px solid #e2e8f0",
-//             marginTop: 14
-//           }}
-//         >
-//           <div className="flex items-center gap-2 flex-wrap">
-//             {formData.receivedAmount && (
-//               <span
-//                 style={{
-//                   display: "inline-flex",
-//                   alignItems: "center",
-//                   gap: 4,
-//                   fontSize: 11,
-//                   fontWeight: 700,
-//                   color: "#166534",
-//                   background: "#dcfce7",
-//                   border: "1.5px solid #86efac",
-//                   borderRadius: 99,
-//                   padding: "3px 10px 3px 7px"
-//                 }}
-//               >
-//                 <IndianRupee size={11} />
-//                 Received:{" "}
-//                 {parseFloat(formData.receivedAmount).toLocaleString("en-IN")}
-//               </span>
-//             )}
-//             {formData.projectAmount && (
-//               <span
-//                 style={{
-//                   display: "inline-flex",
-//                   alignItems: "center",
-//                   gap: 4,
-//                   fontSize: 11,
-//                   fontWeight: 700,
-//                   color: "#1e40af",
-//                   background: "#dbeafe",
-//                   border: "1.5px solid #93c5fd",
-//                   borderRadius: 99,
-//                   padding: "3px 10px 3px 7px"
-//                 }}
-//               >
-//                 <IndianRupee size={11} />
-//                 Project:{" "}
-//                 {parseFloat(formData.projectAmount).toLocaleString("en-IN")}
-//               </span>
-//             )}
-//           </div>
-
-//           <div className="flex items-center gap-2.5">
-//             <button
-//               type="button"
-//               onClick={() => closemodal(false)}
-//               style={{
-//                 padding: "7px 18px",
-//                 borderRadius: 9,
-//                 fontSize: 12,
-//                 fontWeight: 600,
-//                 color: "#475569",
-//                 background: "#fff",
-//                 border: "1.5px solid #e2e8f0",
-//                 cursor: "pointer",
-//                 transition: "all 0.15s"
-//               }}
-//               onMouseEnter={(e) => {
-//                 e.currentTarget.style.background = "#f1f5f9"
-//               }}
-//               onMouseLeave={(e) => {
-//                 e.currentTarget.style.background = "#fff"
-//               }}
-//             >
-//               Cancel
-//             </button>
-//             <button
-//               type="submit"
-//               form="collection-form"
-//               style={{
-//                 display: "flex",
-//                 alignItems: "center",
-//                 gap: 6,
-//                 padding: "7px 20px",
-//                 borderRadius: 9,
-//                 fontSize: 12,
-//                 fontWeight: 700,
-//                 color: "#fff",
-//                 background: "linear-gradient(135deg,#1d4ed8,#2563eb)",
-//                 border: "none",
-//                 cursor: "pointer",
-//                 boxShadow: "0 2px 8px rgba(37,99,235,0.35)",
-//                 transition: "all 0.15s"
-//               }}
-//               onMouseEnter={(e) => {
-//                 e.currentTarget.style.background =
-//                   "linear-gradient(135deg,#1e40af,#1d4ed8)"
-//                 e.currentTarget.style.boxShadow =
-//                   "0 4px 14px rgba(37,99,235,0.45)"
-//               }}
-//               onMouseLeave={(e) => {
-//                 e.currentTarget.style.background =
-//                   "linear-gradient(135deg,#1d4ed8,#2563eb)"
-//                 e.currentTarget.style.boxShadow =
-//                   "0 2px 8px rgba(37,99,235,0.35)"
-//               }}
-//             >
-//               <ClipboardCheck size={14} />
-//               Update Collection
-//             </button>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   )
-// // }
-// import { useState, useEffect } from "react"
-// import { X, IndianRupee, ClipboardCheck } from "lucide-react"
-
-// export function CollectionupdateModal({
-//   data,
-//   closemodal,
-//   partnerlist,
-//   loggedUser,
-//   handleCollectionUpdate
-// }) {
-//   const [formData, setFormData] = useState({
-//     submissionDate: "",
-//     projectAmount: "",
-//     receivedAmount: "",
-//     bankRemark: ""
-//   })
-
-//   // always current date in yyyy-mm-dd, readOnly field
-//   useEffect(() => {
-//     const today = new Date()
-//     const yyyy = today.getFullYear()
-//     const mm = String(today.getMonth() + 1).padStart(2, "0")
-//     const dd = String(today.getDate()).padStart(2, "0")
-//     const current = `${yyyy}-${mm}-${dd}`
-//     setFormData((prev) => ({
-//       ...prev,
-//       submissionDate: current
-//     }))
-//   }, [])
-
-//   // prefill net amount and received from data
-//   useEffect(() => {
-//     if (data) {
-//       setFormData((prev) => ({
-//         ...prev,
-//         projectAmount: data.netAmount ?? "",
-//         receivedAmount: data.receivedAmount ?? "",
-//         bankRemark: data.bankRemark ?? ""
-//       }))
-//     }
-//   }, [data])
-
-//   const balanceAmount =
-//     (parseFloat(formData.projectAmount) || 0) -
-//     (parseFloat(formData.receivedAmount) || 0)
-
-//   const handleChange = (e) => {
-//     const { name, value } = e.target
-//     setFormData((prev) => ({ ...prev, [name]: value }))
-//   }
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault()
-//     const payload = {
-//       leadId: data?.leadId,
-//       leadDocId: data?._id,
-//       ...formData,
-//       balanceAmount,
-//       updatedBy: loggedUser?._id
-//     }
-//     const res = await handleCollectionUpdate(payload)
-//     if (res?.status === 200) closemodal(false)
-//   }
-
-//   /* ── field helpers ── */
-//   const Field = ({ label, children, className = "" }) => (
-//     <div className={`flex flex-col gap-1 ${className}`}>
-//       <label
-//         style={{
-//           fontSize: 10,
-//           fontWeight: 600,
-//           letterSpacing: "0.05em",
-//           textTransform: "uppercase",
-//           color: "#000000"
-//         }}
-//       >
-//         {label}
-//       </label>
-//       {children}
-//     </div>
-//   )
-
-//   const inputCls = {
-//     width: "100%",
-//     padding: "6px 10px",
-//     fontSize: 13,
-//     borderRadius: 8,
-//     border: "1.5px solid #e2e8f0",
-//     background: "#f8fafc",
-//     color: "#0f172a",
-//     outline: "none",
-//     transition: "border-color 0.15s, box-shadow 0.15s"
-//   }
-
-//   const readonlyInputCls = {
-//     ...inputCls,
-//     background: "#f1f5f9",
-//     color: "#475569",
-//     cursor: "not-allowed"
-//   }
-
-//   const onFocus = (e) => {
-//     e.target.style.borderColor = "#3b82f6"
-//     e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.12)"
-//     e.target.style.background = "#fff"
-//   }
-//   const onBlur = (e) => {
-//     e.target.style.borderColor = "#e2e8f0"
-//     e.target.style.boxShadow = "none"
-//     e.target.style.background = "#f8fafc"
-//   }
-
-//   return (
-//     /* ── Overlay ── */
-//     <div
-//       className="fixed inset-0 z-50 flex items-center justify-center"
-//       style={{ background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)" }}
-//       onClick={() => closemodal(false)}
-//     >
-//       {/* ── Modal card ── */}
-//       <div
-//         className="relative w-full flex flex-col bg-[#ADD8E6]"
-//         style={{
-//           maxWidth: 820,
-//           maxHeight: "92vh",
-//           margin: "0 12px",
-//           borderRadius: 18,
-//           boxShadow:
-//             "0 0 0 1px rgba(0,0,0,0.05), 0 8px 32px rgba(0,0,0,0.18), 0 32px 80px rgba(0,0,0,0.14)",
-//           overflow: "hidden"
-//         }}
-//         onClick={(e) => e.stopPropagation()}
-//       >
-//         {/* ══════════ HEADER ══════════ */}
-//         <div
-//           className="flex-shrink-0 flex items-center justify-between px-5 py-3"
-//           style={{
-//             background:
-//               "linear-gradient(130deg,#0c1e3d 0%,#1a3560 55%,#1e4480 100%)",
-//             borderBottom: "1px solid rgba(255,255,255,0.07)"
-//           }}
-//         >
-//           <div className="flex items-center gap-2.5">
-//             <div
-//               style={{
-//                 width: 32,
-//                 height: 32,
-//                 borderRadius: 10,
-//                 background: "rgba(255,255,255,0.1)",
-//                 border: "1px solid rgba(255,255,255,0.14)",
-//                 display: "flex",
-//                 alignItems: "center",
-//                 justifyContent: "center",
-//                 flexShrink: 0
-//               }}
-//             >
-//               <ClipboardCheck size={15} color="rgba(255,255,255,0.85)" />
-//             </div>
-//             <div>
-//               <div
-//                 style={{
-//                   fontSize: 14,
-//                   fontWeight: 700,
-//                   color: "#f1f5f9",
-//                   letterSpacing: "0.01em"
-//                 }}
-//               >
-//                 Collection Update
-//               </div>
-//               <div
-//                 style={{
-//                   fontSize: 10,
-//                   color: "rgba(255,255,255,0.4)",
-//                   marginTop: 1
-//                 }}
-//               >
-//                 Update payment and collection details
-//               </div>
-//             </div>
-//           </div>
-
-//           <div className="flex items-center gap-2.5">
-//             {/* Lead ID badge */}
-//             <div
-//               style={{
-//                 display: "flex",
-//                 alignItems: "center",
-//                 gap: 4,
-//                 padding: "4px 11px",
-//                 borderRadius: 99,
-//                 background: "rgba(255,255,255,0.1)",
-//                 border: "1px solid rgba(255,255,255,0.15)",
-//                 fontSize: 11,
-//                 fontWeight: 700,
-//                 color: "#7dd3fc",
-//                 letterSpacing: "0.04em"
-//               }}
-//             >
-//               Lead ID :{" "}
-//               <span style={{ color: "#38bdf8" }}>{data?.leadId ?? "—"}</span>
-//             </div>
-
-//             <button
-//               onClick={() => closemodal(false)}
-//               style={{
-//                 width: 28,
-//                 height: 28,
-//                 borderRadius: "50%",
-//                 background: "rgba(255,255,255,0.1)",
-//                 border: "1px solid rgba(255,255,255,0.15)",
-//                 display: "flex",
-//                 alignItems: "center",
-//                 justifyContent: "center",
-//                 cursor: "pointer",
-//                 transition: "background 0.15s"
-//               }}
-//               onMouseEnter={(e) => {
-//                 e.currentTarget.style.background = "rgba(255,255,255,0.2)"
-//               }}
-//               onMouseLeave={(e) => {
-//                 e.currentTarget.style.background = "rgba(255,255,255,0.1)"
-//               }}
-//             >
-//               <X size={14} color="rgba(255,255,255,0.8)" />
-//             </button>
-//           </div>
-//         </div>
-
-//         {/* ══════════ BODY ══════════ */}
-//         <div
-//           className="flex-1 overflow-y-auto"
-//           style={{ padding: "18px 18px 0" }}
-//         >
-//           <form onSubmit={handleSubmit} id="collection-form">
-//             <div className="flex gap-4">
-//               {/* ── LEFT COLUMN: Customer info ── */}
-//               <div
-//                 className="flex flex-col gap-2.5"
-//                 style={{
-//                   flex: "0 0 calc(55% - 10px)",
-//                   padding: "14px 14px",
-//                   background: "#f8fafc",
-//                   borderRadius: 12,
-//                   border: "1px solid #e2e8f0"
-//                 }}
-//               >
-//                 <div
-//                   style={{
-//                     fontSize: 10,
-//                     fontWeight: 700,
-//                     letterSpacing: "0.08em",
-//                     textTransform: "uppercase",
-//                     color: "#000000",
-//                     marginBottom: 2,
-//                     display: "flex",
-//                     alignItems: "center",
-//                     gap: 6
-//                   }}
-//                 >
-//                   <span
-//                     style={{
-//                       flex: 1,
-//                       height: 1,
-//                       background: "linear-gradient(90deg,#e2e8f0,transparent)"
-//                     }}
-//                   />
-//                   Customer Information
-//                   <span
-//                     style={{
-//                       flex: 1,
-//                       height: 1,
-//                       background: "linear-gradient(270deg,#e2e8f0,transparent)"
-//                     }}
-//                   />
-//                 </div>
-
-//                 {/* Customer Name */}
-//                 <Field label="Customer Name">
-//                   <input
-//                     style={readonlyInputCls}
-//                     value={data?.customerName?.customerName ?? ""}
-//                     readOnly
-//                   />
-//                 </Field>
-
-//                 {/* Address */}
-//                 <Field label="Address">
-//                   <input
-//                     style={readonlyInputCls}
-//                     value={data?.customerName?.address ?? ""}
-//                     readOnly
-//                   />
-//                 </Field>
-
-//                 {/* Mobile + Email */}
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="Mobile">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.mobile ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                   <Field label="Email">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.email ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                 </div>
-
-//                 {/* Pin + Country */}
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="Pin">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.customerName?.pincode ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                   <Field label="Country">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.customerName?.country ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                 </div>
-
-//                 {/* State + City */}
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="State">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.customerName?.state ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                   <Field label="City">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.customerName?.city ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                 </div>
-
-//                 {/* Registration Type + Registration No */}
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="Registration Type">
-//                     <select
-//                       name="registrationType"
-//                       value={formData.registrationType}
-//                       onChange={handleChange}
-//                       className="mt-0 block w-full border border-gray-300 rounded-md shadow-sm p-1.5 text-xs focus:outline-none cursor-pointer bg-gray-50"
-//                     >
-//                       <option value="">Select RegistrationType</option>
-//                       <option value="unregistered">
-//                         Unregistered/Consumer
-//                       </option>
-//                       <option value="regular">Regular</option>
-//                     </select>
-//                   </Field>
-//                   <Field label="Registration No">
-//                     <input
-//                       style={readonlyInputCls}
-//                       value={data?.customerName?.registrationNo ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                 </div>
-//               </div>
-
-//               {/* ── RIGHT COLUMN: Payment details ── */}
-//               <div
-//                 className="flex flex-col gap-2.5"
-//                 style={{
-//                   flex: "0 0 calc(45% - 10px)",
-//                   padding: "14px 14px",
-//                   background: "#fff",
-//                   borderRadius: 12,
-//                   border: "1px solid #e2e8f0"
-//                 }}
-//               >
-//                 <div
-//                   style={{
-//                     fontSize: 10,
-//                     fontWeight: 700,
-//                     letterSpacing: "0.08em",
-//                     textTransform: "uppercase",
-//                     color: "#000000",
-//                     marginBottom: 2,
-//                     display: "flex",
-//                     alignItems: "center",
-//                     gap: 6
-//                   }}
-//                 >
-//                   <span
-//                     style={{
-//                       flex: 1,
-//                       height: 1,
-//                       background: "linear-gradient(90deg,#e2e8f0,transparent)"
-//                     }}
-//                   />
-//                   Payment Details
-//                   <span
-//                     style={{
-//                       flex: 1,
-//                       height: 1,
-//                       background: "linear-gradient(270deg,#e2e8f0,transparent)"
-//                     }}
-//                   />
-//                 </div>
-
-//                 {/* Submission Date (readOnly current date) */}
-//                 <Field label="Submission Date">
-//                   <input
-//                     type="date"
-//                     name="submissionDate"
-//                     value={formData.submissionDate}
-//                     readOnly
-//                     style={readonlyInputCls}
-//                   />
-//                 </Field>
-
-//                 {/* Net Amount + Received Amount */}
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="Net Amount">
-//                     <div style={{ position: "relative" }}>
-//                       <IndianRupee
-//                         size={12}
-//                         style={{
-//                           position: "absolute",
-//                           left: 8,
-//                           top: "50%",
-//                           transform: "translateY(-50%)",
-//                           color: "#94a3b8"
-//                         }}
-//                       />
-//                       <input
-//                         type="number"
-//                         name="projectAmount"
-//                         value={formData.projectAmount}
-//                         readOnly
-//                         style={{
-//                           ...readonlyInputCls,
-//                           paddingLeft: 24
-//                         }}
-//                       />
-//                     </div>
-//                   </Field>
-//                   <Field label="Received Amount">
-//                     <div style={{ position: "relative" }}>
-//                       <IndianRupee
-//                         size={12}
-//                         style={{
-//                           position: "absolute",
-//                           left: 8,
-//                           top: "50%",
-//                           transform: "translateY(-50%)",
-//                           color: "#94a3b8"
-//                         }}
-//                       />
-//                       <input
-//                         type="number"
-//                         name="receivedAmount"
-//                         value={formData.receivedAmount}
-//                         onChange={handleChange}
-//                         onFocus={onFocus}
-//                         onBlur={onBlur}
-//                         style={{ ...inputCls, paddingLeft: 24 }}
-//                         placeholder="0.00"
-//                         required
-//                       />
-//                     </div>
-//                   </Field>
-//                 </div>
-
-//                 {/* Balance Amount (readOnly) */}
-//                 <Field label="Balance Amount">
-//                   <div
-//                     style={{
-//                       ...readonlyInputCls,
-//                       display: "flex",
-//                       alignItems: "center",
-//                       gap: 6,
-//                       fontWeight: 700,
-//                       color:
-//                         balanceAmount > 0
-//                           ? "#b45309"
-//                           : balanceAmount < 0
-//                             ? "#be123c"
-//                             : "#166534",
-//                       background:
-//                         balanceAmount > 0
-//                           ? "#fffbeb"
-//                           : balanceAmount < 0
-//                             ? "#fff1f2"
-//                             : "#f0fdf4",
-//                       border: `1.5px solid ${
-//                         balanceAmount > 0
-//                           ? "#fde047"
-//                           : balanceAmount < 0
-//                             ? "#fda4af"
-//                             : "#86efac"
-//                       }`
-//                     }}
-//                   >
-//                     <IndianRupee size={12} />
-//                     {Math.abs(balanceAmount).toLocaleString("en-IN", {
-//                       minimumFractionDigits: 2,
-//                       maximumFractionDigits: 2
-//                     })}
-//                     {balanceAmount < 0 && (
-//                       <span
-//                         style={{
-//                           fontSize: 10,
-//                           fontWeight: 600,
-//                           color: "#be123c",
-//                           marginLeft: 4
-//                         }}
-//                       >
-//                         (Excess)
-//                       </span>
-//                     )}
-//                   </div>
-//                 </Field>
-
-//                 {/* Partner (unchanged) */}
-//                 {partnerlist?.length > 0 && (
-//                   <Field label="Partner">
-//                     <select
-//                       name="partner"
-//                       onChange={handleChange}
-//                       onFocus={onFocus}
-//                       onBlur={onBlur}
-//                       style={inputCls}
-//                     >
-//                       <option value="">Select partner</option>
-//                       {partnerlist.map((p) => (
-//                         <option key={p._id} value={p._id}>
-//                           {p.partnerName}
-//                         </option>
-//                       ))}
-//                     </select>
-//                   </Field>
-//                 )}
-
-//                 {/* Bank Remark */}
-//                 <Field label="Bank Remark" className="flex-1">
-//                   <textarea
-//                     name="bankRemark"
-//                     value={formData.bankRemark}
-//                     onChange={handleChange}
-//                     onFocus={onFocus}
-//                     onBlur={(e) => {
-//                       e.target.style.borderColor = "#e2e8f0"
-//                       e.target.style.boxShadow = "none"
-//                       e.target.style.background = "#f8fafc"
-//                     }}
-//                     placeholder="Enter bank remarks or notes..."
-//                     rows={3}
-//                     style={{
-//                       ...inputCls,
-//                       resize: "vertical",
-//                       lineHeight: 1.45,
-//                       minHeight: 70
-//                     }}
-//                   />
-//                 </Field>
-//               </div>
-//             </div>
-//           </form>
-//         </div>
-
-//         {/* ══════════ FOOTER ══════════ */}
-//         <div
-//           className="flex-shrink-0 flex items-center justify-between gap-3 px-5 py-3 bg-[#ADD8E6]"
-//           style={{
-//             borderTop: "1px solid #e2e8f0",
-//             marginTop: 14
-//           }}
-//         >
-//           {/* summary pills */}
-//           <div className="flex items-center gap-2 flex-wrap">
-//             {formData.receivedAmount && (
-//               <span
-//                 style={{
-//                   display: "inline-flex",
-//                   alignItems: "center",
-//                   gap: 4,
-//                   fontSize: 11,
-//                   fontWeight: 700,
-//                   color: "#166534",
-//                   background: "#dcfce7",
-//                   border: "1.5px solid #86efac",
-//                   borderRadius: 99,
-//                   padding: "3px 10px 3px 7px"
-//                 }}
-//               >
-//                 <IndianRupee size={11} />
-//                 Received:{" "}
-//                 {parseFloat(formData.receivedAmount).toLocaleString("en-IN")}
-//               </span>
-//             )}
-//             {formData.projectAmount && (
-//               <span
-//                 style={{
-//                   display: "inline-flex",
-//                   alignItems: "center",
-//                   gap: 4,
-//                   fontSize: 11,
-//                   fontWeight: 700,
-//                   color: "#1e40af",
-//                   background: "#dbeafe",
-//                   border: "1.5px solid #93c5fd",
-//                   borderRadius: 99,
-//                   padding: "3px 10px 3px 7px"
-//                 }}
-//               >
-//                 <IndianRupee size={11} />
-//                 Net:{" "}
-//                 {parseFloat(formData.projectAmount).toLocaleString("en-IN")}
-//               </span>
-//             )}
-//           </div>
-
-//           <div className="flex items-center gap-2.5">
-//             <button
-//               type="button"
-//               onClick={() => closemodal(false)}
-//               style={{
-//                 padding: "7px 18px",
-//                 borderRadius: 9,
-//                 fontSize: 12,
-//                 fontWeight: 600,
-//                 color: "#475569",
-//                 background: "#fff",
-//                 border: "1.5px solid #e2e8f0",
-//                 cursor: "pointer",
-//                 transition: "all 0.15s"
-//               }}
-//               onMouseEnter={(e) => {
-//                 e.currentTarget.style.background = "#f1f5f9"
-//               }}
-//               onMouseLeave={(e) => {
-//                 e.currentTarget.style.background = "#fff"
-//               }}
-//             >
-//               Cancel
-//             </button>
-//             <button
-//               type="submit"
-//               form="collection-form"
-//               style={{
-//                 display: "flex",
-//                 alignItems: "center",
-//                 gap: 6,
-//                 padding: "7px 20px",
-//                 borderRadius: 9,
-//                 fontSize: 12,
-//                 fontWeight: 700,
-//                 color: "#fff",
-//                 background: "linear-gradient(135deg,#1d4ed8,#2563eb)",
-//                 border: "none",
-//                 cursor: "pointer",
-//                 boxShadow: "0 2px 8px rgba(37,99,235,0.35)",
-//                 transition: "all 0.15s"
-//               }}
-//               onMouseEnter={(e) => {
-//                 e.currentTarget.style.background =
-//                   "linear-gradient(135deg,#1e40af,#1d4ed8)"
-//                 e.currentTarget.style.boxShadow =
-//                   "0 4px 14px rgba(37,99,235,0.45)"
-//               }}
-//               onMouseLeave={(e) => {
-//                 e.currentTarget.style.background =
-//                   "linear-gradient(135deg,#1d4ed8,#2563eb)"
-//                 e.currentTarget.style.boxShadow =
-//                   "0 2px 8px rgba(37,99,235,0.35)"
-//               }}
-//             >
-//               <ClipboardCheck size={14} />
-//               Update Collection
-//             </button>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   )
-// // }
-// import { useState, useEffect } from "react"
-// import { X, IndianRupee, ClipboardCheck } from "lucide-react"
-
-// export function CollectionupdateModal({
-//   data,
-//   closemodal,
-//   partnerlist,
-//   loggedUser,
-//   handleCollectionUpdate
-// }) {
-//   const [formData, setFormData] = useState({
-//     submissionDate: "",
-//     projectAmount: "",
-//     receivedAmount: "",
-//     bankRemark: "",
-//     registrationType: ""
-//   })
-
-//   useEffect(() => {
-//     const today = new Date()
-//     const yyyy = today.getFullYear()
-//     const mm = String(today.getMonth() + 1).padStart(2, "0")
-//     const dd = String(today.getDate()).padStart(2, "0")
-//     const current = `${yyyy}-${mm}-${dd}`
-//     setFormData((prev) => ({
-//       ...prev,
-//       submissionDate: current
-//     }))
-//   }, [])
-
-//   useEffect(() => {
-//     if (data) {
-//       setFormData((prev) => ({
-//         ...prev,
-//         projectAmount: data.netAmount ?? "",
-//         receivedAmount: data.receivedAmount ?? "",
-//         bankRemark: data.bankRemark ?? "",
-//         registrationType: data.customerName?.registrationType ?? ""
-//       }))
-//     }
-//   }, [data])
-
-//   const balanceAmount =
-//     (parseFloat(formData.projectAmount) || 0) -
-//     (parseFloat(formData.receivedAmount) || 0)
-
-//   const handleChange = (e) => {
-//     const { name, value } = e.target
-//     setFormData((prev) => ({ ...prev, [name]: value }))
-//   }
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault()
-//     const payload = {
-//       leadId: data?.leadId,
-//       leadDocId: data?._id,
-//       ...formData,
-//       balanceAmount,
-//       updatedBy: loggedUser?._id
-//     }
-//     const res = await handleCollectionUpdate(payload)
-//     if (res?.status === 200) closemodal(false)
-//   }
-
-//   const Field = ({ label, children, className = "" }) => (
-//     <div className={`flex flex-col gap-1 ${className}`}>
-//       <label
-//         style={{
-//           fontSize: 10,
-//           fontWeight: 600,
-//           letterSpacing: "0.05em",
-//           textTransform: "uppercase",
-//           color: "#000000"
-//         }}
-//       >
-//         {label}
-//       </label>
-//       {children}
-//     </div>
-//   )
-
-//   const inputCls = {
-//     width: "100%",
-//     padding: "6px 10px",
-//     fontSize: 13,
-//     borderRadius: 8,
-//     border: "1.5px solid #e2e8f0",
-//     background: "#f8fafc",
-//     color: "#0f172a",
-//     outline: "none",
-//     transition: "border-color 0.15s, box-shadow 0.15s"
-//   }
-
-//   // use this ONLY on submissionDate, netAmount, balanceAmount
-//   const readonlyInputCls = {
-//     ...inputCls,
-//     background: "#f1f5f9",
-//     color: "#475569",
-//     cursor: "not-allowed"
-//   }
-
-//   const onFocus = (e) => {
-//     e.target.style.borderColor = "#3b82f6"
-//     e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.12)"
-//     e.target.style.background = "#fff"
-//   }
-//   const onBlur = (e) => {
-//     e.target.style.borderColor = "#e2e8f0"
-//     e.target.style.boxShadow = "none"
-//     e.target.style.background = "#f8fafc"
-//   }
-
-//   return (
-//     <div
-//       className="fixed inset-0 z-50 flex items-center justify-center"
-//       style={{ background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)" }}
-//       onClick={() => closemodal(false)}
-//     >
-//       <div
-//         className="relative w-full flex flex-col bg-[#ADD8E6]"
-//         style={{
-//           maxWidth: 820,
-//           maxHeight: "92vh",
-//           margin: "0 12px",
-//           borderRadius: 18,
-//           boxShadow:
-//             "0 0 0 1px rgba(0,0,0,0.05), 0 8px 32px rgba(0,0,0,0.18), 0 32px 80px rgba(0,0,0,0.14)",
-//           overflow: "hidden"
-//         }}
-//         onClick={(e) => e.stopPropagation()}
-//       >
-//         {/* HEADER */}
-//         <div
-//           className="flex-shrink-0 flex items-center justify-between px-5 py-3"
-//           style={{
-//             background:
-//               "linear-gradient(130deg,#0c1e3d 0%,#1a3560 55%,#1e4480 100%)",
-//             borderBottom: "1px solid rgba(255,255,255,0.07)"
-//           }}
-//         >
-//           <div className="flex items-center gap-2.5">
-//             <div
-//               style={{
-//                 width: 32,
-//                 height: 32,
-//                 borderRadius: 10,
-//                 background: "rgba(255,255,255,0.1)",
-//                 border: "1px solid rgba(255,255,255,0.14)",
-//                 display: "flex",
-//                 alignItems: "center",
-//                 justifyContent: "center",
-//                 flexShrink: 0
-//               }}
-//             >
-//               <ClipboardCheck size={15} color="rgba(255,255,255,0.85)" />
-//             </div>
-//             <div>
-//               <div
-//                 style={{
-//                   fontSize: 14,
-//                   fontWeight: 700,
-//                   color: "#f1f5f9",
-//                   letterSpacing: "0.01em"
-//                 }}
-//               >
-//                 Collection Update
-//               </div>
-//               <div
-//                 style={{
-//                   fontSize: 10,
-//                   color: "rgba(255,255,255,0.4)",
-//                   marginTop: 1
-//                 }}
-//               >
-//                 Update payment and collection details
-//               </div>
-//             </div>
-//           </div>
-
-//           <div className="flex items-center gap-2.5">
-//             <div
-//               style={{
-//                 display: "flex",
-//                 alignItems: "center",
-//                 gap: 4,
-//                 padding: "4px 11px",
-//                 borderRadius: 99,
-//                 background: "rgba(255,255,255,0.1)",
-//                 border: "1px solid rgba(255,255,255,0.15)",
-//                 fontSize: 11,
-//                 fontWeight: 700,
-//                 color: "#7dd3fc",
-//                 letterSpacing: "0.04em"
-//               }}
-//             >
-//               Lead ID :{" "}
-//               <span style={{ color: "#38bdf8" }}>{data?.leadId ?? "—"}</span>
-//             </div>
-
-//             <button
-//               onClick={() => closemodal(false)}
-//               style={{
-//                 width: 28,
-//                 height: 28,
-//                 borderRadius: "50%",
-//                 background: "rgba(255,255,255,0.1)",
-//                 border: "1px solid rgba(255,255,255,0.15)",
-//                 display: "flex",
-//                 alignItems: "center",
-//                 justifyContent: "center",
-//                 cursor: "pointer",
-//                 transition: "background 0.15s"
-//               }}
-//               onMouseEnter={(e) => {
-//                 e.currentTarget.style.background = "rgba(255,255,255,0.2)"
-//               }}
-//               onMouseLeave={(e) => {
-//                 e.currentTarget.style.background = "rgba(255,255,255,0.1)"
-//               }}
-//             >
-//               <X size={14} color="rgba(255,255,255,0.8)" />
-//             </button>
-//           </div>
-//         </div>
-
-//         {/* BODY */}
-//         <div
-//           className="flex-1 overflow-y-auto"
-//           style={{ padding: "18px 18px 0" }}
-//         >
-//           <form onSubmit={handleSubmit} id="collection-form">
-//             <div className="flex gap-4">
-//               {/* LEFT COLUMN */}
-//               <div
-//                 className="flex flex-col gap-2.5"
-//                 style={{
-//                   flex: "0 0 calc(55% - 10px)",
-//                   padding: "14px 14px",
-//                   background: "#f8fafc",
-//                   borderRadius: 12,
-//                   border: "1px solid #e2e8f0"
-//                 }}
-//               >
-//                 <div
-//                   style={{
-//                     fontSize: 10,
-//                     fontWeight: 700,
-//                     letterSpacing: "0.08em",
-//                     textTransform: "uppercase",
-//                     color: "#000000",
-//                     marginBottom: 2,
-//                     display: "flex",
-//                     alignItems: "center",
-//                     gap: 6
-//                   }}
-//                 >
-//                   <span
-//                     style={{
-//                       flex: 1,
-//                       height: 1,
-//                       background: "linear-gradient(90deg,#e2e8f0,transparent)"
-//                     }}
-//                   />
-//                   Customer Information
-//                   <span
-//                     style={{
-//                       flex: 1,
-//                       height: 1,
-//                       background: "linear-gradient(270deg,#e2e8f0,transparent)"
-//                     }}
-//                   />
-//                 </div>
-
-//                 <Field label="Customer Name">
-//                   <input
-//                     style={inputCls}
-//                     value={data?.customerName?.customerName ?? ""}
-//                     readOnly
-//                   />
-//                 </Field>
-
-//                 <Field label="Address">
-//                   <input
-//                     style={inputCls}
-//                     value={data?.customerName?.address ?? ""}
-//                     readOnly
-//                   />
-//                 </Field>
-
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="Mobile">
-//                     <input
-//                       style={inputCls}
-//                       value={data?.mobile ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                   <Field label="Email">
-//                     <input
-//                       style={inputCls}
-//                       value={data?.email ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                 </div>
-
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="Pin">
-//                     <input
-//                       style={inputCls}
-//                       value={data?.customerName?.pincode ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                   <Field label="Country">
-//                     <input
-//                       style={inputCls}
-//                       value={data?.customerName?.country ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                 </div>
-
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="State">
-//                     <input
-//                       style={inputCls}
-//                       value={data?.customerName?.state ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                   <Field label="City">
-//                     <input
-//                       style={inputCls}
-//                       value={data?.customerName?.city ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                 </div>
-
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="Registration Type">
-//                     <select
-//                       name="registrationType"
-//                       value={formData.registrationType}
-//                       onChange={handleChange}
-//                       className="mt-0 block w-full border border-gray-300 rounded-md shadow-sm p-1.5 text-xs focus:outline-none cursor-pointer bg-gray-50"
-//                     >
-//                       <option value="">Select RegistrationType</option>
-//                       <option value="unregistered">
-//                         Unregistered/Consumer
-//                       </option>
-//                       <option value="regular">Regular</option>
-//                     </select>
-//                   </Field>
-//                   <Field label="Registration No">
-//                     <input
-//                       style={inputCls}
-//                       value={data?.customerName?.registrationNo ?? ""}
-//                       readOnly
-//                     />
-//                   </Field>
-//                 </div>
-//               </div>
-
-//               {/* RIGHT COLUMN */}
-//               <div
-//                 className="flex flex-col gap-2.5"
-//                 style={{
-//                   flex: "0 0 calc(45% - 10px)",
-//                   padding: "14px 14px",
-//                   background: "#fff",
-//                   borderRadius: 12,
-//                   border: "1px solid #e2e8f0"
-//                 }}
-//               >
-//                 <div
-//                   style={{
-//                     fontSize: 10,
-//                     fontWeight: 700,
-//                     letterSpacing: "0.08em",
-//                     textTransform: "uppercase",
-//                     color: "#000000",
-//                     marginBottom: 2,
-//                     display: "flex",
-//                     alignItems: "center",
-//                     gap: 6
-//                   }}
-//                 >
-//                   <span
-//                     style={{
-//                       flex: 1,
-//                       height: 1,
-//                       background: "linear-gradient(90deg,#e2e8f0,transparent)"
-//                     }}
-//                   />
-//                   Payment Details
-//                   <span
-//                     style={{
-//                       flex: 1,
-//                       height: 1,
-//                       background: "linear-gradient(270deg,#e2e8f0,transparent)"
-//                     }}
-//                   />
-//                 </div>
-
-//                 {/* Submission Date (readonly, cursor not-allowed) */}
-//                 <Field label="Submission Date">
-//                   <input
-//                     type="date"
-//                     name="submissionDate"
-//                     value={formData.submissionDate}
-//                     readOnly
-//                     style={readonlyInputCls}
-//                   />
-//                 </Field>
-
-//                 {/* Net Amount + Received Amount */}
-//                 <div className="grid grid-cols-2 gap-2.5">
-//                   <Field label="Net Amount">
-//                     <div style={{ position: "relative" }}>
-//                       <IndianRupee
-//                         size={12}
-//                         style={{
-//                           position: "absolute",
-//                           left: 8,
-//                           top: "50%",
-//                           transform: "translateY(-50%)",
-//                           color: "#94a3b8"
-//                         }}
-//                       />
-//                       <input
-//                         type="number"
-//                         name="projectAmount"
-//                         value={formData.projectAmount}
-//                         readOnly
-//                         style={{ ...readonlyInputCls, paddingLeft: 24 }}
-//                       />
-//                     </div>
-//                   </Field>
-
-//                   <Field label="Received Amount">
-//                     <div style={{ position: "relative" }}>
-//                       <IndianRupee
-//                         size={12}
-//                         style={{
-//                           position: "absolute",
-//                           left: 8,
-//                           top: "50%",
-//                           transform: "translateY(-50%)",
-//                           color: "#94a3b8"
-//                         }}
-//                       />
-//                       <input
-//                         type="number"
-//                         name="receivedAmount"
-//                         value={formData.receivedAmount}
-//                         onChange={handleChange}
-//                         onFocus={onFocus}
-//                         onBlur={onBlur}
-//                         style={{ ...inputCls, paddingLeft: 24 }}
-//                         placeholder="0.00"
-//                         required
-//                       />
-//                     </div>
-//                   </Field>
-//                 </div>
-
-//                 {/* Balance Amount (readonly, cursor not-allowed) */}
-//                 <Field label="Balance Amount">
-//                   <div
-//                     style={{
-//                       ...readonlyInputCls,
-//                       display: "flex",
-//                       alignItems: "center",
-//                       gap: 6,
-//                       fontWeight: 700,
-//                       color:
-//                         balanceAmount > 0
-//                           ? "#b45309"
-//                           : balanceAmount < 0
-//                             ? "#be123c"
-//                             : "#166534",
-//                       background:
-//                         balanceAmount > 0
-//                           ? "#fffbeb"
-//                           : balanceAmount < 0
-//                             ? "#fff1f2"
-//                             : "#f0fdf4",
-//                       border: `1.5px solid ${
-//                         balanceAmount > 0
-//                           ? "#fde047"
-//                           : balanceAmount < 0
-//                             ? "#fda4af"
-//                             : "#86efac"
-//                       }`
-//                     }}
-//                   >
-//                     <IndianRupee size={12} />
-//                     {Math.abs(balanceAmount).toLocaleString("en-IN", {
-//                       minimumFractionDigits: 2,
-//                       maximumFractionDigits: 2
-//                     })}
-//                     {balanceAmount < 0 && (
-//                       <span
-//                         style={{
-//                           fontSize: 10,
-//                           fontWeight: 600,
-//                           color: "#be123c",
-//                           marginLeft: 4
-//                         }}
-//                       >
-//                         (Excess)
-//                       </span>
-//                     )}
-//                   </div>
-//                 </Field>
-
-//                 {partnerlist?.length > 0 && (
-//                   <Field label="Partner">
-//                     <select
-//                       name="partner"
-//                       onChange={handleChange}
-//                       onFocus={onFocus}
-//                       onBlur={onBlur}
-//                       style={inputCls}
-//                     >
-//                       <option value="">Select partner</option>
-//                       {partnerlist.map((p) => (
-//                         <option key={p._id} value={p._id}>
-//                           {p.partnerName}
-//                         </option>
-//                       ))}
-//                     </select>
-//                   </Field>
-//                 )}
-
-//                 <Field label="Bank Remark" className="flex-1">
-//                   <textarea
-//                     name="bankRemark"
-//                     value={formData.bankRemark}
-//                     onChange={handleChange}
-//                     onFocus={onFocus}
-//                     onBlur={(e) => {
-//                       e.target.style.borderColor = "#e2e8f0"
-//                       e.target.style.boxShadow = "none"
-//                       e.target.style.background = "#f8fafc"
-//                     }}
-//                     placeholder="Enter bank remarks or notes..."
-//                     rows={3}
-//                     style={{
-//                       ...inputCls,
-//                       resize: "vertical",
-//                       lineHeight: 1.45,
-//                       minHeight: 70
-//                     }}
-//                   />
-//                 </Field>
-//               </div>
-//             </div>
-//           </form>
-//         </div>
-
-//         {/* FOOTER */}
-//         <div
-//           className="flex-shrink-0 flex items-center justify-between gap-3 px-5 py-3 bg-[#ADD8E6]"
-//           style={{
-//             borderTop: "1px solid #e2e8f0",
-//             marginTop: 14
-//           }}
-//         >
-//           <div className="flex items-center gap-2 flex-wrap">
-//             {formData.receivedAmount && (
-//               <span
-//                 style={{
-//                   display: "inline-flex",
-//                   alignItems: "center",
-//                   gap: 4,
-//                   fontSize: 11,
-//                   fontWeight: 700,
-//                   color: "#166534",
-//                   background: "#dcfce7",
-//                   border: "1.5px solid #86efac",
-//                   borderRadius: 99,
-//                   padding: "3px 10px 3px 7px"
-//                 }}
-//               >
-//                 <IndianRupee size={11} />
-//                 Received:{" "}
-//                 {parseFloat(formData.receivedAmount).toLocaleString("en-IN")}
-//               </span>
-//             )}
-//             {formData.projectAmount && (
-//               <span
-//                 style={{
-//                   display: "inline-flex",
-//                   alignItems: "center",
-//                   gap: 4,
-//                   fontSize: 11,
-//                   fontWeight: 700,
-//                   color: "#1e40af",
-//                   background: "#dbeafe",
-//                   border: "1.5px solid #93c5fd",
-//                   borderRadius: 99,
-//                   padding: "3px 10px 3px 7px"
-//                 }}
-//               >
-//                 <IndianRupee size={11} />
-//                 Net:{" "}
-//                 {parseFloat(formData.projectAmount).toLocaleString("en-IN")}
-//               </span>
-//             )}
-//           </div>
-
-//           <div className="flex items-center gap-2.5">
-//             <button
-//               type="button"
-//               onClick={() => closemodal(false)}
-//               style={{
-//                 padding: "7px 18px",
-//                 borderRadius: 9,
-//                 fontSize: 12,
-//                 fontWeight: 600,
-//                 color: "#475569",
-//                 background: "#fff",
-//                 border: "1.5px solid #e2e8f0",
-//                 cursor: "pointer",
-//                 transition: "all 0.15s"
-//               }}
-//               onMouseEnter={(e) => {
-//                 e.currentTarget.style.background = "#f1f5f9"
-//               }}
-//               onMouseLeave={(e) => {
-//                 e.currentTarget.style.background = "#fff"
-//               }}
-//             >
-//               Cancel
-//             </button>
-//             <button
-//               type="submit"
-//               form="collection-form"
-//               style={{
-//                 display: "flex",
-//                 alignItems: "center",
-//                 gap: 6,
-//                 padding: "7px 20px",
-//                 borderRadius: 9,
-//                 fontSize: 12,
-//                 fontWeight: 700,
-//                 color: "#fff",
-//                 background: "linear-gradient(135deg,#1d4ed8,#2563eb)",
-//                 border: "none",
-//                 cursor: "pointer",
-//                 boxShadow: "0 2px 8px rgba(37,99,235,0.35)",
-//                 transition: "all 0.15s"
-//               }}
-//               onMouseEnter={(e) => {
-//                 e.currentTarget.style.background =
-//                   "linear-gradient(135deg,#1e40af,#1d4ed8)"
-//                 e.currentTarget.style.boxShadow =
-//                   "0 4px 14px rgba(37,99,235,0.45)"
-//               }}
-//               onMouseLeave={(e) => {
-//                 e.currentTarget.style.background =
-//                   "linear-gradient(135deg,#1d4ed8,#2563eb)"
-//                 e.currentTarget.style.boxShadow =
-//                   "0 2px 8px rgba(37,99,235,0.35)"
-//               }}
-//             >
-//               <ClipboardCheck size={14} />
-//               Update Collection
-//             </button>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   )
-// }
 import { useState, useEffect } from "react"
 import { X, IndianRupee, ClipboardCheck } from "lucide-react"
 
@@ -4301,14 +1560,29 @@ export function CollectionupdateModal({
   loggedUser,
   handleCollectionUpdate
 }) {
+  const [error, setError] = useState({})
   const [formData, setFormData] = useState({
     submissionDate: "",
     projectAmount: "",
     receivedAmount: "",
     bankRemark: "",
     registrationType: "",
-    registrationNo: ""
+    registrationNo: "",
+    customerName: "",
+    address: "",
+    mobile: "",
+    email: "",
+    pin: "",
+    country: "",
+    state: "",
+    city: "",
+    partner: ""
   })
+
+  const baseInput =
+    "w-full px-2.5 py-1.5 text-[13px] rounded-lg border border-slate-200 bg-slate-50 text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/20"
+  const readonlyInput =
+    "w-full px-2.5 py-1.5 text-[13px] rounded-lg border border-slate-200 bg-slate-100 text-slate-600 cursor-not-allowed"
 
   useEffect(() => {
     const today = new Date()
@@ -4323,33 +1597,120 @@ export function CollectionupdateModal({
   }, [])
 
   useEffect(() => {
-    if (data) {
-      setFormData((prev) => ({
-        ...prev,
-        projectAmount: data.netAmount ?? "",
-        receivedAmount: data.receivedAmount ?? "",
-        bankRemark: data.bankRemark ?? "",
-        registrationType: data.customerName?.registrationType ?? "",
-        registrationNo: data.customerName?.registrationNo ?? ""
-      }))
-    }
+    if (!data) return
+    console.log(data)
+console.log(   data.receivedAmount !== undefined && data.receivedAmount !== null
+          ? String(data.receivedAmount)
+          : "",)
+    setFormData((prev) => ({
+      ...prev,
+      totalpaidAmountBefore: data?.totalPaidAmount,
+      customerId: data?.customerName?._id,
+      projectAmount:
+        data.netAmount !== undefined && data.netAmount !== null
+          ? String(data.netAmount)
+          : "",
+      receivedAmount:
+        data.receivedAmount !== undefined && data.receivedAmount !== null
+          ? String(data.receivedAmount)
+          : "",
+      bankRemark: data.bankRemark ?? "",
+      registrationType: data.customerName?.registrationType ?? "",
+      registrationNo: data.customerName?.registrationNo ?? "",
+      customerName: data.customerName?.customerName ?? "",
+      address: data.customerName?.address1 ?? "",
+      mobile: data.mobile ?? "",
+      email: data.email ?? "",
+      pin: data.customerName?.pincode ?? "",
+      country: data.customerName?.country ?? "",
+      state: data.customerName?.state ?? "",
+      city: data.customerName?.city ?? "",
+      partner: data?.partner?._id ?? ""
+    }))
   }, [data])
 
+  const safeNumber = (v) => {
+    const n = parseFloat(v)
+    return Number.isFinite(n) ? n : 0
+  }
+const totalpaid=formData.receivedAmount +=data?.totalPaidAmount
+console.log(formData.receivedAmount)
   const balanceAmount =
-    (parseFloat(formData.projectAmount) || 0) -
-    (parseFloat(formData.receivedAmount) || 0)
+    safeNumber(formData.projectAmount) -
+    safeNumber(totalpaid)
 
+console.log(formData)
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-  }
 
+    // 1) Always update formData with raw value
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value
+    }))
+
+    // 2) Validation only updates error, never formData again
+    if (name === "email") {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      setError((prev) => ({
+        ...prev,
+        email: value && !emailRegex.test(value) ? "Email id is not correct" : ""
+      }))
+      return
+    }
+
+    if (name === "mobile") {
+      const mobileRegex = /^[6-9]\d{9}$/
+      let msg = ""
+      if (!value) msg = "Mobile number is required"
+      else if (!/^\d+$/.test(value))
+        msg = "Mobile number must contain only digits"
+      else if (value.length !== 10) msg = "Mobile number must be 10 digits"
+      else if (!mobileRegex.test(value)) msg = "Mobile number is not valid"
+      setError((prev) => ({ ...prev, mobile: msg }))
+      return
+    }
+
+    if (name === "pincode") {
+      const postalCodePatterns = {
+        INDIA: /^[1-9][0-9]{5}$/,
+        IN: /^[1-9][0-9]{5}$/,
+        USA: /^\d{5}(-\d{4})?$/,
+        CA: /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/,
+        GB: /^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$/i,
+        AU: /^\d{4}$/,
+        DE: /^\d{5}$/,
+        FR: /^\d{5}$/,
+        JP: /^\d{3}-?\d{4}$/,
+        SG: /^\d{6}$/
+      }
+      if (!formData.country) {
+        setError((prev) => ({
+          ...prev,
+          pincode: "please fill country before pincode"
+        }))
+        return
+      }
+      const pattern = postalCodePatterns[formData.country.toUpperCase()]
+      if (!pattern) return
+      setError((prev) => ({
+        ...prev,
+        pincode: value && !pattern.test(value) ? "Invalid pincode" : ""
+      }))
+      return
+    }
+
+    setError((prev) => ({ ...prev, [name]: "" }))
+  }
+  console.log(data)
   const handleSubmit = async (e) => {
     e.preventDefault()
     const payload = {
       leadId: data?.leadId,
       leadDocId: data?._id,
       ...formData,
+      projectAmount: safeNumber(formData.projectAmount),
+      receivedAmount: safeNumber(formData.receivedAmount),
       balanceAmount,
       updatedBy: loggedUser?._id
     }
@@ -4357,61 +1718,19 @@ export function CollectionupdateModal({
     if (res?.status === 200) closemodal(false)
   }
 
-  const Field = ({ label, children, className = "" }) => (
-    <div className={`flex flex-col gap-1 ${className}`}>
-      <label
-        style={{
-          fontSize: 10,
-          fontWeight: 600,
-          letterSpacing: "0.05em",
-          textTransform: "uppercase",
-          color: "#000000"
-        }}
-      >
-        {label}
-      </label>
-      {children}
-    </div>
-  )
-
-  const inputCls = {
-    width: "100%",
-    padding: "6px 10px",
-    fontSize: 13,
-    borderRadius: 8,
-    border: "1.5px solid #e2e8f0",
-    background: "#f8fafc",
-    color: "#0f172a",
-    outline: "none",
-    transition: "border-color 0.15s, box-shadow 0.15s"
-  }
-
-  const readonlyInputCls = {
-    ...inputCls,
-    background: "#f1f5f9",
-    color: "#475569",
-    cursor: "not-allowed"
-  }
-
-  const onFocus = (e) => {
-    e.target.style.borderColor = "#3b82f6"
-    e.target.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.12)"
-    e.target.style.background = "#fff"
-  }
-  const onBlur = (e) => {
-    e.target.style.borderColor = "#e2e8f0"
-    e.target.style.boxShadow = "none"
-    e.target.style.background = "#f8fafc"
-  }
-
   const isRegular = formData.registrationType === "regular"
-
+  console.log(partnerlist)
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)" }}
-      onClick={() => closemodal(false)}
+      style={{ backdropFilter: "blur(4px)", background: "rgba(15,23,42,0.55)" }}
     >
+      <div
+        className="absolute inset-0"
+        onClick={() => closemodal(false)}
+        style={{ zIndex: 0 }}
+      />
+
       <div
         className="relative w-full flex flex-col bg-[#ADD8E6]"
         style={{
@@ -4421,13 +1740,13 @@ export function CollectionupdateModal({
           borderRadius: 18,
           boxShadow:
             "0 0 0 1px rgba(0,0,0,0.05), 0 8px 32px rgba(0,0,0,0.18), 0 32px 80px rgba(0,0,0,0.14)",
-          overflow: "hidden"
+          overflow: "hidden",
+          zIndex: 1
         }}
-        onClick={(e) => e.stopPropagation()}
       >
         {/* HEADER */}
         <div
-          className="flex-shrink-0 flex items-center justify-between px-5 py-3"
+          className="flex-shrink-0 flex items-center justify-between px-5 py-2"
           style={{
             background:
               "linear-gradient(130deg,#0c1e3d 0%,#1a3560 55%,#1e4480 100%)",
@@ -4494,6 +1813,7 @@ export function CollectionupdateModal({
             </div>
 
             <button
+              type="button"
               onClick={() => closemodal(false)}
               style={{
                 width: 28,
@@ -4567,100 +1887,165 @@ export function CollectionupdateModal({
                   />
                 </div>
 
-                <Field label="Customer Name">
+                {/* Customer Name */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold tracking-[0.05em] uppercase text-black">
+                    Customer Name
+                  </label>
                   <input
-                    style={inputCls}
-                    value={data?.customerName?.customerName ?? ""}
+                    name="customerName"
+                    value={formData.customerName}
                     readOnly
+                    className={readonlyInput}
                   />
-                </Field>
+                </div>
 
-                <Field label="Address">
+                {/* Address */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold tracking-[0.05em] uppercase text-black">
+                    Address
+                  </label>
                   <input
-                    style={inputCls}
-                    value={data?.customerName?.address ?? ""}
-                    readOnly
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    className={baseInput}
                   />
-                </Field>
-
-                <div className="grid grid-cols-2 gap-2.5">
-                  <Field label="Mobile">
-                    <input
-                      style={inputCls}
-                      value={data?.mobile ?? ""}
-                      readOnly
-                    />
-                  </Field>
-                  <Field label="Email">
-                    <input
-                      style={inputCls}
-                      value={data?.email ?? ""}
-                      readOnly
-                    />
-                  </Field>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2.5">
-                  <Field label="Pin">
+                  {/* Mobile */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-semibold tracking-[0.05em] uppercase text-black">
+                      Mobile
+                    </label>
                     <input
-                      style={inputCls}
-                      value={data?.customerName?.pincode ?? ""}
-                      readOnly
+                      name="mobile"
+                      value={formData.mobile}
+                      onChange={handleChange}
+                      className={baseInput}
                     />
-                  </Field>
-                  <Field label="Country">
+                    {error.mobile && (
+                      <p className="text-xs text-red-500">{error.mobile}</p>
+                    )}
+                  </div>
+
+                  {/* Email */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-semibold tracking-[0.05em] uppercase text-black">
+                      Email
+                    </label>
                     <input
-                      style={inputCls}
-                      value={data?.customerName?.country ?? ""}
-                      readOnly
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className={baseInput}
                     />
-                  </Field>
+                    {error.email && (
+                      <p className="text-xs text-red-500">{error.email}</p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2.5">
-                  <Field label="State">
+                  {/* Pin */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-semibold tracking-[0.05em] uppercase text-black">
+                      Pin
+                    </label>
                     <input
-                      style={inputCls}
-                      value={data?.customerName?.state ?? ""}
-                      readOnly
+                      name="pin"
+                      value={formData.pin}
+                      onChange={handleChange}
+                      className={baseInput}
                     />
-                  </Field>
-                  <Field label="City">
+                  </div>
+
+                  {/* Country */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-semibold tracking-[0.05em] uppercase text-black">
+                      Country
+                    </label>
                     <input
-                      style={inputCls}
-                      value={data?.customerName?.city ?? ""}
-                      readOnly
+                      name="country"
+                      value={formData.country}
+                      onChange={handleChange}
+                      className={baseInput}
                     />
-                  </Field>
+                    {error.country && (
+                      <p className="text-xs text-red-500">{error.country}</p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2.5">
-                  <Field label="Registration Type">
+                  {/* State */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-semibold tracking-[0.05em] uppercase text-black">
+                      State
+                    </label>
+                    <input
+                      name="state"
+                      value={formData.state}
+                      onChange={handleChange}
+                      className={baseInput}
+                    />
+                    {error.state && (
+                      <p className="text-xs text-red-500">{error.state}</p>
+                    )}
+                  </div>
+
+                  {/* City */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-semibold tracking-[0.05em] uppercase text-black">
+                      City
+                    </label>
+                    <input
+                      name="city"
+                      value={formData.city}
+                      onChange={handleChange}
+                      className={baseInput}
+                    />
+                    {error.city && (
+                      <p className="text-xs text-red-500">{error.city}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  {/* Registration Type */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-semibold tracking-[0.05em] uppercase text-black">
+                      Registration Type
+                    </label>
                     <select
                       name="registrationType"
                       value={formData.registrationType}
                       onChange={handleChange}
-                      className="mt-0 block w-full border border-gray-300 rounded-md shadow-sm p-1.5 text-xs focus:outline-none cursor-pointer bg-gray-50"
+                      className="mt-0 block w-full border border-slate-200 rounded-md shadow-sm px-2 py-1.5 text-xs bg-slate-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 cursor-pointer"
                     >
-                      <option value="">Select RegistrationType</option>
+                      <option value="">Select Registration Type</option>
                       <option value="unregistered">
                         Unregistered/Consumer
                       </option>
                       <option value="regular">Regular</option>
                     </select>
-                  </Field>
-                  <Field label="Registration No">
+                  </div>
+
+                  {/* Registration No */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-semibold tracking-[0.05em] uppercase text-black">
+                      Registration No
+                    </label>
                     <input
                       name="registrationNo"
                       value={formData.registrationNo}
                       onChange={handleChange}
-                      style={{
-                        ...(isRegular ? inputCls : readonlyInputCls)
-                      }}
+                      className={isRegular ? baseInput : readonlyInput}
                       readOnly={!isRegular}
                       disabled={!isRegular}
                     />
-                  </Field>
+                  </div>
                 </div>
               </div>
 
@@ -4705,77 +2090,72 @@ export function CollectionupdateModal({
                   />
                 </div>
 
-                {/* Submission Date (readonly) */}
-                <Field label="Submission Date">
+                {/* Submission Date */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold tracking-[0.05em] uppercase text-black">
+                    Submission Date
+                  </label>
                   <input
                     type="date"
                     name="submissionDate"
                     value={formData.submissionDate}
                     readOnly
-                    style={readonlyInputCls}
+                    className={readonlyInput}
                   />
-                </Field>
+                </div>
 
-                {/* Net Amount + Received Amount */}
                 <div className="grid grid-cols-2 gap-2.5">
-                  <Field label="Net Amount">
-                    <div style={{ position: "relative" }}>
+                  {/* Net Amount */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-semibold tracking-[0.05em] uppercase text-black">
+                      Net Amount
+                    </label>
+                    <div className="relative">
                       <IndianRupee
                         size={12}
-                        style={{
-                          position: "absolute",
-                          left: 8,
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          color: "#94a3b8"
-                        }}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400"
                       />
                       <input
-                        type="number"
+                        type="text"
                         name="projectAmount"
                         value={formData.projectAmount}
                         readOnly
-                        style={{ ...readonlyInputCls, paddingLeft: 24 }}
+                        className={`${readonlyInput} pl-6`}
                       />
                     </div>
-                  </Field>
+                  </div>
 
-                  <Field label="Received Amount">
-                    <div style={{ position: "relative" }}>
+                  {/* Received Amount */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-semibold tracking-[0.05em] uppercase text-black">
+                      Received Amount
+                    </label>
+                    <div className="relative">
                       <IndianRupee
                         size={12}
-                        style={{
-                          position: "absolute",
-                          left: 8,
-                          top: "50%",
-                          transform: "translateY(-50%)",
-                          color: "#94a3b8"
-                        }}
+                        className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400"
                       />
                       <input
-                        type="number"
+                        type="text"
+                        inputMode="decimal"
                         name="receivedAmount"
                         value={formData.receivedAmount}
                         onChange={handleChange}
-                        onFocus={onFocus}
-                        onBlur={onBlur}
-                        style={{ ...inputCls, paddingLeft: 24 }}
+                        className={`${baseInput} pl-6`}
                         placeholder="0.00"
-                        required
                       />
                     </div>
-                  </Field>
+                  </div>
                 </div>
 
-                {/* Balance Amount (readonly) */}
-                <Field label="Balance Amount">
+                {/* Balance Amount */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold tracking-[0.05em] uppercase text-black">
+                    Balance Amount
+                  </label>
                   <div
+                    className="flex items-center gap-1.5 text-[13px] font-bold rounded-lg px-2.5 py-1.5"
                     style={{
-                      ...readonlyInputCls,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                      fontWeight: 700,
                       color:
                         balanceAmount > 0
                           ? "#b45309"
@@ -4803,60 +2183,49 @@ export function CollectionupdateModal({
                       maximumFractionDigits: 2
                     })}
                     {balanceAmount < 0 && (
-                      <span
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 600,
-                          color: "#be123c",
-                          marginLeft: 4
-                        }}
-                      >
+                      <span className="text-[10px] font-semibold text-rose-700 ml-1">
                         (Excess)
                       </span>
                     )}
                   </div>
-                </Field>
+                </div>
 
+                {/* Partner */}
                 {partnerlist?.length > 0 && (
-                  <Field label="Partner">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] font-semibold tracking-[0.05em] uppercase text-black">
+                      Associate with
+                    </label>
                     <select
                       name="partner"
+                      value={formData.partner}
                       onChange={handleChange}
-                      onFocus={onFocus}
-                      onBlur={onBlur}
-                      style={inputCls}
+                      className={baseInput}
                     >
                       <option value="">Select partner</option>
                       {partnerlist.map((p) => (
                         <option key={p._id} value={p._id}>
-                          {p.partnerName}
+                          {p?.partner || p?.partnerName}
                         </option>
                       ))}
                     </select>
-                  </Field>
+                  </div>
                 )}
 
-                <Field label="Bank Remark" className="flex-1">
+                {/* Bank Remark */}
+                <div className="flex flex-col gap-1 flex-1">
+                  <label className="text-[10px] font-semibold tracking-[0.05em] uppercase text-black">
+                    Bank Remark
+                  </label>
                   <textarea
                     name="bankRemark"
                     value={formData.bankRemark}
                     onChange={handleChange}
-                    onFocus={onFocus}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "#e2e8f0"
-                      e.target.style.boxShadow = "none"
-                      e.target.style.background = "#f8fafc"
-                    }}
                     placeholder="Enter bank remarks or notes..."
                     rows={3}
-                    style={{
-                      ...inputCls,
-                      resize: "vertical",
-                      lineHeight: 1.45,
-                      minHeight: 70
-                    }}
+                    className={`${baseInput} resize-y leading-[1.45] min-h-[70px]`}
                   />
-                </Field>
+                </div>
               </div>
             </div>
           </form>
@@ -4888,7 +2257,7 @@ export function CollectionupdateModal({
               >
                 <IndianRupee size={11} />
                 Received:{" "}
-                {parseFloat(formData.receivedAmount).toLocaleString("en-IN")}
+                {safeNumber(formData.receivedAmount).toLocaleString("en-IN")}
               </span>
             )}
             {formData.projectAmount && (
@@ -4908,7 +2277,7 @@ export function CollectionupdateModal({
               >
                 <IndianRupee size={11} />
                 Net:{" "}
-                {parseFloat(formData.projectAmount).toLocaleString("en-IN")}
+                {safeNumber(formData.projectAmount).toLocaleString("en-IN")}
               </span>
             )}
           </div>

@@ -30,7 +30,7 @@ export default function CollectionUpdate() {
   console.log("hh")
   const [showFullName, setShowFullName] = useState(false)
   const [tableData, setTableData] = useState([])
-console.log(tableData)
+  console.log(tableData)
   const [isdepartmentisAccountant, setisdepartmentAccountant] = useState(false)
   console.log(isdepartmentisAccountant)
   const [loggedUser, setLoggedUser] = useState(null)
@@ -126,7 +126,7 @@ console.log(tableData)
         const filteredCollectionleads = collectionlead.filter(
           (item) => item.paymentHistory?.length > 0
         )
-console.log(collectionlead)
+        console.log(collectionlead)
         const sortedLeads = filteredCollectionleads.sort((a, b) => {
           const getOldest = (lead) =>
             lead.paymentHistory?.length
@@ -158,6 +158,8 @@ console.log(collectionlead)
   }
 
   const handleCollection = (item) => {
+console.log(item)
+console.log("hh")
     setcollectionUpdateModal(true)
     setselectedData(item)
   }
@@ -167,12 +169,15 @@ console.log(collectionlead)
     setselectedLeadId(null)
   }
   const handleHistory = (Item) => {
+console.log("hh")
     setselectedData(Item.activityLog)
     setHistoryList(Item.activityLog)
     setselectedLeadId(Item.leadId)
     sethistoryModal(true)
   }
   const handleCollectionUpdate = async (formData) => {
+    console.log(formData)
+    return
     try {
       const response = await api.post("/lead/collectionUPdate", formData)
       if (response.status === 200) {
