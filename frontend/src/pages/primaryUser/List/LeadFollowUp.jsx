@@ -3547,7 +3547,9 @@ const LeadFollowUp = () => {
   const [selectedDocId, setselectedDocid] = useState(null)
   const [selectedTab, setselectedTab] = useState("")
   const [hasOwnLeads, setHasownLeads] = useState(false)
-  const [ownFollowUp, setOwnFollowUp] = useState(safeState?.staffId ? false : true)
+  const [ownFollowUp, setOwnFollowUp] = useState(
+    safeState?.staffId ? false : true
+  )
   console.log(safeState)
   console.log(safeState?.staffId ? false : true)
   const [historyList, setHistoryList] = useState([])
@@ -3591,8 +3593,8 @@ const LeadFollowUp = () => {
   console.log(safeState)
   console.log(safeState?.viewMode)
   console.log(!safeState?.viewMode !== "product")
-console.log(safeState.staffId)
-console.log(safeState.istotal)
+  console.log(safeState.staffId)
+  console.log(safeState.istotal)
   useEffect(() => {
     // run only when location.state or selectedCompanyBranch / loggedUser change
     //this from productwisereport
@@ -4112,13 +4114,22 @@ console.log(safeState.istotal)
     fetchFollowups()
   }
 
+  // const shouldFetch =
+  //   (safeState.istotal &&
+  //   safeState.staffId &&
+  //   safeState.viewMode !== "product" )
+  //   loggedUser &&
+  //   selectedCompanyBranch
+  // console.log(safeState.istotal)
   const shouldFetch =
-    (safeState.istotal &&
-    safeState.staffId &&
-    safeState.viewMode !== "product" )||
-    loggedUser &&
-    selectedCompanyBranch
-  console.log(safeState.istotal)
+    !!loggedUser &&
+    !!selectedCompanyBranch &&
+    ((safeState?.viewMode !== "product" &&
+      safeState?.istotal &&
+      !!safeState?.staffId) ||
+      safeState?.staffId == null) // null or undefined
+
+  console.log(shouldFetch)
 
   const url = shouldFetch
     ? `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}` +
@@ -4286,15 +4297,15 @@ console.log(safeState.istotal)
     }
     return []
   }
-console.log(!loggedusersallocatedleads || !dates.endDate || !loggedUser)
-console.log(loggedusersallocatedleads)
-console.log(dates.endDate)
-console.log(loggedUser)
+  console.log(!loggedusersallocatedleads || !dates.endDate || !loggedUser)
+  console.log(loggedusersallocatedleads)
+  console.log(dates.endDate)
+  console.log(loggedUser)
   // main followup data from loggedusersallocatedleads
   useEffect(() => {
     // if (!loggedusersallocatedleads || !dates.endDate || !loggedUser) return
     if (loggedusersallocatedleads && dates.endDate && loggedUser) {
-console.log("h")
+      console.log("h")
       if (pending && ownFollowUp) {
         const ownFollow = loggedusersallocatedleads.followupLeads.filter(
           (lead) =>
@@ -5390,7 +5401,7 @@ console.log("h")
                       setTableData([])
                       setAllocatedLeads([])
                     },
-                    show: safeState.staffId ? false : pending === true,
+                    show: safeState.staffId ? false : pending === true
                     // disabled: safeState.staffId && safeState.istotal
                   },
                   {
@@ -5404,8 +5415,8 @@ console.log("h")
                         handletoogle(pending)
                       }
                     },
-                    show: true,
-                  //  disabled: safeState.staffId && safeState.istotal
+                    show: true
+                    //  disabled: safeState.staffId && safeState.istotal
                   },
                   {
                     label: ownFollowUp ? "Own Followup" : "All Followup",
@@ -5417,7 +5428,7 @@ console.log("h")
                     },
                     show: safeState.staffId
                       ? false
-                      : loggedUser?.role !== "Staff",
+                      : loggedUser?.role !== "Staff"
                     // disabled: safeState.staffId && safeState.istotal
                   }
                 ]
