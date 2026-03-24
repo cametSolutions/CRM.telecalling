@@ -35,6 +35,8 @@ export default function StaffHeader() {
   }, [demoleadcount])
   useEffect(() => {
     const storedUser = localStorage.getItem("user")
+console.log(storedUser)
+console.log(JSON.parse(storedUser))
     if (storedUser) {
       setUser(JSON.parse(storedUser)) // Parse the user data from string to object
     }
@@ -150,6 +152,7 @@ export default function StaffHeader() {
       control: user?.permissions?.[0]?.Partners ?? false
     }
   ]
+console.log(user?.permissions)
   console.log(user?.permissions[0])
   const ProductandServices = [
     {

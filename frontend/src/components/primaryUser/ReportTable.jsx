@@ -1975,6 +1975,7 @@ export default function ReportTable({
   onSeeAll,
   onTotalLeadsClick
 }) {
+console.log(data)
   const isProductWise =
     reportName?.toLowerCase().includes("product-wise") ||
     reportName?.toLowerCase().includes("product wise")
@@ -2397,13 +2398,18 @@ export default function ReportTable({
                       }}
                     >
                       {visibleHeaders.map((header, colIdx) => {
+console.log(FIELD_MAP[header])
+console.log(header)
                         const fieldName = FIELD_MAP[header] ?? header
+console.log(fieldName)
                         const cellValue = row[fieldName]
+console.log(row)
                         const type = getCellType(header)
+console.log(type)
                         const isFirst = colIdx === 0
                         const isLast =
                           colIdx === visibleHeaders.length - 1
-
+console.log(type)
                         const baseTd = {
                           padding: "11px 18px",
                           borderBottom: "1px solid #f1f5f9",
@@ -2416,6 +2422,7 @@ export default function ReportTable({
 
                         // Staff clickable (summary)
                         if (type === "staff") {
+
                           return (
                             <td
                               key={header}
@@ -2544,7 +2551,7 @@ export default function ReportTable({
                             </td>
                           )
                         }
-
+console.log(cellValue)
                         // Default
                         return (
                           <td

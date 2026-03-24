@@ -727,7 +727,7 @@ export const GetallselectedproductFollowup = async (req, res) => {
     const userObjectId = new mongoose.Types.ObjectId(loggeduserid)
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected)
     const productObjectId = selectedproductId ? new mongoose.Types.ObjectId(selectedproductId) : null
-
+console.log("peddddddddddddd",pendingfollowup==="true")
     let query
 
     if (pendingfollowup === "true") {
@@ -805,7 +805,7 @@ export const GetallselectedproductFollowup = async (req, res) => {
     if (productObjectId) {
       query["leadFor.productorServiceId"] = productObjectId
     }
-
+console.log("query",query)
     const selectedfollowup = await LeadMaster.find(query)
       .populate({ path: "customerName" })
       .populate({ path: "partner" })
