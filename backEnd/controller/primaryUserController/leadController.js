@@ -5937,7 +5937,7 @@ export const GetallproductwiseReport = async (req, res) => {
     ])
 
 
-    const a = result.filter((it) => it.staffName === "abhidas")
+    const a = result.filter((it) => it.staffName === "EBBY MANJOORAN")
     console.log("abhissssssssssss", a)
 
     const mappeddata = result.map((item) => ({
