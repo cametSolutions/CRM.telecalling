@@ -105,6 +105,9 @@ const LeadFollowUp = () => {
   const { data: partners } = UseFetch("/customer/getallpartners")
   const { data: branches } = UseFetch("/branch/getBranch")
   const { data } = UseFetch("/auth/getallUsers")
+console.log(partners)
+console.log(branches)
+console.log(data)
   const {
     data: loggedusersallocatedleads,
     loading,
