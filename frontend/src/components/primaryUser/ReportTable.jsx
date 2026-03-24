@@ -636,6 +636,8 @@ export default function ReportTable({
   onSeeAll,
   onTotalLeadsClick
 }) {
+console.log(drillDown)
+console.log(data)
   const isProductWise =
     reportName?.toLowerCase().includes("product-wise") ||
     reportName?.toLowerCase().includes("product wise")
@@ -649,7 +651,7 @@ export default function ReportTable({
   const visibleHeaders = headers.filter((h) => {
     if (
       isProductWise &&
-      (h === "staffId" || h === "productId" || h === "branchId")
+      (h === "staffId" || h === "productId" || h === "branchId"||h==="staffRole")
     )
       return false
     if (isProductWise && !drillDown) {

@@ -2720,7 +2720,7 @@ const LeadMaster = ({
     clearErrors: clearMainerrors,
     formState: { errors: errorsMain }
   } = useForm()
-console.log("h")
+  console.log("h")
   const {
     register: registerModal,
     handleSubmit: handleSubmitModal,
@@ -2730,7 +2730,8 @@ console.log("h")
     setError,
     clearErrors: clearmodalErros,
     formState: { errors: errorsModal },
-    reset: resetModal
+    reset: resetModal,
+    watch
   } = useForm()
 
   const [productOrserviceSelections, setProductorServiceSelections] = useState(
@@ -2740,7 +2741,7 @@ console.log("h")
   const [submitLoading, setsubmitLoading] = useState(false)
   const [popupOpen, setPopupOpen] = useState(false)
   const [formData, setFormData] = useState(null)
-console.log("hhh")
+  console.log("hhh")
   const [restrictionMessage, setrestrictMessage] = useState()
   const [isEligible, setIseligible] = useState(false)
   const [openLicenseDropdown, setOpenLicenseDropdown] = useState(null)
@@ -2823,6 +2824,17 @@ console.log("hhh")
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+  const taxableAmount = Number(watch("taxableAmount") || 0)
+  const taxAmount = Number(watch("taxAmount") || 0)
+  const roundOff = Number(watch("roundOff") || 0)
+
+  // whenever any part changes, recompute netAmount
+  useEffect(() => {
+    const exactTotal = taxableAmount + taxAmount + roundOff
+    // if you want integer final amount, round here; else keep 2 decimals
+    const net = +exactTotal.toFixed(2)
+    setValueMain("netAmount", net, { shouldValidate: true })
+  }, [taxableAmount, taxAmount, roundOff, setValueMain])
 
   useEffect(() => {
     const userData = localStorage.getItem("user")
@@ -4215,8 +4227,19 @@ console.log("hhh")
                         />
                       </div>
                     ))}
+                    <div className="flex items-center">
+                      <span className="text-xs font-bold text-white px-3 py-[7px] bg-[#1B2A4A] rounded-l w-[130px] text-right whitespace-nowrap flex-shrink-0">
+                        Round Off
+                      </span>
+                     
+                      <input
+                        type="number"
+                        step="0.01"
+                        {...registerMain("roundOff")}
+                        className="flex-1 min-w-0 border border-gray-300 rounded-r px-3 py-[6px] text-sm text-right bg-white outline-none"
+                      />
+                    </div>
                   </div>
-                 
                 </div>
 
                 {validateError?.duplicate && (

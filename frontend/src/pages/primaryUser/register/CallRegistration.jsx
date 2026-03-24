@@ -670,23 +670,23 @@ Problem:    \t${selectedText}
   const fetchCustomerData = async (query) => {
     let url
     if (user.role === "Admin") {
-      // url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
-      url = `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
+      url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
+      // url = `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
     } else {
       const branches = JSON.stringify(branch)
 
-      // url =
-      //   branches &&
-      //   branches.length > 0 &&
-      //   `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
-      //     user.role
-      //   }&userBranch=${encodeURIComponent(branches)}`
       url =
         branches &&
         branches.length > 0 &&
-        `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+        `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
           user.role
         }&userBranch=${encodeURIComponent(branches)}`
+      // url =
+      //   branches &&
+      //   branches.length > 0 &&
+      //   `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
+      //     user.role
+      //   }&userBranch=${encodeURIComponent(branches)}`
     }
 
     try {

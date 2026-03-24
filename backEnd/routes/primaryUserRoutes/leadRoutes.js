@@ -40,7 +40,8 @@ import {
   Getallsalesfunnels,
   Getdailystaffreport,
   Getalltasktoreport,
-  GetallselectedproductFollowup
+  GetallselectedproductFollowup,
+  getAlltasktoTarget
 } from "../../controller/primaryUserController/leadController.js";
 const router = express.Router();
 router.get("/getstaffdailyreports", authMiddleware, Getdailystaffreport)
@@ -56,6 +57,7 @@ router.post("/taskRegistration", authMiddleware, TaskRegistration);
 router.get("/checkexistinglead", authMiddleware, Checkexistinglead);
 router.put("/leadRegisterUpdate", authMiddleware, UpdateLeadRegister);
 router.get("/getallTask", authMiddleware, GetallTask);
+router.get("/getAlltasktoTarget", authMiddleware, getAlltasktoTarget)
 router.get("/getalltasktoreport", authMiddleware, Getalltasktoreport)
 router.delete("/taskDelete", authMiddleware, TaskDelete);
 router.put("/taskEdit", authMiddleware, TaskEdit);
