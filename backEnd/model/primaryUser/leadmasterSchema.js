@@ -69,7 +69,7 @@ const leadSchema = new mongoose.Schema(
     netAmount: {
       type: Number,
     },
-    roundOff: { type: Number },
+  
     //balance amount given by the customer
     balanceAmount: {
       type: Number,

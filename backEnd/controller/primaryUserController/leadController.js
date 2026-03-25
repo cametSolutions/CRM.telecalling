@@ -30,7 +30,7 @@ export const LeadRegister = async (req, res) => {
       taxAmount,
       taxableAmount,
       netAmount,
-      roundOff,
+      
       partner,
       allocationType = null,
       selfAllocation,
@@ -122,7 +122,7 @@ export const LeadRegister = async (req, res) => {
       taxAmount: Number(taxAmount),
       taxableAmount: Number(taxableAmount),
       netAmount: Number(netAmount),
-      roundOff: Number(roundOff),
+      
       balanceAmount: Number(netAmount),
       selfAllocation: selfAllocation,
       ...(allocationType && { allocationType }),
