@@ -197,6 +197,8 @@ const LeadTask = () => {
     }
     return []
   }
+console.log(type)
+console.log(pending)
   console.log("hhhh")
   return (
     <div className="h-full flex flex-col bg-[#ADD8E6]">

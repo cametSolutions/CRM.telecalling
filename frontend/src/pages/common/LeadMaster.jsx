@@ -431,7 +431,6 @@ function ProductDropdown({
 // LeadMaster
 // ─────────────────────────────────────────────────────────────────────────────
 const LeadMaster = ({
-
   process,
   Data,
   isReadOnly,
@@ -550,7 +549,7 @@ const LeadMaster = ({
   const canSelfAllocate =
     loggeduser?.department?._id === "670c866552847bbebbd35748" ||
     loggeduser?.department?._id === "670c867352847bbebbd35750"
- 
+
   useEffect(() => {
     if (!selectedleadlist || selectedleadlist.length === 0) {
       setSelectedLeadList([{ ...emptyRow }])
@@ -943,37 +942,74 @@ const LeadMaster = ({
     setcustomerTableData(filteredcustomerLicenseandproducts)
   }
 
+  // const handlePriceChange = (index, newPrice) => {
+  //   setSelectedLeadList((prevList) =>
+  //     prevList.map((product, i) =>
+  //       i === index
+  //         ? {
+  //             ...product,
+  //             productPrice: newPrice,
+  //             netAmount: (
+  //               Number(newPrice) +
+  //               (Number(product.hsn) / 100) * Number(newPrice)
+  //             ).toFixed(2)
+  //           }
+  //         : product
+  //     )
+  //   )
+  // }
   const handlePriceChange = (index, newPrice) => {
     setSelectedLeadList((prevList) =>
-      prevList.map((product, i) =>
-        i === index
-          ? {
-              ...product,
-              productPrice: newPrice,
-              netAmount: (
-                Number(newPrice) +
-                (Number(product.hsn) / 100) * Number(newPrice)
-              ).toFixed(2)
-            }
-          : product
-      )
+      prevList.map((product, i) => {
+        if (i !== index) return product
+
+        const price = Number(newPrice || 0)
+        const igst = Number(product.hsn || 0)
+        const rawNet = price + (igst / 100) * price
+        const netAmount = Math.round(rawNet) // rounded net amount
+
+        return {
+          ...product,
+          productPrice: newPrice,
+          netAmount
+        }
+      })
     )
   }
 
+  // const handleHsnChange = (index, newHsn) => {
+  //   setSelectedLeadList((prevList) =>
+  //     prevList.map((product, i) =>
+  //       i === index
+  //         ? {
+  //             ...product,
+  //             hsn: newHsn,
+  //             netAmount: (
+  //               Number(product?.productPrice) +
+  //               (Number(newHsn) / 100) * Number(product?.productPrice)
+  //             ).toFixed(2)
+  //           }
+  //         : product
+  //     )
+  //   )
+  // }
+console.log(selectedleadlist)
   const handleHsnChange = (index, newHsn) => {
     setSelectedLeadList((prevList) =>
-      prevList.map((product, i) =>
-        i === index
-          ? {
-              ...product,
-              hsn: newHsn,
-              netAmount: (
-                Number(product?.productPrice) +
-                (Number(newHsn) / 100) * Number(product?.productPrice)
-              ).toFixed(2)
-            }
-          : product
-      )
+      prevList.map((product, i) => {
+        if (i !== index) return product
+
+        const price = Number(product.productPrice || 0)
+        const igst = Number(newHsn || 0)
+        const rawNet = price + (igst / 100) * price
+        const netAmount = Math.round(rawNet) // rounded net amount
+
+        return {
+          ...product,
+          hsn:newHsn,
+          netAmount
+        }
+      })
     )
   }
 
@@ -1066,78 +1102,6 @@ const LeadMaster = ({
       seen.add(key)
     }
     return false
-  }
-
-  const handleAddProducts = () => {
-    setIsleadForOpen(false)
-    if (validateError.emptyleadData) {
-      setValidateError((prev) => ({ ...prev, emptyleadData: "" }))
-    }
-    if (validateError.readonlyError) {
-      setValidateError((prev) => ({ ...prev, readonlyError: "" }))
-    }
-    setSelectedLeadList((prev) => {
-      let updatedList = [...prev]
-      if (selectedLicense) {
-        const selectedProducts = productOrserviceSelections[selectedLicense]
-          .filter((items) => items.selected)
-          .map((item) => {
-            const igstRate =
-              item?.selectedArray?.[0]?.hsn_id?.onValue?.igstRate ?? 0
-            return {
-              licenseNumber: selectedLicense,
-              productorServiceName: item.productName || item.serviceName,
-              productorServiceId: item._id,
-              itemType: item.productName ? "Product" : "Service",
-              productPrice: item.productPrice,
-              hsn: item?.selectedArray[0]?.hsn_id?.onValue?.igstRate || 0,
-              price: item?.productPrice,
-              netAmount: (
-                Number(item?.productPrice || 0) +
-                (Number(igstRate) / 100) * Number(item?.productPrice || 0)
-              ).toFixed(2)
-            }
-          })
-        const newProducts = selectedProducts.filter(
-          (product) =>
-            !updatedList.some(
-              (p) =>
-                p.licenseNumber === selectedLicense &&
-                p.productorServiceId === product.productorServiceId
-            )
-        )
-        updatedList = [...updatedList, ...newProducts]
-      } else {
-        const selectedProducts = licensewithoutProductSelection
-          .filter((items) => items.selected)
-          .map((item) => {
-            const igstRate =
-              item?.selectedArray?.[0]?.hsn_id?.onValue?.igstRate ?? 0
-            return {
-              productorServiceName: item.productName || item.serviceName,
-              productorServiceId: item._id,
-              itemType: item.productName ? "Product" : "Service",
-              productPrice: item?.productPrice,
-              hsn: item?.selectedArray[0]?.hsn_id?.onValue?.igstRate || 0,
-              price: item.productPrice || item.price,
-              netAmount: (
-                Number(item?.productPrice || 0) +
-                (Number(igstRate) / 100) * Number(item?.productPrice || 0)
-              ).toFixed(2)
-            }
-          })
-        const newProducts = selectedProducts.filter(
-          (product) =>
-            !updatedList.some(
-              (p) =>
-                !p.licenseNumber &&
-                p.productorServiceId === product.productorServiceId
-            )
-        )
-        updatedList = [...updatedList, ...newProducts]
-      }
-      return updatedList.length ? updatedList : [{ ...emptyRow }]
-    })
   }
 
   const validateLeadData = async (leadData, selectedleadlist, role) => {

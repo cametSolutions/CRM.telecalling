@@ -338,16 +338,16 @@ console.log("hh")
                     <span>Lead Date</span>
                   </div>
                 </td>
-                <td className="px-3 py-1 border border-gray-300 bg-blue-600 text-white">
+                <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
                   <span>Lead ID</span>
                 </td>
-                <td className="px-3 py-1 border border-gray-300 bg-blue-600 text-white">
+                <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
                   <div className="flex items-center gap-1">
                     <Phone className="w-3.5 h-3.5" />
                     <span>Phone</span>
                   </div>
                 </td>
-                <td className="px-3 py-1 border border-gray-300 bg-blue-600 text-white">
+                <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
                   <div className="flex items-center gap-1">
                     <Mail className="w-3.5 h-3.5" />
                     <span>Email</span>
@@ -375,7 +375,7 @@ console.log("hh")
                 <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
                   {item.leadDate?.toString().split("T")[0] || "-"}
                 </td>
-                <td className="px-3 py-1.5 border border-gray-300 font-bold text-blue-700">
+                <td className="px-3 py-1.5 border border-gray-300  text-gray-700">
                   {item?.leadId}
                 </td>
                 <td className="px-3 py-1.5 border border-gray-300 text-gray-700">

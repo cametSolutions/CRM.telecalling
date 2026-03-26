@@ -7020,7 +7020,7 @@ setoriginalloggeduser(user)
   }
 
   const renderTable = (groupedData) => (
-    <table className="border-collapse border border-gray-300 w-full text-sm">
+    <table className="border-collapse border border-gray-300 w-full text-sm h-auto">
       <thead className="whitespace-nowrap bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-30 text-xs">
         <tr>
           <th className="border border-gray-300 w-5" />
@@ -7364,7 +7364,7 @@ setoriginalloggeduser(user)
         </div>
       </div>
 
-      <div className="flex-1 overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
+      <div className="h-auto overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
         {renderTable(currentData)}
       </div>
 

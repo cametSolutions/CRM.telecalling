@@ -596,7 +596,16 @@ export const GetAllstaffs = async (req, res) => {
 }
 export const GetallUsers = async (req, res) => {
   try {
-    const allusers = await Staff.find({})
+    const { isVerified = null } = req.query
+console.log("isvvvvvvv",isVerified)
+    let query = {}
+    if (isVerified) {
+      query = {
+        isVerified: true
+      }
+    }
+console.log('query',query)
+    const allusers = await Staff.find(query)
       .populate({ path: "department", select: "department" })
       .populate({ path: "assignedto", select: "name" })
 
@@ -2208,7 +2217,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
 
           if (checkholidayleave) {
-            if ((checkholidayleave.otherLeave !== "" && checkholidayleave.otherLeave !== 0)||(checkholidayleave.casualLeave !== "" && checkholidayleave.casualLeave !== 0) || (checkholidayleave.privileageLeave !== "" && checkholidayleave.privileageLeave !== 0) || (checkholidayleave.compensatoryLeave !== "" && checkholidayleave.compensatoryLeave !== 0)) {
+            if ((checkholidayleave.otherLeave !== "" && checkholidayleave.otherLeave !== 0) || (checkholidayleave.casualLeave !== "" && checkholidayleave.casualLeave !== 0) || (checkholidayleave.privileageLeave !== "" && checkholidayleave.privileageLeave !== 0) || (checkholidayleave.compensatoryLeave !== "" && checkholidayleave.compensatoryLeave !== 0)) {
 
 
               return {
