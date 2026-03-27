@@ -353,8 +353,9 @@ export const Login = async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid login credentials" })
     }
-    const token = generateToken(res, user._id)
-
+console.log(user)
+    const token = generateToken(res, user)
+console.log("dddddddddddddddddddddddddddddddd",token)
 
     if (token) {
       const { password, ...userwithoutpassword } = user
