@@ -3658,6 +3658,185 @@ export const GetfollowupsummaryReport = async (req, res) => {
 
     console.log("todayStart:", todayStart, "todayEnd:", todayEnd);
 
+    // const result = await LeadMaster.aggregate([
+    //   // 1) Only logs that have a nextFollowUpDate (actual followup completion logs)
+    //   {
+    //     $addFields: {
+    //       followupLogs: {
+    //         $filter: {
+    //           input: "$activityLog",
+    //           as: "log",
+    //           cond: {
+    //             $and: [
+    //               { $ne: ["$$log.nextFollowUpDate", null] },
+    //               { $gt: ["$$log.nextFollowUpDate", new Date("2000-01-01")] }
+    //             ]
+    //           }
+    //         }
+    //       }
+    //     }
+    //   },
+
+    //   // 2) Get last followup log (has the real nextFollowUpDate)
+    //   {
+    //     $addFields: {
+    //       lastActivity: { $arrayElemAt: ["$followupLogs", -1] }
+    //     }
+    //   },
+
+    //   // 3) Only leads with at least one followup log
+    //   {
+    //     $match: {
+    //       lastActivity: { $ne: null }
+    //     }
+    //   },
+
+    //   // 4) Unwind leadFor
+    //   { $unwind: "$leadFor" },
+
+    //   // 5) One row per lead, staffId from assignment log (taskTo: "followup")
+    //   {
+    //     $group: {
+    //       _id: "$_id",
+    //       leadIdStr: { $first: "$leadId" },
+    //       staffId: {
+    //         $first: {
+    //           $let: {
+    //             vars: {
+    //               assignLog: {
+    //                 $arrayElemAt: [
+    //                   {
+    //                     $filter: {
+    //                       input: "$activityLog",
+    //                       as: "log",
+    //                       cond: { $eq: ["$$log.taskTo", "followup"] }
+    //                     }
+    //                   },
+    //                   0
+    //                 ]
+    //               }
+    //             },
+    //             in: "$$assignLog.taskallocatedTo"
+    //           }
+    //         }
+    //       },
+    //       nextFollowupDate: { $first: "$lastActivity.nextFollowUpDate" },
+    //       leadConvertedDate: { $first: "$leadConvertedDate" },
+    //       leadLostDate: { $first: "$leadLostDate" },
+    //       netAmount: { $first: "$leadFor.netAmount" },
+    //       branchId: { $first: "$leadBranch" }
+    //     }
+    //   },
+
+    //   // 6) Compute flags using dynamic date variables
+    //   {
+    //     $addFields: {
+    //       dueToday: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $gte: ["$nextFollowupDate", todayStart] },
+    //               { $lte: ["$nextFollowupDate", todayEnd] }
+    //             ]
+    //           },
+    //           1,
+    //           0
+    //         ]
+    //       },
+    //       overdue: {
+    //         $cond: [{ $lt: ["$nextFollowupDate", todayStart] }, 1, 0]
+    //       },
+    //       future: {
+    //         $cond: [{ $gt: ["$nextFollowupDate", todayEnd] }, 1, 0]
+    //       },
+    //       isConverted: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $ne: ["$leadConvertedDate", null] },
+    //               { $gte: ["$leadConvertedDate", start] },
+    //               { $lte: ["$leadConvertedDate", end] }
+    //             ]
+    //           },
+    //           1,
+    //           0
+    //         ]
+    //       },
+    //       isLost: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $ne: ["$leadLostDate", null] },
+    //               { $gte: ["$leadLostDate", start] },
+    //               { $lte: ["$leadLostDate", end] }
+    //             ]
+    //           },
+    //           1,
+    //           0
+    //         ]
+    //       },
+    //       convertedNetAmount: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $ne: ["$leadConvertedDate", null] },
+    //               { $gte: ["$leadConvertedDate", start] },
+    //               { $lte: ["$leadConvertedDate", end] }
+    //             ]
+    //           },
+    //           { $ifNull: ["$netAmount", 0] },
+    //           0
+    //         ]
+    //       }
+    //     }
+    //   },
+
+    //   // 7) Group per staff
+    //   {
+    //     $group: {
+    //       _id: { staffId: "$staffId" },
+    //       leadIds: { $addToSet: "$leadIdStr" },
+    //       leadCount: { $sum: 1 },
+    //       totalConverted: { $sum: "$isConverted" },
+    //       totalLost: { $sum: "$isLost" },
+    //       totalDueToday: { $sum: "$dueToday" },
+    //       totalOverdue: { $sum: "$overdue" },
+    //       totalFuture: { $sum: "$future" },
+    //       convertedNetAmount: { $sum: "$convertedNetAmount" },
+    //       branchIds: { $addToSet: "$branchId" }
+    //     }
+    //   },
+
+    //   // 8) Join staff details
+    //   {
+    //     $lookup: {
+    //       from: "staffs",
+    //       localField: "_id.staffId",
+    //       foreignField: "_id",
+    //       as: "staff"
+    //     }
+    //   },
+    //   { $unwind: "$staff" },
+
+    //   // 9) Final shape
+    //   {
+    //     $project: {
+    //       _id: 0,
+    //       staffId: "$_id.staffId",
+    //       staffName: "$staff.name",
+    //       staffRole: "$staff.role",
+    //       branchIds: 1,
+    //       leadIds: 1,
+    //       leadCount: 1,
+    //       totalConverted: 1,
+    //       totalLost: 1,
+    //       totalDueToday: 1,
+    //       totalOverdue: 1,
+    //       totalFuture: 1,
+    //       convertedNetAmount: 1
+    //     }
+    //   }
+    // ]);
     const result = await LeadMaster.aggregate([
       // 1) Only logs that have a nextFollowUpDate (actual followup completion logs)
       {
@@ -3698,6 +3877,7 @@ export const GetfollowupsummaryReport = async (req, res) => {
       {
         $group: {
           _id: "$_id",
+          // keep leadId (string) for this lead
           leadIdStr: { $first: "$leadId" },
           staffId: {
             $first: {
@@ -3795,6 +3975,7 @@ export const GetfollowupsummaryReport = async (req, res) => {
       {
         $group: {
           _id: { staffId: "$staffId" },
+          // collect all leadIds for this staff
           leadIds: { $addToSet: "$leadIdStr" },
           leadCount: { $sum: 1 },
           totalConverted: { $sum: "$isConverted" },
@@ -3818,15 +3999,15 @@ export const GetfollowupsummaryReport = async (req, res) => {
       },
       { $unwind: "$staff" },
 
-      // 9) Final shape
+      // 9) Final shape (now includes leadIds)
       {
         $project: {
           _id: 0,
-          staffId: "$_id.staffId",
+          staffId: "_id.staffId",
           staffName: "$staff.name",
           staffRole: "$staff.role",
           branchIds: 1,
-          leadIds: 1,
+          leadIds: 1,          // <-- array of leadId strings for this staff
           leadCount: 1,
           totalConverted: 1,
           totalLost: 1,
@@ -3836,10 +4017,12 @@ export const GetfollowupsummaryReport = async (req, res) => {
           convertedNetAmount: 1
         }
       }
-    ]);
-
+    ])
+result.forEach((item)=>console.log(item.totalConverted))
+console.log("resulstttt",result)
     const structuredData = result.map((item) => ({
       staffId: item.staffId,
+      leadIds: item.leadIds,
       staffRole: item.staffRole,
       branchIds: item.branchIds,
       Staff: item.staffName,
@@ -3881,15 +4064,15 @@ export const GetfollowupsummaryReport = async (req, res) => {
 //     const todayEnd = new Date();
 //     todayEnd.setHours(23, 59, 59, 999);
 //     console.log("todayend", todayEnd)
-    
 
 
 
-    
 
 
 
-    
+
+
+
 //     if (structuredData && structuredData.length > 0) {
 //       return res.status(200).json({ message: "summary found", data: structuredData })
 //     }

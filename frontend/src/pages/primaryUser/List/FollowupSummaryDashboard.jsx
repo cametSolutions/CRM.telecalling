@@ -22,7 +22,7 @@ export default function FollowupSummaryDashboard() {
       selectedBranch &&
       `/lead/getfollowupsummaryReport?startDate=${date.startDate}&endDate=${date.endDate}&branchId=${selectedBranch}`
   )
-
+console.log(followup)
   // set end of current month once
   useEffect(() => {
     const now = new Date()
