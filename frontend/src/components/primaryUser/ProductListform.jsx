@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react"
+import { getLocalStorageItem } from "../../helper/localstorage"
 import { CiEdit } from "react-icons/ci"
 import { PropagateLoader } from "react-spinners"
 import { useNavigate } from "react-router-dom"
@@ -13,7 +14,8 @@ import { Link } from "react-router-dom"
 import _ from "lodash"
 
 const ProductListform = ({ productlist, loading }) => {
-  const user = localStorage.getItem("user")
+  const user = getLocalStorageItem("user")
+console.log(user)
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredProducts, setFilteredProducts] = useState(productlist)
@@ -33,9 +35,9 @@ const ProductListform = ({ productlist, loading }) => {
   useEffect(() => {
     handleSearch(searchQuery)
   }, [searchQuery, handleSearch])
-
+console.log(user)
   return (
-    <div className="container mx-auto  p-8 ">
+    <div className="h-full">
       <div className="w-full  bg-white shadow-lg rounded p-6  h-fit ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
           <h3 className="text-2xl text-black font-bold">Product List</h3>

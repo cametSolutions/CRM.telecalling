@@ -42,6 +42,7 @@ export default function CollectionUpdate() {
   const [collectionupdateModal, setcollectionUpdateModal] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [selectedData, setselectedData] = useState(null)
+console.log(selectedData)
   const [selectedLeadId, setselectedLeadId] = useState(null)
   const [verifiedLead, setverifiedLead] = useState(false)
   const [companyBranches, setcompanyBranches] = useState(null)
@@ -61,6 +62,7 @@ export default function CollectionUpdate() {
     selectedCompanyBranch &&
       `/lead/collectionLeads?selectedBranch=${selectedCompanyBranch}&verified=${verifiedLead}`
   )
+console.log(collectionlead)
   const { data: partners } = UseFetch("/customer/getallpartners")
   console.log("h")
   useEffect(() => {
@@ -177,7 +179,7 @@ console.log("hh")
   }
   const handleCollectionUpdate = async (formData) => {
     console.log(formData)
-    return
+    
     try {
       const response = await api.post("/lead/collectionUPdate", formData)
       if (response.status === 200) {
@@ -252,21 +254,7 @@ console.log("hh")
             >
               <button
                 type="button"
-                // onClick={() =>
-                //   loggedUser.role === "Admin"
-                //     ? navigate("/admin/transaction/lead/leadEdit", {
-                //         state: {
-                //           leadId: item._id,
-                //           isReadOnly: !isAllocatedToeditable
-                //         }
-                //       })
-                //     : navigate("/staff/transaction/lead/leadEdit", {
-                //         state: {
-                //           leadId: item._id,
-                //           isReadOnly: !isAllocatedToeditable
-                //         }
-                //       })
-                // }
+              
                 onClick={() => {
                   setpaymentHistoryList(item.paymentHistory)
                   setpaymentHistoryModal(true)

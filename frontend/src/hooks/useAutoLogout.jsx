@@ -12,7 +12,7 @@ const useAutoLogout = (isActive) => {
 
     const logout = () => {
       console.log("User inactive → logout");
-      navigate("/login");
+      navigate("/");
     };
 
     const resetTimer = () => {

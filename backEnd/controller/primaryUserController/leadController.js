@@ -30,7 +30,7 @@ export const LeadRegister = async (req, res) => {
       taxAmount,
       taxableAmount,
       netAmount,
-      
+
       partner,
       allocationType = null,
       selfAllocation,
@@ -122,7 +122,7 @@ export const LeadRegister = async (req, res) => {
       taxAmount: Number(taxAmount),
       taxableAmount: Number(taxableAmount),
       netAmount: Number(netAmount),
-      
+
       balanceAmount: Number(netAmount),
       selfAllocation: selfAllocation,
       ...(allocationType && { allocationType }),
@@ -3275,7 +3275,7 @@ export const GetfollowupsummaryReport = async (req, res) => {
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-   
+
 
     const result = await LeadMaster.aggregate([
       // 1) Only followup logs with allocated staff
@@ -3624,6 +3624,27 @@ export const GetcollectionLeads = async (req, res) => {
             return populatedActivity;
           })
         );
+        const populatedLeadFor = await Promise.all(
+          (lead.leadFor || []).map(async (item) => {
+            const populatedItem = { ...item }
+
+            if (item.productorServicemodel && item.productorServiceId) {
+              try {
+                const model = mongoose.model(item.productorServicemodel)
+                const productDoc = await model
+                  .findById(item.productorServiceId)
+                  .select("productName name title")
+                  .lean()
+
+                populatedItem.productorServiceId = productDoc
+              } catch (err) {
+                populatedItem.productorServiceId = null
+              }
+            }
+
+            return populatedItem
+          })
+        )
 
         const populatedpaymentHistory = lead?.paymentHistory?.length
           ? await Promise.all(
@@ -3649,6 +3670,7 @@ export const GetcollectionLeads = async (req, res) => {
           ...lead,
           leadBy: populatedLeadBy,
           paymentHistory: populatedpaymentHistory,
+          leadFor:populatedLeadFor,//include populated productorservice
           activityLog: populatedActivityLog, // include fully populated activity logs
           taskallocatedTo: lasttaskallocatedto || null,
           taskallocatedBy: lasttaskallocatedBy || null,
