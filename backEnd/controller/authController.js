@@ -1005,7 +1005,7 @@ export const OnsiteApply = async (req, res) => {
     if (checkForthisonsiteusedforCompensatoryleave) {
       return res.status(201).json({ message: "Cant make date change compensatory for this onsite taken" })
     }
-
+console.log("888888888888888888888888888",checkForthisonsiteusedforCompensatoryleave)
     const selectedObjectId = new mongoose.Types.ObjectId(selectedid)
     const assignedObjectId = new mongoose.Types.ObjectId(assignedto)
 
@@ -1040,6 +1040,7 @@ export const OnsiteApply = async (req, res) => {
       const currentonsiteType = onsiteType
       if (compensatoryLeave === "true") {
         if (formeronsiteType === "Full Day" && currentonsiteType === "Half Day") {
+console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhh")
           const year = new Date(onsiteDate).getFullYear()
 
           const compensatoryLeave = await CompensatoryLeave.find({
@@ -1066,6 +1067,8 @@ export const OnsiteApply = async (req, res) => {
           formeronsiteType === "Half Day" &&
           currentonsiteType === "Full Day"
         ) {
+console.log(
+"tttttttttttttttttttttttt")
           let ValueAdded = 0.5
           const year = new Date(onsiteDate).getFullYear()
 
@@ -1094,7 +1097,7 @@ export const OnsiteApply = async (req, res) => {
 
         })
         if (checkcompenstoryUsed.leaveUsed) {
-
+console.log("OOOOOOOOOOOOOOOOOOOO")
           return res.status(409).json({
             success: false,
             message: "Cannot update onsite. A leave is already used against this."
@@ -1130,6 +1133,7 @@ export const OnsiteApply = async (req, res) => {
         return res.status(200).json({ message: "Onsite updated" })
       }
     } else {
+console.log("pppppppppppppppppppp")
       // If no existing record, create a new one
       const onsitedata = new Onsite({
         onsiteDate,

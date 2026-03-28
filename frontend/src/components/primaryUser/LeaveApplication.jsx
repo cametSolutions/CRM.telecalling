@@ -810,20 +810,8 @@ console.log(ownedcasualCount)
           setMessage({ top: "", bottom: "" })
 
           //Assuming you have an API endpoint for creating leave requests
-          // const response = await fetch(
-          //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
-          //   {
-          //     method: "POST",
-          //     headers: {
-          //       "Content-Type": "application/json"
-          //     },
-          //     body: JSON.stringify(formData),
-          //     credentials: "include"
-          //   }
-          // )
-
           const response = await fetch(
-            `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+            `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
             {
               method: "POST",
               headers: {
@@ -833,6 +821,18 @@ console.log(ownedcasualCount)
               credentials: "include"
             }
           )
+
+          // const response = await fetch(
+          //   `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          //   {
+          //     method: "POST",
+          //     headers: {
+          //       "Content-Type": "application/json"
+          //     },
+          //     body: JSON.stringify(formData),
+          //     credentials: "include"
+          //   }
+          // )
 
           const responseData = await response.json()
 
@@ -910,15 +910,15 @@ console.log(ownedcasualCount)
           console.log(formData)
 
           setLoader(true)
-          // const response = await api.post(
-          //   `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
-          //   { formData, tableRows }
-          // )
-
           const response = await api.post(
-            `https://www.crm.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
+            `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
             { formData, tableRows }
           )
+
+          // const response = await api.post(
+          //   `https://www.crm.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
+          //   { formData, tableRows }
+          // )
 
           if (response.status === 200) {
             setcompensatoryLeave(false)
@@ -965,7 +965,7 @@ console.log(ownedcasualCount)
         ...prev,
         bottom: error?.response?.data?.message
       }))
-      console.log("error:", error.message)
+      console.log("error:", error)
     }
   }
   const selectedTabContent = (value) => {
