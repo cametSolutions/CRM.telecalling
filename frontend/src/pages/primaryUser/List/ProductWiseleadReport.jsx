@@ -55,13 +55,16 @@ console.log(viewMode)
   console.log(report)
   // aggregate per staff for initial view
   useEffect(() => {
-    if (!report || !Array.isArray(report) || !selectedBranch) return
+console.log(!report)
+
+console.log(!report  || !selectedBranch)
+    if (!report  || !selectedBranch) return
 
     // report rows expected with fields:
     // staffId, staffName, productId, productName, branch, totalLeads, totalConverted, totalPending, totalLost, totalValue, convertedValue, ...
     const staffMap = {}
-    console.log(report)
-    report.forEach((row) => {
+    console.log(report.re)
+    report.re.forEach((row)=>{
       if (String(row.branch) !== String(selectedBranch)) {
         return // acts like "continue" for this row
       }
@@ -83,8 +86,10 @@ console.log(viewMode)
           totalConverted: 0,
           totalLost: 0,
           totalPending: 0,
-          totalValue: 0,
-          convertedValue: 0
+          totalNetAmount:0,
+totalConvertedAmount:0,
+totalLostAmount:0,
+totalPendingAmount:0
         }
       }
 
@@ -92,8 +97,12 @@ console.log(viewMode)
       staffMap[staffKey].totalConverted += Number(row.totalConverted || 0)
       staffMap[staffKey].totalLost += Number(row.totalLost || 0)
       staffMap[staffKey].totalPending += Number(row.totalPending || 0)
-      staffMap[staffKey].totalValue += Number(row.totalNetAmount || 0)
-      staffMap[staffKey].convertedValue += Number(row.convertedNetAmount || 0)
+      // staffMap[staffKey].totalValue += Number(row.totalNetAmount || 0)
+      // staffMap[staffKey].convertedValue += Number(row.convertedNetAmount || 0)
+staffMap[staffKey].totalNetAmount +=Number(row.totalNetAmount||0)
+staffMap[staffKey].totalConvertedAmount +=Number(row.totalConvertedAmount||0)
+staffMap[staffKey].totalLostAmount +=Number(row.lostNetAmount||0)
+staffMap[staffKey].totalPendingAmount +=Number(row.totalPendingAmount ||0)
     })
 
     const aggregatedStaffRows = Object.values(staffMap)
@@ -115,8 +124,7 @@ console.log(viewMode)
     "Converted",
     "Lost",
     "Pending",
-    "Total Value",
-    "Converted Value"
+    
   ]
 
   const handleDateRange = (range) => {
