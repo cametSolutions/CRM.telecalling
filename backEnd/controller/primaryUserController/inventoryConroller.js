@@ -3,6 +3,7 @@ import {
   Category,
   Hsn
 } from "../../model/primaryUser/productSubDetailsSchema.js"
+import Product  from "../../model/primaryUser/productSchema.js";
 
 // export const ProductSubdetailsRegistration = async (req, res) => {
 //   const cmp_id=req.owner.cmp_id
@@ -454,6 +455,17 @@ export const DeleteHsn = async (req, res) => {
       message: "Error deleting Hsn",
       error: error.message
     })
+  }
+}
+export const GetCategory=async(req,res)=>{
+ try {
+    const category=await Category.find()
+    if (category.length>0){
+      res.status(200).json({ message: "Brands found", data: category})
+    }
+  } catch (error) {
+    console.log("Error:", error.message)
+    res.status(500).json({ message: "Internal server error" })
   }
 }
 export const GetBrands = async (req, res) => {
