@@ -3109,7 +3109,7 @@
 //                 onClick={() => handleFollowUp(item)}
 //                 className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-white bg-amber-500 rounded hover:bg-amber-600 transition-colors w-full justify-center"
 //               >
-//                 <History className="w-3.5 h-3.5" />
+//                 < className="w-3.5 h-3.5" />
 //               </button>
 //             </td>
 //           )}
@@ -6761,6 +6761,7 @@ setoriginalloggeduser(user)
   }
 
   const handleFollowUp = (Item) => {
+console.log("hhhhhhhhhhhhhhhhhh")
     setshowFollowupModal(true)
     setFormData((prev) => ({
       ...prev,

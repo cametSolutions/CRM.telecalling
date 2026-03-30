@@ -494,8 +494,11 @@ export const Getallsalesfunnels = async (req, res) => {
   }
 };
 export const UpdateCollection = async (req, res) => {
+  console.log("abhbhbbbbbbb")
   const { isFrom = null } = req.query;
   const formData = req.body;
+  console.log("formdata", formData)
+
   let model;
   const isAdmin = await Admin.findOne({ _id: formData.receivedBy });
   if (isAdmin) {
@@ -547,23 +550,34 @@ export const UpdateCollection = async (req, res) => {
     }
     // 2️⃣ Calculate updated totals
     const newTotalPaid =
-      Number(formData.totalpaidAmountBefore || 0) + Number(formData?.receivedAmount);
+      Number(formData.totalpaidAmountBefore || 0) + Number(formData?.totalReceivedAmount)
 
-    const newBalance = Math.max(0, (formData?.projectAmount || 0) - newTotalPaid);
-    console.log("totalpaidamountbefor", formData?.totalpaidAmountBefore)
-    console.log("recievedaountt", formData?.receivedAmount)
-    console.log("newbalanceamount", newBalance)
-    console.log("newtotalpaid", newTotalPaid)
+    const newBalance = Math.max(0, (formData?.totalNetAmount || 0) - newTotalPaid)
+
+
+
+
     // 3️⃣ Create payment record
     const paymentRecord = {
       paymentDate: new Date(),
-      receivedAmount: formData?.receivedAmount || 0,
+      receivedAmount: formData?.totalReceivedAmount,
+      paymentEntries: (formData?.paymentEntries || []).map((e) => ({
+        productorServiceId: e.productorServiceId,
+        productorServicemodel: e.productorServicemodel,
+        netAmount: e.netAmount,
+        receivedAmount: e.receivedAmount,
+        balanceAmount: e.balanceAmount,
+      })),
       receivedBy: formData?.receivedBy,
       receivedModel: model,
       bankRemarks: formData?.bankRemarks || "",
-      remarks: formData?.remarks,
+
     };
-    let allocation = null;
+    formData.paymentEntries.forEach((item) => {
+      console.log(typeof item)
+    })
+    console.log("paymentrecorrrrrrr", paymentRecord)
+    const allocation = null
     if (isFrom) {
       allocation = await Task.findOne({ taskName: "Leadclosed" });
     }
@@ -582,11 +596,7 @@ export const UpdateCollection = async (req, res) => {
             reallocatedTo: false,
             allocationType: allocation?._id,
           }),
-          // ///set followupclosed:true for all activitlylog array elements
-          // ...(followupClosed && {
-          //   "activityLog.$[].followupClosed": true,
-          //   reallocatedTo: true,
-          // }),
+
         },
       },
       { new: true, session }
@@ -619,7 +629,7 @@ export const UpdateCollection = async (req, res) => {
     await session.abortTransaction();
     session.endSession();
 
-    console.log("error", error.message);
+    console.log("error", error);
     return res
       .status(500)
       .json({ successs: false, message: "Internal server error" });
@@ -3646,21 +3656,69 @@ export const GetcollectionLeads = async (req, res) => {
           })
         )
 
+        // const populatedpaymentHistory = lead?.paymentHistory?.length
+        //   ? await Promise.all(
+        //     lead.paymentHistory.map(async (history) => {
+        //       const populatedhistory = { ...history }; // if it's a mongoose subdoc
+        //       if (history.receivedModel && history.receivedBy) {
+        //         const model = mongoose.model(history.receivedModel);
+        //         populatedhistory.receivedBy = await model
+        //           .findById(history.receivedBy)
+        //           .select("name")
+        //           .lean();
+        //       }
+        //       return populatedhistory;
+        //     })
+        //   )
+        //   : [];
+
+
+
+
+
         const populatedpaymentHistory = lead?.paymentHistory?.length
           ? await Promise.all(
             lead.paymentHistory.map(async (history) => {
-              const populatedhistory = { ...history }; // if it's a mongoose subdoc
+              const populatedhistory = { ...history.toObject?.() ?? history }
+
+              // populate receivedBy (existing)
               if (history.receivedModel && history.receivedBy) {
-                const model = mongoose.model(history.receivedModel);
-                populatedhistory.receivedBy = await model
+                const recvModel = mongoose.model(history.receivedModel)
+                populatedhistory.receivedBy = await recvModel
                   .findById(history.receivedBy)
                   .select("name")
-                  .lean();
+                  .lean()
               }
-              return populatedhistory;
+
+              // populate each paymentEntries[].productId via productorServicemodel
+              if (Array.isArray(history.paymentEntries)) {
+                populatedhistory.paymentEntries = await Promise.all(
+                  history.paymentEntries.map(async (entry) => {
+                    const populatedEntry = { ...entry }
+
+                    if (entry.productorServicemodel && entry.productorServiceId) {
+                      try {
+                        const ProdModel = mongoose.model(entry.productorServicemodel)
+                        const doc = await ProdModel
+                          .findById(entry.productorServiceId)
+                          .select("productName name")
+                          .lean()
+
+                        populatedEntry.productorServiceId = doc
+                      } catch (err) {
+                        populatedEntry.productorServiceId = null
+                      }
+                    }
+
+                    return populatedEntry
+                  })
+                )
+              }
+
+              return populatedhistory
             })
           )
-          : [];
+          : []
 
         // ✅ Get last activity
         const lastActivity =
@@ -3670,7 +3728,7 @@ export const GetcollectionLeads = async (req, res) => {
           ...lead,
           leadBy: populatedLeadBy,
           paymentHistory: populatedpaymentHistory,
-          leadFor:populatedLeadFor,//include populated productorservice
+          leadFor: populatedLeadFor,//include populated productorservice
           activityLog: populatedActivityLog, // include fully populated activity logs
           taskallocatedTo: lasttaskallocatedto || null,
           taskallocatedBy: lasttaskallocatedBy || null,

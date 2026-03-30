@@ -121,6 +121,7 @@ console.log(collectionlead)
       partners.length > 0 &&
       loggedUser
     ) {
+console.log(loggedUser?.department)
       if (
         loggedUser?.department?._id === "670c863652847bbebbd35743" ||
         loggedUser?.department?.department === "Accounts"
@@ -177,12 +178,14 @@ console.log("hh")
     setselectedLeadId(Item.leadId)
     sethistoryModal(true)
   }
-  const handleCollectionUpdate = async (formData) => {
+  const handleCollectionUpdate = async (formData,setsubmitLoader)=>{
+setsubmitLoader(true)
     console.log(formData)
     
     try {
       const response = await api.post("/lead/collectionUPdate", formData)
       if (response.status === 200) {
+setsubmitLoader(false)
         toast.success("payment updated successfully")
         refreshHook()
         return response
