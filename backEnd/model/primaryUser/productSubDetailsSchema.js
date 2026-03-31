@@ -2,13 +2,13 @@ import mongoose from "mongoose"
 
 const brandSchema = new mongoose.Schema({
   brand: { type: String, required: true },
-  // cmp_id: { type: String, required: true },
+  cmp_id: { type: mongoose.Schema.Types.ObjectId, ref: "Company",required:true },
   // Primary_user_id: { type: String, required: true }
 })
 
 const categorySchema = new mongoose.Schema({
   category: { type: String, required: true },
- 
+  cmp_id: { type: mongoose.Schema.Types.ObjectId, ref: "Company",required:true }
 })
 
 
@@ -19,6 +19,7 @@ const HsnSchema = new mongoose.Schema({
   description: { type: String },
   onValue: {},
   onItem: [],
+  cmp_id: { type: mongoose.Schema.Types.ObjectId, ref: "Company",required:true }
 })
 
 export const Hsn = mongoose.model("Hsn", HsnSchema)

@@ -42,6 +42,7 @@ export default function CollectionUpdate() {
   const [collectionupdateModal, setcollectionUpdateModal] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [selectedData, setselectedData] = useState(null)
+console.log(selectedData)
   const [selectedLeadId, setselectedLeadId] = useState(null)
   const [verifiedLead, setverifiedLead] = useState(false)
   const [companyBranches, setcompanyBranches] = useState(null)
@@ -61,6 +62,7 @@ export default function CollectionUpdate() {
     selectedCompanyBranch &&
       `/lead/collectionLeads?selectedBranch=${selectedCompanyBranch}&verified=${verifiedLead}`
   )
+console.log(collectionlead)
   const { data: partners } = UseFetch("/customer/getallpartners")
   console.log("h")
   useEffect(() => {
@@ -119,6 +121,7 @@ export default function CollectionUpdate() {
       partners.length > 0 &&
       loggedUser
     ) {
+console.log(loggedUser?.department)
       if (
         loggedUser?.department?._id === "670c863652847bbebbd35743" ||
         loggedUser?.department?.department === "Accounts"
@@ -175,12 +178,14 @@ console.log("hh")
     setselectedLeadId(Item.leadId)
     sethistoryModal(true)
   }
-  const handleCollectionUpdate = async (formData) => {
+  const handleCollectionUpdate = async (formData,setsubmitLoader)=>{
+setsubmitLoader(true)
     console.log(formData)
-    return
+    
     try {
       const response = await api.post("/lead/collectionUPdate", formData)
       if (response.status === 200) {
+setsubmitLoader(false)
         toast.success("payment updated successfully")
         refreshHook()
         return response
@@ -252,21 +257,7 @@ console.log("hh")
             >
               <button
                 type="button"
-                // onClick={() =>
-                //   loggedUser.role === "Admin"
-                //     ? navigate("/admin/transaction/lead/leadEdit", {
-                //         state: {
-                //           leadId: item._id,
-                //           isReadOnly: !isAllocatedToeditable
-                //         }
-                //       })
-                //     : navigate("/staff/transaction/lead/leadEdit", {
-                //         state: {
-                //           leadId: item._id,
-                //           isReadOnly: !isAllocatedToeditable
-                //         }
-                //       })
-                // }
+              
                 onClick={() => {
                   setpaymentHistoryList(item.paymentHistory)
                   setpaymentHistoryModal(true)
@@ -338,16 +329,16 @@ console.log("hh")
                     <span>Lead Date</span>
                   </div>
                 </td>
-                <td className="px-3 py-1 border border-gray-300 bg-blue-600 text-white">
+                <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
                   <span>Lead ID</span>
                 </td>
-                <td className="px-3 py-1 border border-gray-300 bg-blue-600 text-white">
+                <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
                   <div className="flex items-center gap-1">
                     <Phone className="w-3.5 h-3.5" />
                     <span>Phone</span>
                   </div>
                 </td>
-                <td className="px-3 py-1 border border-gray-300 bg-blue-600 text-white">
+                <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
                   <div className="flex items-center gap-1">
                     <Mail className="w-3.5 h-3.5" />
                     <span>Email</span>
@@ -375,7 +366,7 @@ console.log("hh")
                 <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
                   {item.leadDate?.toString().split("T")[0] || "-"}
                 </td>
-                <td className="px-3 py-1.5 border border-gray-300 font-bold text-blue-700">
+                <td className="px-3 py-1.5 border border-gray-300  text-gray-700">
                   {item?.leadId}
                 </td>
                 <td className="px-3 py-1.5 border border-gray-300 text-gray-700">

@@ -5,12 +5,13 @@ import StaffHeader from "../header/StaffHeader.jsx"
 import Mainrouter from "../router/Mainrouter.jsx"
 
 import { useLocation } from "react-router-dom"
-
+import useAutoLogout from "../hooks/useAutoLogout.jsx"
 const Layout = () => {
   const [headerHeight, setHeaderHeight] = useState(0)
   const headerRef = useRef(null)
   const location = useLocation()
-
+const isAuthPage=location.pathname==="/"
+ useAutoLogout(!isAuthPage)
   const adminHeader = location.pathname.startsWith("/admin")
   const staffHeader = location.pathname.startsWith("/staff")
   useEffect(() => {

@@ -931,20 +931,14 @@
 
 // export default TargetRegister
 
-// import { useState, useEffect } from "react"
+
+// import { useState, useEffect, useRef } from "react"
 // import { Plus, Settings, Users, X, ChevronDown } from "lucide-react"
 // import { useSelector } from "react-redux"
 // import UseFetch from "../../../hooks/useFetch"
 // import api from "../../../api/api"
 // import { getLocalStorageItem } from "../../../helper/localstorage"
-// import { useFetcher } from "react-router-dom"
-
-// // const availableAllocations = [
-// //   { id: 1, name: "Follow Up" },
-// //   { id: 2, name: "Demo" },
-// //   { id: 3, name: "Onsite" },
-// //   { id: 4, name: "Closing" }
-// // ]
+// import { use } from "react"
 
 // const months = [
 //   "January",
@@ -964,12 +958,13 @@
 // export const TargetRegister = () => {
 //   const [fromMonth, setFromMonth] = useState("October")
 //   const [toMonth, setToMonth] = useState("December")
-
+// console.log('Hh')
 //   const [userbranches, setuserBranches] = useState([])
 //   const [selectedBranch, setselectedBranch] = useState(null)
 //   const [availableAllocations, setavailableAllocation] = useState([])
 //   const [selectedProducts, setSelectedProducts] = useState([])
 //   const [productandservices, setproductsandservices] = useState([])
+// const [categorylist,setcategoryList]=useState([])
 
 //   const [respectedmonthtargetType, setrespectedmonthtargetType] = useState({})
 //   const [selectedsplitProducts, setselectedsplitProducts] = useState(null)
@@ -977,24 +972,35 @@
 
 //   const [message, setMessage] = useState(null)
 
-//   const [selectedAllocations, setSelectedAllocations] = useState([[]])
+//   const [selectedAllocations, setSelectedAllocations] = useState([])
 
 //   const [showProductModal, setShowProductModal] = useState(false)
 //   const [showAllocationModal, setShowAllocationModal] = useState(false)
 //   const [showSplitModal, setShowSplitModal] = useState(false)
 //   const [splitModalData, setSplitModalData] = useState(null)
-//   console.log(splitModalData)
 
-//   const [targetData, setTargetData] = useState({})
+//   // committedTargetData: what's actually shown in the month input cells
+//   // Only updated when "Save Split" is clicked
+//   const [committedTargetData, setCommittedTargetData] = useState({})
+
 //   const [targetpriceorPercentageType, settargetpriceorPercentageType] =
 //     useState({})
 //   const [targetpriceorpercentageValue, settargetpriceorpercentageValue] =
 //     useState({})
 
-//   const [splitData, setSplitData] = useState({})
+//   // workingSplitData: live edits inside the modal (not yet committed)
+//   const [workingSplitData, setWorkingSplitData] = useState({})
+
+//   // committedSplitData: saved splits used for submission and determining "first time"
+//   const [committedSplitData, setCommittedSplitData] = useState({})
+
 //   const [userList, setuserList] = useState([])
 
-//   const { data } = UseFetch("/auth/getallusers")
+//   // Tracks which products have had at least one "Save Split" committed.
+//   // Key = productId, value = true
+//   const committedProductsRef = useRef({})
+
+//   const { data } = UseFetch("/auth/getallusers?isVerified=true")
 //   const loggeduserBranch = useSelector(
 //     (state) => state.companyBranch.loggeduserbranches
 //   )
@@ -1005,65 +1011,77 @@
 
 //   const { data: productslist } = UseFetch(`/product/getallproducts?${query}`)
 //   const { data: servicelist } = UseFetch(`/product/getallServices?${query}`)
+// const {data:category}=UseFetch("/inventory/getCategory")
+// console.log(category)
 //   const { data: tasklist } = UseFetch("/lead/getAlltasktoTarget")
-//   console.log(tasklist)
+
+//   const safeNum = (v) => {
+//     const n = Number(v)
+//     return Number.isFinite(n) ? n : 0
+//   }
+
+//   const recomputeTotalTargetForKey = (splitArray) => {
+//     if (!splitArray || !splitArray.length) return 0
+//     return splitArray.reduce((sum, user) => {
+//       const slabs = user.slabs || []
+//       if (!slabs.length) return sum
+//       return sum + safeNum(slabs[slabs.length - 1].to)
+//     }, 0)
+//   }
+
 //   useEffect(() => {
 //     if (tasklist && tasklist.length) {
-//       console.log("hh")
-//       // const filteredtask = tasklist.filter(
-//       //   (item) => item.listed || item.taskName.trim() === "lead"||item.taskName.trim()==="closing"
-//       // )
 //       const filteredtask = tasklist.filter((item) => {
 //         const name = (item.taskName || "").trim().toLowerCase()
 //         return item.listed || name === "lead" || name === "closing"
 //       })
-//       console.log(filteredtask)
-//       setavailableAllocation(
-//         filteredtask.map((item) => ({
-//           id: item._id,
-//           name: item.taskName
-//         }))
-//       )
 
-//       console.log(filteredtask)
+//       const mapped = filteredtask.map((item) => ({
+//         id: item._id,
+//         name: item.taskName
+//       }))
+
+//       setavailableAllocation(mapped)
+
+//       // Auto-select "Followup" by default
+//       const followup = mapped.find(
+//         (item) => item.name.trim().toLowerCase() === "followup"
+//       )
+//       if (followup) {
+//         setSelectedAllocations((prev) => {
+//           const alreadySelected = prev.some((a) => a.id === followup.id)
+//           return alreadySelected ? prev : [...prev, followup]
+//         })
+//       }
 //     }
 //   }, [tasklist])
-//   console.log(availableAllocations)
+
 //   // init user + branches
 //   useEffect(() => {
 //     const userData = getLocalStorageItem("user")
 //     if (!userData?.selected?.length) return
-
 //     setselectedBranch(userData.selected[0]?.branch_id)
-
 //     const branches = userData.selected.map((branch) => ({
 //       id: branch.branch_id,
 //       branchName: branch.branchName
 //     }))
 //     setuserBranches(branches)
 //   }, [])
+// useEffect(()=>{
+// if(!category)return
+// console.log(category)
+// setcategoryList(category)
+// },[category])
 
-//   // products + services combined (with branch info)
+//   // products + services combined
 //   useEffect(() => {
 //     if (!productslist && !servicelist) return
-
 //     const all = []
-//     //     if (productslist && productslist.length) {
-//     // console.log(productslist)
-//     //       all.push(
-//     //         ...productslist.map((item) => ({
-//     //           id: item._id,
-//     //           name: item.productName,
-//     //           branchId: item.selected.map((it)=>it.branch_id)
-//     //         }))
-//     //       )
-//     //     }
 //     if (productslist && productslist.length) {
 //       all.push(
 //         ...productslist.map((item) => ({
 //           id: item._id,
 //           name: item.productName,
-//           // product can be in many branches
 //           branchIds: (item.selected || []).map((sel) => sel.branch_id)
 //         }))
 //       )
@@ -1077,7 +1095,8 @@
 //         }))
 //       )
 //     }
-//     console.log(all)
+
+// console.log(all)
 //     setproductsandservices(all)
 //   }, [productslist, servicelist])
 
@@ -1086,25 +1105,12 @@
 //     if (!data) return
 //     const { allusers = [], allAdmins = [] } = data
 //     const combinedUsers = [...allusers, ...allAdmins]
-//     console.log(selectedBranch)
-//     console.log(combinedUsers)
-//     // const users = combinedUsers.map((user) => ({
-//     //   id: user._id,
-//     //   name: user.name,
-//     //   givenTarget: "",
-//     //   achievedTarget: "",
-//     //   slabs: []
-//     // }))
-//     // selectedBranchId: e.g. "66f7b26c1e7129afd9aee189"
-
 //     const users = combinedUsers
-//       // 1) keep only users having this branch in their selected array
 //       .filter(
 //         (user) =>
 //           Array.isArray(user.selected) &&
 //           user.selected.some((sel) => sel.branch_id === selectedBranch)
 //       )
-//       // 2) map to the shape you need
 //       .map((user) => ({
 //         id: user._id,
 //         name: user.name,
@@ -1112,8 +1118,6 @@
 //         achievedTarget: "",
 //         slabs: []
 //       }))
-//     console.log(combinedUsers.length)
-//     console.log(users.length)
 //     setuserList(users)
 //   }, [data, selectedBranch])
 
@@ -1121,34 +1125,23 @@
 //   useEffect(() => {
 //     if (!selectedAllocations.length || !productandservices.length) return
 //     const updatedEntries = {}
-
 //     productandservices.forEach((product) => {
 //       selectedAllocations.forEach((allocationType) => {
 //         updatedEntries[`${product.id}-${allocationType.id}-type`] = "amount"
 //       })
 //     })
-
-//     settargetpriceorPercentageType((prev) => ({
-//       ...prev,
-//       ...updatedEntries
-//     }))
+//     settargetpriceorPercentageType((prev) => ({ ...prev, ...updatedEntries }))
 //   }, [selectedAllocations, productandservices])
-//   console.log(selectedBranch)
-//   console.log(productandservices)
-//   // products filtered by branch
-//   // const filteredProductsForBranch = productandservices.filter((p) =>
-//   //   selectedBranch ? p.branchId === selectedBranch : true
-//   // )
+// console.log(targetpriceorPercentageType)
 //   const filteredProductsForBranch = productandservices.filter((p) =>
 //     selectedBranch ? p.branchIds?.includes(selectedBranch) : true
 //   )
 
-//   // when branch changes, drop selected products that don't belong
 //   useEffect(() => {
 //     setSelectedProducts((prev) =>
 //       prev.filter((p) => filteredProductsForBranch.some((fp) => fp.id === p.id))
 //     )
-//     // eslint-disable-next-line react-hooks/exhaustive-deps
+    
 //   }, [selectedBranch, productandservices])
 
 //   const getMonthsInRange = () => {
@@ -1176,11 +1169,50 @@
 //     })
 //   }
 
-//   const handleTargetInput = (productId, month, value) => {
-//     setTargetData((prev) => ({
-//       ...prev,
-//       [`${productId}-${month}`]: value
-//     }))
+//   const handleRemoveProductRow = (productId) => {
+//     setSelectedProducts((prev) => prev.filter((p) => p.id !== productId))
+
+//     setCommittedTargetData((prev) => {
+//       const next = { ...prev }
+//       Object.keys(next).forEach((key) => {
+//         if (key.startsWith(`${productId}-`)) delete next[key]
+//       })
+//       return next
+//     })
+
+//     settargetpriceorpercentageValue((prev) => {
+//       const next = { ...prev }
+//       Object.keys(next).forEach((key) => {
+//         if (key.startsWith(`${productId}-`)) delete next[key]
+//       })
+//       return next
+//     })
+
+//     settargetpriceorPercentageType((prev) => {
+//       const next = { ...prev }
+//       Object.keys(next).forEach((key) => {
+//         if (key.startsWith(`${productId}-`)) delete next[key]
+//       })
+//       return next
+//     })
+
+//     setCommittedSplitData((prev) => {
+//       const next = { ...prev }
+//       Object.keys(next).forEach((key) => {
+//         if (key.startsWith(`${productId}-`)) delete next[key]
+//       })
+//       return next
+//     })
+
+//     setWorkingSplitData((prev) => {
+//       const next = { ...prev }
+//       Object.keys(next).forEach((key) => {
+//         if (key.startsWith(`${productId}-`)) delete next[key]
+//       })
+//       return next
+//     })
+
+//     delete committedProductsRef.current[productId]
 //   }
 
 //   const handleIncentiveInput = (productId, allocId, value, type) => {
@@ -1197,6 +1229,7 @@
 //     }
 //   }
 
+//   // ─── Open split modal: load working data from committed data ─────────────────
 //   const openSplitModal = (productId, month, name) => {
 //     const Name = name.trim()
 
@@ -1211,274 +1244,273 @@
 //       return updated
 //     })
 
+//     // Populate workingSplitData for this month from committedSplitData
+//     // so the modal always starts from the last saved state for that specific month
+//     const committedKey = `${productId}-${month}`
+//     const existingCommitted = committedSplitData[committedKey]
+
+//     setWorkingSplitData((prev) => ({
+//       ...prev,
+//       [committedKey]: existingCommitted
+//         ? JSON.parse(JSON.stringify(existingCommitted))
+//         : []
+//     }))
+
+//     // Sync userList givenTarget from committed data for this month
+//     setuserList((prevUsers) =>
+//       prevUsers.map((u) => {
+//         const userEntry = existingCommitted?.find(
+//           (item) => item.userId === u.id
+//         )
+//         return {
+//           ...u,
+//           givenTarget: userEntry ? String(userEntry.splitTarget || "") : "",
+//           slabs: userEntry ? userEntry.slabs || [] : []
+//         }
+//       })
+//     )
+
 //     setSplitModalData({ productId, month, name })
 //     setShowSplitModal(true)
 //     setselectedsplitProducts(productId)
 //     setselectedsplitmonth(month)
 //   }
 
-//   const handleSplitChange = (userId, value) => {
+//   // ─── handleSplitChange: only mutates workingSplitData ───────────────────────
+//   const handleSplitChange = (userId, rawValue) => {
+//     const value = safeNum(rawValue)
+
 //     if (message?.[userId]) {
-//       setMessage((prev) => ({
-//         ...prev,
-//         [userId]: ""
-//       }))
+//       setMessage((prev) => ({ ...prev, [userId]: "" }))
 //     }
 
-//     setTargetData((prev) => {
-//       const updatedData = { ...prev }
-//       const baseKey = `${selectedsplitProducts}-${selectedsplitmonth}`
-//       const baseCurrentValue = Number(prev[baseKey] || 0)
-//       const baseNewValue = Number(value || 0)
-//       updatedData[baseKey] = baseCurrentValue + baseNewValue
-
-//       selectedMonths.forEach((month) => {
-//         const key = `${selectedsplitProducts}-${month}`
-//         if (!updatedData[key]) updatedData[key] = updatedData[baseKey]
-//       })
-//       return updatedData
-//     })
-
 //     const key = `${splitModalData.productId}-${splitModalData.month}`
-//     const slabsKey = "slabs"
 
-//     setSplitData((prev) => {
+//     setWorkingSplitData((prev) => {
 //       const existingArray = prev[key] || []
-//       const existingIndex = existingArray.findIndex(
-//         (item) => item.userId === userId
-//       )
-//       const existingSlabs =
-//         existingIndex !== -1 ? existingArray[existingIndex][slabsKey] || [] : []
-//       const updatedSlabs =
-//         existingSlabs.length > 0
-//           ? [
-//               {
-//                 ...existingSlabs[0],
-//                 from: 0,
-//                 to: value,
-//                 amount: existingSlabs[0]?.amount || ""
-//               }
-//             ]
-//           : [{ from: 0, to: value, amount: "" }]
+//       const idx = existingArray.findIndex((i) => i.userId === userId)
+//       let userEntry =
+//         idx !== -1
+//           ? { ...existingArray[idx] }
+//           : { userId, splitTarget: 0, slabs: [] }
 
-//       const newUserData = {
-//         userId,
-//         splitTarget: value,
-//         slabs: updatedSlabs
+//       let slabs = [...(userEntry.slabs || [])]
+
+//       if (!slabs.length) {
+//         slabs = [{ from: 0, to: value, amount: "" }]
+//       } else {
+//         slabs[slabs.length - 1] = { ...slabs[slabs.length - 1], to: value }
 //       }
+
+//       userEntry.slabs = slabs
+//       userEntry.splitTarget = value
 
 //       const updatedArray =
-//         existingIndex !== -1
-//           ? existingArray.map((item, i) =>
-//               i === existingIndex ? newUserData : item
-//             )
-//           : [...existingArray, newUserData]
+//         idx !== -1
+//           ? existingArray.map((it, i) => (i === idx ? userEntry : it))
+//           : [...existingArray, userEntry]
 
-//       return {
-//         ...prev,
-//         [key]: updatedArray
-//       }
-//     })
-
-//     setuserList((prev) =>
-//       prev.map((u) =>
-//         u.id === userId
-//           ? {
-//               ...u,
-//               givenTarget: value,
-//               slabs:
-//                 u.slabs && u.slabs.length > 0
-//                   ? [
-//                       {
-//                         ...u.slabs[0],
-//                         from: 0,
-//                         to: value,
-//                         amount: u.slabs[0]?.amount || ""
-//                       },
-//                       ...u.slabs.slice(1)
-//                     ]
-//                   : [{ from: 0, to: value, amount: "" }]
-//             }
-//           : u
+//       // Update userList for live slab display inside modal
+//       setuserList((prevUsers) =>
+//         prevUsers.map((u) =>
+//           u.id === userId
+//             ? { ...u, givenTarget: value.toString(), slabs }
+//             : u
+//         )
 //       )
-//     )
+
+//       return { ...prev, [key]: updatedArray }
+//     })
+//   }
+
+//   // ─── handleAddSlab: only mutates workingSplitData ───────────────────────────
+//   const handleAddSlab = (userId) => {
+//     const key = `${splitModalData.productId}-${splitModalData.month}`
+
+//     const user = userList.find((u) => u.id === userId)
+//     const currentInputValue = safeNum(user?.givenTarget)
+
+//     if (!currentInputValue) {
+//       setMessage((prev) => ({
+//         ...(prev || {}),
+//         [userId]: "Please fill the target first"
+//       }))
+//       return
+//     }
+
+//     setWorkingSplitData((prev) => {
+//       const existingArray = prev[key] || []
+//       const idx = existingArray.findIndex((i) => i.userId === userId)
+//       let userEntry =
+//         idx !== -1
+//           ? { ...existingArray[idx] }
+//           : { userId, splitTarget: 0, slabs: [] }
+
+//       const slabs = [...(userEntry.slabs || [])]
+
+//       if (!slabs.length) {
+//         slabs.push({ from: 0, to: currentInputValue, amount: "" })
+//       } else {
+//         const lastTo = safeNum(slabs[slabs.length - 1].to)
+//         slabs.push({ from: lastTo, to: currentInputValue, amount: "" })
+//       }
+
+//       userEntry.slabs = slabs
+//       userEntry.splitTarget = currentInputValue
+
+//       const updatedArray =
+//         idx !== -1
+//           ? existingArray.map((it, i) => (i === idx ? userEntry : it))
+//           : [...existingArray, userEntry]
+
+//       setuserList((prevUsers) =>
+//         prevUsers.map((u) => (u.id === userId ? { ...u, slabs } : u))
+//       )
+
+//       return { ...prev, [key]: updatedArray }
+//     })
+//   }
+
+//   // ─── handleRemoveSlab: only mutates workingSplitData ────────────────────────
+//   const handleRemoveSlab = (userId, slabIndex) => {
+//     const key = `${splitModalData.productId}-${splitModalData.month}`
+
+//     setWorkingSplitData((prev) => {
+//       const existingArray = prev[key] || []
+//       const idx = existingArray.findIndex((i) => i.userId === userId)
+//       if (idx === -1) return prev
+
+//       const entry = { ...existingArray[idx] }
+//       let slabs = [...(entry.slabs || [])].filter((_, i) => i !== slabIndex)
+//       entry.slabs = slabs
+//       entry.splitTarget = slabs.length
+//         ? safeNum(slabs[slabs.length - 1].to)
+//         : 0
+
+//       const updatedArray = existingArray.map((it, i) =>
+//         i === idx ? entry : it
+//       )
+
+//       setuserList((prevUsers) =>
+//         prevUsers.map((u) => (u.id === userId ? { ...u, slabs } : u))
+//       )
+
+//       return { ...prev, [key]: updatedArray }
+//     })
+//   }
+
+//   // ─── handleSlabChange: only mutates workingSplitData ────────────────────────
+//   const handleSlabChange = (userId, slabIndex, field, rawValue) => {
+//     const key = `${splitModalData.productId}-${splitModalData.month}`
+//     const value = field === "amount" ? rawValue : safeNum(rawValue)
+
+//     setWorkingSplitData((prev) => {
+//       const existingArray = prev[key] || []
+//       const idx = existingArray.findIndex((i) => i.userId === userId)
+//       if (idx === -1) return prev
+
+//       const entry = { ...existingArray[idx] }
+//       const slabs = [...(entry.slabs || [])]
+//       slabs[slabIndex] = { ...slabs[slabIndex], [field]: value }
+//       entry.slabs = slabs
+//       if (slabs.length) {
+//         entry.splitTarget = safeNum(slabs[slabs.length - 1].to)
+//       }
+
+//       const updatedArray = existingArray.map((it, i) =>
+//         i === idx ? entry : it
+//       )
+
+//       setuserList((prevUsers) =>
+//         prevUsers.map((u) => (u.id === userId ? { ...u, slabs } : u))
+//       )
+
+//       return { ...prev, [key]: updatedArray }
+//     })
 //   }
 
 //   const handleCancel = () => {
 //     setShowSplitModal(false)
+//     // discard working changes — leave committedSplitData untouched
+//     setWorkingSplitData({})
 //   }
 
-//   const handleAddSlab = (userId) => {
-//     if (userId) {
-//       const user = userList.find((u) => u.id === userId)
-//       if (user && (!user.givenTarget || user.givenTarget.trim() === "")) {
-//         setMessage((prev) => ({
-//           ...(prev || {}),
-//           [userId]: "Please fill the target first"
-//         }))
-//         return
-//       }
-//     }
-
-//     const key = `${splitModalData.productId}-${splitModalData.month}`
-
-//     setSplitData((prev) => {
-//       const existingMonthData = prev[key] || []
-
-//       const updatedMonthData = existingMonthData.map((item) => {
-//         if (item.userId === userId) {
-//           return {
-//             ...item,
-//             slabs: [...(item.slabs || []), { from: "", to: "", amount: "" }]
-//           }
-//         }
-//         return item
-//       })
-
-//       const userExists = existingMonthData.some(
-//         (item) => item.userId === userId
-//       )
-//       if (!userExists) {
-//         updatedMonthData.push({
-//           userId,
-//           splitTarget: "",
-//           slabs: [{ from: "", to: "", amount: "" }]
-//         })
-//       }
-
-//       return {
-//         ...prev,
-//         [key]: updatedMonthData
-//       }
-//     })
-
-//     setuserList((prev) =>
-//       prev.map((u) =>
-//         u.id === userId
-//           ? {
-//               ...u,
-//               slabs: [...(u.slabs || []), { from: "", to: "", amount: "" }]
-//             }
-//           : u
-//       )
-//     )
-//   }
-
-//   const handleRemoveSlab = (userId, slabIndex) => {
-//     const key = `${splitModalData.productId}-${splitModalData.month}`
-
-//     setSplitData((prev) => {
-//       const existingMonthData = prev[key] || []
-
-//       const updatedMonthData = existingMonthData.map((item) => {
-//         if (item.id === userId) {
-//           const updatedSlabs = (item[`${userId}-slabs`] || []).filter(
-//             (_, index) => index !== slabIndex
-//           )
-//           return {
-//             ...item,
-//             [`${userId}-slabs`]: updatedSlabs
-//           }
-//         }
-//         return item
-//       })
-
-//       return {
-//         ...prev,
-//         [key]: updatedMonthData
-//       }
-//     })
-//   }
-
-//   const handleSlabChange = (userId, slabIndex, field, value) => {
-//     const key = `${splitModalData.productId}-${splitModalData.month}`
-
-//     setSplitData((prev) => {
-//       const existingMonthData = prev[key] || []
-
-//       const updatedMonthData = existingMonthData.map((item) => {
-//         if (item.id === userId) {
-//           const existingSlabs = [...(item[`${userId}-slabs`] || [])]
-//           const updatedSlabs = existingSlabs.map((slab, index) =>
-//             index === slabIndex ? { ...slab, [field]: value } : slab
-//           )
-//           return {
-//             ...item,
-//             [`${userId}-slabs`]: updatedSlabs
-//           }
-//         }
-//         return item
-//       })
-
-//       return {
-//         ...prev,
-//         [key]: updatedMonthData
-//       }
-//     })
-
-//     setuserList((prev) =>
-//       prev.map((user) => {
-//         if (user.id === userId) {
-//           const updatedSlabs = [...(user.slabs || [])]
-//           updatedSlabs[slabIndex] = {
-//             ...updatedSlabs[slabIndex],
-//             [field]: value
-//           }
-//           return { ...user, slabs: updatedSlabs }
-//         }
-//         return user
-//       })
-//     )
-//   }
-
+//   // ─── Save Split: commit workingSplitData → committedSplitData + committedTargetData ──
 //   const handlesaveSplit = () => {
-//     setSplitData((prev) => {
-//       const updatedData = { ...prev }
-//       const existingKeys = Object.keys(prev)
-//       if (existingKeys.length === 0) return prev
+//     const { productId, month } = splitModalData
+//     const key = `${productId}-${month}`
+//     const workingArray = workingSplitData[key] || []
+//     const total = recomputeTotalTargetForKey(workingArray)
 
-//       const baseKey = existingKeys[0]
-//       const baseData = prev[baseKey]
-//       const productId = baseKey.split("-")[0]
+//     const isFirstTime = !committedProductsRef.current[productId]
 
-//       const updatedBaseData = baseData.map((item) => ({
-//         ...item,
-//         targetType:
-//           respectedmonthtargetType?.[
-//             `${selectedsplitProducts}-${selectedsplitmonth}`
-//           ]
-//       }))
-//       updatedData[baseKey] = updatedBaseData
+//     setCommittedSplitData((prev) => {
+//       const next = { ...prev }
 
-//       selectedMonths.forEach((month) => {
-//         const newKey = `${productId}-${month}`
-//         if (!updatedData[newKey]) {
-//           const clonedData = JSON.parse(JSON.stringify(updatedBaseData))
-//           updatedData[newKey] = clonedData
-//         }
-//       })
+//       if (isFirstTime) {
+//         // Spread this split to all months in range
+//         selectedMonths.forEach((m) => {
+//           next[`${productId}-${m}`] = JSON.parse(JSON.stringify(workingArray))
+//         })
+//       } else {
+//         // Only update this specific month
+//         next[key] = JSON.parse(JSON.stringify(workingArray))
+//       }
 
-//       return updatedData
+//       return next
 //     })
 
+//     setCommittedTargetData((prev) => {
+//       const next = { ...prev }
+
+//       if (isFirstTime) {
+//         selectedMonths.forEach((m) => {
+//           next[`${productId}-${m}`] = total
+//         })
+//       } else {
+//         next[key] = total
+//       }
+
+//       return next
+//     })
+
+//     // Mark this product as having been committed at least once
+//     committedProductsRef.current[productId] = true
+
+//     setWorkingSplitData({})
 //     setShowSplitModal(false)
 //   }
 
+//   // ─── Submit ──────────────────────────────────────────────────────────────────
 //   const handleSubmit = async () => {
 //     const formData = {
-//       targetData,
+//       targetData: committedTargetData,
 //       targetpriceorPercentageType,
 //       targetpriceorpercentageValue,
-//       splitData
+//       splitData: committedSplitData
 //     }
 //     await api.post("/target/submitTargetRegister", formData)
 //   }
 
+//   // ─── Live total shown in the split modal header (from workingSplitData) ──────
+//   const modalKey =
+//     splitModalData && `${splitModalData.productId}-${splitModalData.month}`
+//   const modalWorkingArray = modalKey ? workingSplitData[modalKey] || [] : []
+//   const modalTotal = recomputeTotalTargetForKey(modalWorkingArray)
+//   const currentType =
+//     respectedmonthtargetType?.[
+//       `${selectedsplitProducts}-${selectedsplitmonth}`
+//     ] || "quantity"
+//   const totalLabel =
+//     currentType === "quantity"
+//       ? `${modalTotal} NO`
+//       : `₹ ${modalTotal.toLocaleString("en-IN")}`
+
 //   return (
-//     <div className="h-full bg-[#ADD8E6] px-3 py-4 sm:px-5 sm:py-5">
-//       <div className="mx-auto max-w-6xl space-y-3">
+//     <div className="h-full bg-[#ADD8E6] flex flex-col px-3 py-4 sm:px-5 sm:py-5 overflow-hidden">
+//       <div className="mx-auto w-full max-w-6xl flex flex-col flex-1 min-h-0 gap-3">
 //         {/* HEADER */}
-//         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white border border-slate-200 rounded-lg px-3 py-3">
+//         <div className="flex-shrink-0 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white border border-slate-200 rounded-lg px-3 py-3">
 //           <div className="space-y-1">
 //             <h1 className="text-lg sm:text-xl font-semibold text-slate-900">
 //               Target Master
@@ -1493,7 +1525,6 @@
 //             )}
 //           </div>
 
-//           {/* right: branch + period */}
 //           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
 //             <div className="flex flex-col gap-1">
 //               <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
@@ -1550,7 +1581,7 @@
 //         </div>
 
 //         {/* ACTIONS */}
-//         <div className="flex flex-wrap gap-2">
+//         <div className="flex-shrink-0 flex flex-wrap gap-2">
 //           <button
 //             onClick={() => setShowProductModal(true)}
 //             className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-sm hover:border-indigo-500 hover:text-indigo-700 hover:shadow focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
@@ -1568,10 +1599,10 @@
 //         </div>
 
 //         {/* TABLE CARD */}
-//         <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
-//           <div className="overflow-x-auto">
+//         <div className="flex-1 min-h-0 flex flex-col bg-white border border-slate-200 rounded-lg shadow-sm">
+//           <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
 //             <table className="w-full min-w-[1100px] border-collapse text-xs">
-//               <thead>
+//               <thead className="sticky top-0 z-10">
 //                 <tr className="bg-slate-900">
 //                   <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-white border-r border-slate-800">
 //                     Products &amp; Services
@@ -1616,7 +1647,6 @@
 //                     key={product.id}
 //                     className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/60"}
 //                   >
-//                     {/* Product + remove button */}
 //                     <td className="px-3 py-2 border-r border-slate-200 text-[13px] font-medium text-slate-900 whitespace-nowrap">
 //                       <div className="flex items-center gap-2">
 //                         <button
@@ -1631,23 +1661,19 @@
 //                       </div>
 //                     </td>
 
-//                     {/* Target cells */}
 //                     {selectedMonths.map((month) => (
 //                       <td
 //                         key={month}
 //                         className="px-2 py-1.5 border-r border-slate-200 align-middle"
 //                       >
 //                         <div className="flex items-center gap-1">
+//                           {/* ✅ Shows committedTargetData only (updated on Save Split) */}
 //                           <input
 //                             type="text"
 //                             disabled
-//                             value={targetData[`${product.id}-${month}`] || ""}
-//                             onChange={(e) =>
-//                               handleTargetInput(
-//                                 product.id,
-//                                 month,
-//                                 e.target.value
-//                               )
+//                             value={
+//                               committedTargetData[`${product.id}-${month}`] ||
+//                               ""
 //                             }
 //                             className="w-20 rounded-md border border-slate-300 bg-slate-50 px-2 py-1 text-[11px] text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500/40"
 //                             placeholder="0"
@@ -1666,7 +1692,6 @@
 //                       </td>
 //                     ))}
 
-//                     {/* Incentive cells */}
 //                     {selectedAllocations.map((alloc) => (
 //                       <td
 //                         key={alloc.id}
@@ -1722,7 +1747,7 @@
 //             </table>
 //           </div>
 
-//           <div className="flex justify-end items-center gap-2 border-t border-slate-200 bg-slate-50 px-3 py-2.5">
+//           <div className="flex-shrink-0 flex justify-end items-center gap-2 border-t border-slate-200 bg-slate-50 px-3 py-2.5">
 //             <span className="hidden text-[11px] text-slate-500 sm:inline">
 //               Changes apply for selected branch and period.
 //             </span>
@@ -1834,13 +1859,10 @@
 //           </div>
 //         )}
 
-//         {/* SPLIT TARGET MODAL – keep your latest version here with the new handlers */}
-
-//         {/* Split Target Modal */}
+//         {/* SPLIT TARGET MODAL */}
 //         {showSplitModal && splitModalData && (
 //           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-50">
-//             <div className="bg-white rounded-xl shadow-2xl w-full flex flex-col overflow-hidden h-full">
-//               {/* Modal Header */}
+//             <div className="bg-white rounded-xl shadow-2xl w-full flex flex-col overflow-hidden max-h-[90vh]">
 //               <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center justify-between rounded-t-xl flex-shrink-0">
 //                 <div>
 //                   <h3 className="text-lg font-semibold text-white">
@@ -1854,23 +1876,25 @@
 //                     }
 //                     {" - "}
 //                     {splitModalData.month}
+//                     {" · "}
+//                     <span className="font-semibold">
+//                       Total Target: {totalLabel}
+//                     </span>
 //                   </p>
 //                 </div>
 //                 <button
 //                   type="button"
-//                   onClick={() => setShowSplitModal(false)}
+//                   onClick={handleCancel}
 //                   className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-1"
 //                 >
 //                   <X className="w-5 h-5" />
 //                 </button>
 //               </div>
 
-//               {/* Content Container */}
 //               <div className="flex-1 flex flex-col overflow-hidden">
-//                 {/* Sticky Top Section (Split Type + Inputs) */}
-//                 <div className="bg-white sticky top-0 z-10 px-6 mt-2 border-b border-gray-200 flex">
-//                   <div className="mb-4">
-//                     <label className="block text-sm font-medium text-gray-700 mb-2">
+//                 <div className="bg-white sticky top-0 z-10 px-6 py-3 border-b border-gray-200 flex items-center">
+//                   <div className="flex items-center gap-2">
+//                     <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
 //                       Split Type
 //                     </label>
 //                     <div className="relative">
@@ -1896,26 +1920,22 @@
 //                     </div>
 //                   </div>
 
-//                   {/* Total Target */}
-//                   <div className="flex flex-1 justify-end items-center pr-10">
-//                     <p className="text-lg text-gray-700">
+//                   <div className="flex flex-1 justify-end items-center pr-4">
+//                     <p className="text-sm text-gray-700">
 //                       <span className="font-semibold">Total Target:</span>{" "}
-//                       {targetData[
-//                         `${splitModalData.productId}-${splitModalData.month}`
-//                       ] || 0}
+//                       {totalLabel}
 //                     </p>
 //                   </div>
 //                 </div>
 
-//                 <label className="block text-sm font-medium text-gray-700 bg-white ml-5 m-3">
+//                 <label className="block text-sm font-medium text-gray-700 px-6 pt-3 pb-1">
 //                   Assign to Users
 //                 </label>
 
-//                 {/* Scrollable User List Section */}
 //                 <div className="flex-1 overflow-y-auto px-2 py-4 space-y-4">
 //                   {userList.map((user) => {
 //                     const key = `${splitModalData.productId}-${splitModalData.month}`
-//                     const userArray = splitData[key] || []
+//                     const userArray = workingSplitData[key] || []
 //                     const currentUserData = userArray.find(
 //                       (item) => item.userId === user.id
 //                     )
@@ -1929,14 +1949,11 @@
 //                         key={user.id}
 //                         className="border border-gray-200 rounded-lg p-3 bg-gray-50"
 //                       >
-//                         {/* SINGLE ROW GRID: name | input | button | slabs... */}
 //                         <div className="grid grid-cols-[180px,120px,110px,minmax(0,1fr)] gap-2 items-start">
-//                           {/* name */}
 //                           <span className="text-sm font-medium text-gray-700 truncate">
 //                             {user.name}
 //                           </span>
 
-//                           {/* value input + message */}
 //                           <div className="flex flex-col">
 //                             <input
 //                               type="number"
@@ -1954,16 +1971,14 @@
 //                             )}
 //                           </div>
 
-//                           {/* add slab button */}
 //                           <button
 //                             type="button"
-//                             onClick={() => handleAddSlab(user.id, user)}
+//                             onClick={() => handleAddSlab(user.id)}
 //                             className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium whitespace-nowrap"
 //                           >
 //                             Add Slab
 //                           </button>
 
-//                           {/* slabs */}
 //                           <div className="flex flex-wrap gap-2">
 //                             {userSlabs.map((slab, index) => (
 //                               <div
@@ -1980,7 +1995,6 @@
 //                                 >
 //                                   <X className="w-3.5 h-3.5" />
 //                                 </button>
-
 //                                 <table className="text-xs border-collapse">
 //                                   <thead>
 //                                     <tr>
@@ -2058,7 +2072,6 @@
 //                 </div>
 //               </div>
 
-//               {/* Modal Footer */}
 //               <div className="px-6 py-4 bg-gray-100 rounded-b-xl flex justify-end gap-3 flex-shrink-0">
 //                 <button
 //                   type="button"
@@ -2084,7 +2097,8 @@
 // }
 
 // export default TargetRegister
-import { useState, useEffect } from "react"
+
+import { useState, useEffect, useRef } from "react"
 import { Plus, Settings, Users, X, ChevronDown } from "lucide-react"
 import { useSelector } from "react-redux"
 import UseFetch from "../../../hooks/useFetch"
@@ -2109,12 +2123,17 @@ const months = [
 export const TargetRegister = () => {
   const [fromMonth, setFromMonth] = useState("October")
   const [toMonth, setToMonth] = useState("December")
-
   const [userbranches, setuserBranches] = useState([])
   const [selectedBranch, setselectedBranch] = useState(null)
   const [availableAllocations, setavailableAllocation] = useState([])
+
+  // selected items (CATEGORIES; name kept as products)
   const [selectedProducts, setSelectedProducts] = useState([])
+
+  // backing list used in UI (built from categories now)
   const [productandservices, setproductsandservices] = useState([])
+
+  const [categorylist, setcategoryList] = useState([])
 
   const [respectedmonthtargetType, setrespectedmonthtargetType] = useState({})
   const [selectedsplitProducts, setselectedsplitProducts] = useState(null)
@@ -2129,16 +2148,28 @@ export const TargetRegister = () => {
   const [showSplitModal, setShowSplitModal] = useState(false)
   const [splitModalData, setSplitModalData] = useState(null)
 
-  const [targetData, setTargetData] = useState({})
+  // committedTargetData: what's actually shown in the month input cells
+  // Only updated when "Save Split" is clicked
+  const [committedTargetData, setCommittedTargetData] = useState({})
+
   const [targetpriceorPercentageType, settargetpriceorPercentageType] =
     useState({})
   const [targetpriceorpercentageValue, settargetpriceorpercentageValue] =
     useState({})
 
-  const [splitData, setSplitData] = useState({})
+  // workingSplitData: live edits inside the modal (not yet committed)
+  const [workingSplitData, setWorkingSplitData] = useState({})
+
+  // committedSplitData: saved splits used for submission and determining "first time"
+  const [committedSplitData, setCommittedSplitData] = useState({})
+
   const [userList, setuserList] = useState([])
 
-  const { data } = UseFetch("/auth/getallusers")
+  // Tracks which items (categories) have had at least one "Save Split" committed.
+  // Key = categoryId, value = true
+  const committedProductsRef = useRef({})
+
+  const { data } = UseFetch("/auth/getallusers?isVerified=true")
   const loggeduserBranch = useSelector(
     (state) => state.companyBranch.loggeduserbranches
   )
@@ -2147,8 +2178,12 @@ export const TargetRegister = () => {
     branchselectedArray: JSON.stringify(loggeduserBranch)
   }).toString()
 
-  const { data: productslist } = UseFetch(`/product/getallproducts?${query}`)
-  const { data: servicelist } = UseFetch(`/product/getallServices?${query}`)
+  // OLD:
+  // const { data: productslist } = UseFetch(`/product/getallproducts?${query}`)
+  // const { data: servicelist } = UseFetch(`/product/getallServices?${query}`)
+
+  // NEW: categories only, no branch filter
+  const { data: category } = UseFetch("/inventory/getCategory")
   const { data: tasklist } = UseFetch("/lead/getAlltasktoTarget")
 
   const safeNum = (v) => {
@@ -2156,15 +2191,12 @@ export const TargetRegister = () => {
     return Number.isFinite(n) ? n : 0
   }
 
-  const recomputeTotalTargetForKey = (key, type, splitDataForKey) => {
-    if (!splitDataForKey || !splitDataForKey.length) return 0
-
-    // For both quantity and amount, we use last slab "to" of each user
-    return splitDataForKey.reduce((sum, user) => {
+  const recomputeTotalTargetForKey = (splitArray) => {
+    if (!splitArray || !splitArray.length) return 0
+    return splitArray.reduce((sum, user) => {
       const slabs = user.slabs || []
       if (!slabs.length) return sum
-      const lastTo = safeNum(slabs[slabs.length - 1].to)
-      return sum + lastTo
+      return sum + safeNum(slabs[slabs.length - 1].to)
     }, 0)
   }
 
@@ -2175,12 +2207,22 @@ export const TargetRegister = () => {
         return item.listed || name === "lead" || name === "closing"
       })
 
-      setavailableAllocation(
-        filteredtask.map((item) => ({
-          id: item._id,
-          name: item.taskName
-        }))
+      const mapped = filteredtask.map((item) => ({
+        id: item._id,
+        name: item.taskName
+      }))
+
+      setavailableAllocation(mapped)
+
+      const followup = mapped.find(
+        (item) => item.name.trim().toLowerCase() === "followup"
       )
+      if (followup) {
+        setSelectedAllocations((prev) => {
+          const alreadySelected = prev.some((a) => a.id === followup.id)
+          return alreadySelected ? prev : [...prev, followup]
+        })
+      }
     }
   }, [tasklist])
 
@@ -2188,9 +2230,7 @@ export const TargetRegister = () => {
   useEffect(() => {
     const userData = getLocalStorageItem("user")
     if (!userData?.selected?.length) return
-
     setselectedBranch(userData.selected[0]?.branch_id)
-
     const branches = userData.selected.map((branch) => ({
       id: branch.branch_id,
       branchName: branch.branchName
@@ -2198,38 +2238,28 @@ export const TargetRegister = () => {
     setuserBranches(branches)
   }, [])
 
-  // products + services combined (with branch info)
+  // load categories and mirror into productandservices
   useEffect(() => {
-    if (!productslist && !servicelist) return
+    if (!category) return
+    setcategoryList(category)
+    setproductsandservices(
+      category.map((c) => ({
+        id: c._id,
+        // use category display field
+        name: c.category || c.categoryName || c.name || "Category",
+        branchIds: [] // categories do not have branch mapping
+      }))
+    )
+  }, [category])
 
-    const all = []
-    if (productslist && productslist.length) {
-      all.push(
-        ...productslist.map((item) => ({
-          id: item._id,
-          name: item.productName,
-          branchIds: (item.selected || []).map((sel) => sel.branch_id)
-        }))
-      )
-    }
-    if (servicelist && servicelist.length) {
-      all.push(
-        ...servicelist.map((item) => ({
-          id: item._id,
-          name: item.serviceName,
-          branchIds: (item.selected || []).map((it) => it.branch_id)
-        }))
-      )
-    }
-    setproductsandservices(all)
-  }, [productslist, servicelist])
+  // products + services combined – now no-op
+  useEffect(() => {}, [])
 
   // users list
   useEffect(() => {
     if (!data) return
     const { allusers = [], allAdmins = [] } = data
     const combinedUsers = [...allusers, ...allAdmins]
-
     const users = combinedUsers
       .filter(
         (user) =>
@@ -2243,7 +2273,6 @@ export const TargetRegister = () => {
         achievedTarget: "",
         slabs: []
       }))
-
     setuserList(users)
   }, [data, selectedBranch])
 
@@ -2251,29 +2280,21 @@ export const TargetRegister = () => {
   useEffect(() => {
     if (!selectedAllocations.length || !productandservices.length) return
     const updatedEntries = {}
-
     productandservices.forEach((product) => {
       selectedAllocations.forEach((allocationType) => {
         updatedEntries[`${product.id}-${allocationType.id}-type`] = "amount"
       })
     })
-
-    settargetpriceorPercentageType((prev) => ({
-      ...prev,
-      ...updatedEntries
-    }))
+    settargetpriceorPercentageType((prev) => ({ ...prev, ...updatedEntries }))
   }, [selectedAllocations, productandservices])
 
-  const filteredProductsForBranch = productandservices.filter((p) =>
-    selectedBranch ? p.branchIds?.includes(selectedBranch) : true
-  )
+  // categories have no branch filter → show all items
+  const filteredProductsForBranch = productandservices
 
-  // when branch changes, drop selected products that don't belong
   useEffect(() => {
     setSelectedProducts((prev) =>
       prev.filter((p) => filteredProductsForBranch.some((fp) => fp.id === p.id))
     )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBranch, productandservices])
 
   const getMonthsInRange = () => {
@@ -2304,7 +2325,7 @@ export const TargetRegister = () => {
   const handleRemoveProductRow = (productId) => {
     setSelectedProducts((prev) => prev.filter((p) => p.id !== productId))
 
-    setTargetData((prev) => {
+    setCommittedTargetData((prev) => {
       const next = { ...prev }
       Object.keys(next).forEach((key) => {
         if (key.startsWith(`${productId}-`)) delete next[key]
@@ -2328,20 +2349,23 @@ export const TargetRegister = () => {
       return next
     })
 
-    setSplitData((prev) => {
+    setCommittedSplitData((prev) => {
       const next = { ...prev }
       Object.keys(next).forEach((key) => {
         if (key.startsWith(`${productId}-`)) delete next[key]
       })
       return next
     })
-  }
 
-  const handleTargetInput = (productId, month, value) => {
-    setTargetData((prev) => ({
-      ...prev,
-      [`${productId}-${month}`]: value
-    }))
+    setWorkingSplitData((prev) => {
+      const next = { ...prev }
+      Object.keys(next).forEach((key) => {
+        if (key.startsWith(`${productId}-`)) delete next[key]
+      })
+      return next
+    })
+
+    delete committedProductsRef.current[productId]
   }
 
   const handleIncentiveInput = (productId, allocId, value, type) => {
@@ -2358,6 +2382,7 @@ export const TargetRegister = () => {
     }
   }
 
+  // ─── Open split modal ────────────────────────────────────────────────────────
   const openSplitModal = (productId, month, name) => {
     const Name = name.trim()
 
@@ -2372,6 +2397,29 @@ export const TargetRegister = () => {
       return updated
     })
 
+    const committedKey = `${productId}-${month}`
+    const existingCommitted = committedSplitData[committedKey]
+
+    setWorkingSplitData((prev) => ({
+      ...prev,
+      [committedKey]: existingCommitted
+        ? JSON.parse(JSON.stringify(existingCommitted))
+        : []
+    }))
+
+    setuserList((prevUsers) =>
+      prevUsers.map((u) => {
+        const userEntry = existingCommitted?.find(
+          (item) => item.userId === u.id
+        )
+        return {
+          ...u,
+          givenTarget: userEntry ? String(userEntry.splitTarget || "") : "",
+          slabs: userEntry ? userEntry.slabs || [] : []
+        }
+      })
+    )
+
     setSplitModalData({ productId, month, name })
     setShowSplitModal(true)
     setselectedsplitProducts(productId)
@@ -2382,19 +2430,12 @@ export const TargetRegister = () => {
     const value = safeNum(rawValue)
 
     if (message?.[userId]) {
-      setMessage((prev) => ({
-        ...prev,
-        [userId]: ""
-      }))
+      setMessage((prev) => ({ ...prev, [userId]: "" }))
     }
 
     const key = `${splitModalData.productId}-${splitModalData.month}`
-    const type =
-      respectedmonthtargetType?.[
-        `${selectedsplitProducts}-${selectedsplitmonth}`
-      ] || "quantity"
 
-    setSplitData((prev) => {
+    setWorkingSplitData((prev) => {
       const existingArray = prev[key] || []
       const idx = existingArray.findIndex((i) => i.userId === userId)
       let userEntry =
@@ -2407,10 +2448,7 @@ export const TargetRegister = () => {
       if (!slabs.length) {
         slabs = [{ from: 0, to: value, amount: "" }]
       } else {
-        slabs[slabs.length - 1] = {
-          ...slabs[slabs.length - 1],
-          to: value
-        }
+        slabs[slabs.length - 1] = { ...slabs[slabs.length - 1], to: value }
       }
 
       userEntry.slabs = slabs
@@ -2421,41 +2459,20 @@ export const TargetRegister = () => {
           ? existingArray.map((it, i) => (i === idx ? userEntry : it))
           : [...existingArray, userEntry]
 
-      const total = recomputeTotalTargetForKey(key, type, updatedArray)
-
-      setTargetData((prevTarget) => {
-        const updatedTarget = { ...prevTarget }
-        updatedTarget[`${selectedsplitProducts}-${selectedsplitmonth}`] = total
-        selectedMonths.forEach((m) => {
-          updatedTarget[`${selectedsplitProducts}-${m}`] =
-            updatedTarget[`${selectedsplitProducts}-${selectedsplitmonth}`]
-        })
-        return updatedTarget
-      })
-
       setuserList((prevUsers) =>
         prevUsers.map((u) =>
-          u.id === userId ? { ...u, givenTarget: value.toString(), slabs } : u
+          u.id === userId
+            ? { ...u, givenTarget: value.toString(), slabs }
+            : u
         )
       )
 
-      return {
-        ...prev,
-        [key]: updatedArray
-      }
+      return { ...prev, [key]: updatedArray }
     })
-  }
-
-  const handleCancel = () => {
-    setShowSplitModal(false)
   }
 
   const handleAddSlab = (userId) => {
     const key = `${splitModalData.productId}-${splitModalData.month}`
-    const type =
-      respectedmonthtargetType?.[
-        `${selectedsplitProducts}-${selectedsplitmonth}`
-      ] || "quantity"
 
     const user = userList.find((u) => u.id === userId)
     const currentInputValue = safeNum(user?.givenTarget)
@@ -2468,7 +2485,7 @@ export const TargetRegister = () => {
       return
     }
 
-    setSplitData((prev) => {
+    setWorkingSplitData((prev) => {
       const existingArray = prev[key] || []
       const idx = existingArray.findIndex((i) => i.userId === userId)
       let userEntry =
@@ -2493,89 +2510,46 @@ export const TargetRegister = () => {
           ? existingArray.map((it, i) => (i === idx ? userEntry : it))
           : [...existingArray, userEntry]
 
-      const total = recomputeTotalTargetForKey(key, type, updatedArray)
-
-      setTargetData((prevTarget) => {
-        const updatedTarget = { ...prevTarget }
-        updatedTarget[`${selectedsplitProducts}-${selectedsplitmonth}`] = total
-        selectedMonths.forEach((m) => {
-          updatedTarget[`${selectedsplitProducts}-${m}`] =
-            updatedTarget[`${selectedsplitProducts}-${selectedsplitmonth}`]
-        })
-        return updatedTarget
-      })
-
       setuserList((prevUsers) =>
         prevUsers.map((u) => (u.id === userId ? { ...u, slabs } : u))
       )
 
-      return {
-        ...prev,
-        [key]: updatedArray
-      }
+      return { ...prev, [key]: updatedArray }
     })
   }
 
   const handleRemoveSlab = (userId, slabIndex) => {
     const key = `${splitModalData.productId}-${splitModalData.month}`
-    const type =
-      respectedmonthtargetType?.[
-        `${selectedsplitProducts}-${selectedsplitmonth}`
-      ] || "quantity"
 
-    setSplitData((prev) => {
+    setWorkingSplitData((prev) => {
       const existingArray = prev[key] || []
       const idx = existingArray.findIndex((i) => i.userId === userId)
       if (idx === -1) return prev
 
       const entry = { ...existingArray[idx] }
-      let slabs = [...(entry.slabs || [])]
-      slabs = slabs.filter((_, i) => i !== slabIndex)
+      let slabs = [...(entry.slabs || [])].filter((_, i) => i !== slabIndex)
       entry.slabs = slabs
-
-      if (slabs.length) {
-        entry.splitTarget = safeNum(slabs[slabs.length - 1].to)
-      } else {
-        entry.splitTarget = 0
-      }
+      entry.splitTarget = slabs.length
+        ? safeNum(slabs[slabs.length - 1].to)
+        : 0
 
       const updatedArray = existingArray.map((it, i) =>
         i === idx ? entry : it
       )
 
-      const total = recomputeTotalTargetForKey(key, type, updatedArray)
-
-      setTargetData((prevTarget) => {
-        const updatedTarget = { ...prevTarget }
-        updatedTarget[`${selectedsplitProducts}-${selectedsplitmonth}`] = total
-        selectedMonths.forEach((m) => {
-          updatedTarget[`${selectedsplitProducts}-${m}`] =
-            updatedTarget[`${selectedsplitProducts}-${selectedsplitmonth}`]
-        })
-        return updatedTarget
-      })
-
       setuserList((prevUsers) =>
         prevUsers.map((u) => (u.id === userId ? { ...u, slabs } : u))
       )
 
-      return {
-        ...prev,
-        [key]: updatedArray
-      }
+      return { ...prev, [key]: updatedArray }
     })
   }
 
   const handleSlabChange = (userId, slabIndex, field, rawValue) => {
     const key = `${splitModalData.productId}-${splitModalData.month}`
-    const type =
-      respectedmonthtargetType?.[
-        `${selectedsplitProducts}-${selectedsplitmonth}`
-      ] || "quantity"
-
     const value = field === "amount" ? rawValue : safeNum(rawValue)
 
-    setSplitData((prev) => {
+    setWorkingSplitData((prev) => {
       const existingArray = prev[key] || []
       const idx = existingArray.findIndex((i) => i.userId === userId)
       if (idx === -1) return prev
@@ -2583,7 +2557,6 @@ export const TargetRegister = () => {
       const entry = { ...existingArray[idx] }
       const slabs = [...(entry.slabs || [])]
       slabs[slabIndex] = { ...slabs[slabIndex], [field]: value }
-
       entry.slabs = slabs
       if (slabs.length) {
         entry.splitTarget = safeNum(slabs[slabs.length - 1].to)
@@ -2593,89 +2566,89 @@ export const TargetRegister = () => {
         i === idx ? entry : it
       )
 
-      const total = recomputeTotalTargetForKey(key, type, updatedArray)
-
-      setTargetData((prevTarget) => {
-        const updatedTarget = { ...prevTarget }
-        updatedTarget[`${selectedsplitProducts}-${selectedsplitmonth}`] = total
-        selectedMonths.forEach((m) => {
-          updatedTarget[`${selectedsplitProducts}-${m}`] =
-            updatedTarget[`${selectedsplitProducts}-${selectedsplitmonth}`]
-        })
-        return updatedTarget
-      })
-
       setuserList((prevUsers) =>
         prevUsers.map((u) => (u.id === userId ? { ...u, slabs } : u))
       )
 
-      return {
-        ...prev,
-        [key]: updatedArray
-      }
+      return { ...prev, [key]: updatedArray }
     })
   }
 
+  const handleCancel = () => {
+    setShowSplitModal(false)
+    setWorkingSplitData({})
+  }
+
   const handlesaveSplit = () => {
-    setSplitData((prev) => {
-      const updatedData = { ...prev }
-      const existingKeys = Object.keys(prev)
-      if (existingKeys.length === 0) return prev
+    const { productId, month } = splitModalData
+    const key = `${productId}-${month}`
+    const workingArray = workingSplitData[key] || []
+    const total = recomputeTotalTargetForKey(workingArray)
 
-      const baseKey = existingKeys[0]
-      const baseData = prev[baseKey]
-      const productId = baseKey.split("-")[0]
+    const isFirstTime = !committedProductsRef.current[productId]
 
-      const updatedBaseData = baseData.map((item) => ({
-        ...item,
-        targetType:
-          respectedmonthtargetType?.[
-            `${selectedsplitProducts}-${selectedsplitmonth}`
-          ]
-      }))
-      updatedData[baseKey] = updatedBaseData
+    setCommittedSplitData((prev) => {
+      const next = { ...prev }
 
-      selectedMonths.forEach((month) => {
-        const newKey = `${productId}-${month}`
-        if (!updatedData[newKey]) {
-          const clonedData = JSON.parse(JSON.stringify(updatedBaseData))
-          updatedData[newKey] = clonedData
-        }
-      })
+      if (isFirstTime) {
+        selectedMonths.forEach((m) => {
+          next[`${productId}-${m}`] = JSON.parse(JSON.stringify(workingArray))
+        })
+      } else {
+        next[key] = JSON.parse(JSON.stringify(workingArray))
+      }
 
-      return updatedData
+      return next
     })
 
+    setCommittedTargetData((prev) => {
+      const next = { ...prev }
+
+      if (isFirstTime) {
+        selectedMonths.forEach((m) => {
+          next[`${productId}-${m}`] = total
+        })
+      } else {
+        next[key] = total
+      }
+
+      return next
+    })
+
+    committedProductsRef.current[productId] = true
+
+    setWorkingSplitData({})
     setShowSplitModal(false)
   }
 
   const handleSubmit = async () => {
     const formData = {
-      targetData,
+      targetData: committedTargetData,
       targetpriceorPercentageType,
       targetpriceorpercentageValue,
-      splitData
+      splitData: committedSplitData
     }
     await api.post("/target/submitTargetRegister", formData)
   }
 
-  const totalKey =
+  const modalKey =
     splitModalData && `${splitModalData.productId}-${splitModalData.month}`
+  const modalWorkingArray = modalKey ? workingSplitData[modalKey] || [] : []
+  const modalTotal = recomputeTotalTargetForKey(modalWorkingArray)
   const currentType =
     respectedmonthtargetType?.[
       `${selectedsplitProducts}-${selectedsplitmonth}`
     ] || "quantity"
-  const rawTotal = totalKey ? safeNum(targetData[totalKey]) : 0
   const totalLabel =
     currentType === "quantity"
-      ? `${rawTotal} NO`
-      : `₹ ${rawTotal.toLocaleString("en-IN")}`
+      ? `${modalTotal} NO`
+      : `₹ ${modalTotal.toLocaleString("en-IN")}`
 
   return (
-    <div className="h-full bg-[#ADD8E6] px-3 py-4 sm:px-5 sm:py-5">
-      <div className="mx-auto max-w-6xl space-y-3">
+    <div className="h-full bg-[#ADD8E6] flex flex-col px-3 py-4 sm:px-5 sm:py-5 overflow-hidden">
+      <div className="mx-auto w-full max-w-6xl flex flex-col flex-1 min-h-0 gap-3">
         {/* HEADER */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white border border-slate-200 rounded-lg px-3 py-3">
+        <div className="flex-shrink-0 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white border border-slate-200 rounded-lg px-3 py-3">
           <div className="space-y-1">
             <h1 className="text-lg sm:text-xl font-semibold text-slate-900">
               Target Master
@@ -2690,7 +2663,6 @@ export const TargetRegister = () => {
             )}
           </div>
 
-          {/* right: branch + period */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
             <div className="flex flex-col gap-1">
               <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
@@ -2747,13 +2719,13 @@ export const TargetRegister = () => {
         </div>
 
         {/* ACTIONS */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex-shrink-0 flex flex-wrap gap-2">
           <button
             onClick={() => setShowProductModal(true)}
             className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-sm hover:border-indigo-500 hover:text-indigo-700 hover:shadow focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
           >
             <Settings className="h-3.5 w-3.5 text-indigo-500" />
-            Products ({filteredProductsForBranch.length})
+            Categories ({filteredProductsForBranch.length})
           </button>
           <button
             onClick={() => setShowAllocationModal(true)}
@@ -2765,10 +2737,10 @@ export const TargetRegister = () => {
         </div>
 
         {/* TABLE CARD */}
-        <div className="bg-white border border-slate-200 rounded-lg shadow-sm">
-          <div className="overflow-x-auto">
+        <div className="flex-1 min-h-0 flex flex-col bg-white border border-slate-200 rounded-lg shadow-sm">
+          <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
             <table className="w-full min-w-[1100px] border-collapse text-xs">
-              <thead>
+              <thead className="sticky top-0 z-10">
                 <tr className="bg-slate-900">
                   <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-white border-r border-slate-800">
                     Products &amp; Services
@@ -2813,7 +2785,6 @@ export const TargetRegister = () => {
                     key={product.id}
                     className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/60"}
                   >
-                    {/* Product + remove button */}
                     <td className="px-3 py-2 border-r border-slate-200 text-[13px] font-medium text-slate-900 whitespace-nowrap">
                       <div className="flex items-center gap-2">
                         <button
@@ -2828,7 +2799,6 @@ export const TargetRegister = () => {
                       </div>
                     </td>
 
-                    {/* Target cells */}
                     {selectedMonths.map((month) => (
                       <td
                         key={month}
@@ -2838,13 +2808,9 @@ export const TargetRegister = () => {
                           <input
                             type="text"
                             disabled
-                            value={targetData[`${product.id}-${month}`] || ""}
-                            onChange={(e) =>
-                              handleTargetInput(
-                                product.id,
-                                month,
-                                e.target.value
-                              )
+                            value={
+                              committedTargetData[`${product.id}-${month}`] ||
+                              ""
                             }
                             className="w-20 rounded-md border border-slate-300 bg-slate-50 px-2 py-1 text-[11px] text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500/40"
                             placeholder="0"
@@ -2863,7 +2829,6 @@ export const TargetRegister = () => {
                       </td>
                     ))}
 
-                    {/* Incentive cells */}
                     {selectedAllocations.map((alloc) => (
                       <td
                         key={alloc.id}
@@ -2919,7 +2884,7 @@ export const TargetRegister = () => {
             </table>
           </div>
 
-          <div className="flex justify-end items-center gap-2 border-t border-slate-200 bg-slate-50 px-3 py-2.5">
+          <div className="flex-shrink-0 flex justify-end items-center gap-2 border-t border-slate-200 bg-slate-50 px-3 py-2.5">
             <span className="hidden text-[11px] text-slate-500 sm:inline">
               Changes apply for selected branch and period.
             </span>
@@ -2932,13 +2897,13 @@ export const TargetRegister = () => {
           </div>
         </div>
 
-        {/* PRODUCT MODAL */}
+        {/* PRODUCT (CATEGORY) MODAL */}
         {showProductModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3">
             <div className="bg-white rounded-lg shadow-2xl w-full max-w-md overflow-hidden">
               <div className="px-4 py-3 flex items-center justify-between border-b border-slate-200 bg-slate-50">
                 <h3 className="text-sm font-semibold text-slate-900">
-                  Select Products &amp; Services
+                  Select Categories
                 </h3>
                 <button
                   onClick={() => setShowProductModal(false)}
@@ -2968,7 +2933,7 @@ export const TargetRegister = () => {
                 ))}
                 {filteredProductsForBranch.length === 0 && (
                   <p className="text-xs text-slate-500 px-2 py-1.5">
-                    No products found for this branch.
+                    No categories found.
                   </p>
                 )}
               </div>
@@ -3010,7 +2975,9 @@ export const TargetRegister = () => {
                       checked={selectedAllocations.some(
                         (a) => a.id === allocation.id
                       )}
-                      onChange={() => handleAllocationSelection(allocation)}
+                      onChange={() =>
+                        handleAllocationSelection(allocation)
+                      }
                       className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-1 focus:ring-emerald-500"
                     />
                     <span className="text-sm text-slate-800">
@@ -3031,11 +2998,10 @@ export const TargetRegister = () => {
           </div>
         )}
 
-        {/* Split Target Modal */}
+        {/* SPLIT TARGET MODAL – your exact UI */}
         {showSplitModal && splitModalData && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-50">
-            <div className="bg-white rounded-xl shadow-2xl w-full flex flex-col overflow-hidden h-full">
-              {/* Modal Header */}
+            <div className="bg-white rounded-xl shadow-2xl w-full flex flex-col overflow-hidden max-h-[90vh]">
               <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center justify-between rounded-t-xl flex-shrink-0">
                 <div>
                   <h3 className="text-lg font-semibold text-white">
@@ -3057,19 +3023,17 @@ export const TargetRegister = () => {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowSplitModal(false)}
+                  onClick={handleCancel}
                   className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-1"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Content Container */}
               <div className="flex-1 flex flex-col overflow-hidden">
-                {/* Sticky Top Section (Split Type + Inputs) */}
-                <div className="bg-white sticky top-0 z-10 px-6 mt-2 border-b border-gray-200 flex">
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="bg-white sticky top-0 z-10 px-6 py-3 border-b border-gray-200 flex items-center">
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium text-gray-700 whitespace-nowrap">
                       Split Type
                     </label>
                     <div className="relative">
@@ -3095,24 +3059,22 @@ export const TargetRegister = () => {
                     </div>
                   </div>
 
-                  {/* Total Target (text already shown in header) */}
-                  <div className="flex flex-1 justify-end items-center pr-10">
-                    <p className="text-lg text-gray-700">
+                  <div className="flex flex-1 justify-end items-center pr-4">
+                    <p className="text-sm text-gray-700">
                       <span className="font-semibold">Total Target:</span>{" "}
                       {totalLabel}
                     </p>
                   </div>
                 </div>
 
-                <label className="block text-sm font-medium text-gray-700 bg-white ml-5 m-3">
+                <label className="block text-sm font-medium text-gray-700 px-6 pt-3 pb-1">
                   Assign to Users
                 </label>
 
-                {/* Scrollable User List Section */}
                 <div className="flex-1 overflow-y-auto px-2 py-4 space-y-4">
                   {userList.map((user) => {
                     const key = `${splitModalData.productId}-${splitModalData.month}`
-                    const userArray = splitData[key] || []
+                    const userArray = workingSplitData[key] || []
                     const currentUserData = userArray.find(
                       (item) => item.userId === user.id
                     )
@@ -3126,14 +3088,11 @@ export const TargetRegister = () => {
                         key={user.id}
                         className="border border-gray-200 rounded-lg p-3 bg-gray-50"
                       >
-                        {/* SINGLE ROW GRID: name | input | button | slabs... */}
                         <div className="grid grid-cols-[180px,120px,110px,minmax(0,1fr)] gap-2 items-start">
-                          {/* name */}
                           <span className="text-sm font-medium text-gray-700 truncate">
                             {user.name}
                           </span>
 
-                          {/* value input + message */}
                           <div className="flex flex-col">
                             <input
                               type="number"
@@ -3151,7 +3110,6 @@ export const TargetRegister = () => {
                             )}
                           </div>
 
-                          {/* add slab button */}
                           <button
                             type="button"
                             onClick={() => handleAddSlab(user.id)}
@@ -3160,7 +3118,6 @@ export const TargetRegister = () => {
                             Add Slab
                           </button>
 
-                          {/* slabs */}
                           <div className="flex flex-wrap gap-2">
                             {userSlabs.map((slab, index) => (
                               <div
@@ -3177,7 +3134,6 @@ export const TargetRegister = () => {
                                 >
                                   <X className="w-3.5 h-3.5" />
                                 </button>
-
                                 <table className="text-xs border-collapse">
                                   <thead>
                                     <tr>
@@ -3255,7 +3211,6 @@ export const TargetRegister = () => {
                 </div>
               </div>
 
-              {/* Modal Footer */}
               <div className="px-6 py-4 bg-gray-100 rounded-b-xl flex justify-end gap-3 flex-shrink-0">
                 <button
                   type="button"

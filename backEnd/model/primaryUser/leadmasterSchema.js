@@ -1,4 +1,18 @@
 import mongoose from "mongoose";
+const paymentEntrySchema = new mongoose.Schema(
+  {
+    productorServiceId:{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      required: true,
+    },
+productorServicemodel:{type:String},
+    netAmount: { type: Number, required: true },
+    receivedAmount: { type: Number, required: true },
+    balanceAmount: { type: Number, required: true },
+  },
+  { _id: false }
+)
 
 const leadSchema = new mongoose.Schema(
   {
@@ -69,7 +83,7 @@ const leadSchema = new mongoose.Schema(
     netAmount: {
       type: Number,
     },
-    roundOff: { type: Number },
+
     //balance amount given by the customer
     balanceAmount: {
       type: Number,
@@ -93,6 +107,7 @@ const leadSchema = new mongoose.Schema(
         paymentverifiedModel: { type: String, enum: ["Staff", "Admin"] },
         verifiedAt: { type: Date },
         receivedAmount: { type: Number },
+        paymentEntries:[paymentEntrySchema],
         receivedBy: {
           type: mongoose.Schema.Types.ObjectId,
           refpath: "recievedModel",
