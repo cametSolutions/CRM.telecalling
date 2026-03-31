@@ -3269,10 +3269,391 @@ export const GetselectedLeadData = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+export const GetallfollowupListfromFollowupSummary = async (req, res) => {
+  try {
+    const {
+      loggeduserid,
+      branchSelected,
+      role,
+      pendingfollowup,
+      type          // 'dueToday' | 'overdue' | 'future' | 'converted' | 'lost'
+    } = req.query
+
+    const userObjectId = new mongoose.Types.ObjectId(loggeduserid)
+    const branchObjectId = new mongoose.Types.ObjectId(branchSelected)
+
+    // base query for leads (same as your old find query)
+    let baseMatch
+    if (pendingfollowup === "true") {
+      if (role === "Admin") {
+        baseMatch = {
+          activityLog: {
+            $elemMatch: {
+              taskTo: "followup",
+              allocationChanged: false,
+              allocatedClosed: false,
+              taskClosed: false,
+              followupClosed: false
+            }
+          },
+          leadBranch: branchObjectId,
+          reallocatedTo: false,
+          leadLost: false
+        }
+      } else {
+        baseMatch = {
+          activityLog: {
+            $elemMatch: {
+              taskTo: "followup",
+              $or: [
+                { submittedUser: userObjectId },
+                { taskallocatedTo: userObjectId }
+              ],
+              allocationChanged: false,
+              allocatedClosed: false,
+              taskClosed: false,
+              followupClosed: false
+            }
+          },
+          leadBranch: branchObjectId,
+          reallocatedTo: false,
+          leadLost: false
+        }
+      }
+    } else if (pendingfollowup === "false") {
+      if (role === "Admin") {
+        baseMatch = {
+          activityLog: {
+            $elemMatch: {
+              taskTo: "followup",
+              allocationChanged: false,
+              allocatedClosed: false,
+              taskClosed: true,
+              followupClosed: true
+            }
+          },
+          leadBranch: branchObjectId,
+          leadLost: false
+        }
+      } else {
+        baseMatch = {
+          activityLog: {
+            $elemMatch: {
+              taskTo: "followup",
+              $or: [
+                { submittedUser: userObjectId },
+                { taskallocatedTo: userObjectId }
+              ],
+              taskClosed: true
+            }
+          },
+          leadBranch: branchObjectId,
+          leadLost: false
+        }
+      }
+    } else {
+      // default: no pending filter
+      baseMatch = {
+        leadBranch: branchObjectId
+      }
+    }
+
+    const start = new Date(req.query.startDate)
+    start.setHours(0, 0, 0, 0)
+
+    const end = new Date(req.query.endDate)
+    end.setHours(23, 59, 59, 999)
+
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+
+    const todayEnd = new Date()
+    todayEnd.setHours(23, 59, 59, 999)
+
+    // map query type -> flag field
+    const flagFieldMap = {
+      dueToday: "dueToday",
+      overdue: "overdue",
+      future: "future",
+      converted: "isConverted",
+      lost: "isLost"
+    }
+    const flagField = type ? flagFieldMap[type] : null
+
+    // aggregation: compute flags at lead level and filter by flagField if given
+    const leadsWithFlags = await LeadMaster.aggregate([
+      { $match: baseMatch },
+
+      // pick only followup logs
+      {
+        $addFields: {
+          followupLogs: {
+            $filter: {
+              input: "$activityLog",
+              as: "log",
+              cond: { $eq: ["$$log.taskTo", "followup"] }
+            }
+          }
+        }
+      },
+
+      // last followup log
+      {
+        $addFields: {
+          lastActivity: { $arrayElemAt: ["$followupLogs", -1] }
+        }
+      },
+
+      {
+        $addFields: {
+          nextFollowupDate: "$lastActivity.nextFollowUpDate"
+        }
+      },
+
+      // compute flags (your requested block)
+      {
+        $addFields: {
+          dueToday: {
+            $cond: [
+              {
+                $and: [
+                  { $gte: ["$nextFollowupDate", todayStart] },
+                  { $lte: ["$nextFollowupDate", todayEnd] }
+                ]
+              },
+              1,
+              0
+            ]
+          },
+          overdue: {
+            $cond: [{ $lt: ["$nextFollowupDate", todayStart] }, 1, 0]
+          },
+          future: {
+            $cond: [{ $gt: ["$nextFollowupDate", todayEnd] }, 1, 0]
+          },
+          isConverted: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ["$leadConvertedDate", null] },
+                  { $gte: ["$leadConvertedDate", start] },
+                  { $lte: ["$leadConvertedDate", end] }
+                ]
+              },
+              1,
+              0
+            ]
+          },
+          isLost: {
+            $cond: [
+              {
+                $and: [
+                  { $ne: ["$leadLostDate", null] },
+                  { $gte: ["$leadLostDate", start] },
+                  { $lte: ["$leadLostDate", end] }
+                ]
+              },
+              1,
+              0
+            ]
+          }
+        }
+      },
+
+      // filter by flag if type is given
+      ...(flagField
+        ? [
+          {
+            $match: {
+              [flagField]: 1
+            }
+          }
+        ]
+        : []),
+
+      // we still want full LeadMaster docs for populate & post-processing
+      { $project: { /* keep everything */ } }
+    ])
+
+    // now reuse your old enrichment logic on leadsWithFlags instead of find(query)
+    const followupLeads = []
+    for (const lead of leadsWithFlags) {
+      // === your existing code from selectedfollowup loop, unchanged ===
+      const activity = Array.isArray(lead.activityLog) ? lead.activityLog : []
+      const matchedAllocations = activity
+        .map((item, index) => ({ ...item, index }))
+        .filter((item) => item.taskTo === "followup")
+
+      if (matchedAllocations.length === 0) continue
+
+      const lastAlloc = matchedAllocations[matchedAllocations.length - 1]
+      const lastIndex = lastAlloc.index
+
+      if (
+        !lead.leadByModel ||
+        !mongoose.models[lead.leadByModel] ||
+        !lastAlloc.taskallocatedToModel ||
+        !mongoose.models[lastAlloc.taskallocatedToModel] ||
+        !lastAlloc.taskallocatedByModel ||
+        !mongoose.models[lastAlloc.taskallocatedByModel]
+      ) {
+        continue
+      }
+
+      const leadByModel = mongoose.model(lead.leadByModel)
+      const allocatedToModel = mongoose.model(lastAlloc.taskallocatedToModel)
+      const allocatedByModel = mongoose.model(lastAlloc.taskallocatedByModel)
+
+      const [popLeadBy, popAllocatedTo, popAllocatedBy] = await Promise.all([
+        leadByModel
+          .findById(lead.leadBy)
+          .select("name")
+          .lean()
+          .catch(() => null),
+        allocatedToModel
+          .findById(lastAlloc.taskallocatedTo)
+          .select("name")
+          .lean()
+          .catch(() => null),
+        allocatedByModel
+          .findById(lastAlloc.taskallocatedBy)
+          .select("name")
+          .lean()
+          .catch(() => null)
+      ])
+
+      const populatedActivityLog = await Promise.all(
+        activity.map(async (log) => {
+          let populatedSubmittedUser = null
+          let populatedTaskAllocatedTo = null
+          let populatedTaskAllocatedBy = null
+          let populatedTask = null
+          let populatedTaskBy = null
+
+          if (
+            log.submittedUser &&
+            log.submissiondoneByModel &&
+            mongoose.models[log.submissiondoneByModel]
+          ) {
+            const model = mongoose.model(log.submissiondoneByModel)
+            populatedSubmittedUser = await model
+              .findById(log.submittedUser)
+              .select("name")
+              .lean()
+              .catch(() => null)
+          }
+
+          if (
+            log.taskallocatedBy &&
+            log.taskallocatedByModel &&
+            mongoose.models[log.taskallocatedByModel]
+          ) {
+            const model = mongoose.model(log.taskallocatedByModel)
+            populatedTaskAllocatedBy = await model
+              .findById(log.taskallocatedBy)
+              .select("name")
+              .lean()
+              .catch(() => null)
+          }
+
+          if (
+            log.taskallocatedTo &&
+            log.taskallocatedToModel &&
+            mongoose.models[log.taskallocatedToModel]
+          ) {
+            const model = mongoose.model(log.taskallocatedToModel)
+            populatedTaskAllocatedTo = await model
+              .findById(log.taskallocatedTo)
+              .select("name")
+              .lean()
+              .catch(() => null)
+          }
+
+          if (log?.taskId) {
+            populatedTask = await Task.findById(log.taskId)
+              .select("taskName")
+              .lean()
+              .catch(() => null)
+          }
+
+          if (log?.taskBy) {
+            populatedTaskBy = await Task.findById(log.taskBy)
+          }
+
+          return {
+            ...log,
+            taskBy: populatedTaskBy,
+            submittedUser: populatedSubmittedUser || log.submittedUser,
+            taskallocatedBy: populatedTaskAllocatedBy || log.taskallocatedBy,
+            taskallocatedTo:
+              populatedTaskAllocatedTo || log.taskallocatedTo,
+            taskId: populatedTask
+          }
+        })
+      )
+
+      const lastMatched = lastAlloc
+      const lastMatchedClosed = !!lastMatched.followupClosed
+      let neverfollowuped = false
+
+      if (lastMatchedClosed) {
+        neverfollowuped = true
+      } else {
+        const afterLogs = activity.slice(lastIndex + 1)
+        const foundNextFollowUp = afterLogs.some(
+          (log) => !!log.nextFollowUpDate
+        )
+        if (foundNextFollowUp) {
+          neverfollowuped = false
+        } else {
+          if (lastMatched.nextFollowUpDate) neverfollowuped = false
+          else neverfollowuped = true
+        }
+      }
+
+      const lastActivity = activity[activity.length - 1] || {}
+      const Nextfollowup = !!lastActivity.nextFollowUpDate
+      const allocatedfollowup = !!lastActivity.taskfromFollowup
+      const allocatedTaskClosed = !!lastActivity.allocatedClosed
+
+      followupLeads.push({
+        ...lead,
+        leadBy: popLeadBy || lead.leadBy,
+        allocatedTo: popAllocatedTo,
+        allocatedBy: popAllocatedBy,
+        activityLog: populatedActivityLog,
+        nextFollowUpDate: lastActivity.nextFollowUpDate ?? null,
+        neverfollowuped,
+        Nextfollowup,
+        allocatedfollowup,
+        allocatedTaskClosed
+      })
+    }
+
+    const ischekCollegueLeads = followupLeads.some((item) =>
+      item.allocatedBy?._id?.equals(userObjectId)
+    )
+
+    if (followupLeads && followupLeads.length > 0) {
+      return res.status(201).json({
+        messge: "leadfollowup found",
+        data: { followupLeads, ischekCollegueLeads }
+      })
+    } else {
+      return res
+        .status(404)
+        .json({ message: "leadfollowp not found", data: {} })
+    }
+  } catch (error) {
+    console.log("error:", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const GetfollowupsummaryReport = async (req, res) => {
   try {
-    const { startDate, endDate } = req.query
-    console.log(startDate, endDate)
+    const { startDate, endDate } = req.query;
+    console.log(startDate, endDate);
+
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
 
@@ -3288,7 +3669,7 @@ export const GetfollowupsummaryReport = async (req, res) => {
 
 
     const result = await LeadMaster.aggregate([
-      // 1) Only followup logs with allocated staff
+      // 1) Only logs that have a nextFollowUpDate (actual followup completion logs)
       {
         $addFields: {
           followupLogs: {
@@ -3297,49 +3678,68 @@ export const GetfollowupsummaryReport = async (req, res) => {
               as: "log",
               cond: {
                 $and: [
-                  { $eq: ["$$log.taskTo", "followup"] },
-                  { $ne: ["$$log.taskallocatedTo", null] },
-                  // { $eq: ["$$log.allocationChanged", false] }, // optional
-                ],
-              },
-            },
-          },
-        },
+                  { $ne: ["$$log.nextFollowUpDate", null] },
+                  { $gt: ["$$log.nextFollowUpDate", new Date("2000-01-01")] }
+                ]
+              }
+            }
+          }
+        }
       },
 
-      // 2) Last matching followup for this lead
+      // 2) Get last followup log (has the real nextFollowUpDate)
       {
         $addFields: {
-          lastActivity: { $arrayElemAt: ["$followupLogs", -1] },
-        },
+          lastActivity: { $arrayElemAt: ["$followupLogs", -1] }
+        }
       },
 
-      // 3) Keep only leads that have at least one matching followup
+      // 3) Only leads with at least one followup log
       {
         $match: {
-          lastActivity: { $ne: null },
-        },
+          lastActivity: { $ne: null }
+        }
       },
 
-      // 4) Unwind leadFor (if multiple products)
+      // 4) Unwind leadFor
       { $unwind: "$leadFor" },
 
-      // 5) Collapse to ONE row per LEAD (not per product)
+      // 5) One row per lead, staffId from assignment log (taskTo: "followup")
       {
         $group: {
-          _id: "$_id", // lead ObjectId
-          leadIdStr: { $first: "$leadId" }, // "00005" etc.
-          staffId: { $first: "$lastActivity.taskallocatedTo" },
-          nextFollowupDate: { $first: "$lastActivity.nextFollowupDate" },
+          _id: "$_id",
+          // keep leadId (string) for this lead
+          leadIdStr: { $first: "$leadId" },
+          staffId: {
+            $first: {
+              $let: {
+                vars: {
+                  assignLog: {
+                    $arrayElemAt: [
+                      {
+                        $filter: {
+                          input: "$activityLog",
+                          as: "log",
+                          cond: { $eq: ["$$log.taskTo", "followup"] }
+                        }
+                      },
+                      0
+                    ]
+                  }
+                },
+                in: "$$assignLog.taskallocatedTo"
+              }
+            }
+          },
+          nextFollowupDate: { $first: "$lastActivity.nextFollowUpDate" },
           leadConvertedDate: { $first: "$leadConvertedDate" },
           leadLostDate: { $first: "$leadLostDate" },
           netAmount: { $first: "$leadFor.netAmount" },
-
-          branchId: { $first: "$leadBranch" }, // 👈 from LeadMaster
-        },
+          branchId: { $first: "$leadBranch" }
+        }
       },
 
-      // 6) Flags per lead
+      // 6) Compute flags using dynamic date variables
       {
         $addFields: {
           dueToday: {
@@ -3347,18 +3747,18 @@ export const GetfollowupsummaryReport = async (req, res) => {
               {
                 $and: [
                   { $gte: ["$nextFollowupDate", todayStart] },
-                  { $lte: ["$nextFollowupDate", todayEnd] },
-                ],
+                  { $lte: ["$nextFollowupDate", todayEnd] }
+                ]
               },
               1,
-              0,
-            ],
+              0
+            ]
           },
           overdue: {
-            $cond: [{ $lt: ["$nextFollowupDate", todayStart] }, 1, 0],
+            $cond: [{ $lt: ["$nextFollowupDate", end] }, 1, 0]
           },
           future: {
-            $cond: [{ $gt: ["$nextFollowupDate", todayEnd] }, 1, 0],
+            $cond: [{ $gt: ["$nextFollowupDate", end] }, 1, 0]
           },
           isConverted: {
             $cond: [
@@ -3366,12 +3766,12 @@ export const GetfollowupsummaryReport = async (req, res) => {
                 $and: [
                   { $ne: ["$leadConvertedDate", null] },
                   { $gte: ["$leadConvertedDate", start] },
-                  { $lte: ["$leadConvertedDate", end] },
-                ],
+                  { $lte: ["$leadConvertedDate", end] }
+                ]
               },
               1,
-              0,
-            ],
+              0
+            ]
           },
           isLost: {
             $cond: [
@@ -3379,12 +3779,12 @@ export const GetfollowupsummaryReport = async (req, res) => {
                 $and: [
                   { $ne: ["$leadLostDate", null] },
                   { $gte: ["$leadLostDate", start] },
-                  { $lte: ["$leadLostDate", end] },
-                ],
+                  { $lte: ["$leadLostDate", end] }
+                ]
               },
               1,
-              0,
-            ],
+              0
+            ]
           },
           convertedNetAmount: {
             $cond: [
@@ -3392,20 +3792,21 @@ export const GetfollowupsummaryReport = async (req, res) => {
                 $and: [
                   { $ne: ["$leadConvertedDate", null] },
                   { $gte: ["$leadConvertedDate", start] },
-                  { $lte: ["$leadConvertedDate", end] },
-                ],
+                  { $lte: ["$leadConvertedDate", end] }
+                ]
               },
               { $ifNull: ["$netAmount", 0] },
-              0,
-            ],
-          },
-        },
+              0
+            ]
+          }
+        }
       },
 
-      // 7) Per-staff grouping (for this date range)
+      // 7) Group per staff
       {
         $group: {
           _id: { staffId: "$staffId" },
+          // collect all leadIds for this staff
           leadIds: { $addToSet: "$leadIdStr" },
           leadCount: { $sum: 1 },
           totalConverted: { $sum: "$isConverted" },
@@ -3414,50 +3815,48 @@ export const GetfollowupsummaryReport = async (req, res) => {
           totalOverdue: { $sum: "$overdue" },
           totalFuture: { $sum: "$future" },
           convertedNetAmount: { $sum: "$convertedNetAmount" },
-
-          branchIds: { $addToSet: "$branchId" }, // all branches from that staff's leads
-        },
+          branchIds: { $addToSet: "$branchId" }
+        }
       },
 
-      // 8) Join staff
+      // 8) Join staff details
       {
         $lookup: {
           from: "staffs",
           localField: "_id.staffId",
           foreignField: "_id",
-          as: "staff",
-        },
+          as: "staff"
+        }
       },
       { $unwind: "$staff" },
 
-      // 9) Final shape
+      // 9) Final shape (now includes leadIds)
       {
         $project: {
           _id: 0,
-          staffId: "$_id.staffId",
+          staffId: "_id.staffId",
           staffName: "$staff.name",
           staffRole: "$staff.role",
-
-          branchIds: 1, // from leads
-          leadIds: 1,
+          branchIds: 1,
+          leadIds: 1,          // <-- array of leadId strings for this staff
           leadCount: 1,
           totalConverted: 1,
           totalLost: 1,
           totalDueToday: 1,
           totalOverdue: 1,
           totalFuture: 1,
-          convertedNetAmount: 1,
-        },
-      },
-    ]);
-
-    // Final array for frontend
+          convertedNetAmount: 1
+        }
+      }
+    ])
+    // result.forEach((item) => console.log(item.totalConverted))
+    // console.log("resulstttt", result)
     const structuredData = result.map((item) => ({
       staffId: item.staffId,
+      leadIds: item.leadIds,
       staffRole: item.staffRole,
-      branchIds: item.branchIds, // array of branch ids this staff has leads in (for that period)
-      staffName: item.staffName,
-
+      branchIds: item.branchIds,
+      Staff: item.staffName,
       leadCount: item.leadCount,
       dueToday: item.totalDueToday,
       overDue: item.totalOverdue,
@@ -3465,37 +3864,55 @@ export const GetfollowupsummaryReport = async (req, res) => {
       converted: item.totalConverted,
       lost: item.totalLost,
       convertedPercentage:
-        item.leadCount > 0 ? (item.totalConverted / item.leadCount) * 100 : 0,
-
-      // leadid: item.leadIds, 
+        item.leadCount > 0 ? (item.totalConverted / item.leadCount) * 100 : 0
     }));
 
-    console.log("result", result)
-
-    // const structuredData = result.map((item) => ({
-    //   staffId: item.staffId,
-    //   staffRole: item.staffRole,
-    //   branchId: item.branchId,
-    //   staffName: item.staffName,
-    //   leadCount: item.leadCount,
-    //   dueToday: item.totalDueToday,
-    //   overDue: item.totalOverdue,
-    //   future: item.totalFuture,
-    //   converted: item.totalConverted,
-    //   lost: item.totalLost,
-    //   convertedPercentage: (item.totalConverted / item.leadCount) * 100,
-    //   // leadid: item.leadIds
-    // }))
-    // console.log(structuredData)
     if (structuredData && structuredData.length > 0) {
-      return res.status(200).json({ message: "summary found", data: structuredData })
+      return res.status(200).json({ message: "summary found", data: structuredData });
     }
 
+    return res.status(404).json({ message: "No data found" });
+
   } catch (error) {
-    console.log("error:", error.message)
-    return res.status(500).json({ message: "Internal server error" })
+    console.log("error:", error.message);
+    return res.status(500).json({ message: "Internal server error" });
   }
-}
+};
+
+// export const GetfollowupsummaryReport = async (req, res) => {
+//   try {
+//     const { startDate, endDate } = req.query
+//     console.log(startDate, endDate)
+//     const start = new Date(startDate);
+//     start.setHours(0, 0, 0, 0);
+
+//     const end = new Date(endDate);
+//     end.setHours(23, 59, 59, 999);
+
+//     const todayStart = new Date();
+//     todayStart.setHours(0, 0, 0, 0);
+
+//     const todayEnd = new Date();
+//     todayEnd.setHours(23, 59, 59, 999);
+//     console.log("todayend", todayEnd)
+
+
+
+
+
+
+
+
+
+//     if (structuredData && structuredData.length > 0) {
+//       return res.status(200).json({ message: "summary found", data: structuredData })
+//     }
+
+//   } catch (error) {
+//     console.log("error:", error.message)
+//     return res.status(500).json({ message: "Internal server error" })
+//   }
+// }
 export const Getalltasktoreport = async (req, res) => {
   try {
     const result = await Task.find({ listed: true })
@@ -3852,545 +4269,6 @@ export const GetallproductwiseReport = async (req, res) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
-    // const result = await LeadMaster.aggregate([
-    //   // 1️⃣ Unwind activityLog
-    //   { $unwind: "$activityLog" },
-
-    //   // 2️⃣ Match followup allocations
-    //   {
-    //     $match: {
-    //       "activityLog.taskallocatedTo": { $exists: true, $ne: null },
-    //       "activityLog.taskTo": "followup",
-    //       "activityLog.allocationChanged": false,
-    //     },
-    //   },
-
-    //   // 3️⃣ Unwind leadFor
-    //   { $unwind: "$leadFor" },
-
-    //   // 4️⃣ Deduplicate: Lead + Staff + Product
-    //   {
-    //     $group: {
-    //       _id: {
-    //         leadId: "$leadId",
-    //         staffId: "$activityLog.taskallocatedTo",
-    //         productId: "$leadFor.productorServiceId",
-    //         productModel: "$leadFor.productorServicemodel",
-    //       },
-    //       leadConvertedDate: { $first: "$leadConvertedDate" },
-    //       leadLostDate: { $first: "$leadLostDate" },
-    //       netAmount: { $first: "$leadFor.netAmount" }, // ✅ IMPORTANT
-    //     },
-    //   },
-
-    //   // 5️⃣ Status flags (date-based)
-    //   {
-    //     $addFields: {
-    //       isConverted: {
-    //         $cond: [
-    //           {
-    //             $and: [
-    //               { $ne: ["$leadConvertedDate", null] },
-    //               { $gte: ["$leadConvertedDate", start] },
-    //               { $lte: ["$leadConvertedDate", end] },
-    //             ],
-    //           },
-    //           1,
-    //           0,
-    //         ],
-    //       },
-    //       isLost: {
-    //         $cond: [
-    //           {
-    //             $and: [
-    //               { $ne: ["$leadLostDate", null] },
-    //               { $gte: ["$leadLostDate", start] },
-    //               { $lte: ["$leadLostDate", end] },
-    //             ],
-    //           },
-    //           1,
-    //           0,
-    //         ],
-    //       },
-    //       convertedNetAmount: {
-    //         $cond: [
-    //           {
-    //             $and: [
-    //               { $ne: ["$leadConvertedDate", null] },
-    //               { $gte: ["$leadConvertedDate", start] },
-    //               { $lte: ["$leadConvertedDate", end] },
-    //             ],
-    //           },
-    //           { $ifNull: ["$netAmount", 0] },
-    //           0,
-    //         ],
-    //       },
-    //     },
-    //   },
-
-    //   // 6️⃣ Pending
-    //   {
-    //     $addFields: {
-    //       isPending: {
-    //         $cond: [
-    //           {
-    //             $and: [
-    //               { $eq: ["$isConverted", 0] },
-    //               { $eq: ["$isLost", 0] },
-    //             ],
-    //           },
-    //           1,
-    //           0,
-    //         ],
-    //       },
-    //     },
-    //   },
-
-    //   // 7️⃣ Group per Staff × Product
-    //   {
-    //     $group: {
-    //       _id: {
-    //         staffId: "$_id.staffId",
-    //         productId: "$_id.productId",
-    //         productModel: "$_id.productModel",
-    //       },
-    //       leadCount: { $sum: 1 },
-    //       totalConverted: { $sum: "$isConverted" },
-    //       totalLost: { $sum: "$isLost" },
-    //       totalPending: { $sum: "$isPending" },
-    //       // ✅ CONVERTED VALUE
-    //       convertedNetAmount: { $sum: "$convertedNetAmount" },
-    //       // ✅ NET AMOUNT
-    //       totalNetAmount: { $sum: { $ifNull: ["$netAmount", 0] } },
-    //     },
-    //   },
-
-    //   // 8️⃣ Lookup Staff
-    //   {
-    //     $lookup: {
-    //       from: "staffs",
-    //       localField: "_id.staffId",
-    //       foreignField: "_id",
-    //       as: "staff",
-    //     },
-    //   },
-    //   { $unwind: "$staff" },
-
-    //   // 9️⃣ Lookup Product
-    //   {
-    //     $lookup: {
-    //       from: "products",
-    //       localField: "_id.productId",
-    //       foreignField: "_id",
-    //       as: "product",
-    //     },
-    //   },
-
-    //   // 🔟 Lookup Service
-    //   {
-    //     $lookup: {
-    //       from: "services",
-    //       localField: "_id.productId",
-    //       foreignField: "_id",
-    //       as: "service",
-    //     },
-    //   },
-
-    //   // 1️⃣1️⃣ Resolve Product / Service name
-    //   {
-    //     $addFields: {
-    //       productName: {
-    //         $cond: [
-    //           { $eq: ["$_id.productModel", "Product"] },
-    //           { $arrayElemAt: ["$product.productName", 0] },
-    //           { $arrayElemAt: ["$service.serviceName", 0] },
-    //         ],
-    //       },
-    //     },
-    //   },
-
-    //   // 1️⃣2️⃣ Final projection
-    //   {
-    //     $project: {
-    //       _id: 1,
-    //       staffId: "$_id.staffId",          // 👈 add this line
-    //       productId: "$_id.productId",
-    //       staffName: { $ifNull: ["$staff.name", "Unknown"] },
-
-    //       productName: 1,
-
-    //       leadCount: 1,
-    //       totalConverted: 1,
-    //       totalLost: 1,
-    //       totalPending: 1,
-    //       totalNetAmount: 1, // ✅ FINAL FIELD
-    //       convertedNetAmount: 1, // ✅ FINAL
-    //     },
-    //   },
-
-    //   // 1️⃣3️⃣ Sort
-    //   {
-    //     $sort: {
-    //       staffName: 1,
-    //       productName: 1,
-    //     },
-    //   },
-    // ]);
-    // const result = await LeadMaster.aggregate([
-    //   { $unwind: "$activityLog" },
-    //   {
-    //     $match: {
-    //       "activityLog.taskallocatedTo": { $exists: true, $ne: null },
-    //       "activityLog.taskTo": "followup",
-    //       "activityLog.allocationChanged": false,
-    //     },
-    //   },
-    //   { $unwind: "$leadFor" },
-    //   {
-    //     $group: {
-    //       _id: {
-    //         leadId: "$leadId",
-    //         staffId: "$activityLog.taskallocatedTo",
-    //         productId: "$leadFor.productorServiceId",
-    //         productModel: "$leadFor.productorServicemodel",
-    //       },
-    //       leadConvertedDate: { $first: "$leadConvertedDate" },
-    //       leadLostDate: { $first: "$leadLostDate" },
-    //       netAmount: { $first: "$leadFor.netAmount" },
-    //     },
-    //   },
-    //   {
-    //     $addFields: {
-    //       isConverted: {
-    //         $cond: [
-    //           {
-    //             $and: [
-    //               { $ne: ["$leadConvertedDate", null] },
-    //               { $gte: ["$leadConvertedDate", start] },
-    //               { $lte: ["$leadConvertedDate", end] },
-    //             ],
-    //           },
-    //           1,
-    //           0,
-    //         ],
-    //       },
-    //       isLost: {
-    //         $cond: [
-    //           {
-    //             $and: [
-    //               { $ne: ["$leadLostDate", null] },
-    //               { $gte: ["$leadLostDate", start] },
-    //               { $lte: ["$leadLostDate", end] },
-    //             ],
-    //           },
-    //           1,
-    //           0,
-    //         ],
-    //       },
-    //       convertedNetAmount: {
-    //         $cond: [
-    //           {
-    //             $and: [
-    //               { $ne: ["$leadConvertedDate", null] },
-    //               { $gte: ["$leadConvertedDate", start] },
-    //               { $lte: ["$leadConvertedDate", end] },
-    //             ],
-    //           },
-    //           { $ifNull: ["$netAmount", 0] },
-    //           0,
-    //         ],
-    //       },
-    //     },
-    //   },
-    //   {
-    //     $addFields: {
-    //       isPending: {
-    //         $cond: [
-    //           {
-    //             $and: [
-    //               { $eq: ["$isConverted", 0] },
-    //               { $eq: ["$isLost", 0] },
-    //             ],
-    //           },
-    //           1,
-    //           0,
-    //         ],
-    //       },
-    //     },
-    //   },
-    //   {
-    //     $group: {
-    //       _id: {
-    //         staffId: "$_id.staffId",
-    //         productId: "$_id.productId",
-    //         productModel: "$_id.productModel",
-    //       },
-    //       leadCount: { $sum: 1 },
-    //       totalConverted: { $sum: "$isConverted" },
-    //       totalLost: { $sum: "$isLost" },
-    //       totalPending: { $sum: "$isPending" },
-    //       convertedNetAmount: { $sum: "$convertedNetAmount" },
-    //       totalNetAmount: { $sum: { $ifNull: ["$netAmount", 0] } },
-    //     },
-    //   },
-    //   {
-    //     $lookup: {
-    //       from: "staffs",
-    //       localField: "_id.staffId",
-    //       foreignField: "_id",
-    //       as: "staff",
-    //     },
-    //   },
-    //   { $unwind: "$staff" },
-    //   {
-    //     $lookup: {
-    //       from: "products",
-    //       localField: "_id.productId",
-    //       foreignField: "_id",
-    //       as: "product",
-    //     },
-    //   },
-    //   {
-    //     $lookup: {
-    //       from: "services",
-    //       localField: "_id.productId",
-    //       foreignField: "_id",
-    //       as: "service",
-    //     },
-    //   },
-    //   {
-    //     $addFields: {
-    //       productName: {
-    //         $cond: [
-    //           { $eq: ["$_id.productModel", "Product"] },
-    //           { $arrayElemAt: ["$product.productName", 0] },
-    //           { $arrayElemAt: ["$service.serviceName", 0] },
-    //         ],
-    //       },
-    //       // 👇 branch coming from product OR service
-    //       branch: {
-    //         $cond: [
-    //           { $eq: ["$_id.productModel", "Product"] },
-    //           { $arrayElemAt: ["$product.branch", 0] },   // adjust field name
-    //           { $arrayElemAt: ["$service.branch", 0] },   // adjust field name
-    //         ],
-    //       },
-    //     },
-    //   },
-    //   {
-    //     $project: {
-    //       _id: 1,
-    //       staffId: "$_id.staffId",
-    //       productId: "$_id.productId",
-    //       staffName: { $ifNull: ["$staff.name", "Unknown"] },
-    //       productName: 1,
-    //       branch: 1,                 // 👈 expose branch
-    //       leadCount: 1,
-    //       totalConverted: 1,
-    //       totalLost: 1,
-    //       totalPending: 1,
-    //       totalNetAmount: 1,
-    //       convertedNetAmount: 1,
-    //     },
-    //   },
-    //   {
-    //     $sort: {
-    //       staffName: 1,
-    //       productName: 1,
-    //     },
-    //   },
-    // ])
-    // const result = await LeadMaster.aggregate([
-    //   // 1️⃣ Unwind activityLog
-    //   { $unwind: "$activityLog" },
-
-    //   // 2️⃣ Match followup allocations
-    //   {
-    //     $match: {
-    //       "activityLog.taskallocatedTo": { $exists: true, $ne: null },
-    //       "activityLog.taskTo": "followup",
-    //       "activityLog.allocationChanged": false,
-    //     },
-    //   },
-
-    //   // 3️⃣ Unwind leadFor
-    //   { $unwind: "$leadFor" },
-
-    //   // 4️⃣ Deduplicate: Lead + Staff + Product/Service
-    //   {
-    //     $group: {
-    //       _id: {
-    //         leadId: "$leadId",
-    //         staffId: "$activityLog.taskallocatedTo",
-    //         productId: "$leadFor.productorServiceId",
-    //         productModel: "$leadFor.productorServicemodel", // "Product" | "Service"
-    //       },
-    //       leadConvertedDate: { $first: "$leadConvertedDate" },
-    //       leadLostDate: { $first: "$leadLostDate" },
-    //       netAmount: { $first: "$leadFor.netAmount" },
-    //     },
-    //   },
-
-    //   // 5️⃣ Status flags (date-based)
-    //   {
-    //     $addFields: {
-    //       isConverted: {
-    //         $cond: [
-    //           {
-    //             $and: [
-    //               { $ne: ["$leadConvertedDate", null] },
-    //               { $gte: ["$leadConvertedDate", start] },
-    //               { $lte: ["$leadConvertedDate", end] },
-    //             ],
-    //           },
-    //           1,
-    //           0,
-    //         ],
-    //       },
-    //       isLost: {
-    //         $cond: [
-    //           {
-    //             $and: [
-    //               { $ne: ["$leadLostDate", null] },
-    //               { $gte: ["$leadLostDate", start] },
-    //               { $lte: ["$leadLostDate", end] },
-    //             ],
-    //           },
-    //           1,
-    //           0,
-    //         ],
-    //       },
-    //       convertedNetAmount: {
-    //         $cond: [
-    //           {
-    //             $and: [
-    //               { $ne: ["$leadConvertedDate", null] },
-    //               { $gte: ["$leadConvertedDate", start] },
-    //               { $lte: ["$leadConvertedDate", end] },
-    //             ],
-    //           },
-    //           { $ifNull: ["$netAmount", 0] },
-    //           0,
-    //         ],
-    //       },
-    //     },
-    //   },
-
-    //   // 6️⃣ Pending
-    //   {
-    //     $addFields: {
-    //       isPending: {
-    //         $cond: [
-    //           {
-    //             $and: [
-    //               { $eq: ["$isConverted", 0] },
-    //               { $eq: ["$isLost", 0] },
-    //             ],
-    //           },
-    //           1,
-    //           0,
-    //         ],
-    //       },
-    //     },
-    //   },
-
-    //   // 7️⃣ Group per Staff × Product/Service
-    //   {
-    //     $group: {
-    //       _id: {
-    //         staffId: "$_id.staffId",
-    //         productId: "$_id.productId",
-    //         productModel: "$_id.productModel",
-    //       },
-    //       leadCount: { $sum: 1 },
-    //       totalConverted: { $sum: "$isConverted" },
-    //       totalLost: { $sum: "$isLost" },
-    //       totalPending: { $sum: "$isPending" },
-    //       convertedNetAmount: { $sum: "$convertedNetAmount" },
-    //       totalNetAmount: { $sum: { $ifNull: ["$netAmount", 0] } },
-    //     },
-    //   },
-
-    //   // 8️⃣ Lookup Staff
-    //   {
-    //     $lookup: {
-    //       from: "staffs",
-    //       localField: "_id.staffId",
-    //       foreignField: "_id",
-    //       as: "staff",
-    //     },
-    //   },
-    //   { $unwind: "$staff" },
-
-    //   // 9️⃣ Lookup Product (has branch field)
-    //   {
-    //     $lookup: {
-    //       from: "products",
-    //       localField: "_id.productId",
-    //       foreignField: "_id",
-    //       as: "product",
-    //     },
-    //   },
-
-    //   // 🔟 Lookup Service (has branch field)
-    //   {
-    //     $lookup: {
-    //       from: "services",
-    //       localField: "_id.productId",
-    //       foreignField: "_id",
-    //       as: "service",
-    //     },
-    //   },
-
-    //   // 1️⃣1️⃣ Resolve Product / Service name and branch
-    //   {
-    //     $addFields: {
-    //       productName: {
-    //         $cond: [
-    //           { $eq: ["$_id.productModel", "Product"] },
-    //           { $arrayElemAt: ["$product.productName", 0] },
-    //           { $arrayElemAt: ["$service.serviceName", 0] },
-    //         ],
-    //       },
-    //       branch: {
-    //         $cond: [
-    //           { $eq: ["$_id.productModel", "Product"] },
-    //           { $arrayElemAt: ["$product.branch", 0] },   // branch from product
-    //           { $arrayElemAt: ["$service.branch", 0] },   // branch from service
-    //         ],
-    //       },
-    //     },
-    //   },
-
-    //   // 1️⃣2️⃣ Final projection
-    //   {
-    //     $project: {
-    //       _id: 0,
-    //       staffId: "$_id.staffId",
-    //       productId: "$_id.productId",
-    //       productModel: "$_id.productModel",
-    //       staffName: { $ifNull: ["$staff.name", "Unknown"] },
-
-    //       productName: 1,
-    //       branch: 1,
-
-    //       leadCount: 1,
-    //       totalConverted: 1,
-    //       totalLost: 1,
-    //       totalPending: 1,
-    //       totalNetAmount: 1,
-    //       convertedNetAmount: 1,
-    //     },
-    //   },
-
-    //   // 1️⃣3️⃣ Sort
-    //   {
-    //     $sort: {
-    //       staffName: 1,
-    //       productName: 1,
-    //     },
-    //   },
-    // ])
 
     // const result = await LeadMaster.aggregate([
     //   // 1️⃣ Unwind activityLog
@@ -4412,13 +4290,14 @@ export const GetallproductwiseReport = async (req, res) => {
     //   {
     //     $group: {
     //       _id: {
-    //         leadId: "$leadId",
+    //         leadId: "$leadId",                                // NEW: carry leadId
     //         staffId: "$activityLog.taskallocatedTo",
     //         productId: "$leadFor.productorServiceId",
-    //         productModel: "$leadFor.productorServicemodel", // "Product" | "Service"
+    //         productModel: "$leadFor.productorServicemodel",   // "Product" | "Service"
     //       },
     //       leadConvertedDate: { $first: "$leadConvertedDate" },
     //       leadLostDate: { $first: "$leadLostDate" },
+    //       leadLostFlag: { $first: "$leadLost" },             // NEW: keep leadLost flag
     //       netAmount: { $first: "$leadFor.netAmount" },
     //     },
     //   },
@@ -4431,7 +4310,7 @@ export const GetallproductwiseReport = async (req, res) => {
     //           {
     //             $and: [
     //               { $ne: ["$leadConvertedDate", null] },
-    //               { $ne: ["$leadLost", true] },
+    //               { $ne: ["$leadLostFlag", true] },           // NEW: use grouped flag
     //               { $gte: ["$leadConvertedDate", start] },
     //               { $lte: ["$leadConvertedDate", end] },
     //             ],
@@ -4458,6 +4337,7 @@ export const GetallproductwiseReport = async (req, res) => {
     //           {
     //             $and: [
     //               { $ne: ["$leadConvertedDate", null] },
+    //               { $ne: ["$leadLostFlag", true] },           // NEW: same guard for amount
     //               { $gte: ["$leadConvertedDate", start] },
     //               { $lte: ["$leadConvertedDate", end] },
     //             ],
@@ -4487,14 +4367,14 @@ export const GetallproductwiseReport = async (req, res) => {
     //     },
     //   },
 
-    //   // 7️⃣ Group per Staff × Product/Service
+    //   // 7️⃣ Group per Staff × Product/Service × Lead
     //   {
     //     $group: {
     //       _id: {
     //         staffId: "$_id.staffId",
     //         productId: "$_id.productId",
     //         productModel: "$_id.productModel",
-    //         leadId: "$_id.leadId",
+    //         leadId: "$_id.leadId",                           // NEW: keep leadId here
     //       },
     //       leadCount: { $sum: 1 },
     //       totalConverted: { $sum: "$isConverted" },
@@ -4557,7 +4437,9 @@ export const GetallproductwiseReport = async (req, res) => {
     //             $arrayElemAt: [
     //               {
     //                 $map: {
-    //                   input: { $ifNull: [{ $arrayElemAt: ["$product.selected", 0] }, []] },
+    //                   input: {
+    //                     $ifNull: [{ $arrayElemAt: ["$product.selected", 0] }, []],
+    //                   },
     //                   as: "sel",
     //                   in: "$$sel.branch_id",
     //                 },
@@ -4575,7 +4457,7 @@ export const GetallproductwiseReport = async (req, res) => {
     //   {
     //     $project: {
     //       _id: 0,
-    //       leadid: "$_id.leadId",
+    //       leadId: "$_id.leadId",                             // NEW: expose leadId
     //       staffId: "$_id.staffId",
     //       productId: "$_id.productId",
     //       productModel: "$_id.productModel",
@@ -4583,7 +4465,7 @@ export const GetallproductwiseReport = async (req, res) => {
     //       staffName: { $ifNull: ["$staff.name", "Unknown"] },
     //       staffRole: "$staff.role",
     //       productName: 1,
-    //       branch: 1, // branch id
+    //       branch: 1,
 
     //       leadCount: 1,
     //       totalConverted: 1,
@@ -4602,11 +4484,242 @@ export const GetallproductwiseReport = async (req, res) => {
     //     },
     //   },
     // ])
+    // const result = await LeadMaster.aggregate([
+    //   // 1️⃣ Unwind activityLog
+    //   { $unwind: "$activityLog" },
+
+    //   // 2️⃣ Match followup allocations
+    //   {
+    //     $match: {
+    //       "activityLog.taskallocatedTo": { $exists: true, $ne: null },
+    //       "activityLog.taskTo": "followup",
+    //       "activityLog.allocationChanged": false,
+    //     },
+    //   },
+
+    //   // 3️⃣ Unwind leadFor
+    //   { $unwind: "$leadFor" },
+
+    //   // 4️⃣ Deduplicate: Lead + Staff + Product/Service
+    //   {
+    //     $group: {
+    //       _id: {
+    //         leadId: "$leadId",
+    //         staffId: "$activityLog.taskallocatedTo",
+    //         productId: "$leadFor.productorServiceId",
+    //         productModel: "$leadFor.productorServicemodel",
+    //       },
+    //       leadConvertedDate: { $first: "$leadConvertedDate" },
+    //       leadLostDate: { $first: "$leadLostDate" },
+    //       leadLostFlag: { $first: "$leadLost" },
+    //       // ✅ Use leadFor.netAmount — this is the per-product net amount
+    //       netAmount: { $first: "$leadFor.netAmount" },
+    //     },
+    //   },
+
+    //   // 5️⃣ Compute status flags + all four amount fields per product entry
+    //   {
+    //     $addFields: {
+    //       isConverted: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $ne: ["$leadConvertedDate", null] },
+    //               { $ne: ["$leadLostFlag", true] },
+    //               { $gte: ["$leadConvertedDate", start] },
+    //               { $lte: ["$leadConvertedDate", end] },
+    //             ],
+    //           },
+    //           1, 0,
+    //         ],
+    //       },
+
+    //       isLost: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $ne: ["$leadLostDate", null] },
+    //               { $gte: ["$leadLostDate", start] },
+    //               { $lte: ["$leadLostDate", end] },
+    //             ],
+    //           },
+    //           1, 0,
+    //         ],
+    //       },
+    //     },
+    //   },
+
+    //   // 6️⃣ Pending flag (not converted AND not lost)
+    //   {
+    //     $addFields: {
+    //       isPending: {
+    //         $cond: [
+    //           { $and: [{ $eq: ["$isConverted", 0] }, { $eq: ["$isLost", 0] }] },
+    //           1, 0,
+    //         ],
+    //       },
+    //     },
+    //   },
+
+    //   // 7️⃣ Compute per-entry amounts using status flags × netAmount
+    //   {
+    //     $addFields: {
+    //       // Total: every lead's net amount counts
+    //       entryTotalAmount: { $ifNull: ["$netAmount", 0] },
+
+    //       // Converted: only when isConverted = 1
+    //       entryConvertedAmount: {
+    //         $cond: [
+    //           { $eq: ["$isConverted", 1] },
+    //           { $ifNull: ["$netAmount", 0] },
+    //           0,
+    //         ],
+    //       },
+
+    //       // Lost: only when isLost = 1
+    //       entryLostAmount: {
+    //         $cond: [
+    //           { $eq: ["$isLost", 1] },
+    //           { $ifNull: ["$netAmount", 0] },
+    //           0,
+    //         ],
+    //       },
+
+    //       // Pending: only when isPending = 1
+    //       entryPendingAmount: {
+    //         $cond: [
+    //           { $eq: ["$isPending", 1] },
+    //           { $ifNull: ["$netAmount", 0] },
+    //           0,
+    //         ],
+    //       },
+    //     },
+    //   },
+
+    //   // 8️⃣ Group per Staff × Product × Lead
+    //   {
+    //     $group: {
+    //       _id: {
+    //         staffId: "$_id.staffId",
+    //         productId: "$_id.productId",
+    //         productModel: "$_id.productModel",
+    //         leadId: "$_id.leadId",
+    //       },
+    //       leadCount: { $sum: 1 },
+    //       totalConverted: { $sum: "$isConverted" },
+    //       totalLost: { $sum: "$isLost" },
+    //       totalPending: { $sum: "$isPending" },
+
+    //       // ✅ All four amounts summed correctly
+    //       totalNetAmount: { $sum: "$entryTotalAmount" },
+    //       convertedNetAmount: { $sum: "$entryConvertedAmount" },
+    //       lostNetAmount: { $sum: "$entryLostAmount" },
+    //       totalPendingAmount: { $sum: "$entryPendingAmount" },
+    //     },
+    //   },
+
+    //   // 9️⃣ Lookup Staff
+    //   {
+    //     $lookup: {
+    //       from: "staffs",
+    //       localField: "_id.staffId",
+    //       foreignField: "_id",
+    //       as: "staff",
+    //     },
+    //   },
+    //   { $unwind: "$staff" },
+
+    //   // 🔟 Lookup Product
+    //   {
+    //     $lookup: {
+    //       from: "products",
+    //       localField: "_id.productId",
+    //       foreignField: "_id",
+    //       as: "product",
+    //     },
+    //   },
+
+    //   // 1️⃣1️⃣ Lookup Service
+    //   {
+    //     $lookup: {
+    //       from: "services",
+    //       localField: "_id.productId",
+    //       foreignField: "_id",
+    //       as: "service",
+    //     },
+    //   },
+
+    //   // 1️⃣2️⃣ Resolve product/service name and branch
+    //   {
+    //     $addFields: {
+    //       productName: {
+    //         $cond: [
+    //           { $eq: ["$_id.productModel", "Product"] },
+    //           { $arrayElemAt: ["$product.productName", 0] },
+    //           { $arrayElemAt: ["$service.serviceName", 0] },
+    //         ],
+    //       },
+    //       branch: {
+    //         $cond: [
+    //           { $eq: ["$_id.productModel", "Product"] },
+    //           {
+    //             $arrayElemAt: [
+    //               {
+    //                 $map: {
+    //                   input: { $ifNull: [{ $arrayElemAt: ["$product.selected", 0] }, []] },
+    //                   as: "sel",
+    //                   in: "$$sel.branch_id",
+    //                 },
+    //               },
+    //               0,
+    //             ],
+    //           },
+    //           { $arrayElemAt: ["$service.branch", 0] },
+    //         ],
+    //       },
+    //     },
+    //   },
+
+    //   // 1️⃣3️⃣ Final projection — all four amounts exposed
+    //   {
+    //     $project: {
+    //       _id: 0,
+
+    //       leadId: "$_id.leadId",
+    //       staffId: "$_id.staffId",
+    //       productId: "$_id.productId",
+    //       productModel: "$_id.productModel",
+
+    //       staffName: { $ifNull: ["$staff.name", "Unknown"] },
+    //       staffRole: "$staff.role",
+    //       productName: 1,
+    //       branch: 1,
+
+    //       leadCount: 1,
+    //       totalConverted: 1,
+    //       totalLost: 1,
+    //       totalPending: 1,
+
+    //       // ✅ All four amounts
+    //       totalNetAmount: 1,   // net amount of ALL leads for this product
+    //       convertedNetAmount: 1,   // net amount of CONVERTED leads
+    //       lostNetAmount: 1,   // net amount of LOST leads
+    //       totalPendingAmount: 1,   // net amount of PENDING leads
+    //     },
+    //   },
+
+    //   // 1️⃣4️⃣ Sort
+    //   {
+    //     $sort: { staffName: 1, productName: 1 },
+    //   },
+    // ])
+
+
     const result = await LeadMaster.aggregate([
       // 1️⃣ Unwind activityLog
       { $unwind: "$activityLog" },
 
-      // 2️⃣ Match followup allocations
+      // 2️⃣ Match only followup allocations
       {
         $match: {
           "activityLog.taskallocatedTo": { $exists: true, $ne: null },
@@ -4615,46 +4728,40 @@ export const GetallproductwiseReport = async (req, res) => {
         },
       },
 
+      // ✅ (IMPORTANT) Sort to get latest followup first
+      {
+        $sort: {
+          "activityLog.submissionDate": -1,
+        },
+      },
+
       // 3️⃣ Unwind leadFor
       { $unwind: "$leadFor" },
 
-      // 4️⃣ Deduplicate: Lead + Staff + Product/Service
+      // 4️⃣ FIRST GROUP → Deduplicate (Lead + Staff + Product)
       {
         $group: {
           _id: {
-            leadId: "$leadId",                                // NEW: carry leadId
+            leadId: "$leadId",
             staffId: "$activityLog.taskallocatedTo",
             productId: "$leadFor.productorServiceId",
-            productModel: "$leadFor.productorServicemodel",   // "Product" | "Service"
+            productModel: "$leadFor.productorServicemodel",
           },
           leadConvertedDate: { $first: "$leadConvertedDate" },
           leadLostDate: { $first: "$leadLostDate" },
-          leadLostFlag: { $first: "$leadLost" },             // NEW: keep leadLost flag
+          leadLostFlag: { $first: "$leadLost" },
           netAmount: { $first: "$leadFor.netAmount" },
         },
       },
 
-      // 5️⃣ Status flags (date-based)
+      // 5️⃣ STATUS FLAGS (Lost priority handled)
       {
         $addFields: {
-          isConverted: {
-            $cond: [
-              {
-                $and: [
-                  { $ne: ["$leadConvertedDate", null] },
-                  { $ne: ["$leadLostFlag", true] },           // NEW: use grouped flag
-                  { $gte: ["$leadConvertedDate", start] },
-                  { $lte: ["$leadConvertedDate", end] },
-                ],
-              },
-              1,
-              0,
-            ],
-          },
           isLost: {
             $cond: [
               {
                 $and: [
+                  { $eq: ["$leadLostFlag", true] },
                   { $ne: ["$leadLostDate", null] },
                   { $gte: ["$leadLostDate", start] },
                   { $lte: ["$leadLostDate", end] },
@@ -4664,17 +4771,22 @@ export const GetallproductwiseReport = async (req, res) => {
               0,
             ],
           },
-          convertedNetAmount: {
+        },
+      },
+
+      {
+        $addFields: {
+          isConverted: {
             $cond: [
               {
                 $and: [
+                  { $eq: ["$isLost", 0] }, // ✅ prevent double count
                   { $ne: ["$leadConvertedDate", null] },
-                  { $ne: ["$leadLostFlag", true] },           // NEW: same guard for amount
                   { $gte: ["$leadConvertedDate", start] },
                   { $lte: ["$leadConvertedDate", end] },
                 ],
               },
-              { $ifNull: ["$netAmount", 0] },
+              1,
               0,
             ],
           },
@@ -4688,8 +4800,8 @@ export const GetallproductwiseReport = async (req, res) => {
             $cond: [
               {
                 $and: [
-                  { $eq: ["$isConverted", 0] },
                   { $eq: ["$isLost", 0] },
+                  { $eq: ["$isConverted", 0] },
                 ],
               },
               1,
@@ -4699,25 +4811,48 @@ export const GetallproductwiseReport = async (req, res) => {
         },
       },
 
-      // 7️⃣ Group per Staff × Product/Service × Lead
+      // 7️⃣ Amount calculations per entry
+      {
+        $addFields: {
+          entryTotalAmount: { $ifNull: ["$netAmount", 0] },
+
+          entryConvertedAmount: {
+            $cond: [{ $eq: ["$isConverted", 1] }, { $ifNull: ["$netAmount", 0] }, 0],
+          },
+
+          entryLostAmount: {
+            $cond: [{ $eq: ["$isLost", 1] }, { $ifNull: ["$netAmount", 0] }, 0],
+          },
+
+          entryPendingAmount: {
+            $cond: [{ $eq: ["$isPending", 1] }, { $ifNull: ["$netAmount", 0] }, 0],
+          },
+        },
+      },
+
+      // 8️⃣ FINAL GROUP → Staff + Product (REMOVED leadId ❗)
       {
         $group: {
           _id: {
             staffId: "$_id.staffId",
             productId: "$_id.productId",
             productModel: "$_id.productModel",
-            leadId: "$_id.leadId",                           // NEW: keep leadId here
           },
+
           leadCount: { $sum: 1 },
+
           totalConverted: { $sum: "$isConverted" },
           totalLost: { $sum: "$isLost" },
           totalPending: { $sum: "$isPending" },
-          convertedNetAmount: { $sum: "$convertedNetAmount" },
-          totalNetAmount: { $sum: { $ifNull: ["$netAmount", 0] } },
+
+          totalNetAmount: { $sum: "$entryTotalAmount" },
+          convertedNetAmount: { $sum: "$entryConvertedAmount" },
+          lostNetAmount: { $sum: "$entryLostAmount" },
+          totalPendingAmount: { $sum: "$entryPendingAmount" },
         },
       },
 
-      // 8️⃣ Lookup Staff
+      // 9️⃣ Lookup Staff
       {
         $lookup: {
           from: "staffs",
@@ -4726,9 +4861,14 @@ export const GetallproductwiseReport = async (req, res) => {
           as: "staff",
         },
       },
-      { $unwind: "$staff" },
+      {
+        $unwind: {
+          path: "$staff",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
 
-      // 9️⃣ Lookup Product
+      // 🔟 Lookup Product
       {
         $lookup: {
           from: "products",
@@ -4738,7 +4878,7 @@ export const GetallproductwiseReport = async (req, res) => {
         },
       },
 
-      // 🔟 Lookup Service
+      // 1️⃣1️⃣ Lookup Service
       {
         $lookup: {
           from: "services",
@@ -4748,7 +4888,7 @@ export const GetallproductwiseReport = async (req, res) => {
         },
       },
 
-      // 1️⃣1️⃣ Resolve Product / Service name and branch
+      // 1️⃣2️⃣ Resolve product/service + branch
       {
         $addFields: {
           productName: {
@@ -4759,9 +4899,6 @@ export const GetallproductwiseReport = async (req, res) => {
             ],
           },
 
-          // branchId:
-          // - Product: product.selected[0].branch_id
-          // - Service: service.branch
           branch: {
             $cond: [
               { $eq: ["$_id.productModel", "Product"] },
@@ -4770,7 +4907,10 @@ export const GetallproductwiseReport = async (req, res) => {
                   {
                     $map: {
                       input: {
-                        $ifNull: [{ $arrayElemAt: ["$product.selected", 0] }, []],
+                        $ifNull: [
+                          { $arrayElemAt: ["$product.selected", 0] },
+                          [],
+                        ],
                       },
                       as: "sel",
                       in: "$$sel.branch_id",
@@ -4785,17 +4925,18 @@ export const GetallproductwiseReport = async (req, res) => {
         },
       },
 
-      // 1️⃣2️⃣ Final projection
+      // 1️⃣3️⃣ Final output
       {
         $project: {
           _id: 0,
-          leadId: "$_id.leadId",                             // NEW: expose leadId
+
           staffId: "$_id.staffId",
           productId: "$_id.productId",
           productModel: "$_id.productModel",
 
           staffName: { $ifNull: ["$staff.name", "Unknown"] },
           staffRole: "$staff.role",
+
           productName: 1,
           branch: 1,
 
@@ -4803,12 +4944,15 @@ export const GetallproductwiseReport = async (req, res) => {
           totalConverted: 1,
           totalLost: 1,
           totalPending: 1,
+
           totalNetAmount: 1,
           convertedNetAmount: 1,
+          lostNetAmount: 1,
+          totalPendingAmount: 1,
         },
       },
 
-      // 1️⃣3️⃣ Sort
+      // 1️⃣4️⃣ Sort
       {
         $sort: {
           staffName: 1,
@@ -4818,8 +4962,221 @@ export const GetallproductwiseReport = async (req, res) => {
     ])
 
 
-    const a = result.filter((it) => it.staffName === "EBBY MANJOORAN")
-    console.log("abhissssssssssss", a)
+
+
+
+    const re = await LeadMaster.aggregate([
+      // 1️⃣ Unwind activityLog
+      { $unwind: "$activityLog" },
+
+      // 2️⃣ Only followup allocations
+      {
+        $match: {
+          "activityLog.taskallocatedTo": { $exists: true, $ne: null },
+          "activityLog.taskTo": "followup",
+          "activityLog.allocationChanged": false,
+        },
+      },
+
+      // 3️⃣ Sort latest first (IMPORTANT for latest assignment)
+      {
+        $sort: {
+          "activityLog.submissionDate": -1,
+        },
+      },
+
+      // 4️⃣ Pick latest assignment per lead
+      {
+        $group: {
+          _id: "$leadId",
+
+          leadId: { $first: "$leadId" },
+          staffId: { $first: "$activityLog.taskallocatedTo" },
+          taskallocatedToModel: { $first: "$activityLog.taskallocatedToModel" },
+          branch: { $first: "$leadBranch" },
+
+          leadConvertedDate: { $first: "$leadConvertedDate" },
+          leadLostDate: { $first: "$leadLostDate" },
+          leadLostFlag: { $first: "$leadLost" },
+
+          netAmount: { $first: "$netAmount" },
+        },
+      },
+
+      // 5️⃣ STATUS FLAGS (PRIORITY: LOST > CONVERTED > PENDING)
+      {
+        $addFields: {
+          isLost: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$leadLostFlag", true] },
+                  { $ne: ["$leadLostDate", null] },
+                  { $gte: ["$leadLostDate", start] },
+                  { $lte: ["$leadLostDate", end] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+      },
+      {
+        $addFields: {
+          isConverted: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$isLost", 0] },
+                  { $ne: ["$leadConvertedDate", null] },
+                  { $gte: ["$leadConvertedDate", start] },
+                  { $lte: ["$leadConvertedDate", end] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+      },
+      {
+        $addFields: {
+          isPending: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$isLost", 0] },
+                  { $eq: ["$isConverted", 0] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+      },
+
+      // 6️⃣ Group per staff × branch
+      {
+        $group: {
+          _id: {
+            staffId: "$staffId",
+            branch: "$branch",
+            model: "$taskallocatedToModel",
+          },
+
+          leadIds: { $addToSet: "$leadId" },
+
+          leadCount: { $sum: 1 },
+          totalConverted: { $sum: "$isConverted" },
+          totalLost: { $sum: "$isLost" },
+          totalPending: { $sum: "$isPending" },
+
+          totalNetAmount: { $sum: { $ifNull: ["$netAmount", 0] } },
+
+          convertedNetAmount: {
+            $sum: {
+              $cond: [
+                { $eq: ["$isConverted", 1] },
+                { $ifNull: ["$netAmount", 0] },
+                0,
+              ],
+            },
+          },
+
+          lostNetAmount: {
+            $sum: {
+              $cond: [
+                { $eq: ["$isLost", 1] },
+                { $ifNull: ["$netAmount", 0] },
+                0,
+              ],
+            },
+          },
+
+          totalPendingAmount: {
+            $sum: {
+              $cond: [
+                { $eq: ["$isPending", 1] },
+                { $ifNull: ["$netAmount", 0] },
+                0,
+              ],
+            },
+          },
+        },
+      },
+
+      // 7️⃣ Lookup STAFF
+      {
+        $lookup: {
+          from: "staffs",
+          localField: "_id.staffId",
+          foreignField: "_id",
+          as: "staffData",
+        },
+      },
+
+      // 8️⃣ Lookup ADMIN
+      {
+        $lookup: {
+          from: "admins",
+          localField: "_id.staffId",
+          foreignField: "_id",
+          as: "adminData",
+        },
+      },
+
+      // 9️⃣ Merge correct user
+      {
+        $addFields: {
+          user: {
+            $cond: [
+              { $eq: ["$_id.model", "Admin"] },
+              { $arrayElemAt: ["$adminData", 0] },
+              { $arrayElemAt: ["$staffData", 0] },
+            ],
+          },
+        },
+      },
+
+      // 🔟 Final projection
+      {
+        $project: {
+          _id: 0,
+          branch: "$_id.branch",
+          staffId: "$_id.staffId",
+
+          staffName: { $ifNull: ["$user.name", "Unknown"] },
+          staffRole: { $ifNull: ["$user.role", "Unknown"] },
+
+          leadIds: 1,
+
+          leadCount: 1,
+          totalConverted: 1,
+          totalLost: 1,
+          totalPending: 1,
+
+          totalNetAmount: 1,
+          totalPendingAmount: 1,
+          convertedNetAmount: 1,
+          lostNetAmount: 1,
+        },
+      },
+
+      // 1️⃣1️⃣ Sort
+      {
+        $sort: {
+          staffName: 1,
+        },
+      },
+    ])
+
+
+    console.log("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", re)
+
+    // const a = result.filter((it) => it.staffName === "EBBY MANJOORAN")
+    // console.log("abhissssssssssss", a)
 
     const mappeddata = result.map((item) => ({
       staffId: item.staffId,
@@ -4834,13 +5191,13 @@ export const GetallproductwiseReport = async (req, res) => {
       totalPending: item.totalPending,
       totalNetAmount: item.totalNetAmount,
       convertedNetAmount: item.convertedNetAmount,
-
-
+      totalPendingAmount: item.totalPendingAmount,
+      lostNetAmount: item.lostNetAmount
     }))
 
 
     if (result && result.length > 0) {
-      return res.status(200).json({ message: "lead found", data: mappeddata })
+      return res.status(200).json({ message: "lead found", data: { mappeddata, re } })
     }
   } catch (error) {
     console.log("error", error.message);
