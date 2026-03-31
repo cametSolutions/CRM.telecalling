@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import ReportTable from "../../../components/primaryUser/ReportTable"
@@ -19,8 +17,9 @@ export default function ProductWiseleadReport() {
   })
 
   const [data, setData] = useState([])
+
   const [viewMode, setViewMode] = useState("staff") // "staff" | "product"
-console.log(viewMode)
+  console.log(viewMode)
   const [selectedStaff, setSelectedStaff] = useState(null)
   const [drillDown, setDrillDown] = useState(false)
 
@@ -52,23 +51,84 @@ console.log(viewMode)
   )
   console.log(filterRange?.firstDay)
   console.log(filterRange?.lastDay)
-  console.log(report)
+  console.log(report?.mappeddata)
+const a=report?.mappeddata.filter((item)=>item.staffId==="67220ce51c400b86242fe178")
+console.log(a)
+console.log(report?.re)
   // aggregate per staff for initial view
+  // useEffect(() => {
+  //   console.log(!report)
+
+  //   console.log(!report || !selectedBranch)
+  //   if (!report || !selectedBranch) return
+
+  //   // report rows expected with fields:
+  //   // staffId, staffName, productId, productName, branch, totalLeads, totalConverted, totalPending, totalLost, totalValue, convertedValue, ...
+  //   const staffMap = {}
+  //   console.log(report.mappeddata)
+
+  //   report.re.forEach((row) => {
+  //     if (String(row.branch) !== String(selectedBranch)) {
+  //       return // acts like "continue" for this row
+  //     }
+  //     console.log(row)
+  //     const staffKey = row.staffId
+  //     if (!staffKey) return
+
+  //     if (!staffMap[staffKey]) {
+  //       staffMap[staffKey] = {
+  //         staffId: row.staffId,
+  //         staffRole: row.staffRole,
+  //         productId: null,
+  //         branchId: row.branch, // or row.branchId if your API uses that key
+  //         Staff: row.staffName,
+  //         Product: "",
+
+  //         // numeric metrics initial
+  //         totalLeads: 0,
+  //         totalConverted: 0,
+  //         totalLost: 0,
+  //         totalPending: 0,
+  //         totalNetAmount: 0,
+  //         totalConvertedAmount: 0,
+  //         totalLostAmount: 0,
+  //         totalPendingAmount: 0
+  //       }
+  //     }
+
+  //     staffMap[staffKey].totalLeads += Number(row.leadCount || 0)
+  //     staffMap[staffKey].totalConverted += Number(row.totalConverted || 0)
+  //     staffMap[staffKey].totalLost += Number(row.totalLost || 0)
+  //     staffMap[staffKey].totalPending += Number(row.totalPending || 0)
+  //     // staffMap[staffKey].totalValue += Number(row.totalNetAmount || 0)
+  //     // staffMap[staffKey].convertedValue += Number(row.convertedNetAmount || 0)
+  //     staffMap[staffKey].totalNetAmount += Number(row.totalNetAmount || 0)
+  //     staffMap[staffKey].totalConvertedAmount += Number(
+  //       row.convertedNetAmount || 0
+  //     )
+
+  //     staffMap[staffKey].totalLostAmount += Number(row.lostNetAmount || 0)
+  //     staffMap[staffKey].totalPendingAmount += Number(
+  //       row.totalPendingAmount || 0
+  //     )
+  //   })
+
+  //   const aggregatedStaffRows = Object.values(staffMap)
+  //   console.log(aggregatedStaffRows)
+  //   setData(aggregatedStaffRows)
+  //   setSelectedStaff(null)
+  //   setDrillDown(false)
+  //   setViewMode("staff")
+  // }, [report, selectedBranch])
   useEffect(() => {
-console.log(!report)
+    if (!report || !selectedBranch) return
 
-console.log(!report  || !selectedBranch)
-    if (!report  || !selectedBranch) return
+    const rows = Array.isArray(report.re) ? report.re : []
 
-    // report rows expected with fields:
-    // staffId, staffName, productId, productName, branch, totalLeads, totalConverted, totalPending, totalLost, totalValue, convertedValue, ...
     const staffMap = {}
-    console.log(report.re)
-    report.re.forEach((row)=>{
-      if (String(row.branch) !== String(selectedBranch)) {
-        return // acts like "continue" for this row
-      }
-      console.log(row)
+
+    rows.forEach((row) => {
+      if (String(row.branch) !== String(selectedBranch)) return
       const staffKey = row.staffId
       if (!staffKey) return
 
@@ -77,19 +137,17 @@ console.log(!report  || !selectedBranch)
           staffId: row.staffId,
           staffRole: row.staffRole,
           productId: null,
-          branchId: row.branch, // or row.branchId if your API uses that key
+          branchId: row.branch,
           Staff: row.staffName,
           Product: "",
-
-          // numeric metrics initial
           totalLeads: 0,
           totalConverted: 0,
           totalLost: 0,
           totalPending: 0,
-          totalNetAmount:0,
-totalConvertedAmount:0,
-totalLostAmount:0,
-totalPendingAmount:0
+          totalNetAmount: 0,
+          totalConvertedAmount: 0,
+          totalLostAmount: 0,
+          totalPendingAmount: 0
         }
       }
 
@@ -97,17 +155,17 @@ totalPendingAmount:0
       staffMap[staffKey].totalConverted += Number(row.totalConverted || 0)
       staffMap[staffKey].totalLost += Number(row.totalLost || 0)
       staffMap[staffKey].totalPending += Number(row.totalPending || 0)
-      // staffMap[staffKey].totalValue += Number(row.totalNetAmount || 0)
-      // staffMap[staffKey].convertedValue += Number(row.convertedNetAmount || 0)
-staffMap[staffKey].totalNetAmount +=Number(row.totalNetAmount||0)
-staffMap[staffKey].totalConvertedAmount +=Number(row.totalConvertedAmount||0)
-staffMap[staffKey].totalLostAmount +=Number(row.lostNetAmount||0)
-staffMap[staffKey].totalPendingAmount +=Number(row.totalPendingAmount ||0)
+      staffMap[staffKey].totalNetAmount += Number(row.totalNetAmount || 0)
+      staffMap[staffKey].totalConvertedAmount += Number(
+        row.convertedNetAmount || 0
+      )
+      staffMap[staffKey].totalLostAmount += Number(row.lostNetAmount || 0)
+      staffMap[staffKey].totalPendingAmount += Number(
+        row.totalPendingAmount || 0
+      )
     })
 
-    const aggregatedStaffRows = Object.values(staffMap)
-    console.log(aggregatedStaffRows)
-    setData(aggregatedStaffRows)
+    setData(Object.values(staffMap))
     setSelectedStaff(null)
     setDrillDown(false)
     setViewMode("staff")
@@ -123,8 +181,7 @@ staffMap[staffKey].totalPendingAmount +=Number(row.totalPendingAmount ||0)
     "Total Leads",
     "Converted",
     "Lost",
-    "Pending",
-    
+    "Pending"
   ]
 
   const handleDateRange = (range) => {
@@ -136,52 +193,128 @@ staffMap[staffKey].totalPendingAmount +=Number(row.totalPendingAmount ||0)
     return `${filterRange.startMonth} – ${filterRange.endMonth}`
   }, [filterRange.startMonth, filterRange.endMonth])
 
+  // const handleStaffClick = (staffName) => {
+  //   if (!report) return
+
+  //   setSelectedStaff(staffName)
+  //   setDrillDown(true)
+  //   setViewMode("product")
+
+  //   // when drill‑down, switch data to product‑wise rows for that staff
+  //   const filtered = report.filter(
+  //     (row) => row?.staffName?.toLowerCase() === staffName.toLowerCase()
+  //   )
+  //   console.log(filtered)
+  //   const mapped = filtered.map((row) => ({
+  //     staffId: row.staffId,
+  //     productId: row.productId,
+  //     branchId: row.branch, // or row.branchId
+  //     Staff: row.staffName,
+  //     Product: row.productName,
+  //     totalLeads: Number(row.leadCount || 0),
+  //     totalConverted: Number(row.totalConverted || 0),
+  //     totalLost: Number(row.totalLost || 0),
+  //     totalPending: Number(row.totalPending || 0),
+  //     totalValue: Number(row.totalNetAmount || 0),
+  //     convertedValue: Number(row.convertedNetAmount || 0)
+  //   }))
+
+  //   setData(mapped)
+  // }
   const handleStaffClick = (staffName) => {
     if (!report) return
+
+    const rows = Array.isArray(report.mappeddata) ? report.mappeddata : []
 
     setSelectedStaff(staffName)
     setDrillDown(true)
     setViewMode("product")
 
-    // when drill‑down, switch data to product‑wise rows for that staff
-    const filtered = report.filter(
+    const filtered = rows.filter(
       (row) => row?.staffName?.toLowerCase() === staffName.toLowerCase()
     )
-    console.log(filtered)
+
     const mapped = filtered.map((row) => ({
       staffId: row.staffId,
       productId: row.productId,
-      branchId: row.branch, // or row.branchId
+      branchId: row.branch,
       Staff: row.staffName,
       Product: row.productName,
       totalLeads: Number(row.leadCount || 0),
       totalConverted: Number(row.totalConverted || 0),
       totalLost: Number(row.totalLost || 0),
       totalPending: Number(row.totalPending || 0),
-      totalValue: Number(row.totalNetAmount || 0),
-      convertedValue: Number(row.convertedNetAmount || 0)
+      totalNetAmount: Number(row.totalNetAmount || 0),
+      totalConvertedAmount: Number(row.convertedNetAmount || 0),
+      totalLostAmount: Number(row.lostNetAmount || 0),
+      totalPendingAmount: Number(row.totalPendingAmount || 0)
     }))
 
     setData(mapped)
   }
   console.log(data)
+  // const handleSeeAll = () => {
+  //   setSelectedStaff(null)
+  //   setDrillDown(false)
+  //   setViewMode("staff")
+
+  //   if (!report || !Array.isArray(report)) {
+  //     setData([])
+  //     return
+  //   }
+
+  //   // rebuild staff aggregation from report when coming back
+  //   const staffMap = {}
+  //   console.log(report)
+  //   report.forEach((row) => {
+  //     if (String(row.branch) !== String(selectedBranch)) {
+  //       return
+  //     }
+  //     const staffKey = row.staffId
+  //     if (!staffKey) return
+
+  //     if (!staffMap[staffKey]) {
+  //       staffMap[staffKey] = {
+  //         staffId: row.staffId,
+  //         productId: null,
+  //         branchId: row.branch,
+  //         Staff: row.staffName,
+  //         Product: "",
+  //         totalLeads: 0,
+  //         totalConverted: 0,
+  //         totalLost: 0,
+  //         totalPending: 0,
+  //         totalValue: 0,
+  //         convertedValue: 0
+  //       }
+  //     }
+
+  //     staffMap[staffKey].totalLeads += Number(row.leadCount || 0)
+  //     staffMap[staffKey].totalConverted += Number(row.totalConverted || 0)
+  //     staffMap[staffKey].totalLost += Number(row.totalLost || 0)
+  //     staffMap[staffKey].totalPending += Number(row.totalPending || 0)
+  //     staffMap[staffKey].totalValue += Number(row.totalNetAmount || 0)
+  //     staffMap[staffKey].convertedValue += Number(row.convertedNetAmount || 0)
+  //   })
+
+  //   const aggregatedStaffRows = Object.values(staffMap)
+  //   setData(aggregatedStaffRows)
+  // }
   const handleSeeAll = () => {
     setSelectedStaff(null)
     setDrillDown(false)
     setViewMode("staff")
 
-    if (!report || !Array.isArray(report)) {
+    if (!report) {
       setData([])
       return
     }
 
-    // rebuild staff aggregation from report when coming back
+    const rows = Array.isArray(report.re) ? report.re : []
     const staffMap = {}
-    console.log(report)
-    report.forEach((row) => {
-      if (String(row.branch) !== String(selectedBranch)) {
-        return
-      }
+
+    rows.forEach((row) => {
+      if (String(row.branch) !== String(selectedBranch)) return
       const staffKey = row.staffId
       if (!staffKey) return
 
@@ -196,8 +329,10 @@ staffMap[staffKey].totalPendingAmount +=Number(row.totalPendingAmount ||0)
           totalConverted: 0,
           totalLost: 0,
           totalPending: 0,
-          totalValue: 0,
-          convertedValue: 0
+          totalNetAmount: 0,
+          totalConvertedAmount: 0,
+          totalLostAmount: 0,
+          totalPendingAmount: 0
         }
       }
 
@@ -205,12 +340,17 @@ staffMap[staffKey].totalPendingAmount +=Number(row.totalPendingAmount ||0)
       staffMap[staffKey].totalConverted += Number(row.totalConverted || 0)
       staffMap[staffKey].totalLost += Number(row.totalLost || 0)
       staffMap[staffKey].totalPending += Number(row.totalPending || 0)
-      staffMap[staffKey].totalValue += Number(row.totalNetAmount || 0)
-      staffMap[staffKey].convertedValue += Number(row.convertedNetAmount || 0)
+      staffMap[staffKey].totalNetAmount += Number(row.totalNetAmount || 0)
+      staffMap[staffKey].totalConvertedAmount += Number(
+        row.convertedNetAmount || 0
+      )
+      staffMap[staffKey].totalLostAmount += Number(row.lostNetAmount || 0)
+      staffMap[staffKey].totalPendingAmount += Number(
+        row.totalPendingAmount || 0
+      )
     })
 
-    const aggregatedStaffRows = Object.values(staffMap)
-    setData(aggregatedStaffRows)
+    setData(Object.values(staffMap))
   }
   console.log(drillDown)
   const handleTotalLeadsClick = (row, header) => {
@@ -230,14 +370,17 @@ staffMap[staffKey].totalPendingAmount +=Number(row.totalPendingAmount ||0)
         }
       })
     } else {
+      console.log(viewMode)
       console.log(header)
       console.log(header === "Pending")
+console.log(row)
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: {
           staffId: row.staffId,
-          pending: header === "Pending",
+          pending: header === "Pending"||(row.totalPending>0&&row.totalConverted===0) ||header !=="Converted",
           productId: row.productId,
           branchId: row.branchId,
+          viewMode,
           istotal: !drillDown,
           staffRole: row.staffRole
         }
@@ -341,11 +484,3 @@ staffMap[staffKey].totalPendingAmount +=Number(row.totalPendingAmount ||0)
     </div>
   )
 }
-
-
-
-
-
-
-
-

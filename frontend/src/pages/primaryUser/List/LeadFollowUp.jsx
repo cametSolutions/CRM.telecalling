@@ -1,5 +1,3 @@
-
-
 /////live test code///
 import { useState, useEffect, useRef } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
@@ -122,11 +120,9 @@ const LeadFollowUp = () => {
   const { data: partners } = UseFetch("/customer/getallpartners")
   const { data: branches } = UseFetch("/branch/getBranch")
   const { data } = UseFetch("/auth/getallUsers")
-  console.log(safeState)
+  console.log(safeState?.viewMode !== "product" || !loggedUser)
   console.log(safeState?.viewMode)
-  console.log(!safeState?.viewMode !== "product")
-  console.log(safeState.staffId)
-  console.log(safeState.istotal)
+  console.log(!loggedUser)
   useEffect(() => {
     // run only when location.state or selectedCompanyBranch / loggedUser change
     //this from productwisereport
@@ -171,10 +167,16 @@ const LeadFollowUp = () => {
         // console.log(res.data.followupLeads)
         console.log(res)
         const productwisedata = res.data.followupLeads
-        console.log("h")
-        if (productwisedata && dates.endDate && loggedUser) {
+        console.log(productwisedata)
+        console.log("hd")
+        if (
+          productwisedata &&
+          productwisedata.length &&
+          dates.endDate &&
+          loggedUser
+        ) {
           console.log("H")
-          setproductwiseloader(false)
+
           console.log(pending)
           console.log(ownFollowUp)
           if (pending && ownFollowUp) {
@@ -243,7 +245,7 @@ const LeadFollowUp = () => {
             // mergedall.forEach((item)=>)
             setTableData(Data)
           } else if (pending && !ownFollowUp) {
-            // console.log("h")
+            console.log("h")
             const currentDate = new Date()
             const endDateLocal = getLocalDate(new Date(dates.endDate))
             formatdate(currentDate)
@@ -307,9 +309,9 @@ const LeadFollowUp = () => {
 
             setnetTotalAmount(TotalAmount(mergedall))
             setTableData(groupedData)
-            // console.log(groupedData)
+            console.log(groupedData)
           } else if (!pending && ownFollowUp) {
-            // console.log("h")
+            console.log("h")
             const ownFollow = loggedusersallocatedleads.followupLeads.filter(
               (lead) =>
                 lead.activityLog?.some(
@@ -335,7 +337,7 @@ const LeadFollowUp = () => {
             const Data = normalizeTableData(clearedLeads)
             setTableData(Data)
           } else if (!pending && !ownFollowUp) {
-            // console.log("H")
+            console.log("H")
 
             // console.log(productwisedata)
             // helpers
@@ -382,8 +384,10 @@ const LeadFollowUp = () => {
             setTableData(groupedData)
           }
 
-          setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
+          setHasownLeads(loggedusersallocatedleads?.ischekCollegueLeads)
         }
+console.log("hh")
+        setproductwiseloader(false)
         // console.log(pending)
         // console.log(ownFollowUp)
         // console.log(res.data.followupLeads.length)
@@ -659,32 +663,25 @@ const LeadFollowUp = () => {
     ((safeState?.viewMode !== "product" &&
       safeState?.istotal &&
       !!safeState?.staffId) ||
-      safeState?.staffId == null) // null or undefined
-console.log(safeState?.viewMode)
-console.log(safeState?.istotal)
-console.log(!!loggedUser)
-console.log(!!selectedCompanyBranch)
-
-
-  console.log(shouldFetch)
-console.log(safeState)
-console.log(loggedUser)
-console.log(selectedCompanyBranch)
+      safeState?.staffId == null)&&pending !==undefined
+console.log(shouldFetch)
+const finalPending =
+  pending !== undefined ? pending : safeState?.pending
 
   const url = shouldFetch
     ? `/lead/getallLeadFollowUp?branchSelected=${selectedCompanyBranch}` +
       `&loggeduserid=${safeState.istotal ? safeState.staffId : loggedUser._id}` +
       `&role=${safeState.istotal ? safeState.staffRole : loggedUser.role}` +
-      `&pendingfollowup=${safeState.pending ? safeState.pending : pending}`
+      `&pendingfollowup=${finalPending}`
     : null
-
+console.log(url)
   const {
     data: loggedusersallocatedleads,
     loading,
     error,
     refreshHook
   } = UseFetch(url)
-console.log(url)
+  console.log(url)
   console.log(loggedusersallocatedleads)
 
   // Initial loggedUser + branches from dashboard
@@ -852,6 +849,9 @@ console.log(url)
     // if (!loggedusersallocatedleads || !dates.endDate || !loggedUser) return
     if (loggedusersallocatedleads && dates.endDate && loggedUser) {
       console.log("h")
+console.log(pending)
+console.log(ownFollowUp)
+console.log(!pending&&!ownFollowUp)
       if (pending && ownFollowUp) {
         const ownFollow = loggedusersallocatedleads.followupLeads.filter(
           (lead) =>
@@ -1019,13 +1019,13 @@ console.log(url)
       } else if (!pending && !ownFollowUp) {
         // console.log("H")
 
-        // console.log(loggedusersallocatedleads)
+        console.log(loggedusersallocatedleads)
         // helpers
         const isFollowupActivity = (log) =>
           log?.taskBy?.taskName === "Followup" &&
           log?.followupClosed === true &&
           log?.submissionDate
-
+// console.log(isFollowupActivity)
         const getLatestSubmissionDate = (lead) => {
           const dates = (lead.activityLog || [])
             .filter(isFollowupActivity)
@@ -1037,12 +1037,14 @@ console.log(url)
         const clearedLeads = []
         followupLeads.forEach((lead) => {
           const latest = getLatestSubmissionDate(lead)
+console.log(latest)
           if (latest) {
             // cleared
             clearedLeads.push({ ...lead, latestSubmissionTime: latest })
           }
         })
-
+console.log(followupLeads)
+console.log(clearedLeads)
         // sort cleared leads: latest cleared first
         clearedLeads.sort(
           (a, b) => b.latestSubmissionTime - a.latestSubmissionTime
@@ -1957,7 +1959,8 @@ console.log(url)
                       setPending(!pending)
                       setTableData([])
                       setAllocatedLeads([])
-                      if (safeState.staffId && safeState.istotal) {
+                      if (safeState.staffId && !safeState.istotal) {
+console.log("hhh")
                         handletoogle(pending)
                       }
                     },
