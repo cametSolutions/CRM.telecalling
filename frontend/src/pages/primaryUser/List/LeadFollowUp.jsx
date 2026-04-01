@@ -703,8 +703,9 @@ const LeadFollowUp = () => {
       `&loggeduserid=${safeState.istotal ? safeState.staffId : loggedUser._id}` +
       `&role=${safeState.istotal ? safeState.staffRole : loggedUser.role}` +
       `&pendingfollowup=${finalPending}` +
-      `&viewmode=${safeState ? safeState?.viewMode : null}`
+      `&viewmode=${safeState?.viewMode ? "true" : null}`+`&startDate=${safeState?.viewMode?dates.startDate:null}`+`&endDate=${safeState?.viewMode?dates.endDate:null}`+`&header=${safeState?.header}`
     : null
+console.log(dates)
   console.log(url)
   const {
     data: loggedusersallocatedleads,
@@ -712,8 +713,9 @@ const LeadFollowUp = () => {
     error,
     refreshHook
   } = UseFetch(url)
+console.log(loggedusersallocatedleads)
   console.log(url)
-  console.log(loggedusersallocatedleads)
+  console.log(loggedusersallocatedleads?.followupLeads)
 
   // Initial loggedUser + branches from dashboard
   useEffect(() => {
@@ -913,6 +915,9 @@ const LeadFollowUp = () => {
         console.log(ownFollowUp)
         if (pending && ownFollowUp) {
           console.log("hhhhh")
+console.log(loggedusersallocatedleads.followupLeads)
+const a=loggedusersallocatedleads.followupLeads.map((item)=>item.leadId)
+console.log(a)
           const ownFollow = loggedusersallocatedleads.followupLeads.filter(
             (lead) =>
               lead.activityLog?.some(
@@ -923,6 +928,7 @@ const LeadFollowUp = () => {
                   log.allocationChanged === false
               )
           )
+console.log(ownFollow)
           const currentDate = new Date()
           const endDateLocal = getLocalDate(new Date(dates.endDate))
           formatdate(currentDate)
@@ -1068,12 +1074,13 @@ const LeadFollowUp = () => {
               loggedusersallocatedleads.followupLeads.filter(
                 (lead) => lead.allocatedfollowup && lead.allocatedTaskClosed
               )
+console.log(loggedusersallocatedleads.followupLeads)
             const nonsubmittedtakleads =
               loggedusersallocatedleads.followupLeads.filter(
                 (lead) =>
                   lead.allocatedfollowup && lead.allocatedTaskClosed === false
               )
-
+console.log(nonsubmittedtakleads)
             setallocatednetAmount(TotalAmount(nonsubmittedtakleads))
             // console.log(nonsubmittedtakleads)
             const groupedallocatedleads = {}
@@ -1085,16 +1092,18 @@ const LeadFollowUp = () => {
               }
               groupedallocatedleads[assignedTo].push(lead)
             })
+console.log(groupedallocatedleads)
             const groupedallocatedData = normalizeTableData(
               groupedallocatedleads
             )
             setAllocatedLeads(groupedallocatedData)
+console.log(groupedallocatedData)
             // console.log(groupedallocatedData)
             const mergedall = [
               ...neverfollowupedLeads,
               ...uniqueoverdueAndcurrentdate,
               ...postdatefollowup,
-              ...taskSubmittedLeads
+              // ...taskSubmittedLeads
             ]
             const groupedLeads = {}
             let grandTotal = 0
@@ -1111,6 +1120,7 @@ const LeadFollowUp = () => {
             // console.log(groupedData)
             setnetTotalAmount(TotalAmount(mergedall))
             setTableData(groupedData)
+console.log(groupedData)
           }
         } else if (!pending && ownFollowUp) {
           console.log("h")

@@ -1,5 +1,6 @@
 import LeadMaster from "../../model/primaryUser/leadmasterSchema.js";
 import { isValidObjectId } from "mongoose";
+import util from "util";
 import mongoose from "mongoose";
 import models from "../../model/auth/authSchema.js";
 const { Staff, Admin } = models;
@@ -14,7 +15,6 @@ export const LeadRegister = async (req, res) => {
   try {
     const { leadData, selectedtableLeadData, role } = req.body;
 
-    console.log("tablee", selectedtableLeadData)
     // return
     const {
       customerName,
@@ -206,7 +206,6 @@ export const Checkexistinglead = async (req, res) => {
         exists: false,
       });
     } else {
-      console.log("noneeeeeeeee")
       // No lead at all for this customer
       return res.status(200).json({
         message: "No existing lead for this customer. Safe to create new lead.",
@@ -235,12 +234,10 @@ export const getAlltasktoTarget = async (req, res) => {
 export const GetallTask = async (req, res) => {
   try {
     const { istaskregistration = false } = req.query
-    console.log("check:", istaskregistration, typeof istaskregistration)
     let query = {}
     if (istaskregistration === "false" || istaskregistration === false) {
       query = { listed: true }
     }
-    console.log("query", query)
     const tasks = await Task.find(query);
     if (tasks) {
       return res.status(200).json({ message: "Task found", data: tasks });
@@ -485,7 +482,6 @@ export const Getallsalesfunnels = async (req, res) => {
     });
 
 
-    console.log("formateeddd", formatted)
     return res.status(200).json({ message: "data found", data: formatted });
 
   } catch (error) {
@@ -494,10 +490,8 @@ export const Getallsalesfunnels = async (req, res) => {
   }
 };
 export const UpdateCollection = async (req, res) => {
-  console.log("abhbhbbbbbbb")
   const { isFrom = null } = req.query;
   const formData = req.body;
-  console.log("formdata", formData)
 
   let model;
   const isAdmin = await Admin.findOne({ _id: formData.receivedBy });
@@ -519,7 +513,6 @@ export const UpdateCollection = async (req, res) => {
     // };
     // const followupClosed = toBoolean(req.query.followupclosed);
     const customerId = formData?.customerId;
-    console.log("custromerid", customerId)
     const leadDocId = formData?.leadDocId;
 
     if (!formData.leadDocId) {
@@ -576,7 +569,6 @@ export const UpdateCollection = async (req, res) => {
     formData.paymentEntries.forEach((item) => {
       console.log(typeof item)
     })
-    console.log("paymentrecorrrrrrr", paymentRecord)
     const allocation = null
     if (isFrom) {
       allocation = await Task.findOne({ taskName: "Leadclosed" });
@@ -804,7 +796,6 @@ export const GetallselectedproductFollowup = async (req, res) => {
       .lean()
 
     const followupLeads = []
-    console.log("seecteddforll", selectedfollowup)
 
     for (const lead of selectedfollowup) {
 
@@ -990,16 +981,365 @@ export const GetallselectedproductFollowup = async (req, res) => {
   }
 }
 
+
+// export const GetallfollowupList = async (req, res) => {
+//   try {
+//     const { loggeduserid, branchSelected, role, pendingfollowup, viewmode = null, startDate, endDate, header } = req.query;
+//     console.log("isssssssssssssstotal", viewmode)
+
+//     const userObjectId = new mongoose.Types.ObjectId(loggeduserid);
+//     const branchObjectId = new mongoose.Types.ObjectId(branchSelected);
+//     // const
+//     let query;
+//     if (viewmode) {
+//       query = {
+//         activityLog: {
+//           $elemMatch: {
+//             taskTo: "followup",
+//             $or: [
+//               { submittedUser: userObjectId },
+//               { taskallocatedTo: userObjectId },
+//             ],
+//             allocationChanged: false,
+//             allocatedClosed: false
+//           }
+//         },
+//         leadBranch: branchObjectId,
+//         leadLost: false
+//       }
+//     } else {
+//       if (pendingfollowup === "true") {
+//         if (role === "Admin") {
+//           query = {
+//             activityLog: {
+//               $elemMatch: {
+//                 taskTo: "followup",
+
+//                 allocationChanged: false,
+//                 allocatedClosed: false,
+//                 taskClosed: false,
+//                 followupClosed: false,
+//               },
+//             },
+//             leadBranch: branchObjectId,
+//             reallocatedTo: false,
+//             leadLost: false,
+//           };
+//         } else {
+//           query = {
+//             activityLog: {
+//               $elemMatch: {
+//                 taskTo: "followup",
+//                 $or: [
+//                   { submittedUser: userObjectId },
+//                   { taskallocatedTo: userObjectId },
+//                 ],
+//                 allocationChanged: false,
+//                 allocatedClosed: false,
+//                 taskClosed: false,
+//                 followupClosed: false,
+//               },
+//             },
+//             leadBranch: branchObjectId,
+//             reallocatedTo: false,
+//             leadLost: false,
+//           };
+//         }
+//       } else if (pendingfollowup === "false") {
+//         if (role === "Admin") {
+//           query = {
+//             activityLog: {
+//               $elemMatch: {
+//                 taskTo: "followup",
+//                 allocationChanged: false,
+//                 allocatedClosed: false,
+//                 taskClosed: true,
+//                 followupClosed: true,
+//               },
+//             },
+//             leadBranch: branchObjectId,
+
+//             leadLost: false,
+//           };
+//         } else {
+//           query = {
+//             activityLog: {
+//               $elemMatch: {
+//                 taskTo: "followup",
+//                 $or: [
+//                   { submittedUser: userObjectId },
+//                   { taskallocatedTo: userObjectId },
+//                 ],
+//                 taskClosed: true,
+//               },
+//             },
+//             leadBranch: branchObjectId,
+//             leadLost: false,
+//           };
+//         }
+//       }
+//     }
+
+//     const selectedfollowup = await LeadMaster.find(query)
+//       .populate({ path: "customerName" })
+//       .populate({ path: "partner" })
+//       .lean();
+//     console.log("selelltttt", selectedfollowup)
+//     const followupLeads = [];
+//     for (const lead of selectedfollowup) {
+//       // Build matchedAllocations = activityLog entries where taskTo === 'followup'
+//       const activity = Array.isArray(lead.activityLog) ? lead.activityLog : [];
+//       const matchedAllocations = activity
+//         .map((item, index) => ({ ...item, index }))
+//         .filter((item) => item.taskTo === "followup");
+
+//       // If no matchedAllocation, skip this lead (or push with flags false if needed)
+//       if (matchedAllocations.length === 0) {
+//         continue;
+//       }
+
+//       // Safety: ensure model names exist before doing mongoose.model(...) calls
+//       const lastAlloc = matchedAllocations[matchedAllocations.length - 1];
+
+//       const lastIndex = lastAlloc.index;
+
+//       if (
+//         !lead.leadByModel ||
+//         !mongoose.models[lead.leadByModel] ||
+//         !lastAlloc.taskallocatedToModel ||
+//         !mongoose.models[lastAlloc.taskallocatedToModel] ||
+//         !lastAlloc.taskallocatedByModel ||
+//         !mongoose.models[lastAlloc.taskallocatedByModel]
+//       ) {
+//         console.log("leadby", lead.leadByModel)
+//         console.log("taskallocatedtomodel", lastAlloc.taskallocatedToModel)
+//         console.log("taskallocatedy", lastAlloc.taskallocatedByModel)
+//         console.error(
+//           `Model missing for lead ${lead._id}:`,
+//           lead.leadByModel,
+//           lastAlloc.taskallocatedToModel,
+//           lastAlloc.taskallocatedByModel
+//         );
+//         // skip this lead (don't `return` from whole function)
+//         continue;
+//       }
+
+//       // Populate outer fields (await as needed)
+//       const leadByModel = mongoose.model(lead.leadByModel);
+//       const allocatedToModel = mongoose.model(lastAlloc.taskallocatedToModel);
+//       const allocatedByModel = mongoose.model(lastAlloc.taskallocatedByModel);
+
+//       const [popLeadBy, popAllocatedTo, popAllocatedBy] = await Promise.all([
+//         leadByModel
+//           .findById(lead.leadBy)
+//           .select("name")
+//           .lean()
+//           .catch(() => null),
+//         allocatedToModel
+//           .findById(lastAlloc.taskallocatedTo)
+//           .select("name")
+//           .lean()
+//           .catch(() => null),
+//         allocatedByModel
+//           .findById(lastAlloc.taskallocatedBy)
+//           .select("name")
+//           .lean()
+//           .catch(() => null),
+//       ]);
+
+//       // Populate activityLog fields that reference other models (submittedUser, taskallocatedTo)
+//       const populatedActivityLog = await Promise.all(
+//         activity.map(async (log) => {
+//           let populatedSubmittedUser = null;
+//           let populatedTaskAllocatedTo = null;
+//           let populatedTaskAllocatedBy = null
+//           let populatedTask = null;
+//           let populatedTaskBy = null
+//           if (
+//             log.submittedUser &&
+//             log.submissiondoneByModel &&
+//             mongoose.models[log.submissiondoneByModel]
+//           ) {
+//             const model = mongoose.model(log.submissiondoneByModel);
+//             populatedSubmittedUser = await model
+//               .findById(log.submittedUser)
+//               .select("name")
+//               .lean()
+//               .catch(() => null);
+//           }
+//           if (log.taskallocatedBy && log.taskallocatedByModel && mongoose.models[log.taskallocatedByModel]) {
+//             const model = mongoose.model(log.taskallocatedByModel);
+//             populatedTaskAllocatedBy = await model
+//               .findById(log.taskallocatedBy)
+//               .select("name")
+//               .lean()
+//               .catch(() => null);
+
+//           }
+
+//           if (
+//             log.taskallocatedTo &&
+//             log.taskallocatedToModel &&
+//             mongoose.models[log.taskallocatedToModel]
+//           ) {
+//             const model = mongoose.model(log.taskallocatedToModel);
+//             populatedTaskAllocatedTo = await model
+//               .findById(log.taskallocatedTo)
+//               .select("name")
+//               .lean()
+//               .catch(() => null);
+//           }
+//           if (log?.taskId) {
+//             populatedTask = await Task.findById(log.taskId)
+//               .select("taskName")
+//               .lean()
+//               .catch(() => null);
+//           }
+//           if (log?.taskBy) {
+//             populatedTaskBy = await Task.findById(log.taskBy)
+//           }
+
+//           return {
+//             ...log,
+//             taskBy: populatedTaskBy,
+//             submittedUser: populatedSubmittedUser || log.submittedUser,
+//             taskallocatedBy: populatedTaskAllocatedBy || log.taskallocatedBy,
+//             taskallocatedTo: populatedTaskAllocatedTo || log.taskallocatedTo,
+//             taskId: populatedTask,
+//           };
+//         })
+//       );
+//       const populatedLeadFor = await Promise.all(
+//         lead.leadFor.map(async (item) => {
+//           const productorserviceModel = mongoose.model(
+//             item.productorServicemodel
+//           );
+//           const populatedProductorService = await productorserviceModel
+//             .findById(item.productorServiceId)
+//             .lean(); // Use lean() to get plain JavaScript objects
+
+//           return { ...item, productorServiceId: populatedProductorService };
+//         })
+//       );
+
+//       // Determine neverfollowuped:
+//       // - If the last matched allocation itself has followupClosed === true => NOT neverfollowuped
+//       // - Else, check logs AFTER the lastAlloc.index: if any has nextFollowUpDate (non-null) => NOT neverfollowuped
+//       // - Otherwise => neverfollowuped = true
+//       const lastMatched = lastAlloc;
+//       const lastMatchedClosed = !!lastMatched.followupClosed; // closed flag(s)
+//       let neverfollowuped = false;
+
+//       if (lastMatchedClosed) {
+//         neverfollowuped = true;
+//       } else {
+//         const afterLogs = activity.slice(lastIndex + 1);
+//         const foundNextFollowUp = afterLogs.some(
+//           (log) => !!log.nextFollowUpDate
+//         );
+//         if (foundNextFollowUp) {
+//           neverfollowuped = false;
+//         } else {
+//           // also, if the matched allocation itself had nextFollowUpDate, treat as not neverfollowuped
+//           if (lastMatched.nextFollowUpDate) neverfollowuped = false;
+//           else neverfollowuped = true;
+//         }
+//       }
+
+//       // currentdateNextfollowup: whether the very last activity log entry has nextFollowUpDate (or you can define differently)
+//       const lastActivity = activity[activity.length - 1] || {};
+//       const Nextfollowup = !!lastActivity.nextFollowUpDate;
+
+//       // allocatedfollowup: whether the last activity entry was created from followup task (taskfromFollowup flag)
+//       const allocatedfollowup = !!lastActivity.taskfromFollowup;
+
+//       // allocatedTaskClosed: whether last activity entry's allocatedClosed === true
+//       const allocatedTaskClosed = !!lastActivity.allocatedClosed;
+
+//       // push enriched lead
+//       followupLeads.push({
+//         ...lead,
+//         leadBy: popLeadBy || lead.leadBy,
+//         leadFor: populatedLeadFor,
+//         allocatedTo: popAllocatedTo,
+//         allocatedBy: popAllocatedBy,
+//         activityLog: populatedActivityLog,
+//         nextFollowUpDate: lastActivity.nextFollowUpDate ?? null, //to show the nextfollowupdate in the list
+//         neverfollowuped, //to check whether the lead is ever followuped
+//         Nextfollowup,
+//         allocatedfollowup, //to know whether the lead have any task from followup
+//         allocatedTaskClosed, //to know the the task from followup is closed or not
+//       });
+//     }
+
+
+//     const ischekCollegueLeads = followupLeads.some((item) =>
+//       item.allocatedBy._id.equals(userObjectId)
+//     );
+
+//     if (followupLeads && followupLeads.length > 0) {
+//       return res.status(201).json({
+//         messge: "leadfollowup found",
+//         data: { followupLeads, ischekCollegueLeads },
+//       });
+//     } else {
+//       return res
+//         .status(404)
+//         .json({ message: "leadfollowp not found", data: {} });
+//     }
+//   } catch (error) {
+//     console.log("error:", error.message);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };///live code now
+
 export const GetallfollowupList = async (req, res) => {
   try {
-    const { loggeduserid, branchSelected, role, pendingfollowup, viewmode = null } = req.query;
-    console.log("isssssssssssssstotal", viewmode)
+    const {
+      loggeduserid,
+      branchSelected,
+      role,
+      pendingfollowup,
+      viewmode,
+      startDate,
+      endDate,
+      header,
+    } = req.query;
 
     const userObjectId = new mongoose.Types.ObjectId(loggeduserid);
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected);
-    // const
+
+    const start = startDate ? new Date(startDate) : null;
+    const end = endDate ? new Date(endDate) : null;
+    console.log("showssssssssssss", viewmode)
+    // ✅ CHECK MODE
+    // const isViewMode = viewmode !== "null"
+    // console.log("viewmodeeee", isViewMode)
+
+    // const isNewMode = isViewMode || header || (startDate && endDate);
+    // console.log("isnewomodeee", isNewMode)
+
+
+
+
+    // Check if viewmode is the string "true"
+    const isViewMode = viewmode === "true";
+console.log("viemodecheking",isViewMode)
+
+    // Check for valid header and date params
+    const hasValidHeader = header && header !== "null" && header !== "undefined";
+    const hasValidDates = startDate && endDate &&
+      startDate !== "null" && endDate !== "null" &&
+      startDate !== "undefined" && endDate !== "undefined";
+
+    const isNewMode = isViewMode || hasValidHeader || hasValidDates;
+console.log("hasvalidheader",hasValidHeader)
+console.log("hasvalidadate",hasValidDates)
+
     let query;
-    if (viewmode) {
+
+    // ✅ VIEW MODE
+    if (isViewMode) {
       query = {
         activityLog: {
           $elemMatch: {
@@ -1009,20 +1349,21 @@ export const GetallfollowupList = async (req, res) => {
               { taskallocatedTo: userObjectId },
             ],
             allocationChanged: false,
-            allocatedClosed: false
-          }
+            allocatedClosed: false,
+          },
         },
         leadBranch: branchObjectId,
-        leadLost: false
-      }
+        leadLost: false,
+      };
     } else {
+      console.log("olderrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
+      // ✅ OLD NORMAL CONDITIONS
       if (pendingfollowup === "true") {
         if (role === "Admin") {
           query = {
             activityLog: {
               $elemMatch: {
                 taskTo: "followup",
-
                 allocationChanged: false,
                 allocatedClosed: false,
                 taskClosed: false,
@@ -1066,7 +1407,6 @@ export const GetallfollowupList = async (req, res) => {
               },
             },
             leadBranch: branchObjectId,
-
             leadLost: false,
           };
         } else {
@@ -1092,199 +1432,260 @@ export const GetallfollowupList = async (req, res) => {
       .populate({ path: "customerName" })
       .populate({ path: "partner" })
       .lean();
-    const followupLeads = [];
-    for (const lead of selectedfollowup) {
-      // Build matchedAllocations = activityLog entries where taskTo === 'followup'
-      const activity = Array.isArray(lead.activityLog) ? lead.activityLog : [];
-      const matchedAllocations = activity
-        .map((item, index) => ({ ...item, index }))
-        .filter((item) => item.taskTo === "followup");
 
-      // If no matchedAllocation, skip this lead (or push with flags false if needed)
-      if (matchedAllocations.length === 0) {
-        continue;
+    const followupLeads = [];
+
+    for (const lead of selectedfollowup) {
+      const activity = Array.isArray(lead.activityLog) ? lead.activityLog : [];
+
+      let matchedAllocations;
+
+      // ✅ NEW LOGIC ONLY WHEN REQUIRED
+      if (isNewMode) {
+        console.log("yyyyyyyyyyyyyyyyyyyyyyyyy")
+        matchedAllocations = activity
+          .map((item, index) => ({ ...item, index }))
+          .filter((item) => {
+            if (item.taskTo !== "followup") return false;
+            if (item.allocationChanged !== false) return false;
+            if (!item.submissionDate) return false;
+
+            const subDate = new Date(item.submissionDate);
+
+            if (start && end) {
+              if (subDate < start || subDate > end) return false;
+            }
+
+            return true;
+          });
+      } else {
+        // ✅ OLD LOGIC (NO DATE FILTER)
+        matchedAllocations = activity
+          .map((item, index) => ({ ...item, index }))
+          .filter((item) => item.taskTo === "followup");
       }
 
-      // Safety: ensure model names exist before doing mongoose.model(...) calls
-      const lastAlloc = matchedAllocations[matchedAllocations.length - 1];
+      if (matchedAllocations.length === 0) continue;
 
+      const lastAlloc = matchedAllocations[matchedAllocations.length - 1];
       const lastIndex = lastAlloc.index;
 
-      if (
-        !lead.leadByModel ||
-        !mongoose.models[lead.leadByModel] ||
-        !lastAlloc.taskallocatedToModel ||
-        !mongoose.models[lastAlloc.taskallocatedToModel] ||
-        !lastAlloc.taskallocatedByModel ||
-        !mongoose.models[lastAlloc.taskallocatedByModel]
-      ) {
-        console.log("leadby", lead.leadByModel)
-        console.log("taskallocatedtomodel", lastAlloc.taskallocatedToModel)
-        console.log("taskallocatedy", lastAlloc.taskallocatedByModel)
-        console.error(
-          `Model missing for lead ${lead._id}:`,
-          lead.leadByModel,
-          lastAlloc.taskallocatedToModel,
-          lastAlloc.taskallocatedByModel
-        );
-        // skip this lead (don't `return` from whole function)
-        continue;
-      }
-
-      // Populate outer fields (await as needed)
-      const leadByModel = mongoose.model(lead.leadByModel);
-      const allocatedToModel = mongoose.model(lastAlloc.taskallocatedToModel);
-      const allocatedByModel = mongoose.model(lastAlloc.taskallocatedByModel);
-
-      const [popLeadBy, popAllocatedTo, popAllocatedBy] = await Promise.all([
-        leadByModel
-          .findById(lead.leadBy)
-          .select("name")
-          .lean()
-          .catch(() => null),
-        allocatedToModel
-          .findById(lastAlloc.taskallocatedTo)
-          .select("name")
-          .lean()
-          .catch(() => null),
-        allocatedByModel
-          .findById(lastAlloc.taskallocatedBy)
-          .select("name")
-          .lean()
-          .catch(() => null),
-      ]);
-
-      // Populate activityLog fields that reference other models (submittedUser, taskallocatedTo)
-      const populatedActivityLog = await Promise.all(
-        activity.map(async (log) => {
-          let populatedSubmittedUser = null;
-          let populatedTaskAllocatedTo = null;
-          let populatedTaskAllocatedBy = null
-          let populatedTask = null;
-          let populatedTaskBy = null
+      // ✅ HEADER FILTER ONLY IN NEW MODE
+      if (isNewMode) {
+        if (header === "Pending") {
           if (
-            log.submittedUser &&
-            log.submissiondoneByModel &&
-            mongoose.models[log.submissiondoneByModel]
+            lead.leadConvertedDate ||
+            lead.leadLostDate ||
+            lead.leadLost === true
           ) {
-            const model = mongoose.model(log.submissiondoneByModel);
-            populatedSubmittedUser = await model
-              .findById(log.submittedUser)
-              .select("name")
-              .lean()
-              .catch(() => null);
+            continue;
           }
-          if (log.taskallocatedBy && log.taskallocatedByModel && mongoose.models[log.taskallocatedByModel]) {
-            const model = mongoose.model(log.taskallocatedByModel);
-            populatedTaskAllocatedBy = await model
-              .findById(log.taskallocatedBy)
-              .select("name")
-              .lean()
-              .catch(() => null);
+        }
 
+        if (header === "Converted") {
+          if (!lead.leadConvertedDate) continue;
+
+          const convDate = new Date(lead.leadConvertedDate);
+
+          if (start && end) {
+            if (convDate < start || convDate > end) continue;
           }
-
-          if (
-            log.taskallocatedTo &&
-            log.taskallocatedToModel &&
-            mongoose.models[log.taskallocatedToModel]
-          ) {
-            const model = mongoose.model(log.taskallocatedToModel);
-            populatedTaskAllocatedTo = await model
-              .findById(log.taskallocatedTo)
-              .select("name")
-              .lean()
-              .catch(() => null);
-          }
-          if (log?.taskId) {
-            populatedTask = await Task.findById(log.taskId)
-              .select("taskName")
-              .lean()
-              .catch(() => null);
-          }
-          if (log?.taskBy) {
-            populatedTaskBy = await Task.findById(log.taskBy)
-          }
-
-          return {
-            ...log,
-            taskBy: populatedTaskBy,
-            submittedUser: populatedSubmittedUser || log.submittedUser,
-            taskallocatedBy: populatedTaskAllocatedBy || log.taskallocatedBy,
-            taskallocatedTo: populatedTaskAllocatedTo || log.taskallocatedTo,
-            taskId: populatedTask,
-          };
-        })
-      );
-      const populatedLeadFor = await Promise.all(
-        lead.leadFor.map(async (item) => {
-          const productorserviceModel = mongoose.model(
-            item.productorServicemodel
-          );
-          const populatedProductorService = await productorserviceModel
-            .findById(item.productorServiceId)
-            .lean(); // Use lean() to get plain JavaScript objects
-
-          return { ...item, productorServiceId: populatedProductorService };
-        })
-      );
-
-      // Determine neverfollowuped:
-      // - If the last matched allocation itself has followupClosed === true => NOT neverfollowuped
-      // - Else, check logs AFTER the lastAlloc.index: if any has nextFollowUpDate (non-null) => NOT neverfollowuped
-      // - Otherwise => neverfollowuped = true
-      const lastMatched = lastAlloc;
-      const lastMatchedClosed = !!lastMatched.followupClosed; // closed flag(s)
-      let neverfollowuped = false;
-
-      if (lastMatchedClosed) {
-        neverfollowuped = true;
-      } else {
-        const afterLogs = activity.slice(lastIndex + 1);
-        const foundNextFollowUp = afterLogs.some(
-          (log) => !!log.nextFollowUpDate
-        );
-        if (foundNextFollowUp) {
-          neverfollowuped = false;
-        } else {
-          // also, if the matched allocation itself had nextFollowUpDate, treat as not neverfollowuped
-          if (lastMatched.nextFollowUpDate) neverfollowuped = false;
-          else neverfollowuped = true;
         }
       }
 
-      // currentdateNextfollowup: whether the very last activity log entry has nextFollowUpDate (or you can define differently)
+      // ✅ SAFE POPULATION
+      const leadByModel =
+        lead.leadByModel && mongoose.models[lead.leadByModel]
+          ? mongoose.model(lead.leadByModel)
+          : null;
+
+      const allocatedToModel =
+        lastAlloc.taskallocatedToModel &&
+          mongoose.models[lastAlloc.taskallocatedToModel]
+          ? mongoose.model(lastAlloc.taskallocatedToModel)
+          : null;
+
+      const allocatedByModel =
+        lastAlloc.taskallocatedByModel &&
+          mongoose.models[lastAlloc.taskallocatedByModel]
+          ? mongoose.model(lastAlloc.taskallocatedByModel)
+          : null;
+
+      const [popLeadBy, popAllocatedTo, popAllocatedBy] = await Promise.all([
+        leadByModel
+          ? leadByModel
+            .findById(lead.leadBy)
+            .select("name")
+            .lean()
+            .catch(() => null)
+          : null,
+        allocatedToModel
+          ? allocatedToModel
+            .findById(lastAlloc.taskallocatedTo)
+            .select("name")
+            .lean()
+            .catch(() => null)
+          : null,
+        allocatedByModel
+          ? allocatedByModel
+            .findById(lastAlloc.taskallocatedBy)
+            .select("name")
+            .lean()
+            .catch(() => null)
+          : null,
+      ]);
+
+      // ✅ POPULATE activityLog (only in old mode for detailed view)
+      let populatedActivityLog = activity;
+      if (!isNewMode) {
+        populatedActivityLog = await Promise.all(
+          activity.map(async (log) => {
+            let populatedSubmittedUser = null;
+            let populatedTaskAllocatedTo = null;
+            let populatedTaskAllocatedBy = null;
+            let populatedTask = null;
+            let populatedTaskBy = null;
+
+            if (
+              log.submittedUser &&
+              log.submissiondoneByModel &&
+              mongoose.models[log.submissiondoneByModel]
+            ) {
+              const model = mongoose.model(log.submissiondoneByModel);
+              populatedSubmittedUser = await model
+                .findById(log.submittedUser)
+                .select("name")
+                .lean()
+                .catch(() => null);
+            }
+
+            if (
+              log.taskallocatedBy &&
+              log.taskallocatedByModel &&
+              mongoose.models[log.taskallocatedByModel]
+            ) {
+              const model = mongoose.model(log.taskallocatedByModel);
+              populatedTaskAllocatedBy = await model
+                .findById(log.taskallocatedBy)
+                .select("name")
+                .lean()
+                .catch(() => null);
+            }
+
+            if (
+              log.taskallocatedTo &&
+              log.taskallocatedToModel &&
+              mongoose.models[log.taskallocatedToModel]
+            ) {
+              const model = mongoose.model(log.taskallocatedToModel);
+              populatedTaskAllocatedTo = await model
+                .findById(log.taskallocatedTo)
+                .select("name")
+                .lean()
+                .catch(() => null);
+            }
+
+            if (log?.taskId) {
+              populatedTask = await Task.findById(log.taskId)
+                .select("taskName")
+                .lean()
+                .catch(() => null);
+            }
+
+            if (log?.taskBy) {
+              populatedTaskBy = await Task.findById(log.taskBy)
+                .lean()
+                .catch(() => null);
+            }
+
+            return {
+              ...log,
+              taskBy: populatedTaskBy,
+              submittedUser: populatedSubmittedUser || log.submittedUser,
+              taskallocatedBy: populatedTaskAllocatedBy || log.taskallocatedBy,
+              taskallocatedTo: populatedTaskAllocatedTo || log.taskallocatedTo,
+              taskId: populatedTask,
+            };
+          })
+        );
+      }
+
+      // ✅ POPULATE leadFor
+      const populatedLeadFor = await Promise.all(
+        lead.leadFor.map(async (item) => {
+          const model = mongoose.model(item.productorServicemodel);
+          const populated = await model
+            .findById(item.productorServiceId)
+            .lean()
+            .catch(() => null);
+
+          return { ...item, productorServiceId: populated };
+        })
+      );
+
       const lastActivity = activity[activity.length - 1] || {};
-      const Nextfollowup = !!lastActivity.nextFollowUpDate;
 
-      // allocatedfollowup: whether the last activity entry was created from followup task (taskfromFollowup flag)
-      const allocatedfollowup = !!lastActivity.taskfromFollowup;
+      // ✅ CALCULATE FLAGS (only in old mode)
+      let neverfollowuped = false;
+      let Nextfollowup = false;
+      let allocatedfollowup = false;
+      let allocatedTaskClosed = false;
 
-      // allocatedTaskClosed: whether last activity entry's allocatedClosed === true
-      const allocatedTaskClosed = !!lastActivity.allocatedClosed;
+      if (!isNewMode) {
+        const lastMatched = lastAlloc;
+        const lastMatchedClosed = !!lastMatched.followupClosed;
 
-      // push enriched lead
-      followupLeads.push({
+        if (lastMatchedClosed) {
+          neverfollowuped = true;
+        } else {
+          const afterLogs = activity.slice(lastIndex + 1);
+          const foundNextFollowUp = afterLogs.some(
+            (log) => !!log.nextFollowUpDate
+          );
+          if (foundNextFollowUp) {
+            neverfollowuped = false;
+          } else {
+            if (lastMatched.nextFollowUpDate) neverfollowuped = false;
+            else neverfollowuped = true;
+          }
+        }
+
+        Nextfollowup = !!lastActivity.nextFollowUpDate;
+        allocatedfollowup = !!lastActivity.taskfromFollowup;
+        allocatedTaskClosed = !!lastActivity.allocatedClosed;
+      }
+
+      // ✅ BUILD LEAD OBJECT
+      const leadObject = {
         ...lead,
         leadBy: popLeadBy || lead.leadBy,
         leadFor: populatedLeadFor,
         allocatedTo: popAllocatedTo,
         allocatedBy: popAllocatedBy,
-        activityLog: populatedActivityLog,
-        nextFollowUpDate: lastActivity.nextFollowUpDate ?? null, //to show the nextfollowupdate in the list
-        neverfollowuped, //to check whether the lead is ever followuped
-        Nextfollowup,
-        allocatedfollowup, //to know whether the lead have any task from followup
-        allocatedTaskClosed, //to know the the task from followup is closed or not
-      });
+        nextFollowUpDate: lastActivity.nextFollowUpDate ?? null,
+      };
+
+      // Add detailed fields only in old mode
+      if (!isNewMode) {
+        leadObject.activityLog = populatedActivityLog;
+        leadObject.neverfollowuped = neverfollowuped;
+        leadObject.Nextfollowup = Nextfollowup;
+        leadObject.allocatedfollowup = allocatedfollowup;
+        leadObject.allocatedTaskClosed = allocatedTaskClosed;
+      }
+
+      followupLeads.push(leadObject);
     }
 
-
-    const ischekCollegueLeads = followupLeads.some((item) =>
-      item.allocatedBy._id.equals(userObjectId)
+    const ischekCollegueLeads = followupLeads.some(
+      (item) =>
+        item.allocatedBy?._id?.toString() === userObjectId.toString()
     );
 
-    if (followupLeads && followupLeads.length > 0) {
+    console.log("MODE:", isNewMode ? "NEW" : "OLD");
+    console.log("followupleads", followupLeads)
+
+    if (followupLeads.length > 0) {
       return res.status(201).json({
         messge: "leadfollowup found",
         data: { followupLeads, ischekCollegueLeads },
@@ -1298,7 +1699,8 @@ export const GetallfollowupList = async (req, res) => {
     console.log("error:", error.message);
     return res.status(500).json({ message: "Internal server error" });
   }
-};
+};//claude ai
+
 export const SetDemoallocation = async (req, res) => {
   try {
     const { demoallocatedBy, leaddocId, editIndex } = req.query;
@@ -2590,11 +2992,9 @@ export const UpdateOrleadallocationTask = async (req, res) => {
 export const updateReallocation = async (req, res) => {
   try {
     const { allocatedBy, selectedbranch, allocationTypeId, allocationName } = req.query;
-    console.log("allocationname", allocationName)
     const allocatedbyObjectid = new mongoose.Types.ObjectId(allocatedBy);
     // const branchObjectId = new mongoose.Types.ObjectId(selectedbranch)
     const { selectedItem, formData } = req.body;
-    console.log(selectedItem)
     let allocatedToModel;
     let allocatedByModel;
     const isStaffallocatedtomodel = await Staff.findOne({
@@ -2610,7 +3010,6 @@ export const updateReallocation = async (req, res) => {
         allocatedToModel = "Admin";
       }
     }
-    console.log("allocedtomodel", allocatedToModel)
     const isStaffallocatedbymodel = await Staff.findOne({
       _id: allocatedbyObjectid,
     });
@@ -2624,7 +3023,6 @@ export const updateReallocation = async (req, res) => {
         allocatedByModel = "Admin";
       }
     }
-    console.log("allocstedbymodel", allocatedByModel)
     if (!allocatedToModel || !allocatedByModel) {
       return res
         .status(400)
@@ -2905,7 +3303,6 @@ export const UpdateLeadTask = async (req, res) => {
     }
     await LeadMaster.updateOne({ _id: leadObjectId }, { $set: updateFields });
     const isTaskfromFollowup = taskDetails.taskfromFollowup ? true : false;
-    console.log("taskdetails", taskDetails)
     // 2️⃣ 🔑 UPDATE allocationlist = false for matching followup tasks
     await LeadMaster.collection.updateOne(
       { _id: leadObjectId },
@@ -3028,7 +3425,6 @@ export const GetrespectedleadTask = async (req, res) => {
                 .select("taskName")
                 .lean();
             }
-            console.log(item?.taskBy)
             if (item?.taskBy && isValidObjectId(item?.taskBy)) {
               populatedtaskBy = await Task.findById(item?.taskBy)
                 .select("taskName")
@@ -3656,7 +4052,6 @@ export const GetallfollowupListfromFollowupSummary = async (req, res) => {
 export const GetfollowupsummaryReport = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
-    console.log(startDate, endDate);
 
     const start = new Date(startDate);
     start.setHours(0, 0, 0, 0);
@@ -3948,7 +4343,6 @@ export const GetfollowupsummaryReport = async (req, res) => {
       }
     ]);//new code
 
-    console.log("resulstttt", result)
     const structuredData = result.map((item) => ({
       staffId: item.staffId,
       leadIds: item.leadIds,
@@ -4025,8 +4419,7 @@ export const Getalltasktoreport = async (req, res) => {
 export const Getdailystaffreport = async (req, res) => {
   try {
     const { startDate, endDate } = req.query
-    console.log("sta", startDate)
-    console.log("end", endDate)
+
     if (!startDate || !endDate) {
       return res.status(400).json({ message: "startDate and endDate required" });
     }
@@ -4049,9 +4442,7 @@ export const Getdailystaffreport = async (req, res) => {
 
     // Pass ONLY the day's date to helper - it handles start/end of day
     const leadMetrics = await getLeadMetricsForSingleDay(currentDate, reportEnd);
-    console.log("leadmetidds", leadMetrics)
     const callMetrics = await getCallMetricsForSingleDay(currentDate, reportEnd)
-    console.log("callmetrics", callMetrics)
 
     const dayReport = leadMetrics.map(lead => {
       const callsData = callMetrics.find(
@@ -4077,7 +4468,6 @@ export const Getdailystaffreport = async (req, res) => {
 
     dailyReports.push(...dayReport);
     currentDate.setDate(currentDate.getDate() + 1);
-    console.log("dalyrropoerts", dailyReports)
     return res.status(200).json({ messaage: "daily report found", data: dailyReports })
 
   } catch (error) {
@@ -4090,7 +4480,6 @@ export const Getdailystaffreport = async (req, res) => {
 export const GetcollectionLeads = async (req, res) => {
   try {
     const { selectedBranch, verified } = req.query;
-    console.log("verfieddddd", verified)
     const query = {
       leadBranch: new mongoose.Types.ObjectId(selectedBranch),
       paymentVerified: verified === "true" ? true : false,
@@ -4362,235 +4751,12 @@ export const GetlostLeads = async (req, res) => {
 
 export const GetallproductwiseReport = async (req, res) => {
   try {
-    console.log("hhhhhhhhhhhhhh")
     const { startDate, endDate } = req.query;
-    console.log(startDate, endDate)
 
     const start = new Date(startDate);
     const end = new Date(endDate);
     ///for productwise report
-    // const result = await LeadMaster.aggregate([
 
-    //   // 1️⃣ Unwind activityLog
-    //   { $unwind: "$activityLog" },
-
-    //   // 2️⃣ Only followup allocations
-    //   {
-    //     $match: {
-    //       "activityLog.taskallocatedTo": { $exists: true, $ne: null },
-    //       "activityLog.taskTo": "followup",
-    //       "activityLog.allocationChanged": false,
-    //     },
-    //   },
-
-    //   // 3️⃣ Sort latest followup first
-    //   {
-    //     $sort: {
-    //       "activityLog.submissionDate": -1,
-    //     },
-    //   },
-
-    //   // 4️⃣ Unwind leadFor
-    //   { $unwind: "$leadFor" },
-
-    //   // 5️⃣ DEDUPLICATE (Lead + Staff + Product)
-    //   {
-    //     $group: {
-    //       _id: {
-    //         leadId: "$leadId",
-    //         staffId: "$activityLog.taskallocatedTo",
-    //         productId: "$leadFor.productorServiceId",
-    //         productModel: "$leadFor.productorServicemodel",
-    //       },
-
-    //       leadLost: { $first: "$leadLost" },
-    //       leadLostDate: { $first: "$leadLostDate" },
-    //       leadConvertedDate: { $first: "$leadConvertedDate" },
-    //       netAmount: { $first: "$leadFor.netAmount" },
-    //     },
-    //   },
-
-    //   // 6️⃣ ✅ STATUS LOGIC (FIXED PRIORITY)
-    //   {
-    //     $addFields: {
-    //       status: {
-    //         $cond: [
-    //           {
-    //             $and: [
-    //               { $eq: ["$leadLost", true] },
-    //               { $ne: ["$leadLostDate", null] },
-    //             ],
-    //           },
-    //           "LOST",
-    //           {
-    //             $cond: [
-    //               { $ne: ["$leadConvertedDate", null] },
-    //               "CONVERTED",
-    //               "PENDING",
-    //             ],
-    //           },
-    //         ],
-    //       },
-    //     },
-    //   },
-
-    //   // 7️⃣ Flags
-    //   {
-    //     $addFields: {
-    //       isLost: { $cond: [{ $eq: ["$status", "LOST"] }, 1, 0] },
-    //       isConverted: { $cond: [{ $eq: ["$status", "CONVERTED"] }, 1, 0] },
-    //       isPending: { $cond: [{ $eq: ["$status", "PENDING"] }, 1, 0] },
-    //     },
-    //   },
-
-    //   // 8️⃣ Amount calculations
-    //   {
-    //     $addFields: {
-    //       entryTotalAmount: { $ifNull: ["$netAmount", 0] },
-
-    //       entryConvertedAmount: {
-    //         $cond: [{ $eq: ["$isConverted", 1] }, { $ifNull: ["$netAmount", 0] }, 0],
-    //       },
-
-    //       entryLostAmount: {
-    //         $cond: [{ $eq: ["$isLost", 1] }, { $ifNull: ["$netAmount", 0] }, 0],
-    //       },
-
-    //       entryPendingAmount: {
-    //         $cond: [{ $eq: ["$isPending", 1] }, { $ifNull: ["$netAmount", 0] }, 0],
-    //       },
-    //     },
-    //   },
-
-    //   // 9️⃣ FINAL GROUP → Staff + Product
-    //   {
-    //     $group: {
-    //       _id: {
-    //         staffId: "$_id.staffId",
-    //         productId: "$_id.productId",
-    //         productModel: "$_id.productModel",
-    //       },
-
-    //       leadCount: { $sum: 1 },
-
-    //       totalConverted: { $sum: "$isConverted" },
-    //       totalLost: { $sum: "$isLost" },
-    //       totalPending: { $sum: "$isPending" },
-
-    //       totalNetAmount: { $sum: "$entryTotalAmount" },
-    //       convertedNetAmount: { $sum: "$entryConvertedAmount" },
-    //       lostNetAmount: { $sum: "$entryLostAmount" },
-    //       totalPendingAmount: { $sum: "$entryPendingAmount" },
-    //     },
-    //   },
-
-    //   // 🔟 Lookup Staff
-    //   {
-    //     $lookup: {
-    //       from: "staffs",
-    //       localField: "_id.staffId",
-    //       foreignField: "_id",
-    //       as: "staff",
-    //     },
-    //   },
-    //   {
-    //     $unwind: {
-    //       path: "$staff",
-    //       preserveNullAndEmptyArrays: true,
-    //     },
-    //   },
-
-    //   // 1️⃣1️⃣ Lookup Product
-    //   {
-    //     $lookup: {
-    //       from: "products",
-    //       localField: "_id.productId",
-    //       foreignField: "_id",
-    //       as: "product",
-    //     },
-    //   },
-
-    //   // 1️⃣2️⃣ Lookup Service
-    //   {
-    //     $lookup: {
-    //       from: "services",
-    //       localField: "_id.productId",
-    //       foreignField: "_id",
-    //       as: "service",
-    //     },
-    //   },
-
-    //   // 1️⃣3️⃣ Resolve names
-    //   {
-    //     $addFields: {
-    //       productName: {
-    //         $cond: [
-    //           { $eq: ["$_id.productModel", "Product"] },
-    //           { $arrayElemAt: ["$product.productName", 0] },
-    //           { $arrayElemAt: ["$service.serviceName", 0] },
-    //         ],
-    //       },
-
-    //       branch: {
-    //         $cond: [
-    //           { $eq: ["$_id.productModel", "Product"] },
-    //           {
-    //             $arrayElemAt: [
-    //               {
-    //                 $map: {
-    //                   input: {
-    //                     $ifNull: [
-    //                       { $arrayElemAt: ["$product.selected", 0] },
-    //                       [],
-    //                     ],
-    //                   },
-    //                   as: "sel",
-    //                   in: "$$sel.branch_id",
-    //                 },
-    //               },
-    //               0,
-    //             ],
-    //           },
-    //           { $arrayElemAt: ["$service.branch", 0] },
-    //         ],
-    //       },
-    //     },
-    //   },
-
-    //   // 1️⃣4️⃣ Final output
-    //   {
-    //     $project: {
-    //       _id: 0,
-    //       staffId: "$_id.staffId",
-    //       productId: "$_id.productId",
-    //       productModel: "$_id.productModel",
-
-    //       staffName: { $ifNull: ["$staff.name", "Unknown"] },
-    //       staffRole: "$staff.role",
-
-    //       productName: 1,
-    //       branch: 1,
-
-    //       leadCount: 1,
-    //       totalConverted: 1,
-    //       totalLost: 1,
-    //       totalPending: 1,
-
-    //       totalNetAmount: 1,
-    //       convertedNetAmount: 1,
-    //       lostNetAmount: 1,
-    //       totalPendingAmount: 1,
-    //     },
-    //   },
-
-    //   // 1️⃣5️⃣ Sort
-    //   {
-    //     $sort: {
-    //       staffName: 1,
-    //       productName: 1,
-    //     },
-    //   },
-    // ]);
     const result = await LeadMaster.aggregate([
 
       // 1️⃣ Unwind activityLog
@@ -5072,10 +5238,8 @@ export const GetallproductwiseReport = async (req, res) => {
     ]);
 
 
-    console.log("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee", re)
 
-    // const a = result.filter((it) => it.staffName === "EBBY MANJOORAN")
-    // console.log("abhissssssssssss", a)
+
 
     const mappeddata = result.map((item) => ({
       staffId: item.staffId,
