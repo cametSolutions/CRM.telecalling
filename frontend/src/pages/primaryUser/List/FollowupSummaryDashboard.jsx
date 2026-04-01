@@ -9,7 +9,7 @@ export default function FollowupSummaryDashboard() {
   const navigate = useNavigate()
 
   const [date, setdate] = useState({
-    startDate: new Date().toLocaleDateString("en-CA"),
+    startDate: "",
     endDate: ""
   })
   const [data, setData] = useState([])
@@ -22,16 +22,21 @@ export default function FollowupSummaryDashboard() {
       selectedBranch &&
       `/lead/getfollowupsummaryReport?startDate=${date.startDate}&endDate=${date.endDate}&branchId=${selectedBranch}`
   )
-console.log(followup)
+  console.log(followup)
   // set end of current month once
   useEffect(() => {
     const now = new Date()
+    const startDate = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      1
+    ).toLocaleDateString("en-CA")
     const endDate = new Date(
       now.getFullYear(),
       now.getMonth() + 1,
       0
     ).toLocaleDateString("en-CA")
-    setdate((prev) => ({ ...prev, endDate }))
+    setdate((prev) => ({ startDate, endDate }))
   }, [])
 
   // branches
@@ -83,7 +88,7 @@ console.log(followup)
   const handleMetricClick = (row, header, key) => {
     // row has: staffName, leadCount, dueToday, overDue, future, converted, lost, leadid[]
     const staffName = row.staffName
-
+    console.log("hh")
     if (header === "Lost") {
       navigate("/lostleads", {
         state: {
@@ -138,7 +143,7 @@ console.log(followup)
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: {
           staffId: row.staffId,
-          
+
           branchId: row.branchIds?.[0]
         }
       })
@@ -154,7 +159,7 @@ console.log(followup)
   }
 
   return (
-    <div className="h-full bg-blue-50 flex flex-col">
+    <div className="h-full bg-[#ADD8E6] flex flex-col">
       {/* Top bar */}
       <div className="px-4 md:px-6 py-3 bg-blue-50 border-b border-blue-100">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -260,19 +265,15 @@ console.log(followup)
       </div>
 
       {/* Table wrapper */}
-      <div className="flex-1 overflow-hidden">
-        <div className="h-full px-3 md:px-6 pb-4">
-          <div className="h-full bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
-            <ReportTable
-              headers={headersName}
-              reportName="Follow-Up Summary"
-              data={data}
-              onStaffClick={handleStaffClick}
-              onMetricClick={handleMetricClick}
-              onCellClick={handleFollowupCellClick}
-            />
-          </div>
-        </div>
+      <div className="flex-1 overflow-hidden mb-3 mx-3">
+        <ReportTable
+          headers={headersName}
+          reportName="Follow-Up Summary"
+          data={data}
+          onStaffClick={handleStaffClick}
+          onMetricClick={handleMetricClick}
+          onCellClick={handleFollowupCellClick}
+        />
       </div>
     </div>
   )

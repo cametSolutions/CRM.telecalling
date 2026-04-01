@@ -3283,6 +3283,7 @@ export function CollectionupdateModal({
   handleCollectionUpdate
 }) {
   const [error, setError] = useState({})
+console.log("hh")
   const [submitLoader, setsubmitLoader] = useState(false)
   const [formData, setFormData] = useState({
     submissionDate: todayString(),
@@ -3301,7 +3302,7 @@ export function CollectionupdateModal({
     customerId: ""
   })
   const [paymentRows, setPaymentRows] = useState([emptyRow()])
-
+console.log(paymentRows)
   const base = {
     width: "100%",
     padding: "5px 9px",
@@ -3385,6 +3386,8 @@ export function CollectionupdateModal({
         })
       )
     } else if (Array.isArray(data.leadFor) && data.leadFor.length > 0) {
+console.log("hhhhh")
+console.log(data.leadFor)
       // ✅ fallback: seed from leadFor
       setPaymentRows(
         data.leadFor.map((p) => {
