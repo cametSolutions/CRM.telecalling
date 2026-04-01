@@ -2442,6 +2442,7 @@ export const Getallcompensatoryleave = async (req, res) => {
       { $match: { userId: objectId } },
       { $group: { _id: null, total: { $sum: "$value" } } }
     ])
+console.log("resulttttt",result)
 
     const totalCompensatoryLeave = result[0]?.total || 0
     return res.status(200).json({

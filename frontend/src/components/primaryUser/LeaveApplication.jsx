@@ -282,7 +282,7 @@ console.log(casualstartmonth)
 console.log(ownedcasualCount)
       const balancecasualcount = ownedcasualCount - usedCasualCount
       const balanceprivilege = ownedprivilegeCount - takenPrivilegeCount
-
+console.log(compensatoryleaves)
       setBalanceprivilegeLeaveCount(Math.max(balanceprivilege, 0))
       setBalancecasualLeaveCount(Math.max(balancecasualcount, 0))
       setBalancecompensatoryLeaveCount(compensatoryleaves)
