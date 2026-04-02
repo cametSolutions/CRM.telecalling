@@ -951,7 +951,7 @@ export default function ProductWiseleadReport() {
 
         {/* ================= CONTENT ================= */}
         <div className="flex-1 p-4 overflow-hidden">
-          <div className="h-full bg-gray-50 rounded-xl border border-gray-200 overflow-hidden flex items-center justify-center">
+          <div className="h-full bg-gray-50 rounded-xl border border-gray-200 overflow-hidden ">
             {loading ? (
               <SkeletonTable rows={8} />
             ) : effectiveData.length === 0 ? (

@@ -489,144 +489,339 @@ export const Getallsalesfunnels = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 export const UpdateCollection = async (req, res) => {
-  const { isFrom = null } = req.query;
-  const formData = req.body;
+  console.log("hhhhhhhhhhhhhhhhhhhhhhhhhh")
 
-  let model;
-  const isAdmin = await Admin.findOne({ _id: formData.receivedBy });
-  if (isAdmin) {
-    model = "Admin";
-  } else {
-    const isstaff = await Staff.findOne({ _id: formData.receivedBy });
-    if (isstaff) {
-      model = "Staff";
-    }
-  }
+  const { isFrom = null } = req.query
+  const {
+    overwriteLastPayment = false,
+    paymentData = null,
+    ...formData
+  } = req.body
+  console.log("formmmmmmmmmdata", formData)
 
-  const session = await mongoose.startSession();
+  let model = null
+  let session = null
+
   try {
-    // const toBoolean = (value, defaultValue = false) => {
-    //   if (value === null || value === undefined || value === "")
-    //     return defaultValue;
-    //   return value === "true" || value === true || value === 1 || value === "1";
-    // };
-    // const followupClosed = toBoolean(req.query.followupclosed);
-    const customerId = formData?.customerId;
-    const leadDocId = formData?.leadDocId;
-
-    if (!formData.leadDocId) {
-      return res.status(400).json({ message: "Missing leadid" });
+    const isAdmin = await Admin.findById(formData.receivedBy).lean()
+    if (isAdmin) {
+      model = "Admin"
+    } else {
+      const isStaff = await Staff.findById(formData.receivedBy).lean()
+      if (isStaff) {
+        model = "Staff"
+      }
     }
 
-    session.startTransaction();
-    const updatecustomer = await Customer.findByIdAndUpdate(
-      customerId,
-      {
-        $set: {
-          customerName: formData.customerName,
-          address1: formData.address,
-          email: formData.email,
-          mobile: formData?.mobile,
-          registrationType: formData?.registrationType,
-          partner: formData?.partner,
-          country: formData?.country,
-          state: formData?.state,
-          city: formData?.city,
-          pincode: formData?.pincode,
+    console.log("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
+
+    if (!formData?.leadDocId) {
+      return res.status(400).json({ message: "Missing leadid" })
+    }
+
+    if (!formData?.customerId) {
+      return res.status(400).json({ message: "Missing customerId" })
+    }
+
+    const customerId = formData.customerId
+    const leadDocId = formData.leadDocId
+
+    session = await mongoose.startSession()
+
+    await session.withTransaction(async () => {
+      const updateCustomer = await Customer.findByIdAndUpdate(
+        customerId,
+        {
+          $set: {
+            customerName: formData.customerName,
+            address1: formData.address,
+            email: formData.email,
+            mobile: formData?.mobile,
+            registrationType: formData?.registrationType,
+            partner: formData?.partner,
+            country: formData?.country,
+            state: formData?.state,
+            city: formData?.city,
+            pincode: formData?.pincode
+          }
         },
-      },
-      { new: true, session }
-    );
-    if (!updatecustomer) {
-      throw new Error("Customer not found");
-    }
-    // 2️⃣ Calculate updated totals
-    const newTotalPaid =
-      Number(formData.totalpaidAmountBefore || 0) + Number(formData?.totalReceivedAmount)
+        { new: true, session }
+      )
 
-    const newBalance = Math.max(0, (formData?.totalNetAmount || 0) - newTotalPaid)
+      if (!updateCustomer) {
+        throw new Error("Customer not found")
+      }
 
+      const lead = await LeadMaster.findById(leadDocId).session(session)
 
+      if (!lead) {
+        throw new Error("Lead not found")
+      }
 
+      const receivedAmount = Number(
+        paymentData?.receivedAmount ??
+        formData?.totalReceivedAmount ??
+        0
+      )
 
-    // 3️⃣ Create payment record
-    const paymentRecord = {
-      paymentDate: new Date(),
-      receivedAmount: formData?.totalReceivedAmount,
-      paymentEntries: (formData?.paymentEntries || []).map((e) => ({
+      const currentPaidAmount = Number(
+        lead.totalPaidAmount ??
+        formData.totalpaidAmountBefore ??
+        0
+      )
+
+      let newTotalPaid = currentPaidAmount
+      let previousPaymentAmount = 0
+
+      const normalizedPaymentEntries = (
+        paymentData?.paymentEntries ||
+        formData?.paymentEntries ||
+        []
+      ).map((e) => ({
         productorServiceId: e.productorServiceId,
         productorServicemodel: e.productorServicemodel,
-        netAmount: e.netAmount,
-        receivedAmount: e.receivedAmount,
-        balanceAmount: e.balanceAmount,
-      })),
-      receivedBy: formData?.receivedBy,
-      receivedModel: model,
-      bankRemarks: formData?.bankRemarks || "",
+        netAmount: Number(e.netAmount || 0),
+        receivedAmount: Number(e.receivedAmount || 0),
+        balanceAmount: Number(e.balanceAmount || 0)
+      }))
 
-    };
-    formData.paymentEntries.forEach((item) => {
-      console.log(typeof item)
-    })
-    const allocation = null
-    if (isFrom) {
-      allocation = await Task.findOne({ taskName: "Leadclosed" });
-    }
-    const updateLead = await LeadMaster.findByIdAndUpdate(
-      leadDocId,
-      {
-        $push: { paymentHistory: paymentRecord },
-        $set: {
-          totalPaidAmount: newTotalPaid,
-          partner: formData.partner,
-          balanceAmount: newBalance,
-          ...(isFrom === "reallocation" && {
-            leadClosed: true,
-            leadClosedBy: formData?.receivedBy,
-            leadClosedModel: formData?.receivedModel,
-            reallocatedTo: false,
-            allocationType: allocation?._id,
-          }),
-
-        },
-      },
-      { new: true, session }
-    );
-    await LeadMaster.updateMany(
-      { customerName: updateLead.customerName },
-      {
-        $set: {
-          email: formData?.email,
-          mobile: formData?.mobile,
-          pincode: formData?.pincode,
-          partner: formData?.partner,
-        },
-      },
-      {
-        new: true,
-        session,
+      const paymentRecord = {
+        paymentDate: paymentData?.paymentDate
+          ? new Date(paymentData.paymentDate)
+          : new Date(),
+        receivedAmount,
+        paymentEntries: normalizedPaymentEntries,
+        receivedBy: paymentData?.receivedBy || formData?.receivedBy,
+        receivedModel:
+          paymentData?.receivedModel || model || formData?.receivedModel,
+        bankRemarks:
+          paymentData?.bankRemarks ?? formData?.bankRemarks ?? "",
+        updatedAt: new Date()
       }
-    );
-    if (!updateLead) {
-      throw new Error("lead not found");
-    }
-    await session.commitTransaction();
-    session.endSession();
+
+      if (!Array.isArray(lead.paymentHistory)) {
+        lead.paymentHistory = []
+      }
+
+      if (overwriteLastPayment && lead.paymentHistory.length > 0) {
+        const lastPayment = lead.paymentHistory[lead.paymentHistory.length - 1]
+
+        previousPaymentAmount = Number(lastPayment?.receivedAmount || 0)
+
+        lead.paymentHistory[lead.paymentHistory.length - 1] = {
+          ...(typeof lastPayment?.toObject === "function"
+            ? lastPayment.toObject()
+            : lastPayment),
+          ...paymentRecord
+        }
+
+        newTotalPaid = currentPaidAmount - previousPaymentAmount + receivedAmount
+      } else {
+        lead.paymentHistory.push({
+          ...paymentRecord,
+          createdAt: new Date()
+        })
+
+        newTotalPaid = currentPaidAmount + receivedAmount
+      }
+
+      const totalNetAmount = Number(
+        formData?.totalNetAmount ?? lead.totalNetAmount ?? 0
+      )
+
+      const newBalance = Math.max(0, totalNetAmount - newTotalPaid)
+
+      let allocation = null
+      if (isFrom === "reallocation") {
+        allocation = await Task.findOne({ taskName: "Leadclosed" }).session(session)
+      }
+
+      lead.totalPaidAmount = newTotalPaid
+      lead.partner = formData.partner
+      lead.balanceAmount = newBalance
+
+      if (isFrom === "reallocation") {
+        lead.leadClosed = true
+        lead.leadClosedBy = formData?.receivedBy
+        lead.leadClosedModel = formData?.receivedModel || model
+        lead.reallocatedTo = false
+        lead.allocationType = allocation?._id || lead.allocationType
+      }
+
+      await lead.save({ session })
+
+      await LeadMaster.updateMany(
+        { customerName: lead.customerName },
+        {
+          $set: {
+            email: formData?.email,
+            mobile: formData?.mobile,
+            pincode: formData?.pincode,
+            partner: formData?.partner
+          }
+        },
+        { session }
+      )
+    })
+
     return res.status(200).json({
       success: true,
-      message: "Payment added succesfully",
-    });
+      message: overwriteLastPayment
+        ? "Payment overwritten successfully"
+        : "Payment added successfully"
+    })
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-
-    console.log("error", error);
-    return res
-      .status(500)
-      .json({ successs: false, message: "Internal server error" });
+    console.log("error", error)
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error"
+    })
+  } finally {
+    if (session) {
+      session.endSession()
+    }
   }
-};
+}
+// export const UpdateCollection = async (req, res) => {
+//   const { isFrom = null } = req.query;
+//   const formData = req.body;
+
+//   let model;
+//   const isAdmin = await Admin.findOne({ _id: formData.receivedBy });
+//   if (isAdmin) {
+//     model = "Admin";
+//   } else {
+//     const isstaff = await Staff.findOne({ _id: formData.receivedBy });
+//     if (isstaff) {
+//       model = "Staff";
+//     }
+//   }
+
+//   const session = await mongoose.startSession();
+//   try {
+//     // const toBoolean = (value, defaultValue = false) => {
+//     //   if (value === null || value === undefined || value === "")
+//     //     return defaultValue;
+//     //   return value === "true" || value === true || value === 1 || value === "1";
+//     // };
+//     // const followupClosed = toBoolean(req.query.followupclosed);
+//     const customerId = formData?.customerId;
+//     const leadDocId = formData?.leadDocId;
+
+//     if (!formData.leadDocId) {
+//       return res.status(400).json({ message: "Missing leadid" });
+//     }
+
+//     session.startTransaction();
+//     const updatecustomer = await Customer.findByIdAndUpdate(
+//       customerId,
+//       {
+//         $set: {
+//           customerName: formData.customerName,
+//           address1: formData.address,
+//           email: formData.email,
+//           mobile: formData?.mobile,
+//           registrationType: formData?.registrationType,
+//           partner: formData?.partner,
+//           country: formData?.country,
+//           state: formData?.state,
+//           city: formData?.city,
+//           pincode: formData?.pincode,
+//         },
+//       },
+//       { new: true, session }
+//     );
+//     if (!updatecustomer) {
+//       throw new Error("Customer not found");
+//     }
+//     // 2️⃣ Calculate updated totals
+//     const newTotalPaid =
+//       Number(formData.totalpaidAmountBefore || 0) + Number(formData?.totalReceivedAmount)
+
+//     const newBalance = Math.max(0, (formData?.totalNetAmount || 0) - newTotalPaid)
+
+
+
+
+//     // 3️⃣ Create payment record
+//     const paymentRecord = {
+//       paymentDate: new Date(),
+//       receivedAmount: formData?.totalReceivedAmount,
+//       paymentEntries: (formData?.paymentEntries || []).map((e) => ({
+//         productorServiceId: e.productorServiceId,
+//         productorServicemodel: e.productorServicemodel,
+//         netAmount: e.netAmount,
+//         receivedAmount: e.receivedAmount,
+//         balanceAmount: e.balanceAmount,
+//       })),
+//       receivedBy: formData?.receivedBy,
+//       receivedModel: model,
+//       bankRemarks: formData?.bankRemarks || "",
+
+//     };
+//     formData.paymentEntries.forEach((item) => {
+//       console.log(typeof item)
+//     })
+//     const allocation = null
+//     if (isFrom) {
+//       allocation = await Task.findOne({ taskName: "Leadclosed" });
+//     }
+//     const updateLead = await LeadMaster.findByIdAndUpdate(
+//       leadDocId,
+//       {
+//         $push: { paymentHistory: paymentRecord },
+//         $set: {
+//           totalPaidAmount: newTotalPaid,
+//           partner: formData.partner,
+//           balanceAmount: newBalance,
+//           ...(isFrom === "reallocation" && {
+//             leadClosed: true,
+//             leadClosedBy: formData?.receivedBy,
+//             leadClosedModel: formData?.receivedModel,
+//             reallocatedTo: false,
+//             allocationType: allocation?._id,
+//           }),
+
+//         },
+//       },
+//       { new: true, session }
+//     );
+//     await LeadMaster.updateMany(
+//       { customerName: updateLead.customerName },
+//       {
+//         $set: {
+//           email: formData?.email,
+//           mobile: formData?.mobile,
+//           pincode: formData?.pincode,
+//           partner: formData?.partner,
+//         },
+//       },
+//       {
+//         new: true,
+//         session,
+//       }
+//     );
+//     if (!updateLead) {
+//       throw new Error("lead not found");
+//     }
+//     await session.commitTransaction();
+//     session.endSession();
+//     return res.status(200).json({
+//       success: true,
+//       message: "Payment added succesfully",
+//     });
+//   } catch (error) {
+//     await session.abortTransaction();
+//     session.endSession();
+
+//     console.log("error", error);
+//     return res
+//       .status(500)
+//       .json({ successs: false, message: "Internal server error" });
+//   }
+// };
 export const ChecktodeleteTask = async (req, res) => {
   try {
     const { id } = req.query
@@ -1291,7 +1486,11 @@ export const GetallselectedproductFollowup = async (req, res) => {
 //     console.log("error:", error.message);
 //     return res.status(500).json({ message: "Internal server error" });
 //   }
-// };///live code now
+// };///old code
+export const GetleadById = async (req, res) => {
+  const { leadDocId } = req.query
+  console.log("lleaddocidd", leadDocId)
+}
 
 export const GetallfollowupList = async (req, res) => {
   try {
@@ -1312,19 +1511,13 @@ export const GetallfollowupList = async (req, res) => {
     const start = startDate ? new Date(startDate) : null;
     const end = endDate ? new Date(endDate) : null;
     console.log("showssssssssssss", viewmode)
-    // ✅ CHECK MODE
-    // const isViewMode = viewmode !== "null"
-    // console.log("viewmodeeee", isViewMode)
-
-    // const isNewMode = isViewMode || header || (startDate && endDate);
-    // console.log("isnewomodeee", isNewMode)
 
 
 
 
     // Check if viewmode is the string "true"
     const isViewMode = viewmode === "true";
-console.log("viemodecheking",isViewMode)
+    console.log("viemodecheking", isViewMode)
 
     // Check for valid header and date params
     const hasValidHeader = header && header !== "null" && header !== "undefined";
@@ -1333,8 +1526,8 @@ console.log("viemodecheking",isViewMode)
       startDate !== "undefined" && endDate !== "undefined";
 
     const isNewMode = isViewMode || hasValidHeader || hasValidDates;
-console.log("hasvalidheader",hasValidHeader)
-console.log("hasvalidadate",hasValidDates)
+    console.log("hasvalidheader", hasValidHeader)
+    console.log("hasvalidadate", hasValidDates)
 
     let query;
 
@@ -1622,6 +1815,49 @@ console.log("hasvalidadate",hasValidDates)
           return { ...item, productorServiceId: populated };
         })
       );
+      const populatedpaymentHistory = lead?.paymentHistory?.length
+        ? await Promise.all(
+          lead.paymentHistory.map(async (history) => {
+            const populatedhistory = { ...history.toObject?.() ?? history }
+
+            // populate receivedBy (existing)
+            if (history.receivedModel && history.receivedBy) {
+              const recvModel = mongoose.model(history.receivedModel)
+              populatedhistory.receivedBy = await recvModel
+                .findById(history.receivedBy)
+                .select("name")
+                .lean()
+            }
+
+            // populate each paymentEntries[].productId via productorServicemodel
+            if (Array.isArray(history.paymentEntries)) {
+              populatedhistory.paymentEntries = await Promise.all(
+                history.paymentEntries.map(async (entry) => {
+                  const populatedEntry = { ...entry }
+
+                  if (entry.productorServicemodel && entry.productorServiceId) {
+                    try {
+                      const ProdModel = mongoose.model(entry.productorServicemodel)
+                      const doc = await ProdModel
+                        .findById(entry.productorServiceId)
+                        .select("productName name")
+                        .lean()
+
+                      populatedEntry.productorServiceId = doc
+                    } catch (err) {
+                      populatedEntry.productorServiceId = null
+                    }
+                  }
+
+                  return populatedEntry
+                })
+              )
+            }
+
+            return populatedhistory
+          })
+        )
+        : []
 
       const lastActivity = activity[activity.length - 1] || {};
 
@@ -1659,6 +1895,7 @@ console.log("hasvalidadate",hasValidDates)
       const leadObject = {
         ...lead,
         leadBy: popLeadBy || lead.leadBy,
+        paymentHistory: populatedpaymentHistory,
         leadFor: populatedLeadFor,
         allocatedTo: popAllocatedTo,
         allocatedBy: popAllocatedBy,
