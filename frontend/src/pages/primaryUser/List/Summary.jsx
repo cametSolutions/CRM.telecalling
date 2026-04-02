@@ -38,6 +38,8 @@ const Summary = () => {
       dates.endDate &&
       `/auth/staffcallList?startDate=${dates.startDate}&endDate=${dates.endDate}`
   )
+  console.log(staffCallList)
+  console.log("l")
   useEffect(() => {
     if (branches && branches.length > 0) {
       const userData = localStorage.getItem("user")
@@ -177,7 +179,6 @@ const Summary = () => {
         }
       }
       if (isToggled) {
-
         setTotalCalls(0)
         fetchUserList()
         setLoading(true)
@@ -578,6 +579,21 @@ const Summary = () => {
     setSelectedCustomer(null)
     setSelectedUser(null)
   }
+  const formatDuration = (seconds, name) => {
+console.log(seconds)
+    if (!seconds || isNaN(seconds)) {
+      return "0 hr 0 min 0 sec"
+    }
+
+    const hrs = Math.floor(seconds / 3600)
+    const mins = Math.floor((seconds % 3600) / 60)
+    const secs = seconds % 60
+    return `${hrs} hr ${mins} min ${secs} sec`
+  }
+  console.log(isModalOpen)
+const callfor=(e)=>{
+console.log(e?.attendedBy)
+}
   return (
     <div className="flex flex-col h-full">
       {loading && (
@@ -954,10 +970,10 @@ const Summary = () => {
                           const rowColor = isCompletedToday
                             ? "linear-gradient(135deg, rgba(0, 140, 0, 1), rgba(128, 255, 128, 1))"
                             : isToday
-                            ? "linear-gradient(135deg,rgba(255,255,1,1),rgba(255,255,128,1))"
-                            : isPast
-                            ? "linear-gradient(135deg,rgba(255,0,0,1),rgba(255,128,128,1))"
-                            : ""
+                              ? "linear-gradient(135deg,rgba(255,255,1,1),rgba(255,255,128,1))"
+                              : isPast
+                                ? "linear-gradient(135deg,rgba(255,0,0,1),rgba(255,128,128,1))"
+                                : ""
                           return (
                             <>
                               <tr
@@ -1012,10 +1028,10 @@ const Summary = () => {
                                   reg?.formdata?.status === "solved"
                                     ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
                                     : reg?.formdata?.status === "pending"
-                                    ? callDate === today
-                                      ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                      ? callDate === today
+                                        ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                        : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                       : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                    : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                 }`}
                                 style={{ height: "5px" }}
                               >
@@ -1048,7 +1064,18 @@ const Summary = () => {
                                     )} days`}
                                   </span>
                                   <span className="ml-1">
-                                    {reg?.timedata?.duration || "N/A"}
+
+                                
+                                    {formatDuration(
+                                      reg?.formdata?.attendedBy?.reduce(
+                                        (sum, item) => {
+                                          return (
+                                            sum + Number(item?.duration||0 )
+                                          )
+                                        },
+                                        0
+                                      )
+                                    ) || "N/A"}
                                   </span>
                                 </td>
                                 <td
@@ -1089,10 +1116,10 @@ const Summary = () => {
                       const rowColor = isCompletedToday
                         ? "linear-gradient(135deg, rgba(0, 140, 0, 1), rgba(128, 255, 128, 1))"
                         : isToday
-                        ? "linear-gradient(135deg,rgba(255,255,1,1),rgba(255,255,128,1))"
-                        : isPast
-                        ? "linear-gradient(135deg,rgba(255,0,0,1),rgba(255,128,128,1))"
-                        : ""
+                          ? "linear-gradient(135deg,rgba(255,255,1,1),rgba(255,255,128,1))"
+                          : isPast
+                            ? "linear-gradient(135deg,rgba(255,0,0,1),rgba(255,128,128,1))"
+                            : ""
 
                       return (
                         <>
@@ -1150,10 +1177,10 @@ const Summary = () => {
                               call?.formdata?.status === "solved"
                                 ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
                                 : call?.formdata?.status === "pending"
-                                ? callDate === today
-                                  ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                  ? callDate === today
+                                    ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                    : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                   : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                             }`}
                             style={{ height: "5px" }}
                           >
@@ -1186,7 +1213,15 @@ const Summary = () => {
                                 )} days`}
                               </span>
                               <span className="ml-1">
-                                {call?.timedata?.duration || "N/A"}
+                             
+                                {formatDuration(
+                                  call?.formdata?.attendedBy?.reduce(
+                                    (sum, item) => {
+                                      return sum + Number(item.duration || 0)
+                                    },
+                                    0
+                                  )
+                                ) || "N/A"}
                               </span>
                             </td>
                             <td

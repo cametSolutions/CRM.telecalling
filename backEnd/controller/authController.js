@@ -1005,7 +1005,7 @@ export const OnsiteApply = async (req, res) => {
     if (checkForthisonsiteusedforCompensatoryleave) {
       return res.status(201).json({ message: "Cant make date change compensatory for this onsite taken" })
     }
-console.log("888888888888888888888888888",checkForthisonsiteusedforCompensatoryleave)
+    console.log("888888888888888888888888888", checkForthisonsiteusedforCompensatoryleave)
     const selectedObjectId = new mongoose.Types.ObjectId(selectedid)
     const assignedObjectId = new mongoose.Types.ObjectId(assignedto)
 
@@ -1040,7 +1040,7 @@ console.log("888888888888888888888888888",checkForthisonsiteusedforCompensatoryl
       const currentonsiteType = onsiteType
       if (compensatoryLeave === "true") {
         if (formeronsiteType === "Full Day" && currentonsiteType === "Half Day") {
-console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhh")
+          console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhh")
           const year = new Date(onsiteDate).getFullYear()
 
           const compensatoryLeave = await CompensatoryLeave.find({
@@ -1067,8 +1067,8 @@ console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhhh")
           formeronsiteType === "Half Day" &&
           currentonsiteType === "Full Day"
         ) {
-console.log(
-"tttttttttttttttttttttttt")
+          console.log(
+            "tttttttttttttttttttttttt")
           let ValueAdded = 0.5
           const year = new Date(onsiteDate).getFullYear()
 
@@ -1097,7 +1097,7 @@ console.log(
 
         })
         if (checkcompenstoryUsed.leaveUsed) {
-console.log("OOOOOOOOOOOOOOOOOOOO")
+          console.log("OOOOOOOOOOOOOOOOOOOO")
           return res.status(409).json({
             success: false,
             message: "Cannot update onsite. A leave is already used against this."
@@ -1133,7 +1133,7 @@ console.log("OOOOOOOOOOOOOOOOOOOO")
         return res.status(200).json({ message: "Onsite updated" })
       }
     } else {
-console.log("pppppppppppppppppppp")
+      console.log("pppppppppppppppppppp")
       // If no existing record, create a new one
       const onsitedata = new Onsite({
         onsiteDate,
@@ -2212,7 +2212,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
 
           if (checkholidayleave) {
-            if ((checkholidayleave.otherLeave !== "" && checkholidayleave.otherLeave !== 0)||(checkholidayleave.casualLeave !== "" && checkholidayleave.casualLeave !== 0) || (checkholidayleave.privileageLeave !== "" && checkholidayleave.privileageLeave !== 0) || (checkholidayleave.compensatoryLeave !== "" && checkholidayleave.compensatoryLeave !== 0)) {
+            if ((checkholidayleave.otherLeave !== "" && checkholidayleave.otherLeave !== 0) || (checkholidayleave.casualLeave !== "" && checkholidayleave.casualLeave !== 0) || (checkholidayleave.privileageLeave !== "" && checkholidayleave.privileageLeave !== 0) || (checkholidayleave.compensatoryLeave !== "" && checkholidayleave.compensatoryLeave !== 0)) {
 
 
               return {
@@ -2442,7 +2442,7 @@ export const Getallcompensatoryleave = async (req, res) => {
       { $match: { userId: objectId } },
       { $group: { _id: null, total: { $sum: "$value" } } }
     ])
-console.log("resulttttt",result)
+    console.log("resulttttt", result)
 
     const totalCompensatoryLeave = result[0]?.total || 0
     return res.status(200).json({
@@ -3666,21 +3666,44 @@ export const DeleteUser = async (req, res) => {
   }
 }
 
+
+
+
 export const GetStaffCallList = async (req, res) => {
   try {
     const { startDate, endDate } = req.query
 
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0); // Start of the day
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999); // End of the day
+    const start = new Date(startDate)
+    start.setHours(0, 0, 0, 0)
 
-    const staff = await Staff.find().lean();
+    const end = new Date(endDate)
+    end.setHours(23, 59, 59, 999)
+
+    const [staff, admins] = await Promise.all([
+      Staff.find().lean(),
+      Admin.find().lean()
+    ])
+
+    const allUsers = [...staff, ...admins]
+
+    const userMap = new Map(
+      allUsers.map((user) => [
+        user._id.toString(),
+        {
+          _id: user._id,
+          name: user.name || user.username || user.fullName || "Unknown",
+          selected: user.selected ?? false,
+          type: staff.some((s) => s._id.toString() === user._id.toString())
+            ? "staff"
+            : "admin"
+        }
+      ])
+    )
+
     const customerCalls = await CallRegistration.aggregate([
-
       {
         $match: {
-          "callregistration": { $exists: true, $ne: [] },
+          callregistration: { $exists: true, $ne: [] },
           "callregistration.formdata.attendedBy": { $type: "array" }
         }
       },
@@ -3703,20 +3726,21 @@ export const GetStaffCallList = async (req, res) => {
                           $and: [
                             { $ne: ["$$attendee.calldate", null] },
                             { $ne: ["$$attendee.calldate", ""] },
-                            { $in: [{ $type: "$$attendee.calldate" }, ["string", "date"]] },
+                            {
+                              $in: [
+                                { $type: "$$attendee.calldate" },
+                                ["string", "date"]
+                              ]
+                            },
                             {
                               $gte: [
-                                {
-                                  $toDate: "$$attendee.calldate"
-                                },
+                                { $toDate: "$$attendee.calldate" },
                                 start
                               ]
                             },
                             {
                               $lte: [
-                                {
-                                  $toDate: "$$attendee.calldate"
-                                },
+                                { $toDate: "$$attendee.calldate" },
                                 end
                               ]
                             }
@@ -3731,109 +3755,137 @@ export const GetStaffCallList = async (req, res) => {
             }
           }
         }
-      }
-      ,
+      },
       {
         $match: {
-          // Ensure callregistration array still contains at least one element after filtering
           callregistration: { $ne: [] }
         }
       },
-      // Lookup for attendedBy details (and directly enrich the existing attendedBy field)
       {
         $lookup: {
           from: "staffs",
           localField: "callregistration.formdata.attendedBy.callerId",
           foreignField: "_id",
-          as: "attendedByDetails" // Temporary storage for attendedBy details
+          as: "attendedByStaffDetails"
+        }
+      },
+      {
+        $lookup: {
+          from: "admins",
+          localField: "callregistration.formdata.attendedBy.callerId",
+          foreignField: "_id",
+          as: "attendedByAdminDetails"
+        }
+      },
+      {
+        $addFields: {
+          attendedByDetails: {
+            $concatArrays: [
+              { $ifNull: ["$attendedByStaffDetails", []] },
+              { $ifNull: ["$attendedByAdminDetails", []] }
+            ]
+          }
+        }
+      },
+      {
+        $project: {
+          customerName: 1,
+          callregistration: 1,
+          attendedByDetails: 1
         }
       }
     ])
-    const filteredCalls = customerCalls.map((call) => {
-      const filteredCallRegistration = call.callregistration
-        .map((reg) => {
-          // Make sure attendedBy is a valid array
-          const attendedBy = Array.isArray(reg.formdata?.attendedBy)
-            ? reg.formdata.attendedBy
-            : [];
 
-          // Filter attendedBy entries with valid calldate in range
-          const matchedAttendedBy = attendedBy.filter((entry) => {
-            if (!entry.calldate) return false;
-            const callDate = new Date(entry.calldate);
-            return callDate >= start && callDate <= end;
-          });
+    const filteredCalls = customerCalls
+      .map((call) => {
+        const filteredCallRegistration = call.callregistration
+          .map((reg) => {
+            const attendedBy = Array.isArray(reg.formdata?.attendedBy)
+              ? reg.formdata.attendedBy
+              : []
 
-          // If there are matched attendedBy entries, return updated registration
-          if (matchedAttendedBy.length > 0) {
-            return {
-              ...reg,
-              formdata: {
-                ...reg.formdata,
-                attendedBy: matchedAttendedBy,
-              },
-            };
-          }
-          return null;
-        })
-        .filter(Boolean); // remove nulls
+            const matchedAttendedBy = attendedBy.filter((entry) => {
+              if (!entry.calldate) return false
+              const callDate = new Date(entry.calldate)
+              return callDate >= start && callDate <= end
+            })
 
-      // Return the full call with filtered callregistration
-      return {
-        ...call,
-        callregistration: filteredCallRegistration,
-      };
-    }).filter(call => call.callregistration.length > 0); // Remove calls with no matching entries
-    // Process customer calls
+            if (matchedAttendedBy.length > 0) {
+              return {
+                ...reg,
+                formdata: {
+                  ...reg.formdata,
+                  attendedBy: matchedAttendedBy
+                }
+              }
+            }
+
+            return null
+          })
+          .filter(Boolean)
+
+        return {
+          ...call,
+          callregistration: filteredCallRegistration
+        }
+      })
+      .filter((call) => call.callregistration.length > 0)
+
     const userCallsCount = filteredCalls
       .map((item) => {
         return item.callregistration
           .filter((calls) =>
             calls.formdata.attendedBy.some((call) => {
-              const callDate = new Date(call.calldate) // Assuming `calldate` is a parsable date format
+              const callDate = new Date(call.calldate)
               const filterDate = new Date("2024-12-10")
-              return callDate > filterDate // Only include calls after 10-12-2024
+              return callDate > filterDate
             })
           )
           .map((calls) => {
-            const uniqueCallerIds = new Set() // Track unique `callerId`
+            const uniqueCallerIds = new Set()
 
             return calls.formdata.attendedBy
               .filter((call) => {
-                if (uniqueCallerIds.has(call.callerId?.toString())) {
-                  return false // Skip if already processed
+                const callerId = call.callerId?.toString()
+                if (!callerId) return false
+
+                if (uniqueCallerIds.has(callerId)) {
+                  return false
                 }
-                uniqueCallerIds.add(call.callerId?.toString()) // Add to the set
+
+                uniqueCallerIds.add(callerId)
                 return true
               })
               .map((call) => {
-                // Get today's date in `YYYY-MM-DD` format
                 const today = new Date().toISOString().split("T")[0]
-
                 const callDate = new Date(call.calldate).toISOString().split("T")[0]
-                // Check if callerId matches any staff _id and add staff name to callerDetails
-                const matchedStaff = staff.find(
-                  (staffMember) =>
-                    staffMember._id.toString() === call?.callerId?.toString()
-                )
+
+                const callerIdString = call?.callerId?.toString()
+                const matchedUser = callerIdString
+                  ? userMap.get(callerIdString)
+                  : null
+
+                const completedByCallerId =
+                  calls?.formdata?.completedBy?.[0]?.callerId?.toString?.() ||
+                  calls?.formdata?.completedBy?.[0]?.callerId?.toString() ||
+                  calls?.formdata?.completedBy?.[0]?.callerId
 
                 const isColleagueSolved =
                   calls.formdata.status === "solved" &&
                   calls.formdata.attendedBy.findIndex(
                     (attendee) =>
-                      attendee?.callerId?.toString() ===
-                      calls?.formdata?.completedBy[0].callerId
-                  ) ===
-                  calls.formdata.attendedBy.lastIndexOf((attendee) =>
-                    attendee?.callerId?.toString()
-                  )
+                      attendee?.callerId?.toString() === completedByCallerId
+                  ) !== -1
 
                 return {
-                  callDate: call.calldate, // Ensure `calldate` exists
-                  callerId: call.callerId?._id, // Access the populated `_id` of `callerId`
-                  callerName: matchedStaff
-                    ? matchedStaff.name // Set the staff name if matched
-                    : call.callerId, // Default to original callerDetails if no match
+                  callDate: call.calldate,
+                  callerId: callerIdString || null,
+                  callerName: matchedUser
+                    ? matchedUser.name
+                    : call.callerId,
+                  callerType: matchedUser
+                    ? matchedUser.type
+                    : "unknown",
                   callStatus: calls.formdata.status,
                   colleagueSolved:
                     isColleagueSolved && calls.formdata.status === "solved"
@@ -3841,21 +3893,17 @@ export const GetStaffCallList = async (req, res) => {
                       : !isColleagueSolved &&
                         calls.formdata.status === "pending"
                         ? 0
-                        : 1, // Default value if neither condition is met
-
+                        : 1,
                   solvedCalls: isColleagueSolved ? 1 : 0,
                   datecalls: 1,
-                  pendingCalls: calls.formdata.completedBy[0]
-                    ? 0 // No pending calls
-                    : 1, // Increment count if `completedBy[0]` is empty
-                  todaysCalls: callDate === today ? 1 : 0,// Count 1 if `call.calldate` matches today's date
-                  selected: matchedStaff.selected
+                  pendingCalls: calls.formdata.completedBy?.[0] ? 0 : 1,
+                  todaysCalls: callDate === today ? 1 : 0,
+                  selected: matchedUser ? matchedUser.selected : false
                 }
               })
           })
       })
-      .flat() // Flatten nested arrays into a single array
-
+      .flat(2)
 
     if (userCallsCount && userCallsCount.length) {
       return res.status(200).json({
@@ -3872,7 +3920,7 @@ export const GetStaffCallList = async (req, res) => {
     console.log("error:", error)
     return res.status(500).json({ message: "Internal server error" })
   }
-}
+}////new code
 
 
 export const GetindividualStaffCall = async (req, res) => {
