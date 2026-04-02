@@ -490,7 +490,9 @@ import { useNavigate } from "react-router-dom"
 import ReportTable from "../../../components/primaryUser/ReportTable"
 import { MonthRangePicker } from "../../../components/primaryUser/MonthRangePicker"
 import UseFetch from "../../../hooks/useFetch"
-import { useSelector } from "react-redux"
+// import SkeletonTable from "../../../components/loader/SkeletonTable"
+import SkeletonTable from "../../../components/loader/SkeletonTable"
+import NodataAvailable from "../../../components/NodataAvailable"
 import { getLocalStorageItem } from "../../../helper/localstorage"
 
 export default function ProductWiseleadReport() {
@@ -527,7 +529,7 @@ export default function ProductWiseleadReport() {
   }, [])
 
   // API call – includes branchId and date range
-  const { data: report } = UseFetch(
+  const { data: report, loading } = UseFetch(
     filterRange.firstDay &&
       filterRange.lastDay &&
       selectedBranch &&
@@ -540,7 +542,7 @@ export default function ProductWiseleadReport() {
 
     const rows = Array.isArray(report.re) ? report.re : []
     const staffMap = {}
-console.log(rows)
+    console.log(rows)
     rows.forEach((row) => {
       if (String(row.branch) !== String(selectedBranch)) return
       const staffKey = row.staffId
@@ -574,9 +576,7 @@ console.log(rows)
         row.convertedNetAmount || 0
       )
       staffMap[staffKey].totalLostAmount += Number(row.lostNetAmount || 0)
-      staffMap[staffKey].totalPendingAmount += Number(
-        row.pendingNetAmount || 0
-      )
+      staffMap[staffKey].totalPendingAmount += Number(row.pendingNetAmount || 0)
     })
 
     setData(Object.values(staffMap))
@@ -775,39 +775,138 @@ console.log(rows)
   }
 
   const effectiveData = data
-console.log(data)
+  console.log(data)
   return (
-    <div className="h-full bg-[#ADD8E6] flex flex-col">
-      {/* Top bar */}
-      <div className="px-4 md:px-6 py-3 bg-[#ADD8E6]">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          {/* Left: title + range */}
-          <div className="flex flex-col gap-1">
-            <h1 className="text-lg md:text-xl font-bold text-gray-900">
-              Product‑Wise Lead Report
-            </h1>
-            {formattedRange && (
-              <p className="text-xs text-slate-500">
-                Period{" "}
-                <span className="inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
-                  {formattedRange}
-                </span>
-              </p>
-            )}
-          </div>
+    // <div className="h-full bg-[#ADD8E6] flex flex-col">
+    //   {/* Top bar */}
+    //   <div className="px-4 md:px-6 py-3 bg-[#ADD8E6]">
+    //     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+    //       {/* Left: title + range */}
+    //       <div className="flex flex-col gap-1">
+    //         <h1 className="text-lg md:text-xl font-bold text-gray-900">
+    //           Product‑Wise Lead Report
+    //         </h1>
+    //         {formattedRange && (
+    //           <p className="text-xs text-slate-500">
+    //             Period{" "}
+    //             <span className="inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
+    //               {formattedRange}
+    //             </span>
+    //           </p>
+    //         )}
+    //       </div>
 
-          {/* Right: branch + toggle + date range */}
-          <div className="flex flex-wrap items-center gap-3 md:gap-4">
-            {/* Branch select */}
+    //       {/* Right: branch + toggle + date range */}
+    //       <div className="flex flex-wrap items-center gap-3 md:gap-4">
+    //         {/* Branch select */}
+    //         <div className="flex flex-col gap-1">
+    //           <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+    //             Branch
+    //           </span>
+    //           <div className="relative">
+    //             <select
+    //               value={selectedBranch || ""}
+    //               onChange={(e) => setselectedBranch(e.target.value)}
+    //               className="h-8 min-w-[150px] rounded-md border border-slate-300 bg-white cursor-pointer pr-7 pl-3 text-xs text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+    //             >
+    //               {userbranches.map((b) => (
+    //                 <option key={b.id} value={b.id}>
+    //                   {b.branchName}
+    //                 </option>
+    //               ))}
+    //             </select>
+    //           </div>
+    //         </div>
+
+    //         {/* Toggle */}
+    //         <div className="flex items-center bg-white rounded-full px-1 py-0.5 text-xs font-medium shadow-sm border border-gray-200 mt-4">
+    //           <button
+    //             type="button"
+    //             onClick={handleSeeAll}
+    //             className={`px-3 py-1 rounded-full transition-colors ${
+    //               viewMode === "staff"
+    //                 ? "bg-blue-600 text-white shadow"
+    //                 : "text-gray-600"
+    //             }`}
+    //           >
+    //             Staff
+    //           </button>
+    //           <button
+    //             type="button"
+    //             onClick={handleProductToggle}
+    //             className={`px-3 py-1 rounded-full transition-colors ${
+    //               viewMode === "product"
+    //                 ? "bg-blue-600 text-white shadow"
+    //                 : "text-gray-600"
+    //             }`}
+    //           >
+    //             Product
+    //           </button>
+    //         </div>
+
+    //         {/* MonthRangePicker */}
+    //         <div className="bg-white rounded-lg px-3 py-1.5 shadow-sm border border-gray-200 flex items-center">
+    //           <MonthRangePicker onChange={handleDateRange} />
+    //         </div>
+    //       </div>
+    //     </div>
+    //   </div>
+
+    //   {/* Table wrapper */}
+    //   <div className="flex-1 overflow-hidden mb-3 mx-3">
+    //     {loading ? (
+    //       <SkeletonTable rows={8} />
+    //     ) : effectiveData.length === 0 ? (
+    //       <NodataAvailable />
+    //     ) : (
+    //       <ReportTable
+    //         headers={headersName}
+    //         reportName="Product-Wise Lead Report"
+    //         data={effectiveData}
+    //         mode={viewMode}
+    //         selectedStaff={selectedStaff}
+    //         drillDown={drillDown}
+    //         onStaffClick={handleStaffClick}
+    //         onSeeAll={handleSeeAll}
+    //         onTotalLeadsClick={handleTotalLeadsClick}
+    //       />
+    //     )}
+    //   </div>
+    // </div>
+    <div className="h-full bg-gradient-to-br from-[#ADD8E6]/60 to-blue-100 p-4">
+      {/* MAIN CONTAINER */}
+      <div className="h-full bg-white rounded-2xl shadow-lg flex flex-col overflow-hidden">
+        {/* ================= HEADER ================= */}
+        <div className="px-5 py-4 border-b bg-white">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            {/* LEFT: TITLE */}
             <div className="flex flex-col gap-1">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                Branch
-              </span>
-              <div className="relative">
+              <h1 className="text-xl font-semibold text-gray-800 tracking-tight">
+                Product-Wise Lead Report
+              </h1>
+
+              {formattedRange && (
+                <p className="text-xs text-gray-500">
+                  Period{" "}
+                  <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
+                    {formattedRange}
+                  </span>
+                </p>
+              )}
+            </div>
+
+            {/* RIGHT CONTROLS */}
+            <div className="flex flex-wrap items-end gap-4">
+              {/* Branch */}
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                  Branch
+                </span>
+
                 <select
                   value={selectedBranch || ""}
                   onChange={(e) => setselectedBranch(e.target.value)}
-                  className="h-8 min-w-[150px] rounded-md border border-slate-300 bg-white cursor-pointer pr-7 pl-3 text-xs text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                  className="h-9 min-w-[160px] rounded-lg border border-gray-300 bg-white cursor-pointer px-3 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 outline-none"
                 >
                   {userbranches.map((b) => (
                     <option key={b.id} value={b.id}>
@@ -816,55 +915,62 @@ console.log(data)
                   ))}
                 </select>
               </div>
-            </div>
 
-            {/* Toggle */}
-            <div className="flex items-center bg-white rounded-full px-1 py-0.5 text-xs font-medium shadow-sm border border-gray-200 mt-4">
-              <button
-                type="button"
-                onClick={handleSeeAll}
-                className={`px-3 py-1 rounded-full transition-colors ${
-                  viewMode === "staff"
-                    ? "bg-blue-600 text-white shadow"
-                    : "text-gray-600"
-                }`}
-              >
-                Staff
-              </button>
-              <button
-                type="button"
-                onClick={handleProductToggle}
-                className={`px-3 py-1 rounded-full transition-colors ${
-                  viewMode === "product"
-                    ? "bg-blue-600 text-white shadow"
-                    : "text-gray-600"
-                }`}
-              >
-                Product
-              </button>
-            </div>
+              {/* Toggle */}
+              <div className="flex items-center bg-gray-100 rounded-full p-1 text-xs font-medium">
+                <button
+                  onClick={handleSeeAll}
+                  className={`px-4 py-1.5 rounded-full transition-all ${
+                    viewMode === "staff"
+                      ? "bg-blue-600 text-white shadow"
+                      : "text-gray-600 hover:text-black"
+                  }`}
+                >
+                  Staff
+                </button>
 
-            {/* MonthRangePicker */}
-            <div className="bg-white rounded-lg px-3 py-1.5 shadow-sm border border-gray-200 flex items-center">
-              <MonthRangePicker onChange={handleDateRange} />
+                <button
+                  onClick={handleProductToggle}
+                  className={`px-4 py-1.5 rounded-full transition-all ${
+                    viewMode === "product"
+                      ? "bg-blue-600 text-white shadow"
+                      : "text-gray-600 hover:text-black"
+                  }`}
+                >
+                  Product
+                </button>
+              </div>
+
+              {/* Date Picker */}
+              <div className="bg-white rounded-lg px-3 py-2 border border-gray-200 shadow-sm">
+                <MonthRangePicker onChange={handleDateRange} />
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Table wrapper */}
-      <div className="flex-1 overflow-hidden mb-3 mx-3">
-        <ReportTable
-          headers={headersName}
-          reportName="Product-Wise Lead Report"
-          data={effectiveData}
-          mode={viewMode}
-          selectedStaff={selectedStaff}
-          drillDown={drillDown}
-          onStaffClick={handleStaffClick}
-          onSeeAll={handleSeeAll}
-          onTotalLeadsClick={handleTotalLeadsClick}
-        />
+        {/* ================= CONTENT ================= */}
+        <div className="flex-1 p-4 overflow-hidden">
+          <div className="h-full bg-gray-50 rounded-xl border border-gray-200 overflow-hidden flex items-center justify-center">
+            {loading ? (
+              <SkeletonTable rows={8} />
+            ) : effectiveData.length === 0 ? (
+              <NodataAvailable />
+            ) : (
+              <ReportTable
+                headers={headersName}
+                reportName="Product-Wise Lead Report"
+                data={effectiveData}
+                mode={viewMode}
+                selectedStaff={selectedStaff}
+                drillDown={drillDown}
+                onStaffClick={handleStaffClick}
+                onSeeAll={handleSeeAll}
+                onTotalLeadsClick={handleTotalLeadsClick}
+              />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )

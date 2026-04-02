@@ -6,7 +6,7 @@ import MyDatePicker from "../../../components/common/MyDatePicker"
 import { FaSpinner } from "react-icons/fa"
 import { LeadhistoryModal } from "../../../components/primaryUser/LeadhistoryModal"
 import { CollectionupdateModal } from "../../../components/primaryUser/CollectionupdateModal"
-import SkeletonTable from "../../../components/loader/SkeletonTable "
+import SkeletonTable from "../../../components/loader/SkeletonTable"
 import { BsFilterLeft } from "react-icons/bs"
 import {
   Eye,

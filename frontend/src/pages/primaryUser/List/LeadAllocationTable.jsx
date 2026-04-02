@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { X, Calendar, FileText, AlertCircle, IndianRupee } from "lucide-react"
 import NodataAvailable from "../../../components/NodataAvailable"
-import SkeletonTable from "../../../components/loader/SkeletonTable "
+import SkeletonTable from "../../../components/loader/SkeletonTable"
 import React from "react"
 import { toast } from "react-toastify"
 import { PropagateLoader } from "react-spinners"
