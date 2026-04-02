@@ -282,7 +282,7 @@ console.log(casualstartmonth)
 console.log(ownedcasualCount)
       const balancecasualcount = ownedcasualCount - usedCasualCount
       const balanceprivilege = ownedprivilegeCount - takenPrivilegeCount
-
+console.log(compensatoryleaves)
       setBalanceprivilegeLeaveCount(Math.max(balanceprivilege, 0))
       setBalancecasualLeaveCount(Math.max(balancecasualcount, 0))
       setBalancecompensatoryLeaveCount(compensatoryleaves)
@@ -965,7 +965,7 @@ console.log(ownedcasualCount)
         ...prev,
         bottom: error?.response?.data?.message
       }))
-      console.log("error:", error.message)
+      console.log("error:", error)
     }
   }
   const selectedTabContent = (value) => {

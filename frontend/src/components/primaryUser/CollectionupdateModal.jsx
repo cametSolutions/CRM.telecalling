@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { X } from "lucide-react"
 import { FaSpinner } from "react-icons/fa"
-
-import { toast } from "react-toastify"
 import { Country, State } from "country-state-city"
+import { toast } from "react-toastify"
 
 export const CollectionupdateModal = ({
   isClosed = false,
@@ -19,10 +18,12 @@ export const CollectionupdateModal = ({
   const [error, setError] = useState({})
   const [noneAmount, setisnoneAmount] = useState(false)
   const [message, setMessage] = useState({ warning: "" })
+  const [selectedCountry, setSelectedCountry] = useState(null)
+  const [selectedState, setSelectedState] = useState(null)
   const [iscanupateCollection, setcanupdateCollection] = useState(false)
   const [submitloader, setsubmitloader] = useState(false)
   const [isreadytoVarify, setisreadyTovarify] = useState(false)
-  const [countryOptions, setcountryOptions] = useState([])
+  // const [countryOptions, setcountryOptions] = useState([])
   const [formData, setformData] = useState({
     leadDocId: data?._id,
     customerId: data?.customerName?._id,
@@ -51,6 +52,7 @@ export const CollectionupdateModal = ({
     receivedBy: loggedUser?._id,
     receivedModel: loggedUser?.role === "Admin" ? "Admin" : "Staff"
   })
+  console.log(formData.state)
   useEffect(() => {
     if (data?.netAmount === 0) {
       setisnoneAmount(true)
@@ -65,14 +67,44 @@ export const CollectionupdateModal = ({
       }))
     }
   }, [])
-  useEffect(() => {
-    setcountryOptions(
+  // useEffect(() => {
+  //   setcountryOptions(
+  //     Country.getAllCountries().map((country) => ({
+  //       label: country.name,
+  //       value: country.isoCode
+  //     }))
+  //   )
+  // }, [])
+  const countryOptions = useMemo(
+    () =>
       Country.getAllCountries().map((country) => ({
         label: country.name,
         value: country.isoCode
+      })),
+    []
+  )
+  const defaultCountry = useMemo(
+    () => countryOptions.find((country) => country.value === "IN"),
+    [countryOptions]
+  )
+
+  useEffect(() => {
+    if (defaultCountry) {
+      setSelectedCountry(defaultCountry)
+      // setValue("country", defaultCountry.value)
+    }
+  }, [defaultCountry])
+console.log(selectedCountry)
+  const stateOptions = selectedCountry
+    ? State.getStatesOfCountry(selectedCountry.value).map((state) => ({
+        label: state.name,
+        value: state.isoCode
       }))
-    )
-  }, [])
+    : [selectedCountry]
+console.log(countryOptions)
+console.log(stateOptions)
+
+  console.log(defaultCountry)
   const handleChange = (e) => {
     const { value, name } = e.target
 
@@ -169,6 +201,9 @@ export const CollectionupdateModal = ({
       }))
     }
   }
+  const isShortCode = (value) => {
+    return value && value.length <= 3
+  }
   const handleSubmit = async () => {
     try {
       if (error.submitError) {
@@ -222,7 +257,7 @@ export const CollectionupdateModal = ({
           typeof value === "string" ? value.trim() : value
         ])
       )
-      
+
       const response = await handleCollectionUpdate(cleanedData)
       if (response.status === 200) {
         isClosed
@@ -242,7 +277,10 @@ export const CollectionupdateModal = ({
       }))
     }
   }
-
+  console.log(stateOptions)
+  console.log(countryOptions)
+console.log(isShortCode(formData.state))
+console.log(formData.state)
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-2xl shadow-2xl w-full  max-h-[95vh] flex flex-col overflow-hidden">
@@ -323,7 +361,7 @@ export const CollectionupdateModal = ({
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                  Adress
+                  Address
                 </label>
                 <div className="relative">
                   <input
@@ -332,7 +370,7 @@ export const CollectionupdateModal = ({
                     onChange={(e) =>
                       setformData((prev) => ({
                         ...prev,
-                        address: e.target.value()
+                        address: e.target.value
                       }))
                     }
                     className="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium focus:outline-none"
@@ -436,69 +474,104 @@ export const CollectionupdateModal = ({
                   <p className="text-red-500 text-xs mt-1">{error?.partner}</p>
                 )}
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                  Country
-                </label>
 
-                <input
-                  type="text"
-                  name="country"
-                  value={formData.country}
-                  onChange={(e) => handleChange(e)}
-                  className="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium  focus:outline-none"
-                />
-                {error.country && (
-                  <p className="text-red-500 text-xs mt-1">{error?.country}</p>
-                )}
-                {/* <Select
-                    options={countryOptions}
-                    value={formData?.country}
-                    onChange={(option) =>
+              {isShortCode(formData.country) ? (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                    Country
+                  </label>
+
+                  <select
+                    value={formData.country}
+                    onChange={(e) => {
                       setformData((prev) => ({
                         ...prev,
-                        country: option
+                        country: e.target.value
                       }))
-                    }
-                    styles={{
-                      menu: (provided) => ({
-                        ...provided,
-                        maxHeight: "200px", // Set dropdown max height
-                        overflowY: "auto" // Enable scrolling
-                      }),
-                      menuList: (provided) => ({
-                        ...provided,
-                        maxHeight: "200px", // Ensures dropdown scrolls internally
-                        overflowY: "auto"
-                      })
+                      setSelectedCountry(e.target.value)
                     }}
-                    menuPortalTarget={document.body} // Prevents nested scrolling issues
-                    menuShouldScrollIntoView={false}
-                  /> */}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                  State
-                </label>
-                <div className="relative">
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+
+                    {countryOptions?.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                    Country
+                  </label>
+
                   <input
                     type="text"
+                    name="country"
+                    value={formData.country}
+                    onChange={(e) => handleChange(e)}
+                    className="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium  focus:outline-none"
+                  />
+                  {error.country && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {error?.country}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {isShortCode(formData.state) ? (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                    State
+                  </label>
+
+                  <select
                     value={formData.state}
-                    onChange={(e) => {
-                      if (error.state) {
-                        setformData((prev) => ({
-                          ...prev,
-                          state: e.target.value.trim()
-                        }))
-                      }
-                    }}
+                    onChange={(e) =>
+                      setformData((prev) => ({
+                        ...prev,
+                        state: e.target.value
+                      }))
+                    }
+                    className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+
+                    {stateOptions?.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  {error?.state && (
+                    <p className="text-red-500 text-xs mt-1">
+                      State is required
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                    State
+                  </label>
+
+                  <input
+                    type="text"
+                    name="country"
+                    value={formData.state}
+                    onChange={(e) => handleChange(e)}
                     className="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium  focus:outline-none"
                   />
                   {error.state && (
-                    <p className="text-red-500 text-xs mt-1">{error?.state}</p>
+                    <p className="text-red-500 text-xs mt-1">
+                      {error?.state}
+                    </p>
                   )}
                 </div>
-              </div>
+              )}
+
               <div>
                 <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
                   City
