@@ -35,12 +35,14 @@ function LeaveApplication() {
     top: "",
     bottom: ""
   })
+  console.log(message)
   const [showModal, setShowModal] = useState(false)
   const [pastDate, setPastDate] = useState(null)
   const [selectedTab, setSelectedTab] = useState("Leave")
   const [formData, setFormData] = useState({
     leaveDate: "",
     onsiteDate: "",
+    formerOnsiteDate: "",
     leaveType: "Full Day",
     onsiteType: "Full Day",
 
@@ -61,7 +63,7 @@ function LeaveApplication() {
   const userData = localStorage.getItem("user")
   const tabs = ["Leave", "Onsite"]
   const user = JSON.parse(userData)
-console.log(user)
+  console.log(user)
   const { data: leaves, refreshHook } = UseFetch(
     user && `/auth/getallLeave?userid=${user._id}`
   )
@@ -156,7 +158,7 @@ console.log(user)
 
     setPastDate(isPastDate)
   }, [formData])
-console.log(allleaves)
+  console.log(allleaves)
   useEffect(() => {
     if (
       allleaves &&
@@ -178,15 +180,15 @@ console.log(allleaves)
       const casualstartDate = new Date(user?.casualleavestartsfrom)
       const casualstartYear = casualstartDate.getFullYear()
       const casualstartmonth = casualstartDate.getMonth() + 1 // 1-based month
-console.log(casualstartDate)
+      console.log(casualstartDate)
       const totalprivilegeLeave = leavemasterleavecount?.totalprivilegeLeave
       const privilegePerMonth = totalprivilegeLeave / 12
       const totalcasualLeave = leavemasterleavecount?.totalcasualleave
       const casualPerMonth = totalcasualLeave / 12
       let ownedprivilegeCount = 0
       let ownedcasualCount = 0
-console.log(casualstartYear)
-console.log(currentYear)
+      console.log(casualstartYear)
+      console.log(currentYear)
       if (casualstartYear < currentYear) {
         let casualCount
 
@@ -199,8 +201,8 @@ console.log(currentYear)
         }
         ownedcasualCount = casualCount
       } else if (casualstartYear === currentYear) {
-console.log(currentmonth)
-console.log(casualstartmonth)
+        console.log(currentmonth)
+        console.log(casualstartmonth)
         // If privilege started this year, give leaves from start month to current month
         if (currentmonth >= casualstartmonth) {
           ownedcasualCount = casualPerMonth
@@ -279,10 +281,10 @@ console.log(casualstartmonth)
 
         return count
       }, 0)
-console.log(ownedcasualCount)
+      console.log(ownedcasualCount)
       const balancecasualcount = ownedcasualCount - usedCasualCount
       const balanceprivilege = ownedprivilegeCount - takenPrivilegeCount
-console.log(compensatoryleaves)
+      console.log(compensatoryleaves)
       setBalanceprivilegeLeaveCount(Math.max(balanceprivilege, 0))
       setBalancecasualLeaveCount(Math.max(balancecasualcount, 0))
       setBalancecompensatoryLeaveCount(compensatoryleaves)
@@ -503,6 +505,7 @@ console.log(compensatoryleaves)
 
             leaveType: "Full Day",
             onsiteType: "Full Day",
+            formerOnsiteType: "",
 
             halfDayPeriod: "",
             onsite: false,
@@ -523,7 +526,7 @@ console.log(compensatoryleaves)
 
             leaveType: "Full Day",
             onsiteType: "Full Day",
-
+            formerOnsiteType: "",
             halfDayPeriod: "",
             onsite: false,
             leaveCategory: "",
@@ -555,7 +558,7 @@ console.log(compensatoryleaves)
 
             leaveType: "Full Day",
             onsiteType: "Full Day",
-
+            formerOnsiteType: "",
             halfDayPeriod: "",
             onsite: false,
             leaveCategory: "",
@@ -576,7 +579,7 @@ console.log(compensatoryleaves)
 
             leaveType: "Full Day",
             onsiteType: "Full Day",
-
+            formerOnsiteType: "",
             halfDayPeriod: "",
             onsite: false,
             leaveCategory: "",
@@ -669,6 +672,8 @@ console.log(compensatoryleaves)
     setCurrentDate(new Date())
   }
   const handleDataChange = (e) => {
+    console.log(formData)
+    console.log(e)
     setMessage((prev) => ({
       ...prev,
       top: "",
@@ -755,7 +760,275 @@ console.log(compensatoryleaves)
       }
     })
   }
+  // const handleSubmit = async (tab) => {
+  //   console.log("enddddddddddddddddddddddddddddddddddddddddd")
+  //   try {
+  //     if (tab === "New Leave" || tab === "Edit Leave") {
+  //       const dayOfWeek = new Date(formData.leaveDate).getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+  //       const isSunday = dayOfWeek === 0
+
+  //       const isHoliday = monthlyHoly?.some((holiday) => {
+  //         const formattedHolyDate = holiday.holyDate.split("T")[0] // Extract YYYY-MM-DD
+  //         return formattedHolyDate === formData.leaveDate
+  //       })
+
+  //       if (isSunday || isHoliday) {
+  //         setMessage((prev) => ({
+  //           ...prev,
+  //           bottom: "It's a holiday—you can't request leave."
+  //         }))
+  //         return
+  //       }
+  //     }
+
+  //     if (tab === "Leave" || tab === "New Leave" || tab === "Edit Leave") {
+  //       // Validation
+  //       let newErrors = {}
+  //       if (!formData.leaveType) newErrors.leaveType = "Shift is required"
+  //       if (formData.leaveType === "Half Day" && !formData.halfDayPeriod)
+  //         newErrors.halfDayPeriod = "Please select Half Day period"
+  //       if (!formData.leaveDate) newErrors.leaveDate = "Leave Date is required"
+  //       if (!formData.leaveCategory)
+  //         newErrors.leaveCategory = "Leave Type is required"
+  //       if (!formData.reason) newErrors.reason = "Reason is required"
+  //       if (Object.keys(newErrors).length > 0) {
+  //         console.log(newErrors)
+  //         setErrors(newErrors)
+  //         return
+  //       }
+  //       let isApprovedLeave
+  //       if (formData.leaveId) {
+  //         isApprovedLeave = allleaves?.find((leave) => {
+  //           const matchedid = leave._id === formData.leaveId
+
+  //           return (
+  //             matchedid && (leave.adminverified || leave.departmentverified)
+  //           )
+  //         })
+  //       }
+
+  //       if (isApprovedLeave) {
+  //         setMessage((prev) => ({
+  //           ...prev,
+  //           bottom: "This leave is already approved. Do not make any changes."
+  //         }))
+  //       } else {
+  //         setMessage({ top: "", bottom: "" })
+
+  //         //Assuming you have an API endpoint for creating leave requests
+  //         const response = await fetch(
+  //           `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+  //           {
+  //             method: "POST",
+  //             headers: {
+  //               "Content-Type": "application/json"
+  //             },
+  //             body: JSON.stringify(formData),
+  //             credentials: "include"
+  //           }
+  //         )
+
+  //         // const response = await fetch(
+  //         //   `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+  //         //   {
+  //         //     method: "POST",
+  //         //     headers: {
+  //         //       "Content-Type": "application/json"
+  //         //     },
+  //         //     body: JSON.stringify(formData),
+  //         //     credentials: "include"
+  //         //   }
+  //         // )
+
+  //         const responseData = await response.json()
+
+  //         if (!response.ok) {
+  //           throw new Error("Failed to apply for leave")
+  //         } else {
+  //           setLoader(false)
+  //           setEdit(false)
+  //           if (response.status === 200) {
+  //             setSelectedTab("Leave")
+  //             refreshHook()
+  //             refreshHookCompensatory()
+
+  //             setFormData({
+  //               leaveDate: "",
+
+  //               leaveType: "Full Day",
+  //               onsiteType: "Full Day",
+
+  //               halfDayPeriod: "Morning",
+  //               onsite: false,
+  //               leaveCategory: "",
+  //               reason: "",
+  //               description: ""
+  //             })
+  //             setErrors("")
+  //             setShowModal(false)
+  //             toast.success(responseData.message)
+  //           } else if (response.status === 201) {
+  //             setMessage((prev) => ({
+  //               ...prev,
+  //               bottom: responseData.message
+  //             }))
+  //           }
+  //         }
+  //       }
+  //     } else if (tab === "New Onsite" || tab === "Edit Onsite") {
+  //       console.log("hhhhdddddddd")
+  //       // Validation
+  //       let newErrors = {}
+  //       if (!formData.onsiteType) newErrors.onsiteType = "Shift is required"
+  //       if (formData.onsiteType === "Half Day" && !formData.halfDayPeriod)
+  //         newErrors.halfDayPeriod = "Please select Half Day period"
+  //       if (!formData.onsiteDate)
+  //         newErrors.onsiteDate = "Onsite Date is required"
+  //       if (tableRows.length === 0)
+  //         newErrors.tabledataError = "Please add table data"
+  //       if (!formData.description)
+  //         newErrors.description = "Description is required"
+  //       if (Object.keys(newErrors).length > 0) {
+  //         setErrors(newErrors)
+  //         return
+  //       }
+
+  //       // Helper function to check if an onsite for a given date is already approved
+  //     const checkApprovedOnsiteByDate = (date) => {
+  //       return allOnsites?.find((onsite) => {
+  //         const onsiteDate = new Date(onsite.onsiteDate)
+
+  //         const isSameDate =
+  //           onsiteDate.getFullYear() === date.getFullYear() &&
+  //           onsiteDate.getMonth() === date.getMonth() &&
+  //           onsiteDate.getDate() === date.getDate()
+
+  //         return (
+  //           isSameDate && (onsite.adminverified || onsite.departmentverified)
+  //         )
+  //       })
+  //     }
+
+  //     // Helper function to check if two dates are the same
+  //     const isSameDate = (date1, date2) => {
+  //       return (
+  //         date1.getFullYear() === date2.getFullYear() &&
+  //         date1.getMonth() === date2.getMonth() &&
+  //         date1.getDate() === date2.getDate()
+  //       )
+  //     }
+
+  //     // For Edit Onsite, check if the original onsite was approved
+  //     if (tab === "Edit Onsite" && formData.formerOnsiteDate) {
+  //       const approvedFormerOnsite = checkApprovedOnsiteByDate(
+  //         new Date(formData.formerOnsiteDate)
+  //       )
+
+  //       if (approvedFormerOnsite) {
+  //         // Check if user is trying to change the date or onsite type
+  //         const isDateChanged = !isSameDate(
+  //           new Date(formData.onsiteDate),
+  //           new Date(formData.formerOnsiteDate)
+  //         )
+
+  //         const isOnsiteTypeChanged = formData.onsiteType !== formData.formerOnsiteType
+
+  //         if (isDateChanged || isOnsiteTypeChanged) {
+  //           setMessage((prev) => ({
+  //             ...prev,
+  //             bottom: "This onsite is already approved. You cannot change the date or onsite type. Only table data and description can be edited."
+  //           }))
+  //           return // Stop execution
+  //         }
+
+  //         // If neither date nor type changed, allow editing table and description
+  //         console.log("Approved onsite - allowing table and description edit only")
+  //       }
+  //     }
+
+  //     // For New Onsite or Edit Onsite (if not approved or not changing restricted fields)
+  //     // Check if there's already an approved onsite on the new date
+  //     const approvedOnsiteOnNewDate = checkApprovedOnsiteByDate(
+  //       new Date(formData.onsiteDate)
+  //     )
+
+  //     if (approvedOnsiteOnNewDate && tab === "New Onsite") {
+  //       setMessage((prev) => ({
+  //         ...prev,
+  //         bottom: "An approved onsite already exists for this date."
+  //       }))
+  //       return
+  //     }
+
+  //     // Clear any previous messages
+  //     setMessage({ top: "", bottom: "" })
+
+  //     // Proceed with API call
+  //     setLoader(true)
+
+  //         console.log(formData)
+
+  //         setLoader(true)
+  //         const response = await api.post(
+  //           `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
+  //           { formData, tableRows }
+  //         )
+
+  //         // const response = await api.post(
+  //         //   `https://www.crm.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
+  //         //   { formData, tableRows }
+  //         // )
+
+  //         if (response.status === 200) {
+  //           setcompensatoryLeave(false)
+  //           setLoader(false)
+  //           toast.success("Onsite applied successfully")
+  //           setSelectedTab("Leave")
+  //           setFormData((prev) => ({
+  //             ...prev,
+  //             leaveDate: "",
+  //             description: "",
+  //             onsite: false,
+  //             halfDayPeriod: "Morning",
+  //             onsiteType: "Full Day",
+  //             leaveType: "Full Day"
+  //           }))
+  //           setTableRows((prev) => [
+  //             {
+  //               ...prev,
+  //               siteName: "",
+  //               place: "",
+  //               Start: "",
+  //               End: "",
+  //               km: "",
+  //               kmExpense: "",
+  //               foodExpense: ""
+  //             }
+  //           ])
+  //           setShowModal(false)
+  //           refreshHook()
+  //           refreshHookOnsite()
+  //           refreshHookCompensatory()
+  //         } else if (response.status === 201) {
+  //           setLoader(false)
+  //           setMessage((prev) => ({
+  //             ...prev,
+  //             bottom: response.data.message
+  //           }))
+  //         }
+  //       }
+  //     }
+  //   } catch (error) {
+  //     setLoader(false)
+  //     setMessage((prev) => ({
+  //       ...prev,
+  //       bottom: error?.response?.data?.message
+  //     }))
+  //     console.log("error:", error)
+  //   }
+  // }
   const handleSubmit = async (tab) => {
+    console.log("enddddddddddddddddddddddddddddddddddddddddd")
     try {
       if (tab === "New Leave" || tab === "Edit Leave") {
         const dayOfWeek = new Date(formData.leaveDate).getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
@@ -848,10 +1121,8 @@ console.log(compensatoryleaves)
 
               setFormData({
                 leaveDate: "",
-
                 leaveType: "Full Day",
                 onsiteType: "Full Day",
-
                 halfDayPeriod: "Morning",
                 onsite: false,
                 leaveCategory: "",
@@ -870,6 +1141,8 @@ console.log(compensatoryleaves)
           }
         }
       } else if (tab === "New Onsite" || tab === "Edit Onsite") {
+        console.log("Processing onsite request")
+
         // Validation
         let newErrors = {}
         if (!formData.onsiteType) newErrors.onsiteType = "Shift is required"
@@ -881,89 +1154,140 @@ console.log(compensatoryleaves)
           newErrors.tabledataError = "Please add table data"
         if (!formData.description)
           newErrors.description = "Description is required"
+
         if (Object.keys(newErrors).length > 0) {
           setErrors(newErrors)
           return
         }
-        const formStartDate = new Date(formData.onsiteDate)
 
-        // Find a leave matching the date (ignoring time) and adminverified or departmentverified is true
-        const existingOnsite = allOnsites?.find((onsite) => {
-          const onsiteDate = new Date(onsite.onsiteDate) // Convert leave.leaveDate to Date object
-          // Compare the year, month, and day only (ignoring time)
-          const isSameDate =
-            onsiteDate.getFullYear() === formStartDate.getFullYear() &&
-            onsiteDate.getMonth() === formStartDate.getMonth() &&
-            onsiteDate.getDate() === formStartDate.getDate()
+        // Helper function to check if an onsite for a given date is already approved
+        const checkApprovedOnsiteByDate = (date) => {
+          return allOnsites?.find((onsite) => {
+            const onsiteDate = new Date(onsite.onsiteDate)
 
-          // Check if adminverified or departmentverified is true
+            const isSameDate =
+              onsiteDate.getFullYear() === date.getFullYear() &&
+              onsiteDate.getMonth() === date.getMonth() &&
+              onsiteDate.getDate() === date.getDate()
+
+            return (
+              isSameDate && (onsite.adminverified || onsite.departmentverified)
+            )
+          })
+        }
+
+        // Helper function to check if two dates are the same
+        const isSameDate = (date1, date2) => {
           return (
-            isSameDate && (onsite.adminverified || onsite.departmentverified)
+            date1.getFullYear() === date2.getFullYear() &&
+            date1.getMonth() === date2.getMonth() &&
+            date1.getDate() === date2.getDate()
           )
-        })
+        }
 
-        if (existingOnsite) {
-          setMessage(
-            "This onsite is already approved. Do not make any changes."
-          )
-        } else {
-          console.log(formData)
-
-          setLoader(true)
-          // const response = await api.post(
-          //   `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
-          //   { formData, tableRows }
-          // )
-
-          const response = await api.post(
-            `https://www.crm.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
-            { formData, tableRows }
+        // For Edit Onsite, check if the original onsite was approved
+        if (tab === "Edit Onsite" && formData.formerOnsiteDate) {
+          const approvedFormerOnsite = checkApprovedOnsiteByDate(
+            new Date(formData.formerOnsiteDate)
           )
 
-          if (response.status === 200) {
-            setcompensatoryLeave(false)
-            setLoader(false)
-            toast.success("Onsite applied successfully")
-            setSelectedTab("Leave")
-            setFormData((prev) => ({
-              ...prev,
-              leaveDate: "",
-              description: "",
-              onsite: false,
-              halfDayPeriod: "Morning",
-              onsiteType: "Full Day",
-              leaveType: "Full Day"
-            }))
-            setTableRows((prev) => [
-              {
+          if (approvedFormerOnsite) {
+            // Check if user is trying to change the date or onsite type
+            const isDateChanged = !isSameDate(
+              new Date(formData.onsiteDate),
+              new Date(formData.formerOnsiteDate)
+            )
+            console.log(isDateChanged)
+            const isOnsiteTypeChanged =
+              formData.onsiteType !== formData.formerOnsiteType
+            console.log(isOnsiteTypeChanged)
+            if (isDateChanged || isOnsiteTypeChanged) {
+              setMessage((prev) => ({
                 ...prev,
-                siteName: "",
-                place: "",
-                Start: "",
-                End: "",
-                km: "",
-                kmExpense: "",
-                foodExpense: ""
-              }
-            ])
-            setShowModal(false)
-            refreshHook()
-            refreshHookOnsite()
-            refreshHookCompensatory()
-          } else if (response.status === 201) {
-            setLoader(false)
-            setMessage((prev) => ({
-              ...prev,
-              bottom: response.data.message
-            }))
+                bottom:
+                  "This onsite is already approved. You cannot change the date or onsite type. Only table data and description can be edited."
+              }))
+              return // Stop execution
+            }
+
+            // If neither date nor type changed, allow editing table and description
+            console.log(
+              "Approved onsite - allowing table and description edit only"
+            )
           }
+        }
+
+        // For New Onsite or Edit Onsite (if not approved or not changing restricted fields)
+        // Check if there's already an approved onsite on the new date
+        const approvedOnsiteOnNewDate = checkApprovedOnsiteByDate(
+          new Date(formData.onsiteDate)
+        )
+
+        if (approvedOnsiteOnNewDate && tab === "New Onsite") {
+          setMessage((prev) => ({
+            ...prev,
+            bottom: "An approved onsite already exists for this date."
+          }))
+          return
+        }
+
+        // Clear any previous messages
+        setMessage({ top: "", bottom: "" })
+
+        // Proceed with API call
+        setLoader(true)
+        // const response = await api.post(
+        //   `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
+        //   { formData, tableRows }
+        // )
+
+        const response = await api.post(
+          `https://www.crm.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
+          { formData, tableRows }
+        )
+
+        if (response.status === 200) {
+          setcompensatoryLeave(false)
+          setLoader(false)
+          toast.success("Onsite applied successfully")
+          setSelectedTab("Leave")
+          setFormData((prev) => ({
+            ...prev,
+            leaveDate: "",
+            description: "",
+            onsite: false,
+            halfDayPeriod: "Morning",
+            onsiteType: "Full Day",
+            leaveType: "Full Day"
+          }))
+          setTableRows([
+            {
+              siteName: "",
+              place: "",
+              Start: "",
+              End: "",
+              km: "",
+              kmExpense: "",
+              foodExpense: ""
+            }
+          ])
+          setShowModal(false)
+          refreshHook()
+          refreshHookOnsite()
+          refreshHookCompensatory()
+        } else if (response.status === 201) {
+          setLoader(false)
+          setMessage((prev) => ({
+            ...prev,
+            bottom: response.data.message
+          }))
         }
       }
     } catch (error) {
       setLoader(false)
       setMessage((prev) => ({
         ...prev,
-        bottom: error?.response?.data?.message
+        bottom: error?.response?.data?.message || "An error occurred"
       }))
       console.log("error:", error)
     }
@@ -1008,9 +1332,14 @@ console.log(compensatoryleaves)
           return eventDate.toString().split("T")[0] === clickedDate // Compare only the date part
         })
         if (existingEvent && existingEvent.length > 0) {
+          console.log("hhhhhh")
           // Set the form data dynamically based on the relevant event
           setFormData({
             onsiteDate: existingEvent[0]?.onsiteDate.toString().split("T")[0],
+            formerOnsiteDate: existingEvent[0]?.onsiteDate
+              .toString()
+              .split("T")[0],
+            formerOnsiteType: existingEvent[0]?.onsiteType,
 
             onsiteType: existingEvent[0]?.onsiteType || "",
             halfDayPeriod: existingEvent[0]?.halfDayPeriod || "",
@@ -1115,18 +1444,18 @@ console.log(compensatoryleaves)
                           leave.hrstatus === "HR/Onsite Approved"
                             ? "bg-green-500"
                             : leave.departmentstatus === "Not Approved" &&
-                              leave.hrstatus === "Not Approved"
-                            ? "bg-yellow-500"
-                            : "bg-red-500"
+                                leave.hrstatus === "Not Approved"
+                              ? "bg-yellow-500"
+                              : "bg-red-500"
                         }`}
                       >
                         {leave.departmentstatus === "Dept Approved" ||
                         leave.hrstatus === "HR/Onsite Approved"
                           ? "Approved"
                           : leave.departmentstatus === "Not Approved" &&
-                            leave.hrstatus === "Not Approved"
-                          ? "Pending"
-                          : ""}
+                              leave.hrstatus === "Not Approved"
+                            ? "Pending"
+                            : ""}
                       </div>
 
                       {/* Forward Arrow */}
@@ -1205,18 +1534,18 @@ console.log(compensatoryleaves)
                           onsite.hrstatus === "HR/Onsite Approved"
                             ? "bg-green-500"
                             : onsite.departmentstatus === "Not Approved" &&
-                              onsite.hrstatus === "Not Approved"
-                            ? "bg-yellow-500"
-                            : "bg-red-500"
+                                onsite.hrstatus === "Not Approved"
+                              ? "bg-yellow-500"
+                              : "bg-red-500"
                         }`}
                       >
                         {onsite.departmentstatus === "Dept Approved" ||
                         onsite.hrstatus === "HR/Onsite Approved"
                           ? "Approved"
                           : onsite.departmentstatus === "Not Approved" &&
-                            onsite.hrstatus === "Not Approved"
-                          ? "Pending"
-                          : ""}
+                              onsite.hrstatus === "Not Approved"
+                            ? "Pending"
+                            : ""}
                       </div>
 
                       {/* Forward Arrow */}
@@ -1231,6 +1560,11 @@ console.log(compensatoryleaves)
                             onsiteDate: onsite.onsiteDate
                               .toString()
                               .split("T")[0],
+                            formerOnsiteDate: onsite.onsiteDate
+                              .toString()
+                              .split("T")[0],
+                            formerOnsiteType: onsite.onsiteType,
+
                             onsiteType: onsite.onsiteType,
                             halfDayPeriod:
                               onsite.onsiteType === "Half Day"
@@ -1496,7 +1830,7 @@ console.log(compensatoryleaves)
               <p className="text-red-500">{errors.description}</p>
             )}
             <div className="text-center text-red-700 ">
-              <p>{message.bottom}</p>
+              <p>{message?.bottom}</p>
             </div>
           </div>
         )
@@ -1783,18 +2117,18 @@ console.log(compensatoryleaves)
                             leave.hrstatus === "HR/Onsite Approved"
                               ? "bg-green-500"
                               : leave.departmentstatus === "Not Approved" &&
-                                leave.hrstatus === "Not Approved"
-                              ? "bg-yellow-500"
-                              : "bg-red-500"
+                                  leave.hrstatus === "Not Approved"
+                                ? "bg-yellow-500"
+                                : "bg-red-500"
                           }`}
                         >
                           {leave.departmentstatus === "Dept Approved" ||
                           leave.hrstatus === "HR/Onsite Approved"
                             ? "Approved"
                             : leave.departmentstatus === "Not Approved" &&
-                              leave.hrstatus === "Not Approved"
-                            ? "Pending"
-                            : ""}
+                                leave.hrstatus === "Not Approved"
+                              ? "Pending"
+                              : ""}
                         </div>
                       </div>
                     ))
