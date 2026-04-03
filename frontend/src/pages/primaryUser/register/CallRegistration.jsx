@@ -199,7 +199,7 @@ export default function CallRegistration() {
   useEffect(() => {
     const handler = setTimeout(() => {
       if (search && !selectedCustomer) {
-console.log('H')
+        console.log("H")
         fetchCustomerData(search)
         setloading(true)
       } else {
@@ -426,7 +426,9 @@ console.log('H')
         }
         updatedformData.completedBy = {
           callerId: user._id,
-          role: user.role
+          role: user.role,
+          duration: timeData?.duration,
+          calldate: startTime
         }
         // Set both attendedBy and completedBy if status is solved
       }
@@ -452,6 +454,7 @@ console.log('H')
 
         return
       }
+      console.log(calldata)
 
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
@@ -520,7 +523,9 @@ console.log('H')
         }
         updatedformData.completedBy = {
           callerId: user._id,
-          role: user.role
+          role: user.role,
+          duration: timeData.duration,
+          calldate: startTime
         }
         // Set both attendedBy and completedBy if status is solved
       }
@@ -541,11 +546,13 @@ console.log('H')
 
       setcallReport(calldata)
       if (!calldata.branchName) {
-        console.log("if branchname is null",calldata.branchName)
+        console.log("if branchname is null", calldata.branchName)
         alert("Unable to load branch details. Please refresh and try again.")
 
         return
       }
+      console.log(calldata)
+
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
         calldata,

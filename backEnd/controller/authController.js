@@ -1096,7 +1096,7 @@ export const OnsiteApply = async (req, res) => {
           userId: selectedObjectId
 
         })
-        if (checkcompenstoryUsed.leaveUsed) {
+        if (checkcompenstoryUsed && checkcompenstoryUsed.length && checkcompenstoryUsed.leaveUsed) {
           console.log("OOOOOOOOOOOOOOOOOOOO")
           return res.status(409).json({
             success: false,
@@ -1163,7 +1163,7 @@ export const OnsiteApply = async (req, res) => {
       }
     }
   } catch (error) {
-    console.log("error:", error.message)
+    console.log("error:", error)
     return res.status(500).json({ message: "Internal server error" })
   }
 }
@@ -1685,6 +1685,9 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               punchOut < minOutTime &&
               punchOut > noonLimit)
           ) {
+            // if (stats.name === "Ponmari A") {
+            //   console.log("punchin1",punchIn)
+            // }
             stats.attendancedates[dayTime].notMarked = 1
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.onsite++
@@ -1962,6 +1965,9 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           }
           daysInMonth.delete(day)
         })
+      // if (stats.name === "Ponmari A") {
+      //   console.log("punchin1", stats)
+      // }
 
       onsites?.length &&
         onsites?.forEach((onsite) => {
@@ -2014,7 +2020,9 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       leaves?.length &&
         leaves.forEach((leave) => {
           const leaveDate = leave.leaveDate.toISOString().split("T")[0]
-
+          if (stats.name === "Ponmari A") {
+            console.log("leaveDate", leaveDate)
+          }
           const leaveCategory = leave?.leaveCategory
 
           const isAttendance =
@@ -2022,6 +2030,9 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             attendances.some(
               (o) => o.attendanceDate.toISOString().split("T")[0] === leaveDate
             )
+          if (stats.name === "Ponmari A") {
+            console.log("isattendance", isAttendance)
+          }
 
           if (!isAttendance) {
             if (
@@ -2131,6 +2142,10 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
               stats.attendancedates[leaveDate].notMarked = (stats.attendancedates[leaveDate]?.onsite?.length > 0 && (stats.attendancedates[leaveDate].onsite[0].onsiteType === "Full Day" || stats.attendancedates[leaveDate].onsite[0].onsiteType === "Half Day") && totalLeave > 0) || totalLeave > 0.5 ? "" : totalLeave === 0.5 ? 0.5 : totalLeave === 0 ? "" : ""
               // stats.attendancedates[leaveDate].notMarked = (stats.attendancedates[leaveDate].casualLeave + stats.attendancedates[leaveDate].otherLeave + stats.attendancedates[leaveDate].privileageLeave + stats.attendancedates[leaveDate].compensatoryLeave) > 0.5 ? "" : 1
+            }
+          } else if (isAttendance) {
+            if (leave.leaveType === "Full Day" && leave.onsite === false && (leave.adminverified === true || leave.departmentverified === true)) {
+              stats.attendancedates[leaveDate].present = 0
             }
           }
         })
@@ -2345,13 +2360,22 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
       //////calculate to check whether day before and day after of holiday is present or absent
       await calculateAbsences(allholidays, stats); // your existing variables
-
+      // if (stats.name === "Ponmari A") {
+      //   console.log(
+      //     "before")
+      //   console.log(stats)
+      // }
       // Then continue your existing logic to count present, absent, etc.
       for (const date in stats.attendancedates) {
         const day = stats.attendancedates[date];
 
 
         stats.present += day.present || 0;
+        // if (stats.name === "Ponmari A") {
+        //   console.log(
+        //     "after")
+        //   console.log(stats)
+        // }
 
         const leaveTypes = ["casualLeave", "otherLeave", "privileageLeave", "compensatoryLeave"];
         leaveTypes.forEach((type) => {
@@ -2365,6 +2389,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
 
 
+
       const combined = stats.earlyGoing + stats.late
       stats.latecutting =
         Math.floor(combined / (latecuttingCount * 2)) * 1 +
@@ -2373,7 +2398,6 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       stats.present -=
         Math.floor(combined / (latecuttingCount * 2)) * 1 +
         (Math.floor(combined / latecuttingCount) % 2) * 0.5
-
 
       staffAttendanceStats.push(stats)
     }
