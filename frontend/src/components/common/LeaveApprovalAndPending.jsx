@@ -8,7 +8,7 @@ import api from "../../api/api"
 import dayjs from "dayjs"
 
 const LeaveApprovalAndPending = () => {
-  const [user, setUser] = useState(null)
+const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [loader, setLoader] = useState(false)
   const [leaveList, setLeaveList] = useState([])
@@ -27,11 +27,11 @@ const LeaveApprovalAndPending = () => {
   const headerRef = useRef(null)
   const [tableHeight, setTableHeight] = useState("auto")
   const [dates, setDates] = useState({ startDate: "", endDate: "" })
-  useEffect(() => {
-    const userData = localStorage.getItem("user")
-    const user = JSON.parse(userData)
-    setUser(user)
-  }, [])
+useEffect(() => {
+  const userData = localStorage.getItem("user")
+  const user = JSON.parse(userData)
+  setUser(user)
+}, [])
   useEffect(() => {
     if (headerRef.current) {
       const headerHeight = headerRef.current.getBoundingClientRect().height
@@ -71,7 +71,7 @@ const LeaveApprovalAndPending = () => {
         user
       ) {
         try {
-         
+
           setLoader(true)
           let response
           if (pendingLeave && !pendingOnsite) {
@@ -228,6 +228,7 @@ const LeaveApprovalAndPending = () => {
       fetchApprovedList()
     } // Call the async function
   }, [dates, user, ispending])
+
   const ApprovedToggle = async () => {
     try {
       setLoader(true)
@@ -712,7 +713,7 @@ const LeaveApprovalAndPending = () => {
       })
     }
   }
-  
+
   const handleDropdownSelect = (option) => {
     if (option === "pending") {
       if (onsite) {
@@ -1036,3 +1037,1135 @@ const LeaveApprovalAndPending = () => {
 }
 
 export default LeaveApprovalAndPending
+
+// import { useState } from "react"
+// import dayjs from "dayjs"
+// import { BarLoader } from "react-spinners"
+// // import MyDatePicker from "./MyDatePicker";
+// // import DeleteAlert from "./DeleteAlert";
+// import UseFetch from "../../hooks/useFetch"
+// import { useEffect } from "react"
+// import api from "../../api/api"
+
+// const MyDatePicker = ({ setDates, dates, compact = false }) => (
+//   <div
+//     className={`grid ${compact ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2"} gap-2`}
+//   >
+//     <input
+//       type="date"
+//       className="w-full h-9 px-3 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+//       value={dayjs(dates.startDate).format("YYYY-MM-DD")}
+//       onChange={(e) =>
+//         setDates((prev) => ({
+//           ...prev,
+//           startDate: e.target.value,
+//           endDate: dayjs(e.target.value).isAfter(dayjs(prev.endDate))
+//             ? e.target.value
+//             : prev.endDate
+//         }))
+//       }
+//     />
+//     <input
+//       type="date"
+//       className="w-full h-9 px-3 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+//       value={dayjs(dates.endDate).format("YYYY-MM-DD")}
+//       min={dayjs(dates.startDate).format("YYYY-MM-DD")}
+//       onChange={(e) =>
+//         setDates((prev) => ({
+//           ...prev,
+//           endDate: e.target.value
+//         }))
+//       }
+//     />
+//   </div>
+// )
+
+// const DeleteAlert = ({ onDelete, Id, category }) => (
+//   <button
+//     onClick={() => onDelete(Id, category)}
+//     className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 transition-colors"
+//     title="Reject"
+//   >
+//     <svg
+//       className="w-4 h-4"
+//       fill="none"
+//       stroke="currentColor"
+//       viewBox="0 0 24 24"
+//     >
+//       <path
+//         strokeLinecap="round"
+//         strokeLinejoin="round"
+//         strokeWidth={2}
+//         d="M6 18L18 6M6 6l12 12"
+//       />
+//     </svg>
+//   </button>
+// )
+
+// const getStatusBadge = (status) => {
+//   const s = status?.toLowerCase()
+//   const map = {
+//     approved: "bg-green-100 text-green-700 border-green-200",
+//     pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
+//     rejected: "bg-red-100 text-red-700 border-red-200"
+//   }
+
+//   return (
+//     <span
+//       className={`px-2 py-0.5 text-xs font-medium rounded-full border ${
+//         map[s] || "bg-gray-100 text-gray-600 border-gray-200"
+//       }`}
+//     >
+//       {status || "—"}
+//     </span>
+//   )
+// }
+
+// const statCardClasses = {
+//   blue: "bg-blue-50 border-blue-200 text-blue-700 subtext-blue-600",
+//   green: "bg-green-50 border-green-200 text-green-700 subtext-green-600",
+//   yellow: "bg-yellow-50 border-yellow-200 text-yellow-700 subtext-yellow-600",
+//   purple: "bg-purple-50 border-purple-200 text-purple-700 subtext-purple-600"
+// }
+
+// export default function LeaveOnsiteApproval() {
+//   const [loader, setLoader] = useState(false)
+// const [onsite, setonsite] = useState(false)
+//   const [user, setUser] = useState(null)
+//   const [approvedLeave, setApprovedLeave] = useState(false)
+//   const [approvedOnsite, setapprovedOnsite] = useState(false)
+//   const [loading, setLoading] = useState(false)
+//   const [searchQuery, setSearchQuery] = useState("")
+//   const [leaveList, setLeaveList] = useState([])
+//   console.log(leaveList)
+//   const [filteredlist, setFilteredlist] = useState([])
+//   const [isToggled, setIsToggled] = useState({})
+//   const [isSelected, setIsSelected] = useState({})
+//   const [dates, setDates] = useState({
+//     startDate: dayjs().startOf("month").toDate(),
+//     endDate: dayjs().endOf("month").toDate()
+//   })
+
+//   const [ispending, setIspending] = useState(true)
+//   const [pendingOnsite, setPendingOnsite] = useState(false)
+//   const [mispunchMode, setMispunchMode] = useState(false)
+
+//   const pendingLeave = ispending && !pendingOnsite
+//   useEffect(() => {
+//     const userData = localStorage.getItem("user")
+//     const user = JSON.parse(userData)
+//     setUser(user)
+//   }, [])
+//   const modeLabel = mispunchMode
+//     ? "Mispunch"
+//     : ispending
+//       ? pendingOnsite
+//         ? "Pending Onsite"
+//         : "Pending Leave"
+//       : approvedOnsite
+//         ? "Approved Onsite"
+//         : "Approved Leave"
+
+//   const dateColHeader = mispunchMode
+//     ? "Mispunch Date"
+//     : pendingLeave || approvedLeave
+//       ? "Leave Date"
+//       : "Onsite Date"
+
+//   const PendingToggle = () => setPendingOnsite((p) => !p)
+
+//   const ApprovedToggle = async () => {
+//     console.log("Hhh")
+//     try {
+//       setLoader(true)
+//       setLoading(true)
+//       let response
+//       if (!approvedOnsite) {
+//         console.log("Hhhh")
+// console.log(dates)
+//         response = await api.get(
+//           `/auth/approvedOnsiteList?startdate=${dates.startDate}&enddate=${
+//             dates.endDate
+//           }&onsite=${true}&userid=${user?._id}&role=${user?.role}`
+//         )
+// console.log("hhhhhhh")
+//         setapprovedOnsite(!approvedOnsite)
+//         setApprovedLeave(!approvedLeave)
+//         setonsite(true)
+//         console.log("HH")
+//       } else {
+//         console.log("hhh")
+//         response = await api.get(
+//           `/auth/approvedLeaveList?onsite=${false}&startdate=${
+//             dates.startDate
+//           }&enddate=${dates.endDate}&userid=${user?._id}&role=${user?.role}`
+//         )
+//         setapprovedOnsite(!approvedOnsite)
+//         setApprovedLeave(!approvedLeave)
+//         setonsite(false)
+//         console.log("hh")
+//       }
+
+//       const list = response.data.data // Assuming API returns data in response.data
+//       console.log(list)
+//       if (Array.isArray(list) && list.length > 0) {
+//         setLoader(false)
+//         setLoading(false)
+//         setLeaveList(list) // Update state only if the list has items
+//       } else {
+//         setLoader(false)
+//         setLoading(false)
+//         setLeaveList([])
+//       }
+
+//       // Initialize isToggled state based on the status of each leave request
+//       const initialToggles = {}
+//       const initialReject = {}
+//       const initialSelectAll = {}
+//       if (user?.role === "Admin") {
+//         list.forEach((userLeave) => {
+//           const userId = userLeave.userId._id
+//           // Check the `status` field for each leave and set the toggle accordingly
+//           initialToggles[userLeave?._id] =
+//             userLeave?.hrstatus === "HR/Onsite Approved" // Toggle on if approved
+//           initialReject[userLeave?._id] = userLeave.hrstatus === "HR Rejected"
+
+//           const userLeaves = list.filter(
+//             (leave) => leave?.userId?._id === userId
+//           )
+
+//           // Check if all are approved
+//           initialSelectAll[userId] = userLeaves.every(
+//             (leave) => leave.hrstatus === "HR/Onsite Approved"
+//           )
+//         })
+//       } else {
+//         list.forEach((userLeave) => {
+//           const userId = userLeave?.userId?._id
+//           // Check the `status` field for each leave and set the toggle accordingly
+//           initialToggles[userLeave?._id] =
+//             userLeave?.departmentstatus === "Dept Approved" // Toggle on if approved
+//           initialReject[userLeave?._id] =
+//             userLeave?.departmentstatus === "Dept Rejected"
+//           const userLeaves = list.filter((leave) => leave.userId._id === userId)
+
+//           // Check if all are approved
+//           initialSelectAll[userId] = userLeaves.every(
+//             (leave) => leave.hrstatus === "Dept Approved"
+//           )
+//         })
+//       }
+
+//       setIsSelected(initialSelectAll)
+//       setIsToggled(initialToggles)
+//       setLeaveStatus(initialReject)
+//     } catch (error) {
+//       console.log("error:", error.message)
+//     }
+//   }
+//   const handleDropdownSelect = (val) => setIspending(val === "pending")
+
+//   const toggleMispunch = () => {
+//     setMispunchMode((p) => !p)
+//     // TODO: call mispunch API here
+//   }
+
+//   const singleApprovalOrCancel = (id, userId) => {
+//     setIsToggled((prev) => ({ ...prev, [id]: !prev[id] }))
+//     // TODO: API call here
+//   }
+
+//   const approveAll = (id, userId) => {
+//     setIsSelected((prev) => ({ ...prev, [userId]: !prev[userId] }))
+//     // TODO: API call here
+//   }
+
+//   const toggleReject = (id, category) => {
+//     setLeaveList((prev) => prev.filter((r) => r._id !== id))
+//     // TODO: API call here
+//   }
+
+//   const displayList = (searchQuery ? filteredlist : leaveList)
+//     .slice()
+//     .sort(
+//       (a, b) =>
+//         new Date(a.leaveDate || a.onsiteDate || a.mispunchDate) -
+//         new Date(b.leaveDate || b.onsiteDate || b.mispunchDate)
+//     )
+//   console.log(leaveList)
+//   console.log(displayList)
+//   console.log(filteredlist)
+//   const approvedCount = Object.values(isToggled).filter(Boolean).length
+//   const pendingCount = Math.max(displayList.length - approvedCount, 0)
+
+//   const stats = [
+//     { label: "Total", value: leaveList.length, color: "blue" },
+//     { label: "Approved", value: approvedCount, color: "green" },
+//     { label: "Pending", value: pendingCount, color: "yellow" },
+//     {
+//       label: "Date Range",
+//       value: `${dayjs(dates.startDate).format("MMM DD")} - ${dayjs(dates.endDate).format("MMM DD")}`,
+//       color: "purple"
+//     }
+//   ]
+
+//   return (
+//     // <div className="h-full overflow-hidden bg-[#ADD8E6] flex flex-col">
+//     //   {loader && (
+//     //     <div className="fixed top-0 left-0 right-0 z-50">
+//     //       <BarLoader
+//     //         cssOverride={{ width: "100%", height: "4px" }}
+//     //         color="#3B82F6"
+//     //       />
+//     //     </div>
+//     //   )}
+
+//     //   <div className="flex flex-col h-full px-3 sm:px-4 md:px-6 py-3 gap-3">
+
+//     //     <div className="shrink-0 bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4">
+//     //       {/* Row 1: title + search on right */}
+//     //       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
+//     //         <div>
+//     //           <h1 className="text-base sm:text-lg md:text-xl font-bold text-gray-800 leading-tight">
+//     //             {mispunchMode
+//     //               ? "Mispunch Approval"
+//     //               : pendingOnsite || approvedOnsite
+//     //                 ? "Onsite Approval"
+//     //                 : "Leave Approval"}
+//     //           </h1>
+//     //           <p className="text-xs text-gray-500 mt-0.5">
+//     //             {mispunchMode
+//     //               ? "Manage and approve mispunch requests"
+//     //               : "Manage and approve employee leave and onsite requests"}
+//     //           </p>
+//     //         </div>
+
+//     //         {/* Search in top-right */}
+//     //         <div className="w-full sm:w-64">
+//     //           <label className="block text-[11px] font-medium text-gray-600 mb-1">
+//     //             Search
+//     //           </label>
+//     //           <div className="relative">
+//     //             <svg
+//     //               className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+//     //               fill="none"
+//     //               stroke="currentColor"
+//     //               viewBox="0 0 24 24"
+//     //             >
+//     //               <path
+//     //                 strokeLinecap="round"
+//     //                 strokeLinejoin="round"
+//     //                 strokeWidth={2}
+//     //                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+//     //               />
+//     //             </svg>
+//     //             <input
+//     //               type="text"
+//     //               placeholder="Search staff..."
+//     //               value={searchQuery}
+//     //               onChange={(e) => setSearchQuery(e.target.value)}
+//     //               className="w-full h-9 pl-9 pr-3 text-xs sm:text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+//     //             />
+//     //           </div>
+//     //         </div>
+//     //       </div>
+
+//     //       {/* Row 2: mispunch + request type + status + date range */}
+//     //       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+//     //         {/* Mispunch */}
+//     //         <div>
+//     //           <label className="block text-[11px] font-medium text-gray-600 mb-1">
+//     //             Mispunch Mode
+//     //           </label>
+//     //           <div className="h-9 flex items-center justify-between rounded-lg border border-gray-300 bg-gray-50 px-3">
+//     //             <span className="text-xs sm:text-sm font-medium text-gray-700">
+//     //               Mispunch
+//     //             </span>
+//     //             <button
+//     //               onClick={toggleMispunch}
+//     //               aria-label="Toggle mispunch mode"
+//     //               className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 ${
+//     //                 mispunchMode ? "bg-indigo-600" : "bg-gray-300"
+//     //               }`}
+//     //             >
+//     //               <span
+//     //                 className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ${
+//     //                   mispunchMode ? "translate-x-5" : "translate-x-1"
+//     //                 }`}
+//     //               />
+//     //             </button>
+//     //           </div>
+//     //         </div>
+
+//     //         {/* Request Type */}
+//     //         {!mispunchMode && (
+//     //           <div>
+//     //             <label className="block text-[11px] font-medium text-gray-600 mb-1">
+//     //               Request Type
+//     //             </label>
+//     //             <div className="h-9 flex items-center justify-between rounded-lg border border-gray-300 bg-gray-50 px-3">
+//     //               <span className="text-xs sm:text-sm font-medium text-gray-700 truncate">
+//     //                 {modeLabel}
+//     //               </span>
+//     //               <button
+//     //                 onClick={ispending ? PendingToggle : ApprovedToggle}
+//     //                 aria-label="Toggle onsite or leave"
+//     //                 className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
+//     //                   (ispending && pendingOnsite) ||
+//     //                   (!ispending && approvedOnsite)
+//     //                     ? "bg-blue-600"
+//     //                     : "bg-gray-300"
+//     //                 }`}
+//     //               >
+//     //                 <span
+//     //                   className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ${
+//     //                     (ispending && pendingOnsite) ||
+//     //                     (!ispending && approvedOnsite)
+//     //                       ? "translate-x-5"
+//     //                       : "translate-x-1"
+//     //                   }`}
+//     //                 />
+//     //               </button>
+//     //             </div>
+//     //           </div>
+//     //         )}
+
+//     //         {/* Status */}
+//     //         {!mispunchMode && (
+//     //           <div>
+//     //             <label className="block text-[11px] font-medium text-gray-600 mb-1">
+//     //               Status
+//     //             </label>
+//     //             <div className="relative">
+//     //               <select
+//     //                 onChange={(e) => handleDropdownSelect(e.target.value)}
+//     //                 value={ispending ? "pending" : "approved"}
+//     //                 className="w-full h-9 pl-3 pr-8 text-xs sm:text-sm border border-gray-300 rounded-lg appearance-none bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all cursor-pointer"
+//     //               >
+//     //                 <option value="pending">Pending</option>
+//     //                 <option value="approved">Approved</option>
+//     //               </select>
+//     //               <svg
+//     //                 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+//     //                 fill="none"
+//     //                 stroke="currentColor"
+//     //                 viewBox="0 0 24 24"
+//     //               >
+//     //                 <path
+//     //                   strokeLinecap="round"
+//     //                   strokeLinejoin="round"
+//     //                   strokeWidth={2}
+//     //                   d="M19 9l-7 7-7-7"
+//     //                 />
+//     //               </svg>
+//     //             </div>
+//     //           </div>
+//     //         )}
+
+//     //         {/* Date Range — stays on same row on desktop */}
+//     //         {dates.startDate && (
+//     //           <div>
+//     //             <label className="block text-[11px] font-medium text-gray-600 mb-1">
+//     //               Date Range
+//     //             </label>
+//     //             <MyDatePicker setDates={setDates} dates={dates} />
+//     //           </div>
+//     //         )}
+//     //       </div>
+//     //       {/* Stats */}
+//     //       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+//     //         {stats.map((item) => {
+//     //           const cardBg =
+//     //             item.color === "blue"
+//     //               ? "bg-blue-50 border-blue-200"
+//     //               : item.color === "green"
+//     //                 ? "bg-green-50 border-green-200"
+//     //                 : item.color === "yellow"
+//     //                   ? "bg-yellow-50 border-yellow-200"
+//     //                   : "bg-purple-50 border-purple-200"
+
+//     //           const labelText =
+//     //             item.color === "blue"
+//     //               ? "text-blue-600"
+//     //               : item.color === "green"
+//     //                 ? "text-green-600"
+//     //                 : item.color === "yellow"
+//     //                   ? "text-yellow-600"
+//     //                   : "text-purple-600"
+
+//     //           const valueText =
+//     //             item.color === "blue"
+//     //               ? "text-blue-700"
+//     //               : item.color === "green"
+//     //                 ? "text-green-700"
+//     //                 : item.color === "yellow"
+//     //                   ? "text-yellow-700"
+//     //                   : "text-purple-700"
+
+//     //           return (
+//     //             <div
+//     //               key={item.label}
+//     //               className={`rounded-lg p-2.5 border ${cardBg}`}
+//     //             >
+//     //               <p className={`text-xs font-medium ${labelText}`}>
+//     //                 {item.label}
+//     //               </p>
+//     //               <p className={`text-sm font-bold mt-0.5 ${valueText}`}>
+//     //                 {item.value}
+//     //               </p>
+//     //             </div>
+//     //           )
+//     //         })}
+//     //       </div>
+//     //     </div>
+
+//     //     <div className="flex-1 min-h-0 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+//     //       <div className="flex-1 overflow-auto">
+//     //         <table className="min-w-full divide-y divide-gray-200 text-xs">
+//     //           <thead className="bg-gray-50 sticky top-0 z-10">
+//     //             <tr>
+//     //               <th className="px-2 py-2.5 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+//     //                 #
+//     //               </th>
+//     //               <th className="px-3 py-2.5 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+//     //                 Name
+//     //               </th>
+//     //               <th className="px-3 py-2.5 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden sm:table-cell">
+//     //                 Dept
+//     //               </th>
+//     //               <th className="px-3 py-2.5 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
+//     //                 Branch
+//     //               </th>
+//     //               <th className="px-3 py-2.5 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden lg:table-cell">
+//     //                 Apply Date
+//     //               </th>
+//     //               <th className="px-3 py-2.5 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+//     //                 {dateColHeader}
+//     //               </th>
+//     //               <th className="px-3 py-2.5 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
+//     //                 Type
+//     //               </th>
+//     //               <th className="px-3 py-2.5 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden xl:table-cell">
+//     //                 Shift
+//     //               </th>
+//     //               <th className="px-3 py-2.5 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden xl:table-cell">
+//     //                 Reason
+//     //               </th>
+//     //               <th className="px-3 py-2.5 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden xl:table-cell">
+//     //                 Dept Status
+//     //               </th>
+//     //               <th className="px-3 py-2.5 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden xl:table-cell">
+//     //                 HR Status
+//     //               </th>
+//     //               <th className="px-3 py-2.5 text-center font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+//     //                 Approve
+//     //               </th>
+//     //               <th className="px-3 py-2.5 text-center font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
+//     //                 All
+//     //               </th>
+//     //               <th className="px-3 py-2.5 text-center font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+//     //                 Reject
+//     //               </th>
+//     //             </tr>
+//     //           </thead>
+
+//     //           <tbody className="bg-white divide-y divide-gray-100">
+//     //             {displayList.length > 0 ? (
+//     //               displayList.map((user, index) => {
+//     //                 const dateVal =
+//     //                   pendingLeave || approvedLeave
+//     //                     ? user?.leaveDate
+//     //                     : mispunchMode
+//     //                       ? user?.mispunchDate
+//     //                       : user?.onsiteDate
+
+//     //                 return (
+//     //                   <tr
+//     //                     key={user._id}
+//     //                     className="hover:bg-blue-50 transition-colors duration-150"
+//     //                   >
+//     //                     <td className="px-2 py-2.5 whitespace-nowrap font-medium text-gray-500">
+//     //                       {index + 1}
+//     //                     </td>
+
+//     //                     <td className="px-3 py-2.5 whitespace-nowrap">
+//     //                       <div className="flex items-center gap-2">
+//     //                         <div className="h-7 w-7 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shrink-0">
+//     //                           <span className="text-white text-xs font-semibold">
+//     //                             {user?.userId?.name?.charAt(0)?.toUpperCase()}
+//     //                           </span>
+//     //                         </div>
+//     //                         <div className="min-w-0">
+//     //                           <div className="font-medium text-gray-900 truncate max-w-[100px] sm:max-w-none">
+//     //                             {user?.userId?.name}
+//     //                           </div>
+//     //                           <div className="text-gray-500 sm:hidden truncate max-w-[100px]">
+//     //                             {user?.userId?.department?.department}
+//     //                           </div>
+//     //                         </div>
+//     //                       </div>
+//     //                     </td>
+
+//     //                     <td className="px-3 py-2.5 text-gray-700 whitespace-nowrap hidden sm:table-cell">
+//     //                       {user?.userId?.department?.department}
+//     //                     </td>
+
+//     //                     <td className="px-3 py-2.5 text-gray-700 hidden md:table-cell">
+//     //                       <div className="max-w-[120px] truncate">
+//     //                         {user?.userId?.selected
+//     //                           ?.map((b) => b?.branch_id?.branchName)
+//     //                           .join(", ")}
+//     //                       </div>
+//     //                     </td>
+
+//     //                     <td className="px-3 py-2.5 text-gray-700 whitespace-nowrap hidden lg:table-cell">
+//     //                       {new Date(user?.createdAt).toLocaleDateString(
+//     //                         "en-GB",
+//     //                         {
+//     //                           timeZone: "UTC",
+//     //                           day: "2-digit",
+//     //                           month: "short",
+//     //                           year: "numeric"
+//     //                         }
+//     //                       )}
+//     //                     </td>
+
+//     //                     <td className="px-3 py-2.5 text-gray-700 whitespace-nowrap">
+//     //                       {dateVal
+//     //                         ? new Date(dateVal).toLocaleDateString("en-GB", {
+//     //                             timeZone: "UTC",
+//     //                             day: "2-digit",
+//     //                             month: "short",
+//     //                             year: "numeric"
+//     //                           })
+//     //                         : "—"}
+//     //                     </td>
+
+//     //                     <td className="px-3 py-2.5 whitespace-nowrap hidden md:table-cell">
+//     //                       <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-purple-100 text-purple-700 border border-purple-200">
+//     //                         {mispunchMode
+//     //                           ? user?.mispunchType
+//     //                           : pendingLeave || approvedLeave
+//     //                             ? user?.leaveType
+//     //                             : user?.onsiteType}
+//     //                       </span>
+//     //                     </td>
+
+//     //                     <td className="px-3 py-2.5 text-gray-700 whitespace-nowrap hidden xl:table-cell">
+//     //                       {user?.halfDayPeriod || "—"}
+//     //                     </td>
+
+//     //                     <td className="px-3 py-2.5 text-gray-700 hidden xl:table-cell">
+//     //                       <div
+//     //                         className="max-w-[160px] truncate"
+//     //                         title={user?.reason || user?.description}
+//     //                       >
+//     //                         {user?.reason || user?.description || "—"}
+//     //                       </div>
+//     //                     </td>
+
+//     //                     <td className="px-3 py-2.5 whitespace-nowrap hidden xl:table-cell">
+//     //                       {getStatusBadge(user?.departmentstatus)}
+//     //                     </td>
+
+//     //                     <td className="px-3 py-2.5 whitespace-nowrap hidden xl:table-cell">
+//     //                       {getStatusBadge(user?.hrstatus)}
+//     //                     </td>
+
+//     //                     <td className="px-3 py-2.5 whitespace-nowrap">
+//     //                       <div className="flex justify-center">
+//     //                         <button
+//     //                           onClick={() =>
+//     //                             singleApprovalOrCancel(
+//     //                               user?._id,
+//     //                               user?.userId?._id
+//     //                             )
+//     //                           }
+//     //                           aria-label={
+//     //                             isToggled[user?._id]
+//     //                               ? "Revoke approval"
+//     //                               : "Approve"
+//     //                           }
+//     //                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${
+//     //                             isToggled[user?._id]
+//     //                               ? "bg-green-500"
+//     //                               : "bg-gray-300"
+//     //                           }`}
+//     //                         >
+//     //                           <span
+//     //                             className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ${
+//     //                               isToggled[user?._id]
+//     //                                 ? "translate-x-6"
+//     //                                 : "translate-x-1"
+//     //                             }`}
+//     //                           />
+//     //                         </button>
+//     //                       </div>
+//     //                     </td>
+
+//     //                     <td className="px-3 py-2.5 whitespace-nowrap hidden md:table-cell">
+//     //                       <div className="flex justify-center">
+//     //                         <button
+//     //                           onClick={() =>
+//     //                             approveAll(user?._id, user?.userId?._id)
+//     //                           }
+//     //                           className={`px-3 py-1 rounded-lg text-xs font-medium text-white transition-all duration-200 ${
+//     //                             isSelected[user?.userId?._id]
+//     //                               ? "bg-green-500 hover:bg-green-600"
+//     //                               : "bg-orange-500 hover:bg-orange-600"
+//     //                           }`}
+//     //                         >
+//     //                           All
+//     //                         </button>
+//     //                       </div>
+//     //                     </td>
+
+//     //                     <td className="px-3 py-2.5 whitespace-nowrap">
+//     //                       <div className="flex justify-center">
+//     //                         <DeleteAlert
+//     //                           onDelete={toggleReject}
+//     //                           Id={user._id}
+//     //                           category={user?.leaveCategory}
+//     //                         />
+//     //                       </div>
+//     //                     </td>
+//     //                   </tr>
+//     //                 )
+//     //               })
+//     //             ) : (
+//     //               <tr>
+//     //                 <td colSpan="14" className="px-4 py-12 text-center">
+//     //                   <div className="flex flex-col items-center justify-center gap-2">
+//     //                     <svg
+//     //                       className="w-12 h-12 text-gray-300"
+//     //                       fill="none"
+//     //                       stroke="currentColor"
+//     //                       viewBox="0 0 24 24"
+//     //                     >
+//     //                       <path
+//     //                         strokeLinecap="round"
+//     //                         strokeLinejoin="round"
+//     //                         strokeWidth={1.5}
+//     //                         d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+//     //                       />
+//     //                     </svg>
+//     //                     <p className="text-gray-500 text-sm font-medium">
+//     //                       {loading
+//     //                         ? "Loading requests..."
+//     //                         : mispunchMode
+//     //                           ? "No mispunch requests found"
+//     //                           : pendingOnsite || approvedOnsite
+//     //                             ? "No onsite requests found"
+//     //                             : "No leave requests found"}
+//     //                     </p>
+//     //                     <p className="text-gray-400 text-xs">
+//     //                       Try adjusting your filters or date range
+//     //                     </p>
+//     //                   </div>
+//     //                 </td>
+//     //               </tr>
+//     //             )}
+//     //           </tbody>
+//     //         </table>
+//     //       </div>
+//     //     </div>
+//     //   </div>
+//     // </div>
+
+//     <div className="h-full overflow-hidden bg-[#ADD8E6] flex flex-col">
+//       {loader && (
+//         <div className="fixed top-0 left-0 right-0 z-50">
+//           <BarLoader
+//             cssOverride={{ width: "100%", height: "4px" }}
+//             color="#3B82F6"
+//           />
+//         </div>
+//       )}
+
+//       <div className="flex flex-col h-full px-3 sm:px-4 md:px-5 py-2 gap-2">
+//         {/* Compact Header */}
+//         <div className="shrink-0 bg-white rounded-xl shadow-sm border border-gray-200 p-3">
+//           {/* Top row */}
+//           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-2 mb-2">
+//             <div>
+//               <h1 className="text-lg sm:text-xl font-bold text-gray-800 leading-tight">
+//                 {mispunchMode
+//                   ? "Mispunch Approval"
+//                   : pendingOnsite || approvedOnsite
+//                     ? "Onsite Approval"
+//                     : "Leave Approval"}
+//               </h1>
+//             </div>
+
+//             {/* Search on right */}
+//             <div className="w-full lg:w-64">
+//               <div className="relative">
+//                 <svg
+//                   className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+//                   fill="none"
+//                   stroke="currentColor"
+//                   viewBox="0 0 24 24"
+//                 >
+//                   <path
+//                     strokeLinecap="round"
+//                     strokeLinejoin="round"
+//                     strokeWidth={2}
+//                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+//                   />
+//                 </svg>
+//                 <input
+//                   type="text"
+//                   placeholder="Search staff..."
+//                   value={searchQuery}
+//                   onChange={(e) => setSearchQuery(e.target.value)}
+//                   className="w-full h-9 pl-9 pr-3 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+//                 />
+//               </div>
+//             </div>
+//           </div>
+
+//           {/* Controls row */}
+//           <div
+//             className={`grid gap-2 ${
+//               mispunchMode
+//                 ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-2"
+//                 : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+//             }`}
+//           >
+//             {/* Mispunch Toggle */}
+//             <div className="h-9 flex items-center justify-between rounded-lg border border-gray-300 bg-gray-50 px-3">
+//               <span className="text-sm font-medium text-gray-700">
+//                 Mispunch
+//               </span>
+//               <button
+//                 onClick={toggleMispunch}
+//                 aria-label="Toggle mispunch mode"
+//                 className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 ${
+//                   mispunchMode ? "bg-indigo-600" : "bg-gray-300"
+//                 }`}
+//               >
+//                 <span
+//                   className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ${
+//                     mispunchMode ? "translate-x-5" : "translate-x-1"
+//                   }`}
+//                 />
+//               </button>
+//             </div>
+
+//             {/* Request Type */}
+//             {!mispunchMode && (
+//               <div className="h-9 flex items-center justify-between rounded-lg border border-gray-300 bg-gray-50 px-3">
+//                 <span className="text-sm font-medium text-gray-700 truncate">
+//                   {modeLabel}
+//                 </span>
+//                 <button
+//                   onClick={ispending ? PendingToggle : ApprovedToggle}
+//                   aria-label="Toggle onsite or leave"
+//                   className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
+//                     (ispending && pendingOnsite) ||
+//                     (!ispending && approvedOnsite)
+//                       ? "bg-blue-600"
+//                       : "bg-gray-300"
+//                   }`}
+//                 >
+//                   <span
+//                     className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ${
+//                       (ispending && pendingOnsite) ||
+//                       (!ispending && approvedOnsite)
+//                         ? "translate-x-5"
+//                         : "translate-x-1"
+//                     }`}
+//                   />
+//                 </button>
+//               </div>
+//             )}
+
+//             {/* Status */}
+//             {!mispunchMode && (
+//               <div className="relative">
+//                 <select
+//                   onChange={(e) => handleDropdownSelect(e.target.value)}
+//                   value={ispending ? "pending" : "approved"}
+//                   className="w-full h-9 pl-3 pr-8 text-sm border border-gray-300 rounded-lg appearance-none bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all cursor-pointer"
+//                 >
+//                   <option value="pending">Pending</option>
+//                   <option value="approved">Approved</option>
+//                 </select>
+//                 <svg
+//                   className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+//                   fill="none"
+//                   stroke="currentColor"
+//                   viewBox="0 0 24 24"
+//                 >
+//                   <path
+//                     strokeLinecap="round"
+//                     strokeLinejoin="round"
+//                     strokeWidth={2}
+//                     d="M19 9l-7 7-7-7"
+//                   />
+//                 </svg>
+//               </div>
+//             )}
+
+//             {/* Date Range */}
+//             {dates.startDate && (
+//               <MyDatePicker setDates={setDates} dates={dates} compact />
+//             )}
+//           </div>
+//         </div>
+
+//         {/* Table */}
+//         <div className="flex-1 min-h-0 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+//           <div className="flex-1 overflow-auto">
+//             <table className="min-w-full divide-y divide-gray-200 text-xs">
+//               <thead className="bg-gray-50 sticky top-0 z-10">
+//                 <tr>
+//                   <th className="px-2 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+//                     #
+//                   </th>
+//                   <th className="px-3 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+//                     Name
+//                   </th>
+//                   <th className="px-3 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden sm:table-cell">
+//                     Dept
+//                   </th>
+//                   <th className="px-3 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
+//                     Branch
+//                   </th>
+//                   <th className="px-3 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden lg:table-cell">
+//                     Apply Date
+//                   </th>
+//                   <th className="px-3 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+//                     {dateColHeader}
+//                   </th>
+//                   <th className="px-3 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
+//                     Type
+//                   </th>
+//                   <th className="px-3 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden xl:table-cell">
+//                     Shift
+//                   </th>
+//                   <th className="px-3 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden xl:table-cell">
+//                     Reason
+//                   </th>
+//                   <th className="px-3 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden xl:table-cell">
+//                     Dept Status
+//                   </th>
+//                   <th className="px-3 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden xl:table-cell">
+//                     HR Status
+//                   </th>
+//                   <th className="px-3 py-2 text-center font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+//                     Approve
+//                   </th>
+//                   <th className="px-3 py-2 text-center font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
+//                     All
+//                   </th>
+//                   <th className="px-3 py-2 text-center font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
+//                     Reject
+//                   </th>
+//                 </tr>
+//               </thead>
+
+//               <tbody className="bg-white divide-y divide-gray-100">
+//                 {displayList.length > 0 ? (
+//                   displayList.map((user, index) => {
+//                     const dateVal =
+//                       pendingLeave || approvedLeave
+//                         ? user?.leaveDate
+//                         : mispunchMode
+//                           ? user?.mispunchDate
+//                           : user?.onsiteDate
+
+//                     return (
+//                       <tr
+//                         key={user._id}
+//                         className="hover:bg-blue-50 transition-colors duration-150"
+//                       >
+//                         <td className="px-2 py-2 whitespace-nowrap font-medium text-gray-500">
+//                           {index + 1}
+//                         </td>
+
+//                         <td className="px-3 py-2 whitespace-nowrap">
+//                           <div className="flex items-center gap-2">
+//                             <div className="h-7 w-7 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shrink-0">
+//                               <span className="text-white text-xs font-semibold">
+//                                 {user?.userId?.name?.charAt(0)?.toUpperCase()}
+//                               </span>
+//                             </div>
+//                             <div className="min-w-0">
+//                               <div className="font-medium text-gray-900 truncate max-w-[100px] sm:max-w-none">
+//                                 {user?.userId?.name}
+//                               </div>
+//                               <div className="text-gray-500 sm:hidden truncate max-w-[100px]">
+//                                 {user?.userId?.department?.department}
+//                               </div>
+//                             </div>
+//                           </div>
+//                         </td>
+
+//                         <td className="px-3 py-2 text-gray-700 whitespace-nowrap hidden sm:table-cell">
+//                           {user?.userId?.department?.department}
+//                         </td>
+
+//                         <td className="px-3 py-2 text-gray-700 hidden md:table-cell">
+//                           <div className="max-w-[120px] truncate">
+//                             {user?.userId?.selected
+//                               ?.map((b) => b?.branch_id?.branchName)
+//                               .join(", ")}
+//                           </div>
+//                         </td>
+
+//                         <td className="px-3 py-2 text-gray-700 whitespace-nowrap hidden lg:table-cell">
+//                           {new Date(user?.createdAt).toLocaleDateString(
+//                             "en-GB",
+//                             {
+//                               timeZone: "UTC",
+//                               day: "2-digit",
+//                               month: "short",
+//                               year: "numeric"
+//                             }
+//                           )}
+//                         </td>
+
+//                         <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
+//                           {dateVal
+//                             ? new Date(dateVal).toLocaleDateString("en-GB", {
+//                                 timeZone: "UTC",
+//                                 day: "2-digit",
+//                                 month: "short",
+//                                 year: "numeric"
+//                               })
+//                             : "—"}
+//                         </td>
+
+//                         <td className="px-3 py-2 whitespace-nowrap hidden md:table-cell">
+//                           <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-purple-100 text-purple-700 border border-purple-200">
+//                             {mispunchMode
+//                               ? user?.mispunchType
+//                               : pendingLeave || approvedLeave
+//                                 ? user?.leaveType
+//                                 : user?.onsiteType}
+//                           </span>
+//                         </td>
+
+//                         <td className="px-3 py-2 text-gray-700 whitespace-nowrap hidden xl:table-cell">
+//                           {user?.halfDayPeriod || "—"}
+//                         </td>
+
+//                         <td className="px-3 py-2 text-gray-700 hidden xl:table-cell">
+//                           <div
+//                             className="max-w-[160px] truncate"
+//                             title={user?.reason || user?.description}
+//                           >
+//                             {user?.reason || user?.description || "—"}
+//                           </div>
+//                         </td>
+
+//                         <td className="px-3 py-2 whitespace-nowrap hidden xl:table-cell">
+//                           {getStatusBadge(user?.departmentstatus)}
+//                         </td>
+
+//                         <td className="px-3 py-2 whitespace-nowrap hidden xl:table-cell">
+//                           {getStatusBadge(user?.hrstatus)}
+//                         </td>
+
+//                         <td className="px-3 py-2 whitespace-nowrap">
+//                           <div className="flex justify-center">
+//                             <button
+//                               onClick={() =>
+//                                 singleApprovalOrCancel(
+//                                   user?._id,
+//                                   user?.userId?._id
+//                                 )
+//                               }
+//                               aria-label={
+//                                 isToggled[user?._id]
+//                                   ? "Revoke approval"
+//                                   : "Approve"
+//                               }
+//                               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 ${
+//                                 isToggled[user?._id]
+//                                   ? "bg-green-500"
+//                                   : "bg-gray-300"
+//                               }`}
+//                             >
+//                               <span
+//                                 className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-300 ${
+//                                   isToggled[user?._id]
+//                                     ? "translate-x-6"
+//                                     : "translate-x-1"
+//                                 }`}
+//                               />
+//                             </button>
+//                           </div>
+//                         </td>
+
+//                         <td className="px-3 py-2 whitespace-nowrap hidden md:table-cell">
+//                           <div className="flex justify-center">
+//                             <button
+//                               onClick={() =>
+//                                 approveAll(user?._id, user?.userId?._id)
+//                               }
+//                               className={`px-3 py-1 rounded-lg text-xs font-medium text-white transition-all duration-200 ${
+//                                 isSelected[user?.userId?._id]
+//                                   ? "bg-green-500 hover:bg-green-600"
+//                                   : "bg-orange-500 hover:bg-orange-600"
+//                               }`}
+//                             >
+//                               All
+//                             </button>
+//                           </div>
+//                         </td>
+
+//                         <td className="px-3 py-2 whitespace-nowrap">
+//                           <div className="flex justify-center">
+//                             <DeleteAlert
+//                               onDelete={toggleReject}
+//                               Id={user._id}
+//                               category={user?.leaveCategory}
+//                             />
+//                           </div>
+//                         </td>
+//                       </tr>
+//                     )
+//                   })
+//                 ) : (
+//                   <tr>
+//                     <td colSpan="14" className="px-4 py-10 text-center">
+//                       <div className="flex flex-col items-center justify-center gap-2">
+//                         <svg
+//                           className="w-10 h-10 text-gray-300"
+//                           fill="none"
+//                           stroke="currentColor"
+//                           viewBox="0 0 24 24"
+//                         >
+//                           <path
+//                             strokeLinecap="round"
+//                             strokeLinejoin="round"
+//                             strokeWidth={1.5}
+//                             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+//                           />
+//                         </svg>
+//                         <p className="text-gray-500 text-sm font-medium">
+//                           {loading
+//                             ? "Loading requests..."
+//                             : mispunchMode
+//                               ? "No mispunch requests found"
+//                               : pendingOnsite || approvedOnsite
+//                                 ? "No onsite requests found"
+//                                 : "No leave requests found"}
+//                         </p>
+//                         <p className="text-gray-400 text-xs">
+//                           Try adjusting your filters or date range
+//                         </p>
+//                       </div>
+//                     </td>
+//                   </tr>
+//                 )}
+//               </tbody>
+//             </table>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   )
+// }
