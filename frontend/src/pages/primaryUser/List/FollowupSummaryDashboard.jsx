@@ -71,6 +71,7 @@ export default function FollowupSummaryDashboard() {
     "Due Today",
     "Overdue",
     "Future",
+    "Never Follow Up",
     "Converted",
     "Lost",
     "Conversion %"

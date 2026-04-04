@@ -2076,9 +2076,6 @@
 //   )
 // }
 
-
-
-
 // export default function ReportTable({
 //   reportName,
 //   data,
@@ -2847,10 +2844,6 @@
 //   )
 // }
 
-
-
-
-
 // export default function ReportTable({
 //   reportName,
 //   data,
@@ -3488,13 +3481,6 @@
 //     </div>
 //   )
 // }
-
-
-
-
-
-
-
 
 // export default function ReportTable({
 //   reportName,
@@ -4321,9 +4307,6 @@
 //   )
 // }
 
-
-
-
 export default function ReportTable({
   reportName,
   data,
@@ -4336,6 +4319,8 @@ export default function ReportTable({
   onTotalLeadsClick,
   onCellClick
 }) {
+  console.log(data)
+  console.log(headers)
   // ---- REPORT TYPE FLAGS ----
   const lowerName = reportName?.toLowerCase() || ""
   const isProductWise =
@@ -4451,6 +4436,7 @@ export default function ReportTable({
     "Due Today": "dueToday",
     Overdue: "overDue",
     Future: "future",
+    "Never Follow Up": "neverFollowup",
     "Conversion%": "convertedPercentage",
     "Conversion %": "convertedPercentage",
     "Converted %": "convertedPercentage",
@@ -4474,6 +4460,7 @@ export default function ReportTable({
         : []
 
   const rawColumns = sourceHeaders.map((header) => {
+    console.log(header)
     let accessor = keyMap[header] || header
 
     if (isFollowup) {
@@ -4512,12 +4499,18 @@ export default function ReportTable({
 
     // Mark Staff column as clickable only in staff mode
     if (["Staff", "staffName"].includes(h)) {
-      return { ...col, type: mode === "staff" && !drillDown ? "staff" : "default" }
+      return {
+        ...col,
+        type: mode === "staff" && !drillDown ? "staff" : "default"
+      }
     }
 
     // Mark Product column as the primary identifier in product mode
     if (h === "Product") {
-      return { ...col, type: mode === "product" && !drillDown ? "product" : "default" }
+      return {
+        ...col,
+        type: mode === "product" && !drillDown ? "product" : "default"
+      }
     }
 
     if (
@@ -4531,6 +4524,7 @@ export default function ReportTable({
         "Due Today",
         "Overdue",
         "Future",
+        "Never Follow Up",
         "Conversion%",
         "Conversion %",
         "Conv %",
@@ -4559,21 +4553,23 @@ export default function ReportTable({
 
       // In drill-down mode (clicked on staff → showing products)
       if (drillDown && h === "Staff") return false
-      
+
       // In product mode (toggle) → hide Staff, show Product
       if (mode === "product" && !drillDown && h === "Staff") return false
-      
+
       // In staff mode (toggle) → hide Product, show Staff
       if (mode === "staff" && !drillDown && h === "Product") return false
     }
 
     if (isFollowup) {
+      console.log(h)
       const allowed = [
         "Staff",
         "Total Leads",
         "Due Today",
         "Overdue",
         "Future",
+        "Never Follow Up",
         "Converted",
         "Lost",
         "Conversion%",
@@ -4588,7 +4584,14 @@ export default function ReportTable({
     }
 
     if (isSalesFunnel) {
-      const allowed = ["Stage", "Count", "Value", "Conv%", "Conv %", "Conversion %"]
+      const allowed = [
+        "Stage",
+        "Count",
+        "Value",
+        "Conv%",
+        "Conv %",
+        "Conversion %"
+      ]
       return allowed.includes(h)
     }
 
@@ -4663,7 +4666,7 @@ export default function ReportTable({
   }
 
   const effectiveData = data || []
-
+  console.log(effectiveData)
   // ---- RENDER ----
   return (
     <div
@@ -4814,10 +4817,7 @@ export default function ReportTable({
                   stroke="currentColor"
                   strokeWidth="2.5"
                 >
-                  <path
-                    d="M3 12h18M3 6h18M3 18h18"
-                    strokeLinecap="round"
-                  />
+                  <path d="M3 12h18M3 6h18M3 18h18" strokeLinecap="round" />
                 </svg>
                 SEE ALL
               </button>
@@ -4915,6 +4915,7 @@ export default function ReportTable({
                         }
 
                         const value = row[col.accessor]
+                        console.log(value)
                         const type = getCellType(col)
 
                         /* ── STAFF CELL ── */
@@ -4978,10 +4979,7 @@ export default function ReportTable({
                         if (type === "product") {
                           const name = String(value || "")
                           return (
-                            <td
-                              key={col.header || colIdx}
-                              style={baseTd}
-                            >
+                            <td key={col.header || colIdx} style={baseTd}>
                               <div
                                 style={{
                                   display: "flex",
@@ -4994,14 +4992,16 @@ export default function ReportTable({
                                     width: 30,
                                     height: 30,
                                     borderRadius: 8,
-                                    background: "linear-gradient(135deg, #10b981, #059669)",
+                                    background:
+                                      "linear-gradient(135deg, #10b981, #059669)",
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
                                     fontSize: 16,
                                     color: "#fff",
                                     flexShrink: 0,
-                                    boxShadow: "0 2px 6px rgba(16, 185, 129, 0.3)"
+                                    boxShadow:
+                                      "0 2px 6px rgba(16, 185, 129, 0.3)"
                                   }}
                                 >
                                   📦
@@ -5041,7 +5041,7 @@ export default function ReportTable({
                             amountKey !== null && amountKey !== undefined
                               ? row[amountKey]
                               : undefined
-console.log(amountVal)
+                          console.log(amountVal)
                           const amountFormatted =
                             amountVal !== undefined && amountVal !== null
                               ? formatAmount(amountVal)
@@ -5213,5 +5213,3 @@ console.log(amountVal)
     </div>
   )
 }
-
-
