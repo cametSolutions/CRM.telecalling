@@ -84,7 +84,7 @@ export default function FollowupSummaryDashboard() {
   const handleEndChange = (value) => {
     setdate((prev) => ({ ...prev, endDate: value }))
   }
-
+  console.log("hhhh")
   // navigation logic for metric cells
   const handleMetricClick = (row, header, key) => {
     // row has: staffName, leadCount, dueToday, overDue, future, converted, lost, leadid[]
@@ -102,55 +102,128 @@ export default function FollowupSummaryDashboard() {
         }
       })
       return
+    } else {
+      console.log("hhhh")
+      // all others go to followup page
+      navigate("/leadfollowup", {
+        state: {
+          staffName,
+          branchId: selectedBranch,
+          startDate: date.startDate,
+          endDate: date.endDate,
+          type: header, // "Total Leads", "Due Today", etc.
+          count: row[key],
+          leadIds: row.leadid
+        }
+      })
     }
-
-    // all others go to followup page
-    navigate("/leadfollowup", {
-      state: {
-        staffName,
-        branchId: selectedBranch,
-        startDate: date.startDate,
-        endDate: date.endDate,
-        type: header, // "Total Leads", "Due Today", etc.
-        count: row[key],
-        leadIds: row.leadid
-      }
-    })
   }
 
   const handleFollowupCellClick = ({ row, header }) => {
     console.log(header)
     console.log(row)
     if (header === "Staff") return
-    if (header === "Converted Percentage") return
+    if (header === "Conversion %") return
 
-    // navigate based on header & row
-    if (header === "Lead Count") {
+    if (header === "Lost") {
+      console.log("jjj")
+      navigate("/admin/transaction/lead/lostLeads", {
+        state: {
+          staffId: row.staffId,
+          productId: row.productId,
+          branchId: row?.branchIds?.[0],
+          viewMode: "lostlead"
+        }
+      })
+    } else if (header === "Lead Count") {
       navigate("/admin/transaction/lead/allLeads", {
         state: { staffId: row.staffId }
       })
+    } else if (header === "Due Today") {
+      navigate("/admin/transaction/lead/leadFollowUp", {
+        state: {
+          staffId: row.staffId,
+          dueToday: true,
+          branchId: row.branchIds?.[0],
+          viewMode: "dueToday",
+          from: "followupReport",
+          istotal: true,
+          filterRange: date
+        }
+      })
+      console.log("hhhhh")
     } else if (header === "Overdue") {
+      console.log("hhh")
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: {
           staffId: row.staffId,
           overdue: true,
-          branchId: row.branchIds?.[0]
+          branchId: row.branchIds?.[0],
+          viewMode: "overDue",
+          from: "followupReport",
+          istotal: true,
+          filterRange: date
+        }
+      })
+    } else if (header === "Future") {
+      console.log("hhh")
+      navigate("/admin/transaction/lead/leadFollowUp", {
+        state: {
+          staffId: row.staffId,
+          future: true,
+          branchId: row.branchIds?.[0],
+          viewMode: "future",
+          from: "followupReport",
+          istotal: true,
+          filterRange: date
+        }
+      })
+    } else if (header === "Converted") {
+      console.log("hhhhh")
+      navigate("/admin/transaction/lead/leadFollowUp", {
+        state: {
+          staffId: row.staffId,
+          converted: true,
+          branchId: row.branchIds?.[0],
+          viewMode: "converted",
+          from: "followupReport",
+          istotal: true,
+          filterRange: date
+        }
+      })
+    } else if (header === "Never Follow Up") {
+      console.log("hhhhhh")
+      console.log("hhhhh")
+      navigate("/admin/transaction/lead/leadFollowUp", {
+        state: {
+          staffId: row.staffId,
+          neverfollowup: true,
+          branchId: row.branchIds?.[0],
+          viewMode: "neverfollowup",
+          from: "followupReport",
+          istotal: true,
+          filterRange: date
         }
       })
     } else if (header === "Total Leads") {
       // navigate("/admin/transaction/lead/leadFollowUp", {
       //   state: { staffId: row.staffId ,branchId:row.branchIds?.[0],istotal:true}
       // })
+      console.log(date)
+      console.log("hhhh")
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: {
           staffId: row.staffId,
-
+          filterRange: date,
+          from: "followupReport",
+          viewMode: "followup",
+          istotal: true,
+          header: "Total Leads",
           branchId: row.branchIds?.[0]
         }
       })
       console.log("hhh")
     }
-    // etc...
   }
 
   const handleStaffClick = (row) => {

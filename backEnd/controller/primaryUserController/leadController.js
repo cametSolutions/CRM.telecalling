@@ -919,7 +919,7 @@ export const GetAllservices = async (req, res) => {
 export const GetallselectedproductFollowup = async (req, res) => {
   try {
     // const { loggeduserid, branchSelected, role, pendingfollowup, selectedproductId } = req.query;
-    const { loggeduserid, branchSelected, role, pendingfollowup, selectedproductId, viewmode = null } = req.query
+    const { loggeduserid, branchSelected, role, pendingfollowup, selectedproductId, viewmode = null, header = null } = req.query
     console.log("viewwwwwwwwwwwwwwww", viewmode)
     const userObjectId = new mongoose.Types.ObjectId(loggeduserid)
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected)
@@ -937,7 +937,11 @@ export const GetallselectedproductFollowup = async (req, res) => {
           },
         },
         leadBranch: branchObjectId,
-        leadLost: false,
+
+      }
+      if (header !== "Total Leads") {
+        query.leadLost = false
+
       }
 
     } else {
@@ -1131,20 +1135,48 @@ export const GetallselectedproductFollowup = async (req, res) => {
       const lastMatched = lastAlloc
       const lastMatchedClosed = !!lastMatched.followupClosed
 
+      // let neverfollowuped = false
+
+      // if (lastMatchedClosed) {
+      //   neverfollowuped = true
+      // } else {
+      //   const afterLogs = activity.slice(lastIndex + 1)
+      //   const foundNextFollowUp = afterLogs.some(
+      //     (log) => !!log.nextFollowUpDate
+      //   )
+      //   if (foundNextFollowUp) {
+      //     neverfollowuped = false
+      //   } else {
+      //     if (lastMatched.nextFollowUpDate) neverfollowuped = false
+      //     else neverfollowuped = true
+      //   }
+      // }
+      // 1️⃣ Get all followup allocations
+      const followupLogs = activity
+        .map((item, index) => ({ ...item, index }))
+        .filter((item) => item.taskTo === "followup")
+
+      if (followupLogs.length === 0) return
+
+      // 2️⃣ Take LAST followup allocation
+      const lastFollowup = followupLogs[followupLogs.length - 1]
+
+      // 3️⃣ Apply your conditions
       let neverfollowuped = false
 
-      if (lastMatchedClosed) {
-        neverfollowuped = true
-      } else {
-        const afterLogs = activity.slice(lastIndex + 1)
-        const foundNextFollowUp = afterLogs.some(
-          (log) => !!log.nextFollowUpDate
+      if (
+        lastFollowup.allocationChanged === false &&
+        lastFollowup.followupClosed === false
+      ) {
+        // 4️⃣ Check logs AFTER this index
+        const afterLogs = activity.slice(lastFollowup.index + 1)
+
+        const hasNextFollowUpDate = afterLogs.some(
+          (log) => log.nextFollowUpDate
         )
-        if (foundNextFollowUp) {
-          neverfollowuped = false
-        } else {
-          if (lastMatched.nextFollowUpDate) neverfollowuped = false
-          else neverfollowuped = true
+
+        if (!hasNextFollowUpDate) {
+          neverfollowuped = true
         }
       }
 
@@ -1533,6 +1565,7 @@ export const GetallfollowupList = async (req, res) => {
 
     // ✅ VIEW MODE
     if (isViewMode) {
+      console.log("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
       query = {
         activityLog: {
           $elemMatch: {
@@ -1546,8 +1579,12 @@ export const GetallfollowupList = async (req, res) => {
           },
         },
         leadBranch: branchObjectId,
-        leadLost: false,
+
       };
+      // ✅ Add condition only when needed
+      if (header !== "Total Leads") {
+        query.leadLost = false
+      }
     } else {
       console.log("olderrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
       // ✅ OLD NORMAL CONDITIONS
@@ -1627,6 +1664,7 @@ export const GetallfollowupList = async (req, res) => {
       .lean();
 
     const followupLeads = [];
+    // console.log("selctedfollowups",selectedfollowup)
 
     for (const lead of selectedfollowup) {
       const activity = Array.isArray(lead.activityLog) ? lead.activityLog : [];
@@ -1920,7 +1958,7 @@ export const GetallfollowupList = async (req, res) => {
     );
 
     console.log("MODE:", isNewMode ? "NEW" : "OLD");
-    console.log("followupleads", followupLeads)
+    // console.log("followupleadsssssssssssssssssss", followupLeads)
 
     if (followupLeads.length > 0) {
       return res.status(201).json({
@@ -5303,6 +5341,7 @@ export const GetcollectionLeads = async (req, res) => {
 export const GetlostLeads = async (req, res) => {
   try {
     const { selectedBranch } = req.query;
+    console.log("selectedbranchddddddddddddddddddddd", selectedBranch)
     const matchedlostLead = await LeadMaster.find({
       leadBranch: new mongoose.Types.ObjectId(selectedBranch),
       leadLost: true,
@@ -5386,7 +5425,7 @@ export const GetlostLeads = async (req, res) => {
         .json({ message: "lead  not found", data: populatedlostLeads });
     }
   } catch (error) {
-    console.log("error:", error.message);
+    console.log("error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
