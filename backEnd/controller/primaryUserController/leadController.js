@@ -489,144 +489,339 @@ export const Getallsalesfunnels = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 export const UpdateCollection = async (req, res) => {
-  const { isFrom = null } = req.query;
-  const formData = req.body;
+  console.log("hhhhhhhhhhhhhhhhhhhhhhhhhh")
 
-  let model;
-  const isAdmin = await Admin.findOne({ _id: formData.receivedBy });
-  if (isAdmin) {
-    model = "Admin";
-  } else {
-    const isstaff = await Staff.findOne({ _id: formData.receivedBy });
-    if (isstaff) {
-      model = "Staff";
-    }
-  }
+  const { isFrom = null } = req.query
+  const {
+    overwriteLastPayment = false,
+    paymentData = null,
+    ...formData
+  } = req.body
+  console.log("formmmmmmmmmdata", formData)
 
-  const session = await mongoose.startSession();
+  let model = null
+  let session = null
+
   try {
-    // const toBoolean = (value, defaultValue = false) => {
-    //   if (value === null || value === undefined || value === "")
-    //     return defaultValue;
-    //   return value === "true" || value === true || value === 1 || value === "1";
-    // };
-    // const followupClosed = toBoolean(req.query.followupclosed);
-    const customerId = formData?.customerId;
-    const leadDocId = formData?.leadDocId;
-
-    if (!formData.leadDocId) {
-      return res.status(400).json({ message: "Missing leadid" });
+    const isAdmin = await Admin.findById(formData.receivedBy).lean()
+    if (isAdmin) {
+      model = "Admin"
+    } else {
+      const isStaff = await Staff.findById(formData.receivedBy).lean()
+      if (isStaff) {
+        model = "Staff"
+      }
     }
 
-    session.startTransaction();
-    const updatecustomer = await Customer.findByIdAndUpdate(
-      customerId,
-      {
-        $set: {
-          customerName: formData.customerName,
-          address1: formData.address,
-          email: formData.email,
-          mobile: formData?.mobile,
-          registrationType: formData?.registrationType,
-          partner: formData?.partner,
-          country: formData?.country,
-          state: formData?.state,
-          city: formData?.city,
-          pincode: formData?.pincode,
+    console.log("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
+
+    if (!formData?.leadDocId) {
+      return res.status(400).json({ message: "Missing leadid" })
+    }
+
+    if (!formData?.customerId) {
+      return res.status(400).json({ message: "Missing customerId" })
+    }
+
+    const customerId = formData.customerId
+    const leadDocId = formData.leadDocId
+
+    session = await mongoose.startSession()
+
+    await session.withTransaction(async () => {
+      const updateCustomer = await Customer.findByIdAndUpdate(
+        customerId,
+        {
+          $set: {
+            customerName: formData.customerName,
+            address1: formData.address,
+            email: formData.email,
+            mobile: formData?.mobile,
+            registrationType: formData?.registrationType,
+            partner: formData?.partner,
+            country: formData?.country,
+            state: formData?.state,
+            city: formData?.city,
+            pincode: formData?.pincode
+          }
         },
-      },
-      { new: true, session }
-    );
-    if (!updatecustomer) {
-      throw new Error("Customer not found");
-    }
-    // 2️⃣ Calculate updated totals
-    const newTotalPaid =
-      Number(formData.totalpaidAmountBefore || 0) + Number(formData?.totalReceivedAmount)
+        { new: true, session }
+      )
 
-    const newBalance = Math.max(0, (formData?.totalNetAmount || 0) - newTotalPaid)
+      if (!updateCustomer) {
+        throw new Error("Customer not found")
+      }
 
+      const lead = await LeadMaster.findById(leadDocId).session(session)
 
+      if (!lead) {
+        throw new Error("Lead not found")
+      }
 
+      const receivedAmount = Number(
+        paymentData?.receivedAmount ??
+        formData?.totalReceivedAmount ??
+        0
+      )
 
-    // 3️⃣ Create payment record
-    const paymentRecord = {
-      paymentDate: new Date(),
-      receivedAmount: formData?.totalReceivedAmount,
-      paymentEntries: (formData?.paymentEntries || []).map((e) => ({
+      const currentPaidAmount = Number(
+        lead.totalPaidAmount ??
+        formData.totalpaidAmountBefore ??
+        0
+      )
+
+      let newTotalPaid = currentPaidAmount
+      let previousPaymentAmount = 0
+
+      const normalizedPaymentEntries = (
+        paymentData?.paymentEntries ||
+        formData?.paymentEntries ||
+        []
+      ).map((e) => ({
         productorServiceId: e.productorServiceId,
         productorServicemodel: e.productorServicemodel,
-        netAmount: e.netAmount,
-        receivedAmount: e.receivedAmount,
-        balanceAmount: e.balanceAmount,
-      })),
-      receivedBy: formData?.receivedBy,
-      receivedModel: model,
-      bankRemarks: formData?.bankRemarks || "",
+        netAmount: Number(e.netAmount || 0),
+        receivedAmount: Number(e.receivedAmount || 0),
+        balanceAmount: Number(e.balanceAmount || 0)
+      }))
 
-    };
-    formData.paymentEntries.forEach((item) => {
-      console.log(typeof item)
-    })
-    const allocation = null
-    if (isFrom) {
-      allocation = await Task.findOne({ taskName: "Leadclosed" });
-    }
-    const updateLead = await LeadMaster.findByIdAndUpdate(
-      leadDocId,
-      {
-        $push: { paymentHistory: paymentRecord },
-        $set: {
-          totalPaidAmount: newTotalPaid,
-          partner: formData.partner,
-          balanceAmount: newBalance,
-          ...(isFrom === "reallocation" && {
-            leadClosed: true,
-            leadClosedBy: formData?.receivedBy,
-            leadClosedModel: formData?.receivedModel,
-            reallocatedTo: false,
-            allocationType: allocation?._id,
-          }),
-
-        },
-      },
-      { new: true, session }
-    );
-    await LeadMaster.updateMany(
-      { customerName: updateLead.customerName },
-      {
-        $set: {
-          email: formData?.email,
-          mobile: formData?.mobile,
-          pincode: formData?.pincode,
-          partner: formData?.partner,
-        },
-      },
-      {
-        new: true,
-        session,
+      const paymentRecord = {
+        paymentDate: paymentData?.paymentDate
+          ? new Date(paymentData.paymentDate)
+          : new Date(),
+        receivedAmount,
+        paymentEntries: normalizedPaymentEntries,
+        receivedBy: paymentData?.receivedBy || formData?.receivedBy,
+        receivedModel:
+          paymentData?.receivedModel || model || formData?.receivedModel,
+        bankRemarks:
+          paymentData?.bankRemarks ?? formData?.bankRemarks ?? "",
+        updatedAt: new Date()
       }
-    );
-    if (!updateLead) {
-      throw new Error("lead not found");
-    }
-    await session.commitTransaction();
-    session.endSession();
+
+      if (!Array.isArray(lead.paymentHistory)) {
+        lead.paymentHistory = []
+      }
+
+      if (overwriteLastPayment && lead.paymentHistory.length > 0) {
+        const lastPayment = lead.paymentHistory[lead.paymentHistory.length - 1]
+
+        previousPaymentAmount = Number(lastPayment?.receivedAmount || 0)
+
+        lead.paymentHistory[lead.paymentHistory.length - 1] = {
+          ...(typeof lastPayment?.toObject === "function"
+            ? lastPayment.toObject()
+            : lastPayment),
+          ...paymentRecord
+        }
+
+        newTotalPaid = currentPaidAmount - previousPaymentAmount + receivedAmount
+      } else {
+        lead.paymentHistory.push({
+          ...paymentRecord,
+          createdAt: new Date()
+        })
+
+        newTotalPaid = currentPaidAmount + receivedAmount
+      }
+
+      const totalNetAmount = Number(
+        formData?.totalNetAmount ?? lead.totalNetAmount ?? 0
+      )
+
+      const newBalance = Math.max(0, totalNetAmount - newTotalPaid)
+
+      let allocation = null
+      if (isFrom === "reallocation") {
+        allocation = await Task.findOne({ taskName: "Leadclosed" }).session(session)
+      }
+
+      lead.totalPaidAmount = newTotalPaid
+      lead.partner = formData.partner
+      lead.balanceAmount = newBalance
+
+      if (isFrom === "reallocation") {
+        lead.leadClosed = true
+        lead.leadClosedBy = formData?.receivedBy
+        lead.leadClosedModel = formData?.receivedModel || model
+        lead.reallocatedTo = false
+        lead.allocationType = allocation?._id || lead.allocationType
+      }
+
+      await lead.save({ session })
+
+      await LeadMaster.updateMany(
+        { customerName: lead.customerName },
+        {
+          $set: {
+            email: formData?.email,
+            mobile: formData?.mobile,
+            pincode: formData?.pincode,
+            partner: formData?.partner
+          }
+        },
+        { session }
+      )
+    })
+
     return res.status(200).json({
       success: true,
-      message: "Payment added succesfully",
-    });
+      message: overwriteLastPayment
+        ? "Payment overwritten successfully"
+        : "Payment added successfully"
+    })
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-
-    console.log("error", error);
-    return res
-      .status(500)
-      .json({ successs: false, message: "Internal server error" });
+    console.log("error", error)
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error"
+    })
+  } finally {
+    if (session) {
+      session.endSession()
+    }
   }
-};
+}
+// export const UpdateCollection = async (req, res) => {
+//   const { isFrom = null } = req.query;
+//   const formData = req.body;
+
+//   let model;
+//   const isAdmin = await Admin.findOne({ _id: formData.receivedBy });
+//   if (isAdmin) {
+//     model = "Admin";
+//   } else {
+//     const isstaff = await Staff.findOne({ _id: formData.receivedBy });
+//     if (isstaff) {
+//       model = "Staff";
+//     }
+//   }
+
+//   const session = await mongoose.startSession();
+//   try {
+//     // const toBoolean = (value, defaultValue = false) => {
+//     //   if (value === null || value === undefined || value === "")
+//     //     return defaultValue;
+//     //   return value === "true" || value === true || value === 1 || value === "1";
+//     // };
+//     // const followupClosed = toBoolean(req.query.followupclosed);
+//     const customerId = formData?.customerId;
+//     const leadDocId = formData?.leadDocId;
+
+//     if (!formData.leadDocId) {
+//       return res.status(400).json({ message: "Missing leadid" });
+//     }
+
+//     session.startTransaction();
+//     const updatecustomer = await Customer.findByIdAndUpdate(
+//       customerId,
+//       {
+//         $set: {
+//           customerName: formData.customerName,
+//           address1: formData.address,
+//           email: formData.email,
+//           mobile: formData?.mobile,
+//           registrationType: formData?.registrationType,
+//           partner: formData?.partner,
+//           country: formData?.country,
+//           state: formData?.state,
+//           city: formData?.city,
+//           pincode: formData?.pincode,
+//         },
+//       },
+//       { new: true, session }
+//     );
+//     if (!updatecustomer) {
+//       throw new Error("Customer not found");
+//     }
+//     // 2️⃣ Calculate updated totals
+//     const newTotalPaid =
+//       Number(formData.totalpaidAmountBefore || 0) + Number(formData?.totalReceivedAmount)
+
+//     const newBalance = Math.max(0, (formData?.totalNetAmount || 0) - newTotalPaid)
+
+
+
+
+//     // 3️⃣ Create payment record
+//     const paymentRecord = {
+//       paymentDate: new Date(),
+//       receivedAmount: formData?.totalReceivedAmount,
+//       paymentEntries: (formData?.paymentEntries || []).map((e) => ({
+//         productorServiceId: e.productorServiceId,
+//         productorServicemodel: e.productorServicemodel,
+//         netAmount: e.netAmount,
+//         receivedAmount: e.receivedAmount,
+//         balanceAmount: e.balanceAmount,
+//       })),
+//       receivedBy: formData?.receivedBy,
+//       receivedModel: model,
+//       bankRemarks: formData?.bankRemarks || "",
+
+//     };
+//     formData.paymentEntries.forEach((item) => {
+//       console.log(typeof item)
+//     })
+//     const allocation = null
+//     if (isFrom) {
+//       allocation = await Task.findOne({ taskName: "Leadclosed" });
+//     }
+//     const updateLead = await LeadMaster.findByIdAndUpdate(
+//       leadDocId,
+//       {
+//         $push: { paymentHistory: paymentRecord },
+//         $set: {
+//           totalPaidAmount: newTotalPaid,
+//           partner: formData.partner,
+//           balanceAmount: newBalance,
+//           ...(isFrom === "reallocation" && {
+//             leadClosed: true,
+//             leadClosedBy: formData?.receivedBy,
+//             leadClosedModel: formData?.receivedModel,
+//             reallocatedTo: false,
+//             allocationType: allocation?._id,
+//           }),
+
+//         },
+//       },
+//       { new: true, session }
+//     );
+//     await LeadMaster.updateMany(
+//       { customerName: updateLead.customerName },
+//       {
+//         $set: {
+//           email: formData?.email,
+//           mobile: formData?.mobile,
+//           pincode: formData?.pincode,
+//           partner: formData?.partner,
+//         },
+//       },
+//       {
+//         new: true,
+//         session,
+//       }
+//     );
+//     if (!updateLead) {
+//       throw new Error("lead not found");
+//     }
+//     await session.commitTransaction();
+//     session.endSession();
+//     return res.status(200).json({
+//       success: true,
+//       message: "Payment added succesfully",
+//     });
+//   } catch (error) {
+//     await session.abortTransaction();
+//     session.endSession();
+
+//     console.log("error", error);
+//     return res
+//       .status(500)
+//       .json({ successs: false, message: "Internal server error" });
+//   }
+// };
 export const ChecktodeleteTask = async (req, res) => {
   try {
     const { id } = req.query
@@ -724,7 +919,7 @@ export const GetAllservices = async (req, res) => {
 export const GetallselectedproductFollowup = async (req, res) => {
   try {
     // const { loggeduserid, branchSelected, role, pendingfollowup, selectedproductId } = req.query;
-    const { loggeduserid, branchSelected, role, pendingfollowup, selectedproductId, viewmode = null } = req.query
+    const { loggeduserid, branchSelected, role, pendingfollowup, selectedproductId, viewmode = null, header = null } = req.query
     console.log("viewwwwwwwwwwwwwwww", viewmode)
     const userObjectId = new mongoose.Types.ObjectId(loggeduserid)
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected)
@@ -742,7 +937,11 @@ export const GetallselectedproductFollowup = async (req, res) => {
           },
         },
         leadBranch: branchObjectId,
-        leadLost: false,
+
+      }
+      if (header !== "Total Leads") {
+        query.leadLost = false
+
       }
 
     } else {
@@ -936,20 +1135,48 @@ export const GetallselectedproductFollowup = async (req, res) => {
       const lastMatched = lastAlloc
       const lastMatchedClosed = !!lastMatched.followupClosed
 
+      // let neverfollowuped = false
+
+      // if (lastMatchedClosed) {
+      //   neverfollowuped = true
+      // } else {
+      //   const afterLogs = activity.slice(lastIndex + 1)
+      //   const foundNextFollowUp = afterLogs.some(
+      //     (log) => !!log.nextFollowUpDate
+      //   )
+      //   if (foundNextFollowUp) {
+      //     neverfollowuped = false
+      //   } else {
+      //     if (lastMatched.nextFollowUpDate) neverfollowuped = false
+      //     else neverfollowuped = true
+      //   }
+      // }
+      // 1️⃣ Get all followup allocations
+      const followupLogs = activity
+        .map((item, index) => ({ ...item, index }))
+        .filter((item) => item.taskTo === "followup")
+
+      if (followupLogs.length === 0) return
+
+      // 2️⃣ Take LAST followup allocation
+      const lastFollowup = followupLogs[followupLogs.length - 1]
+
+      // 3️⃣ Apply your conditions
       let neverfollowuped = false
 
-      if (lastMatchedClosed) {
-        neverfollowuped = true
-      } else {
-        const afterLogs = activity.slice(lastIndex + 1)
-        const foundNextFollowUp = afterLogs.some(
-          (log) => !!log.nextFollowUpDate
+      if (
+        lastFollowup.allocationChanged === false &&
+        lastFollowup.followupClosed === false
+      ) {
+        // 4️⃣ Check logs AFTER this index
+        const afterLogs = activity.slice(lastFollowup.index + 1)
+
+        const hasNextFollowUpDate = afterLogs.some(
+          (log) => log.nextFollowUpDate
         )
-        if (foundNextFollowUp) {
-          neverfollowuped = false
-        } else {
-          if (lastMatched.nextFollowUpDate) neverfollowuped = false
-          else neverfollowuped = true
+
+        if (!hasNextFollowUpDate) {
+          neverfollowuped = true
         }
       }
 
@@ -1291,7 +1518,11 @@ export const GetallselectedproductFollowup = async (req, res) => {
 //     console.log("error:", error.message);
 //     return res.status(500).json({ message: "Internal server error" });
 //   }
-// };///live code now
+// };///old code
+export const GetleadById = async (req, res) => {
+  const { leadDocId } = req.query
+  console.log("lleaddocidd", leadDocId)
+}
 
 export const GetallfollowupList = async (req, res) => {
   try {
@@ -1312,19 +1543,13 @@ export const GetallfollowupList = async (req, res) => {
     const start = startDate ? new Date(startDate) : null;
     const end = endDate ? new Date(endDate) : null;
     console.log("showssssssssssss", viewmode)
-    // ✅ CHECK MODE
-    // const isViewMode = viewmode !== "null"
-    // console.log("viewmodeeee", isViewMode)
-
-    // const isNewMode = isViewMode || header || (startDate && endDate);
-    // console.log("isnewomodeee", isNewMode)
 
 
 
 
     // Check if viewmode is the string "true"
     const isViewMode = viewmode === "true";
-console.log("viemodecheking",isViewMode)
+    console.log("viemodecheking", isViewMode)
 
     // Check for valid header and date params
     const hasValidHeader = header && header !== "null" && header !== "undefined";
@@ -1333,13 +1558,14 @@ console.log("viemodecheking",isViewMode)
       startDate !== "undefined" && endDate !== "undefined";
 
     const isNewMode = isViewMode || hasValidHeader || hasValidDates;
-console.log("hasvalidheader",hasValidHeader)
-console.log("hasvalidadate",hasValidDates)
+    console.log("hasvalidheader", hasValidHeader)
+    console.log("hasvalidadate", hasValidDates)
 
     let query;
 
     // ✅ VIEW MODE
     if (isViewMode) {
+      console.log("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
       query = {
         activityLog: {
           $elemMatch: {
@@ -1353,8 +1579,12 @@ console.log("hasvalidadate",hasValidDates)
           },
         },
         leadBranch: branchObjectId,
-        leadLost: false,
+
       };
+      // ✅ Add condition only when needed
+      if (header !== "Total Leads") {
+        query.leadLost = false
+      }
     } else {
       console.log("olderrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
       // ✅ OLD NORMAL CONDITIONS
@@ -1434,6 +1664,7 @@ console.log("hasvalidadate",hasValidDates)
       .lean();
 
     const followupLeads = [];
+    // console.log("selctedfollowups",selectedfollowup)
 
     for (const lead of selectedfollowup) {
       const activity = Array.isArray(lead.activityLog) ? lead.activityLog : [];
@@ -1622,6 +1853,49 @@ console.log("hasvalidadate",hasValidDates)
           return { ...item, productorServiceId: populated };
         })
       );
+      const populatedpaymentHistory = lead?.paymentHistory?.length
+        ? await Promise.all(
+          lead.paymentHistory.map(async (history) => {
+            const populatedhistory = { ...history.toObject?.() ?? history }
+
+            // populate receivedBy (existing)
+            if (history.receivedModel && history.receivedBy) {
+              const recvModel = mongoose.model(history.receivedModel)
+              populatedhistory.receivedBy = await recvModel
+                .findById(history.receivedBy)
+                .select("name")
+                .lean()
+            }
+
+            // populate each paymentEntries[].productId via productorServicemodel
+            if (Array.isArray(history.paymentEntries)) {
+              populatedhistory.paymentEntries = await Promise.all(
+                history.paymentEntries.map(async (entry) => {
+                  const populatedEntry = { ...entry }
+
+                  if (entry.productorServicemodel && entry.productorServiceId) {
+                    try {
+                      const ProdModel = mongoose.model(entry.productorServicemodel)
+                      const doc = await ProdModel
+                        .findById(entry.productorServiceId)
+                        .select("productName name")
+                        .lean()
+
+                      populatedEntry.productorServiceId = doc
+                    } catch (err) {
+                      populatedEntry.productorServiceId = null
+                    }
+                  }
+
+                  return populatedEntry
+                })
+              )
+            }
+
+            return populatedhistory
+          })
+        )
+        : []
 
       const lastActivity = activity[activity.length - 1] || {};
 
@@ -1659,6 +1933,7 @@ console.log("hasvalidadate",hasValidDates)
       const leadObject = {
         ...lead,
         leadBy: popLeadBy || lead.leadBy,
+        paymentHistory: populatedpaymentHistory,
         leadFor: populatedLeadFor,
         allocatedTo: popAllocatedTo,
         allocatedBy: popAllocatedBy,
@@ -1683,7 +1958,7 @@ console.log("hasvalidadate",hasValidDates)
     );
 
     console.log("MODE:", isNewMode ? "NEW" : "OLD");
-    console.log("followupleads", followupLeads)
+    // console.log("followupleadsssssssssssssssssss", followupLeads)
 
     if (followupLeads.length > 0) {
       return res.status(201).json({
@@ -4049,6 +4324,8 @@ export const GetallfollowupListfromFollowupSummary = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+
+
 export const GetfollowupsummaryReport = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
@@ -4065,29 +4342,83 @@ export const GetfollowupsummaryReport = async (req, res) => {
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-
     const result = await LeadMaster.aggregate([
-      // 1️⃣ Extract followup assignment logs
+
+      // 1️⃣ Filter followup assignment logs WITH DATE
       {
         $addFields: {
           followupAssignLogs: {
             $filter: {
               input: "$activityLog",
               as: "log",
-              cond: { $eq: ["$$log.taskTo", "followup"] }
+              cond: {
+                $and: [
+                  { $eq: ["$$log.taskTo", "followup"] },
+                  { $ne: ["$$log.submissionDate", null] },
+                  { $gte: ["$$log.submissionDate", start] },
+                  { $lte: ["$$log.submissionDate", end] }
+                ]
+              }
             }
           }
         }
       },
 
-      // 2️⃣ Get latest assignment
+      // 2️⃣ Latest assign log
       {
         $addFields: {
           assignLog: { $arrayElemAt: ["$followupAssignLogs", -1] }
         }
       },
 
-      // 3️⃣ Extract logs having nextFollowUpDate
+      // 3️⃣ Keep only valid leads
+      {
+        $match: {
+          assignLog: { $ne: null }
+        }
+      },
+
+      // 4️⃣ Logs AFTER assignment
+      {
+        $addFields: {
+          logsAfterAssign: {
+            $filter: {
+              input: "$activityLog",
+              as: "log",
+              cond: {
+                $gt: ["$$log.submissionDate", "$assignLog.submissionDate"]
+              }
+            }
+          }
+        }
+      },
+
+      // 5️⃣ Check if any nextFollowUp exists after assignment
+      {
+        $addFields: {
+          hasNextFollowup: {
+            $gt: [
+              {
+                $size: {
+                  $filter: {
+                    input: "$logsAfterAssign",
+                    as: "log",
+                    cond: {
+                      $and: [
+                        { $ne: ["$$log.nextFollowUpDate", null] },
+                        { $gt: ["$$log.nextFollowUpDate", new Date("2000-01-01")] }
+                      ]
+                    }
+                  }
+                }
+              },
+              0
+            ]
+          }
+        }
+      },
+
+      // 6️⃣ Extract all valid followup logs
       {
         $addFields: {
           followupLogs: {
@@ -4105,24 +4436,17 @@ export const GetfollowupsummaryReport = async (req, res) => {
         }
       },
 
-      // 4️⃣ Get last followup
+      // 7️⃣ Get last followup
       {
         $addFields: {
           lastActivity: { $arrayElemAt: ["$followupLogs", -1] }
         }
       },
 
-      // 5️⃣ Include all relevant leads
-      {
-        $match: {
-          assignLog: { $ne: null } // must have followup assignment
-        }
-      },
-
-      // 6️⃣ Unwind leadFor
+      // 8️⃣ Unwind leadFor
       { $unwind: "$leadFor" },
 
-      // 7️⃣ One row per lead
+      // 9️⃣ Group per lead
       {
         $group: {
           _id: "$_id",
@@ -4139,11 +4463,13 @@ export const GetfollowupsummaryReport = async (req, res) => {
 
           netAmount: { $first: "$leadFor.netAmount" },
 
-          branchId: { $first: "$leadBranch" }
+          branchId: { $first: "$leadBranch" },
+
+          hasNextFollowup: { $first: "$hasNextFollowup" }
         }
       },
 
-      // 8️⃣ STATUS PRIORITY (Lost > Converted > Active)
+      // 🔟 STATUS FLAGS
       {
         $addFields: {
           isLost: {
@@ -4167,7 +4493,7 @@ export const GetfollowupsummaryReport = async (req, res) => {
             $cond: [
               {
                 $and: [
-                  { $eq: ["$isLost", 0] }, // ✅ prevent double count
+                  { $eq: ["$isLost", 0] },
                   { $ne: ["$leadConvertedDate", null] },
                   { $gte: ["$leadConvertedDate", start] },
                   { $lte: ["$leadConvertedDate", end] }
@@ -4196,7 +4522,7 @@ export const GetfollowupsummaryReport = async (req, res) => {
         }
       },
 
-      // 9️⃣ FOLLOWUP BUCKETS (ONLY ACTIVE)
+      // 1️⃣1️⃣ FOLLOWUP BUCKETS
       {
         $addFields: {
           dueToday: {
@@ -4213,7 +4539,6 @@ export const GetfollowupsummaryReport = async (req, res) => {
               0
             ]
           },
-
           overdue: {
             $cond: [
               {
@@ -4227,7 +4552,6 @@ export const GetfollowupsummaryReport = async (req, res) => {
               0
             ]
           },
-
           future: {
             $cond: [
               {
@@ -4244,7 +4568,25 @@ export const GetfollowupsummaryReport = async (req, res) => {
         }
       },
 
-      // 🔟 Amount
+      // 🔥 NEVER FOLLOWUP LOGIC
+      {
+        $addFields: {
+          neverFollowup: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$isActive", 1] },
+                  { $eq: ["$hasNextFollowup", false] }
+                ]
+              },
+              1,
+              0
+            ]
+          }
+        }
+      },
+
+      // 1️⃣2️⃣ Amount
       {
         $addFields: {
           convertedNetAmount: {
@@ -4257,7 +4599,7 @@ export const GetfollowupsummaryReport = async (req, res) => {
         }
       },
 
-      // 1️⃣1️⃣ FINAL GROUP
+      // 1️⃣3️⃣ FINAL GROUP
       {
         $group: {
           _id: {
@@ -4266,8 +4608,6 @@ export const GetfollowupsummaryReport = async (req, res) => {
           },
 
           leadIds: { $addToSet: "$leadIdStr" },
-
-          // ✅ FIXED: total followup leads
           leadCount: { $sum: 1 },
 
           totalConverted: { $sum: "$isConverted" },
@@ -4277,13 +4617,15 @@ export const GetfollowupsummaryReport = async (req, res) => {
           totalOverdue: { $sum: "$overdue" },
           totalFuture: { $sum: "$future" },
 
+          totalNeverFollowup: { $sum: "$neverFollowup" },
+
           convertedNetAmount: { $sum: "$convertedNetAmount" },
 
           branchIds: { $addToSet: "$branchId" }
         }
       },
 
-      // 1️⃣2️⃣ Lookup STAFF
+      // 1️⃣4️⃣ Lookup STAFF
       {
         $lookup: {
           from: "staffs",
@@ -4293,7 +4635,7 @@ export const GetfollowupsummaryReport = async (req, res) => {
         }
       },
 
-      // 1️⃣3️⃣ Lookup ADMIN
+      // 1️⃣5️⃣ Lookup ADMIN
       {
         $lookup: {
           from: "admins",
@@ -4303,7 +4645,7 @@ export const GetfollowupsummaryReport = async (req, res) => {
         }
       },
 
-      // 1️⃣4️⃣ Resolve correct user
+      // 1️⃣6️⃣ Resolve user
       {
         $addFields: {
           user: {
@@ -4316,7 +4658,7 @@ export const GetfollowupsummaryReport = async (req, res) => {
         }
       },
 
-      // 1️⃣5️⃣ Final output
+      // 1️⃣7️⃣ Final output
       {
         $project: {
           _id: 0,
@@ -4338,10 +4680,12 @@ export const GetfollowupsummaryReport = async (req, res) => {
           totalOverdue: 1,
           totalFuture: 1,
 
+          totalNeverFollowup: 1,
+
           convertedNetAmount: 1
         }
       }
-    ]);//new code
+    ]);
 
     const structuredData = result.map((item) => ({
       staffId: item.staffId,
@@ -4349,19 +4693,24 @@ export const GetfollowupsummaryReport = async (req, res) => {
       staffRole: item.staffRole,
       branchIds: item.branchIds,
       Staff: item.staffName,
+
       leadCount: item.leadCount,
       dueToday: item.totalDueToday,
       overDue: item.totalOverdue,
       future: item.totalFuture,
+
       converted: item.totalConverted,
       lost: item.totalLost,
+
+      neverFollowup: item.totalNeverFollowup,
+
       convertedPercentage:
         item.leadCount > 0
           ? Number(((item.totalConverted / item.leadCount) * 100).toFixed(2))
           : 0
     }));
 
-    if (structuredData && structuredData.length > 0) {
+    if (structuredData.length > 0) {
       return res.status(200).json({ message: "summary found", data: structuredData });
     }
 
@@ -4372,6 +4721,338 @@ export const GetfollowupsummaryReport = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+// export const GetfollowupsummaryReport = async (req, res) => {
+//   try {
+//     const { startDate, endDate } = req.query;
+
+//     const start = new Date(startDate);
+//     start.setHours(0, 0, 0, 0);
+
+//     const end = new Date(endDate);
+//     end.setHours(23, 59, 59, 999);
+
+//     const todayStart = new Date();
+//     todayStart.setHours(0, 0, 0, 0);
+
+//     const todayEnd = new Date();
+//     todayEnd.setHours(23, 59, 59, 999);
+
+
+//     const result = await LeadMaster.aggregate([
+
+//       {
+//         $addFields: {
+//           followupAssignLogs: {
+//             $filter: {
+//               input: "$activityLog",
+//               as: "log",
+//               cond: {
+//                 $and: [
+//                   { $eq: ["$$log.taskTo", "followup"] },
+
+//                   // ✅ ADD THIS DATE FILTER
+//                   { $ne: ["$$log.submissionDate", null] },
+//                   { $gte: ["$$log.submissionDate", start] },
+//                   { $lte: ["$$log.submissionDate", end] }
+//                 ]
+//               }
+//             }
+//           }
+//         }
+//       },
+
+//       // 2️⃣ Get latest assignment
+//       {
+//         $addFields: {
+//           assignLog: { $arrayElemAt: ["$followupAssignLogs", -1] }
+//         }
+//       },
+
+//       // 3️⃣ Extract logs having nextFollowUpDate
+//       {
+//         $addFields: {
+//           followupLogs: {
+//             $filter: {
+//               input: "$activityLog",
+//               as: "log",
+//               cond: {
+//                 $and: [
+//                   { $ne: ["$$log.nextFollowUpDate", null] },
+//                   { $gt: ["$$log.nextFollowUpDate", new Date("2000-01-01")] }
+//                 ]
+//               }
+//             }
+//           }
+//         }
+//       },
+
+//       // 4️⃣ Get last followup
+//       {
+//         $addFields: {
+//           lastActivity: { $arrayElemAt: ["$followupLogs", -1] }
+//         }
+//       },
+
+//       // 5️⃣ Include all relevant leads
+//       {
+//         $match: {
+//           assignLog: { $ne: null } // must have followup assignment
+//         }
+//       },
+
+//       // 6️⃣ Unwind leadFor
+//       { $unwind: "$leadFor" },
+
+//       // 7️⃣ One row per lead
+//       {
+//         $group: {
+//           _id: "$_id",
+
+//           leadIdStr: { $first: "$leadId" },
+
+//           staffId: { $first: "$assignLog.taskallocatedTo" },
+//           staffModel: { $first: "$assignLog.taskallocatedToModel" },
+
+//           nextFollowupDate: { $first: "$lastActivity.nextFollowUpDate" },
+
+//           leadConvertedDate: { $first: "$leadConvertedDate" },
+//           leadLostDate: { $first: "$leadLostDate" },
+
+//           netAmount: { $first: "$leadFor.netAmount" },
+
+//           branchId: { $first: "$leadBranch" }
+//         }
+//       },
+
+//       // 8️⃣ STATUS PRIORITY (Lost > Converted > Active)
+//       {
+//         $addFields: {
+//           isLost: {
+//             $cond: [
+//               {
+//                 $and: [
+//                   { $ne: ["$leadLostDate", null] },
+//                   { $gte: ["$leadLostDate", start] },
+//                   { $lte: ["$leadLostDate", end] }
+//                 ]
+//               },
+//               1,
+//               0
+//             ]
+//           }
+//         }
+//       },
+//       {
+//         $addFields: {
+//           isConverted: {
+//             $cond: [
+//               {
+//                 $and: [
+//                   { $eq: ["$isLost", 0] }, // ✅ prevent double count
+//                   { $ne: ["$leadConvertedDate", null] },
+//                   { $gte: ["$leadConvertedDate", start] },
+//                   { $lte: ["$leadConvertedDate", end] }
+//                 ]
+//               },
+//               1,
+//               0
+//             ]
+//           }
+//         }
+//       },
+//       {
+//         $addFields: {
+//           isActive: {
+//             $cond: [
+//               {
+//                 $and: [
+//                   { $eq: ["$isLost", 0] },
+//                   { $eq: ["$isConverted", 0] }
+//                 ]
+//               },
+//               1,
+//               0
+//             ]
+//           }
+//         }
+//       },
+
+//       // 9️⃣ FOLLOWUP BUCKETS (ONLY ACTIVE)
+//       {
+//         $addFields: {
+//           dueToday: {
+//             $cond: [
+//               {
+//                 $and: [
+//                   { $eq: ["$isActive", 1] },
+//                   { $ne: ["$nextFollowupDate", null] },
+//                   { $gte: ["$nextFollowupDate", todayStart] },
+//                   { $lte: ["$nextFollowupDate", todayEnd] }
+//                 ]
+//               },
+//               1,
+//               0
+//             ]
+//           },
+
+//           overdue: {
+//             $cond: [
+//               {
+//                 $and: [
+//                   { $eq: ["$isActive", 1] },
+//                   { $ne: ["$nextFollowupDate", null] },
+//                   { $lt: ["$nextFollowupDate", todayStart] }
+//                 ]
+//               },
+//               1,
+//               0
+//             ]
+//           },
+
+//           future: {
+//             $cond: [
+//               {
+//                 $and: [
+//                   { $eq: ["$isActive", 1] },
+//                   { $ne: ["$nextFollowupDate", null] },
+//                   { $gt: ["$nextFollowupDate", todayEnd] }
+//                 ]
+//               },
+//               1,
+//               0
+//             ]
+//           }
+//         }
+//       },
+
+//       // 🔟 Amount
+//       {
+//         $addFields: {
+//           convertedNetAmount: {
+//             $cond: [
+//               { $eq: ["$isConverted", 1] },
+//               { $ifNull: ["$netAmount", 0] },
+//               0
+//             ]
+//           }
+//         }
+//       },
+
+//       // 1️⃣1️⃣ FINAL GROUP
+//       {
+//         $group: {
+//           _id: {
+//             staffId: "$staffId",
+//             staffModel: "$staffModel"
+//           },
+
+//           leadIds: { $addToSet: "$leadIdStr" },
+
+//           // ✅ FIXED: total followup leads
+//           leadCount: { $sum: 1 },
+
+//           totalConverted: { $sum: "$isConverted" },
+//           totalLost: { $sum: "$isLost" },
+
+//           totalDueToday: { $sum: "$dueToday" },
+//           totalOverdue: { $sum: "$overdue" },
+//           totalFuture: { $sum: "$future" },
+
+//           convertedNetAmount: { $sum: "$convertedNetAmount" },
+
+//           branchIds: { $addToSet: "$branchId" }
+//         }
+//       },
+
+//       // 1️⃣2️⃣ Lookup STAFF
+//       {
+//         $lookup: {
+//           from: "staffs",
+//           localField: "_id.staffId",
+//           foreignField: "_id",
+//           as: "staff"
+//         }
+//       },
+
+//       // 1️⃣3️⃣ Lookup ADMIN
+//       {
+//         $lookup: {
+//           from: "admins",
+//           localField: "_id.staffId",
+//           foreignField: "_id",
+//           as: "admin"
+//         }
+//       },
+
+//       // 1️⃣4️⃣ Resolve correct user
+//       {
+//         $addFields: {
+//           user: {
+//             $cond: [
+//               { $eq: ["$_id.staffModel", "Admin"] },
+//               { $arrayElemAt: ["$admin", 0] },
+//               { $arrayElemAt: ["$staff", 0] }
+//             ]
+//           }
+//         }
+//       },
+
+//       // 1️⃣5️⃣ Final output
+//       {
+//         $project: {
+//           _id: 0,
+
+//           staffId: "$_id.staffId",
+//           staffModel: "$_id.staffModel",
+
+//           staffName: { $ifNull: ["$user.name", "Unknown"] },
+//           staffRole: "$user.role",
+
+//           branchIds: 1,
+//           leadIds: 1,
+
+//           leadCount: 1,
+//           totalConverted: 1,
+//           totalLost: 1,
+
+//           totalDueToday: 1,
+//           totalOverdue: 1,
+//           totalFuture: 1,
+
+//           convertedNetAmount: 1
+//         }
+//       }
+//     ]);//new code
+
+//     const structuredData = result.map((item) => ({
+//       staffId: item.staffId,
+//       leadIds: item.leadIds,
+//       staffRole: item.staffRole,
+//       branchIds: item.branchIds,
+//       Staff: item.staffName,
+//       leadCount: item.leadCount,
+//       dueToday: item.totalDueToday,
+//       overDue: item.totalOverdue,
+//       future: item.totalFuture,
+//       converted: item.totalConverted,
+//       lost: item.totalLost,
+//       convertedPercentage:
+//         item.leadCount > 0
+//           ? Number(((item.totalConverted / item.leadCount) * 100).toFixed(2))
+//           : 0
+//     }));
+
+//     if (structuredData && structuredData.length > 0) {
+//       return res.status(200).json({ message: "summary found", data: structuredData });
+//     }
+
+//     return res.status(404).json({ message: "No data found" });
+
+//   } catch (error) {
+//     console.log("error:", error.message);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 
 // export const GetfollowupsummaryReport = async (req, res) => {
 //   try {
@@ -4660,6 +5341,7 @@ export const GetcollectionLeads = async (req, res) => {
 export const GetlostLeads = async (req, res) => {
   try {
     const { selectedBranch } = req.query;
+    console.log("selectedbranchddddddddddddddddddddd", selectedBranch)
     const matchedlostLead = await LeadMaster.find({
       leadBranch: new mongoose.Types.ObjectId(selectedBranch),
       leadLost: true,
@@ -4743,7 +5425,7 @@ export const GetlostLeads = async (req, res) => {
         .json({ message: "lead  not found", data: populatedlostLeads });
     }
   } catch (error) {
-    console.log("error:", error.message);
+    console.log("error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };

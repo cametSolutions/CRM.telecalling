@@ -3,7 +3,7 @@
 // import { useLocation } from "react-router-dom"
 // import { useNavigate } from "react-router-dom"
 // import { LeadhistoryModal } from "../../components/primaryUser/LeadhistoryModal"
-// import SkeletonTable from "../../components/loader/SkeletonTable "
+// import SkeletonTable from "../../components/loader/SkeletonTable"
 // import NodataAvailable from "../../components/NodataAvailable"
 // import {
 //   Eye,
@@ -440,7 +440,7 @@ import { useEffect, useState } from "react"
 import UseFetch from "../../hooks/useFetch"
 import { useLocation, useNavigate } from "react-router-dom"
 import { LeadhistoryModal } from "../../components/primaryUser/LeadhistoryModal"
-import SkeletonTable from "../../components/loader/SkeletonTable "
+import SkeletonTable from "../../components/loader/SkeletonTable"
 import NodataAvailable from "../../components/NodataAvailable"
 import { Eye, IndianRupee, ChevronDown, ChevronRight, BellRing } from "lucide-react"
 import { getLocalStorageItem } from "../../helper/localstorage"

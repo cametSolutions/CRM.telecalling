@@ -41,7 +41,8 @@ import {
   Getdailystaffreport,
   Getalltasktoreport,
   GetallselectedproductFollowup,
-  getAlltasktoTarget
+  getAlltasktoTarget,
+GetleadById
 } from "../../controller/primaryUserController/leadController.js";
 const router = express.Router();
 router.get("/getstaffdailyreports", authMiddleware, Getdailystaffreport)
@@ -72,6 +73,7 @@ router.get("/getAllleadowned", authMiddleware, GetallleadOwned); //for getting a
 router.get("/getallreallocatedLead", authMiddleware, GetallReallocatedLead);
 router.get("/getalltaskAnalysisLeads", authMiddleware, GetalltaskanalysisLeads);
 router.get("/getallLeadFollowUp", authMiddleware, GetallfollowupList);
+router.get("/getLeadById",authMiddleware,GetleadById)
 router.get("/getallLeadFollowUpforselectedProduct", authMiddleware, GetallselectedproductFollowup)
 router.get("/getallServices", authMiddleware, GetAllservices);
 router.get("/ownregisteredLead", authMiddleware, GetownLeadList);

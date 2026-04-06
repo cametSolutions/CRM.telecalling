@@ -3365,6 +3365,7 @@ console.log(paymentRows)
       lastPayment.paymentEntries.length > 0
 
     if (hasPaymentEntries) {
+console.log(lastPayment.paymentEntries)
       console.log("hh")
       // ✅ seed from last paymentHistory.paymentEntries
       setPaymentRows(
