@@ -448,26 +448,22 @@ const LeaveApprovalAndPending = () => {
       ? "Leave Date"
       : "Onsite Date"
   console.log(leaveList)
- 
+console.log(loader)
   const singleApprovalOrCancel = async (id, userId) => {
     try {
       const selectedItem = leaveList.find((item) => item._id === id)
-
-      console.log(selectedItem)
-      console.log(misspunchlist)
-      let name = null
+console.log(selectedItem)
+      const name = selectedItem?.userId?.name
+      const selectedmispunch = misspunchlist.find((item) => item._id === id)
       if (mispunchMode) {
-        const selectedmispunch = misspunchlist.find((item) => item._id === id)
-        name = selectedmispunch?.userId?.name
-console.log(selectedmispunch)
-        console.log("dddddddd")
-        console.log(name)
+        if (!selectedmispunch) return
       } else {
-        name = selectedItem?.userId?.name
         if (!selectedItem) return
       }
-
+console.log("hhh")
       setLoader(true)
+
+
       console.log(isToggled)
 
       const isTrue = isToggled[id]
@@ -509,14 +505,13 @@ console.log(selectedmispunch)
         if (mispunchMode) {
           console.log("hhh")
           response = await api.put(
-            `/auth/approveMispunch/?role=${user?.role}&selectedId=${id}&userId=${user?._id}&name=${name}&startDate=${dates.startDate}&endDate=${dates.endDate}&misspunchDate=${selectedmispunch.misspunchDate}&misspunchType=${selectedmispunch.misspunchType}`
+            `/auth/approveMispunch/?role=${user?.role}&selectedId=${id}&userId=${user?._id}&startDate=${dates.startDate}&endDate=${dates.endDate}&misspunchDate=${selectedmispunch.misspunchDate}&misspunchType=${selectedmispunch.misspunchType}`
           )
         }
 
         // ✅ PENDING ONSITE
         else if (pendingOnsite && !pendingLeave) {
-          console.log("hhhh")
-          return
+          
           response = await api.put(
             `/auth/approveOnsite/?role=${user?.role}&selectedId=${id}&startDate=${dates.startDate}&endDate=${dates.endDate}&onsite=true&userId=${user?._id}&single=true&name=${name}&isPending=true`
           )
@@ -524,8 +519,7 @@ console.log(selectedmispunch)
 
         // ✅ PENDING LEAVE
         else if (!pendingOnsite && pendingLeave) {
-          console.log("hhhh")
-          return
+          
           response = await api.put(
             `/auth/approveLeave/?role=${user?.role}&selectedId=${id}&userId=${user?._id}&startDate=${dates.startDate}&endDate=${dates.endDate}&single=true&onsite=false&name=${name}&isPending=true`
           )
@@ -542,7 +536,7 @@ console.log(selectedmispunch)
         // ✅ APPROVED ONSITE
         else if (approvedOnsite && !approvedLeave) {
           console.log("hhh")
-          return
+          
           response = await api.put(
             `/auth/approveOnsite/?role=${user?.role}&selectedId=${id}&startDate=${dates.startDate}&endDate=${dates.endDate}&onsite=true&userId=${user?._id}&single=true&name=${name}&isPending=false`
           )
@@ -557,10 +551,10 @@ console.log(selectedmispunch)
 
         toast.success(response.data.message || "Success")
         if (mispunchMode) {
-console.log("hhhhh")
+          console.log("hhhhh")
           setMisspunchList(updatedList)
         } else {
-console.log("hhh")
+          console.log("hhh")
           setLeaveList(updatedList)
         }
 
@@ -578,8 +572,9 @@ console.log("hhh")
         toast.error("Something went wrong")
       }
     } catch (error) {
-      console.error(error)
-      toast.error("Error processing request")
+      console.error(error.message)
+console.log(error.response.data.message)
+      toast.error(error.response.data.message)
     } finally {
       setLoader(false)
     }

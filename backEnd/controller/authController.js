@@ -1,7 +1,7 @@
 import models from "../model/auth/authSchema.js"
 import Leavemaster from "../model/secondaryUser/leavemasterSchema.js"
 import Customer from "../model/secondaryUser/customerSchema.js"
-
+import Misspunch from "../model/primaryUser/missPunchSchema.js"
 import { getStaffSolvedCallCounts } from "../helper/staffHighestandlowestsolvedcallscount.js"
 import LeadMaster from "../model/primaryUser/leadmasterSchema.js"
 import { PreviousmonthLeavesummary } from "../helper/previousMonthleaveSummary.js"
@@ -728,14 +728,14 @@ export const LeaveApply = async (req, res) => {
 
   try {
 
-
+console.log("pppppppppppppppppppppppppppppppp")
     const existingDateLeave = await LeaveRequest.find({
 
       leaveDate,
       userId: objectId
     })
     const filteredLeave = existingDateLeave?.filter((leave) => leave._id.equals(leaveId))
-
+console.log("iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii")
 
     if (filteredLeave && filteredLeave.length) {
       if (existingDateLeave.some((item) => item.leaveType === "Half Day") && leaveType === "Full Day") {
@@ -879,7 +879,7 @@ export const LeaveApply = async (req, res) => {
         }
 
       }
-
+console.log("ddddddddddddddddddddddddddddddddddddd")
       const newleave = new LeaveRequest({
         leaveDate,
         leaveType,
@@ -892,7 +892,7 @@ export const LeaveApply = async (req, res) => {
         assignedto: assignedTo
       })
       await newleave.save()
-
+console.log("hhhhhhhhhhhhhhhhhhhhhhhhhh")
       if (leaveCategory === "compensatory Leave") {
         const year = new Date(leaveDate).getFullYear()
         const leaveValue = leaveType === "Full Day" ? 1 : 0.5
@@ -918,7 +918,7 @@ export const LeaveApply = async (req, res) => {
         .json({ message: "leave applied successfully", data: allleaves })
     }
   } catch (error) {
-    console.log("error:", error.message)
+    console.log("error:", error)
     res.status(500).json({ message: "internal server error" })
   }
 }
@@ -1073,13 +1073,16 @@ export const ApproveMisspunch = async (req, res) => {
     // ============================================
     const attendanceRecord = await Attendance.findOne({
       userId: misspunchUserId,
-      date: misspunchDateParsed
+      attendanceDate: misspunchDateParsed
     }).session(session);
 
     if (!attendanceRecord) {
       await session.abortTransaction();
+      console.log("misspunjcuseridd", misspunchUserId)
+      console.log("dateparsed", misspunchDateParsed)
+      console.log("no attendance")
       return res.status(404).json({
-        message: `No attendance record found for user on date: ${misspunchDate}. Cannot approve misspunch.`
+        message: `No attendance record found`
       });
     }
 
@@ -1094,17 +1097,13 @@ export const ApproveMisspunch = async (req, res) => {
 
     // Update inTime or outTime based on misspunchType
     if (misspunchType.toLowerCase() === 'in') {
-      // Set inTime to 9:30 AM on the misspunch date
-      const inTime = new Date(misspunchDateParsed);
-      inTime.setHours(9, 30, 0, 0);
-      attendanceUpdateFields.inTime = inTime;
-      console.log(`✓ Prepared inTime update: ${inTime}`);
+      // Set inTime to "9:30 AM" as string
+      attendanceUpdateFields.inTime = "9:30 AM";
+      console.log(`✓ Prepared inTime update: 9:30 AM`);
     } else if (misspunchType.toLowerCase() === 'out') {
-      // Set outTime to 5:30 PM on the misspunch date
-      const outTime = new Date(misspunchDateParsed);
-      outTime.setHours(17, 30, 0, 0);
-      attendanceUpdateFields.outTime = outTime;
-      console.log(`✓ Prepared outTime update: ${outTime}`);
+      // Set outTime to "5:30 PM" as string
+      attendanceUpdateFields.outTime = "5:30 PM";
+      console.log(`✓ Prepared outTime update: 5:30 PM`);
     }
 
     // ============================================
