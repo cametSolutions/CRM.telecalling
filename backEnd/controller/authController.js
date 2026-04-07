@@ -1,11 +1,12 @@
 import models from "../model/auth/authSchema.js"
 import Leavemaster from "../model/secondaryUser/leavemasterSchema.js"
 import Customer from "../model/secondaryUser/customerSchema.js"
-import Misspunch from "../model/primaryUser/missPunchSchema.js"
+
 import { getStaffSolvedCallCounts } from "../helper/staffHighestandlowestsolvedcallscount.js"
 import LeadMaster from "../model/primaryUser/leadmasterSchema.js"
 import { PreviousmonthLeavesummary } from "../helper/previousMonthleaveSummary.js"
 import mongoose from "mongoose"
+import Misspunch from "../model/primaryUser/misspunchSchema.js"
 
 import Attendance from "../model/primaryUser/attendanceSchema.js"
 import Holymaster from "../model/secondaryUser/holydaymasterSchema.js"
@@ -19,6 +20,8 @@ import CallRegistration from "../model/secondaryUser/CallRegistrationSchema.js"
 export const resetCallStatus = async (req, res) => {
   const { adminid } = req.query
 console.log(adminid)
+console.log("h")
+console.log("dd")
   const objectId = new mongoose.Types.ObjectId(adminid)
   try {
     const resetstatus = await Admin.updateOne(
