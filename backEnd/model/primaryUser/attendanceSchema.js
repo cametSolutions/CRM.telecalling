@@ -13,6 +13,7 @@ const attendanceSchema = new Schema(
     //   ref: "Staff",
     //   required: true
     // },
+    misspunchVerified: { type: Boolean, default: false },
     attendanceId: {
       type: Number,
       required: true
