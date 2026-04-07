@@ -1041,7 +1041,7 @@ console.log("hhhhh")
             bottom: response.data.message
           }))
         }
-      } else if (tab === "Misspunch") {
+      } else if (tab === "Mispunch") {
         console.log("hhhhhh")
         let newErrors = {}
         console.log(formData)
@@ -1053,15 +1053,15 @@ console.log("hhhhh")
           userId: user?._id,
           userModel: user?.role
         }
-        // const response = await api.post(
-        //   "http://localhost:9000/api/auth/misspunchRegister",
-        //   misspunchData
-        // )
-
         const response = await api.post(
-          "https://www.crmtest.camet.in/api/auth/misspunchRegister",
+          "http://localhost:9000/api/auth/misspunchRegister",
           misspunchData
         )
+
+        // const response = await api.post(
+        //   "https://www.crmtest.camet.in/api/auth/misspunchRegister",
+        //   misspunchData
+        // )
         if (response.status === 201 || response.status === 200) {
           console.log("Success:", response.data)
           toast.success("Misspunch registered")
