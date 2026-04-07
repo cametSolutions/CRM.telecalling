@@ -6,7 +6,7 @@ import { getStaffSolvedCallCounts } from "../helper/staffHighestandlowestsolvedc
 import LeadMaster from "../model/primaryUser/leadmasterSchema.js"
 import { PreviousmonthLeavesummary } from "../helper/previousMonthleaveSummary.js"
 import mongoose from "mongoose"
-import Misspunch from "../model/primaryUser/misspunchSchema.js"
+import Misspunch from "../model/primaryUser/misspunchingSchema.js"
 
 import Attendance from "../model/primaryUser/attendanceSchema.js"
 import Holymaster from "../model/secondaryUser/holydaymasterSchema.js"
