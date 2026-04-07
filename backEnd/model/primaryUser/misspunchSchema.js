@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 const { Schema } = mongoose
-const missPunchSchema = new Schema({
+const misspunchSchema = new Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         refPath: "userModel",
@@ -28,5 +28,5 @@ const missPunchSchema = new Schema({
     applyDate: { type: Date },
     misspunchType: { type: String }
 }, { timestamps: true })
-const Misspunch = mongoose.model("Misspunch", missPunchSchema)
+const Misspunch = mongoose.model("Misspunch", misspunchSchema)
 export default Misspunch
