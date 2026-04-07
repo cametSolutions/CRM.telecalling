@@ -1323,6 +1323,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       }
 
       const startMinutes = convertToMinutes(startTime)
+console.log("startsminteeeeeeeee",startMinutes)
       const endMinutes = convertToMinutes(endTime)
       const midMinutes = Math.floor((startMinutes + endMinutes) / 2)
 
