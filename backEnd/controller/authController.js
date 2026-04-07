@@ -1,11 +1,12 @@
 import models from "../model/auth/authSchema.js"
 import Leavemaster from "../model/secondaryUser/leavemasterSchema.js"
 import Customer from "../model/secondaryUser/customerSchema.js"
-
+import Misspunch from "../model/primaryUser/missPunchSchema.js"
 import { getStaffSolvedCallCounts } from "../helper/staffHighestandlowestsolvedcallscount.js"
 import LeadMaster from "../model/primaryUser/leadmasterSchema.js"
 import { PreviousmonthLeavesummary } from "../helper/previousMonthleaveSummary.js"
 import mongoose from "mongoose"
+
 import Attendance from "../model/primaryUser/attendanceSchema.js"
 import Holymaster from "../model/secondaryUser/holydaymasterSchema.js"
 import Onsite from "../model/primaryUser/onsiteSchema.js"
@@ -353,9 +354,9 @@ export const Login = async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid login credentials" })
     }
-console.log(user)
+    console.log(user)
     const token = generateToken(res, user)
-console.log("dddddddddddddddddddddddddddddddd",token)
+    console.log("dddddddddddddddddddddddddddddddd", token)
 
     if (token) {
       const { password, ...userwithoutpassword } = user
@@ -598,14 +599,14 @@ export const GetAllstaffs = async (req, res) => {
 export const GetallUsers = async (req, res) => {
   try {
     const { isVerified = null } = req.query
-console.log("isvvvvvvv",isVerified)
+    console.log("isvvvvvvv", isVerified)
     let query = {}
     if (isVerified) {
       query = {
         isVerified: true
       }
     }
-console.log('query',query)
+    console.log('query', query)
     const allusers = await Staff.find(query)
       .populate({ path: "department", select: "department" })
       .populate({ path: "assignedto", select: "name" })
@@ -727,14 +728,14 @@ export const LeaveApply = async (req, res) => {
 
   try {
 
-
+console.log("pppppppppppppppppppppppppppppppp")
     const existingDateLeave = await LeaveRequest.find({
 
       leaveDate,
       userId: objectId
     })
     const filteredLeave = existingDateLeave?.filter((leave) => leave._id.equals(leaveId))
-
+console.log("iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii")
 
     if (filteredLeave && filteredLeave.length) {
       if (existingDateLeave.some((item) => item.leaveType === "Half Day") && leaveType === "Full Day") {
@@ -878,7 +879,7 @@ export const LeaveApply = async (req, res) => {
         }
 
       }
-
+console.log("ddddddddddddddddddddddddddddddddddddd")
       const newleave = new LeaveRequest({
         leaveDate,
         leaveType,
@@ -891,7 +892,7 @@ export const LeaveApply = async (req, res) => {
         assignedto: assignedTo
       })
       await newleave.save()
-
+console.log("hhhhhhhhhhhhhhhhhhhhhhhhhh")
       if (leaveCategory === "compensatory Leave") {
         const year = new Date(leaveDate).getFullYear()
         const leaveValue = leaveType === "Full Day" ? 1 : 0.5
@@ -917,7 +918,7 @@ export const LeaveApply = async (req, res) => {
         .json({ message: "leave applied successfully", data: allleaves })
     }
   } catch (error) {
-    console.log("error:", error.message)
+    console.log("error:", error)
     res.status(500).json({ message: "internal server error" })
   }
 }
@@ -959,6 +960,316 @@ export const mergeonsite = async (req, res) => {
     }
   } catch (error) {
     console.log("error", error)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
+
+export const ApproveMisspunch = async (req, res) => {
+  // Start a session for transaction
+  const session = await mongoose.startSession();
+
+  try {
+    const {
+      role,
+      userId,
+      selectedId,
+      startDate,
+      endDate,
+      name,
+      misspunchDate,
+      misspunchType
+    } = req.query;
+
+    // Validate common parameters
+    if (!role || !startDate || !endDate) {
+      return res
+        .status(400)
+        .json({ message: "Missing required query parameters." });
+    }
+
+    // Validate misspunch-specific parameters
+    if (!selectedId || !misspunchDate || !misspunchType) {
+      return res
+        .status(400)
+        .json({ message: "Missing required misspunch parameters (selectedId, misspunchDate, misspunchType)." });
+    }
+
+    // Validate misspunchType
+    if (!['in', 'out'].includes(misspunchType.toLowerCase())) {
+      return res
+        .status(400)
+        .json({ message: "Invalid misspunchType. Must be 'in' or 'out'." });
+    }
+
+    // Convert IDs to ObjectId if provided
+    const userObjectId = userId ? new mongoose.Types.ObjectId(userId) : null;
+    const selectedObjectId = new mongoose.Types.ObjectId(selectedId);
+
+    const startdate = new Date(startDate);
+    startdate.setHours(0, 0, 0, 0);
+
+    const enddate = new Date(endDate);
+    enddate.setHours(23, 59, 59, 999);
+
+    // Parse misspunch date and set to start of day for exact matching
+    const misspunchDateParsed = new Date(misspunchDate);
+    misspunchDateParsed.setHours(0, 0, 0, 0);
+
+    // Base query common to both cases
+    const baseQuery = {
+      misspunchDate: { $gte: startdate, $lte: enddate }
+    };
+
+    // Define role-based update fields for MISSPUNCH
+    const updateFields =
+      role === "Admin"
+        ? {
+          hrstatus: "HR Approved",
+          adminverified: true
+        }
+        : {
+          departmentstatus: "Dept Approved",
+          departmentverified: true
+        };
+
+    // Start transaction
+    await session.startTransaction();
+
+    // ============================================
+    // STEP 1: UPDATE MISSPUNCH RECORD
+    // ============================================
+    const result = await Misspunch.updateOne(
+      {
+        _id: selectedObjectId
+      },
+      { $set: updateFields },
+      { session }
+    );
+
+    if (!result || result.modifiedCount === 0) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: "Misspunch record not found or already updated" });
+    }
+
+    console.log(`✓ Misspunch record updated successfully - ID: ${selectedObjectId}`);
+
+    // ============================================
+    // STEP 2: GET USER ID FROM MISSPUNCH RECORD
+    // ============================================
+    const misspunchRecord = await Misspunch.findById(selectedObjectId)
+      .select('userId')
+      .session(session);
+
+    if (!misspunchRecord || !misspunchRecord.userId) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: "Misspunch record or userId not found" });
+    }
+
+    const misspunchUserId = misspunchRecord.userId;
+    console.log(`✓ Found userId: ${misspunchUserId} from misspunch record`);
+
+    // ============================================
+    // STEP 3: FIND ATTENDANCE RECORD FOR EXACT DATE
+    // ============================================
+    const attendanceRecord = await Attendance.findOne({
+      userId: misspunchUserId,
+      attendanceDate: misspunchDateParsed
+    }).session(session);
+
+    if (!attendanceRecord) {
+      await session.abortTransaction();
+      console.log("misspunjcuseridd", misspunchUserId)
+      console.log("dateparsed", misspunchDateParsed)
+      console.log("no attendance")
+      return res.status(404).json({
+        message: `No attendance record found`
+      });
+    }
+
+    console.log(`✓ Found attendance record - ID: ${attendanceRecord._id}`);
+
+    // ============================================
+    // STEP 4: PREPARE ATTENDANCE UPDATE FIELDS
+    // ============================================
+    const attendanceUpdateFields = {
+      misspunchVerified: true
+    };
+
+    // Update inTime or outTime based on misspunchType
+    if (misspunchType.toLowerCase() === 'in') {
+      // Set inTime to "9:30 AM" as string
+      attendanceUpdateFields.inTime = "9:30 AM";
+      console.log(`✓ Prepared inTime update: 9:30 AM`);
+    } else if (misspunchType.toLowerCase() === 'out') {
+      // Set outTime to "5:30 PM" as string
+      attendanceUpdateFields.outTime = "5:30 PM";
+      console.log(`✓ Prepared outTime update: 5:30 PM`);
+    }
+
+    // ============================================
+    // STEP 5: UPDATE ATTENDANCE RECORD
+    // ============================================
+    const updateResult = await Attendance.updateOne(
+      {
+        _id: attendanceRecord._id
+      },
+      { $set: attendanceUpdateFields },
+      { session }
+    );
+
+    if (!updateResult || updateResult.modifiedCount === 0) {
+      await session.abortTransaction();
+      return res.status(500).json({
+        message: "Failed to update attendance record. Transaction aborted."
+      });
+    }
+
+    console.log(`✓ Attendance record updated successfully - ID: ${attendanceRecord._id}`);
+
+    // ============================================
+    // STEP 6: COMMIT TRANSACTION
+    // ============================================
+    await session.commitTransaction();
+    console.log(`✓ Transaction committed successfully`);
+
+    // ============================================
+    // STEP 7: FETCH UPDATED MISSPUNCH RECORDS
+    // ============================================
+    const updatedmissPunch = await Misspunch.find(baseQuery).populate({
+      path: "userId",
+      select: "name role department",
+      populate: [
+        {
+          path: "department",
+          select: "department",
+          options: { strictPopulate: false }
+        },
+        {
+          path: "selected.branch_id",
+          model: "Branch",
+          select: "branchName",
+          options: { strictPopulate: false }
+        }
+      ]
+    });
+
+    return res.status(200).json({
+      message: "Misspunch and attendance updated successfully",
+      data: updatedmissPunch,
+      updatedRecords: {
+        misspunch: {
+          id: selectedObjectId,
+          status: role === "Admin" ? "HR Approved" : "Dept Approved"
+        },
+        attendance: {
+          id: attendanceRecord._id,
+          userId: misspunchUserId,
+          date: misspunchDate,
+          updatedField: misspunchType.toLowerCase() === 'in' ? 'inTime' : 'outTime',
+          updatedValue: misspunchType.toLowerCase() === 'in' ? '9:30 AM' : '5:30 PM',
+          misspunchVerified: true
+        }
+      }
+    });
+
+  } catch (error) {
+    // Abort transaction on error
+    await session.abortTransaction();
+    console.error("❌ Error occurred:", error);
+    return res.status(500).json({
+      message: "Internal server error. Transaction aborted.",
+      error: error.message
+    });
+  } finally {
+    // End session
+    session.endSession();
+    console.log(`✓ Session ended`);
+  }
+};
+
+
+
+
+
+
+
+
+export const MisspunchRegister = async (req, res) => {
+  try {
+    const { userId, userModel, misspunchDate, misspunchType, remark } = req.body;
+
+    // Basic validation
+    if (!userId || !userModel || !misspunchType) {
+      return res.status(400).json({ message: "Required fields missing" });
+    }
+
+    const newMisspunch = await Misspunch.create({
+      userId,
+      remark,
+      userModel, // "Staff" or "Admin"
+      misspunchDate: misspunchDate ? new Date(misspunchDate) : new Date(),
+      applyDate: new Date(), // when user applied
+      misspunchType
+    });
+
+    return res.status(201).json({
+      message: "Misspunch registered successfully",
+      data: newMisspunch
+    });
+
+  } catch (error) {
+    console.log("error", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+
+
+
+
+export const Getallmisspunch = async (req, res) => {
+  try {
+    const startdate = req?.query?.startDate
+    const start = new Date(startdate);
+    start.setHours(0, 0, 0, 0); // Start of the day
+    const enddate = req?.query?.endDate
+
+    const end = new Date(enddate);
+    end.setHours(23, 59, 59, 999)
+    console.log("startdate", startdate)
+    console.log("enddate", enddate)
+    const misspunchdata = await Misspunch.find({
+      misspunchDate: {
+        $gte: startdate,
+        $lte: enddate
+      }
+    }).populate({
+      path: "userId",
+      select: "name role department", // Select fields from User
+      populate: [
+        {
+          path: "department",
+          select: "department",
+          options: { strictPopulate: false } // Graceful fallback for missing departments
+        },
+        {
+          path: "selected.branch_id",
+          model: "Branch",
+          select: "branchName",
+          options: { strictPopulate: false } // Avoid errors for missing branches
+        }
+      ]
+    })
+
+    console.log("missssspucnhdata", misspunchdata)
+    if (misspunchdata && misspunchdata.length) {
+      return res.status(200).json({ message: "misspunchfound", data: misspunchdata })
+    } else {
+      return res.status(400).json({ message: "not found" })
+    }
+
+  } catch (error) {
+    console.log("error", error.message)
     return res.status(500).json({ message: "Internal server error" })
   }
 }

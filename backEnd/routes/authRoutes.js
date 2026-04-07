@@ -43,7 +43,10 @@ import {
   GetAllstaffs,
   Getadminpanelcount,
   Logout,
-  
+  ApproveMisspunch,
+  MisspunchRegister,
+  Getallmisspunch
+
 } from "../controller/authController.js"
 const router = express.Router()
 
@@ -84,6 +87,9 @@ router.get("/getStaffCallStatus", authMiddleware, GetStaffCallList)
 router.get("/staffcallList", authMiddleware, GetindividualStaffCall)
 router.put("/approveLeave", authMiddleware, ApproveLeave)
 router.put("/approveOnsite", authMiddleware, ApproveOnsite)
+router.put("/approveMispunch", authMiddleware, ApproveMisspunch)
+router.post("/misspunchRegister", authMiddleware, MisspunchRegister)
+router.get("/getallmisspunch", authMiddleware, Getallmisspunch)
 router.put("/cancelLeaveApproval", authMiddleware, cancelLeaveOrOnsiteApproval)
 router.put("/cancelOnsiteApproval", authMiddleware, cancelLeaveOrOnsiteApproval)
 router.put("/rejectLeave", authMiddleware, RejectLeave)

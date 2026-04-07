@@ -416,7 +416,7 @@ function UsersLeaveApplicationSummary() {
         //   { formData, tableRows }
         // )
         const response = await api.post(
-          `https://www.crm.camet.in/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          `https://www.crmtest.camet.in/api/auth/onsiteLeave?selectedid=${user._id}&assignedto=${user.assignedto}`,
           { formData, tableRows }
         )
 
@@ -457,7 +457,7 @@ function UsersLeaveApplicationSummary() {
         //   }
         // )
         const response = await fetch(
-          `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          `https://www.crmtest.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
           {
             method: "POST",
             headers: {

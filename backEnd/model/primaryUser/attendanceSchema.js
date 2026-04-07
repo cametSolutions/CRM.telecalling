@@ -8,11 +8,8 @@ const attendanceSchema = new Schema(
       ref: "Staff", // Reference to the user who made the request
       required: true
     },
-    // assignedto: {
-    //   type: mongoose.Schema.Types.ObjectId,
-    //   ref: "Staff",
-    //   required: true
-    // },
+ 
+    misspunchVerified: { type: Boolean, default: false },
     attendanceId: {
       type: Number,
       required: true
