@@ -20,6 +20,7 @@ import CallRegistration from "../model/secondaryUser/CallRegistrationSchema.js"
 export const resetCallStatus = async (req, res) => {
   const { adminid } = req.query
 console.log(adminid)
+console.log("h")
   const objectId = new mongoose.Types.ObjectId(adminid)
   try {
     const resetstatus = await Admin.updateOne(
