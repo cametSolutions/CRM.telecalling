@@ -1041,7 +1041,7 @@ console.log("hhhhh")
             bottom: response.data.message
           }))
         }
-      } else if (tab === "Misspunch") {
+      } else if (tab === "Mispunch") {
         console.log("hhhhhh")
         let newErrors = {}
         console.log(formData)
