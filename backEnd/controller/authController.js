@@ -1202,8 +1202,30 @@ export const MisspunchRegister = async (req, res) => {
     const { userId, userModel, misspunchDate, misspunchType, remark } = req.body;
 
     // Basic validation
-    if (!userId || !userModel || !misspunchType) {
+    if (!userId || !userModel || !misspunchType||misspunchDate) {
       return res.status(400).json({ message: "Required fields missing" });
+    }
+ // ✅ Normalize date (remove time part)
+    const startOfDay = new Date(misspunchDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(misspunchDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // ✅ Check attendance
+    const attendanceRecord = await Attendance.findOne({
+      userId,
+      date: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      }
+    });
+
+    // ❌ If no attendance → block
+    if (!attendanceRecord) {
+      return res.status(404).json({
+        message: `No attendance found for this date"
+      });
     }
 
     const newMisspunch = await Misspunch.create({
@@ -1487,6 +1509,10 @@ export const OnsiteApply = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" })
   }
 }
+
+
+
+
 
 export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
   try {
