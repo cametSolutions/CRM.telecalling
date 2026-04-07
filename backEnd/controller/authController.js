@@ -21,6 +21,7 @@ export const resetCallStatus = async (req, res) => {
   const { adminid } = req.query
 console.log(adminid)
 console.log("h")
+console.log("dd")
   const objectId = new mongoose.Types.ObjectId(adminid)
   try {
     const resetstatus = await Admin.updateOne(
