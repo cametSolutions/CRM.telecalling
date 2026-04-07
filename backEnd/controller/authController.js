@@ -18,7 +18,7 @@ import LeaveRequest from "../model/primaryUser/leaveRequestSchema.js"
 import CallRegistration from "../model/secondaryUser/CallRegistrationSchema.js"
 export const resetCallStatus = async (req, res) => {
   const { adminid } = req.query
-
+console.log(adminid)
   const objectId = new mongoose.Types.ObjectId(adminid)
   try {
     const resetstatus = await Admin.updateOne(
