@@ -1570,7 +1570,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       return dates
     }
 
-    //
+  
     const getMidTime = (startTime, endTime) => {
       const convertToMinutes = (timeString) => {
         const [time, period] = timeString.split(" ")
@@ -1590,7 +1590,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
         if (hours > 12) hours -= 12
         if (hours === 0) hours = 12
 
-        return `${hours}:${minutes} ${period}`
+        return `${hours}:${minutes} ${period}`;
       }
 
       const startMinutes = convertToMinutes(startTime)
@@ -1600,7 +1600,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
       return convertToTimeString(midMinutes)
     }
  
-
+ 
     const sundays = getSundays(year, month)
     const sundayFulldate = createDates(sundays, month, year)
     const startDate = new Date(Date.UTC(year, month - 1, 1))
