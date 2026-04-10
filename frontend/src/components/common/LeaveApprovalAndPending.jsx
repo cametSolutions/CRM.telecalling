@@ -1037,11 +1037,11 @@ console.log(error.response.data.message)
                   <th className="px-3 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
                     {dateColHeader}
                   </th>
-                  <th className="px-3 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
+                  <th className="px-3 py-2 text-center font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
                     Type
                   </th>
                   {!mispunchMode && (
-                    <th className="px-3 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden xl:table-cell">
+                    <th className="px-3 py-2 text-center font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden xl:table-cell">
                       Shift
                     </th>
                   )}
@@ -1135,7 +1135,7 @@ console.log(error.response.data.message)
                               ).toLocaleDateString("en-GB")}
                         </td>
 
-                        <td className="px-3 py-2 whitespace-nowrap hidden md:table-cell">
+                        <td className="px-3 py-2 whitespace-nowrap hidden md:table-cell text-center">
                           <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-purple-100 text-purple-700 border border-purple-200">
                             {mispunchMode
                               ? user?.misspunchType
@@ -1145,7 +1145,7 @@ console.log(error.response.data.message)
                           </span>
                         </td>
                         {!mispunchMode && (
-                          <td className="px-3 py-2 text-gray-700 whitespace-nowrap hidden xl:table-cell">
+                          <td className="px-3 py-2 text-gray-700 whitespace-nowrap hidden xl:table-cell text-center">
                             {user?.halfDayPeriod || "—"}
                           </td>
                         )}
@@ -1161,11 +1161,11 @@ console.log(error.response.data.message)
                           </div>
                         </td>
 
-                        <td className="px-3 py-2 whitespace-nowrap hidden xl:table-cell">
+                        <td className="px-3 py-2 whitespace-nowrap hidden xl:table-cell text-center">
                           {getStatusBadge(user?.departmentstatus)}
                         </td>
 
-                        <td className="px-3 py-2 whitespace-nowrap hidden xl:table-cell">
+                        <td className="px-3 py-2 whitespace-nowrap hidden xl:table-cell text-center">
                           {getStatusBadge(user?.hrstatus)}
                         </td>
 

@@ -36,8 +36,9 @@ export default function FollowupSummaryDashboard() {
       now.getMonth() + 1,
       0
     ).toLocaleDateString("en-CA")
-    setdate((prev) => ({ startDate, endDate }))
+    setdate({ startDate, endDate })
   }, [])
+  console.log(date)
 
   // branches
   useEffect(() => {
@@ -70,8 +71,8 @@ export default function FollowupSummaryDashboard() {
     "Total Leads",
     "Due Today",
     "Overdue",
-    "Future",
-    "Never Follow Up",
+    "Upcoming",
+    "New Lead",
     "Converted",
     "Lost",
     "Conversion %"
@@ -84,6 +85,7 @@ export default function FollowupSummaryDashboard() {
   const handleEndChange = (value) => {
     setdate((prev) => ({ ...prev, endDate: value }))
   }
+  console.log(date)
   console.log("hhhh")
   // navigation logic for metric cells
   const handleMetricClick = (row, header, key) => {
@@ -140,6 +142,7 @@ export default function FollowupSummaryDashboard() {
         state: { staffId: row.staffId }
       })
     } else if (header === "Due Today") {
+      console.log(date)
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: {
           staffId: row.staffId,
@@ -154,6 +157,7 @@ export default function FollowupSummaryDashboard() {
       console.log("hhhhh")
     } else if (header === "Overdue") {
       console.log("hhh")
+      console.log(date)
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: {
           staffId: row.staffId,
@@ -206,9 +210,6 @@ export default function FollowupSummaryDashboard() {
         }
       })
     } else if (header === "Total Leads") {
-      // navigate("/admin/transaction/lead/leadFollowUp", {
-      //   state: { staffId: row.staffId ,branchId:row.branchIds?.[0],istotal:true}
-      // })
       console.log(date)
       console.log("hhhh")
       navigate("/admin/transaction/lead/leadFollowUp", {
