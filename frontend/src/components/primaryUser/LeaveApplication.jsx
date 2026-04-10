@@ -639,11 +639,7 @@ function LeaveApplication() {
         ...formData,
         leaveDate: clickedDate,
         onsiteDate: clickedDate,
-        misspunchDate: new Date(clickedDate).toLocaleString("en-GB", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric"
-        }),
+        misspunchDate: clickedDate,
         leaveType: "Full Day",
         reason: "",
         description: ""
@@ -784,7 +780,7 @@ function LeaveApplication() {
       }
     })
   }
-  
+
   const handleSubmit = async (tab) => {
     console.log(tab)
     console.log("enddddddddddddddddddddddddddddddddddddddddd")
@@ -840,7 +836,7 @@ function LeaveApplication() {
           }))
         } else {
           setMessage({ top: "", bottom: "" })
-console.log("hhhhh")
+          console.log("hhhhh")
           //Assuming you have an API endpoint for creating leave requests
           // const response = await fetch(
           //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
@@ -1043,9 +1039,9 @@ console.log("hhhhh")
         }
       } else if (tab === "Mispunch") {
         console.log("hhhhhh")
-        let newErrors = {}
-        console.log(formData)
 
+        console.log(formData)
+        setLoader(true)
         const misspunchData = {
           misspunchDate: formData.misspunchDate,
           remark: formData?.remark,
@@ -1065,22 +1061,79 @@ console.log("hhhhh")
         if (response.status === 201 || response.status === 200) {
           console.log("Success:", response.data)
           toast.success("Misspunch registered")
+          setLoader(false)
         }
         console.log(misspunchData)
       }
       console.log("H")
     } catch (error) {
-console.log(error)
-console.log(error?.response?.data?.message)
+      console.log(error)
+      console.log(error?.response?.data?.message)
       setLoader(false)
 
       setMessage((prev) => ({
         ...prev,
         bottom: error?.response?.data?.message || "An error occurred"
       }))
+      toast.error(error?.response?.data?.message || "error occured")
       console.log("error:", error)
     }
   }
+ 
+
+  const resetApplicationFlow = () => {
+    setShowModal(false)
+    setShowTypeSelector(false)
+    setSelectedType("")
+    setSelectedDate(null)
+    setcompensatoryLeave(false)
+    setEdit(false)
+    setSelectedTab("Leave")
+    setTableRows([])
+    setMessage("")
+    setErrors("")
+    setIsOnsite(false)
+    setFormData({
+      description: "",
+      onsite: false,
+      halfDayPeriod: "",
+      leaveType: "Full Day",
+      leaveCategory: "",
+      reason: "",
+      mispunchType: "",
+      remark: ""
+    })
+  }
+
+  const handleTypeSelection = (type, date) => {
+    setSelectedType(type)
+
+    if (type === "leave") {
+      setSelectedTab("Leave")
+      setIsOnsite(false)
+    }
+
+    if (type === "onsite") {
+      setSelectedTab("Onsite")
+      setIsOnsite(true)
+    }
+
+    if (type === "mispunch") {
+      setSelectedTab("Mispunch")
+      setIsOnsite(false)
+    }
+
+    handleDateClick(date.fullDate)
+    setShowTypeSelector(false)
+    setShowModal(true)
+  }
+
+  const handleSubmitAndReset = async (tabName) => {
+    await handleSubmit(tabName)
+    resetApplicationFlow()
+  }
+
+  
   const selectedTabContent = (value) => {
     let existingEvent
     switch (true) {
@@ -1814,270 +1867,7 @@ console.log(error?.response?.data?.message)
     }
   }
   return (
-    // <div className="w-full ">
-    //   <div className="flex items-center justify-between sticky top-0 py-3 px-4 z-30 bg-white">
-    //     <h2 className="text-xl font-semibold">{visibleMonth}</h2>
-    //     <div className="flex space-x-2">
-    //       <button
-    //         onClick={prevMonth}
-    //         className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"
-    //       >
-    //         <HiChevronLeft className="w-5 h-5" /> {/* Backward Icon */}
-    //       </button>
-    //       <button
-    //         onClick={goToToday}
-    //         className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
-    //       >
-    //         Today
-    //       </button>
-    //       <button
-    //         onClick={nextMonth}
-    //         className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"
-    //       >
-    //         <HiChevronRight className="w-5 h-5" /> {/* Forward Icon */}
-    //       </button>
-    //     </div>
-    //   </div>
-
-    //   <div className="overflow-y-auto border rounded-lg mx-4">
-    //     {visibleDays.map((date, index) => (
-    //       <div
-    //         key={index}
-    //         onClick={() => {
-    //           setSelectedDate(date)
-    //           handleDateClick(date.fullDate)
-    //         }}
-    //         className="flex justify-between items-center px-4 py-2 mb-2  cursor-pointer bg-gray-200"
-    //       >
-    //         <div className="">
-    //           <div className=" flex-shrink-0 flex items-center justify-center rounded-full border mr-4 font-bold  text-sm sm:text-lg">
-    //             {date.fullMonthDay}
-    //           </div>
-    //           <div>
-    //             <div className="font-medium">
-    //               {new Date(date.fullDate).toLocaleString("default", {
-    //                 weekday: "long"
-    //               })}
-    //             </div>
-    //           </div>
-    //         </div>
-
-    //         <div className="flex flex-col">
-    //           {currentmonthleaveData?.length > 0
-    //             ? currentmonthleaveData
-    //                 .filter(
-    //                   (leave) =>
-    //                     new Date(leave.leaveDate)
-    //                       .toISOString()
-    //                       .split("T")[0] === date.fullDate
-    //                 ) // Matching dates correctly
-    //                 .map((leave, index) => (
-    //                   <div
-    //                     key={index}
-    //                     className="flex  items-center justify-between hover:cursor-pointer  mb-1"
-    //                   >
-    //                     <div className="flex flex-col text-gray-600">
-    //                       <span className="text-sm">{leave?.leaveType}</span>
-    //                       <span className="text-sm font-semibold">
-    //                         {leave?.leaveCategory}
-    //                       </span>
-    //                     </div>
-
-    //                     <div
-    //                       className={`px-3 ml-2 py-1 text-sm rounded-full text-white ${
-    //                         leave.departmentstatus === "Dept Approved" ||
-    //                         leave.hrstatus === "HR/Onsite Approved"
-    //                           ? "bg-green-500"
-    //                           : leave.departmentstatus === "Not Approved" &&
-    //                               leave.hrstatus === "Not Approved"
-    //                             ? "bg-yellow-500"
-    //                             : "bg-red-500"
-    //                       }`}
-    //                     >
-    //                       {leave.departmentstatus === "Dept Approved" ||
-    //                       leave.hrstatus === "HR/Onsite Approved"
-    //                         ? "Approved"
-    //                         : leave.departmentstatus === "Not Approved" &&
-    //                             leave.hrstatus === "Not Approved"
-    //                           ? "Pending"
-    //                           : ""}
-    //                     </div>
-    //                   </div>
-    //                 ))
-    //             : ""}
-    //         </div>
-    //       </div>
-    //     ))}
-    //   </div>
-
-    //   {/* Modal Popup */}
-    //   {showModal && leaveBalance && (
-    //     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center  z-50">
-    //       <div
-    //         className={` bg-white rounded-lg shadow-lg  sm:w-auto mx-4 max-h-[90vh] overflow-y-auto flex flex-col  ${
-    //           selectedTab === "New Onsite" ? "md:w-3/4" : ""
-    //         }`}
-    //       >
-    //         {loader && (
-    //           <BarLoader
-    //             cssOverride={{ width: "100%", height: "6px" }} // Tailwind's `h-4` corresponds to `16px`
-    //             color="#4A90E2" // Change color as needed
-    //             // loader={true}
-    //           />
-    //         )}
-    //         <div className="p-3 w-full  ">
-    //           {/* Tab Navigation */}
-    //           <div className="flex justify-center space-x-4 ">
-    //             {tabs?.map((tab) => (
-    //               <span
-    //                 key={tab}
-    //                 onClick={() => {
-    //                   setSelectedTab(tab)
-    //                   setMessage("")
-    //                   selectedTabContent(tab)
-
-    //                   setIsOnsite(tab === "Onsite")
-    //                 }}
-    //                 className={`cursor-pointer ${
-    //                   selectedTab === tab
-    //                     ? "text-blue-500 font-semibold underline"
-    //                     : "text-black"
-    //                 }`}
-    //               >
-    //                 {tab}
-    //               </span>
-    //             ))}
-    //           </div>
-
-    //           <div className="mt-2">
-    //             <div>{renderContent()}</div>
-
-    //             {selectedTab === "Leave" ? (
-    //               <div className=" flex justify-center mt-3 mb-3">
-    //                 <button
-    //                   className="bg-blue-800 rounded-lg px-4 py-1 text-white hover:bg-blue-700"
-    //                   onClick={() => {
-    //                     setSelectedTab("New Leave")
-    //                     setFormData((prev) => ({
-    //                       ...prev,
-    //                       leaveType: "Full Day",
-    //                       leaveCategory: "",
-    //                       halfDayPeriod: "",
-    //                       reason: ""
-    //                     }))
-    //                   }}
-    //                 >
-    //                   Apply New Leaves
-    //                 </button>
-    //                 <button
-    //                   className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600 ml-3"
-    //                   onClick={() => {
-    //                     setShowModal(false)
-    //                     setcompensatoryLeave(false)
-    //                     setEdit(false)
-    //                     setFormData({
-    //                       description: "",
-    //                       onsite: false,
-    //                       halfDayPeriod: "",
-    //                       leaveType: "Full Day"
-    //                     })
-
-    //                     setSelectedTab("Leave")
-    //                     setTableRows([])
-    //                     setMessage("")
-    //                     setErrors("")
-    //                   }}
-    //                 >
-    //                   Close
-    //                 </button>
-    //               </div>
-    //             ) : selectedTab === "Edit Onsite" ||
-    //               selectedTab === "Edit Leave" ||
-    //               selectedTab === "New Leave" ||
-    //               selectedTab === "New Onsite" ? (
-    //               <div className="col-span-2 gap-4 flex justify-center mt-4 mb-3">
-    //                 <button
-    //                   className="bg-gradient-to-b from-blue-400 to-blue-500 px-3 py-1 hover:from-blue-400 hover:to-blue-600 text-white rounded"
-    //                   onClick={() => handleSubmit(selectedTab)}
-    //                 >
-    //                   {selectedTab === "Edit Onsite" ||
-    //                   selectedTab === "Edit Leave"
-    //                     ? "Update"
-    //                     : "Submit"}
-    //                 </button>
-    //                 <button
-    //                   className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
-    //                   onClick={() => {
-    //                     setShowModal(false)
-    //                     setcompensatoryLeave(false)
-    //                     setFormData({
-    //                       description: "",
-    //                       onsite: false,
-    //                       halfDayPeriod: "",
-    //                       leaveType: "Full Day"
-    //                     })
-
-    //                     setSelectedTab("Leave")
-    //                     setTableRows([])
-    //                     setMessage("")
-    //                     setErrors("")
-    //                   }}
-    //                 >
-    //                   Close
-    //                 </button>
-    //                 <button
-    //                   className="bg-red-600 px-4 py-2 rounded-md text-white font-semibold shadow-lg hover:bg-red-700 active:shadow-md active:translate-y-[2px] transition-all duration-200"
-    //                   onClick={() => handledelete(formData)}
-    //                 >
-    //                   Delete
-    //                 </button>
-    //               </div>
-    //             ) : (
-    //               <div className="text-center">
-    //                 <button
-    //                   onClick={() => {
-    //                     setSelectedTab("New Onsite")
-    //                     setFormData((prev) => ({
-    //                       ...prev,
-    //                       onsiteType: "Full Day",
-    //                       halfDayPeriod: "",
-    //                       description: ""
-    //                     }))
-    //                     setTableRows([])
-    //                   }}
-    //                   className="py-2 m-2 bg-blue-800 shadow-lg text-white rounded-lg px-2 hover:bg-blue-900"
-    //                 >
-    //                   Apply New Onsite
-    //                 </button>
-    //                 <button
-    //                   className="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600"
-    //                   onClick={() => {
-    //                     setShowModal(false)
-    //                     setcompensatoryLeave(false)
-    //                     setFormData({
-    //                       description: "",
-    //                       onsite: false,
-    //                       halfDayPeriod: "",
-    //                       leaveType: "Full Day"
-    //                     })
-
-    //                     setSelectedTab("Leave")
-    //                     setTableRows([])
-    //                     setMessage("")
-    //                     setErrors("")
-    //                   }}
-    //                 >
-    //                   Close
-    //                 </button>
-    //               </div>
-    //             )}
-    //           </div>
-    //         </div>
-    //       </div>
-    //     </div>
-    //   )}
-    // </div>
-    //new ui
+    //updated
     // <div className="w-full ">
     //   {/* HEADER */}
     //   <div className="flex items-center justify-between sticky top-0 py-3 px-4 z-30 bg-white">
@@ -2191,12 +1981,7 @@ console.log(error?.response?.data?.message)
     //                 name="type"
     //                 value={type}
     //                 checked={selectedType === type}
-    //                 onChange={
-    //                   (e) => setSelectedType(e.target.value)
-    //                   // setFormData((prev)=>({
-    //                   // ...prev,
-    //                   // selectedDate:}))
-    //                 }
+    //                 onChange={(e) => setSelectedType(e.target.value)}
     //               />
     //               <span className="capitalize">{type}</span>
     //             </label>
@@ -2238,23 +2023,47 @@ console.log(error?.response?.data?.message)
     //   )}
 
     //   {/* 🔴 MAIN MODAL */}
-    //   {showModal && (
+    //   {showModal && leaveBalance && (
     //     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    //       <div className="bg-white rounded-lg shadow-lg mx-4 max-h-[90vh] overflow-y-auto flex flex-col">
+    //       <div
+    //         className={`bg-white rounded-lg shadow-lg mx-4 max-h-[90vh] overflow-y-auto flex flex-col ${
+    //           selectedTab === "New Onsite" ? "md:w-3/4" : "sm:w-auto"
+    //         }`}
+    //       >
+    //         {loader && (
+    //           <BarLoader
+    //             cssOverride={{ width: "100%", height: "6px" }}
+    //             color="#4A90E2"
+    //           />
+    //         )}
     //         <div className="p-3">
     //           {/* TABS (ONLY SELECTED TYPE) */}
     //           <div className="flex justify-center space-x-4">
     //             {tabs
     //               ?.filter((tab) => {
-    //                 if (selectedType === "leave") return tab === "Leave"
-    //                 if (selectedType === "onsite") return tab === "Onsite"
+    //                 if (selectedType === "leave")
+    //                   return ["Leave", "New Leave", "Edit Leave"].includes(tab)
+    //                 if (selectedType === "onsite")
+    //                   return ["Onsite", "New Onsite", "Edit Onsite"].includes(
+    //                     tab
+    //                   )
     //                 if (selectedType === "mispunch") return tab === "Mispunch"
     //                 return false
     //               })
     //               .map((tab) => (
     //                 <span
     //                   key={tab}
-    //                   className="text-blue-500 font-semibold underline"
+    //                   onClick={() => {
+    //                     setSelectedTab(tab)
+    //                     setMessage("")
+    //                     selectedTabContent(tab)
+    //                     setIsOnsite(tab === "Onsite")
+    //                   }}
+    //                   className={`cursor-pointer ${
+    //                     selectedTab === tab
+    //                       ? "text-blue-500 font-semibold underline"
+    //                       : "text-black"
+    //                   }`}
     //                 >
     //                   {tab}
     //                 </span>
@@ -2263,9 +2072,10 @@ console.log(error?.response?.data?.message)
 
     //           {/* CONTENT */}
     //           <div className="mt-4">
-    //             {/* ✅ EXISTING CONTENT */}
+    //             {/* ✅ EXISTING CONTENT FOR LEAVE & ONSITE */}
     //             {selectedTab !== "Mispunch" && renderContent()}
 
+    //             {/* ✅ MISPUNCH CONTENT */}
     //             {selectedTab === "Mispunch" && (
     //               <div className="space-y-4 max-h-[calc(100vh-280px)] overflow-y-auto px-1">
     //                 {/* Date Display */}
@@ -2364,13 +2174,13 @@ console.log(error?.response?.data?.message)
     //                             }))
     //                           }
     //                           className={`
-    //             relative px-3 py-2.5 rounded-lg border-2 transition-all duration-200
-    //             ${
-    //               formData.mispunchType === type
-    //                 ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm"
-    //                 : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
-    //             }
-    //           `}
+    //                         relative px-3 py-2.5 rounded-lg border-2 transition-all duration-200
+    //                         ${
+    //                           formData.mispunchType === type
+    //                             ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm"
+    //                             : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+    //                         }
+    //                       `}
     //                         >
     //                           <div className="flex items-center justify-center gap-1.5">
     //                             {type === "In" ? (
@@ -2456,24 +2266,24 @@ console.log(error?.response?.data?.message)
     //                         }))
     //                       }
     //                     />
+
     //                     <p className="text-xs text-gray-500 mt-1">
     //                       Provide clear details to help us process your request
     //                       faster
     //                     </p>
     //                   </div>
     //                 </div>
-
-    //                 {/* Submit Button */}
     //               </div>
     //             )}
     //           </div>
 
-    //           {/* CLOSE BUTTON */}
+    //           {/* BUTTONS SECTION */}
     //           <div className="flex justify-center mt-4 gap-4">
+    //             {/* MISPUNCH SUBMIT BUTTON */}
     //             {selectedTab === "Mispunch" && (
     //               <button
     //                 className="group relative bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-200 hover:shadow-xl hover:shadow-blue-300 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-    //                 onClick={() => handleSubmit("Misspunch")}
+    //                 onClick={() => handleSubmit("Mispunch")}
     //                 disabled={!formData.mispunchType || !formData.remark}
     //               >
     //                 <span className="flex items-center gap-1.5">
@@ -2494,9 +2304,11 @@ console.log(error?.response?.data?.message)
     //                 </span>
     //               </button>
     //             )}
+
+    //             {/* LEAVE - APPLY NEW BUTTON */}
     //             {selectedTab === "Leave" && (
     //               <button
-    //                 className="bg-blue-800 rounded-lg px-4 py-1 text-white hover:bg-blue-700"
+    //                 className="bg-blue-800 rounded-lg px-4 py-2 text-white hover:bg-blue-700"
     //                 onClick={() => {
     //                   setSelectedTab("New Leave")
     //                   setFormData((prev) => ({
@@ -2511,6 +2323,8 @@ console.log(error?.response?.data?.message)
     //                 Apply New Leaves
     //               </button>
     //             )}
+
+    //             {/* ONSITE - APPLY NEW BUTTON */}
     //             {selectedTab === "Onsite" && (
     //               <button
     //                 onClick={() => {
@@ -2523,34 +2337,61 @@ console.log(error?.response?.data?.message)
     //                   }))
     //                   setTableRows([])
     //                 }}
-    //                 className="py-2 m-2 bg-blue-800 shadow-lg text-white rounded-lg px-2 hover:bg-blue-900"
+    //                 className="py-2 bg-blue-800 shadow-lg text-white rounded-lg px-4 hover:bg-blue-900"
     //               >
     //                 Apply New Onsite
     //               </button>
     //             )}
-    //             {selectedTab === "Leave" && (
-    //               <button
-    //                 className="bg-blue-800 rounded-lg px-4 py-1 text-white hover:bg-blue-700"
-    //                 onClick={() => {
-    //                   setSelectedTab("New Leave")
-    //                   setFormData((prev) => ({
-    //                     ...prev,
-    //                     leaveType: "Full Day",
-    //                     leaveCategory: "",
-    //                     halfDayPeriod: "",
-    //                     reason: ""
-    //                   }))
-    //                 }}
-    //               >
-    //                 Apply New Leaves
-    //               </button>
+
+    //             {/* SUBMIT/UPDATE BUTTON FOR NEW LEAVE, EDIT LEAVE, NEW ONSITE, EDIT ONSITE */}
+    //             {(selectedTab === "Edit Onsite" ||
+    //               selectedTab === "Edit Leave" ||
+    //               selectedTab === "New Leave" ||
+    //               selectedTab === "New Onsite") && (
+    //               <>
+    //                 <button
+    //                   className="bg-gradient-to-b from-blue-400 to-blue-500 px-4 py-2 hover:from-blue-400 hover:to-blue-600 text-white rounded"
+    //                   onClick={() => handleSubmit(selectedTab)}
+    //                 >
+    //                   {selectedTab === "Edit Onsite" ||
+    //                   selectedTab === "Edit Leave"
+    //                     ? "Update"
+    //                     : "Submit"}
+    //                 </button>
+
+    //                 {/* DELETE BUTTON */}
+    //                 {(selectedTab === "Edit Onsite" ||
+    //                   selectedTab === "Edit Leave") && (
+    //                   <button
+    //                     className="bg-red-600 px-4 py-2 rounded-md text-white font-semibold shadow-lg hover:bg-red-700 active:shadow-md active:translate-y-[2px] transition-all duration-200"
+    //                     onClick={() => handledelete(formData)}
+    //                   >
+    //                     Delete
+    //                   </button>
+    //                 )}
+    //               </>
     //             )}
 
+    //             {/* CLOSE BUTTON - ALWAYS VISIBLE */}
     //             <button
-    //               className="bg-gray-500 text-white px-4 py-2 rounded"
+    //               className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
     //               onClick={() => {
     //                 setShowModal(false)
     //                 setSelectedType("")
+    //                 setcompensatoryLeave(false)
+    //                 setEdit(false)
+    //                 setFormData({
+    //                   description: "",
+    //                   onsite: false,
+    //                   halfDayPeriod: "",
+    //                   leaveType: "Full Day",
+    //                   mispunchType: "",
+    //                   remark: ""
+    //                 })
+    //                 setSelectedTab("Leave")
+    //                 setTableRows([])
+    //                 setMessage("")
+    //                 setErrors("")
     //               }}
     //             >
     //               Close
@@ -2561,53 +2402,53 @@ console.log(error?.response?.data?.message)
     //     </div>
     //   )}
     // </div>
-
-    //updated
-    <div className="w-full ">
+    <div className="w-full">
       {/* HEADER */}
-      <div className="flex items-center justify-between sticky top-0 py-3 px-4 z-30 bg-white">
+      <div className="sticky top-0 z-30 flex items-center justify-between bg-white px-4 py-3">
         <h2 className="text-xl font-semibold">{visibleMonth}</h2>
+
         <div className="flex space-x-2">
           <button
             onClick={prevMonth}
-            className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"
+            className="rounded-full bg-gray-100 p-2 transition hover:bg-gray-200"
           >
-            <HiChevronLeft className="w-5 h-5" />
+            <HiChevronLeft className="h-5 w-5" />
           </button>
 
           <button
             onClick={goToToday}
-            className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+            className="rounded-lg bg-gray-100 px-4 py-2 transition hover:bg-gray-200"
           >
             Today
           </button>
 
           <button
             onClick={nextMonth}
-            className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"
+            className="rounded-full bg-gray-100 p-2 transition hover:bg-gray-200"
           >
-            <HiChevronRight className="w-5 h-5" />
+            <HiChevronRight className="h-5 w-5" />
           </button>
         </div>
       </div>
 
       {/* DATE LIST */}
-      <div className="overflow-y-auto border rounded-lg mx-4">
+      <div className="mx-4 overflow-y-auto rounded-lg border">
         {visibleDays.map((date, index) => (
           <div
             key={index}
             onClick={() => {
               setSelectedDate(date)
               setSelectedType("")
-              setShowTypeSelector(true) // 🔥 FIRST POPUP
+              setShowTypeSelector(true)
             }}
-            className="flex justify-between items-center px-4 py-2 mb-2 cursor-pointer bg-gray-200"
+            className="mb-2 flex cursor-pointer items-center justify-between bg-gray-200 px-4 py-2"
           >
             <div>
               <div className="flex items-center">
-                <div className="rounded-full border mr-4 font-bold text-sm sm:text-lg px-2">
+                <div className="mr-4 rounded-full border px-2 text-sm font-bold sm:text-lg">
                   {date.fullMonthDay}
                 </div>
+
                 <div className="font-medium">
                   {new Date(date.fullDate).toLocaleString("default", {
                     weekday: "long"
@@ -2626,7 +2467,7 @@ console.log(error?.response?.data?.message)
                       date.fullDate
                   )
                   .map((leave, i) => (
-                    <div key={i} className="flex items-center mb-1">
+                    <div key={i} className="mb-1 flex items-center">
                       <div className="flex flex-col text-gray-600">
                         <span className="text-sm">{leave?.leaveType}</span>
                         <span className="text-sm font-semibold">
@@ -2635,7 +2476,7 @@ console.log(error?.response?.data?.message)
                       </div>
 
                       <div
-                        className={`px-3 ml-2 py-1 text-sm rounded-full text-white ${
+                        className={`ml-2 rounded-full px-3 py-1 text-sm text-white ${
                           leave.departmentstatus === "Dept Approved" ||
                           leave.hrstatus === "HR/Onsite Approved"
                             ? "bg-green-500"
@@ -2660,32 +2501,39 @@ console.log(error?.response?.data?.message)
         ))}
       </div>
 
-      {/* 🔴 TYPE SELECTOR POPUP */}
+     
+
+      {/* TYPE SELECTOR POPUP */}
       {showTypeSelector && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-80 shadow-lg">
-            <h3 className="text-lg font-semibold mb-4 text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-80 rounded-lg bg-white p-6 shadow-lg">
+            <h3 className="mb-4 text-center text-lg font-semibold">
               Select Request Type
             </h3>
 
             <div className="flex flex-col space-y-3">
               {["leave", "onsite", "mispunch"].map((type) => (
-                <label key={type} className="flex items-center space-x-2">
+                <label
+                  key={type}
+                  className="flex cursor-pointer items-center space-x-2 rounded-md px-2 py-2 transition hover:bg-gray-50"
+                >
                   <input
                     type="radio"
                     name="type"
                     value={type}
                     checked={selectedType === type}
-                    onChange={(e) => setSelectedType(e.target.value)}
+                    onChange={(e) =>
+                      handleTypeSelection(e.target.value, selectedDate)
+                    }
                   />
                   <span className="capitalize">{type}</span>
                 </label>
               ))}
             </div>
 
-            <div className="flex justify-between mt-5">
+            <div className="mt-5 flex justify-end">
               <button
-                className="bg-gray-400 text-white px-4 py-1 rounded"
+                className="rounded bg-gray-400 px-4 py-1 text-white transition hover:bg-gray-500"
                 onClick={() => {
                   setShowTypeSelector(false)
                   setSelectedType("")
@@ -2693,35 +2541,16 @@ console.log(error?.response?.data?.message)
               >
                 Cancel
               </button>
-
-              <button
-                disabled={!selectedType}
-                className={`px-4 py-1 rounded text-white ${
-                  selectedType ? "bg-blue-600" : "bg-gray-300"
-                }`}
-                onClick={() => {
-                  setShowTypeSelector(false)
-
-                  if (selectedType === "leave") setSelectedTab("Leave")
-                  if (selectedType === "onsite") setSelectedTab("Onsite")
-                  if (selectedType === "mispunch") setSelectedTab("Mispunch")
-
-                  handleDateClick(selectedDate.fullDate)
-                  setShowModal(true)
-                }}
-              >
-                Continue
-              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 🔴 MAIN MODAL */}
+      {/* MAIN MODAL */}
       {showModal && leaveBalance && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div
-            className={`bg-white rounded-lg shadow-lg mx-4 max-h-[90vh] overflow-y-auto flex flex-col ${
+            className={`mx-4 flex max-h-[90vh] flex-col overflow-y-auto rounded-lg bg-white shadow-lg ${
               selectedTab === "New Onsite" ? "md:w-3/4" : "sm:w-auto"
             }`}
           >
@@ -2731,18 +2560,23 @@ console.log(error?.response?.data?.message)
                 color="#4A90E2"
               />
             )}
+
             <div className="p-3">
-              {/* TABS (ONLY SELECTED TYPE) */}
+              {/* TABS */}
               <div className="flex justify-center space-x-4">
                 {tabs
                   ?.filter((tab) => {
-                    if (selectedType === "leave")
+                    if (selectedType === "leave") {
                       return ["Leave", "New Leave", "Edit Leave"].includes(tab)
-                    if (selectedType === "onsite")
+                    }
+                    if (selectedType === "onsite") {
                       return ["Onsite", "New Onsite", "Edit Onsite"].includes(
                         tab
                       )
-                    if (selectedType === "mispunch") return tab === "Mispunch"
+                    }
+                    if (selectedType === "mispunch") {
+                      return tab === "Mispunch"
+                    }
                     return false
                   })
                   .map((tab) => (
@@ -2756,7 +2590,7 @@ console.log(error?.response?.data?.message)
                       }}
                       className={`cursor-pointer ${
                         selectedTab === tab
-                          ? "text-blue-500 font-semibold underline"
+                          ? "font-semibold text-blue-500 underline"
                           : "text-black"
                       }`}
                     >
@@ -2767,18 +2601,16 @@ console.log(error?.response?.data?.message)
 
               {/* CONTENT */}
               <div className="mt-4">
-                {/* ✅ EXISTING CONTENT FOR LEAVE & ONSITE */}
                 {selectedTab !== "Mispunch" && renderContent()}
 
-                {/* ✅ MISPUNCH CONTENT */}
                 {selectedTab === "Mispunch" && (
-                  <div className="space-y-4 max-h-[calc(100vh-280px)] overflow-y-auto px-1">
+                  <div className="max-h-[calc(100vh-280px)] space-y-4 overflow-y-auto px-1">
                     {/* Date Display */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <svg
-                            className="w-4 h-4 text-blue-600"
+                            className="h-4 w-4 text-blue-600"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -2790,10 +2622,12 @@ console.log(error?.response?.data?.message)
                               d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                             />
                           </svg>
+
                           <span className="text-xs font-medium text-blue-900">
                             Request Date
                           </span>
                         </div>
+
                         <span className="text-sm font-semibold text-blue-700">
                           {(formData.misspunchDate
                             ? new Date(formData.misspunchDate)
@@ -2808,11 +2642,11 @@ console.log(error?.response?.data?.message)
                     </div>
 
                     {/* Header Section */}
-                    <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 rounded-lg p-3">
+                    <div className="rounded-lg border-l-4 border-amber-500 bg-gradient-to-r from-amber-50 to-orange-50 p-3">
                       <div className="flex items-start gap-2">
-                        <div className="bg-amber-100 rounded-full p-1.5 mt-0.5 flex-shrink-0">
+                        <div className="mt-0.5 flex-shrink-0 rounded-full bg-amber-100 p-1.5">
                           <svg
-                            className="w-4 h-4 text-amber-600"
+                            className="h-4 w-4 text-amber-600"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -2825,11 +2659,12 @@ console.log(error?.response?.data?.message)
                             />
                           </svg>
                         </div>
+
                         <div>
-                          <h3 className="text-sm font-semibold text-gray-800 mb-0.5">
+                          <h3 className="mb-0.5 text-sm font-semibold text-gray-800">
                             Report a Misspunch
                           </h3>
-                          <p className="text-xs text-gray-600 leading-tight">
+                          <p className="text-xs leading-tight text-gray-600">
                             Missed clocking in or out? Let us know and we'll
                             help correct your attendance.
                           </p>
@@ -2841,9 +2676,9 @@ console.log(error?.response?.data?.message)
                     <div className="space-y-4">
                       {/* Misspunch Type */}
                       <div>
-                        <label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 mb-2">
+                        <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-gray-700">
                           <svg
-                            className="w-3.5 h-3.5 text-gray-500"
+                            className="h-3.5 w-3.5 text-gray-500"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -2857,6 +2692,7 @@ console.log(error?.response?.data?.message)
                           </svg>
                           Punch Type
                         </label>
+
                         <div className="grid grid-cols-2 gap-2.5">
                           {["In", "Out"].map((type) => (
                             <button
@@ -2868,19 +2704,16 @@ console.log(error?.response?.data?.message)
                                   mispunchType: type
                                 }))
                               }
-                              className={`
-                            relative px-3 py-2.5 rounded-lg border-2 transition-all duration-200
-                            ${
-                              formData.mispunchType === type
-                                ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm"
-                                : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
-                            }
-                          `}
+                              className={`relative rounded-lg border-2 px-3 py-2.5 transition-all duration-200 ${
+                                formData.mispunchType === type
+                                  ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm"
+                                  : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                              }`}
                             >
                               <div className="flex items-center justify-center gap-1.5">
                                 {type === "In" ? (
                                   <svg
-                                    className="w-4 h-4"
+                                    className="h-4 w-4"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -2894,7 +2727,7 @@ console.log(error?.response?.data?.message)
                                   </svg>
                                 ) : (
                                   <svg
-                                    className="w-4 h-4"
+                                    className="h-4 w-4"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -2907,21 +2740,23 @@ console.log(error?.response?.data?.message)
                                     />
                                   </svg>
                                 )}
+
                                 <span className="text-sm font-medium">
                                   Punch {type}
                                 </span>
                               </div>
+
                               {formData.mispunchType === type && (
-                                <div className="absolute -top-1 -right-1 bg-blue-500 text-white rounded-full p-0.5">
+                                <div className="absolute -right-1 -top-1 rounded-full bg-blue-500 p-0.5 text-white">
                                   <svg
-                                    className="w-2.5 h-2.5"
+                                    className="h-2.5 w-2.5"
                                     fill="currentColor"
                                     viewBox="0 0 20 20"
                                   >
                                     <path
                                       fillRule="evenodd"
-                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                                       clipRule="evenodd"
+                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
                                     />
                                   </svg>
                                 </div>
@@ -2933,9 +2768,9 @@ console.log(error?.response?.data?.message)
 
                       {/* Remark */}
                       <div>
-                        <label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 mb-2">
+                        <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-gray-700">
                           <svg
-                            className="w-3.5 h-3.5 text-gray-500"
+                            className="h-3.5 w-3.5 text-gray-500"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -2949,8 +2784,9 @@ console.log(error?.response?.data?.message)
                           </svg>
                           Reason for Misspunch
                         </label>
+
                         <textarea
-                          className="w-full border-2 border-gray-200 px-3 py-2 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200 resize-none"
+                          className="w-full resize-none rounded-lg border-2 border-gray-200 px-3 py-2 text-sm transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                           rows={3}
                           placeholder="Please explain why you missed the punch (e.g., forgot to clock in, system error, etc.)"
                           value={formData.remark || ""}
@@ -2961,7 +2797,8 @@ console.log(error?.response?.data?.message)
                             }))
                           }
                         />
-                        <p className="text-xs text-gray-500 mt-1">
+
+                        <p className="mt-1 text-xs text-gray-500">
                           Provide clear details to help us process your request
                           faster
                         </p>
@@ -2972,18 +2809,18 @@ console.log(error?.response?.data?.message)
               </div>
 
               {/* BUTTONS SECTION */}
-              <div className="flex justify-center mt-4 gap-4">
-                {/* MISPUNCH SUBMIT BUTTON */}
+              <div className="mt-4 flex justify-center gap-4">
+                {/* MISPUNCH SUBMIT */}
                 {selectedTab === "Mispunch" && (
                   <button
-                    className="group relative bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-200 hover:shadow-xl hover:shadow-blue-300 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                    onClick={() => handleSubmit("Mispunch")}
+                    className="group relative rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-200 transition-all duration-200 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl hover:shadow-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() => handleSubmitAndReset("Mispunch")}
                     disabled={!formData.mispunchType || !formData.remark}
                   >
                     <span className="flex items-center gap-1.5">
                       Submit Request
                       <svg
-                        className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform"
+                        className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -2999,10 +2836,10 @@ console.log(error?.response?.data?.message)
                   </button>
                 )}
 
-                {/* LEAVE - APPLY NEW BUTTON */}
+                {/* LEAVE APPLY NEW */}
                 {selectedTab === "Leave" && (
                   <button
-                    className="bg-blue-800 rounded-lg px-4 py-2 text-white hover:bg-blue-700"
+                    className="rounded-lg bg-blue-800 px-4 py-2 text-white hover:bg-blue-700"
                     onClick={() => {
                       setSelectedTab("New Leave")
                       setFormData((prev) => ({
@@ -3018,7 +2855,7 @@ console.log(error?.response?.data?.message)
                   </button>
                 )}
 
-                {/* ONSITE - APPLY NEW BUTTON */}
+                {/* ONSITE APPLY NEW */}
                 {selectedTab === "Onsite" && (
                   <button
                     onClick={() => {
@@ -3031,21 +2868,21 @@ console.log(error?.response?.data?.message)
                       }))
                       setTableRows([])
                     }}
-                    className="py-2 bg-blue-800 shadow-lg text-white rounded-lg px-4 hover:bg-blue-900"
+                    className="rounded-lg bg-blue-800 px-4 py-2 text-white shadow-lg hover:bg-blue-900"
                   >
                     Apply New Onsite
                   </button>
                 )}
 
-                {/* SUBMIT/UPDATE BUTTON FOR NEW LEAVE, EDIT LEAVE, NEW ONSITE, EDIT ONSITE */}
+                {/* SUBMIT / UPDATE */}
                 {(selectedTab === "Edit Onsite" ||
                   selectedTab === "Edit Leave" ||
                   selectedTab === "New Leave" ||
                   selectedTab === "New Onsite") && (
                   <>
                     <button
-                      className="bg-gradient-to-b from-blue-400 to-blue-500 px-4 py-2 hover:from-blue-400 hover:to-blue-600 text-white rounded"
-                      onClick={() => handleSubmit(selectedTab)}
+                      className="rounded bg-gradient-to-b from-blue-400 to-blue-500 px-4 py-2 text-white hover:from-blue-400 hover:to-blue-600"
+                      onClick={() => handleSubmitAndReset(selectedTab)}
                     >
                       {selectedTab === "Edit Onsite" ||
                       selectedTab === "Edit Leave"
@@ -3053,11 +2890,10 @@ console.log(error?.response?.data?.message)
                         : "Submit"}
                     </button>
 
-                    {/* DELETE BUTTON */}
                     {(selectedTab === "Edit Onsite" ||
                       selectedTab === "Edit Leave") && (
                       <button
-                        className="bg-red-600 px-4 py-2 rounded-md text-white font-semibold shadow-lg hover:bg-red-700 active:shadow-md active:translate-y-[2px] transition-all duration-200"
+                        className="rounded-md bg-red-600 px-4 py-2 font-semibold text-white shadow-lg transition-all duration-200 hover:bg-red-700 active:translate-y-[2px] active:shadow-md"
                         onClick={() => handledelete(formData)}
                       >
                         Delete
@@ -3066,27 +2902,10 @@ console.log(error?.response?.data?.message)
                   </>
                 )}
 
-                {/* CLOSE BUTTON - ALWAYS VISIBLE */}
+                {/* CLOSE */}
                 <button
-                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                  onClick={() => {
-                    setShowModal(false)
-                    setSelectedType("")
-                    setcompensatoryLeave(false)
-                    setEdit(false)
-                    setFormData({
-                      description: "",
-                      onsite: false,
-                      halfDayPeriod: "",
-                      leaveType: "Full Day",
-                      mispunchType: "",
-                      remark: ""
-                    })
-                    setSelectedTab("Leave")
-                    setTableRows([])
-                    setMessage("")
-                    setErrors("")
-                  }}
+                  className="rounded bg-gray-500 px-4 py-2 text-white hover:bg-gray-600"
+                  onClick={resetApplicationFlow}
                 >
                   Close
                 </button>

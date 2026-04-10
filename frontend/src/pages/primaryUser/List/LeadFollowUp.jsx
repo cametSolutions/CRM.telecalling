@@ -733,6 +733,7 @@ console.log(safeState?.viewMode ? [] : taskSubmittedLeads)
       `&endDate=${safeState?.viewMode ? dates.endDate : null}` +
       `&header=${safeState?.header}`
     : null
+console.log(safeState)
   console.log(selectedCompanyBranch)
   console.log(safeState?.header)
   console.log(dates)

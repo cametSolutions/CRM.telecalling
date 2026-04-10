@@ -7,6 +7,7 @@ import ProductWiseleadReport from "../../../pages/primaryUser/List/ProductWisele
 import FollowupSummaryDashboard from "../../../pages/primaryUser/List/FollowupSummaryDashboard";
 import SalesFunnel from "../../../pages/primaryUser/List/SalesFunnel";
 import DailyStaffActivity from "../../../pages/primaryUser/List/DailyStaffActivity";
+import MarketingDashboard from "../../../components/primaryUser/MarketingDashboard";
 const reportsRoutes = [
   { path: "/admin/reports/summary", component: Summary },
 
@@ -26,7 +27,8 @@ const reportsRoutes = [
     component: FollowupSummaryDashboard,
   },
   { path: "/admin/reports/sales-funel", component: SalesFunnel },
-  { path: "/admin/reports/dailystaffactivity", component: DailyStaffActivity }
+  { path: "/admin/reports/dailystaffactivity", component: DailyStaffActivity },
+  { path: "/admin/reports/markettingdashboard", component: MarketingDashboard }
 ];
 
 export default reportsRoutes;
