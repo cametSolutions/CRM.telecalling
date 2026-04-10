@@ -1542,6 +1542,8 @@ export const GetallfollowupList = async (req, res) => {
 
     const start = startDate ? new Date(startDate) : null;
     const end = endDate ? new Date(endDate) : null;
+    console.log("start", start)
+    console.log("end", end)
     console.log("showssssssssssss", viewmode)
 
 
@@ -1673,7 +1675,7 @@ export const GetallfollowupList = async (req, res) => {
 
       // ✅ NEW LOGIC ONLY WHEN REQUIRED
       if (isNewMode) {
-        console.log("yyyyyyyyyyyyyyyyyyyyyyyyy")
+        console.log("isnewmode")
         matchedAllocations = activity
           .map((item, index) => ({ ...item, index }))
           .filter((item) => {
@@ -1681,26 +1683,28 @@ export const GetallfollowupList = async (req, res) => {
             if (item.allocationChanged !== false) return false;
             if (!item.submissionDate) return false;
 
-            const subDate = new Date(item.submissionDate);
+            // const subDate = new Date(item.submissionDate);
 
-            if (start && end) {
-              if (subDate < start || subDate > end) return false;
-            }
+            // if (start && end) {
+            //   if (subDate < start || subDate > end) return false;
+            // }
 
             return true;
           });
       } else {
+        console.log(
+          "notnewmode")
         // ✅ OLD LOGIC (NO DATE FILTER)
         matchedAllocations = activity
           .map((item, index) => ({ ...item, index }))
           .filter((item) => item.taskTo === "followup");
       }
-
+      console.log("00000000000000000000000000000000000000")
       if (matchedAllocations.length === 0) continue;
-
+      console.log("0.5555555555555555555555555555555555555555555")
       const lastAlloc = matchedAllocations[matchedAllocations.length - 1];
       const lastIndex = lastAlloc.index;
-
+      console.log("1111111111111111111111111111111111111111111111111")
       // ✅ HEADER FILTER ONLY IN NEW MODE
       if (isNewMode) {
         if (header === "Pending") {
@@ -1723,7 +1727,7 @@ export const GetallfollowupList = async (req, res) => {
           }
         }
       }
-
+      console.log("2222222222222222222222222222222222222222222222222")
       // ✅ SAFE POPULATION
       const leadByModel =
         lead.leadByModel && mongoose.models[lead.leadByModel]
@@ -1765,7 +1769,7 @@ export const GetallfollowupList = async (req, res) => {
             .catch(() => null)
           : null,
       ]);
-
+      console.log("333333333333333333333333333333333333333333333333333333333")
       // ✅ POPULATE activityLog (only in old mode for detailed view)
       let populatedActivityLog = activity;
       if (!isNewMode) {
@@ -1840,7 +1844,7 @@ export const GetallfollowupList = async (req, res) => {
           })
         );
       }
-
+      console.log("44444444444444444444444444444444444444444444444444444")
       // ✅ POPULATE leadFor
       const populatedLeadFor = await Promise.all(
         lead.leadFor.map(async (item) => {
@@ -1896,7 +1900,7 @@ export const GetallfollowupList = async (req, res) => {
           })
         )
         : []
-
+      console.log("5555555555555555555555555555555555555555555555555")
       const lastActivity = activity[activity.length - 1] || {};
 
       // ✅ CALCULATE FLAGS (only in old mode)
@@ -1928,7 +1932,7 @@ export const GetallfollowupList = async (req, res) => {
         allocatedfollowup = !!lastActivity.taskfromFollowup;
         allocatedTaskClosed = !!lastActivity.allocatedClosed;
       }
-
+      console.log("6666666666666666666666666666666666666666666666666666")
       // ✅ BUILD LEAD OBJECT
       const leadObject = {
         ...lead,
@@ -4328,13 +4332,6 @@ export const GetallfollowupListfromFollowupSummary = async (req, res) => {
 
 export const GetfollowupsummaryReport = async (req, res) => {
   try {
-    const { startDate, endDate } = req.query;
-
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
@@ -4342,8 +4339,351 @@ export const GetfollowupsummaryReport = async (req, res) => {
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-    const result = await LeadMaster.aggregate([
+    // const result = await LeadMaster.aggregate([
 
+    //   // 1️⃣ Filter followup assignment logs WITH DATE
+    //   {
+    //     $addFields: {
+    //       followupAssignLogs: {
+    //         $filter: {
+    //           input: "$activityLog",
+    //           as: "log",
+    //           cond: {
+    //             $and: [
+    //               { $eq: ["$$log.taskTo", "followup"] },
+    //               { $ne: ["$$log.submissionDate", null] },
+    //               // { $gte: ["$$log.submissionDate", start] },
+    //               // { $lte: ["$$log.submissionDate", end] }
+    //             ]
+    //           }
+    //         }
+    //       }
+    //     }
+    //   },
+
+    //   // 2️⃣ Latest assign log
+    //   {
+    //     $addFields: {
+    //       assignLog: { $arrayElemAt: ["$followupAssignLogs", -1] }
+    //     }
+    //   },
+
+    //   // 3️⃣ Keep only valid leads
+    //   {
+    //     $match: {
+    //       assignLog: { $ne: null }
+    //     }
+    //   },
+
+    //   // 4️⃣ Logs AFTER assignment
+    //   {
+    //     $addFields: {
+    //       logsAfterAssign: {
+    //         $filter: {
+    //           input: "$activityLog",
+    //           as: "log",
+    //           cond: {
+    //             $gt: ["$$log.submissionDate", "$assignLog.submissionDate"]
+    //           }
+    //         }
+    //       }
+    //     }
+    //   },
+
+    //   // 5️⃣ Check if any nextFollowUp exists after assignment
+    //   {
+    //     $addFields: {
+    //       hasNextFollowup: {
+    //         $gt: [
+    //           {
+    //             $size: {
+    //               $filter: {
+    //                 input: "$logsAfterAssign",
+    //                 as: "log",
+    //                 cond: {
+    //                   $and: [
+    //                     { $ne: ["$$log.nextFollowUpDate", null] },
+    //                     { $gt: ["$$log.nextFollowUpDate", new Date("2000-01-01")] }
+    //                   ]
+    //                 }
+    //               }
+    //             }
+    //           },
+    //           0
+    //         ]
+    //       }
+    //     }
+    //   },
+
+    //   // 6️⃣ Extract all valid followup logs
+    //   {
+    //     $addFields: {
+    //       followupLogs: {
+    //         $filter: {
+    //           input: "$activityLog",
+    //           as: "log",
+    //           cond: {
+    //             $and: [
+    //               { $ne: ["$$log.nextFollowUpDate", null] },
+    //               { $gt: ["$$log.nextFollowUpDate", new Date("2000-01-01")] }
+    //             ]
+    //           }
+    //         }
+    //       }
+    //     }
+    //   },
+
+    //   // 7️⃣ Get last followup
+    //   {
+    //     $addFields: {
+    //       lastActivity: { $arrayElemAt: ["$followupLogs", -1] }
+    //     }
+    //   },
+
+    //   // 8️⃣ Unwind leadFor
+    //   { $unwind: "$leadFor" },
+
+    //   // 9️⃣ Group per lead
+    //   {
+    //     $group: {
+    //       _id: "$_id",
+
+    //       leadIdStr: { $first: "$leadId" },
+
+    //       staffId: { $first: "$assignLog.taskallocatedTo" },
+    //       staffModel: { $first: "$assignLog.taskallocatedToModel" },
+
+    //       nextFollowupDate: { $first: "$lastActivity.nextFollowUpDate" },
+
+    //       leadConvertedDate: { $first: "$leadConvertedDate" },
+    //       leadLostDate: { $first: "$leadLostDate" },
+
+    //       netAmount: { $first: "$leadFor.netAmount" },
+
+    //       branchId: { $first: "$leadBranch" },
+
+    //       hasNextFollowup: { $first: "$hasNextFollowup" }
+    //     }
+    //   },
+
+    //   // 🔟 STATUS FLAGS
+    //   {
+    //     $addFields: {
+    //       isLost: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $ne: ["$leadLostDate", null] },
+    //               // { $gte: ["$leadLostDate", start] },
+    //               // { $lte: ["$leadLostDate", end] }
+    //             ]
+    //           },
+    //           1,
+    //           0
+    //         ]
+    //       }
+    //     }
+    //   },
+    //   {
+    //     $addFields: {
+    //       isConverted: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $eq: ["$isLost", 0] },
+    //               { $ne: ["$leadConvertedDate", null] },
+    //               // { $gte: ["$leadConvertedDate", start] },
+    //               // { $lte: ["$leadConvertedDate", end] }
+    //             ]
+    //           },
+    //           1,
+    //           0
+    //         ]
+    //       }
+    //     }
+    //   },
+    //   {
+    //     $addFields: {
+    //       isActive: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $eq: ["$isLost", 0] },
+    //               { $eq: ["$isConverted", 0] }
+    //             ]
+    //           },
+    //           1,
+    //           0
+    //         ]
+    //       }
+    //     }
+    //   },
+
+    //   // 1️⃣1️⃣ FOLLOWUP BUCKETS
+    //   {
+    //     $addFields: {
+    //       dueToday: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $eq: ["$isActive", 1] },
+    //               { $ne: ["$nextFollowupDate", null] },
+    //               { $gte: ["$nextFollowupDate", todayStart] },
+    //               { $lte: ["$nextFollowupDate", todayEnd] }
+    //             ]
+    //           },
+    //           1,
+    //           0
+    //         ]
+    //       },
+    //       overdue: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $eq: ["$isActive", 1] },
+    //               { $ne: ["$nextFollowupDate", null] },
+    //               { $lt: ["$nextFollowupDate", todayStart] }
+    //             ]
+    //           },
+    //           1,
+    //           0
+    //         ]
+    //       },
+    //       future: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $eq: ["$isActive", 1] },
+    //               { $ne: ["$nextFollowupDate", null] },
+    //               { $gt: ["$nextFollowupDate", todayEnd] }
+    //             ]
+    //           },
+    //           1,
+    //           0
+    //         ]
+    //       }
+    //     }
+    //   },
+
+    //   // 🔥 NEVER FOLLOWUP LOGIC
+    //   {
+    //     $addFields: {
+    //       neverFollowup: {
+    //         $cond: [
+    //           {
+    //             $and: [
+    //               { $eq: ["$isActive", 1] },
+    //               { $eq: ["$hasNextFollowup", false] }
+    //             ]
+    //           },
+    //           1,
+    //           0
+    //         ]
+    //       }
+    //     }
+    //   },
+
+    //   // 1️⃣2️⃣ Amount
+    //   {
+    //     $addFields: {
+    //       convertedNetAmount: {
+    //         $cond: [
+    //           { $eq: ["$isConverted", 1] },
+    //           { $ifNull: ["$netAmount", 0] },
+    //           0
+    //         ]
+    //       }
+    //     }
+    //   },
+
+    //   // 1️⃣3️⃣ FINAL GROUP
+    //   {
+    //     $group: {
+    //       _id: {
+    //         staffId: "$staffId",
+    //         staffModel: "$staffModel"
+    //       },
+
+    //       leadIds: { $addToSet: "$leadIdStr" },
+    //       leadCount: { $sum: 1 },
+
+    //       totalConverted: { $sum: "$isConverted" },
+    //       totalLost: { $sum: "$isLost" },
+
+    //       totalDueToday: { $sum: "$dueToday" },
+    //       totalOverdue: { $sum: "$overdue" },
+    //       totalFuture: { $sum: "$future" },
+
+    //       totalNeverFollowup: { $sum: "$neverFollowup" },
+
+    //       convertedNetAmount: { $sum: "$convertedNetAmount" },
+
+    //       branchIds: { $addToSet: "$branchId" }
+    //     }
+    //   },
+
+    //   // 1️⃣4️⃣ Lookup STAFF
+    //   {
+    //     $lookup: {
+    //       from: "staffs",
+    //       localField: "_id.staffId",
+    //       foreignField: "_id",
+    //       as: "staff"
+    //     }
+    //   },
+
+    //   // 1️⃣5️⃣ Lookup ADMIN
+    //   {
+    //     $lookup: {
+    //       from: "admins",
+    //       localField: "_id.staffId",
+    //       foreignField: "_id",
+    //       as: "admin"
+    //     }
+    //   },
+
+    //   // 1️⃣6️⃣ Resolve user
+    //   {
+    //     $addFields: {
+    //       user: {
+    //         $cond: [
+    //           { $eq: ["$_id.staffModel", "Admin"] },
+    //           { $arrayElemAt: ["$admin", 0] },
+    //           { $arrayElemAt: ["$staff", 0] }
+    //         ]
+    //       }
+    //     }
+    //   },
+
+    //   // 1️⃣7️⃣ Final output
+    //   {
+    //     $project: {
+    //       _id: 0,
+
+    //       staffId: "$_id.staffId",
+    //       staffModel: "$_id.staffModel",
+
+    //       staffName: { $ifNull: ["$user.name", "Unknown"] },
+    //       staffRole: "$user.role",
+
+    //       branchIds: 1,
+    //       leadIds: 1,
+
+    //       leadCount: 1,
+    //       totalConverted: 1,
+    //       totalLost: 1,
+
+    //       totalDueToday: 1,
+    //       totalOverdue: 1,
+    //       totalFuture: 1,
+
+    //       totalNeverFollowup: 1,
+
+    //       convertedNetAmount: 1
+    //     }
+    //   }
+    // ]);
+    const result = await LeadMaster.aggregate([
       // 1️⃣ Filter followup assignment logs WITH DATE
       {
         $addFields: {
@@ -4354,9 +4694,9 @@ export const GetfollowupsummaryReport = async (req, res) => {
               cond: {
                 $and: [
                   { $eq: ["$$log.taskTo", "followup"] },
-                  { $ne: ["$$log.submissionDate", null] },
-                  { $gte: ["$$log.submissionDate", start] },
-                  { $lte: ["$$log.submissionDate", end] }
+                  { $ne: ["$$log.submissionDate", null] }
+                  // { $gte: ["$$log.submissionDate", start] },
+                  // { $lte: ["$$log.submissionDate", end] }
                 ]
               }
             }
@@ -4476,9 +4816,9 @@ export const GetfollowupsummaryReport = async (req, res) => {
             $cond: [
               {
                 $and: [
-                  { $ne: ["$leadLostDate", null] },
-                  { $gte: ["$leadLostDate", start] },
-                  { $lte: ["$leadLostDate", end] }
+                  { $ne: ["$leadLostDate", null] }
+                  // { $gte: ["$leadLostDate", start] },
+                  // { $lte: ["$leadLostDate", end] }
                 ]
               },
               1,
@@ -4494,9 +4834,9 @@ export const GetfollowupsummaryReport = async (req, res) => {
               {
                 $and: [
                   { $eq: ["$isLost", 0] },
-                  { $ne: ["$leadConvertedDate", null] },
-                  { $gte: ["$leadConvertedDate", start] },
-                  { $lte: ["$leadConvertedDate", end] }
+                  { $ne: ["$leadConvertedDate", null] }
+                  // { $gte: ["$leadConvertedDate", start] },
+                  // { $lte: ["$leadConvertedDate", end] }
                 ]
               },
               1,
@@ -4510,10 +4850,7 @@ export const GetfollowupsummaryReport = async (req, res) => {
           isActive: {
             $cond: [
               {
-                $and: [
-                  { $eq: ["$isLost", 0] },
-                  { $eq: ["$isConverted", 0] }
-                ]
+                $and: [{ $eq: ["$isLost", 0] }, { $eq: ["$isConverted", 0] }]
               },
               1,
               0
@@ -4522,7 +4859,7 @@ export const GetfollowupsummaryReport = async (req, res) => {
         }
       },
 
-      // 1️⃣1️⃣ FOLLOWUP BUCKETS
+      // 1️⃣1️⃣ FOLLOWUP BUCKETS (flags)
       {
         $addFields: {
           dueToday: {
@@ -4568,7 +4905,7 @@ export const GetfollowupsummaryReport = async (req, res) => {
         }
       },
 
-      // 🔥 NEVER FOLLOWUP LOGIC
+      // 🔥 NEVER FOLLOWUP LOGIC (flag)
       {
         $addFields: {
           neverFollowup: {
@@ -4586,7 +4923,7 @@ export const GetfollowupsummaryReport = async (req, res) => {
         }
       },
 
-      // 1️⃣2️⃣ Amount
+      // 1️⃣2️⃣ Amount (per lead converted)
       {
         $addFields: {
           convertedNetAmount: {
@@ -4599,7 +4936,41 @@ export const GetfollowupsummaryReport = async (req, res) => {
         }
       },
 
-      // 1️⃣3️⃣ FINAL GROUP
+      // 💰 BUCKET AMOUNTS (per lead)
+      {
+        $addFields: {
+          dueTodayAmount: {
+            $cond: [
+              { $eq: ["$dueToday", 1] },
+              { $ifNull: ["$netAmount", 0] },
+              0
+            ]
+          },
+          overdueAmount: {
+            $cond: [
+              { $eq: ["$overdue", 1] },
+              { $ifNull: ["$netAmount", 0] },
+              0
+            ]
+          },
+          futureAmount: {
+            $cond: [
+              { $eq: ["$future", 1] },
+              { $ifNull: ["$netAmount", 0] },
+              0
+            ]
+          },
+          neverFollowupAmount: {
+            $cond: [
+              { $eq: ["$neverFollowup", 1] },
+              { $ifNull: ["$netAmount", 0] },
+              0
+            ]
+          }
+        }
+      },
+
+      // 1️⃣3️⃣ FINAL GROUP (per staff)
       {
         $group: {
           _id: {
@@ -4616,10 +4987,17 @@ export const GetfollowupsummaryReport = async (req, res) => {
           totalDueToday: { $sum: "$dueToday" },
           totalOverdue: { $sum: "$overdue" },
           totalFuture: { $sum: "$future" },
-
           totalNeverFollowup: { $sum: "$neverFollowup" },
 
+          // total lead amount regardless of status
+          totalLeadAmount: { $sum: { $ifNull: ["$netAmount", 0] } },
+
           convertedNetAmount: { $sum: "$convertedNetAmount" },
+
+          dueTodayAmount: { $sum: "$dueTodayAmount" },
+          overdueAmount: { $sum: "$overdueAmount" },
+          futureAmount: { $sum: "$futureAmount" },
+          neverFollowupAmount: { $sum: "$neverFollowupAmount" },
 
           branchIds: { $addToSet: "$branchId" }
         }
@@ -4679,14 +5057,39 @@ export const GetfollowupsummaryReport = async (req, res) => {
           totalDueToday: 1,
           totalOverdue: 1,
           totalFuture: 1,
-
           totalNeverFollowup: 1,
 
-          convertedNetAmount: 1
+          totalLeadAmount: 1,
+          convertedNetAmount: 1,
+          dueTodayAmount: 1,
+          overdueAmount: 1,
+          futureAmount: 1,
+          neverFollowupAmount: 1
         }
       }
     ]);
+    // const structuredData = result.map((item) => ({
+    //   staffId: item.staffId,
+    //   leadIds: item.leadIds,
+    //   staffRole: item.staffRole,
+    //   branchIds: item.branchIds,
+    //   Staff: item.staffName,
 
+    //   leadCount: item.leadCount,
+    //   dueToday: item.totalDueToday,
+    //   overDue: item.totalOverdue,
+    //   future: item.totalFuture,
+
+    //   converted: item.totalConverted,
+    //   lost: item.totalLost,
+
+    //   neverFollowup: item.totalNeverFollowup,
+
+    //   convertedPercentage:
+    //     item.leadCount > 0
+    //       ? Number(((item.totalConverted / item.leadCount) * 100).toFixed(2))
+    //       : 0
+    // }));
     const structuredData = result.map((item) => ({
       staffId: item.staffId,
       leadIds: item.leadIds,
@@ -4694,15 +5097,22 @@ export const GetfollowupsummaryReport = async (req, res) => {
       branchIds: item.branchIds,
       Staff: item.staffName,
 
+      // counts
       leadCount: item.leadCount,
       dueToday: item.totalDueToday,
       overDue: item.totalOverdue,
       future: item.totalFuture,
-
       converted: item.totalConverted,
       lost: item.totalLost,
-
       neverFollowup: item.totalNeverFollowup,
+
+      // amounts
+      leadAmount: item.totalLeadAmount,
+      convertedAmount: item.convertedNetAmount,
+      dueTodayAmount: item.dueTodayAmount,
+      overDueAmount: item.overdueAmount,
+      futureAmount: item.futureAmount,
+      neverFollowupAmount: item.neverFollowupAmount,
 
       convertedPercentage:
         item.leadCount > 0

@@ -45,7 +45,8 @@ import {
   Logout,
   ApproveMisspunch,
   MisspunchRegister,
-  Getallmisspunch
+  Getallmisspunch,
+UploadImage
 
 } from "../controller/authController.js"
 const router = express.Router()
@@ -89,6 +90,7 @@ router.put("/approveLeave", authMiddleware, ApproveLeave)
 router.put("/approveOnsite", authMiddleware, ApproveOnsite)
 router.put("/approveMispunch", authMiddleware, ApproveMisspunch)
 router.post("/misspunchRegister", authMiddleware, MisspunchRegister)
+router.post("/uploadimage",authMiddleware,UploadImage)//from marketting dashboard
 router.get("/getallmisspunch", authMiddleware, Getallmisspunch)
 router.put("/cancelLeaveApproval", authMiddleware, cancelLeaveOrOnsiteApproval)
 router.put("/cancelOnsiteApproval", authMiddleware, cancelLeaveOrOnsiteApproval)
