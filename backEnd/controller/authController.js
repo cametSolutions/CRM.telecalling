@@ -1050,6 +1050,31 @@ export const MisspunchRegister = async (req, res) => {
     if (!userId || !userModel || !misspunchType) {
       return res.status(400).json({ message: "Required fields missing" });
     }
+    // ✅ Normalize date (remove time part)
+    const startOfDay = new Date(misspunchDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(misspunchDate);
+    endOfDay.setHours(23, 59, 59, 999);
+console.log("startttt",startOfDay)
+console.log("enddd",endOfDay)
+    // ✅ Check attendance
+    const attendanceRecord = await Attendance.findOne({
+      userId,
+      attendanceDate: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      }
+    });
+
+
+    if (!attendanceRecord) {
+      return res.status(404).json({
+        message: "No attendance found for this date"
+      });
+    }
+
+
 
     const newMisspunch = await Misspunch.create({
       userId,
@@ -1070,6 +1095,7 @@ export const MisspunchRegister = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 }
+
 export const OnsiteApply = async (req, res) => {
   try {
     const { selectedid, assignedto, compensatoryLeave } = req.query
