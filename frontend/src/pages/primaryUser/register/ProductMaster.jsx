@@ -4,8 +4,9 @@ import api from "../../../api/api"
 import { toast } from "react-toastify"
 import { useNavigate } from "react-router-dom"
 import ProductAdd from "../../../components/primaryUser/ProductAdd"
+import { getLocalStorageItem,setLocalStorageItem } from "../../../helper/localstorage"
 function ProductMaster() {
-  const user = localStorage.getItem("user")
+  const user = getLocalStorageItem("user")
 
   const navigate = useNavigate()
   const handleSubmit = async (productData, tableData) => {
@@ -38,7 +39,7 @@ function ProductMaster() {
     }
   }
   return (
-    <div>
+    <div className="h-full">
       <ProductAdd process="Registration" handleProductData={handleSubmit} />
     </div>
   )
