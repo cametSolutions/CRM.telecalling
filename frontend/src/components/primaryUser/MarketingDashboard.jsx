@@ -114,8 +114,12 @@ const getBarStyle = (value, colorA, colorB) => ({
 const MarketingDashboard = () => {
   const [user, setUser] = useState(null)
   const [openModal, setOpenModal] = useState(false)
+  const [categorylist, setcategorylist] = useState([])
   const [avatarOpen, setAvatarOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [selectedDatapopup, setselectedDataPopup] = useState({})
+  const [achievedproducts, setacheivedProducts] = useState([])
+  console.log(selectedDatapopup)
   const [cardDisplay, setcardDisplay] = useState([])
   const [selectedBranch, setselectedBranch] = useState(null)
   const now = new Date()
@@ -129,6 +133,12 @@ const MarketingDashboard = () => {
   )
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const { data: followup } = UseFetch("/lead/getfollowupsummaryReport")
+  console.log(followup)
+  console.log(selectedMonth)
+  const { data: target } = UseFetch(
+    `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}`
+  )
+  console.log(target)
   console.log(followup)
   useEffect(() => {
     if (followup && followup.length && user) {
@@ -191,7 +201,13 @@ const MarketingDashboard = () => {
       }
     }
   }, [followup])
+  useEffect(() => {
+    if (target && target.length) {
+      setcategorylist(target)
+    }
+  }, [target])
   console.log(cardDisplay)
+
   useEffect(() => {
     const storedUser = getLocalStorageItem("user")
     if (storedUser) {
@@ -214,15 +230,16 @@ const MarketingDashboard = () => {
     setdate({ startDate, endDate })
   }, [])
   console.log(selectedBranch)
-  const handleFollowupCellClick = (header,count) => {
+  console.log(selectedMonth)
+  const handleFollowupCellClick = (header, count) => {
     console.log(header)
-console.log(count)
+    console.log(count)
 
     if (header === "Lead Count") {
       navigate("/admin/transaction/lead/allLeads", {
         state: { staffId: row.staffId }
       })
-    } else if (header === "Due Today"&&count>0) {
+    } else if (header === "Due Today" && count > 0) {
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: {
           staffId: user?._id,
@@ -235,7 +252,7 @@ console.log(count)
         }
       })
       console.log("hhhhh")
-    } else if (header === "Over Due"&&count>0) {
+    } else if (header === "Over Due" && count > 0) {
       console.log("hhh")
       console.log(date)
       navigate("/admin/transaction/lead/leadFollowUp", {
@@ -249,7 +266,7 @@ console.log(count)
           filterRange: date
         }
       })
-    } else if (header === "Up Coming"&&count>0) {
+    } else if (header === "Up Coming" && count > 0) {
       console.log("hhh")
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: {
@@ -262,7 +279,7 @@ console.log(count)
           filterRange: date
         }
       })
-    } else if (header === "Converted"&&count>0) {
+    } else if (header === "Converted" && count > 0) {
       console.log("hhhhh")
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: {
@@ -275,7 +292,7 @@ console.log(count)
           filterRange: date
         }
       })
-    } else if (header === "New Lead"&&count>0) {
+    } else if (header === "New Lead" && count > 0) {
       console.log("hhhhhh")
       console.log("hhhhh")
       navigate("/admin/transaction/lead/leadFollowUp", {
@@ -289,7 +306,7 @@ console.log(count)
           filterRange: date
         }
       })
-    } else if (header === "All Leads"&&count>0) {
+    } else if (header === "All Leads" && count > 0) {
       console.log(date)
       console.log("hhhh")
       navigate("/staff/transaction/lead/leadFollowUp", {
@@ -327,9 +344,24 @@ console.log(count)
       toast.error("Profile not uploaded")
     }
   }
-  const handleMoreClick = () => {
+  const handleMoreClick = (item) => {
+    console.log(item)
+    setselectedDataPopup(item)
+    console.log(item)
+    // setacheivedProducts((prev)=>({
+    // item.products.map((item)=>{
+    // productname:item.product,
+    // amount:item.amount})}))
+    setacheivedProducts((prev) => [
+      ...prev,
+      ...item.products.map((product) => ({
+        productname: product.name,
+        amount: product.achieved
+      }))
+    ])
     setOpenModal(true)
   }
+console.log(achievedproducts)
   console.log(user)
   const total = productData.reduce((acc, item) => acc + item.value, 0)
 
@@ -441,28 +473,30 @@ console.log(count)
     `}
           >
             <div className="space-y-3">
-              {scoreItems.map((item, index) => (
-                <div
-                  key={`${item.label}-${index}`}
-                  className="flex items-center justify-between border-b border-slate-200/90 pb-2"
-                >
-                  <span className="text-[12px] font-medium leading-4 text-rose-700">
-                    {item.label}
-                  </span>
-                  <div className="text-right">
-                    <p className="text-[13px] font-semibold leading-4 text-emerald-700">
-                      {item.value}
-                    </p>
+              {categorylist &&
+                categorylist.length &&
+                categorylist?.map((item, index) => (
+                  <div
+                    key={`${item.categoryName}-${index}`}
+                    className="flex items-center justify-between border-b border-slate-200/90 pb-2"
+                  >
+                    <span className="text-[12px] font-medium leading-4 text-rose-700">
+                      {item?.categoryName}
+                    </span>
+                    <div className="text-right">
+                      <p className="text-[13px] font-semibold leading-4 text-emerald-700">
+                        {item?.value || "0%"}
+                      </p>
 
-                    <p
-                      className="mt-0.5 text-[12px] font-medium leading-4 text-rose-500 cursor-pointer"
-                      onClick={handleMoreClick}
-                    >
-                      More
-                    </p>
+                      <p
+                        className="mt-0.5 text-[12px] font-medium leading-4 text-rose-500 cursor-pointer"
+                        onClick={() => handleMoreClick(item)}
+                      >
+                        More
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         </aside>
@@ -502,7 +536,9 @@ console.log(count)
                 {cardDisplay.slice(0, 6).map((card) => (
                   <div
                     key={card.title}
-                    onClick={() => handleFollowupCellClick(card.title,card.value)}
+                    onClick={() =>
+                      handleFollowupCellClick(card.title, card.value)
+                    }
                     className="
         min-w-0
         flex flex-col justify-between
@@ -880,15 +916,11 @@ cursor-pointer
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}
         summary={{
-          target: 500000,
-          achieved: 350000,
-          balance: 150000
+          target: selectedDatapopup?.target,
+          achieved: selectedDatapopup?.achieved,
+          balance: selectedDatapopup?.balance
         }}
-        products={[
-          { name: "CRM", value: 120000 },
-          { name: "ERP", value: 90000 },
-          { name: "Cloud", value: 80000 }
-        ]}
+        products={achievedproducts}
       />
     </div>
   )

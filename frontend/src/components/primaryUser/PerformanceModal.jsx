@@ -248,6 +248,8 @@ export function PerformanceModal({
   onMonthChange,
   onYearChange
 }) {
+console.log(summary)
+console.log(products)
   const [activeMetric, setActiveMetric] = useState(null)
 
   if (!modalOpen) return null
@@ -370,14 +372,14 @@ export function PerformanceModal({
                   <tbody className="divide-y divide-slate-100 bg-white">
                     {products?.map((p) => (
                       <tr
-                        key={p.name}
+                        key={p.productname}
                         className="transition-colors hover:bg-slate-50/80"
                       >
-                        <td className="px-3 py-2 text-[12px] text-slate-700">
-                          {p.name}
+                        <td className="px-3 py-2 text-[12px] text-slate-700 font-bold">
+                          {p.productname.toUpperCase()}
                         </td>
                         <td className="px-3 py-2 text-right text-[12px] font-semibold text-slate-900">
-                          ₹{Number(p.value || 0).toLocaleString("en-IN")}
+                          ₹{Number(p?.amount || 0).toLocaleString("en-IN")}
                         </td>
                       </tr>
                     ))}
@@ -411,6 +413,8 @@ function SummaryPill({
   clickable = false,
   onClick
 }) {
+console.log(label)
+console.log(value)
   const toneMap = {
     slate: {
       base: "bg-slate-50 text-slate-700 ring-slate-100",
