@@ -516,7 +516,7 @@ console.log(selectedmispunch)
         // ✅ PENDING ONSITE
         else if (pendingOnsite && !pendingLeave) {
           console.log("hhhh")
-          return
+          
           response = await api.put(
             `/auth/approveOnsite/?role=${user?.role}&selectedId=${id}&startDate=${dates.startDate}&endDate=${dates.endDate}&onsite=true&userId=${user?._id}&single=true&name=${name}&isPending=true`
           )
@@ -525,7 +525,7 @@ console.log(selectedmispunch)
         // ✅ PENDING LEAVE
         else if (!pendingOnsite && pendingLeave) {
           console.log("hhhh")
-          return
+          
           response = await api.put(
             `/auth/approveLeave/?role=${user?.role}&selectedId=${id}&userId=${user?._id}&startDate=${dates.startDate}&endDate=${dates.endDate}&single=true&onsite=false&name=${name}&isPending=true`
           )
@@ -542,7 +542,7 @@ console.log(selectedmispunch)
         // ✅ APPROVED ONSITE
         else if (approvedOnsite && !approvedLeave) {
           console.log("hhh")
-          return
+          
           response = await api.put(
             `/auth/approveOnsite/?role=${user?.role}&selectedId=${id}&startDate=${dates.startDate}&endDate=${dates.endDate}&onsite=true&userId=${user?._id}&single=true&name=${name}&isPending=false`
           )
