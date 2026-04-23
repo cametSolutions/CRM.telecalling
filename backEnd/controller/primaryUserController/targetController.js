@@ -51,7 +51,8 @@ export const gettargetResult = async (req, res) => {
                 summary: {
                     target: 0,
                     achieved: 0,
-                    balance: 0
+                    balance: 0,
+                    incentive: 0
                 }
             })
         }
@@ -85,9 +86,7 @@ export const gettargetResult = async (req, res) => {
         }
 
         const [products, services] = await Promise.all([
-            Product.find({ _id: { $in: [...productIds] } }).select(
-                "productName name selected"
-            ),
+            Product.find({ _id: { $in: [...productIds] } }).select("productName name selected"),
             Service.find({ _id: { $in: [...serviceIds] } }).select(
                 "serviceName name selected category_id categoryId categoryName"
             )
@@ -98,8 +97,7 @@ export const gettargetResult = async (req, res) => {
 
         for (const item of products) {
             const selectedRow = Array.isArray(item.selected) ? item.selected[0] : null
-            const categoryId =
-                selectedRow?.category_id ? String(selectedRow.category_id) : ""
+            const categoryId = selectedRow?.category_id ? String(selectedRow.category_id) : ""
 
             productMap[String(item._id)] = {
                 name: item.productName || item.name || "Product",
@@ -123,22 +121,119 @@ export const gettargetResult = async (req, res) => {
             }
         }
 
-        const results = []
+        const getVerifiedReceivedAmount = (lead) => {
+            let total = 0
+
+            for (const payment of lead.paymentHistory || []) {
+                if (!payment.paymentVerified) continue
+
+                const paymentDate = new Date(payment.paymentDate)
+                if (paymentDate < startOfMonth || paymentDate > endOfMonth) continue
+
+                for (const entry of payment.paymentEntries || []) {
+                    total += Number(entry.receivedAmount || 0)
+                }
+            }
+
+            return total
+        }
+
+        const isLeadFullyVerified = (lead) => {
+            const payments = lead.paymentHistory || []
+            if (!payments.length) return false
+            return payments.every((p) => p.paymentVerified)
+        }
+
+        const isLeadEligibleForIncentive = (lead) => {
+            if (lead.forcefullyClosedTarget === true) return true
+            if (Number(lead.balanceAmount || 0) === 0) return true
+            if (isLeadFullyVerified(lead)) return true
+            return false
+        }
+
+
+        const getLeadAllocationIncentive = ({ lead, config, userId }) => {
+            if (!isLeadEligibleForIncentive(lead)) return 0
+
+            const allocationValues = Array.isArray(config.allocationValues)
+                ? config.allocationValues
+                : []
+
+            if (!allocationValues.length) return 0
+
+            const leadActivityLogs = Array.isArray(lead.activityLog) ? lead.activityLog : []
+
+            let totalIncentive = 0
+
+            for (const log of leadActivityLogs) {
+                const taskById = String(log?.taskBy || "")
+                const submittedUserId = String(log?.submittedUser || "")
+
+                if (!taskById) continue
+                if (submittedUserId !== String(userId)) continue
+
+                const matchedAllocation = allocationValues.find(
+                    (alloc) => String(alloc.allocationId) === taskById
+                )
+
+                if (!matchedAllocation) continue
+
+                const allocationValue = Number(matchedAllocation.value || 0)
+                if (allocationValue <= 0) continue
+
+                const mode = config.measurementType 
+
+                if (mode === "quantity") {
+                    totalIncentive += allocationValue
+                    continue
+                }
+
+                let baseAmount = 0
+
+                if (lead.forcefullyClosedTarget === true) {
+                    baseAmount = Number(lead.netAmount || 0)
+                } else {
+                    baseAmount = getVerifiedReceivedAmount(lead)
+                }
+
+                if (baseAmount <= 0) continue
+
+                totalIncentive += (allocationValue / 100) * baseAmount
+            }
+
+            return totalIncentive
+        }
+        const leadBelongsToCategory = (lead, configCategoryId) => {
+            for (const item of lead.leadFor || []) {
+                const itemId = item.productorServiceId ? String(item.productorServiceId) : null
+                const itemModel = item.productorServicemodel
+
+                if (!itemId || !itemModel) continue
+
+                const itemMeta =
+                    itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
+
+                if (!itemMeta) continue
+
+                if (String(itemMeta.categoryId) === String(configCategoryId)) {
+                    return true
+                }
+            }
+
+            return false
+        }
+
+        const userWiseMap = {}
 
         for (const config of targetConfigs) {
             const mt = config.monthlyTargets.find(
-                (m) => m.month === monthNumber && m.year === yearNumber
+                (m) => Number(m.month) === monthNumber && Number(m.year) === yearNumber
             )
 
             if (!mt) continue
 
             const configCategoryId = String(config.categoryId?._id || config.categoryId)
-
-            let totalTargetForMonth = 0
-            let totalAchievedForMonth = 0
-
-            const users = []
-            const productWiseMap = {}
+            const categoryName = config.categoryId?.category || "Category"
 
             for (const userTarget of mt.userTargets) {
                 const userId = String(userTarget.userId?._id || userTarget.userId)
@@ -153,10 +248,45 @@ export const gettargetResult = async (req, res) => {
                 const userLeads = leadsByUser[userId] || []
 
                 let achievedForUser = 0
+                let incentiveForUser = 0
                 const userProductWiseMap = {}
 
                 if (config.measurementType === "amount") {
                     for (const lead of userLeads) {
+                        const belongsToCurrentCategory = leadBelongsToCategory(lead, configCategoryId)
+
+                        if (!belongsToCurrentCategory) continue
+                        if (lead.forcefullyClosedTarget === true) {
+                            // console.log("trueeeeeeeeee")
+                            const netAmount = Number(lead.netAmount || 0)
+                            if (netAmount > 0) {
+                                achievedForUser += netAmount
+
+                                const forcedKey = `FORCED-${lead._id}`
+                                if (!userProductWiseMap[forcedKey]) {
+                                    userProductWiseMap[forcedKey] = {
+                                        id: String(lead._id),
+                                        model: "Lead",
+                                        name: "Force-closed target",
+                                        achieved: 0,
+                                        incentive: 0
+                                    }
+                                }
+
+                                userProductWiseMap[forcedKey].achieved += netAmount
+
+                                const leadIncentive = getLeadAllocationIncentive({
+                                    lead,
+                                    config,
+                                    userId
+                                })
+
+                                incentiveForUser += leadIncentive
+                                userProductWiseMap[forcedKey].incentive += leadIncentive
+                            }
+                            continue
+                        }
+
                         for (const payment of lead.paymentHistory || []) {
                             if (!payment.paymentVerified) continue
 
@@ -172,9 +302,7 @@ export const gettargetResult = async (req, res) => {
                                 if (!itemId || !itemModel) continue
 
                                 const itemMeta =
-                                    itemModel === "Product"
-                                        ? productMap[itemId]
-                                        : serviceMap[itemId]
+                                    itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
 
                                 if (!itemMeta) continue
                                 if (itemMeta.categoryId !== configCategoryId) continue
@@ -189,27 +317,57 @@ export const gettargetResult = async (req, res) => {
                                         id: itemId,
                                         model: itemModel,
                                         name: itemMeta.name,
-                                        achieved: 0
+                                        achieved: 0,
+                                        incentive: 0
                                     }
                                 }
 
                                 userProductWiseMap[productKey].achieved += achievedAmount
-
-                                if (!productWiseMap[productKey]) {
-                                    productWiseMap[productKey] = {
-                                        id: itemId,
-                                        model: itemModel,
-                                        name: itemMeta.name,
-                                        achieved: 0
-                                    }
-                                }
-
-                                productWiseMap[productKey].achieved += achievedAmount
                             }
                         }
+                        // if (userId === "69d46fb5cb24d20ff3ce28c7") {
+                        //     console.log("lllllllllllllllll", lead)
+                        // }
+                        const leadIncentive = getLeadAllocationIncentive({
+                            lead,
+                            config,
+                            userId
+                        })
+
+                        incentiveForUser += leadIncentive
                     }
                 } else {
                     for (const lead of userLeads) {
+                        const belongsToCurrentCategory = leadBelongsToCategory(lead, configCategoryId)
+
+                        if (!belongsToCurrentCategory) continue
+                        if (lead.forcefullyClosedTarget === true) {
+                            achievedForUser += 1
+
+                            const forcedKey = `FORCED-${lead._id}`
+                            if (!userProductWiseMap[forcedKey]) {
+                                userProductWiseMap[forcedKey] = {
+                                    id: String(lead._id),
+                                    model: "Lead",
+                                    name: "Force-closed target",
+                                    achieved: 0,
+                                    incentive: 0
+                                }
+                            }
+
+                            userProductWiseMap[forcedKey].achieved += 1
+
+                            const leadIncentive = getLeadAllocationIncentive({
+                                lead,
+                                config,
+                                userId
+                            })
+
+                            incentiveForUser += leadIncentive
+                            userProductWiseMap[forcedKey].incentive += leadIncentive
+                            continue
+                        }
+
                         const payments = lead.paymentHistory || []
                         if (!payments.length) continue
 
@@ -229,9 +387,7 @@ export const gettargetResult = async (req, res) => {
                                 if (!itemId || !itemModel) continue
 
                                 const itemMeta =
-                                    itemModel === "Product"
-                                        ? productMap[itemId]
-                                        : serviceMap[itemId]
+                                    itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
 
                                 if (!itemMeta) continue
                                 if (itemMeta.categoryId !== configCategoryId) continue
@@ -262,68 +418,74 @@ export const gettargetResult = async (req, res) => {
                                         id: item.id,
                                         model: item.model,
                                         name: item.name,
-                                        achieved: 0
+                                        achieved: 0,
+                                        incentive: 0
                                     }
                                 }
 
                                 userProductWiseMap[itemKey].achieved += 1
-
-                                if (!productWiseMap[itemKey]) {
-                                    productWiseMap[itemKey] = {
-                                        id: item.id,
-                                        model: item.model,
-                                        name: item.name,
-                                        achieved: 0
-                                    }
-                                }
-
-                                productWiseMap[itemKey].achieved += 1
                             }
+
+                            const leadIncentive = getLeadAllocationIncentive({
+                                lead,
+                                config,
+                                userId
+                            })
+
+                            incentiveForUser += leadIncentive
                         }
                     }
                 }
 
                 const balanceForUser = userMonthlyTarget - achievedForUser
 
-                totalTargetForMonth += userMonthlyTarget
-                totalAchievedForMonth += achievedForUser
+                if (!userWiseMap[userId]) {
+                    userWiseMap[userId] = {
+                        userId,
+                        userName,
+                        target: 0,
+                        achieved: 0,
+                        balance: 0,
+                        incentive: 0,
+                        categories: []
+                    }
+                }
 
-                users.push({
-                    userId,
-                    userName,
+                userWiseMap[userId].target += userMonthlyTarget
+                userWiseMap[userId].achieved += achievedForUser
+                userWiseMap[userId].incentive += incentiveForUser
+                userWiseMap[userId].balance =
+                    userWiseMap[userId].target - userWiseMap[userId].achieved
+
+                userWiseMap[userId].categories.push({
+                    categoryId: configCategoryId,
+                    categoryName,
+                    measurementType: config.measurementType,
+                    // incentiveMode: config.mode || "amount",
                     target: userMonthlyTarget,
                     achieved: achievedForUser,
                     balance: balanceForUser,
+                    incentive: incentiveForUser,
                     slabs,
                     products: Object.values(userProductWiseMap)
                 })
             }
-
-            results.push({
-                targetConfigId: config._id,
-                categoryId: config.categoryId?._id || config.categoryId,
-                categoryName: config.categoryId?.category || "Category",
-                measurementType: config.measurementType,
-                month: monthNumber,
-                year: yearNumber,
-                target: totalTargetForMonth,
-                achieved: totalAchievedForMonth,
-                balance: totalTargetForMonth - totalAchievedForMonth,
-                users,
-                products: Object.values(productWiseMap)
-            })
         }
 
-        const globalTarget = results.reduce((sum, item) => sum + item.target, 0)
-        const globalAchieved = results.reduce((sum, item) => sum + item.achieved, 0)
+        const userWiseResults = Object.values(userWiseMap)
+
+        const globalTarget = userWiseResults.reduce((sum, item) => sum + item.target, 0)
+        const globalAchieved = userWiseResults.reduce((sum, item) => sum + item.achieved, 0)
+        const globalIncentive = userWiseResults.reduce((sum, item) => sum + item.incentive, 0)
 
         return res.json({
             success: true,
-            data: results,
+            data: userWiseResults,
             summary: {
                 target: globalTarget,
                 achieved: globalAchieved,
-                balance: globalTarget - globalAchieved
+                balance: globalTarget - globalAchieved,
+                incentive: globalIncentive
             }
         })
     } catch (error) {
@@ -334,6 +496,948 @@ export const gettargetResult = async (req, res) => {
         })
     }
 }
+// export const gettargetResult = async (req, res) => {
+//     try {
+//         const { month, year } = req.query
+
+//         const monthNumber = Number(month)
+//         const yearNumber = Number(year)
+
+//         if (!monthNumber || !yearNumber) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "month and year are required"
+//             })
+//         }
+
+//         const startOfMonth = new Date(yearNumber, monthNumber - 1, 1)
+//         const endOfMonth = new Date(yearNumber, monthNumber, 0, 23, 59, 59, 999)
+
+//         const configQuery = {
+//             startDate: { $lte: endOfMonth },
+//             endDate: { $gte: startOfMonth }
+//         }
+
+//         const targetConfigs = await TargetConfiguration.find(configQuery)
+//             .populate("categoryId", "category")
+//             .populate("monthlyTargets.userTargets.userId", "name email")
+
+//         if (!targetConfigs.length) {
+//             return res.json({
+//                 success: true,
+//                 data: [],
+//                 summary: {
+//                     target: 0,
+//                     achieved: 0,
+//                     balance: 0
+//                 }
+//             })
+//         }
+
+//         const leads = await LeadMaster.find({
+//             leadDate: { $gte: startOfMonth, $lte: endOfMonth }
+//         })
+
+//         const leadsByUser = {}
+//         for (const lead of leads) {
+//             const userId = String(lead.leadBy)
+//             if (!leadsByUser[userId]) leadsByUser[userId] = []
+//             leadsByUser[userId].push(lead)
+//         }
+
+//         const productIds = new Set()
+//         const serviceIds = new Set()
+
+//         for (const lead of leads) {
+//             for (const payment of lead.paymentHistory || []) {
+//                 for (const entry of payment.paymentEntries || []) {
+//                     if (!entry.productorServiceId || !entry.productorServicemodel) continue
+
+//                     if (entry.productorServicemodel === "Product") {
+//                         productIds.add(String(entry.productorServiceId))
+//                     } else if (entry.productorServicemodel === "Service") {
+//                         serviceIds.add(String(entry.productorServiceId))
+//                     }
+//                 }
+//             }
+//         }
+
+//         const [products, services] = await Promise.all([
+//             Product.find({ _id: { $in: [...productIds] } }).select(
+//                 "productName name selected"
+//             ),
+//             Service.find({ _id: { $in: [...serviceIds] } }).select(
+//                 "serviceName name selected category_id categoryId categoryName"
+//             )
+//         ])
+
+//         const productMap = {}
+//         const serviceMap = {}
+
+//         for (const item of products) {
+//             const selectedRow = Array.isArray(item.selected) ? item.selected[0] : null
+//             const categoryId = selectedRow?.category_id
+//                 ? String(selectedRow.category_id)
+//                 : ""
+
+//             productMap[String(item._id)] = {
+//                 name: item.productName || item.name || "Product",
+//                 categoryId
+//             }
+//         }
+
+//         for (const item of services) {
+//             const selectedRow = Array.isArray(item.selected) ? item.selected[0] : null
+//             const categoryId = selectedRow?.category_id
+//                 ? String(selectedRow.category_id)
+//                 : item.category_id
+//                     ? String(item.category_id)
+//                     : item.categoryId
+//                         ? String(item.categoryId)
+//                         : ""
+
+//             serviceMap[String(item._id)] = {
+//                 name: item.serviceName || item.name || "Service",
+//                 categoryId
+//             }
+//         }
+
+//         const userWiseMap = {}
+
+//         for (const config of targetConfigs) {
+//             const mt = config.monthlyTargets.find(
+//                 (m) => Number(m.month) === monthNumber && Number(m.year) === yearNumber
+//             )
+
+//             if (!mt) continue
+
+//             const configCategoryId = String(config.categoryId?._id || config.categoryId)
+//             const categoryName = config.categoryId?.category || "Category"
+
+//             for (const userTarget of mt.userTargets) {
+//                 const userId = String(userTarget.userId?._id || userTarget.userId)
+//                 const userName = userTarget.userId?.name || "Unknown User"
+//                 const slabs = userTarget.slabs || []
+
+//                 const userMonthlyTarget =
+//                     slabs.length > 0
+//                         ? Number(slabs[slabs.length - 1].toValue || 0)
+//                         : 0
+
+//                 const userLeads = leadsByUser[userId] || []
+
+//                 let achievedForUser = 0
+//                 const userProductWiseMap = {}
+
+//                 // === amount measurement ===
+//                 if (config.measurementType === "amount") {
+//                     for (const lead of userLeads) {
+//                         // NEW: if this lead is forcefully closed, treat its netAmount as achieved
+//                         if (lead.forcefullyClosedTarget === true) {
+//                             const netAmount = Number(lead.netAmount || 0)
+//                             if (netAmount <= 0) continue
+
+//                             // Optional: if leads can have multiple category combos, you may
+//                             // need metadata to know which category this forced close belongs to.
+//                             // For now we assume the entire netAmount belongs to this config category.
+//                             achievedForUser += netAmount
+
+//                             // You may also want to register it as a generic "FORCED" product:
+//                             const forcedKey = `FORCED-${lead._id}`
+//                             if (!userProductWiseMap[forcedKey]) {
+//                                 userProductWiseMap[forcedKey] = {
+//                                     id: String(lead._id),
+//                                     model: "Lead",
+//                                     name: "Force-closed target",
+//                                     achieved: 0
+//                                 }
+//                             }
+//                             userProductWiseMap[forcedKey].achieved += netAmount
+//                             continue
+//                         }
+
+//                         // existing logic (non‑forced leads)
+//                         for (const payment of lead.paymentHistory || []) {
+//                             if (!payment.paymentVerified) continue
+
+//                             const paymentDate = new Date(payment.paymentDate)
+//                             if (paymentDate < startOfMonth || paymentDate > endOfMonth) continue
+
+//                             for (const entry of payment.paymentEntries || []) {
+//                                 const itemId = entry.productorServiceId
+//                                     ? String(entry.productorServiceId)
+//                                     : null
+//                                 const itemModel = entry.productorServicemodel
+
+//                                 if (!itemId || !itemModel) continue
+
+//                                 const itemMeta =
+//                                     itemModel === "Product"
+//                                         ? productMap[itemId]
+//                                         : serviceMap[itemId]
+
+//                                 if (!itemMeta) continue
+//                                 if (itemMeta.categoryId !== configCategoryId) continue
+
+//                                 const achievedAmount = Number(entry.receivedAmount || 0)
+//                                 achievedForUser += achievedAmount
+
+//                                 const productKey = `${itemModel}-${itemId}`
+
+//                                 if (!userProductWiseMap[productKey]) {
+//                                     userProductWiseMap[productKey] = {
+//                                         id: itemId,
+//                                         model: itemModel,
+//                                         name: itemMeta.name,
+//                                         achieved: 0
+//                                     }
+//                                 }
+
+//                                 userProductWiseMap[productKey].achieved += achievedAmount
+//                             }
+//                         }
+//                     }
+//                 } else {
+//                     // === count measurement ===
+//                     for (const lead of userLeads) {
+//                         // NEW: for "count" measurement, a forced-close lead counts as 1
+//                         if (lead.forcefullyClosedTarget === true) {
+//                             achievedForUser += 1
+
+//                             const forcedKey = `FORCED-${lead._id}`
+//                             if (!userProductWiseMap[forcedKey]) {
+//                                 userProductWiseMap[forcedKey] = {
+//                                     id: String(lead._id),
+//                                     model: "Lead",
+//                                     name: "Force-closed target",
+//                                     achieved: 0
+//                                 }
+//                             }
+//                             userProductWiseMap[forcedKey].achieved += 1
+//                             continue
+//                         }
+
+//                         const payments = lead.paymentHistory || []
+//                         if (!payments.length) continue
+
+//                         const allVerified = payments.every((p) => p.paymentVerified)
+
+//                         let totalReceived = 0
+//                         const leadItemKeys = new Set()
+//                         const leadItemMap = {}
+
+//                         for (const payment of payments) {
+//                             for (const entry of payment.paymentEntries || []) {
+//                                 const itemId = entry.productorServiceId
+//                                     ? String(entry.productorServiceId)
+//                                     : null
+//                                 const itemModel = entry.productorServicemodel
+
+//                                 if (!itemId || !itemModel) continue
+
+//                                 const itemMeta =
+//                                     itemModel === "Product"
+//                                         ? productMap[itemId]
+//                                         : serviceMap[itemId]
+
+//                                 if (!itemMeta) continue
+//                                 if (itemMeta.categoryId !== configCategoryId) continue
+
+//                                 totalReceived += Number(entry.receivedAmount || 0)
+
+//                                 const itemKey = `${itemModel}-${itemId}`
+//                                 leadItemKeys.add(itemKey)
+
+//                                 if (!leadItemMap[itemKey]) {
+//                                     leadItemMap[itemKey] = {
+//                                         id: itemId,
+//                                         model: itemModel,
+//                                         name: itemMeta.name
+//                                     }
+//                                 }
+//                             }
+//                         }
+
+//                         if (allVerified && totalReceived === Number(lead.netAmount || 0)) {
+//                             achievedForUser += 1
+
+//                             for (const itemKey of leadItemKeys) {
+//                                 const item = leadItemMap[itemKey]
+
+//                                 if (!userProductWiseMap[itemKey]) {
+//                                     userProductWiseMap[itemKey] = {
+//                                         id: item.id,
+//                                         model: item.model,
+//                                         name: item.name,
+//                                         achieved: 0
+//                                     }
+//                                 }
+
+//                                 userProductWiseMap[itemKey].achieved += 1
+//                             }
+//                         }
+//                     }
+//                 }
+
+//                 const balanceForUser = userMonthlyTarget - achievedForUser
+
+//                 if (!userWiseMap[userId]) {
+//                     userWiseMap[userId] = {
+//                         userId,
+//                         userName,
+//                         target: 0,
+//                         achieved: 0,
+//                         balance: 0,
+//                         categories: []
+//                     }
+//                 }
+
+//                 userWiseMap[userId].target += userMonthlyTarget
+//                 userWiseMap[userId].achieved += achievedForUser
+//                 userWiseMap[userId].balance =
+//                     userWiseMap[userId].target - userWiseMap[userId].achieved
+
+//                 userWiseMap[userId].categories.push({
+//                     categoryId: configCategoryId,
+//                     categoryName,
+//                     measurementType: config.measurementType,
+//                     target: userMonthlyTarget,
+//                     achieved: achievedForUser,
+//                     balance: balanceForUser,
+//                     slabs,
+//                     products: Object.values(userProductWiseMap)
+//                 })
+//             }
+//         }
+
+//         const userWiseResults = Object.values(userWiseMap)
+
+//         const globalTarget = userWiseResults.reduce(
+//             (sum, item) => sum + item.target,
+//             0
+//         )
+//         const globalAchieved = userWiseResults.reduce(
+//             (sum, item) => sum + item.achieved,
+//             0
+//         )
+
+//         return res.json({
+//             success: true,
+//             data: userWiseResults,
+//             summary: {
+//                 target: globalTarget,
+//                 achieved: globalAchieved,
+//                 balance: globalTarget - globalAchieved
+//             }
+//         })
+//     } catch (error) {
+//         console.log("error", error.message)
+//         return res.status(500).json({
+//             success: false,
+//             message: "Internal server error"
+//         })
+//     }
+// }
+// export const gettargetResult = async (req, res) => {
+//     try {
+//         const { month, year } = req.query
+
+//         const monthNumber = Number(month)
+//         const yearNumber = Number(year)
+
+//         if (!monthNumber || !yearNumber) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "month and year are required"
+//             })
+//         }
+
+//         const startOfMonth = new Date(yearNumber, monthNumber - 1, 1)
+//         const endOfMonth = new Date(yearNumber, monthNumber, 0, 23, 59, 59, 999)
+
+//         const configQuery = {
+//             startDate: { $lte: endOfMonth },
+//             endDate: { $gte: startOfMonth }
+//         }
+
+//         const targetConfigs = await TargetConfiguration.find(configQuery)
+//             .populate("categoryId", "category")
+//             .populate("monthlyTargets.userTargets.userId", "name email")
+
+//         if (!targetConfigs.length) {
+//             return res.json({
+//                 success: true,
+//                 data: [],
+//                 summary: {
+//                     target: 0,
+//                     achieved: 0,
+//                     balance: 0
+//                 }
+//             })
+//         }
+
+//         const leads = await LeadMaster.find({
+//             leadDate: { $gte: startOfMonth, $lte: endOfMonth }
+//         })
+
+//         const leadsByUser = {}
+//         for (const lead of leads) {
+//             const userId = String(lead.leadBy)
+//             if (!leadsByUser[userId]) leadsByUser[userId] = []
+//             leadsByUser[userId].push(lead)
+//         }
+
+//         const productIds = new Set()
+//         const serviceIds = new Set()
+
+//         for (const lead of leads) {
+//             for (const payment of lead.paymentHistory || []) {
+//                 for (const entry of payment.paymentEntries || []) {
+//                     if (!entry.productorServiceId || !entry.productorServicemodel) continue
+
+//                     if (entry.productorServicemodel === "Product") {
+//                         productIds.add(String(entry.productorServiceId))
+//                     } else if (entry.productorServicemodel === "Service") {
+//                         serviceIds.add(String(entry.productorServiceId))
+//                     }
+//                 }
+//             }
+//         }
+
+//         const [products, services] = await Promise.all([
+//             Product.find({ _id: { $in: [...productIds] } }).select("productName name selected"),
+//             Service.find({ _id: { $in: [...serviceIds] } }).select(
+//                 "serviceName name selected category_id categoryId categoryName"
+//             )
+//         ])
+
+//         const productMap = {}
+//         const serviceMap = {}
+
+//         for (const item of products) {
+//             const selectedRow = Array.isArray(item.selected) ? item.selected[0] : null
+//             const categoryId = selectedRow?.category_id ? String(selectedRow.category_id) : ""
+
+//             productMap[String(item._id)] = {
+//                 name: item.productName || item.name || "Product",
+//                 categoryId
+//             }
+//         }
+
+//         for (const item of services) {
+//             const selectedRow = Array.isArray(item.selected) ? item.selected[0] : null
+//             const categoryId = selectedRow?.category_id
+//                 ? String(selectedRow.category_id)
+//                 : item.category_id
+//                     ? String(item.category_id)
+//                     : item.categoryId
+//                         ? String(item.categoryId)
+//                         : ""
+
+//             serviceMap[String(item._id)] = {
+//                 name: item.serviceName || item.name || "Service",
+//                 categoryId
+//             }
+//         }
+
+//         const userWiseMap = {}
+
+//         for (const config of targetConfigs) {
+//             const mt = config.monthlyTargets.find(
+//                 (m) => Number(m.month) === monthNumber && Number(m.year) === yearNumber
+//             )
+
+//             if (!mt) continue
+
+//             const configCategoryId = String(config.categoryId?._id || config.categoryId)
+//             const categoryName = config.categoryId?.category || "Category"
+
+//             for (const userTarget of mt.userTargets) {
+//                 const userId = String(userTarget.userId?._id || userTarget.userId)
+//                 const userName = userTarget.userId?.name || "Unknown User"
+//                 const slabs = userTarget.slabs || []
+
+//                 const userMonthlyTarget =
+//                     slabs.length > 0
+//                         ? Number(slabs[slabs.length - 1].toValue || 0)
+//                         : 0
+
+//                 const userLeads = leadsByUser[userId] || []
+
+//                 let achievedForUser = 0
+//                 const userProductWiseMap = {}
+
+//                 if (config.measurementType === "amount") {
+//                     for (const lead of userLeads) {
+//                         for (const payment of lead.paymentHistory || []) {
+//                             if (!payment.paymentVerified) continue
+
+//                             const paymentDate = new Date(payment.paymentDate)
+//                             if (paymentDate < startOfMonth || paymentDate > endOfMonth) continue
+
+//                             for (const entry of payment.paymentEntries || []) {
+//                                 const itemId = entry.productorServiceId
+//                                     ? String(entry.productorServiceId)
+//                                     : null
+//                                 const itemModel = entry.productorServicemodel
+
+//                                 if (!itemId || !itemModel) continue
+
+//                                 const itemMeta =
+//                                     itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
+
+//                                 if (!itemMeta) continue
+//                                 if (itemMeta.categoryId !== configCategoryId) continue
+
+//                                 const achievedAmount = Number(entry.receivedAmount || 0)
+//                                 achievedForUser += achievedAmount
+
+//                                 const productKey = `${itemModel}-${itemId}`
+
+//                                 if (!userProductWiseMap[productKey]) {
+//                                     userProductWiseMap[productKey] = {
+//                                         id: itemId,
+//                                         model: itemModel,
+//                                         name: itemMeta.name,
+//                                         achieved: 0
+//                                     }
+//                                 }
+
+//                                 userProductWiseMap[productKey].achieved += achievedAmount
+//                             }
+//                         }
+//                     }
+//                 } else {
+//                     for (const lead of userLeads) {
+//                         const payments = lead.paymentHistory || []
+//                         if (!payments.length) continue
+
+//                         const allVerified = payments.every((p) => p.paymentVerified)
+
+//                         let totalReceived = 0
+//                         const leadItemKeys = new Set()
+//                         const leadItemMap = {}
+
+//                         for (const payment of payments) {
+//                             for (const entry of payment.paymentEntries || []) {
+//                                 const itemId = entry.productorServiceId
+//                                     ? String(entry.productorServiceId)
+//                                     : null
+//                                 const itemModel = entry.productorServicemodel
+
+//                                 if (!itemId || !itemModel) continue
+
+//                                 const itemMeta =
+//                                     itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
+
+//                                 if (!itemMeta) continue
+//                                 if (itemMeta.categoryId !== configCategoryId) continue
+
+//                                 totalReceived += Number(entry.receivedAmount || 0)
+
+//                                 const itemKey = `${itemModel}-${itemId}`
+//                                 leadItemKeys.add(itemKey)
+
+//                                 if (!leadItemMap[itemKey]) {
+//                                     leadItemMap[itemKey] = {
+//                                         id: itemId,
+//                                         model: itemModel,
+//                                         name: itemMeta.name
+//                                     }
+//                                 }
+//                             }
+//                         }
+
+//                         if (allVerified && totalReceived === Number(lead.netAmount || 0)) {
+//                             achievedForUser += 1
+
+//                             for (const itemKey of leadItemKeys) {
+//                                 const item = leadItemMap[itemKey]
+
+//                                 if (!userProductWiseMap[itemKey]) {
+//                                     userProductWiseMap[itemKey] = {
+//                                         id: item.id,
+//                                         model: item.model,
+//                                         name: item.name,
+//                                         achieved: 0
+//                                     }
+//                                 }
+
+//                                 userProductWiseMap[itemKey].achieved += 1
+//                             }
+//                         }
+//                     }
+//                 }
+
+//                 const balanceForUser = userMonthlyTarget - achievedForUser
+
+//                 if (!userWiseMap[userId]) {
+//                     userWiseMap[userId] = {
+//                         userId,
+//                         userName,
+//                         target: 0,
+//                         achieved: 0,
+//                         balance: 0,
+//                         categories: []
+//                     }
+//                 }
+
+//                 userWiseMap[userId].target += userMonthlyTarget
+//                 userWiseMap[userId].achieved += achievedForUser
+//                 userWiseMap[userId].balance =
+//                     userWiseMap[userId].target - userWiseMap[userId].achieved
+
+//                 userWiseMap[userId].categories.push({
+//                     categoryId: configCategoryId,
+//                     categoryName,
+//                     measurementType: config.measurementType,
+//                     target: userMonthlyTarget,
+//                     achieved: achievedForUser,
+//                     balance: balanceForUser,
+//                     slabs,
+//                     products: Object.values(userProductWiseMap)
+//                 })
+//             }
+//         }
+
+//         const userWiseResults = Object.values(userWiseMap)
+
+//         const globalTarget = userWiseResults.reduce((sum, item) => sum + item.target, 0)
+//         const globalAchieved = userWiseResults.reduce((sum, item) => sum + item.achieved, 0)
+
+//         return res.json({
+//             success: true,
+//             data: userWiseResults,
+//             summary: {
+//                 target: globalTarget,
+//                 achieved: globalAchieved,
+//                 balance: globalTarget - globalAchieved
+//             }
+//         })
+//     } catch (error) {
+//         console.log("error", error.message)
+//         return res.status(500).json({
+//             success: false,
+//             message: "Internal server error"
+//         })
+//     }
+// }
+// export const gettargetResult = async (req, res) => {
+//     try {
+//         const { month, year } = req.query
+
+//         const monthNumber = Number(month)
+//         const yearNumber = Number(year)
+
+//         if (!monthNumber || !yearNumber) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "month and year are required"
+//             })
+//         }
+
+//         const startOfMonth = new Date(yearNumber, monthNumber - 1, 1)
+//         const endOfMonth = new Date(yearNumber, monthNumber, 0, 23, 59, 59, 999)
+
+//         const configQuery = {
+//             startDate: { $lte: endOfMonth },
+//             endDate: { $gte: startOfMonth }
+//         }
+
+//         const targetConfigs = await TargetConfiguration.find(configQuery)
+//             .populate("categoryId", "category")
+//             .populate("monthlyTargets.userTargets.userId", "name email")
+
+//         if (!targetConfigs.length) {
+//             return res.json({
+//                 success: true,
+//                 data: [],
+//                 summary: {
+//                     target: 0,
+//                     achieved: 0,
+//                     balance: 0
+//                 }
+//             })
+//         }
+
+//         const leads = await LeadMaster.find({
+//             leadDate: { $gte: startOfMonth, $lte: endOfMonth }
+//         })
+
+//         const leadsByUser = {}
+//         for (const lead of leads) {
+//             const userId = String(lead.leadBy)
+//             if (!leadsByUser[userId]) leadsByUser[userId] = []
+//             leadsByUser[userId].push(lead)
+//         }
+
+//         const productIds = new Set()
+//         const serviceIds = new Set()
+
+//         for (const lead of leads) {
+//             for (const payment of lead.paymentHistory || []) {
+//                 for (const entry of payment.paymentEntries || []) {
+//                     if (!entry.productorServiceId || !entry.productorServicemodel) continue
+
+//                     if (entry.productorServicemodel === "Product") {
+//                         productIds.add(String(entry.productorServiceId))
+//                     } else if (entry.productorServicemodel === "Service") {
+//                         serviceIds.add(String(entry.productorServiceId))
+//                     }
+//                 }
+//             }
+//         }
+
+//         const [products, services] = await Promise.all([
+//             Product.find({ _id: { $in: [...productIds] } }).select(
+//                 "productName name selected"
+//             ),
+//             Service.find({ _id: { $in: [...serviceIds] } }).select(
+//                 "serviceName name selected category_id categoryId categoryName"
+//             )
+//         ])
+
+//         const productMap = {}
+//         const serviceMap = {}
+
+//         for (const item of products) {
+//             const selectedRow = Array.isArray(item.selected) ? item.selected[0] : null
+//             const categoryId =
+//                 selectedRow?.category_id ? String(selectedRow.category_id) : ""
+
+//             productMap[String(item._id)] = {
+//                 name: item.productName || item.name || "Product",
+//                 categoryId
+//             }
+//         }
+
+//         for (const item of services) {
+//             const selectedRow = Array.isArray(item.selected) ? item.selected[0] : null
+//             const categoryId = selectedRow?.category_id
+//                 ? String(selectedRow.category_id)
+//                 : item.category_id
+//                     ? String(item.category_id)
+//                     : item.categoryId
+//                         ? String(item.categoryId)
+//                         : ""
+
+//             serviceMap[String(item._id)] = {
+//                 name: item.serviceName || item.name || "Service",
+//                 categoryId
+//             }
+//         }
+
+//         const results = []
+
+//         for (const config of targetConfigs) {
+//             const mt = config.monthlyTargets.find(
+//                 (m) => m.month === monthNumber && m.year === yearNumber
+//             )
+
+//             if (!mt) continue
+
+//             const configCategoryId = String(config.categoryId?._id || config.categoryId)
+
+//             let totalTargetForMonth = 0
+//             let totalAchievedForMonth = 0
+
+//             const users = []
+//             const productWiseMap = {}
+
+//             for (const userTarget of mt.userTargets) {
+//                 const userId = String(userTarget.userId?._id || userTarget.userId)
+//                 const userName = userTarget.userId?.name || "Unknown User"
+//                 const slabs = userTarget.slabs || []
+
+//                 const userMonthlyTarget =
+//                     slabs.length > 0
+//                         ? Number(slabs[slabs.length - 1].toValue || 0)
+//                         : 0
+
+//                 const userLeads = leadsByUser[userId] || []
+
+//                 let achievedForUser = 0
+//                 const userProductWiseMap = {}
+
+//                 if (config.measurementType === "amount") {
+//                     for (const lead of userLeads) {
+//                         for (const payment of lead.paymentHistory || []) {
+//                             if (!payment.paymentVerified) continue
+
+//                             const paymentDate = new Date(payment.paymentDate)
+//                             if (paymentDate < startOfMonth || paymentDate > endOfMonth) continue
+
+//                             for (const entry of payment.paymentEntries || []) {
+//                                 const itemId = entry.productorServiceId
+//                                     ? String(entry.productorServiceId)
+//                                     : null
+//                                 const itemModel = entry.productorServicemodel
+
+//                                 if (!itemId || !itemModel) continue
+
+//                                 const itemMeta =
+//                                     itemModel === "Product"
+//                                         ? productMap[itemId]
+//                                         : serviceMap[itemId]
+
+//                                 if (!itemMeta) continue
+//                                 if (itemMeta.categoryId !== configCategoryId) continue
+
+//                                 const achievedAmount = Number(entry.receivedAmount || 0)
+//                                 achievedForUser += achievedAmount
+
+//                                 const productKey = `${itemModel}-${itemId}`
+
+//                                 if (!userProductWiseMap[productKey]) {
+//                                     userProductWiseMap[productKey] = {
+//                                         id: itemId,
+//                                         model: itemModel,
+//                                         name: itemMeta.name,
+//                                         achieved: 0
+//                                     }
+//                                 }
+
+//                                 userProductWiseMap[productKey].achieved += achievedAmount
+
+//                                 if (!productWiseMap[productKey]) {
+//                                     productWiseMap[productKey] = {
+//                                         id: itemId,
+//                                         model: itemModel,
+//                                         name: itemMeta.name,
+//                                         achieved: 0
+//                                     }
+//                                 }
+
+//                                 productWiseMap[productKey].achieved += achievedAmount
+//                             }
+//                         }
+//                     }
+//                 } else {
+//                     for (const lead of userLeads) {
+//                         const payments = lead.paymentHistory || []
+//                         if (!payments.length) continue
+
+//                         const allVerified = payments.every((p) => p.paymentVerified)
+
+//                         let totalReceived = 0
+//                         const leadItemKeys = new Set()
+//                         const leadItemMap = {}
+
+//                         for (const payment of payments) {
+//                             for (const entry of payment.paymentEntries || []) {
+//                                 const itemId = entry.productorServiceId
+//                                     ? String(entry.productorServiceId)
+//                                     : null
+//                                 const itemModel = entry.productorServicemodel
+
+//                                 if (!itemId || !itemModel) continue
+
+//                                 const itemMeta =
+//                                     itemModel === "Product"
+//                                         ? productMap[itemId]
+//                                         : serviceMap[itemId]
+
+//                                 if (!itemMeta) continue
+//                                 if (itemMeta.categoryId !== configCategoryId) continue
+
+//                                 totalReceived += Number(entry.receivedAmount || 0)
+
+//                                 const itemKey = `${itemModel}-${itemId}`
+//                                 leadItemKeys.add(itemKey)
+
+//                                 if (!leadItemMap[itemKey]) {
+//                                     leadItemMap[itemKey] = {
+//                                         id: itemId,
+//                                         model: itemModel,
+//                                         name: itemMeta.name
+//                                     }
+//                                 }
+//                             }
+//                         }
+
+//                         if (allVerified && totalReceived === Number(lead.netAmount || 0)) {
+//                             achievedForUser += 1
+
+//                             for (const itemKey of leadItemKeys) {
+//                                 const item = leadItemMap[itemKey]
+
+//                                 if (!userProductWiseMap[itemKey]) {
+//                                     userProductWiseMap[itemKey] = {
+//                                         id: item.id,
+//                                         model: item.model,
+//                                         name: item.name,
+//                                         achieved: 0
+//                                     }
+//                                 }
+
+//                                 userProductWiseMap[itemKey].achieved += 1
+
+//                                 if (!productWiseMap[itemKey]) {
+//                                     productWiseMap[itemKey] = {
+//                                         id: item.id,
+//                                         model: item.model,
+//                                         name: item.name,
+//                                         achieved: 0
+//                                     }
+//                                 }
+
+//                                 productWiseMap[itemKey].achieved += 1
+//                             }
+//                         }
+//                     }
+//                 }
+
+//                 const balanceForUser = userMonthlyTarget - achievedForUser
+
+//                 totalTargetForMonth += userMonthlyTarget
+//                 totalAchievedForMonth += achievedForUser
+
+//                 users.push({
+//                     userId,
+//                     userName,
+//                     target: userMonthlyTarget,
+//                     achieved: achievedForUser,
+//                     balance: balanceForUser,
+//                     slabs,
+//                     products: Object.values(userProductWiseMap)
+//                 })
+//             }
+
+//             results.push({
+//                 targetConfigId: config._id,
+//                 categoryId: config.categoryId?._id || config.categoryId,
+//                 categoryName: config.categoryId?.category || "Category",
+//                 measurementType: config.measurementType,
+//                 month: monthNumber,
+//                 year: yearNumber,
+//                 target: totalTargetForMonth,
+//                 achieved: totalAchievedForMonth,
+//                 balance: totalTargetForMonth - totalAchievedForMonth,
+//                 users,
+//                 products: Object.values(productWiseMap)
+//             })
+//         }
+
+//         const globalTarget = results.reduce((sum, item) => sum + item.target, 0)
+//         const globalAchieved = results.reduce((sum, item) => sum + item.achieved, 0)
+
+//         return res.json({
+//             success: true,
+//             data: results,
+//             summary: {
+//                 target: globalTarget,
+//                 achieved: globalAchieved,
+//                 balance: globalTarget - globalAchieved
+//             }
+//         })
+//     } catch (error) {
+//         console.log("error", error.message)
+//         return res.status(500).json({
+//             success: false,
+//             message: "Internal server error"
+//         })
+//     }
+// }
 // export const gettargetResult = async (req, res) => {
 //     try {
 //         const { month, year } = req.query
@@ -1278,9 +2382,9 @@ const validateSlabs = (slabs) => {
  * Create a new target configuration with full setup
  * @route POST /api/targets
  */
-const createTargetConfiguration = async (req, res) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+const createOrUpdateTargetConfiguration = async (req, res) => {
+    const session = await mongoose.startSession()
+    session.startTransaction()
 
     try {
         const {
@@ -1289,105 +2393,241 @@ const createTargetConfiguration = async (req, res) => {
             endDate,
             categoryId,
             measurementType,
-            allocations, // [{ allocationId, value }]
-            monthlyTargets // [{ month, year, userTargets: [{ userId, slabs }] }]
-        } = req.body;
+            allocations,
+            monthlyTargets
+        } = req.body
 
-        // Validation
         if (!periodName || !startDate || !endDate || !categoryId || !measurementType) {
+            await session.abortTransaction()
             return res.status(400).json({
                 success: false,
-                message: 'Missing required fields'
-            });
+                message: "Missing required fields"
+            })
         }
 
-        // Verify category exists
-        const category = await Category.findById(categoryId);
+        const category = await Category.findById(categoryId).session(session)
         if (!category) {
+            await session.abortTransaction()
             return res.status(404).json({
                 success: false,
-                message: 'Category not found'
-            });
+                message: "Category not found"
+            })
         }
 
-        // Prepare allocation values with denormalized names
-        const allocationValues = [];
-        for (const alloc of allocations) {
-            const allocation = await Task.findById(alloc.allocationId);
+        const allocationValues = []
+        for (const alloc of allocations || []) {
+            const allocation = await Task.findById(alloc.allocationId).session(session)
             if (!allocation) {
-                throw new Error(`Allocation ${alloc.allocationId} not found`);
+                throw new Error(`Allocation ${alloc.allocationId} not found`)
             }
+
             allocationValues.push({
                 allocationId: alloc.allocationId,
                 allocationName: allocation.name,
-                value: alloc.value
-            });
+                value: alloc.value,
+                mode: alloc.mode
+            })
         }
 
-        // Validate and prepare monthly targets
-        const preparedMonthlyTargets = [];
-        console.log("target", monthlyTargets)
-        for (const mt of monthlyTargets) {
-            const userTargets = [];
+        const preparedMonthlyTargets = []
+        for (const mt of monthlyTargets || []) {
+            const userTargets = []
 
-            for (const ut of mt.userTargets) {
-                // Verify user exists
-                console.log("userrrrrrrrrr", ut.userId)
-                const user = await Staff.findById(ut.userId);
-
+            for (const ut of mt.userTargets || []) {
+                const user = await Staff.findById(ut.userId).session(session)
                 if (!user) {
-                    throw new Error(`User ${ut.userId} not found`);
+                    throw new Error(`User ${ut.userId} not found`)
                 }
 
-                // Validate slabs
-                validateSlabs(ut.slabs);
+                validateSlabs(ut.slabs)
 
                 userTargets.push({
                     userId: ut.userId,
                     slabs: ut.slabs
-                });
+                })
             }
 
             preparedMonthlyTargets.push({
                 month: mt.month,
                 year: mt.year,
                 userTargets
-            });
+            })
         }
 
-        // Create target configuration
-        const targetConfig = new TargetConfiguration({
+        const normalizedStartDate = new Date(startDate)
+        const normalizedEndDate = new Date(endDate)
+
+        let existingConfig = await TargetConfiguration.findOne({
             periodName,
-            startDate: new Date(startDate),
-            endDate: new Date(endDate),
             categoryId,
-            categoryName: category.name,
-            measurementType,
-            allocationValues,
-            monthlyTargets: preparedMonthlyTargets,
-            status: 'draft',
-            createdBy: req.user?.id // Assuming auth middleware
-        });
+            startDate: normalizedStartDate,
+            endDate: normalizedEndDate
+        }).session(session)
 
-        await targetConfig.save({ session });
-        await session.commitTransaction();
+        let message = "Target configuration created successfully"
+        let statusCode = 201
 
-        res.status(201).json({
+        if (existingConfig) {
+            existingConfig.periodName = periodName
+            existingConfig.startDate = normalizedStartDate
+            existingConfig.endDate = normalizedEndDate
+            existingConfig.categoryId = categoryId
+            existingConfig.categoryName = category.category || category.name
+            existingConfig.measurementType = measurementType
+            existingConfig.allocationValues = allocationValues
+            existingConfig.monthlyTargets = preparedMonthlyTargets
+            existingConfig.status = "draft"
+            existingConfig.updatedBy = req.user?.id
+
+            await existingConfig.save({ session })
+
+            message = "Target configuration updated successfully"
+            statusCode = 200
+        } else {
+            existingConfig = new TargetConfiguration({
+                periodName,
+                startDate: normalizedStartDate,
+                endDate: normalizedEndDate,
+                categoryId,
+                categoryName: category.category || category.name,
+                measurementType,
+                allocationValues,
+                monthlyTargets: preparedMonthlyTargets,
+                status: "draft",
+                createdBy: req.user?.id
+            })
+
+            await existingConfig.save({ session })
+        }
+
+        await session.commitTransaction()
+
+        return res.status(statusCode).json({
             success: true,
-            message: 'Target configuration created successfully',
-            data: targetConfig
-        });
+            message,
+            data: existingConfig
+        })
     } catch (error) {
-        await session.abortTransaction();
-        console.error('Error creating target configuration:', error);
-        res.status(500).json({
+        await session.abortTransaction()
+        console.error("Error creating/updating target configuration:", error)
+        return res.status(500).json({
             success: false,
-            message: error.message || 'Failed to create target configuration'
-        });
+            message: error.message || "Failed to save target configuration"
+        })
     } finally {
-        session.endSession();
+        session.endSession()
     }
-};
+}
+// const createTargetConfiguration = async (req, res) => {
+//     const session = await mongoose.startSession();
+//     session.startTransaction();
+
+//     try {
+//         const {
+//             periodName,
+//             startDate,
+//             endDate,
+//             categoryId,
+//             measurementType,
+//             allocations, // [{ allocationId, value }]
+//             monthlyTargets // [{ month, year, userTargets: [{ userId, slabs }] }]
+//         } = req.body;
+
+//         // Validation
+//         if (!periodName || !startDate || !endDate || !categoryId || !measurementType) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: 'Missing required fields'
+//             });
+//         }
+
+//         // Verify category exists
+//         const category = await Category.findById(categoryId);
+//         if (!category) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: 'Category not found'
+//             });
+//         }
+
+//         // Prepare allocation values with denormalized names
+//         const allocationValues = [];
+//         for (const alloc of allocations) {
+//             const allocation = await Task.findById(alloc.allocationId);
+//             if (!allocation) {
+//                 throw new Error(`Allocation ${alloc.allocationId} not found`);
+//             }
+//             allocationValues.push({
+//                 allocationId: alloc.allocationId,
+//                 allocationName: allocation.name,
+//                 value: alloc.value
+//             });
+//         }
+
+//         // Validate and prepare monthly targets
+//         const preparedMonthlyTargets = [];
+//         console.log("target", monthlyTargets)
+//         for (const mt of monthlyTargets) {
+//             const userTargets = [];
+
+//             for (const ut of mt.userTargets) {
+//                 // Verify user exists
+//                 console.log("userrrrrrrrrr", ut.userId)
+//                 const user = await Staff.findById(ut.userId);
+
+//                 if (!user) {
+//                     throw new Error(`User ${ut.userId} not found`);
+//                 }
+
+//                 // Validate slabs
+//                 validateSlabs(ut.slabs);
+
+//                 userTargets.push({
+//                     userId: ut.userId,
+//                     slabs: ut.slabs
+//                 });
+//             }
+
+//             preparedMonthlyTargets.push({
+//                 month: mt.month,
+//                 year: mt.year,
+//                 userTargets
+//             });
+//         }
+
+//         // Create target configuration
+//         const targetConfig = new TargetConfiguration({
+//             periodName,
+//             startDate: new Date(startDate),
+//             endDate: new Date(endDate),
+//             categoryId,
+//             categoryName: category.name,
+//             measurementType,
+//             allocationValues,
+//             monthlyTargets: preparedMonthlyTargets,
+//             status: 'draft',
+//             createdBy: req.user?.id // Assuming auth middleware
+//         });
+
+//         await targetConfig.save({ session });
+//         await session.commitTransaction();
+
+//         res.status(201).json({
+//             success: true,
+//             message: 'Target configuration created successfully',
+//             data: targetConfig
+//         });
+//     } catch (error) {
+//         await session.abortTransaction();
+//         console.error('Error creating target configuration:', error);
+//         res.status(500).json({
+//             success: false,
+//             message: error.message || 'Failed to create target configuration'
+//         });
+//     } finally {
+//         session.endSession();
+//     }
+// };
 
 // =====================================================
 // 2. UPDATE USER SLABS FOR SPECIFIC MONTH
@@ -1528,21 +2768,46 @@ const updateUserSlabs = async (req, res) => {
 //   }
 // };
 
-// =====================================================
-// 4. GET SPECIFIC TARGET CONFIGURATION
-// =====================================================
+
+const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+]
+
+const getDateFromPeriod = (periodName) => {
+    const match = periodName.match(/^(\w+)\s*-\s*(\w+)\s+(\d{4})$/)
+
+    if (!match) return null
+
+    const [, fromMonth, , year] = match
+
+    const monthIndex = months.indexOf(fromMonth)
+
+    if (monthIndex === -1) return null
+
+    return new Date(Number(year), monthIndex, 1)
+}
+
 const getTargetConfigurations = async (req, res) => {
     try {
         const { periodName } = req.query
-        console.log("peroidddd", periodName)
 
-
-        const targets = await TargetConfiguration.find({ periodName })
+        const queryDate = getDateFromPeriod(periodName)
+        if (!queryDate) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid period format"
+            })
+        }
+        console.log("querydate", queryDate)
+        const targets = await TargetConfiguration.find({
+            startDate: { $lte: queryDate },
+            endDate: { $gte: queryDate }
+        })
             .populate("categoryId", "name description")
             .populate("allocationValues.allocationId", "name")
             .populate("monthlyTargets.userTargets.userId", "name email")
             .sort({ createdAt: -1 })
-        console.log("targetssssssssssssss", targets)
 
         res.json({
             success: true,
@@ -1981,7 +3246,7 @@ const getAchievementReport = async (req, res) => {
 // =====================================================
 
 export {
-    createTargetConfiguration,
+    createOrUpdateTargetConfiguration,
     updateUserSlabs,
     getTargetConfigurations,
     getTargetConfigurationById,

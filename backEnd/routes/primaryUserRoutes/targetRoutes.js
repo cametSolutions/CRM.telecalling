@@ -1,9 +1,9 @@
 import express from "express"
 import authMiddleware from "../../middleware/authMiddleware.js"
-import { SubmitTargetRegister } from "../../controller/primaryUserController/targetController.js"
-import { createTargetConfiguration,getTargetConfigurations,gettargetResult } from "../../controller/primaryUserController/targetController.js"
+
+import { createOrUpdateTargetConfiguration,getTargetConfigurations,gettargetResult } from "../../controller/primaryUserController/targetController.js"
 const router = express.Router()
 router.get("/getregisteredTarget",authMiddleware,getTargetConfigurations)
 router.get("/gettargetresult",authMiddleware,gettargetResult)
-router.post("/submitTargetRegister", authMiddleware, createTargetConfiguration)
+router.post("/createOrUpdateTargetConfiguration", authMiddleware, createOrUpdateTargetConfiguration)
 export default router

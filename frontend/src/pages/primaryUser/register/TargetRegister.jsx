@@ -3371,7 +3371,7 @@ const months = [
 ]
 
 export const TargetRegister = () => {
-const currentMonth = new Date().toLocaleString("default", { month: "long" })
+  const currentMonth = new Date().toLocaleString("default", { month: "long" })
   const [fromMonth, setFromMonth] = useState(currentMonth)
   const [toMonth, setToMonth] = useState(currentMonth)
   const [userbranches, setuserBranches] = useState([])
@@ -3386,12 +3386,12 @@ const currentMonth = new Date().toLocaleString("default", { month: "long" })
   const [respectedmonthtargetType, setrespectedmonthtargetType] = useState({})
   const [selectedsplitProducts, setselectedsplitProducts] = useState(null)
   const [selectedsplitmonth, setselectedsplitmonth] = useState(null)
-
+  const [incentiveWarnings, setIncentiveWarnings] = useState({})
   const [pageMessage, setPageMessage] = useState("")
   const [userMessages, setUserMessages] = useState({})
-
+  const [splitWarnings, setSplitWarnings] = useState({})
   const [selectedAllocations, setSelectedAllocations] = useState([])
-console.log(selectedAllocations)
+  console.log(selectedAllocations)
   const [showProductModal, setShowProductModal] = useState(false)
   const [showAllocationModal, setShowAllocationModal] = useState(false)
   const [showSplitModal, setShowSplitModal] = useState(false)
@@ -3415,23 +3415,24 @@ console.log(selectedAllocations)
   const { data: target } = UseFetch(
     `/target/getregisteredTarget?periodName=${periodName}`
   )
+console.log(periodName)
   console.log(target)
   const loggeduserBranch = useSelector(
     (state) => state.companyBranch.loggeduserbranches
   )
-console.log(months)
+  console.log(months)
   const query = new URLSearchParams({
     branchselectedArray: JSON.stringify(loggeduserBranch)
   }).toString()
 
   const { data: category } = UseFetch("/inventory/getCategory")
   const { data: tasklist } = UseFetch("/lead/getAlltasktoTarget")
-
+  console.log(tasklist)
   const safeNum = (v) => {
     const n = Number(v)
     return Number.isFinite(n) ? n : 0
   }
-
+  console.log(splitWarnings)
   const recomputeTotalTargetForKey = (splitArray) => {
     if (!splitArray || !splitArray.length) return 0
     return splitArray.reduce((sum, user) => {
@@ -3442,16 +3443,40 @@ console.log(months)
     }, 0)
   }
 
+  const isOverlappingPeriod = () => {
+    if (!targetArray?.length) return false
+
+    const newStart = buildStartDate()
+    const newEnd = buildEndDate()
+
+    return targetArray.some((item) => {
+      const existingStart = new Date(item.startDate)
+      const existingEnd = new Date(item.endDate)
+
+      return newStart <= existingEnd && newEnd >= existingStart
+    })
+  }
+
   const getMonthNumber = (monthName) => months.indexOf(monthName) + 1
   const getCurrentYear = () => new Date().getFullYear()
 
   const buildPeriodName = () => {
     return `${fromMonth} - ${toMonth} ${getCurrentYear()}`
   }
-console.log(fromMonth)
-console.log(toMonth)
+  console.log(fromMonth)
+  console.log(toMonth)
   const buildStartDate = () => {
     return new Date(getCurrentYear(), getMonthNumber(fromMonth) - 1, 1)
+  }
+  const isValidIncentiveType = (productId, selectedType) => {
+    const splitType =
+      respectedmonthtargetType?.[`${productId}-${selectedMonths[0]}`] ||
+      "quantity"
+
+    if (splitType === "amount" && selectedType !== "percentage") return false
+    if (splitType === "quantity" && selectedType !== "amount") return false
+
+    return true
   }
 
   const buildEndDate = () => {
@@ -3463,6 +3488,7 @@ console.log(toMonth)
     setperiodName(period)
   }, [fromMonth, toMonth])
   console.log(periodName)
+  console.log(target)
   useEffect(() => {
     if (!target) return
     if (!productandservices.length) return
@@ -3575,6 +3601,7 @@ console.log(toMonth)
       setToMonth(months[end.getMonth()])
     }
   }, [target, productandservices, availableAllocations])
+  console.log(tasklist)
   useEffect(() => {
     if (tasklist && tasklist.length) {
       const filteredtask = tasklist.filter((item) => {
@@ -3592,7 +3619,9 @@ console.log(toMonth)
       const followup = mapped.find(
         (item) => item.name.trim().toLowerCase() === "followup"
       )
+      console.log(selectedAllocations)
       if (followup) {
+        console.log("hhh")
         setSelectedAllocations((prev) => {
           const alreadySelected = prev.some((a) => a.id === followup.id)
           return alreadySelected ? prev : [...prev, followup]
@@ -3600,7 +3629,7 @@ console.log(toMonth)
       }
     }
   }, [tasklist])
-
+  console.log(selectedAllocations)
   useEffect(() => {
     const userData = getLocalStorageItem("user")
     if (!userData?.selected?.length) return
@@ -3658,9 +3687,9 @@ console.log(toMonth)
   }, [selectedAllocations, productandservices])
 
   const filteredProductsForBranch = productandservices
-console.log(selectedProducts)
+  console.log(selectedProducts)
   useEffect(() => {
-console.log(filteredProductsForBranch)
+    console.log(filteredProductsForBranch)
     setSelectedProducts((prev) =>
       prev.filter((p) => filteredProductsForBranch.some((fp) => fp.id === p.id))
     )
@@ -3676,14 +3705,24 @@ console.log(filteredProductsForBranch)
   const selectedMonths = getMonthsInRange()
   console.log(selectedMonths)
   const handleProductSelection = (product) => {
-console
+    console
     setSelectedProducts((prev) => {
       const exists = prev.find((p) => p.id === product.id)
       if (exists) return prev.filter((p) => p.id !== product.id)
       return [...prev, product]
     })
   }
-
+  const payloads = selectedProducts.map((product) => {
+    const allocationsPayload = selectedAllocations.map((alloc) => ({
+      allocationId: alloc.id,
+      value:
+        Number(
+          targetpriceorpercentageValue[`${product.id}-${alloc.id}-value`]
+        ) || 0,
+      mode: targetpriceorPercentageType[`${product.id}-${alloc.id}-type`]
+    }))
+    console.log(allocationsPayload)
+  })
   const handleAllocationSelection = (allocation) => {
     setSelectedAllocations((prev) => {
       const exists = prev.find((a) => a.id === allocation.id)
@@ -3737,21 +3776,116 @@ console
 
     delete committedProductsRef.current[productId]
   }
+  console.log(targetpriceorPercentageType)
+  console.log(targetpriceorpercentageValue)
+  // const handleIncentiveInput = (productId, allocId, value, type) => {
+  //   console.log(type)
+  //   if (type === "type") {
+  //     settargetpriceorPercentageType((prev) => ({
+  //       ...prev,
+  //       [`${productId}-${allocId}-${type}`]: value
+  //     }))
+  //   } else {
+  //     settargetpriceorpercentageValue((prev) => ({
+  //       ...prev,
+  //       [`${productId}-${allocId}-${type}`]: value
+  //     }))
+  //   }
+  // }
+  // const handleIncentiveInput = (productId, allocId, value, field) => {
+  //   if (field === "type") {
+  //     // 🚨 VALIDATION
+  //     if (!isValidIncentiveType(productId, value)) {
+  //       alert(
+  //         `Invalid selection: ${
+  //           respectedmonthtargetType?.[`${productId}-${selectedMonths[0]}`] ===
+  //           "amount"
+  //             ? "Use % for Amount split"
+  //             : "Use ₹ for Quantity split"
+  //         }`
+  //       )
+  //       return
+  //     }
 
-  const handleIncentiveInput = (productId, allocId, value, type) => {
-    if (type === "type") {
+  //     settargetpriceorPercentageType((prev) => ({
+  //       ...prev,
+  //       [`${productId}-${allocId}-type`]: value
+  //     }))
+  //   } else {
+  //     settargetpriceorpercentageValue((prev) => ({
+  //       ...prev,
+  //       [`${productId}-${allocId}-value`]: value
+  //     }))
+  //   }
+  // }
+  const handleIncentiveInput = (productId, allocId, value, field) => {
+    if (field === "type") {
+      const splitType =
+        respectedmonthtargetType?.[`${productId}-${selectedMonths[0]}`] ||
+        "quantity"
+
+      let message = ""
+      console.log(splitType)
+      console.log(value)
+      if (splitType === "amount" && value !== "percentage") {
+        message = "For Amount split, incentive must be %"
+      }
+
+      if (splitType === "quantity" && value !== "amount") {
+        message = "For Quantity split, incentive must be ₹"
+      }
+
+      if (message) {
+        console.log(message)
+        setIncentiveWarnings((prev) => ({
+          ...prev,
+          [`${productId}-${allocId}`]: message
+        }))
+        // ⏳ auto remove after 3 sec
+        setTimeout(() => {
+          setIncentiveWarnings((prev) => {
+            const updated = { ...prev }
+            delete updated[`${productId}-${allocId}`]
+            return updated
+          })
+        }, 3000)
+
+        // also update split warning (global sync)
+        setSplitWarnings((prev) => ({
+          ...prev,
+          [`${productId}`]:
+            splitType === "amount"
+              ? "Split type 'Amount' requires all incentives to be %"
+              : "Split type 'Quantity' requires all incentives to be ₹"
+        }))
+
+        return
+      }
+
+      // ✅ clear both warnings
+      setIncentiveWarnings((prev) => ({
+        ...prev,
+        [`${productId}-${allocId}`]: ""
+      }))
+
+      setSplitWarnings((prev) => ({
+        ...prev,
+        [`${productId}`]: ""
+      }))
+
       settargetpriceorPercentageType((prev) => ({
         ...prev,
-        [`${productId}-${allocId}-${type}`]: value
+        [`${productId}-${allocId}-type`]: value
       }))
     } else {
       settargetpriceorpercentageValue((prev) => ({
         ...prev,
-        [`${productId}-${allocId}-${type}`]: value
+        [`${productId}-${allocId}-value`]: value
       }))
     }
   }
-
+  console.log(targetpriceorpercentageValue)
+  console.log(targetpriceorPercentageType)
   const openSplitModal = (productId, month, name) => {
     const Name = name.trim()
 
@@ -3958,7 +4092,15 @@ console
     })
   }
 
+  console.log(splitWarnings[selectedsplitProducts])
+  console.log(splitWarnings)
+  console.log(incentiveWarnings)
   const handleCancel = () => {
+    // setSplitWarnings
+    setSplitWarnings((prev) => ({
+      ...prev,
+      [selectedsplitProducts]: ""
+    }))
     setShowSplitModal(false)
     setWorkingSplitData({})
     setUserMessages({})
@@ -4031,9 +4173,14 @@ console
     setShowSplitModal(false)
     setUserMessages({})
   }
-
+  console.log(targetpriceorpercentageValue)
+  console.log(targetpriceorpercentageValue)
   const handleSubmitTarget = async () => {
     try {
+      if (isOverlappingPeriod()) {
+        setPageMessage("Target already exists for this period range")
+        return
+      }
       setPageMessage("")
 
       if (!selectedProducts.length) {
@@ -4061,7 +4208,8 @@ console
           value:
             Number(
               targetpriceorpercentageValue[`${product.id}-${alloc.id}-value`]
-            ) || 0
+            ) || 0,
+          mode: targetpriceorPercentageType[`${product.id}-${alloc.id}-type`]
         }))
 
         const monthlyTargetsPayload = selectedMonths.map((monthName) => {
@@ -4107,13 +4255,16 @@ console
 
       await Promise.all(
         payloads.map((body) =>
-          api.post("/target/submitTargetRegister", body, {
+          api.post("/target/createOrUpdateTargetConfiguration", body, {
             headers: { Authorization: `Bearer ${token}` }
           })
         )
       )
-
-      setPageMessage("Target configuration saved successfully")
+      setPageMessage(
+        isUpdateMode
+          ? "Target configuration updated successfully"
+          : "Target configuration saved successfully"
+      )
     } catch (err) {
       console.error(err)
       setPageMessage(
@@ -4121,6 +4272,48 @@ console
       )
     }
   }
+  const targetArray = Array.isArray(target?.data)
+    ? target.data
+    : Array.isArray(target)
+      ? target
+      : target?.data
+        ? target.data
+        : []
+console.log(target)
+console.log(targetArray)
+  const hasExistingTargetForProduct = (productId) =>
+    targetArray.some(
+      (item) =>
+        String(item.categoryId?._id || item.categoryId) === String(productId)
+    )
+
+  const hasExistingSplitForProductMonth = (productId, monthName) => {
+    const monthNumber = getMonthNumber(monthName)
+
+    return targetArray.some((item) => {
+      const sameCategory =
+        String(item.categoryId?._id || item.categoryId) === String(productId)
+
+      if (!sameCategory) return false
+
+      return (item.monthlyTargets || []).some(
+        (mt) =>
+          Number(mt.month) === Number(monthNumber) &&
+          Number(mt.year) === Number(getCurrentYear()) &&
+          Array.isArray(mt.userTargets) &&
+          mt.userTargets.length > 0
+      )
+    })
+  }
+  const isSplitUpdateMode =
+    splitModalData &&
+    hasExistingSplitForProductMonth(
+      splitModalData.productId,
+      splitModalData.month
+    )
+  const isUpdateMode =
+    selectedProducts?.length > 0 &&
+    selectedProducts.every((product) => hasExistingTargetForProduct(product.id))
 
   const modalKey =
     splitModalData && `${splitModalData.productId}-${splitModalData.month}`
@@ -4193,11 +4386,11 @@ console
                     setFromMonth(e.target.value)
                     setSelectedProducts([])
                     setSelectedAllocations([])
-                    setCommittedTargetData([])
-                    setCommittedSplitData([])
-                    settargetpriceorPercentageType([])
-                    settargetpriceorpercentageValue([])
-                    setrespectedmonthtargetType([])
+                    setCommittedTargetData({})
+                    setCommittedSplitData({})
+                    settargetpriceorPercentageType({})
+                    settargetpriceorpercentageValue({})
+                    setrespectedmonthtargetType({})
                   }}
                   className="h-7 rounded-md border border-slate-200 bg-white px-2 pr-6 text-xs text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/40"
                 >
@@ -4340,7 +4533,7 @@ console
                       </td>
                     ))}
 
-                    {selectedAllocations.map((alloc) => (
+                    {/* {selectedAllocations.map((alloc) => (
                       <td
                         key={alloc.id}
                         className="px-2 py-1.5 border-r border-slate-200 align-middle"
@@ -4388,7 +4581,68 @@ console
                           </div>
                         </div>
                       </td>
-                    ))}
+                    ))} */}
+                    {selectedAllocations.map((alloc) => {
+                      const key = `${product.id}-${alloc.id}`
+
+                      return (
+                        <td
+                          key={alloc.id}
+                          className="px-2 py-1.5 border-r border-slate-200 align-middle"
+                        >
+                          <div className="flex flex-col">
+                            {/* INPUT + SELECT */}
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="number"
+                                value={
+                                  targetpriceorpercentageValue[
+                                    `${product.id}-${alloc.id}-value`
+                                  ] || ""
+                                }
+                                onChange={(e) =>
+                                  handleIncentiveInput(
+                                    product.id,
+                                    alloc.id,
+                                    e.target.value,
+                                    "value"
+                                  )
+                                }
+                                className="max-w-24 rounded-md border border-slate-300 bg-white px-2 py-1 text-[11px]"
+                                placeholder="0"
+                              />
+
+                              <select
+                                value={
+                                  targetpriceorPercentageType[
+                                    `${product.id}-${alloc.id}-type`
+                                  ] || "amount"
+                                }
+                                onChange={(e) =>
+                                  handleIncentiveInput(
+                                    product.id,
+                                    alloc.id,
+                                    e.target.value,
+                                    "type"
+                                  )
+                                }
+                                className="rounded-md border border-slate-300 px-2 py-1 text-[11px]"
+                              >
+                                <option value="amount">₹</option>
+                                <option value="percentage">%</option>
+                              </select>
+                            </div>
+
+                            {/* 🔴 WARNING MESSAGE */}
+                            {incentiveWarnings[key] && (
+                              <p className="text-[10px] text-red-500 mt-1">
+                                {incentiveWarnings[key]}
+                              </p>
+                            )}
+                          </div>
+                        </td>
+                      )
+                    })}
                   </tr>
                 ))}
 
@@ -4416,7 +4670,7 @@ console
               onClick={handleSubmitTarget}
               className="inline-flex items-center rounded-md bg-slate-900 px-4 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/70"
             >
-              Save Target
+              {isUpdateMode ? "Update Target" : "Save Target"}
             </button>
           </div>
         </div>
@@ -4429,7 +4683,13 @@ console
                   Select Categories
                 </h3>
                 <button
-                  onClick={() => setShowProductModal(false)}
+                  onClick={() => {
+                    setSplitWarnings((prev) => ({
+                      ...prev,
+                      [selectedsplitProducts]: ""
+                    }))
+                    setShowProductModal(false)
+                  }}
                   className="rounded-full p-1 text-slate-500 hover:bg-slate-200"
                 >
                   <X className="w-4 h-4" />
@@ -4562,13 +4822,73 @@ console
                             `${selectedsplitProducts}-${selectedsplitmonth}`
                           ] || "quantity"
                         }
-                        onChange={(e) =>
-                          setrespectedmonthtargetType((prev) => ({
+                        onChange={(e) => {
+                          const newType = e.target.value
+                          const productId = selectedsplitProducts
+
+                          // check existing incentive types
+                          const invalidAlloc = selectedAllocations.find(
+                            (alloc) => {
+                              const incentiveType =
+                                targetpriceorPercentageType[
+                                  `${productId}-${alloc.id}-type`
+                                ] || "amount"
+
+                              if (
+                                newType === "amount" &&
+                                incentiveType !== "percentage"
+                              )
+                                return true
+                              if (
+                                newType === "quantity" &&
+                                incentiveType !== "amount"
+                              )
+                                return true
+
+                              return false
+                            }
+                          )
+
+                          if (invalidAlloc) {
+                            setSplitWarnings((prev) => ({
+                              ...prev,
+                              [`${productId}`]:
+                                newType === "amount"
+                                  ? "Split type 'Amount' requires all incentives to be %"
+                                  : "Split type 'Quantity' requires all incentives to be ₹"
+                            }))
+                            return
+                          }
+
+                          // ✅ clear warning
+                          setSplitWarnings((prev) => ({
                             ...prev,
-                            [`${selectedsplitProducts}-${selectedsplitmonth}`]:
-                              e.target.value
+                            [`${productId}`]: ""
                           }))
-                        }
+
+                          // ✅ apply SAME split type for all months
+                          setrespectedmonthtargetType((prev) => {
+                            const updated = { ...prev }
+                            selectedMonths.forEach((m) => {
+                              updated[`${productId}-${m}`] = newType
+                            })
+                            return updated
+                          })
+                        }}
+                        // onChange={(e) => {
+                        //   const newType = e.target.value
+
+                        //   setrespectedmonthtargetType((prev) => {
+                        //     const updated = { ...prev }
+
+                        //     // apply SAME type to ALL months of that product
+                        //     selectedMonths.forEach((m) => {
+                        //       updated[`${selectedsplitProducts}-${m}`] = newType
+                        //     })
+
+                        //     return updated
+                        //   })
+                        // }}
                         className="w-28 px-2 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
                       >
                         <option value="quantity">Quantity</option>
@@ -4576,6 +4896,11 @@ console
                       </select>
                       <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
                     </div>
+                    {splitWarnings[selectedsplitProducts] && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {splitWarnings[selectedsplitProducts]}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex flex-1 justify-end items-center pr-4">
@@ -4743,7 +5068,7 @@ console
                   onClick={handlesaveSplit}
                   className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                 >
-                  Save Split
+                  {isSplitUpdateMode ? "Update Splits" : "Save Split"}
                 </button>
               </div>
             </div>
