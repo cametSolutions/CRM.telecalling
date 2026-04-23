@@ -9,6 +9,7 @@ export function FancySelect({
   placeholder = "Select",
   width = "min-w-[150px]"
 }) {
+console.log(options)
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
 

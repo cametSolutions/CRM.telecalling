@@ -42,10 +42,12 @@ import {
   Getalltasktoreport,
   GetallselectedproductFollowup,
   getAlltasktoTarget,
-GetleadById
+GetleadById,
+ApprovedforcefullyClosedTarget
 } from "../../controller/primaryUserController/leadController.js";
 const router = express.Router();
 router.get("/getstaffdailyreports", authMiddleware, Getdailystaffreport)
+router.post("/approveforcefullyclosetarget",authMiddleware,ApprovedforcefullyClosedTarget)
 router.get("/getsalesfunnels", authMiddleware, Getallsalesfunnels)
 router.get("/getallproductwisereport", authMiddleware, GetallproductwiseReport);
 router.get("/getfollowupsummaryReport", authMiddleware, GetfollowupsummaryReport)

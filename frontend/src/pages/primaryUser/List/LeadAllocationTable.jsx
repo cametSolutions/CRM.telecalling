@@ -736,7 +736,7 @@ const LeadAllocationTable = () => {
             </div>
           )}
         </div> */}
-        <div className="flex-1 mx-5">
+        <div className=" mx-5">
           {loading || toggleLoading ? (
             // 1) While fetching → skeleton loader
             <SkeletonTable rows={5} columns={8} />

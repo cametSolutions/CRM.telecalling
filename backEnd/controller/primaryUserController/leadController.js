@@ -1524,6 +1524,46 @@ export const GetleadById = async (req, res) => {
   console.log("lleaddocidd", leadDocId)
 }
 
+export const ApprovedforcefullyClosedTarget = async (req, res) => {
+  try {
+    const { leadDocId } = req.query
+
+    if (!leadDocId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "leadDocId is required" })
+    }
+
+    const result = await LeadMaster.updateOne(
+      { _id:leadDocId },
+      { $set: { forcefullyClosedTarget: true } }
+    )
+
+    // result.matchedCount: how many docs matched filter
+    // result.modifiedCount: how many docs actually changed
+    if (result.matchedCount === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Lead not found" })
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Target forcefully closed successfully",
+      data: {
+        leadDocId,
+        matchedCount: result.matchedCount,
+        modifiedCount: result.modifiedCount
+      }
+    })
+  } catch (error) {
+    console.error("ApprovedforcefullyClosedTarget error:", error)
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" })
+  }
+}
+
 export const GetallfollowupList = async (req, res) => {
   try {
     const {
@@ -3045,7 +3085,7 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
         }
       );
     }
-    const allocationTask = await Task.findOne({ taskName: "Followup" });
+    const allocationTask = await Task.findOne({ taskName: "Closing" });
     const activityEntry = {
       submissionDate: formData.followUpDate,
       submittedUser: loggeduserid,

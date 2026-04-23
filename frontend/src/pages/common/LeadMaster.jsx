@@ -479,6 +479,7 @@ const LeadMaster = ({
   const [openLicenseDropdown, setOpenLicenseDropdown] = useState(null)
   const [openProductDropdown, setOpenProductDropdown] = useState(null)
   const [popupMessage, setPopupMessage] = useState("")
+  const [warningMessage, setwarningMessage] = useState("")
   const [ispopupModalOpen, setIspopupModalOpen] = useState(false)
   const [isSelfAllocationChangable, setselfAllocationChangable] = useState(true)
   const [modalloader, setModalLoader] = useState(false)
@@ -942,22 +943,6 @@ const LeadMaster = ({
     setcustomerTableData(filteredcustomerLicenseandproducts)
   }
 
-  // const handlePriceChange = (index, newPrice) => {
-  //   setSelectedLeadList((prevList) =>
-  //     prevList.map((product, i) =>
-  //       i === index
-  //         ? {
-  //             ...product,
-  //             productPrice: newPrice,
-  //             netAmount: (
-  //               Number(newPrice) +
-  //               (Number(product.hsn) / 100) * Number(newPrice)
-  //             ).toFixed(2)
-  //           }
-  //         : product
-  //     )
-  //   )
-  // }
   const handlePriceChange = (index, newPrice) => {
     setSelectedLeadList((prevList) =>
       prevList.map((product, i) => {
@@ -977,23 +962,7 @@ const LeadMaster = ({
     )
   }
 
-  // const handleHsnChange = (index, newHsn) => {
-  //   setSelectedLeadList((prevList) =>
-  //     prevList.map((product, i) =>
-  //       i === index
-  //         ? {
-  //             ...product,
-  //             hsn: newHsn,
-  //             netAmount: (
-  //               Number(product?.productPrice) +
-  //               (Number(newHsn) / 100) * Number(product?.productPrice)
-  //             ).toFixed(2)
-  //           }
-  //         : product
-  //     )
-  //   )
-  // }
-console.log(selectedleadlist)
+  console.log(selectedleadlist)
   const handleHsnChange = (index, newHsn) => {
     setSelectedLeadList((prevList) =>
       prevList.map((product, i) => {
@@ -1006,7 +975,7 @@ console.log(selectedleadlist)
 
         return {
           ...product,
-          hsn:newHsn,
+          hsn: newHsn,
           netAmount
         }
       })
@@ -1076,8 +1045,13 @@ console.log(selectedleadlist)
       return total + Number(product.productPrice)
     }, 0)
   }
-
+  console.log(warningMessage)
   const handleAddRowFromTable = () => {
+    setwarningMessage("You can’t add more products; this is limited to a single product.")
+    setTimeout(() => {
+      setwarningMessage("")
+    }, 3000) // 3 seconds
+    return
     setSelectedLeadList((prev) => {
       if (!prev || prev.length === 0) {
         return [{ ...emptyRow }]
@@ -1889,7 +1863,9 @@ console.log(selectedleadlist)
                     </tbody>
                   </table>
                 </div>
-
+                {warningMessage && (
+                  <p className="text-red-500 text-sm mt-0">{warningMessage}</p>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
@@ -2042,57 +2018,6 @@ console.log(selectedleadlist)
                     )}
                   </div>
                 </div>
-
-                {/* {process !== "edit" ? (
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">
-                      Self Allocation / Other
-                    </label>
-                    <select
-                      disabled={!isSelfAllocationChangable}
-                      {...registerMain("selfAllocation", {
-                        setValueAs: (v) => v === "true",
-                        validate: (v) =>
-                          v === true || v === false
-                            ? true
-                            : "This field is required",
-                        onChange: (e) =>
-                          setselfAllocation(e.target.value === "true")
-                      })}
-                      className={`w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] ${
-                        !isSelfAllocationChangable
-                          ? "cursor-not-allowed opacity-70"
-                          : "cursor-pointer"
-                      }`}
-                    >
-                      <option value="">Select</option>
-                      {(loggeduser?.department?._id ===
-                        "670c866552847bbebbd35748" ||
-                        loggeduser?.department?._id ===
-                          "670c867352847bbebbd35750") && (
-                        <option value="true">Self Allocate</option>
-                      )}
-                      <option value="false">Allocate To Other</option>
-                    </select>
-                    {errorsMain.selfAllocation && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errorsMain.selfAllocation.message}
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">
-                      Lead Id
-                    </label>
-                    <input
-                      {...registerMain("leadId")}
-                      disabled
-                      placeholder="Lead Id..."
-                      className="w-full border border-gray-300 rounded px-3 py-[7px] text-sm outline-none bg-[#EEF2F8] cursor-not-allowed opacity-70"
-                    />
-                  </div>
-                )} */}
 
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 pt-2">
                   <div>

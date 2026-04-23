@@ -5,6 +5,9 @@ import { toast } from "react-toastify"
 import api from "../../api/api"
 export const PaymentHistoryModal = ({
   data,
+  balanceAmount,
+isforcefullyclosed,
+  isChecked,
   leadid,
   onClose,
   leadDocId,
@@ -12,7 +15,16 @@ export const PaymentHistoryModal = ({
   refresh,
   setdata
 }) => {
+  console.log(leadDocId)
+  console.log(isChecked)
+  console.log(balanceAmount)
   const [editingRow, setEditingRow] = useState(null)
+  const [warningMessage, setwarningMessage] = useState(
+    isChecked?.checked
+      ? `This is ${isChecked.month} target,you can forcefully closed this target/incentive`
+      : `This is ${isChecked.month} target,you can forcefully closed this target/incentive`
+  )
+  console.log(warningMessage)
   const [isdepartmentisAccountant, setisdepartmentAccountant] = useState(false)
   const [message, setMessage] = useState({})
   const [editedData, setEditedData] = useState({})
@@ -101,15 +113,26 @@ export const PaymentHistoryModal = ({
     setEditingRow(null)
     setEditedData({})
   }
-
+  console.log("h")
   const handleInputChange = (field, value) => {
     setEditedData((prev) => ({
       ...prev,
       [field]: value
     }))
   }
+  const handleCloseTarget = async () => {
+    onClose(false)
+    console.log("h")
+    setwarningMessage("")
+    const response = await api.post(
+      `/lead/approveforcefullyclosetarget?leadDocId=${leadDocId}`
+    )
+    if (response.status === 200) {
+      console.log("Hhhh")
+    }
+  }
+
   const handleVerify = async (row, index, checkverified) => {
-  
     try {
       setsubmitLoading(true)
       const payload = {
@@ -144,6 +167,7 @@ export const PaymentHistoryModal = ({
     (sum, item) => sum + (item.receivedAmount || 0),
     0
   )
+  console.log(data)
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col overflow-hidden">
@@ -180,13 +204,21 @@ export const PaymentHistoryModal = ({
         )}
 
         {/* Total Amount Card */}
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200 px-4 sm:px-6 py-3">
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200 px-4 sm:px-6 py-3 flex justify-between">
           <div className="flex items-center justify-between">
             <span className="text-sm sm:text-base font-medium text-gray-700">
-              Total Received
+              Total Received :
             </span>
-            <span className="text-xl sm:text-2xl font-bold text-green-700">
+            <span className="text-xl sm:text-xl font-bold text-green-700">
               {formatAmount(totalAmount)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm sm:text-base font-medium text-gray-700">
+              Balance Amount :
+            </span>
+            <span className="text-xl sm:text-xl font-bold text-green-700">
+              {formatAmount(balanceAmount)}
             </span>
           </div>
         </div>
@@ -206,10 +238,10 @@ export const PaymentHistoryModal = ({
                   <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold  whitespace-nowrap">
                     Payment Amount
                   </th>
-                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold whitespace-nowrap">
+                  <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold whitespace-nowrap">
                     Remarks
                   </th>
-                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold whitespace-nowrap">
+                  <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold whitespace-nowrap">
                     Bank Remarks
                   </th>
                   <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold  whitespace-nowrap">
@@ -260,7 +292,7 @@ export const PaymentHistoryModal = ({
                           </span>
                         )}
                       </td>
-                      <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm">
+                      <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-center">
                         {isEditing && ispermissionEdit ? (
                           <input
                             type="text"
@@ -277,7 +309,7 @@ export const PaymentHistoryModal = ({
                           </span>
                         )}
                       </td>
-                      <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm">
+                      <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm text-center">
                         {isEditing && ispermissionEdit ? (
                           <input
                             type="text"
@@ -294,7 +326,7 @@ export const PaymentHistoryModal = ({
                           </span>
                         )}
                       </td>
-                      <td className="px-3 sm:px-4 py-3  whitespace-nowrap ">
+                      <td className="px-3 sm:px-4 py-3  whitespace-nowrap text-center">
                         {isEditing ? (
                           <div className="flex items-center justify-center gap-2">
                             <button
@@ -366,6 +398,17 @@ export const PaymentHistoryModal = ({
             Total Records:{" "}
             <span className="font-semibold text-gray-800">{data.length}</span>
           </p>
+          {warningMessage && !isforcefullyclosed&& (
+            <>
+              <p className="text-red-500">{warningMessage}</p>
+              <button
+                onClick={() => handleCloseTarget()}
+                className="px-4 py-2 bg-orange-400 text-white rounded-lg hover:bg-orange-500 transition-colors text-sm font-medium"
+              >
+                Closed Target/Incentive
+              </button>
+            </>
+          )}
           <button
             onClick={() => {
               onClose(false)

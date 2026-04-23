@@ -11,7 +11,9 @@ import {
   ChevronRight
 } from "lucide-react"
 import StaffHeader from "../../header/StaffHeader"
+import Sidebar from "./Sidebar"
 import AdminHeader from "../../header/AdminHeader"
+import { BranchSelect } from "./BranchSelect"
 import { toast } from "react-toastify"
 import { useEffect, useState } from "react"
 import UseFetch from "../../hooks/useFetch"
@@ -21,6 +23,8 @@ import {
 } from "../../helper/localstorage"
 import AvatarEditor from "../common/AvatarEditor"
 import { PerformanceModal } from "./PerformanceModal"
+import TableSkeletonLoader from "../common/SkeletonLoader"
+import SkeletonTable from "../loader/SkeletonTable"
 import api from "../../api/api"
 import { useNavigate } from "react-router-dom"
 const statCards = [
@@ -113,11 +117,23 @@ const getBarStyle = (value, colorA, colorB) => ({
 
 const MarketingDashboard = () => {
   const [user, setUser] = useState(null)
+  const [branchOptions, setbranchOptions] = useState([])
+  const [selectedUserName, setselecteduserName] = useState(null)
+  const [selectedCategory, setselectedCategory] = useState(null)
+  const [Branch, setBranch] = useState("Accuanet")
+  console.log(selectedCategory)
   const [openModal, setOpenModal] = useState(false)
+  const [categorylist, setcategorylist] = useState([])
+  const [productlist, setproductList] = useState([])
   const [avatarOpen, setAvatarOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [selectedDatapopup, setselectedDataPopup] = useState({})
+  const [achievedproducts, setacheivedProducts] = useState([])
+  console.log(selectedDatapopup)
   const [cardDisplay, setcardDisplay] = useState([])
+  console.log(cardDisplay)
   const [selectedBranch, setselectedBranch] = useState(null)
+  const [achievedPoints, setachievedPoints] = useState(0)
   const now = new Date()
   const navigate = useNavigate()
   const [date, setdate] = useState({
@@ -128,8 +144,30 @@ const MarketingDashboard = () => {
     String(now.getMonth() + 1).padStart(2, "0")
   )
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
+  // const {data:productandServiceslist}=UseFetch("")
   const { data: followup } = UseFetch("/lead/getfollowupsummaryReport")
   console.log(followup)
+  console.log(selectedMonth)
+  const { data: target, loading: targetLoading } = UseFetch(
+    `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}`
+  )
+  console.log(selectedMonth)
+  console.log(target)
+  const { data: branchProduct } = UseFetch(
+    `/product/getallbranchProduct?branch=${selectedBranch}`
+  )
+  console.log(branchProduct)
+  console.log(target)
+  console.log(followup)
+  // useEffect(() => {
+  //   if (branchProduct && branchProduct.length) {
+  //     const productorservicenames = branchProduct.map(
+  //       (item) => item.serviceName || item.productName
+  //     )
+  //     setproductList(productorservicenames)
+  //     console.log(productorservicenames)
+  //   }
+  // }, [branchProduct])
   useEffect(() => {
     if (followup && followup.length && user) {
       const filteredleadcounts = followup.filter(
@@ -140,9 +178,59 @@ const MarketingDashboard = () => {
       const item = filteredleadcounts?.[0]
 
       if (item) {
+        //         setcardDisplay([
+        //           {
+        //             title: "All Leads",
+        // detail:""
+        //             value: item.leadCount - item.lost,
+        //             right: item.leadAmount,
+        //             icon: (
+        //               <Users size={15} className="text-violet-700" strokeWidth={2.2} />
+        //             )
+        //           },
+        //           {
+        //             title: "Due Today",
+        //             value: item.dueToday,
+        //             right: item.dueTodayAmount,
+        //             icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
+        //           },
+        //           {
+        //             title: "Over Due",
+        //             value: item.overDue,
+        //             right: item.overDueAmount,
+        //             icon: (
+        //               <Users size={15} className="text-violet-700" strokeWidth={2.2} />
+        //             )
+        //           },
+        //           {
+        //             title: "Up Coming",
+        //             value: item.future,
+        //             right: item.futureAmount,
+        //             icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
+        //           },
+        //           {
+        //             title: "New Lead",
+        //             value: item.neverFollowup,
+        //             right: item.neverFollowupAmount,
+        //             icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
+        //           },
+        //           {
+        //             title: "Converted",
+        //             value: item.converted,
+        //             right: item.convertedAmount,
+        //             icon: (
+        //               <TrendingUp
+        //                 size={15}
+        //                 className="text-emerald-700"
+        //                 strokeWidth={2.2}
+        //               />
+        //             )
+        //           }
+        //         ])
         setcardDisplay([
           {
             title: "All Leads",
+            detail: "Active leads",
             value: item.leadCount - item.lost,
             right: item.leadAmount,
             icon: (
@@ -151,12 +239,14 @@ const MarketingDashboard = () => {
           },
           {
             title: "Due Today",
+            detail: "Follow-ups scheduled for today",
             value: item.dueToday,
             right: item.dueTodayAmount,
             icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
           },
           {
             title: "Over Due",
+            detail: "Pending follow-ups past due date",
             value: item.overDue,
             right: item.overDueAmount,
             icon: (
@@ -165,20 +255,72 @@ const MarketingDashboard = () => {
           },
           {
             title: "Up Coming",
+            detail: "Future follow-ups",
             value: item.future,
             right: item.futureAmount,
             icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
           },
           {
             title: "New Lead",
+            detail: "Leads with no follow-up started",
             value: item.neverFollowup,
             right: item.neverFollowupAmount,
             icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
           },
           {
             title: "Converted",
+            detail: "Leads successfully closed",
             value: item.converted,
             right: item.convertedAmount,
+            icon: (
+              <TrendingUp
+                size={15}
+                className="text-emerald-700"
+                strokeWidth={2.2}
+              />
+            )
+          }
+        ])
+      } else {
+        setcardDisplay([
+          {
+            title: "All Leads",
+            value: 0,
+            right: 0,
+            icon: (
+              <Users size={15} className="text-violet-700" strokeWidth={2.2} />
+            )
+          },
+          {
+            title: "Due Today",
+            value: 0,
+            right: 0,
+            icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
+          },
+          {
+            title: "Over Due",
+            value: 0,
+            right: 0,
+            icon: (
+              <Users size={15} className="text-violet-700" strokeWidth={2.2} />
+            )
+          },
+          {
+            title: "Up Coming",
+            value: 0,
+            right: 0,
+            icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
+          },
+          {
+            title: "New Lead",
+            value: 0,
+            right: 0,
+            icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
+          },
+          {
+            title: "Converted",
+            value: 0,
+            right: 0,
             icon: (
               <TrendingUp
                 size={15}
@@ -191,14 +333,70 @@ const MarketingDashboard = () => {
       }
     }
   }, [followup])
+  useEffect(() => {
+    if (target && target.length) {
+      console.log(target)
+
+      const uniqueCategories = [
+        ...new Map(
+          target
+            .flatMap((user) => user.categories || [])
+            .map((category) => [
+              category.categoryId,
+              {
+                categoryId: category.categoryId,
+                categoryName: category.categoryName
+              }
+            ])
+        ).values()
+      ]
+
+      // const respectedtarget=target.filter((item)=>item.userId===user._id).map((item)=>item.categories.filter(item)=>uniqueCategories.map(id)=>id.categoryId===item.categoryId)
+      // console.log(respectedtarget)
+      const selectedUser = target.find((item) => item.userId === user._id)
+      setachievedPoints(selectedUser?.incentive)
+      console.log(selectedUser.incentive)
+      const updatedCategories = uniqueCategories.map((cat) => {
+        const matchedCategory = selectedUser?.categories.find(
+          (c) => c.categoryId === cat.categoryId
+        )
+
+        return {
+          ...cat,
+          achievedamount: matchedCategory ? matchedCategory.achieved : 0,
+          targetamount: matchedCategory ? matchedCategory.target : 0
+        }
+      })
+      setcategorylist(updatedCategories)
+
+      console.log(updatedCategories)
+      console.log(user)
+
+      console.log(uniqueCategories)
+    }
+  }, [target])
+  console.log(categorylist)
   console.log(cardDisplay)
+
   useEffect(() => {
     const storedUser = getLocalStorageItem("user")
     if (storedUser) {
       setUser(storedUser)
+      setselecteduserName(storedUser.name)
       setselectedBranch(storedUser.selected[0].branch_id)
+      console.log(storedUser.selected)
+      setbranchOptions((prev) => [
+        ...prev,
+        ...storedUser.selected.map((branch) => ({
+          id: branch.branch_id,
+          label: branch.branchName
+        }))
+      ])
     }
   }, [])
+  console.log(branchOptions)
+  console.log(selectedBranch)
+  console.log(user)
   useEffect(() => {
     const now = new Date()
     const startDate = new Date(
@@ -214,15 +412,16 @@ const MarketingDashboard = () => {
     setdate({ startDate, endDate })
   }, [])
   console.log(selectedBranch)
-  const handleFollowupCellClick = (header,count) => {
+  console.log(selectedMonth)
+  const handleFollowupCellClick = (header, count) => {
     console.log(header)
-console.log(count)
+    console.log(count)
 
     if (header === "Lead Count") {
       navigate("/admin/transaction/lead/allLeads", {
         state: { staffId: row.staffId }
       })
-    } else if (header === "Due Today"&&count>0) {
+    } else if (header === "Due Today" && count > 0) {
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: {
           staffId: user?._id,
@@ -235,7 +434,7 @@ console.log(count)
         }
       })
       console.log("hhhhh")
-    } else if (header === "Over Due"&&count>0) {
+    } else if (header === "Over Due" && count > 0) {
       console.log("hhh")
       console.log(date)
       navigate("/admin/transaction/lead/leadFollowUp", {
@@ -249,7 +448,7 @@ console.log(count)
           filterRange: date
         }
       })
-    } else if (header === "Up Coming"&&count>0) {
+    } else if (header === "Up Coming" && count > 0) {
       console.log("hhh")
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: {
@@ -262,7 +461,7 @@ console.log(count)
           filterRange: date
         }
       })
-    } else if (header === "Converted"&&count>0) {
+    } else if (header === "Converted" && count > 0) {
       console.log("hhhhh")
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: {
@@ -275,7 +474,7 @@ console.log(count)
           filterRange: date
         }
       })
-    } else if (header === "New Lead"&&count>0) {
+    } else if (header === "New Lead" && count > 0) {
       console.log("hhhhhh")
       console.log("hhhhh")
       navigate("/admin/transaction/lead/leadFollowUp", {
@@ -289,7 +488,7 @@ console.log(count)
           filterRange: date
         }
       })
-    } else if (header === "All Leads"&&count>0) {
+    } else if (header === "All Leads" && count > 0) {
       console.log(date)
       console.log("hhhh")
       navigate("/staff/transaction/lead/leadFollowUp", {
@@ -327,9 +526,85 @@ console.log(count)
       toast.error("Profile not uploaded")
     }
   }
-  const handleMoreClick = () => {
-    setOpenModal(true)
+  console.log(target)
+  const handleSelectedUser = (category, userId, userName) => {
+    console.log(category)
+    console.log(userId)
+    setselecteduserName(userName)
+    setselectedCategory({
+      Id: category.Id,
+      categoryName: category.categoryName
+    })
+    console.log(target)
+    const filteredloggedUserItem = target.filter(
+      (item) => item.userId === userId
+    )
+    console.log(filteredloggedUserItem)
+    const filteredselectedCategory =
+      filteredloggedUserItem[0].categories.filter(
+        (item) => item.categoryId === category.Id
+      )
+    console.log(filteredselectedCategory)
+    console.log(filteredloggedUserItem)
+    setselectedDataPopup(filteredselectedCategory)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      console.log("hh")
+      setacheivedProducts(
+        filteredselectedCategory[0]?.products?.map((product) => ({
+          productname: product.name,
+          amount: product.achieved
+        })) || []
+      )
+    } else {
+      setacheivedProducts([])
+    }
   }
+  console.log(selectedDatapopup)
+  const handleMoreClick = (id, name) => {
+    console.log(id)
+    console.log(id)
+    // const filteredproduct=branchProduct.filter((product)=>)
+    const filteredList = branchProduct
+      .filter(
+        (item) =>
+          item.selected?.some(
+            (selectedItem) => String(selectedItem.category_id) === String(id)
+          ) || String(item.category_id) === String(id)
+      )
+      .map((item) => item.productName || item.serviceName)
+    setproductList(filteredList)
+    console.log(filteredList)
+    setselectedCategory({ Id: id, categoryName: name })
+    console.log(target)
+    const filteredloggedUserItem = target.filter(
+      (item) => item.userId === user._id
+    )
+    console.log(filteredloggedUserItem)
+    const filteredselectedCategory =
+      filteredloggedUserItem[0].categories.filter(
+        (item) => item.categoryId === id
+      )
+    console.log(filteredselectedCategory)
+    console.log(filteredloggedUserItem)
+    setselectedDataPopup(filteredselectedCategory)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      console.log("hh")
+      setacheivedProducts((prev) => [
+        ...prev,
+        ...filteredselectedCategory[0]?.products?.map((product) => ({
+          productname: product.name,
+          amount: product.achieved
+        }))
+      ])
+    } else {
+      setacheivedProducts([])
+    }
+    console.log("hhh")
+    setOpenModal(true)
+
+    console.log(true)
+  }
+  console.log(achievedproducts)
   console.log(user)
   const total = productData.reduce((acc, item) => acc + item.value, 0)
 
@@ -348,125 +623,21 @@ console.log(count)
       style={appTextStyle}
     >
       <div className="flex h-full flex-col lg:flex-row">
-        <aside
-          className={`
-    flex flex-col
-    border-r border-slate-200 bg-gradient-to-b
-    from-[#eef3f9] to-[#e8eef6]
-    transition-[width] duration-200 ease-in-out
-    lg:h-full lg:flex-shrink-0
-    ${sidebarOpen ? "w-full lg:w-[220px]" : "w-full lg:w-[64px]"}
-  `}
-        >
-          <div className="flex items-center justify-between border-b border-slate-200 px-3 py-3 lg:hidden">
-            <button className="rounded-md p-1.5 text-slate-700 transition hover:bg-white/80">
-              <Menu size={16} strokeWidth={2.2} />
-            </button>
-          </div>
-
-          <div className="hidden lg:flex justify-end px-2 pt-2">
-            <button
-              type="button"
-              onClick={toggleSidebar}
-              className="flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-sm text-slate-600 hover:bg-slate-50"
-            >
-              {sidebarOpen ? (
-                <ChevronLeft size={14} />
-              ) : (
-                <ChevronRight size={14} />
-              )}
-            </button>
-          </div>
-
-          {/* fixed top area */}
-          <div
-            className={`
-      shrink-0
-      ${sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"}
-      transition-opacity duration-150
-    `}
-          >
-            <div className="flex flex-col items-center px-3 py-4">
-              <button
-                type="button"
-                onClick={() => setAvatarOpen(true)}
-                className="relative h-16 w-16 overflow-hidden rounded-full border-2 border-white shadow-sm sm:h-20 sm:w-20 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                style={{
-                  boxShadow:
-                    "0 4px 12px rgba(15,23,42,0.10), inset 0 1px 0 rgba(255,255,255,0.8)"
-                }}
-              >
-                <img
-                  src={
-                    user?.profileUrl ||
-                    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80"
-                  }
-                  alt="Profile"
-                  className="h-full w-full object-cover"
-                />
-                <span className="absolute bottom-0 left-0 right-0 bg-black/40 py-0.5 text-center text-[10px] font-medium text-white">
-                  Edit
-                </span>
-              </button>
-
-              <h3 className="mt-2 text-[15px] font-semibold leading-5 text-slate-900">
-                {user?.name || "John Smith"}
-              </h3>
-              <p className="mt-1 text-[12px] font-medium leading-4 text-slate-600">
-                Marketing Executive
-              </p>
-            </div>
-
-            <div className="border-y border-slate-200 bg-white/35 px-3 py-2">
-              <h4 className="text-[12px] font-semibold uppercase tracking-[0.08em] text-rose-700">
-                Score Board
-              </h4>
-            </div>
-            <div className="flex items-center justify-between px-3 py-2 bg-slate-950">
-              <span className="text-[12px] font-medium leading-4 text-white">
-                Achieved Points
-              </span>
-              <span className="text-[18px] font-semibold leading-none text-white">
-                910
-              </span>
-            </div>
-          </div>
-
-          {/* only this part scrolls */}
-          <div
-            className={`
-      min-h-0 flex-1 overflow-y-auto px-3 py-3
-      ${sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"}
-      transition-opacity duration-150
-    `}
-          >
-            <div className="space-y-3">
-              {scoreItems.map((item, index) => (
-                <div
-                  key={`${item.label}-${index}`}
-                  className="flex items-center justify-between border-b border-slate-200/90 pb-2"
-                >
-                  <span className="text-[12px] font-medium leading-4 text-rose-700">
-                    {item.label}
-                  </span>
-                  <div className="text-right">
-                    <p className="text-[13px] font-semibold leading-4 text-emerald-700">
-                      {item.value}
-                    </p>
-
-                    <p
-                      className="mt-0.5 text-[12px] font-medium leading-4 text-rose-500 cursor-pointer"
-                      onClick={handleMoreClick}
-                    >
-                      More
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </aside>
-
+        <Sidebar
+          handleMoreClick={handleMoreClick}
+          achievedPoints={achievedPoints}
+          sidebarOpen={sidebarOpen}
+          toggleSidebar={toggleSidebar}
+          user={user}
+          selectedBranch={selectedBranch}
+          setselectedBranch={setselectedBranch}
+          branchOptions={branchOptions}
+          categorylist={categorylist}
+          targetLoading={targetLoading}
+          BranchSelect={BranchSelect}
+          SkeletonTable={SkeletonTable}
+          setAvatarOpen={setAvatarOpen}
+        />
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           {/* TOP NAVBAR */}
 
@@ -502,7 +673,9 @@ console.log(count)
                 {cardDisplay.slice(0, 6).map((card) => (
                   <div
                     key={card.title}
-                    onClick={() => handleFollowupCellClick(card.title,card.value)}
+                    onClick={() =>
+                      handleFollowupCellClick(card.title, card.value)
+                    }
                     className="
         min-w-0
         flex flex-col justify-between
@@ -570,6 +743,17 @@ cursor-pointer
                       title={card.title}
                     >
                       {card.title}
+                    </p>
+                    <p
+                      className="
+          mt-1 line-clamp-2
+          font-medium leading-[1.25] text-slate-600
+text-[clamp(9px,0.75vw,11px)]
+          
+        "
+                      title={card.title}
+                    >
+                      {card.detail}
                     </p>
                   </div>
                 ))}
@@ -876,19 +1060,31 @@ cursor-pointer
       />
       <PerformanceModal
         modalOpen={openModal}
-        onClose={() => setOpenModal(false)}
+        onMonthChange={(val) => setSelectedMonth(val)}
+        onYearChange={(val) => setSelectedYear(val)}
+        productlist={productlist}
+        onClose={() => {
+          console.log("hhhh")
+          setselecteduserName(user?.name)
+          setacheivedProducts([])
+          setOpenModal(false)
+        }}
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}
         summary={{
-          target: 500000,
-          achieved: 350000,
-          balance: 150000
+          target: selectedDatapopup?.[0]?.target,
+          achieved: selectedDatapopup?.[0]?.achieved,
+          balance:
+            selectedDatapopup?.[0]?.achieved > selectedDatapopup?.[0]?.target
+              ? 0
+              : selectedDatapopup?.[0]?.balance
         }}
-        products={[
-          { name: "CRM", value: 120000 },
-          { name: "ERP", value: 90000 },
-          { name: "Cloud", value: 80000 }
-        ]}
+        products={achievedproducts}
+        targetData={target}
+        loggedUser={user}
+        selectedUser={selectedUserName}
+        category={selectedCategory}
+        handleSelectedUser={handleSelectedUser}
       />
     </div>
   )
