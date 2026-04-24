@@ -130,6 +130,7 @@ const MarketingDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
   const [achievedproducts, setacheivedProducts] = useState([])
+console.log(achievedproducts)
   console.log(selectedDatapopup)
   const [cardDisplay, setcardDisplay] = useState([])
   console.log(cardDisplay)
