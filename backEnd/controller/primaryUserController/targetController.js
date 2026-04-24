@@ -10,8 +10,8 @@ import Service from "../../model/primaryUser/servicesSchema.js";
 
 export const gettargetResult = async (req, res) => {
     try {
-console.log("controller")
-        const { month, year,periodMode } = req.query
+        console.log("controller")
+        const { month, year, periodMode } = req.query
 
         const monthNumber = Number(month)
         const yearNumber = Number(year)
@@ -30,7 +30,7 @@ console.log("controller")
             startDate: { $lte: endOfMonth },
             endDate: { $gte: startOfMonth }
         }
-console.log("query",configQuery)
+        console.log("query", configQuery)
         const targetConfigs = await TargetConfiguration.find(configQuery)
             .populate("categoryId", "category")
             .populate("monthlyTargets.userTargets.userId", "name email")
@@ -172,7 +172,7 @@ console.log("query",configQuery)
                 const allocationValue = Number(matchedAllocation.value || 0)
                 if (allocationValue <= 0) continue
 
-                const mode = config.measurementType 
+                const mode = config.measurementType
 
                 if (mode === "quantity") {
                     totalIncentive += allocationValue
@@ -242,41 +242,258 @@ console.log("query",configQuery)
                 let incentiveForUser = 0
                 const userProductWiseMap = {}
 
+                // if (config.measurementType === "amount") {
+                //     for (const lead of userLeads) {
+                //         const belongsToCurrentCategory = leadBelongsToCategory(lead, configCategoryId)
+
+                //         if (!belongsToCurrentCategory) continue
+                //         if (lead.forcefullyClosedTarget === true) {
+                //             const netAmount = Number(lead.netAmount || 0)
+                //             if (netAmount > 0) {
+                //                 achievedForUser += netAmount
+
+                //                 const forcedKey = `FORCED-${lead._id}`
+                //                 if (!userProductWiseMap[forcedKey]) {
+                //                     userProductWiseMap[forcedKey] = {
+                //                         id: String(lead._id),
+                //                         model: "Lead",
+                //                         name: "Force-closed target",
+                //                         achieved: 0,
+                //                         incentive: 0
+                //                     }
+                //                 }
+
+                //                 userProductWiseMap[forcedKey].achieved += netAmount
+
+                //                 const leadIncentive = getLeadAllocationIncentive({
+                //                     lead,
+                //                     config,
+                //                     userId
+                //                 })
+
+                //                 incentiveForUser += leadIncentive
+                //                 userProductWiseMap[forcedKey].incentive += leadIncentive
+                //             }
+                //             continue
+                //         }
+
+                //         for (const payment of lead.paymentHistory || []) {
+                //             if (!payment.paymentVerified) continue
+
+                //             const paymentDate = new Date(payment.paymentDate)
+                //             if (paymentDate < startOfMonth || paymentDate > endOfMonth) continue
+
+                //             for (const entry of payment.paymentEntries || []) {
+                //                 const itemId = entry.productorServiceId
+                //                     ? String(entry.productorServiceId)
+                //                     : null
+                //                 const itemModel = entry.productorServicemodel
+
+                //                 if (!itemId || !itemModel) continue
+
+                //                 const itemMeta =
+                //                     itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
+
+                //                 if (!itemMeta) continue
+                //                 if (itemMeta.categoryId !== configCategoryId) continue
+
+                //                 const achievedAmount = Number(entry.receivedAmount || 0)
+                //                 achievedForUser += achievedAmount
+
+                //                 const productKey = `${itemModel}-${itemId}`
+
+                //                 if (!userProductWiseMap[productKey]) {
+                //                     userProductWiseMap[productKey] = {
+                //                         id: itemId,
+                //                         model: itemModel,
+                //                         name: itemMeta.name,
+                //                         achieved: 0,
+                //                         incentive: 0
+                //                     }
+                //                 }
+
+                //                 userProductWiseMap[productKey].achieved += achievedAmount
+                //             }
+                //         }
+
+                //         const leadIncentive = getLeadAllocationIncentive({
+                //             lead,
+                //             config,
+                //             userId
+                //         })
+
+                //         incentiveForUser += leadIncentive
+                //     }
+                // } else if(config.measurementType === "amount") {
+                //     for (const lead of userLeads) {
+                //         const belongsToCurrentCategory = leadBelongsToCategory(lead, configCategoryId)
+
+                //         if (!belongsToCurrentCategory) continue
+                //         if (lead.forcefullyClosedTarget === true) {
+                //             achievedForUser += 1
+
+                //             const forcedKey = `FORCED-${lead._id}`
+                //             if (!userProductWiseMap[forcedKey]) {
+                //                 userProductWiseMap[forcedKey] = {
+                //                     id: String(lead._id),
+                //                     model: "Lead",
+                //                     name: "Force-closed target",
+                //                     achieved: 0,
+                //                     incentive: 0
+                //                 }
+                //             }
+
+                //             userProductWiseMap[forcedKey].achieved += 1
+
+                //             const leadIncentive = getLeadAllocationIncentive({
+                //                 lead,
+                //                 config,
+                //                 userId
+                //             })
+
+                //             incentiveForUser += leadIncentive
+                //             userProductWiseMap[forcedKey].incentive += leadIncentive
+                //             continue
+                //         }
+
+                //         const payments = lead.paymentHistory || []
+                //         if (!payments.length) continue
+
+                //         const allVerified = payments.every((p) => p.paymentVerified)
+
+                //         let totalReceived = 0
+                //         const leadItemKeys = new Set()
+                //         const leadItemMap = {}
+
+                //         for (const payment of payments) {
+                //             for (const entry of payment.paymentEntries || []) {
+                //                 const itemId = entry.productorServiceId
+                //                     ? String(entry.productorServiceId)
+                //                     : null
+                //                 const itemModel = entry.productorServicemodel
+
+                //                 if (!itemId || !itemModel) continue
+
+                //                 const itemMeta =
+                //                     itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
+
+                //                 if (!itemMeta) continue
+                //                 if (itemMeta.categoryId !== configCategoryId) continue
+
+                //                 totalReceived += Number(entry.receivedAmount || 0)
+
+                //                 const itemKey = `${itemModel}-${itemId}`
+                //                 leadItemKeys.add(itemKey)
+
+                //                 if (!leadItemMap[itemKey]) {
+                //                     leadItemMap[itemKey] = {
+                //                         id: itemId,
+                //                         model: itemModel,
+                //                         name: itemMeta.name
+                //                     }
+                //                 }
+                //             }
+                //         }
+
+                //         if (allVerified && totalReceived === Number(lead.netAmount || 0)) {
+                //             achievedForUser += 1
+
+                //             for (const itemKey of leadItemKeys) {
+                //                 const item = leadItemMap[itemKey]
+
+                //                 if (!userProductWiseMap[itemKey]) {
+                //                     userProductWiseMap[itemKey] = {
+                //                         id: item.id,
+                //                         model: item.model,
+                //                         name: item.name,
+                //                         achieved: 0,
+                //                         incentive: 0
+                //                     }
+                //                 }
+
+                //                 userProductWiseMap[itemKey].achieved += 1
+                //             }
+
+                //             const leadIncentive = getLeadAllocationIncentive({
+                //                 lead,
+                //                 config,
+                //                 userId
+                //             })
+
+                //             incentiveForUser += leadIncentive
+                //         }
+                //     }
+                // }
                 if (config.measurementType === "amount") {
                     for (const lead of userLeads) {
                         const belongsToCurrentCategory = leadBelongsToCategory(lead, configCategoryId)
-
                         if (!belongsToCurrentCategory) continue
+
+                        // ✅ FORCE CLOSED (UPDATED)
                         if (lead.forcefullyClosedTarget === true) {
                             const netAmount = Number(lead.netAmount || 0)
                             if (netAmount > 0) {
                                 achievedForUser += netAmount
+                            }
 
-                                const forcedKey = `FORCED-${lead._id}`
-                                if (!userProductWiseMap[forcedKey]) {
-                                    userProductWiseMap[forcedKey] = {
-                                        id: String(lead._id),
-                                        model: "Lead",
-                                        name: "Force-closed target",
+                            const leadItems = lead.leadFor || [] // 🔴 adjust if needed
+
+                            for (const item of leadItems) {
+                                const itemId = item.productorServiceId
+                                    ? String(item.productorServiceId)
+                                    : null
+                                const itemModel = item.productorServicemodel
+
+                                if (!itemId || !itemModel) continue
+
+                                const itemMeta =
+                                    itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
+
+                                if (!itemMeta) continue
+                                if (itemMeta.categoryId !== configCategoryId) continue
+
+                                const productKey = `${itemModel}-${itemId}`
+
+                                if (!userProductWiseMap[productKey]) {
+                                    userProductWiseMap[productKey] = {
+                                        id: itemId,
+                                        model: itemModel,
+                                        name: itemMeta.name,
                                         achieved: 0,
                                         incentive: 0
                                     }
                                 }
 
-                                userProductWiseMap[forcedKey].achieved += netAmount
-
-                                const leadIncentive = getLeadAllocationIncentive({
-                                    lead,
-                                    config,
-                                    userId
-                                })
-
-                                incentiveForUser += leadIncentive
-                                userProductWiseMap[forcedKey].incentive += leadIncentive
+                                userProductWiseMap[productKey].achieved += netAmount
                             }
+
+                            const leadIncentive = getLeadAllocationIncentive({
+                                lead,
+                                config,
+                                userId
+                            })
+
+                            incentiveForUser += leadIncentive
+
+                            for (const item of leadItems) {
+                                const itemId = item.productorServiceId
+                                    ? String(item.productorServiceId)
+                                    : null
+                                const itemModel = item.productorServicemodel
+
+                                if (!itemId || !itemModel) continue
+
+                                const productKey = `${itemModel}-${itemId}`
+
+                                if (userProductWiseMap[productKey]) {
+                                    userProductWiseMap[productKey].incentive += leadIncentive
+                                }
+                            }
+
                             continue
                         }
 
+                        // ✅ NORMAL FLOW (UNCHANGED)
                         for (const payment of lead.paymentHistory || []) {
                             if (!payment.paymentVerified) continue
 
@@ -315,7 +532,7 @@ console.log("query",configQuery)
                                 userProductWiseMap[productKey].achieved += achievedAmount
                             }
                         }
-                       
+
                         const leadIncentive = getLeadAllocationIncentive({
                             lead,
                             config,
@@ -324,26 +541,46 @@ console.log("query",configQuery)
 
                         incentiveForUser += leadIncentive
                     }
+
                 } else {
                     for (const lead of userLeads) {
                         const belongsToCurrentCategory = leadBelongsToCategory(lead, configCategoryId)
-
                         if (!belongsToCurrentCategory) continue
+
+                        // ✅ FORCE CLOSED (UPDATED)
                         if (lead.forcefullyClosedTarget === true) {
                             achievedForUser += 1
 
-                            const forcedKey = `FORCED-${lead._id}`
-                            if (!userProductWiseMap[forcedKey]) {
-                                userProductWiseMap[forcedKey] = {
-                                    id: String(lead._id),
-                                    model: "Lead",
-                                    name: "Force-closed target",
-                                    achieved: 0,
-                                    incentive: 0
-                                }
-                            }
+                            const leadItems = lead.leadFor || [] // 🔴 adjust if needed
 
-                            userProductWiseMap[forcedKey].achieved += 1
+                            for (const item of leadItems) {
+                                const itemId = item.productorServiceId
+                                    ? String(item.productorServiceId)
+                                    : null
+                                const itemModel = item.productorServicemodel
+
+                                if (!itemId || !itemModel) continue
+
+                                const itemMeta =
+                                    itemModel === "Product" ? productMap[itemId] : serviceMap[itemId]
+
+                                if (!itemMeta) continue
+                                if (itemMeta.categoryId !== configCategoryId) continue
+
+                                const productKey = `${itemModel}-${itemId}`
+
+                                if (!userProductWiseMap[productKey]) {
+                                    userProductWiseMap[productKey] = {
+                                        id: itemId,
+                                        model: itemModel,
+                                        name: itemMeta.name,
+                                        achieved: 0,
+                                        incentive: 0
+                                    }
+                                }
+
+                                userProductWiseMap[productKey].achieved += 1
+                            }
 
                             const leadIncentive = getLeadAllocationIncentive({
                                 lead,
@@ -352,10 +589,26 @@ console.log("query",configQuery)
                             })
 
                             incentiveForUser += leadIncentive
-                            userProductWiseMap[forcedKey].incentive += leadIncentive
+
+                            for (const item of leadItems) {
+                                const itemId = item.productorServiceId
+                                    ? String(item.productorServiceId)
+                                    : null
+                                const itemModel = item.productorServicemodel
+
+                                if (!itemId || !itemModel) continue
+
+                                const productKey = `${itemModel}-${itemId}`
+
+                                if (userProductWiseMap[productKey]) {
+                                    userProductWiseMap[productKey].incentive += leadIncentive
+                                }
+                            }
+
                             continue
                         }
 
+                        // ✅ NORMAL FLOW (UNCHANGED)
                         const payments = lead.paymentHistory || []
                         if (!payments.length) continue
 
