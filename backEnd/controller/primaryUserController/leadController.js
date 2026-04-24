@@ -491,7 +491,6 @@ export const Getallsalesfunnels = async (req, res) => {
 };
 
 export const UpdateCollection = async (req, res) => {
-  console.log("hhhhhhhhhhhhhhhhhhhhhhhhhh")
 
   const { isFrom = null } = req.query
   const {
@@ -499,7 +498,6 @@ export const UpdateCollection = async (req, res) => {
     paymentData = null,
     ...formData
   } = req.body
-  console.log("formmmmmmmmmdata", formData)
 
   let model = null
   let session = null
@@ -515,7 +513,6 @@ export const UpdateCollection = async (req, res) => {
       }
     }
 
-    console.log("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
 
     if (!formData?.leadDocId) {
       return res.status(400).json({ message: "Missing leadid" })
@@ -684,144 +681,7 @@ export const UpdateCollection = async (req, res) => {
     }
   }
 }
-// export const UpdateCollection = async (req, res) => {
-//   const { isFrom = null } = req.query;
-//   const formData = req.body;
 
-//   let model;
-//   const isAdmin = await Admin.findOne({ _id: formData.receivedBy });
-//   if (isAdmin) {
-//     model = "Admin";
-//   } else {
-//     const isstaff = await Staff.findOne({ _id: formData.receivedBy });
-//     if (isstaff) {
-//       model = "Staff";
-//     }
-//   }
-
-//   const session = await mongoose.startSession();
-//   try {
-//     // const toBoolean = (value, defaultValue = false) => {
-//     //   if (value === null || value === undefined || value === "")
-//     //     return defaultValue;
-//     //   return value === "true" || value === true || value === 1 || value === "1";
-//     // };
-//     // const followupClosed = toBoolean(req.query.followupclosed);
-//     const customerId = formData?.customerId;
-//     const leadDocId = formData?.leadDocId;
-
-//     if (!formData.leadDocId) {
-//       return res.status(400).json({ message: "Missing leadid" });
-//     }
-
-//     session.startTransaction();
-//     const updatecustomer = await Customer.findByIdAndUpdate(
-//       customerId,
-//       {
-//         $set: {
-//           customerName: formData.customerName,
-//           address1: formData.address,
-//           email: formData.email,
-//           mobile: formData?.mobile,
-//           registrationType: formData?.registrationType,
-//           partner: formData?.partner,
-//           country: formData?.country,
-//           state: formData?.state,
-//           city: formData?.city,
-//           pincode: formData?.pincode,
-//         },
-//       },
-//       { new: true, session }
-//     );
-//     if (!updatecustomer) {
-//       throw new Error("Customer not found");
-//     }
-//     // 2️⃣ Calculate updated totals
-//     const newTotalPaid =
-//       Number(formData.totalpaidAmountBefore || 0) + Number(formData?.totalReceivedAmount)
-
-//     const newBalance = Math.max(0, (formData?.totalNetAmount || 0) - newTotalPaid)
-
-
-
-
-//     // 3️⃣ Create payment record
-//     const paymentRecord = {
-//       paymentDate: new Date(),
-//       receivedAmount: formData?.totalReceivedAmount,
-//       paymentEntries: (formData?.paymentEntries || []).map((e) => ({
-//         productorServiceId: e.productorServiceId,
-//         productorServicemodel: e.productorServicemodel,
-//         netAmount: e.netAmount,
-//         receivedAmount: e.receivedAmount,
-//         balanceAmount: e.balanceAmount,
-//       })),
-//       receivedBy: formData?.receivedBy,
-//       receivedModel: model,
-//       bankRemarks: formData?.bankRemarks || "",
-
-//     };
-//     formData.paymentEntries.forEach((item) => {
-//       console.log(typeof item)
-//     })
-//     const allocation = null
-//     if (isFrom) {
-//       allocation = await Task.findOne({ taskName: "Leadclosed" });
-//     }
-//     const updateLead = await LeadMaster.findByIdAndUpdate(
-//       leadDocId,
-//       {
-//         $push: { paymentHistory: paymentRecord },
-//         $set: {
-//           totalPaidAmount: newTotalPaid,
-//           partner: formData.partner,
-//           balanceAmount: newBalance,
-//           ...(isFrom === "reallocation" && {
-//             leadClosed: true,
-//             leadClosedBy: formData?.receivedBy,
-//             leadClosedModel: formData?.receivedModel,
-//             reallocatedTo: false,
-//             allocationType: allocation?._id,
-//           }),
-
-//         },
-//       },
-//       { new: true, session }
-//     );
-//     await LeadMaster.updateMany(
-//       { customerName: updateLead.customerName },
-//       {
-//         $set: {
-//           email: formData?.email,
-//           mobile: formData?.mobile,
-//           pincode: formData?.pincode,
-//           partner: formData?.partner,
-//         },
-//       },
-//       {
-//         new: true,
-//         session,
-//       }
-//     );
-//     if (!updateLead) {
-//       throw new Error("lead not found");
-//     }
-//     await session.commitTransaction();
-//     session.endSession();
-//     return res.status(200).json({
-//       success: true,
-//       message: "Payment added succesfully",
-//     });
-//   } catch (error) {
-//     await session.abortTransaction();
-//     session.endSession();
-
-//     console.log("error", error);
-//     return res
-//       .status(500)
-//       .json({ successs: false, message: "Internal server error" });
-//   }
-// };
 export const ChecktodeleteTask = async (req, res) => {
   try {
     const { id } = req.query
@@ -920,11 +780,9 @@ export const GetallselectedproductFollowup = async (req, res) => {
   try {
     // const { loggeduserid, branchSelected, role, pendingfollowup, selectedproductId } = req.query;
     const { loggeduserid, branchSelected, role, pendingfollowup, selectedproductId, viewmode = null, header = null } = req.query
-    console.log("viewwwwwwwwwwwwwwww", viewmode)
     const userObjectId = new mongoose.Types.ObjectId(loggeduserid)
     const branchObjectId = new mongoose.Types.ObjectId(branchSelected)
     const productObjectId = selectedproductId ? new mongoose.Types.ObjectId(selectedproductId) : null
-    console.log("peddddddddddddd", pendingfollowup === "true")
 
     let query
     if (viewmode) {
@@ -988,7 +846,6 @@ export const GetallselectedproductFollowup = async (req, res) => {
     if (productObjectId) {
       query["leadFor.productorServiceId"] = productObjectId
     }
-    console.log("query", query)
     const selectedfollowup = await LeadMaster.find(query)
       .populate({ path: "customerName" })
       .populate({ path: "partner" })
@@ -1521,7 +1378,6 @@ export const GetallselectedproductFollowup = async (req, res) => {
 // };///old code
 export const GetleadById = async (req, res) => {
   const { leadDocId } = req.query
-  console.log("lleaddocidd", leadDocId)
 }
 
 export const ApprovedforcefullyClosedTarget = async (req, res) => {
@@ -1582,16 +1438,13 @@ export const GetallfollowupList = async (req, res) => {
 
     const start = startDate ? new Date(startDate) : null;
     const end = endDate ? new Date(endDate) : null;
-    console.log("start", start)
-    console.log("end", end)
-    console.log("showssssssssssss", viewmode)
+   
 
 
 
 
     // Check if viewmode is the string "true"
     const isViewMode = viewmode === "true";
-    console.log("viemodecheking", isViewMode)
 
     // Check for valid header and date params
     const hasValidHeader = header && header !== "null" && header !== "undefined";
@@ -1600,14 +1453,12 @@ export const GetallfollowupList = async (req, res) => {
       startDate !== "undefined" && endDate !== "undefined";
 
     const isNewMode = isViewMode || hasValidHeader || hasValidDates;
-    console.log("hasvalidheader", hasValidHeader)
-    console.log("hasvalidadate", hasValidDates)
-
+   
     let query;
 
     // ✅ VIEW MODE
     if (isViewMode) {
-      console.log("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
+     
       query = {
         activityLog: {
           $elemMatch: {
@@ -1628,7 +1479,7 @@ export const GetallfollowupList = async (req, res) => {
         query.leadLost = false
       }
     } else {
-      console.log("olderrrrrrrrrrrrrrrrrrrrrrrrrrrrr")
+     
       // ✅ OLD NORMAL CONDITIONS
       if (pendingfollowup === "true") {
         if (role === "Admin") {
@@ -1715,7 +1566,6 @@ export const GetallfollowupList = async (req, res) => {
 
       // ✅ NEW LOGIC ONLY WHEN REQUIRED
       if (isNewMode) {
-        console.log("isnewmode")
         matchedAllocations = activity
           .map((item, index) => ({ ...item, index }))
           .filter((item) => {
@@ -1732,19 +1582,15 @@ export const GetallfollowupList = async (req, res) => {
             return true;
           });
       } else {
-        console.log(
-          "notnewmode")
+        
         // ✅ OLD LOGIC (NO DATE FILTER)
         matchedAllocations = activity
           .map((item, index) => ({ ...item, index }))
           .filter((item) => item.taskTo === "followup");
       }
-      console.log("00000000000000000000000000000000000000")
       if (matchedAllocations.length === 0) continue;
-      console.log("0.5555555555555555555555555555555555555555555")
       const lastAlloc = matchedAllocations[matchedAllocations.length - 1];
       const lastIndex = lastAlloc.index;
-      console.log("1111111111111111111111111111111111111111111111111")
       // ✅ HEADER FILTER ONLY IN NEW MODE
       if (isNewMode) {
         if (header === "Pending") {
@@ -1767,7 +1613,6 @@ export const GetallfollowupList = async (req, res) => {
           }
         }
       }
-      console.log("2222222222222222222222222222222222222222222222222")
       // ✅ SAFE POPULATION
       const leadByModel =
         lead.leadByModel && mongoose.models[lead.leadByModel]
@@ -1809,7 +1654,6 @@ export const GetallfollowupList = async (req, res) => {
             .catch(() => null)
           : null,
       ]);
-      console.log("333333333333333333333333333333333333333333333333333333333")
       // ✅ POPULATE activityLog (only in old mode for detailed view)
       let populatedActivityLog = activity;
       if (!isNewMode) {
@@ -1884,7 +1728,6 @@ export const GetallfollowupList = async (req, res) => {
           })
         );
       }
-      console.log("44444444444444444444444444444444444444444444444444444")
       // ✅ POPULATE leadFor
       const populatedLeadFor = await Promise.all(
         lead.leadFor.map(async (item) => {
@@ -1940,7 +1783,6 @@ export const GetallfollowupList = async (req, res) => {
           })
         )
         : []
-      console.log("5555555555555555555555555555555555555555555555555")
       const lastActivity = activity[activity.length - 1] || {};
 
       // ✅ CALCULATE FLAGS (only in old mode)
@@ -1972,7 +1814,6 @@ export const GetallfollowupList = async (req, res) => {
         allocatedfollowup = !!lastActivity.taskfromFollowup;
         allocatedTaskClosed = !!lastActivity.allocatedClosed;
       }
-      console.log("6666666666666666666666666666666666666666666666666666")
       // ✅ BUILD LEAD OBJECT
       const leadObject = {
         ...lead,
@@ -2002,7 +1843,6 @@ export const GetallfollowupList = async (req, res) => {
     );
 
     console.log("MODE:", isNewMode ? "NEW" : "OLD");
-    // console.log("followupleadsssssssssssssssssss", followupLeads)
 
     if (followupLeads.length > 0) {
       return res.status(201).json({
@@ -5108,28 +4948,7 @@ export const GetfollowupsummaryReport = async (req, res) => {
         }
       }
     ]);
-    // const structuredData = result.map((item) => ({
-    //   staffId: item.staffId,
-    //   leadIds: item.leadIds,
-    //   staffRole: item.staffRole,
-    //   branchIds: item.branchIds,
-    //   Staff: item.staffName,
-
-    //   leadCount: item.leadCount,
-    //   dueToday: item.totalDueToday,
-    //   overDue: item.totalOverdue,
-    //   future: item.totalFuture,
-
-    //   converted: item.totalConverted,
-    //   lost: item.totalLost,
-
-    //   neverFollowup: item.totalNeverFollowup,
-
-    //   convertedPercentage:
-    //     item.leadCount > 0
-    //       ? Number(((item.totalConverted / item.leadCount) * 100).toFixed(2))
-    //       : 0
-    // }));
+   
     const structuredData = result.map((item) => ({
       staffId: item.staffId,
       leadIds: item.leadIds,
@@ -5171,373 +4990,8 @@ export const GetfollowupsummaryReport = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-// export const GetfollowupsummaryReport = async (req, res) => {
-//   try {
-//     const { startDate, endDate } = req.query;
-
-//     const start = new Date(startDate);
-//     start.setHours(0, 0, 0, 0);
-
-//     const end = new Date(endDate);
-//     end.setHours(23, 59, 59, 999);
-
-//     const todayStart = new Date();
-//     todayStart.setHours(0, 0, 0, 0);
-
-//     const todayEnd = new Date();
-//     todayEnd.setHours(23, 59, 59, 999);
 
 
-//     const result = await LeadMaster.aggregate([
-
-//       {
-//         $addFields: {
-//           followupAssignLogs: {
-//             $filter: {
-//               input: "$activityLog",
-//               as: "log",
-//               cond: {
-//                 $and: [
-//                   { $eq: ["$$log.taskTo", "followup"] },
-
-//                   // ✅ ADD THIS DATE FILTER
-//                   { $ne: ["$$log.submissionDate", null] },
-//                   { $gte: ["$$log.submissionDate", start] },
-//                   { $lte: ["$$log.submissionDate", end] }
-//                 ]
-//               }
-//             }
-//           }
-//         }
-//       },
-
-//       // 2️⃣ Get latest assignment
-//       {
-//         $addFields: {
-//           assignLog: { $arrayElemAt: ["$followupAssignLogs", -1] }
-//         }
-//       },
-
-//       // 3️⃣ Extract logs having nextFollowUpDate
-//       {
-//         $addFields: {
-//           followupLogs: {
-//             $filter: {
-//               input: "$activityLog",
-//               as: "log",
-//               cond: {
-//                 $and: [
-//                   { $ne: ["$$log.nextFollowUpDate", null] },
-//                   { $gt: ["$$log.nextFollowUpDate", new Date("2000-01-01")] }
-//                 ]
-//               }
-//             }
-//           }
-//         }
-//       },
-
-//       // 4️⃣ Get last followup
-//       {
-//         $addFields: {
-//           lastActivity: { $arrayElemAt: ["$followupLogs", -1] }
-//         }
-//       },
-
-//       // 5️⃣ Include all relevant leads
-//       {
-//         $match: {
-//           assignLog: { $ne: null } // must have followup assignment
-//         }
-//       },
-
-//       // 6️⃣ Unwind leadFor
-//       { $unwind: "$leadFor" },
-
-//       // 7️⃣ One row per lead
-//       {
-//         $group: {
-//           _id: "$_id",
-
-//           leadIdStr: { $first: "$leadId" },
-
-//           staffId: { $first: "$assignLog.taskallocatedTo" },
-//           staffModel: { $first: "$assignLog.taskallocatedToModel" },
-
-//           nextFollowupDate: { $first: "$lastActivity.nextFollowUpDate" },
-
-//           leadConvertedDate: { $first: "$leadConvertedDate" },
-//           leadLostDate: { $first: "$leadLostDate" },
-
-//           netAmount: { $first: "$leadFor.netAmount" },
-
-//           branchId: { $first: "$leadBranch" }
-//         }
-//       },
-
-//       // 8️⃣ STATUS PRIORITY (Lost > Converted > Active)
-//       {
-//         $addFields: {
-//           isLost: {
-//             $cond: [
-//               {
-//                 $and: [
-//                   { $ne: ["$leadLostDate", null] },
-//                   { $gte: ["$leadLostDate", start] },
-//                   { $lte: ["$leadLostDate", end] }
-//                 ]
-//               },
-//               1,
-//               0
-//             ]
-//           }
-//         }
-//       },
-//       {
-//         $addFields: {
-//           isConverted: {
-//             $cond: [
-//               {
-//                 $and: [
-//                   { $eq: ["$isLost", 0] }, // ✅ prevent double count
-//                   { $ne: ["$leadConvertedDate", null] },
-//                   { $gte: ["$leadConvertedDate", start] },
-//                   { $lte: ["$leadConvertedDate", end] }
-//                 ]
-//               },
-//               1,
-//               0
-//             ]
-//           }
-//         }
-//       },
-//       {
-//         $addFields: {
-//           isActive: {
-//             $cond: [
-//               {
-//                 $and: [
-//                   { $eq: ["$isLost", 0] },
-//                   { $eq: ["$isConverted", 0] }
-//                 ]
-//               },
-//               1,
-//               0
-//             ]
-//           }
-//         }
-//       },
-
-//       // 9️⃣ FOLLOWUP BUCKETS (ONLY ACTIVE)
-//       {
-//         $addFields: {
-//           dueToday: {
-//             $cond: [
-//               {
-//                 $and: [
-//                   { $eq: ["$isActive", 1] },
-//                   { $ne: ["$nextFollowupDate", null] },
-//                   { $gte: ["$nextFollowupDate", todayStart] },
-//                   { $lte: ["$nextFollowupDate", todayEnd] }
-//                 ]
-//               },
-//               1,
-//               0
-//             ]
-//           },
-
-//           overdue: {
-//             $cond: [
-//               {
-//                 $and: [
-//                   { $eq: ["$isActive", 1] },
-//                   { $ne: ["$nextFollowupDate", null] },
-//                   { $lt: ["$nextFollowupDate", todayStart] }
-//                 ]
-//               },
-//               1,
-//               0
-//             ]
-//           },
-
-//           future: {
-//             $cond: [
-//               {
-//                 $and: [
-//                   { $eq: ["$isActive", 1] },
-//                   { $ne: ["$nextFollowupDate", null] },
-//                   { $gt: ["$nextFollowupDate", todayEnd] }
-//                 ]
-//               },
-//               1,
-//               0
-//             ]
-//           }
-//         }
-//       },
-
-//       // 🔟 Amount
-//       {
-//         $addFields: {
-//           convertedNetAmount: {
-//             $cond: [
-//               { $eq: ["$isConverted", 1] },
-//               { $ifNull: ["$netAmount", 0] },
-//               0
-//             ]
-//           }
-//         }
-//       },
-
-//       // 1️⃣1️⃣ FINAL GROUP
-//       {
-//         $group: {
-//           _id: {
-//             staffId: "$staffId",
-//             staffModel: "$staffModel"
-//           },
-
-//           leadIds: { $addToSet: "$leadIdStr" },
-
-//           // ✅ FIXED: total followup leads
-//           leadCount: { $sum: 1 },
-
-//           totalConverted: { $sum: "$isConverted" },
-//           totalLost: { $sum: "$isLost" },
-
-//           totalDueToday: { $sum: "$dueToday" },
-//           totalOverdue: { $sum: "$overdue" },
-//           totalFuture: { $sum: "$future" },
-
-//           convertedNetAmount: { $sum: "$convertedNetAmount" },
-
-//           branchIds: { $addToSet: "$branchId" }
-//         }
-//       },
-
-//       // 1️⃣2️⃣ Lookup STAFF
-//       {
-//         $lookup: {
-//           from: "staffs",
-//           localField: "_id.staffId",
-//           foreignField: "_id",
-//           as: "staff"
-//         }
-//       },
-
-//       // 1️⃣3️⃣ Lookup ADMIN
-//       {
-//         $lookup: {
-//           from: "admins",
-//           localField: "_id.staffId",
-//           foreignField: "_id",
-//           as: "admin"
-//         }
-//       },
-
-//       // 1️⃣4️⃣ Resolve correct user
-//       {
-//         $addFields: {
-//           user: {
-//             $cond: [
-//               { $eq: ["$_id.staffModel", "Admin"] },
-//               { $arrayElemAt: ["$admin", 0] },
-//               { $arrayElemAt: ["$staff", 0] }
-//             ]
-//           }
-//         }
-//       },
-
-//       // 1️⃣5️⃣ Final output
-//       {
-//         $project: {
-//           _id: 0,
-
-//           staffId: "$_id.staffId",
-//           staffModel: "$_id.staffModel",
-
-//           staffName: { $ifNull: ["$user.name", "Unknown"] },
-//           staffRole: "$user.role",
-
-//           branchIds: 1,
-//           leadIds: 1,
-
-//           leadCount: 1,
-//           totalConverted: 1,
-//           totalLost: 1,
-
-//           totalDueToday: 1,
-//           totalOverdue: 1,
-//           totalFuture: 1,
-
-//           convertedNetAmount: 1
-//         }
-//       }
-//     ]);//new code
-
-//     const structuredData = result.map((item) => ({
-//       staffId: item.staffId,
-//       leadIds: item.leadIds,
-//       staffRole: item.staffRole,
-//       branchIds: item.branchIds,
-//       Staff: item.staffName,
-//       leadCount: item.leadCount,
-//       dueToday: item.totalDueToday,
-//       overDue: item.totalOverdue,
-//       future: item.totalFuture,
-//       converted: item.totalConverted,
-//       lost: item.totalLost,
-//       convertedPercentage:
-//         item.leadCount > 0
-//           ? Number(((item.totalConverted / item.leadCount) * 100).toFixed(2))
-//           : 0
-//     }));
-
-//     if (structuredData && structuredData.length > 0) {
-//       return res.status(200).json({ message: "summary found", data: structuredData });
-//     }
-
-//     return res.status(404).json({ message: "No data found" });
-
-//   } catch (error) {
-//     console.log("error:", error.message);
-//     return res.status(500).json({ message: "Internal server error" });
-//   }
-// };
-
-// export const GetfollowupsummaryReport = async (req, res) => {
-//   try {
-//     const { startDate, endDate } = req.query
-//     console.log(startDate, endDate)
-//     const start = new Date(startDate);
-//     start.setHours(0, 0, 0, 0);
-
-//     const end = new Date(endDate);
-//     end.setHours(23, 59, 59, 999);
-
-//     const todayStart = new Date();
-//     todayStart.setHours(0, 0, 0, 0);
-
-//     const todayEnd = new Date();
-//     todayEnd.setHours(23, 59, 59, 999);
-//     console.log("todayend", todayEnd)
-
-
-
-
-
-
-
-
-
-//     if (structuredData && structuredData.length > 0) {
-//       return res.status(200).json({ message: "summary found", data: structuredData })
-//     }
-
-//   } catch (error) {
-//     console.log("error:", error.message)
-//     return res.status(500).json({ message: "Internal server error" })
-//   }
-// }
 export const Getalltasktoreport = async (req, res) => {
   try {
     const result = await Task.find({ listed: true })
@@ -5693,23 +5147,7 @@ export const GetcollectionLeads = async (req, res) => {
           })
         )
 
-        // const populatedpaymentHistory = lead?.paymentHistory?.length
-        //   ? await Promise.all(
-        //     lead.paymentHistory.map(async (history) => {
-        //       const populatedhistory = { ...history }; // if it's a mongoose subdoc
-        //       if (history.receivedModel && history.receivedBy) {
-        //         const model = mongoose.model(history.receivedModel);
-        //         populatedhistory.receivedBy = await model
-        //           .findById(history.receivedBy)
-        //           .select("name")
-        //           .lean();
-        //       }
-        //       return populatedhistory;
-        //     })
-        //   )
-        //   : [];
-
-
+       
 
 
 
@@ -5791,7 +5229,6 @@ export const GetcollectionLeads = async (req, res) => {
 export const GetlostLeads = async (req, res) => {
   try {
     const { selectedBranch } = req.query;
-    console.log("selectedbranchddddddddddddddddddddd", selectedBranch)
     const matchedlostLead = await LeadMaster.find({
       leadBranch: new mongoose.Types.ObjectId(selectedBranch),
       leadLost: true,
@@ -6413,7 +5850,6 @@ export const GetownLeadList = async (req, res) => {
     } else if (ownlead === "false" && role !== "Staff") {
       query = { leadBranch: new mongoose.Types.ObjectId(selectedBranch) };
     }
-    console.log("query", query)
 
     const matchedLead = await LeadMaster.find(query)
       .populate({ path: "customerName", select: "customerName" })
@@ -6508,69 +5944,6 @@ export const GetownLeadList = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-// export const Getdailystaffreport = async (req, res) => {
-//   try {
-//     const { startDate, endDate } = req.query
-//     console.log("sta", startDate)
-//     console.log("end", endDate)
-//     if (!startDate || !endDate) {
-//       return res.status(400).json({ message: "startDate and endDate required" });
-//     }
-//     const allTasks = await Task.find({ listed: true }, { taskName: 1, _id: 0 }).lean();
-//     const taskNames = allTasks.map(t => t.taskName);
-
-//     // Use FULL date range from req.query
-//     const reportStart = new Date(startDate);
-//     const reportEnd = new Date(endDate);
-//     reportEnd.setHours(23, 59, 59, 999);
-
-//     console.log(`Full range: ${startDate} to ${endDate}`);
-
-//     // **DAILY LOOP** - Process each day between startDate & endDate
-//     const dailyReports = [];
-//     let currentDate = new Date(reportStart);
-
-
-//     const dateStr = currentDate.toLocaleDateString('en-IN'); // "25-1-2026"
-
-//     // Pass ONLY the day's date to helper - it handles start/end of day
-//     const leadMetrics = await getLeadMetricsForSingleDay(currentDate, reportEnd);
-//     console.log("leadmetidds", leadMetrics)
-//     const callMetrics = await getCallMetricsForSingleDay(currentDate, reportEnd)
-//     console.log("callmetrics", callMetrics)
-
-//     const dayReport = leadMetrics.map(lead => {
-//       const callsData = callMetrics.find(
-//         call => String(call.staffId) === String(lead.staffId)
-//       );
-
-
-//       // 🔹 Base object
-//       const row = {
-//         Date: dateStr,
-//         staffName: lead.staffName,
-//         Calls: callsData ? callsData.Calls : 0,
-//         newlead: lead.newlead || 0
-//       };
-
-//       // 🔹 Add ALL tasks dynamically
-//       taskNames.forEach(taskName => {
-//         row[taskName] = lead.tasks?.[taskName] || 0;
-//       });
-
-//       return row;
-//     });
-
-//     dailyReports.push(...dayReport);
-//     currentDate.setDate(currentDate.getDate() + 1);
-//     console.log("dalyrropoerts", dailyReports)
-//     return res.status(200).json({ messaage: "daily report found", data: dailyReports })
-
-//   } catch (error) {
-//     console.log("error:", error.message)
-//     return res.status(500).json({ message: "Internal server error" })
-//   }
-// }
 export const fixLeadVerifiedField = async (req, res) => {
   try {
     // 1️⃣ Rename the field 'leadVarified' -> 'leadVerified'

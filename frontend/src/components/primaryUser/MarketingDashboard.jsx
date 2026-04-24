@@ -17,6 +17,7 @@ import { BranchSelect } from "./BranchSelect"
 import { toast } from "react-toastify"
 import { useEffect, useState } from "react"
 import UseFetch from "../../hooks/useFetch"
+
 import {
   getLocalStorageItem,
   setLocalStorageItem
@@ -143,13 +144,15 @@ const MarketingDashboard = () => {
   const [selectedMonth, setSelectedMonth] = useState(
     String(now.getMonth() + 1).padStart(2, "0")
   )
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const [periodMode, setperiodMode] = useState("All")
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   // const {data:productandServiceslist}=UseFetch("")
   const { data: followup } = UseFetch("/lead/getfollowupsummaryReport")
   console.log(followup)
   console.log(selectedMonth)
   const { data: target, loading: targetLoading } = UseFetch(
-    `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}`
+    `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}&periodMode=${periodMode}`
   )
   console.log(selectedMonth)
   console.log(target)
@@ -159,15 +162,19 @@ const MarketingDashboard = () => {
   console.log(branchProduct)
   console.log(target)
   console.log(followup)
-  // useEffect(() => {
-  //   if (branchProduct && branchProduct.length) {
-  //     const productorservicenames = branchProduct.map(
-  //       (item) => item.serviceName || item.productName
-  //     )
-  //     setproductList(productorservicenames)
-  //     console.log(productorservicenames)
-  //   }
-  // }, [branchProduct])
+console.log(showUserMenu)
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest(".user-menu-container")) {
+console.log("Hh")
+        setShowUserMenu(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
   useEffect(() => {
     if (followup && followup.length && user) {
       const filteredleadcounts = followup.filter(
@@ -178,55 +185,6 @@ const MarketingDashboard = () => {
       const item = filteredleadcounts?.[0]
 
       if (item) {
-        //         setcardDisplay([
-        //           {
-        //             title: "All Leads",
-        // detail:""
-        //             value: item.leadCount - item.lost,
-        //             right: item.leadAmount,
-        //             icon: (
-        //               <Users size={15} className="text-violet-700" strokeWidth={2.2} />
-        //             )
-        //           },
-        //           {
-        //             title: "Due Today",
-        //             value: item.dueToday,
-        //             right: item.dueTodayAmount,
-        //             icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
-        //           },
-        //           {
-        //             title: "Over Due",
-        //             value: item.overDue,
-        //             right: item.overDueAmount,
-        //             icon: (
-        //               <Users size={15} className="text-violet-700" strokeWidth={2.2} />
-        //             )
-        //           },
-        //           {
-        //             title: "Up Coming",
-        //             value: item.future,
-        //             right: item.futureAmount,
-        //             icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
-        //           },
-        //           {
-        //             title: "New Lead",
-        //             value: item.neverFollowup,
-        //             right: item.neverFollowupAmount,
-        //             icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
-        //           },
-        //           {
-        //             title: "Converted",
-        //             value: item.converted,
-        //             right: item.convertedAmount,
-        //             icon: (
-        //               <TrendingUp
-        //                 size={15}
-        //                 className="text-emerald-700"
-        //                 strokeWidth={2.2}
-        //               />
-        //             )
-        //           }
-        //         ])
         setcardDisplay([
           {
             title: "All Leads",
@@ -333,6 +291,7 @@ const MarketingDashboard = () => {
       }
     }
   }, [followup])
+
   useEffect(() => {
     if (target && target.length) {
       console.log(target)
@@ -355,7 +314,7 @@ const MarketingDashboard = () => {
       // console.log(respectedtarget)
       const selectedUser = target.find((item) => item.userId === user._id)
       setachievedPoints(selectedUser?.incentive)
-      console.log(selectedUser.incentive)
+      console.log(selectedUser?.incentive)
       const updatedCategories = uniqueCategories.map((cat) => {
         const matchedCategory = selectedUser?.categories.find(
           (c) => c.categoryId === cat.categoryId
@@ -411,6 +370,29 @@ const MarketingDashboard = () => {
     ).toLocaleDateString("en-CA")
     setdate({ startDate, endDate })
   }, [])
+  console.log(showUserMenu)
+  const handleLogout = async () => {
+    try {
+      console.log("Hh")
+      const res = await api.post("/auth/logout")
+      if (
+        res.status === 200 &&
+        res.data?.message === "Logged out successfully"
+      ) {
+        localStorage.removeItem("authToken")
+        localStorage.removeItem("user")
+        localStorage.removeItem("timer")
+        localStorage.removeItem("wish")
+        toast.success("Logout successfully")
+        navigate("/")
+      } else {
+        toast.error("Logout failed on server")
+      }
+    } catch (err) {
+      console.error(err)
+      toast.error("Logout failed, please try again")
+    }
+  }
   console.log(selectedBranch)
   console.log(selectedMonth)
   const handleFollowupCellClick = (header, count) => {
@@ -559,6 +541,7 @@ const MarketingDashboard = () => {
       setacheivedProducts([])
     }
   }
+
   console.log(selectedDatapopup)
   const handleMoreClick = (id, name) => {
     console.log(id)
@@ -661,9 +644,36 @@ const MarketingDashboard = () => {
               <button className="rounded-full p-1.5 transition bg-slate-100">
                 <Settings size={15} strokeWidth={2.2} />
               </button>
-              <button className="rounded-full p-1.5 transition bg-slate-100">
+              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
                 <User size={15} strokeWidth={2.2} />
-              </button>
+              </button> */}
+
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+console.log("Hh")
+                    e.stopPropagation()
+                    setShowUserMenu((prev) => !prev)
+                  }}
+                  className="rounded-full p-1.5 transition bg-slate-100"
+                >
+                  <User size={15} strokeWidth={2.2} />
+                </button>
+
+                {/* {showUserMenu && (
+                  <div
+                    onClick={(e) => e.stopPropagation()} 
+                    className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
+                  >
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )} */}
+              </div>
             </div>
           </header>
 

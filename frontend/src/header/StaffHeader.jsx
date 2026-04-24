@@ -934,9 +934,7 @@ export default function StaffHeader({ hide = false }) {
 
   const permissions = user?.permissions?.[0] || {}
 
-  const { data: demoLeadCount = 0 } = UseFetch(
-    user && `/lead/demoleadcount?loggeduserid=${user._id}`
-  )
+ 
 
   const masters = useMemo(
     () => [
@@ -1132,11 +1130,11 @@ export default function StaffHeader({ hide = false }) {
         label: "Leave Summary",
         control: permissions.LeaveSummary ?? false
       },
-      {
-        to: "/staff/reports/markettingdashboard",
-        label: "Marketing Dashboard",
-        control: true
-      }
+      // {
+      //   to: "/staff/reports/markettingdashboard",
+      //   label: "Marketing Dashboard",
+      //   control: true
+      // }
     ],
     [permissions]
   )
@@ -1424,11 +1422,7 @@ export default function StaffHeader({ hide = false }) {
                 </div>
               </div>
 
-              {demoLeadCount > 0 && (
-                <div className="mt-3 inline-flex rounded-full bg-amber-500/10 px-3 py-1 text-[11px] font-medium text-amber-300">
-                  Demo Leads: {demoLeadCount}
-                </div>
-              )}
+            
             </div>
 
             <div className="p-3">

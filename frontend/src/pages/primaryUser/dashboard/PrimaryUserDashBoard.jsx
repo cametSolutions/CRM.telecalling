@@ -929,33 +929,38 @@ export default function PrimaryUserDashBoard() {
       [Id]: !prev[Id]
     }))
   }
-
+  console.log(user)
+  // 670c866552847bbebbd35748
   const cards = [
     {
       label: "support department",
       to:
-        user?.role === "Admin"
-          ? "/admin/support&department"
-          : "/staff/support&department",
-      icon: MdSupportAgent
+        user?.department?._id === "670c866552847bbebbd35748"
+          ? "/staff/support&department"
+          : "",
+      icon: MdSupportAgent,
+      show: true
     },
     {
       label: "sales & marketing",
-      to: "",
+      show: user?.department?._id === "670c866552847bbebbd35748" ? true : false,
+      to: "/staff/reports/markettingdashboard",
       icon: MdBarChart
     },
     {
       label: "research & development",
       to: "",
-      icon: MdScience
+      icon: MdScience,
+      show: false
     },
     {
       label: "admin",
       to: user?.role === "Admin" ? "/admin/adminpanel" : "",
-      icon: MdAdminPanelSettings
+      icon: MdAdminPanelSettings,
+      show: true
     }
   ]
-
+  console.log("h")
   const handleSubmit = async (e) => {
     e.preventDefault()
     setachieverLoader(true)
