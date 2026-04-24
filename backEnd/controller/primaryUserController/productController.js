@@ -73,7 +73,6 @@ export const EditProduct = async (req, res) => {
 export const GetbranchProduct = async (req, res) => {
   try {
     const { branch } = req.query
-    console.log("branchd", branch)
     if (!mongoose.isValidObjectId(branch)) {
       return res.status(400).json({
         success: false,
@@ -85,7 +84,6 @@ export const GetbranchProduct = async (req, res) => {
       "selected.branch_id": new mongoose.Types.ObjectId(branch)
     })
     const services = await Service.find({ branch: new mongoose.Types.ObjectId(branch) })
-console.log("services",services)
     if (branches && branches.length || services && services.length) {
       const merged = [...branches, ...services]
       return res.status(200).json({ message: "Products found", data: merged })
@@ -454,9 +452,7 @@ export const UpdateServices = async (req, res) => {
 export const GetallServices = async (req, res) => {
   try {
     const { branchselected = null, branchselectedArray = null } = req.query
-    console.log("null", branchselectedArray)
     if (branchselectedArray) {
-      console.log('gggg')
       let decodedbranches = JSON.parse(decodeURIComponent(branchselectedArray))
       if (!Array.isArray(decodedbranches)) {
         decodedbranches = [decodedbranches]
