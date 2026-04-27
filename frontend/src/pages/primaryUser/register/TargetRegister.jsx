@@ -347,6 +347,8 @@ export const TargetRegister = () => {
 
       return merged
     })
+    console.log(nextCommittedSplitData)
+    console.log(nextCommittedTargetData)
     setCommittedTargetData(nextCommittedTargetData)
     setCommittedSplitData(nextCommittedSplitData)
     settargetpriceorpercentageValue(nextIncentiveValues)
@@ -439,6 +441,7 @@ export const TargetRegister = () => {
     }
 
     if (targets?.length) {
+      console.log("hhh")
       hydrateTargetIntoState(targets)
     } else {
       resetTargetStates()
@@ -546,7 +549,8 @@ export const TargetRegister = () => {
       return !usedMonths.has(month)
     })
   }
-
+console.log(committedSplitData)
+console.log(workingSplitData)
   const validateCreatePeriod = (startMonth, endMonth) => {
     const fromIndex = months.indexOf(startMonth)
     const toIndex = months.indexOf(endMonth)
@@ -751,7 +755,7 @@ export const TargetRegister = () => {
       })
       return next
     })
-
+console.log(committedSplitData)
     setCommittedSplitData((prev) => {
       const next = { ...prev }
       Object.keys(next).forEach((key) => {
@@ -759,7 +763,7 @@ export const TargetRegister = () => {
       })
       return next
     })
-
+    console.log(workingSplitData)
     setWorkingSplitData((prev) => {
       const next = { ...prev }
       Object.keys(next).forEach((key) => {
@@ -868,7 +872,7 @@ export const TargetRegister = () => {
   //     }))
   //   }
   // }
-
+  console.log(userList)
   const openSplitModal = (productId, month, name) => {
     const Name = name.trim()
 
@@ -885,14 +889,15 @@ export const TargetRegister = () => {
 
     const committedKey = `${productId}-${month}`
     const existingCommitted = committedSplitData[committedKey]
-
+    console.log(existingCommitted)
+    console.log(workingSplitData)
     setWorkingSplitData((prev) => ({
       ...prev,
       [committedKey]: existingCommitted
         ? JSON.parse(JSON.stringify(existingCommitted))
         : []
     }))
-
+    console.log(userList)
     setuserList((prevUsers) =>
       prevUsers.map((u) => {
         const userEntry = existingCommitted?.find(
@@ -918,16 +923,16 @@ export const TargetRegister = () => {
     setselectedsplitmonth(month)
     setUserMessages({})
   }
-
+  console.log(workingSplitData)
   const handleSplitChange = (userId, rawValue) => {
     const value = safeNum(rawValue)
-
+    console.log(value)
     if (userMessages?.[userId]) {
       setUserMessages((prev) => ({ ...prev, [userId]: "" }))
     }
 
     const key = `${splitModalData.productId}-${splitModalData.month}`
-
+    console.log(workingSplitData)
     setWorkingSplitData((prev) => {
       const existingArray = prev[key] || []
       const idx = existingArray.findIndex((i) => i.userId === userId)
@@ -975,7 +980,7 @@ export const TargetRegister = () => {
       }))
       return
     }
-
+    console.log(workingSplitData)
     setWorkingSplitData((prev) => {
       const existingArray = prev[key] || []
       const idx = existingArray.findIndex((i) => i.userId === userId)
@@ -1011,7 +1016,7 @@ export const TargetRegister = () => {
 
   const handleRemoveSlab = (userId, slabIndex) => {
     const key = `${splitModalData.productId}-${splitModalData.month}`
-
+    console.log(workingSplitData)
     setWorkingSplitData((prev) => {
       const existingArray = prev[key] || []
       const idx = existingArray.findIndex((i) => i.userId === userId)
@@ -1109,7 +1114,7 @@ export const TargetRegister = () => {
   const handleSlabChange = (userId, slabIndex, field, rawValue) => {
     const key = `${splitModalData.productId}-${splitModalData.month}`
     const value = field === "amount" ? rawValue : safeNum(rawValue)
-
+    console.log(workingSplitData)
     setWorkingSplitData((prev) => {
       const existingArray = prev[key] || []
       const idx = existingArray.findIndex((i) => i.userId === userId)
@@ -1155,16 +1160,17 @@ export const TargetRegister = () => {
     setWorkingSplitData({})
     setUserMessages({})
   }
-
+console.log(userList)
   const normalizeSlabs = (slabArray = []) => {
+console.log(slabArray)
     return slabArray
       .map((slab, index) => ({
         slabOrder: index + 1,
-        fromValue: Number(slab.from) || 0,
-        toValue: Number(slab.to) || 0,
+        from: Number(slab.from) || 0,
+        to: Number(slab.to) || 0,
         amount: slab.amount || ""
       }))
-      .filter((s) => s.toValue > s.fromValue)
+      .filter((s) => s.to > s.from)
   }
 
   const handlesaveSplit = () => {
@@ -1173,7 +1179,8 @@ export const TargetRegister = () => {
     const { productId, month } = splitModalData
     const key = `${productId}-${month}`
     const workingArray = workingSplitData[key] || []
-
+console.log(workingArray)
+// console.log(normalizeSlabs)
     const normalizedArray = workingArray
       .map((userEntry) => ({
         userId: userEntry.userId,
@@ -1184,11 +1191,12 @@ export const TargetRegister = () => {
 
     const total = normalizedArray.reduce((sum, user) => {
       if (!user.slabs.length) return sum
-      return sum + Number(user.slabs[user.slabs.length - 1].toValue || 0)
+      return sum + Number(user.slabs[user.slabs.length - 1].to || 0)
     }, 0)
 
     const isFirstTime = !committedProductsRef.current[productId]
-
+console.log(committedSplitData)
+console.log(normalizedArray)
     setCommittedSplitData((prev) => {
       const next = { ...prev }
 
@@ -2297,6 +2305,8 @@ export const TargetRegister = () => {
                   {userList.map((user) => {
                     const key = `${splitModalData.productId}-${splitModalData.month}`
                     const userArray = workingSplitData[key] || []
+                    console.log(userArray)
+                    console.log(user.id)
                     const currentUserData = userArray.find(
                       (item) => item.userId === user.id
                     )
@@ -2304,7 +2314,7 @@ export const TargetRegister = () => {
                       ? currentUserData.splitTarget || ""
                       : ""
                     const userSlabs = currentUserData?.slabs || []
-
+                    console.log(userSlabs)
                     return (
                       <div
                         key={user.id}
