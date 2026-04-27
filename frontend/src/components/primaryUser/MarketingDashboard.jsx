@@ -122,18 +122,17 @@ const MarketingDashboard = () => {
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [Branch, setBranch] = useState("Accuanet")
-  console.log(selectedCategory)
   const [openModal, setOpenModal] = useState(false)
   const [categorylist, setcategorylist] = useState([])
+  console.log(categorylist)
   const [productlist, setproductList] = useState([])
   const [avatarOpen, setAvatarOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
   const [achievedproducts, setacheivedProducts] = useState([])
-console.log(achievedproducts)
-  console.log(selectedDatapopup)
+  const [selectedPeriod, setselectedPeriod] = useState("")
+
   const [cardDisplay, setcardDisplay] = useState([])
-  console.log(cardDisplay)
   const [selectedBranch, setselectedBranch] = useState(null)
   const [achievedPoints, setachievedPoints] = useState(0)
   const now = new Date()
@@ -146,28 +145,21 @@ console.log(achievedproducts)
     String(now.getMonth() + 1).padStart(2, "0")
   )
   const [showUserMenu, setShowUserMenu] = useState(false)
-  const [periodMode, setperiodMode] = useState("All")
+  const [periodMode, setperiodMode] = useState("all")
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
-  // const {data:productandServiceslist}=UseFetch("")
   const { data: followup } = UseFetch("/lead/getfollowupsummaryReport")
-  console.log(followup)
-  console.log(selectedMonth)
-  const { data: target, loading: targetLoading } = UseFetch(
+
+  const { data, loading: targetLoading } = UseFetch(
     `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}&periodMode=${periodMode}`
   )
-  console.log(selectedMonth)
-  console.log(target)
+  console.log(data)
   const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${selectedBranch}`
   )
-  console.log(branchProduct)
-  console.log(target)
-  console.log(followup)
-console.log(showUserMenu)
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (!e.target.closest(".user-menu-container")) {
-console.log("Hh")
         setShowUserMenu(false)
       }
     }
@@ -181,8 +173,7 @@ console.log("Hh")
       const filteredleadcounts = followup.filter(
         (item) => item.staffId === user._id
       )
-      console.log(filteredleadcounts)
-      console.log(statCards)
+
       const item = filteredleadcounts?.[0]
 
       if (item) {
@@ -294,12 +285,11 @@ console.log("Hh")
   }, [followup])
 
   useEffect(() => {
-    if (target && target.length) {
-      console.log(target)
-
+    if (data?.userWiseResults && data?.userWiseResults.length) {
+      setselectedPeriod(data?.selectedPeriodName)
       const uniqueCategories = [
         ...new Map(
-          target
+          data?.userWiseResults
             .flatMap((user) => user.categories || [])
             .map((category) => [
               category.categoryId,
@@ -310,33 +300,37 @@ console.log("Hh")
             ])
         ).values()
       ]
-
-      // const respectedtarget=target.filter((item)=>item.userId===user._id).map((item)=>item.categories.filter(item)=>uniqueCategories.map(id)=>id.categoryId===item.categoryId)
-      // console.log(respectedtarget)
-      const selectedUser = target.find((item) => item.userId === user._id)
+      const selectedUser = data?.userWiseResults.find(
+        (item) => item.userId === user._id
+      )
       setachievedPoints(selectedUser?.incentive)
-      console.log(selectedUser?.incentive)
+
       const updatedCategories = uniqueCategories.map((cat) => {
-        const matchedCategory = selectedUser?.categories.find(
-          (c) => c.categoryId === cat.categoryId
+        // Get ALL matching categories (for different months)
+        const matchedCategories =
+          selectedUser?.categories.filter(
+            (c) => c.categoryId === cat.categoryId
+          ) || []
+
+        // Sum up all targets and achieved amounts
+        const totalTarget = matchedCategories.reduce(
+          (sum, c) => sum + (c.target || 0),
+          0
+        )
+        const totalAchieved = matchedCategories.reduce(
+          (sum, c) => sum + (c.achieved || 0),
+          0
         )
 
         return {
           ...cat,
-          achievedamount: matchedCategory ? matchedCategory.achieved : 0,
-          targetamount: matchedCategory ? matchedCategory.target : 0
+          achievedamount: totalAchieved,
+          targetamount: totalTarget
         }
       })
       setcategorylist(updatedCategories)
-
-      console.log(updatedCategories)
-      console.log(user)
-
-      console.log(uniqueCategories)
     }
-  }, [target])
-  console.log(categorylist)
-  console.log(cardDisplay)
+  }, [data])
 
   useEffect(() => {
     const storedUser = getLocalStorageItem("user")
@@ -344,7 +338,6 @@ console.log("Hh")
       setUser(storedUser)
       setselecteduserName(storedUser.name)
       setselectedBranch(storedUser.selected[0].branch_id)
-      console.log(storedUser.selected)
       setbranchOptions((prev) => [
         ...prev,
         ...storedUser.selected.map((branch) => ({
@@ -354,9 +347,54 @@ console.log("Hh")
       ])
     }
   }, [])
-  console.log(branchOptions)
-  console.log(selectedBranch)
-  console.log(user)
+  useEffect(() => {
+    if (selectedCategory) {
+      const filteredList = branchProduct
+        .filter(
+          (item) =>
+            item.selected?.some(
+              (selectedItem) =>
+                String(selectedItem.category_id) ===
+                String(selectedCategory?.Id)
+            ) || String(item.category_id) === String(selectedCategory?.Id)
+        )
+        .map((item) => item.productName || item.serviceName)
+      setproductList(filteredList)
+
+      const filteredloggedUserItem = data?.userWiseResults.filter(
+        (item) => item.userId === user._id
+      )
+      const filteredselectedCategory =
+        filteredloggedUserItem[0]?.categories.filter(
+          (item) => item.categoryId === selectedCategory?.Id
+        )
+      const summary = filteredselectedCategory?.reduce(
+        (acc, cur) => {
+          acc.target += Number(cur.target || 0)
+          acc.achieved += Number(cur.achieved || 0)
+          acc.balance += Number(cur.balance || 0)
+          return acc
+        },
+        { target: 0, achieved: 0, balance: 0 }
+      )
+
+      setselectedDataPopup(summary)
+      if (filteredselectedCategory && filteredselectedCategory.length) {
+        setacheivedProducts((prev) => [
+          ...prev,
+          ...filteredselectedCategory.flatMap((item) =>
+            (item?.products || []).map((product) => ({
+              productname: product.name,
+              amount: product.achieved
+            }))
+          )
+        ])
+      } else {
+        setacheivedProducts([])
+      }
+    }
+  }, [data])
+
   useEffect(() => {
     const now = new Date()
     const startDate = new Date(
@@ -371,10 +409,8 @@ console.log("Hh")
     ).toLocaleDateString("en-CA")
     setdate({ startDate, endDate })
   }, [])
-  console.log(showUserMenu)
   const handleLogout = async () => {
     try {
-      console.log("Hh")
       const res = await api.post("/auth/logout")
       if (
         res.status === 200 &&
@@ -394,12 +430,8 @@ console.log("Hh")
       toast.error("Logout failed, please try again")
     }
   }
-  console.log(selectedBranch)
-  console.log(selectedMonth)
-  const handleFollowupCellClick = (header, count) => {
-    console.log(header)
-    console.log(count)
 
+  const handleFollowupCellClick = (header, count) => {
     if (header === "Lead Count") {
       navigate("/admin/transaction/lead/allLeads", {
         state: { staffId: row.staffId }
@@ -416,10 +448,7 @@ console.log("Hh")
           filterRange: date
         }
       })
-      console.log("hhhhh")
     } else if (header === "Over Due" && count > 0) {
-      console.log("hhh")
-      console.log(date)
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: {
           staffId: user?._id,
@@ -432,7 +461,6 @@ console.log("Hh")
         }
       })
     } else if (header === "Up Coming" && count > 0) {
-      console.log("hhh")
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: {
           staffId: user?._id,
@@ -445,7 +473,6 @@ console.log("Hh")
         }
       })
     } else if (header === "Converted" && count > 0) {
-      console.log("hhhhh")
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: {
           staffId: user?._id,
@@ -458,8 +485,6 @@ console.log("Hh")
         }
       })
     } else if (header === "New Lead" && count > 0) {
-      console.log("hhhhhh")
-      console.log("hhhhh")
       navigate("/admin/transaction/lead/leadFollowUp", {
         state: {
           staffId: user?._id,
@@ -472,8 +497,6 @@ console.log("Hh")
         }
       })
     } else if (header === "All Leads" && count > 0) {
-      console.log(date)
-      console.log("hhhh")
       navigate("/staff/transaction/lead/leadFollowUp", {
         state: {
           staffId: user?._id,
@@ -485,7 +508,6 @@ console.log("Hh")
           branchId: selectedBranch
         }
       })
-      console.log("hhh")
     }
   }
   const toggleSidebar = () => setSidebarOpen((prev) => !prev)
@@ -509,29 +531,31 @@ console.log("Hh")
       toast.error("Profile not uploaded")
     }
   }
-  console.log(target)
   const handleSelectedUser = (category, userId, userName) => {
-    console.log(category)
-    console.log(userId)
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
       categoryName: category.categoryName
     })
-    console.log(target)
-    const filteredloggedUserItem = target.filter(
+    const filteredloggedUserItem = data?.userWiseResults.filter(
       (item) => item.userId === userId
     )
-    console.log(filteredloggedUserItem)
     const filteredselectedCategory =
       filteredloggedUserItem[0].categories.filter(
         (item) => item.categoryId === category.Id
       )
-    console.log(filteredselectedCategory)
-    console.log(filteredloggedUserItem)
-    setselectedDataPopup(filteredselectedCategory)
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+
+    setselectedDataPopup(summary)
     if (filteredselectedCategory && filteredselectedCategory.length) {
-      console.log("hh")
       setacheivedProducts(
         filteredselectedCategory[0]?.products?.map((product) => ({
           productname: product.name,
@@ -543,11 +567,7 @@ console.log("Hh")
     }
   }
 
-  console.log(selectedDatapopup)
   const handleMoreClick = (id, name) => {
-    console.log(id)
-    console.log(id)
-    // const filteredproduct=branchProduct.filter((product)=>)
     const filteredList = branchProduct
       .filter(
         (item) =>
@@ -557,39 +577,41 @@ console.log("Hh")
       )
       .map((item) => item.productName || item.serviceName)
     setproductList(filteredList)
-    console.log(filteredList)
     setselectedCategory({ Id: id, categoryName: name })
-    console.log(target)
-    const filteredloggedUserItem = target.filter(
+    const filteredloggedUserItem = data?.userWiseResults.filter(
       (item) => item.userId === user._id
     )
-    console.log(filteredloggedUserItem)
     const filteredselectedCategory =
       filteredloggedUserItem[0].categories.filter(
         (item) => item.categoryId === id
       )
-    console.log(filteredselectedCategory)
-    console.log(filteredloggedUserItem)
-    setselectedDataPopup(filteredselectedCategory)
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+
+    setselectedDataPopup(summary)
     if (filteredselectedCategory && filteredselectedCategory.length) {
-      console.log("hh")
       setacheivedProducts((prev) => [
         ...prev,
-        ...filteredselectedCategory[0]?.products?.map((product) => ({
-          productname: product.name,
-          amount: product.achieved
-        }))
+        ...filteredselectedCategory.flatMap((item) =>
+          (item?.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
       ])
     } else {
       setacheivedProducts([])
     }
-    console.log("hhh")
     setOpenModal(true)
-
-    console.log(true)
   }
-  console.log(achievedproducts)
-  console.log(user)
+
   const total = productData.reduce((acc, item) => acc + item.value, 0)
 
   let cumulative = 0
@@ -652,7 +674,6 @@ console.log("Hh")
               <div className="relative">
                 <button
                   onClick={(e) => {
-console.log("Hh")
                     e.stopPropagation()
                     setShowUserMenu((prev) => !prev)
                   }}
@@ -1071,27 +1092,43 @@ text-[clamp(9px,0.75vw,11px)]
       />
       <PerformanceModal
         modalOpen={openModal}
-        onMonthChange={(val) => setSelectedMonth(val)}
-        onYearChange={(val) => setSelectedYear(val)}
+        splitType={data?.selectedMeasurementType}
+        selectedperiod={selectedPeriod}
+        allperiods={data?.periods}
+        onselectedPeriodChange={(val, val2) => {
+          setSelectedMonth(val2)
+          setselectedPeriod(val)
+        }}
+        onMonthChange={(val) => {
+          setcategorylist([])
+          setacheivedProducts([])
+          setselectedDataPopup([])
+          setperiodMode(val)
+        }}
+        onYearChange={(val) => {
+          setcategorylist([])
+          setacheivedProducts([])
+          setselectedDataPopup([])
+          setSelectedYear(val)
+        }}
         productlist={productlist}
         onClose={() => {
-          console.log("hhhh")
           setselecteduserName(user?.name)
           setacheivedProducts([])
           setOpenModal(false)
         }}
-        selectedMonth={selectedMonth}
+        selectedMonth={periodMode}
         selectedYear={selectedYear}
         summary={{
-          target: selectedDatapopup?.[0]?.target,
-          achieved: selectedDatapopup?.[0]?.achieved,
+          target: selectedDatapopup?.target,
+          achieved: selectedDatapopup?.achieved,
           balance:
-            selectedDatapopup?.[0]?.achieved > selectedDatapopup?.[0]?.target
+            selectedDatapopup?.achieved > selectedDatapopup?.target
               ? 0
-              : selectedDatapopup?.[0]?.balance
+              : selectedDatapopup?.balance
         }}
         products={achievedproducts}
-        targetData={target}
+        targetData={data?.userWiseResults}
         loggedUser={user}
         selectedUser={selectedUserName}
         category={selectedCategory}

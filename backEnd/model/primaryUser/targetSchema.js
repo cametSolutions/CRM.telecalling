@@ -158,7 +158,7 @@ const AllocationValueSchema = new Schema(
             required: true,
             min: 0
         },
-        mode: { type: String,enum:["percentage","amount"] }
+        mode: { type: String, enum: ["percentage", "amount"] }
     },
     { _id: false }
 );
@@ -172,6 +172,12 @@ const TargetConfigurationSchema = new Schema(
             type: String,
             required: true,
             trim: true
+        },
+year:{type:Number},
+        branch: {
+            type: Schema.Types.ObjectId,
+            ref: 'Branch',
+            required: true
         },
         startDate: {
             type: Date,

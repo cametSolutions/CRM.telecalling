@@ -930,6 +930,7 @@ export default function PrimaryUserDashBoard() {
     }))
   }
   console.log(user)
+console.log( user?.department?._id === "670c866552847bbebbd35748" ? true : false)
   // 670c866552847bbebbd35748
   const cards = [
     {
@@ -944,7 +945,7 @@ export default function PrimaryUserDashBoard() {
     {
       label: "sales & marketing",
       show: user?.department?._id === "670c866552847bbebbd35748" ? true : false,
-      to: "/staff/reports/markettingdashboard",
+      to: (user?.department?._id === "670c866552847bbebbd35748"&&user.role.trim()==="Admin")?"/admin/reports/markettingdasboard":user?.department?._id === "670c866552847bbebbd35748"? "/staff/reports/markettingdashboard":"",
       icon: MdBarChart
     },
     {
