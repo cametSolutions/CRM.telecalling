@@ -82,8 +82,13 @@ export const LeadRegister = async (req, res) => {
         taskBy: leadtask?._id,
       },
     ];
+    const allocationName = await Task.findOne({
+      taskName: { $regex: new RegExp(`^${allocationType}$`, 'i') }
+    });
+    console.log("alocationtype", allocationType)
     if (allocationType) {
-      const allocationName = await Task.findOne({ _id: allocationType });
+      // const allocationName = await Task.findOne({ taskName: allocationType });
+
       activityLog.push({
         submissionDate: leadDate,
         submittedUser: leadBy,
@@ -95,7 +100,7 @@ export const LeadRegister = async (req, res) => {
         remarks: remark,
         taskBy: allocationtask?._id,
         taskTo: allocationName?.taskName,
-        taskId: allocationType,
+        taskId: allocationName?._id,
         allocationChanged: false,
         followupClosed: false,
         taskfromFollowup: false,
@@ -125,9 +130,9 @@ export const LeadRegister = async (req, res) => {
 
       balanceAmount: Number(netAmount),
       selfAllocation: selfAllocation,
-      ...(allocationType && { allocationType }),
+      ...(allocationType && { allocationType:allocationName?._id }),
       ...(selfAllocation && {
-        selfAllocationType: allocationType,
+        selfAllocationType: allocationName?._id,
         selfAllocationDueDate: dueDate,
       }),
       activityLog,
@@ -1391,7 +1396,7 @@ export const ApprovedforcefullyClosedTarget = async (req, res) => {
     }
 
     const result = await LeadMaster.updateOne(
-      { _id:leadDocId },
+      { _id: leadDocId },
       { $set: { forcefullyClosedTarget: true } }
     )
 
@@ -1438,7 +1443,7 @@ export const GetallfollowupList = async (req, res) => {
 
     const start = startDate ? new Date(startDate) : null;
     const end = endDate ? new Date(endDate) : null;
-   
+
 
 
 
@@ -1453,12 +1458,12 @@ export const GetallfollowupList = async (req, res) => {
       startDate !== "undefined" && endDate !== "undefined";
 
     const isNewMode = isViewMode || hasValidHeader || hasValidDates;
-   
+
     let query;
 
     // ✅ VIEW MODE
     if (isViewMode) {
-     
+
       query = {
         activityLog: {
           $elemMatch: {
@@ -1479,7 +1484,7 @@ export const GetallfollowupList = async (req, res) => {
         query.leadLost = false
       }
     } else {
-     
+
       // ✅ OLD NORMAL CONDITIONS
       if (pendingfollowup === "true") {
         if (role === "Admin") {
@@ -1582,7 +1587,7 @@ export const GetallfollowupList = async (req, res) => {
             return true;
           });
       } else {
-        
+
         // ✅ OLD LOGIC (NO DATE FILTER)
         matchedAllocations = activity
           .map((item, index) => ({ ...item, index }))
@@ -4948,7 +4953,7 @@ export const GetfollowupsummaryReport = async (req, res) => {
         }
       }
     ]);
-   
+
     const structuredData = result.map((item) => ({
       staffId: item.staffId,
       leadIds: item.leadIds,
@@ -5147,7 +5152,7 @@ export const GetcollectionLeads = async (req, res) => {
           })
         )
 
-       
+
 
 
 

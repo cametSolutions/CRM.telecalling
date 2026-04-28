@@ -134,6 +134,7 @@ const MarketingDashboard = () => {
 
   const [cardDisplay, setcardDisplay] = useState([])
   const [selectedBranch, setselectedBranch] = useState(null)
+  console.log(selectedBranch)
   const [achievedPoints, setachievedPoints] = useState(0)
   const now = new Date()
   const navigate = useNavigate()
@@ -151,7 +152,11 @@ const MarketingDashboard = () => {
   const { data: followup } = UseFetch("/lead/getfollowupsummaryReport")
 
   const { data, loading: targetLoading } = UseFetch(
-    `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}&periodMode=${periodMode}`
+    selectedBranch &&
+      selectedMonth &&
+      selectedYear &&
+      periodMode &&
+      `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}&periodMode=${periodMode}&selectedBranch=${selectedBranch}`
   )
   console.log(data)
   const { data: branchProduct } = UseFetch(
@@ -333,7 +338,7 @@ const MarketingDashboard = () => {
       setcategorylist(updatedCategories)
     }
   }, [data])
-console.log(loggedusedTarget)
+  console.log(loggedusedTarget)
   useEffect(() => {
     const storedUser = getLocalStorageItem("user")
     if (storedUser) {

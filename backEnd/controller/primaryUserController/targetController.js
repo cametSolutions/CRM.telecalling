@@ -1403,7 +1403,7 @@ import Service from "../../model/primaryUser/servicesSchema.js";
 // }new code
 export const gettargetResult = async (req, res) => {
     try {
-        const { month, year, periodMode } = req.query
+        const { month, year, periodMode,selectedBranch } = req.query
 
         const monthNumber = Number(month)
         const yearNumber = Number(year)
