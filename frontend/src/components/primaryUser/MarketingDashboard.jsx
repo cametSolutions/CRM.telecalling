@@ -146,6 +146,7 @@ const MarketingDashboard = () => {
   )
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [periodMode, setperiodMode] = useState("all")
+  const [loggedusedTarget, setloggeduserTarget] = useState([])
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
   const { data: followup } = UseFetch("/lead/getfollowupsummaryReport")
 
@@ -303,6 +304,7 @@ const MarketingDashboard = () => {
       const selectedUser = data?.userWiseResults.find(
         (item) => item.userId === user._id
       )
+      setloggeduserTarget(selectedUser)
       setachievedPoints(selectedUser?.incentive)
 
       const updatedCategories = uniqueCategories.map((cat) => {
@@ -331,7 +333,7 @@ const MarketingDashboard = () => {
       setcategorylist(updatedCategories)
     }
   }, [data])
-
+console.log(loggedusedTarget)
   useEffect(() => {
     const storedUser = getLocalStorageItem("user")
     if (storedUser) {
