@@ -99,7 +99,7 @@ export const LeadRegister = async (req, res) => {
         taskallocatedToModel: leadByModel,
         remarks: remark,
         taskBy: allocationtask?._id,
-        taskTo: allocationName?.taskName,
+        taskTo: allocationName?.taskName.toLowerCase(),
         taskId: allocationName?._id,
         allocationChanged: false,
         followupClosed: false,
