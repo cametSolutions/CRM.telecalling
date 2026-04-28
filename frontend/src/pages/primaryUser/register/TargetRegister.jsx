@@ -1587,7 +1587,7 @@ console.log(normalizedArray)
 
   return (
     <div className="h-full bg-[#ADD8E6] flex flex-col px-3 py-4 sm:px-5 sm:py-5 overflow-hidden">
-      <div className="mx-auto  w-auto flex flex-col flex-1 min-h-0 gap-3">
+      <div className="mx-auto  w-full flex flex-col flex-1 min-h-0 gap-3 ">
         <div className="flex-shrink-0 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white border border-slate-200 rounded-lg px-3 py-3">
           <div className="space-y-1">
             <h1 className="text-lg sm:text-xl font-semibold text-slate-900">
