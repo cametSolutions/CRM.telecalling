@@ -21,6 +21,7 @@ const TaskAnalysis = () => {
     const user = JSON.parse(userData)
     setLoggedUser(user)
   }, [])
+  console.log("h")
   useEffect(() => {
     if (loggedUser && branches && branches.length > 0) {
       if (loggedUser.role === "Admin") {
@@ -47,8 +48,11 @@ const TaskAnalysis = () => {
       }
     }
   }, [loggedUser, branches])
+  console.log("a")
   useEffect(() => {
     if (analysisleads && analysisleads.length > 0) {
+      const a = analysisleads.map((item) => item.leadId)
+      console.log(a)
       const taskByList = analysisleads.reduce((acc, lead) => {
         const logs = lead.activityLog
         if (logs.length === 0) return acc
@@ -56,13 +60,19 @@ const TaskAnalysis = () => {
         logs.forEach((log) => {
           // Only include logs that are not closed and have a taskTo field
           if (
-            log.taskTo &&
-            (log.taskClosed === false || log.followupClosed === false)
+            log.taskId &&
+            (log.taskClosed === false || log.followupClosed === false) &&
+            log.taskClosed !== true &&
+            log.followupClosed !== true &&
+            log?.allocatedClosed === false &&
+            (!("allocationlist" in log) || log.allocationlist === false)
           ) {
-            acc[log.taskTo] = (acc[log.taskTo] || 0) + 1
+            console.log(log.taskId.taskName)
+            console.log(log.taskClosed)
+            console.log(lead.leadId, log.taskId)
+            acc[log.taskId.taskName] = (acc[log.taskId.taskName] || 0) + 1
           }
         })
-        
 
         return acc
       }, {})
@@ -77,7 +87,7 @@ const TaskAnalysis = () => {
     }
   }, [analysisleads])
   return (
-    <div className="flex flex-col h-full bg-white">
+    <div className="flex flex-col h-full bg-[#ADD8E6]">
       <div>
         {loading && (
           <BarLoader
@@ -88,29 +98,30 @@ const TaskAnalysis = () => {
       </div>
       <div className="flex justify-between m-2 mx-4">
         <h2 className="text-lg font-bold">Task Analysis</h2>
-        <CurrentDate />
+        <div className="flex justify-between ">
+          <select
+            // value={selectedCompanyBranch || ""}
+            onChange={(e) => {
+              setSelectedCompanyBranch(e.target.value)
+              setgridList([])
+              // setStatus(approvedToggleStatus ? "Approved" : "Pending")
+            }}
+            className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px] md:mr-5 mr-2"
+          >
+            {loggedUserBranches?.map((branch) => (
+              <option key={branch._id} value={branch.value}>
+                {branch.label}
+              </option>
+            ))}
+          </select>
+          <CurrentDate />
+        </div>
       </div>
 
-      <div className="m-2 mx-4 flex justify-end">
-        <select
-          // value={selectedCompanyBranch || ""}
-          onChange={(e) => {
-            setSelectedCompanyBranch(e.target.value)
-            setgridList([])
-            // setStatus(approvedToggleStatus ? "Approved" : "Pending")
-          }}
-          className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px]"
-        >
-          {loggedUserBranches?.map((branch) => (
-            <option key={branch._id} value={branch.value}>
-              {branch.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="flex-1 border border-gray-100 p-3 mx-4 rounded-xl shadow-xl bg-white mb-3">
-        {gridList && gridList.length > 0 ? (
+      <div className="h-auto border border-gray-100 p-3 mx-4 rounded-xl shadow-xl bg-white mb-3">
+        {loading ? (
+          <CardSkeletonLoader count={5} />
+        ) : gridList && gridList.length > 0 ? (
           gridList.map((item, index) => {
             return (
               <div
@@ -144,7 +155,26 @@ const TaskAnalysis = () => {
             )
           })
         ) : (
-          <CardSkeletonLoader count={5} />
+          <div className="flex flex-col items-center justify-center py-16 bg-white rounded-xl shadow-sm border border-dashed border-gray-300">
+            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 mb-4">
+              <AiOutlineProfile className="text-blue-500 text-3xl" />
+            </div>
+
+            <h3 className="text-xl font-semibold text-gray-700">
+              No Data Found
+            </h3>
+
+            <p className="text-gray-500 mt-1 text-sm">
+              There are no records available for the selected criteria.
+            </p>
+
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-5 px-5 py-2 rounded-lg bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition"
+            >
+              Refresh
+            </button>
+          </div>
         )}
       </div>
     </div>

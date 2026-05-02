@@ -8,7 +8,7 @@ const attendanceSchema = new Schema(
       ref: "Staff", // Reference to the user who made the request
       required: true
     },
-   
+ 
     misspunchVerified: { type: Boolean, default: false },
     attendanceId: {
       type: Number,

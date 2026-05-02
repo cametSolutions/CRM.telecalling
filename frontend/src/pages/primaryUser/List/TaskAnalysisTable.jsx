@@ -28,9 +28,14 @@ const TaskAnalysisTable = () => {
       selectedCompanyBranch &&
       `/lead/getalltaskAnalysisLeads?selectedBranch=${selectedCompanyBranch}`
   )
+console.log(selectedCompanyBranch)
+console.log(loading)
+  console.log(selectedData)
+  console.log(taskAnalysisLeads)
   const location = useLocation()
   const { branchid } = location.state || {}
   const navigate = useNavigate()
+  console.log("hhhhh")
   useEffect(() => {
     const userData = localStorage.getItem("user")
     const user = JSON.parse(userData)
@@ -65,6 +70,11 @@ const TaskAnalysisTable = () => {
 
   useEffect(() => {
     if (taskAnalysisLeads && taskAnalysisLeads.length > 0) {
+      console.log(taskAnalysisLeads)
+      const a = taskAnalysisLeads.map((item) => item.leadId)
+      console.log(a)
+      console.log(taskAnalysisLeads.length)
+      console.log(label)
       const filteredLeads = filterLeadsByLastTaskLabel(taskAnalysisLeads, label)
       const groupedLeads = {}
       let grandTotal = 0 //to hold total across all
@@ -84,12 +94,26 @@ const TaskAnalysisTable = () => {
     }
   }, [taskAnalysisLeads])
   const filterLeadsByLastTaskLabel = (leads, label) => {
+    console.log(label)
     return leads.filter((lead) => {
       const logs = lead.activityLog
       if (!logs || logs.length === 0) return false
 
-      const lastLog = logs[logs.length - 1]
-      return lastLog.taskTo?.toLowerCase() === label.toLowerCase()
+      // 🔍 Find LAST log that HAS taskTo field
+      const lastTaskLog = logs
+        .filter(
+          (log) =>
+            log.taskTo !== undefined &&
+            log.taskTo !== null &&
+            log.taskClosed === false &&
+            log.followupClosed === false
+        ) // Only logs WITH taskTo
+        .pop() // Get the LAST one
+
+      // If no logs have taskTo, return false
+      if (!lastTaskLog) return false
+
+      return lastTaskLog.taskId?.taskName.toLowerCase() === label.toLowerCase()
     })
   }
 
@@ -103,10 +127,10 @@ const TaskAnalysisTable = () => {
     return diffDays
   }
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className=" h-full bg-[#ADD8E6]">
       {loading && <div className="w-full h-1 bg-blue-500 animate-pulse"></div>}
 
-      <div className="mx-auto px-3 sm:px-6 lg:px-8 py-2 bg-blue-100 w-full">
+      <div className="mx-auto px-3 sm:px-6 lg:px-8 py-2  w-full">
         {/* Header Row */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
           {/* Left Section: Title + Task Type + Actions */}
@@ -146,7 +170,10 @@ const TaskAnalysisTable = () => {
             <div className="relative">
               <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               <select
-                onChange={(e) => setSelectedCompanyBranch(e.target.value)}
+                onChange={(e) => {
+                  setTableData([])
+                  setSelectedCompanyBranch(e.target.value)
+                }}
                 className="pl-9 pr-8 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm cursor-pointer"
                 value={selectedCompanyBranch}
               >
@@ -379,157 +406,166 @@ const TaskAnalysisTable = () => {
             </div>
           )}
         </div>
+       
         {showModal && selectedData && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40">
-            <div className="relative overflow-x-auto overflow-y-auto md:max-h-64 lg:max-h-96 shadow-xl rounded-lg mx-3 md:mx-5 px-7 p-3 bg-white w-full max-w-4xl">
-              {/* Close Button */}
-              <button
-                onClick={() => {
-                  setselectedLeadId(null)
-                  setselectedData([])
-                  setShowModal(false)
-                }}
-                className="absolute top-2 right-2  text-red-500 font-bold hover:text-red-600 text-lg"
-              >
-                ✕
-              </button>
-
-              {/* Header */}
-              <div className="flex justify-center text-xl font-bold gap-2 mb-3">
-                <span>Lead Id:</span>
-                <span className="text-indigo-600">{selectedLeadId}</span>
+            {/* modal card with responsive max height */}
+            <div className="relative bg-white rounded-lg shadow-xl mx-3 md:mx-5 w-full max-w-4xl max-h-[80vh] flex flex-col">
+              {/* header + close */}
+              <div className="flex items-center justify-center gap-2 px-4 pt-3 pb-2 border-b">
+                <div className="flex-1" />
+                <div className="flex items-center justify-center gap-2 text-lg md:text-xl font-bold">
+                  <span>Lead Id:</span>
+                  <span className="text-indigo-600">{selectedLeadId}</span>
+                </div>
+                <button
+                  onClick={() => {
+                    setselectedLeadId(null)
+                    setselectedData([])
+                    setShowModal(false)
+                  }}
+                  className="flex-1 flex justify-end text-red-500 hover:text-red-600 text-lg font-bold"
+                >
+                  ✕
+                </button>
               </div>
 
-              {/* Table */}
-              <table className="w-full text-sm border-collapse text-center">
-                <thead className="text-center sticky top-0 z-10">
-                  <tr className="bg-indigo-100">
-                    <th className="border border-indigo-200 p-2 min-w-[100px]">
-                      Date
-                    </th>
-                    <th className="border border-indigo-200 p-2 min-w-[100px]">
-                      User
-                    </th>
-                    <th className="border border-indigo-200 p-2 min-w-[100px]">
-                      Task
-                    </th>
-                    <th className="border border-indigo-200 p-2 w-fit min-w-[200px]">
-                      Remark
-                    </th>
-                    {label === "followup" && (
+              {/* scrollable table area */}
+              <div className="flex-1 overflow-auto px-4 pb-3">
+                <table className="w-full text-sm border-collapse text-center">
+                  {/* sticky header relative to this scroll container */}
+                  <thead className="sticky top-0 z-10 bg-indigo-100">
+                    <tr>
                       <th className="border border-indigo-200 p-2 min-w-[100px]">
-                        Next Follow Up Date
+                        Date
                       </th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedData && selectedData.length > 0 ? (
-                    selectedData.map((item, index) => {
-                      const hasFollowerData =
-                        Array.isArray(item.folowerData) &&
-                        item.folowerData.length > 0
+                      <th className="border border-indigo-200 p-2 min-w-[100px]">
+                        User
+                      </th>
+                      <th className="border border-indigo-200 p-2 min-w-[100px]">
+                        Task
+                      </th>
+                      <th className="border border-indigo-200 p-2 min-w-[200px]">
+                        Remark
+                      </th>
+                      {label === "followup" && (
+                        <th className="border border-indigo-200 p-2 min-w-[140px]">
+                          Next Follow Up Date
+                        </th>
+                      )}
+                    </tr>
+                  </thead>
 
-                      return hasFollowerData ? (
-                        item.folowerData.map((subItem, subIndex) => (
+                  <tbody>
+                    {selectedData && selectedData.length > 0 ? (
+                      selectedData.map((item, index) => {
+                        const hasFollowerData =
+                          Array.isArray(item.folowerData) &&
+                          item.folowerData.length > 0
+
+                        return hasFollowerData ? (
+                          item.folowerData.map((subItem, subIndex) => (
+                            <tr
+                              key={`${index}-${subIndex}`}
+                              className={
+                                (index + subIndex) % 2 === 0
+                                  ? "bg-gray-50"
+                                  : "bg-white"
+                              }
+                            >
+                              {loggedUser?.role === "Admin" && (
+                                <td className="border border-gray-200 p-2">
+                                  {item?.followedId?.name}
+                                </td>
+                              )}
+                              <td className="border border-gray-200 p-2">
+                                {new Date(subItem.followerDate)
+                                  .toLocaleDateString("en-GB")
+                                  .split("/")
+                                  .join("-")}
+                              </td>
+                              <td className="border border-gray-200 p-2">
+                                {subItem?.followerDescription || "N/A"}
+                              </td>
+                              <td className="border border-gray-200 p-2"></td>
+                            </tr>
+                          ))
+                        ) : (
                           <tr
-                            key={`${index}-${subIndex}`}
+                            key={index}
                             className={
-                              (index + subIndex) % 2 === 0
-                                ? "bg-gray-50"
-                                : "bg-white"
+                              index % 2 === 0 ? "bg-gray-50" : "bg-white"
                             }
                           >
-                            {loggedUser?.role === "Admin" && (
-                              <td className="border border-gray-200 p-2">
-                                {item?.followedId?.name}
-                              </td>
-                            )}
                             <td className="border border-gray-200 p-2">
-                              {new Date(subItem.followerDate)
+                              {new Date(item.submissionDate)
                                 .toLocaleDateString("en-GB")
                                 .split("/")
                                 .join("-")}
                             </td>
                             <td className="border border-gray-200 p-2">
-                              {subItem?.followerDescription || "N/A"}
+                              {item?.submittedUser?.name}
                             </td>
-                            <td className="border border-gray-200 p-2"></td>
-                          </tr>
-                        ))
-                      ) : (
-                        <tr
-                          key={index}
-                          className={
-                            index % 2 === 0 ? "bg-gray-50" : "bg-white"
-                          }
-                        >
-                          <td className="border border-gray-200 p-2">
-                            {new Date(item.submissionDate)
-                              .toLocaleDateString("en-GB")
-                              .split("/")
-                              .join("-")}
-                          </td>
-                          <td className="border border-gray-200 p-2">
-                            {item?.submittedUser?.name}
-                          </td>
-                          <td className="border border-gray-200 p-2 min-w-[160px]">
-                            <div>
-                              {item?.taskallocatedTo ? (
-                                <>
-                                  <span>{item?.taskBy || "N/A"}</span>
-                                  <span className="text-red-500">
-                                    {" "}
-                                    - {item?.taskallocatedTo?.name || ""}
-                                  </span>
-                                  <br />
-                                  <span className="text-red-500">
-                                    {item.taskTo}
-                                  </span>
-                                  {item.allocationDate && (
+                            <td className="border border-gray-200 p-2 min-w-[160px]">
+                              {/* your task cell content unchanged */}
+                              <div>
+                                {item?.taskallocatedTo ? (
+                                  <>
                                     <span>
-                                      {" "}
-                                      - on(
-                                      {new Date(
-                                        item.allocationDate
-                                      ).toLocaleDateString("en-GB")}
-                                      )
+                                      {item?.taskBy?.taskName || "N/A"}
                                     </span>
-                                  )}
-                                </>
-                              ) : (
-                                <span>{item.taskBy}</span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="border border-gray-200 p-2">
-                            {item?.remarks || "N/A"}
-                          </td>
-                          {label === "followup" && (
-                            <td className="border border-gray-200 p-2">
-                              {item?.nextfollowUpDate
-                                ? new Date(item.nextfollowUpDate)
-                                    .toLocaleDateString("en-GB")
-                                    .split("/")
-                                    .join("-")
-                                : "-"}
+                                    <span className="text-red-500">
+                                      - {item?.taskallocatedTo?.name || ""}
+                                    </span>
+                                    <br />
+                                    <span className="text-red-500">
+                                      {item?.taskId?.taskName || "o"}
+                                    </span>
+                                    {item.allocationDate && (
+                                      <span>
+                                        {" "}
+                                        - on(
+                                        {new Date(
+                                          item.allocationDate
+                                        ).toLocaleDateString("en-GB")}
+                                        )
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span>{item?.taskBy?.taskName}</span>
+                                )}
+                              </div>
                             </td>
-                          )}
-                        </tr>
-                      )
-                    })
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan={5}
-                        className="text-center bg-white p-3 text-gray-500 italic"
-                      >
-                        No followUps
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                            <td className="border border-gray-200 p-2">
+                              {item?.remarks || "N/A"}
+                            </td>
+                            {label === "followup" && (
+                              <td className="border border-gray-200 p-2">
+                                {item?.nextfollowUpDate
+                                  ? new Date(item.nextfollowUpDate)
+                                      .toLocaleDateString("en-GB")
+                                      .split("/")
+                                      .join("-")
+                                  : "-"}
+                              </td>
+                            )}
+                          </tr>
+                        )
+                      })
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={5}
+                          className="text-center bg-white p-3 text-gray-500 italic"
+                        >
+                          No followUps
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}

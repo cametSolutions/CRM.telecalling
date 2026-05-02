@@ -1,49 +1,115 @@
-import { toast } from "react-toastify"
+// import { toast } from "react-toastify"
 
-const upload_preset = import.meta.env.VITE_UPLOAD_PRESET
-const cloud_name = import.meta.env.VITE_CLOUD_NAME
+// const upload_preset = import.meta.env.VITE_UPLOAD_PRESET
+// const cloud_name = import.meta.env.VITE_CLOUD_NAME
+
+// const uploadImageToCloudinary = async (file) => {
+//   try {
+//     if (
+//       !file.type.includes("image/jpeg") &&
+//       !file.type.includes("image/png") &&
+//       !file.type.includes("image/jpg")
+//     ) {
+//       console.error("Only JPEG, JPG, and PNG images are allowed.")
+//       toast.error("Only JPEG, JPG, and PNG images are allowed.")
+//       return {
+//         status: 400,
+//         message: "Only JPEG, JPG, and PNG images are allowed."
+//       } // Return error response
+//     }
+
+//     const uploadData = new FormData()
+//     uploadData.append("file", file)
+//     uploadData.append("upload_preset", upload_preset)
+
+//     const res = await fetch(
+//       `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,
+//       {
+//         method: "POST",
+//         body: uploadData
+//       }
+//     )
+
+
+//     if (!res.ok) {
+//       // Handle server errors
+//       const errorData = await res.json()
+//       console.error("Upload error:", errorData)
+//       return { status: res.status, message: errorData.message }
+//     }
+
+//     const data = await res.json()
+//     return data
+//   } catch (error) {
+//     console.error("Error uploading image:", error)
+//     return { status: 500, message: "Internal server error" }
+//   }
+// }
+
+// export default uploadImageToCloudinary
+
+
+
+
+
+
+
+
+
+
+
+
+
+// uploadImageToCloudinary.js
+import { toast } from "react-toastify";
+
+const upload_preset = import.meta.env.VITE_UPLOAD_PRESET;
+const cloud_name = import.meta.env.VITE_CLOUD_NAME;
 
 const uploadImageToCloudinary = async (file) => {
   try {
-    if (
-      !file.type.includes("image/jpeg") &&
-      !file.type.includes("image/png") &&
-      !file.type.includes("image/jpg")
-    ) {
-      console.error("Only JPEG, JPG, and PNG images are allowed.")
-      toast.error("Only JPEG, JPG, and PNG images are allowed.")
-      return {
-        status: 400,
-        message: "Only JPEG, JPG, and PNG images are allowed."
-      } // Return error response
+    if (!file) {
+      toast.error("No image selected.");
+      return { status: 400, message: "No image selected." };
     }
 
-    const uploadData = new FormData()
-    uploadData.append("file", file)
-    uploadData.append("upload_preset", upload_preset)
+    const allowedTypes = ["image/jpeg", "image/png", "image/jpg", "image/webp"];
+    const fileType = file.type || "image/jpeg";
+
+    if (!allowedTypes.includes(fileType)) {
+      toast.error("Only JPEG, JPG, PNG, and WEBP images are allowed.");
+      return {
+        status: 400,
+        message: "Only JPEG, JPG, PNG, and WEBP images are allowed.",
+      };
+    }
+
+    const uploadData = new FormData();
+    uploadData.append("file", file, "avatar.jpg");
+    uploadData.append("upload_preset", upload_preset);
 
     const res = await fetch(
       `https://api.cloudinary.com/v1_1/${cloud_name}/image/upload`,
       {
         method: "POST",
-        body: uploadData
+        body: uploadData,
       }
-    )
+    );
 
+    const data = await res.json();
 
     if (!res.ok) {
-      // Handle server errors
-      const errorData = await res.json()
-      console.error("Upload error:", errorData)
-      return { status: res.status, message: errorData.message }
+      return {
+        status: res.status,
+        message: data?.error?.message || data?.message || "Upload failed",
+      };
     }
 
-    const data = await res.json()
-    return data
+    return data;
   } catch (error) {
-    console.error("Error uploading image:", error)
-    return { status: 500, message: "Internal server error" }
+    console.error("Error uploading image:", error);
+    return { status: 500, message: "Internal server error" };
   }
-}
+};
 
-export default uploadImageToCloudinary
+export default uploadImageToCloudinary;

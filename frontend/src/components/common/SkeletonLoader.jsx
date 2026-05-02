@@ -8,14 +8,7 @@ const TableSkeletonLoader = ({
   return (
     <div className="bg-gradient-to-br from-blue-50 via-white to-indigo-100 min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
-        
-        {/* Main Header Skeleton */}
-        {/* <div className="bg-white/80 backdrop-blur-lg border border-white/20 shadow-2xl px-8 py-6 rounded-2xl mb-6 animate-pulse">
-          <div className="text-center">
-            <div className="h-8 bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg w-80 mx-auto mb-2"></div>
-            <div className="w-24 h-1 bg-gradient-to-r from-gray-200 to-gray-300 mx-auto rounded-full"></div>
-          </div>
-        </div> */}
+     
 
         {/* Generate multiple staff sections */}
         {[...Array(staffCount)].map((_, staffIndex) => (

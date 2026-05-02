@@ -120,7 +120,7 @@ export const MonthRangePicker = ({ onChange }) => {
   }, [startMonth, endMonth]);
 
   return (
-    <div className="flex flex-grow items-center gap-3 px-4 bg-white border-b border-gray-200">
+    <div className="flex flex-grow items-center gap-3 px-4 bg-blue-50 ">
       {/* Start Month */}
       <div className="flex-1">
         <label className="block text-xs font-medium text-gray-500 mb-1">
@@ -132,7 +132,7 @@ export const MonthRangePicker = ({ onChange }) => {
             console.log("h");
             setStartMonth(new Date(e.target.value + "-01"));
           }}
-          className="w-full p-2 text-sm border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+          className="w-full p-1 text-sm border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
         >
           {months.map((month) => (
             <option key={month.toISOString()} value={format(month, "yyyy-MM")}>
@@ -154,7 +154,7 @@ export const MonthRangePicker = ({ onChange }) => {
           onChange={(e) => {
             setEndMonth(new Date(e.target.value + "-01"));
           }}
-          className="w-full p-2 text-sm border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+          className="w-full p-1 text-sm border border-gray-200 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
         >
           {months.map((month) => (
             <option key={month.toISOString()} value={format(month, "yyyy-MM")}>

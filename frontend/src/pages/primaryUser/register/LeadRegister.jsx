@@ -10,7 +10,8 @@ function LeadRegister() {
   const userData = localStorage.getItem("user")
   const user = JSON.parse(userData)
   const navigate = useNavigate()
-
+  // reset functions exposed from LeadMaster
+ 
   const handleSubmit = async (leadData, selectedtableLeadData, role) => {
     try {
       const response = await api.post("/lead/leadRegister", {
@@ -21,11 +22,11 @@ function LeadRegister() {
       })
       if (response.status === 200) {
         toast.success(response && response.data && response.data.message)
-        if (user.role === "Admin") {
-          navigate("/admin/transaction/lead/leadAllocation")
-        } else {
-          navigate("/staff/transaction/lead/leadFollowUp")
-        }
+
+        // wait for toast to be visible, then reload
+        setTimeout(() => {
+          navigate(0) // or window.location.reload()
+        }, 1500)
       } else if (response.status === 201) {
         setpopUpMessage(response.data.message)
       }
@@ -52,6 +53,7 @@ function LeadRegister() {
         setLoadingState={setLoader}
         showmessage={popupMessage}
         showpopupMessage={setpopUpMessage}
+      
       />
     </div>
   )

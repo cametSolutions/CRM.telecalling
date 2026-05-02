@@ -448,26 +448,22 @@ const LeaveApprovalAndPending = () => {
       ? "Leave Date"
       : "Onsite Date"
   console.log(leaveList)
- 
+console.log(loader)
   const singleApprovalOrCancel = async (id, userId) => {
     try {
       const selectedItem = leaveList.find((item) => item._id === id)
-
-      console.log(selectedItem)
-      console.log(misspunchlist)
-      let name = null
+console.log(selectedItem)
+      const name = selectedItem?.userId?.name
+      const selectedmispunch = misspunchlist.find((item) => item._id === id)
       if (mispunchMode) {
-        const selectedmispunch = misspunchlist.find((item) => item._id === id)
-        name = selectedmispunch?.userId?.name
-console.log(selectedmispunch)
-        console.log("dddddddd")
-        console.log(name)
+        if (!selectedmispunch) return
       } else {
-        name = selectedItem?.userId?.name
         if (!selectedItem) return
       }
-
+console.log("hhh")
       setLoader(true)
+
+
       console.log(isToggled)
 
       const isTrue = isToggled[id]
@@ -509,13 +505,12 @@ console.log(selectedmispunch)
         if (mispunchMode) {
           console.log("hhh")
           response = await api.put(
-            `/auth/approveMispunch/?role=${user?.role}&selectedId=${id}&userId=${user?._id}&name=${name}&startDate=${dates.startDate}&endDate=${dates.endDate}&misspunchDate=${selectedmispunch.misspunchDate}&misspunchType=${selectedmispunch.misspunchType}`
+            `/auth/approveMispunch/?role=${user?.role}&selectedId=${id}&userId=${user?._id}&startDate=${dates.startDate}&endDate=${dates.endDate}&misspunchDate=${selectedmispunch.misspunchDate}&misspunchType=${selectedmispunch.misspunchType}`
           )
         }
 
         // ✅ PENDING ONSITE
         else if (pendingOnsite && !pendingLeave) {
-          console.log("hhhh")
           
           response = await api.put(
             `/auth/approveOnsite/?role=${user?.role}&selectedId=${id}&startDate=${dates.startDate}&endDate=${dates.endDate}&onsite=true&userId=${user?._id}&single=true&name=${name}&isPending=true`
@@ -524,7 +519,6 @@ console.log(selectedmispunch)
 
         // ✅ PENDING LEAVE
         else if (!pendingOnsite && pendingLeave) {
-          console.log("hhhh")
           
           response = await api.put(
             `/auth/approveLeave/?role=${user?.role}&selectedId=${id}&userId=${user?._id}&startDate=${dates.startDate}&endDate=${dates.endDate}&single=true&onsite=false&name=${name}&isPending=true`
@@ -557,10 +551,10 @@ console.log(selectedmispunch)
 
         toast.success(response.data.message || "Success")
         if (mispunchMode) {
-console.log("hhhhh")
+          console.log("hhhhh")
           setMisspunchList(updatedList)
         } else {
-console.log("hhh")
+          console.log("hhh")
           setLeaveList(updatedList)
         }
 
@@ -578,8 +572,9 @@ console.log("hhh")
         toast.error("Something went wrong")
       }
     } catch (error) {
-      console.error(error)
-      toast.error("Error processing request")
+      console.error(error.message)
+console.log(error.response.data.message)
+      toast.error(error.response.data.message)
     } finally {
       setLoader(false)
     }
@@ -1042,11 +1037,11 @@ console.log("hhh")
                   <th className="px-3 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap">
                     {dateColHeader}
                   </th>
-                  <th className="px-3 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
+                  <th className="px-3 py-2 text-center font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
                     Type
                   </th>
                   {!mispunchMode && (
-                    <th className="px-3 py-2 text-left font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden xl:table-cell">
+                    <th className="px-3 py-2 text-center font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden xl:table-cell">
                       Shift
                     </th>
                   )}
@@ -1140,7 +1135,7 @@ console.log("hhh")
                               ).toLocaleDateString("en-GB")}
                         </td>
 
-                        <td className="px-3 py-2 whitespace-nowrap hidden md:table-cell">
+                        <td className="px-3 py-2 whitespace-nowrap hidden md:table-cell text-center">
                           <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-purple-100 text-purple-700 border border-purple-200">
                             {mispunchMode
                               ? user?.misspunchType
@@ -1150,7 +1145,7 @@ console.log("hhh")
                           </span>
                         </td>
                         {!mispunchMode && (
-                          <td className="px-3 py-2 text-gray-700 whitespace-nowrap hidden xl:table-cell">
+                          <td className="px-3 py-2 text-gray-700 whitespace-nowrap hidden xl:table-cell text-center">
                             {user?.halfDayPeriod || "—"}
                           </td>
                         )}
@@ -1166,11 +1161,11 @@ console.log("hhh")
                           </div>
                         </td>
 
-                        <td className="px-3 py-2 whitespace-nowrap hidden xl:table-cell">
+                        <td className="px-3 py-2 whitespace-nowrap hidden xl:table-cell text-center">
                           {getStatusBadge(user?.departmentstatus)}
                         </td>
 
-                        <td className="px-3 py-2 whitespace-nowrap hidden xl:table-cell">
+                        <td className="px-3 py-2 whitespace-nowrap hidden xl:table-cell text-center">
                           {getStatusBadge(user?.hrstatus)}
                         </td>
 

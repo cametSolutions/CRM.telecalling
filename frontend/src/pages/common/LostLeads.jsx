@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react"
 import UseFetch from "../../hooks/useFetch"
 import { useNavigate } from "react-router-dom"
+import { useLocation } from "react-router-dom"
 import { LeadhistoryModal } from "../../components/primaryUser/LeadhistoryModal"
 import { PropagateLoader } from "react-spinners"
 import {
@@ -20,6 +21,7 @@ import { getLocalStorageItem } from "../../helper/localstorage"
 
 export default function LostLeads() {
   const [showFullName, setShowFullName] = useState(false)
+  const location = useLocation()
   const [tableData, setTableData] = useState([])
   const [TotalAmount, settotalAmount] = useState(0)
   const [loggedUser, setLoggedUser] = useState(null)
@@ -34,11 +36,24 @@ export default function LostLeads() {
   const [historyList, setHistoryList] = useState([])
   const navigate = useNavigate()
   const { data: companybranches } = UseFetch("/branch/getBranch")
-  const { data: lostlead, loading } = UseFetch(
-    loggedUser &&
-      selectedCompanyBranch &&
-      `/lead/lostlead?userId=${loggedUser._id}&role=${loggedUser.role}&selectedBranch=${selectedCompanyBranch}&ownlead=${ownLead}`
-  )
+  const shouldFetch = loggedUser && selectedCompanyBranch
+  console.log(loggedUser)
+  console.log(companyBranches)
+  console.log(selectedCompanyBranch)
+  const url = shouldFetch
+    ? location?.state?.staffId
+      ? `/lead/lostlead?userId=${loggedUser._id}&role=${loggedUser.role}&selectedBranch=${location?.state?.branchId}&ownlead=${ownLead}`
+      : `/lead/lostlead?userId=${loggedUser._id}&role=${loggedUser.role}&selectedBranch=${selectedCompanyBranch}&ownlead=${ownLead}`
+    : null
+  console.log(location?.state)
+  console.log(url)
+  const { data: lostlead, loading, error, refreshHook } = UseFetch(url)
+  console.log(lostlead)
+  // const { data: lostlead, loading } = UseFetch(
+  //   loggedUser &&
+  //     selectedCompanyBranch &&
+  //     `/lead/lostlead?userId=${loggedUser._id}&role=${loggedUser.role}&selectedBranch=${selectedCompanyBranch}&ownlead=${ownLead}`
+  // )
 
   useEffect(() => {
     if (companybranches && companybranches.length > 0) {
@@ -56,9 +71,39 @@ export default function LostLeads() {
   }, [companybranches])
   useEffect(() => {
     if (lostlead && lostlead.length > 0) {
+      console.log(lostlead)
+      console.log(location?.state)
+let filteredLeads=[]
+      if (location?.state?.viewMode) {
+        // const filteredleads=lostlead.filter((item)=>item.staffId)
+        console.log(lostlead)
+        filteredLeads = lostlead.filter((lead) => {
+          // 1️⃣ Get only followup allocation logs
+          const followupAllocations = lead.activityLog.filter(
+            (log) =>
+              log.taskTo === "followup" &&
+              log.taskallocatedTo && // must exist
+              log.allocationChanged === false
+          )
+
+          // 2️⃣ If no followup allocations → skip
+          if (followupAllocations.length === 0) return false
+
+          // 3️⃣ Take LAST followup allocation
+          const lastFollowupAllocation =
+            followupAllocations[followupAllocations.length - 1]
+
+          // 4️⃣ Match with user
+          return (
+            lastFollowupAllocation.taskallocatedTo.toString() ===
+            location?.staffId?.toString()
+          )
+        })
+        console.log(filteredLeads)
+      }
       const groupedLeads = {}
       let grandTotal = 0
-      lostlead.forEach((lead) => {
+     location?.state?.viewMode?filteredLeads: lostlead.forEach((lead) => {
         const assignedTo = lead?.leadclosedBy?.name
         const amount = lead?.netAmount || 0
         grandTotal += amount
@@ -125,22 +170,6 @@ export default function LostLeads() {
           <th className="border border-gray-300 px-3 py-1 min-w-[90px] text-left">
             Lead Id
           </th>
-          {/* {pending && (
-            <>
-              <th className="border border-gray-300 px-3 py-1">
-                <div className="flex items-center gap-1.5 justify-center">
-                  <CalendarDays className="w-3 h-3" />
-                  <span>Due Date</span>
-                </div>
-              </th>
-              <th className="border border-gray-300 px-3 py-1">
-                <div className="flex items-center gap-1.5 justify-center">
-                  <Hourglass className="w-3 h-3" />
-                  <span>Remaining Days</span>
-                </div>
-              </th>
-            </>
-          )} */}
 
           <th className="border border-gray-300 px-3 py-1 min-w-[90px]">
             Action
@@ -172,12 +201,6 @@ export default function LostLeads() {
                 <td className="px-3 py-1 font-medium text-blue-700">
                   {item?.leadId}
                 </td>
-                {/* {pending && (
-                  <>
-                    <td className="border border-b-0 border-gray-300 px-3 py-1"></td>
-                    <td className="border border-b-0 border-gray-300 px-3 py-1"></td>
-                  </>
-                )} */}
 
                 <td className="border border-b-0 border-gray-300 px-2 py-1 text-center">
                   <button
@@ -223,16 +246,6 @@ export default function LostLeads() {
                     <span>Lead Date</span>
                   </div>
                 </td>
-                {/* {pending && (
-                  <>
-                    <td className="border border-t-0 border-b-0 border-gray-300 px-3  bg-white text-center text-lg font-semibold text-red-500">
-                      {new Date(item.dueDate).toLocaleDateString("en-GB")}
-                    </td>
-                    <td className="border border-t-0 border-b-0 border-gray-300 px-3 bg-white text-center text-lg font-semibold text-red-500">
-                      {getRemainingDays(item.dueDate)} days left
-                    </td>
-                  </>
-                )} */}
 
                 <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1 bg-white"></td>
                 <td className="border border-t-0 border-b-0 border-gray-300 px-3  bg-white font-semibold">
@@ -260,12 +273,6 @@ export default function LostLeads() {
                 <td className="border border-t-0 border-gray-300 px-3 py-1 text-gray-900">
                   {item.leadDate?.toString().split("T")[0]}
                 </td>
-                {/* {pending && (
-                  <>
-                    <td className="border border-t-0 border-b-0 border-gray-300 px-3 py-1"></td>
-                    <td className="border border-t-0 border-b-0 border-gray-300 px-3 py-1"></td>
-                  </>
-                )} */}
 
                 <td className="border border-t-0 border-b-0 border-gray-300 px-2 py-1">
                   {" "}
@@ -325,8 +332,8 @@ export default function LostLeads() {
   )
 
   return (
-    <div className="max-h-full h-full p-3 bg-white">
-      <div className="flex justify-between items-center mx-3 md:mx-5  mb-3">
+    <div className="max-h-full h-full p-3 bg-[#ADD8E6]">
+      <div className="flex justify-between items-center mx-3 md:mx-5">
         <h2 className="text-lg font-bold">Lost Leads</h2>
         <div className="flex justify-end items-center">
           <select
@@ -357,14 +364,14 @@ export default function LostLeads() {
         </div>
       </div>
       {tableData && tableData.length > 0 && (
-        <div className="flex justify-end md:mx-5 text-blue-500">
+        <div className="flex justify-end md:mx-5 text-blue-700 font-semibold">
           <span>Total Amount :</span>
           <span className="ml-1">{TotalAmount}</span>
         </div>
       )}
 
       {/* Responsive Table Container this is the newest design*/}
-      <div className="flex-1 overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3">
+      <div className="flex-1 overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
         <>
           {(() => {
             const hasLeads =

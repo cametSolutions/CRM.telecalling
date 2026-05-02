@@ -27,9 +27,15 @@ import { PropagateLoader } from "react-spinners"
 import { toast } from "react-toastify"
 
 export default function CollectionUpdate() {
+  console.log("hh")
   const [showFullName, setShowFullName] = useState(false)
   const [tableData, setTableData] = useState([])
+  console.log(tableData)
+  const [forcefullyclosedLeads, setforcefullyClosedLeads] = useState([])
+  const [isforcefullyclosed, setisforcefullyclosed] = useState(false)
+  console.log(tableData)
   const [isdepartmentisAccountant, setisdepartmentAccountant] = useState(false)
+  console.log(isdepartmentisAccountant)
   const [loggedUser, setLoggedUser] = useState(null)
   const [leadId, setleadId] = useState(null)
   const [leadDocId, setleadDocId] = useState(null)
@@ -39,9 +45,13 @@ export default function CollectionUpdate() {
   const [collectionupdateModal, setcollectionUpdateModal] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [selectedData, setselectedData] = useState(null)
+  console.log(selectedData)
   const [selectedLeadId, setselectedLeadId] = useState(null)
+  console.log(selectedLeadId)
   const [verifiedLead, setverifiedLead] = useState(false)
   const [companyBranches, setcompanyBranches] = useState(null)
+  const [balanceAmount, setBalanceAmount] = useState(null)
+  const [isChecked, setIsChecked] = useState(false)
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
   const [showhistoryModal, sethistoryModal] = useState(false)
   const [paymentHistoryList, setpaymentHistoryList] = useState([])
@@ -56,13 +66,23 @@ export default function CollectionUpdate() {
     refreshHook
   } = UseFetch(
     selectedCompanyBranch &&
-      `/lead/collectionLeads?selectedBranch=${selectedCompanyBranch}&verified=${verifiedLead}`
+      loggedUser &&
+      `/lead/collectionLeads?selectedBranch=${selectedCompanyBranch}&verified=${verifiedLead}&isAccountant=${isdepartmentisAccountant}&loggeduserby=${loggedUser._id}`
   )
+  console.log(selectedCompanyBranch)
+  console.log(verifiedLead)
+  console.log(isdepartmentisAccountant)
+  console.log(loggedUser)
+  console.log(isdepartmentisAccountant)
+  console.log(verifiedLead)
+  console.log(collectionlead)
   const { data: partners } = UseFetch("/customer/getallpartners")
-
+  console.log("h")
+  console.log(paymenthistoryModal)
   useEffect(() => {
     if (companybranches && companybranches.length > 0) {
       const userData = getLocalStorageItem("user")
+      console.log(userData.department?.department)
       if (
         userData.department?.department === "Accountant" ||
         userData.department?._id === "670c863652847bbebbd35743"
@@ -101,6 +121,19 @@ export default function CollectionUpdate() {
       }
     }
   }, [companybranches])
+
+  useEffect(() => {
+    if (paymenthistoryModal && collectionlead && selectedLeadId) {
+      console.log("hh")
+      const updatedhistorylist = collectionlead.filter(
+        (item) => item.leadId === selectedLeadId
+      )
+      console.log(updatedhistorylist)
+      setpaymentHistoryList(updatedhistorylist[0]?.paymentHistory)
+      setBalanceAmount(updatedhistorylist[0].balanceAmount)
+    }
+  })
+  console.log(paymentHistoryList)
   useEffect(() => {
     if (loggedUserBranches && loggedUserBranches.length > 0) {
       const defaultbranch = loggedUserBranches[0]
@@ -115,13 +148,23 @@ export default function CollectionUpdate() {
       partners.length > 0 &&
       loggedUser
     ) {
+      console.log(loggedUser?.department)
       if (
         loggedUser?.department?._id === "670c863652847bbebbd35743" ||
         loggedUser?.department?.department === "Accounts"
       ) {
-        const filteredCollectionleads = collectionlead.filter(
-          (item) => item.paymentHistory?.length > 0
+        const filteredforcefullyleads = collectionlead.filter(
+          (item) => item.forcefullyClosedTarget
         )
+        if (filteredforcefullyleads.length) {
+          setforcefullyClosedLeads(normalizeTableData(filteredforcefullyleads))
+          console.log("Hhh")
+        }
+        const filteredCollectionleads = collectionlead.filter(
+          (item) =>
+            item.paymentHistory?.length > 0 && !item.forcefullyClosedTarget
+        )
+        console.log(collectionlead)
         const sortedLeads = filteredCollectionleads.sort((a, b) => {
           const getOldest = (lead) =>
             lead.paymentHistory?.length
@@ -132,6 +175,7 @@ export default function CollectionUpdate() {
 
           return getOldest(a) - getOldest(b)
         })
+        console.log(sortedLeads)
         setTableData(normalizeTableData(sortedLeads))
       } else {
         setTableData(normalizeTableData(collectionlead))
@@ -152,7 +196,40 @@ export default function CollectionUpdate() {
     return []
   }
 
+  const checkIsForcefullyClosed = (dateString, balance, isverified) => {
+    console.log(balance)
+    console.log(isverified)
+    const checkelibleforForcefullyclosed = Number(balance) > 0 && !isverified
+    console.log(checkelibleforForcefullyclosed)
+    console.log(dateString)
+    console.log(dateString)
+    const d = new Date(dateString) // e.g. "2026-04-17T09:32:29.127Z"
+    if (isNaN(d)) return // invalid date guard
+
+    const now = new Date()
+
+    const sameMonth =
+      d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() // month is 0-based
+
+    console.log(sameMonth)
+    console.log(d.getMonth())
+    console.log(now.getMonth())
+    console.log(d.toLocaleDateString())
+    const monthName = d.toLocaleString("default", { month: "long" })
+    console.log(monthName)
+    // If same month as current → not previous target
+    if (sameMonth) {
+      console.log("hhh")
+      // setIsChecked(false)
+      setIsChecked({ month: monthName, checked: true })
+    } else {
+      console.log("hhh")
+      setIsChecked({ month: monthName, checked: true })
+    }
+  }
   const handleCollection = (item) => {
+    console.log(item)
+    console.log("hh")
     setcollectionUpdateModal(true)
     setselectedData(item)
   }
@@ -162,15 +239,32 @@ export default function CollectionUpdate() {
     setselectedLeadId(null)
   }
   const handleHistory = (Item) => {
+    console.log("hh")
     setselectedData(Item.activityLog)
     setHistoryList(Item.activityLog)
     setselectedLeadId(Item.leadId)
     sethistoryModal(true)
   }
-  const handleCollectionUpdate = async (formData) => {
+
+  const getDisplayAmount = (item) => {
+    console.log(item)
+
+    console.log("h")
+    return (item || [])
+      .filter((history) => history?.paymentVerified === false)
+      .reduce((sum, history) => sum + Number(history?.receivedAmount || 0), 0)
+    
+
+  
+  }
+  const handleCollectionUpdate = async (formData, setsubmitLoader) => {
+    setsubmitLoader(true)
+    console.log(formData)
+
     try {
       const response = await api.post("/lead/collectionUPdate", formData)
       if (response.status === 200) {
+        setsubmitLoader(false)
         toast.success("payment updated successfully")
         refreshHook()
         return response
@@ -180,8 +274,7 @@ export default function CollectionUpdate() {
       console.log("error", error.message)
     }
   }
-
-  
+  console.log(forcefullyclosedLeads)
   const renderTable = (data) => {
     const LeadRow = ({ item, index }) => {
       const [open, setOpen] = useState(false)
@@ -222,7 +315,7 @@ export default function CollectionUpdate() {
                 {lastLog?.remarks || "-"}
               </span>
             </td>
-            <td className="px-3 py-2 text-sm text-gray-700 border border-gray-300 whitespace-nowrap">
+            <td className="px-3 py-2 text-sm text-gray-700 border border-gray-300 whitespace-nowrap text-center">
               {followupDate}
             </td>
             <td
@@ -243,23 +336,15 @@ export default function CollectionUpdate() {
             >
               <button
                 type="button"
-                // onClick={() =>
-                //   loggedUser.role === "Admin"
-                //     ? navigate("/admin/transaction/lead/leadEdit", {
-                //         state: {
-                //           leadId: item._id,
-                //           isReadOnly: !isAllocatedToeditable
-                //         }
-                //       })
-                //     : navigate("/staff/transaction/lead/leadEdit", {
-                //         state: {
-                //           leadId: item._id,
-                //           isReadOnly: !isAllocatedToeditable
-                //         }
-                //       })
-                // }
                 onClick={() => {
                   setpaymentHistoryList(item.paymentHistory)
+                  setselectedLeadId(item.leadId)
+                  checkIsForcefullyClosed(
+                    item.leadDate,
+                    item.balanceAmount,
+                    item.paymentVerified
+                  )
+                  setBalanceAmount(item.balanceAmount)
                   setpaymentHistoryModal(true)
                   setleadId(item.leadId)
                   setleadDocId(item._id)
@@ -269,26 +354,26 @@ export default function CollectionUpdate() {
                 <CreditCard className="w-3.5 h-3.5" />
               </button>
             </td>
-
-            <td
-              className="px-2 py-2 border border-gray-300"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {!verifiedLead && (
+            {!verifiedLead && (
+              <td
+                className="px-2 py-2 border border-gray-300"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <button
                   onClick={() => handleCollection(item)}
                   className="inline-flex items-center gap-1  py-1 text-xs font-semibold text-white bg-green-500 rounded hover:bg-green-600 transition-colors w-full justify-center"
                 >
                   <ClipboardCheck className="w-3.5 h-3.5" />
-                  
                 </button>
-              )}
-            </td>
+              </td>
+            )}
 
             <td className="px-3 py-2 text-sm font-semibold text-green-700 border border-gray-300 whitespace-nowrap text-right">
               <span className="inline-flex items-center gap-0.5 justify-end">
                 <IndianRupee className="w-3.5 h-3.5" />
-                {item.netAmount?.toLocaleString("en-IN")}
+                {!verifiedLead
+                  ? getDisplayAmount(item.paymentHistory)
+                  : item?.netAmount?.toLocaleString("en-IN")}
               </span>
             </td>
           </tr>
@@ -330,16 +415,16 @@ export default function CollectionUpdate() {
                     <span>Lead Date</span>
                   </div>
                 </td>
-                <td className="px-3 py-1 border border-gray-300 bg-blue-600 text-white">
+                <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
                   <span>Lead ID</span>
                 </td>
-                <td className="px-3 py-1 border border-gray-300 bg-blue-600 text-white">
+                <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
                   <div className="flex items-center gap-1">
                     <Phone className="w-3.5 h-3.5" />
                     <span>Phone</span>
                   </div>
                 </td>
-                <td className="px-3 py-1 border border-gray-300 bg-blue-600 text-white">
+                <td className="px-3 py-1 border border-gray-300 bg-gray-100 text-gray-600">
                   <div className="flex items-center gap-1">
                     <Mail className="w-3.5 h-3.5" />
                     <span>Email</span>
@@ -367,7 +452,7 @@ export default function CollectionUpdate() {
                 <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
                   {item.leadDate?.toString().split("T")[0] || "-"}
                 </td>
-                <td className="px-3 py-1.5 border border-gray-300 font-bold text-blue-700">
+                <td className="px-3 py-1.5 border border-gray-300  text-gray-700">
                   {item?.leadId}
                 </td>
                 <td className="px-3 py-1.5 border border-gray-300 text-gray-700">
@@ -415,9 +500,11 @@ export default function CollectionUpdate() {
             <th className="border border-gray-300 px-3 py-1 text-center">
               Payment History
             </th>
-            <th className="border border-gray-300 px-3 py-1 text-center">
-              Collection Update
-            </th>
+            {!verifiedLead && (
+              <th className="border border-gray-300 px-3 py-1 text-center">
+                Collection Update
+              </th>
+            )}
 
             <th className="border border-gray-300 px-3 py-1 text-right">
               <div className="flex items-center gap-1.5 justify-end">
@@ -450,37 +537,70 @@ export default function CollectionUpdate() {
     )
   }
   return (
-    <div className="max-h-full flex flex-col ">
-      <div className="flex justify-between items-center p-3 md:p-5 mb-3 sticky top-0 z-30 bg-white">
+    <div className="h-full flex flex-col bg-[#ADD8E6]">
+      <div className="flex justify-between items-center p-3 md:p-5 md:pb-2 sticky top-0 z-30">
         <h2 className="text-lg font-bold">
           {isdepartmentisAccountant
             ? verifiedLead
               ? "All Verified Payment Leads"
-              : "Pending Verified Collections"
+              : forcefullyclosedLeads.length > 0 && isforcefullyclosed
+                ? "Forcefully Closed amount Leads"
+                : "Pending Verified Collections"
             : "Pending Collection Leads"}
         </h2>
 
         <div className="flex justify-end items-center">
           {isdepartmentisAccountant && (
             <>
-              <span className="text-sm whitespace-nowrap font-semibold">
-                {verifiedLead ? "All payment Verified" : "Pending Verified"}
-              </span>
-              <button
-                onClick={() => {
-                  setTableData([])
-                  setverifiedLead(!verifiedLead)
-                }}
-                className={`${
-                  verifiedLead ? "bg-green-500" : "bg-gray-300"
-                } w-11 h-6 flex items-center rounded-full transition-colors duration-300 mx-2`}
-              >
-                <div
-                  className={`${
-                    verifiedLead ? "translate-x-5" : "translate-x-0"
-                  } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                ></div>
-              </button>
+              {!verifiedLead && (
+                <div className="mr-3 flex">
+                  <span className="text-sm whitespace-nowrap font-semibold">
+                    Forcefully closed Leads
+                  </span>
+                  <div className="">
+                    <button
+                      onClick={() => {
+                        // setTableData([])
+                        setisforcefullyclosed(!isforcefullyclosed)
+                        // setverifiedLead(!verifiedLead)
+                      }}
+                      className={`${
+                        isforcefullyclosed ? "bg-green-500" : "bg-gray-300"
+                      } w-11 h-6 flex items-center rounded-full transition-colors duration-300 mx-2`}
+                    >
+                      <div
+                        className={`${
+                          isforcefullyclosed ? "translate-x-5" : "translate-x-0"
+                        } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                      ></div>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex">
+                <span className="text-sm whitespace-nowrap font-semibold">
+                  {verifiedLead ? "Payment Verified" : "Pending Verified"}
+                </span>
+                <div className="">
+                  {" "}
+                  <button
+                    onClick={() => {
+                      setTableData([])
+                      setverifiedLead(!verifiedLead)
+                    }}
+                    className={`${
+                      verifiedLead ? "bg-green-500" : "bg-gray-300"
+                    } w-11 h-6 flex items-center rounded-full transition-colors duration-300 mx-2`}
+                  >
+                    <div
+                      className={`${
+                        verifiedLead ? "translate-x-5" : "translate-x-0"
+                      } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                    ></div>
+                  </button>
+                </div>
+              </div>
             </>
           )}
           <select
@@ -489,7 +609,7 @@ export default function CollectionUpdate() {
               setTableData([])
               setselectedCompanyBranch(e.target.value)
             }}
-            className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[150px] mr-2 cursor-pointer"
+            className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[150px] mx-2 cursor-pointer "
           >
             {loggedUserBranches?.map((branch) => (
               <option key={branch.value} value={branch.value}>
@@ -511,16 +631,20 @@ export default function CollectionUpdate() {
         </div>
       </div>
       {/* Responsive Table Container this is the newest design*/}
-      <div className="flex-1 overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3">
+      <div className="h-auto overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
         <>
           {(() => {
+            const currentData = isforcefullyclosed
+              ? forcefullyclosedLeads
+              : tableData
+            console.log(currentData)
             const hasLeads =
-              Array.isArray(tableData) &&
-              tableData.some(
+              Array.isArray(currentData) &&
+              currentData.some(
                 (group) => Array.isArray(group.leads) && group.leads.length > 0
               )
-
-            if (!hasLeads || tableData.length === 0) {
+            console.log(hasLeads)
+            if (!hasLeads || currentData.length === 0) {
               return loading ? (
                 <div className="flex justify-center py-6">
                   <PropagateLoader color="#3b82f6" size={10} />
@@ -532,7 +656,7 @@ export default function CollectionUpdate() {
               )
             }
 
-            return tableData.map(({ staffName, leads }, index) => (
+            return currentData.map(({ staffName, leads }, index) => (
               <div key={staffName || `group-${index}`} className="mb-6">
                 {staffName && (
                   <h3 className="text-base font-semibold text-gray-800 mb-2">
@@ -580,12 +704,18 @@ export default function CollectionUpdate() {
       {paymenthistoryModal && (
         <PaymentHistoryModal
           data={paymentHistoryList}
+          isChecked={isChecked}
+          isforcefullyclosed={isforcefullyclosed}
+          balanceAmount={balanceAmount}
           onClose={setpaymentHistoryModal}
           leadid={leadId}
+          setselectedLeadId={setselectedLeadId}
           leadDocId={leadDocId}
           loggedUser={loggedUser}
           refresh={refreshHook}
           setdata={setTableData}
+          verifiedLead={verifiedLead}
+          isdepartmentisAccountant={isdepartmentisAccountant}
         />
       )}
     </div>

@@ -8,14 +8,15 @@ import {
   GetHsnDetails,
   DeleteHsn,
   UpdateHsn,
-  GetBrands
+  GetBrands,
+GetCategory
 } from "../../controller/primaryUserController/inventoryConroller.js"
 import authMiddleware from "../../middleware/authMiddleware.js"
 
 const router = express.Router()
 
 router.post(
-  "/productSubdetailsRegistration/",
+  "/productSubdetailsRegistration",
   authMiddleware,
   ProductSubdetailsRegistration
 )
@@ -27,4 +28,5 @@ router.get("/hsnlist", authMiddleware, GetHsnDetails)
 router.delete("/hsndelete", authMiddleware, DeleteHsn)
 router.put("/hsnEdit", authMiddleware, UpdateHsn)
 router.get("/getBrand", authMiddleware, GetBrands)
+router.get("/getCategory",authMiddleware,GetCategory)
 export default router

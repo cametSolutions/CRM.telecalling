@@ -28,7 +28,7 @@ import { CallNoteRegistration } from "../../../pages/primaryUser/register/CallNo
 import LeaveMaster from "../../../pages/primaryUser/register/LeaveMaster"
 import TaskRegistration from "../../../pages/primaryUser/register/TaskRegistration"
 import WithoutProductdetailscustomer from "../../../components/secondaryUser/WithoutProductdetailscustomer"
-import { TargetRegister } from "../../../pages/primaryUser/register/TargetRegister"
+import  TargetRegister from "../../../pages/primaryUser/register/TargetRegister"
 const mastersRoutes = [
   {
     path: "/admin/masters/company",

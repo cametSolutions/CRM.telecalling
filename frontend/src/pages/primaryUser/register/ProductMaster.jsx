@@ -3,11 +3,11 @@
 import api from "../../../api/api"
 import { toast } from "react-toastify"
 import { useNavigate } from "react-router-dom"
-import ProductAdd from "../../../components/primaryUser/ProductAdd"
 import { getLocalStorageItem,setLocalStorageItem } from "../../../helper/localstorage"
+import ProductAdd from "../../../components/primaryUser/ProductAdd"
 function ProductMaster() {
   const user = getLocalStorageItem("user")
-
+console.log(user)
   const navigate = useNavigate()
   const handleSubmit = async (productData, tableData) => {
     try {
@@ -18,7 +18,7 @@ function ProductMaster() {
           withCredentials: true
         }
       )
-
+console.log(user.role)
       toast.success(response && response.data && response.data.message)
       if (user.role === "Admin") {
         navigate("/admin/masters/product")

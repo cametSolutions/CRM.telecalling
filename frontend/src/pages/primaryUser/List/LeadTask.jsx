@@ -5,6 +5,7 @@ import BarLoader from "react-spinners/BarLoader"
 import LeadTaskComponent from "../../../components/primaryUser/LeadTaskComponent"
 import { useState, useEffect } from "react"
 import { getLocalStorageItem } from "../../../helper/localstorage"
+
 import { FaFileInvoiceDollar } from "react-icons/fa"
 import { PropagateLoader } from "react-spinners"
 const LeadTask = () => {
@@ -26,19 +27,18 @@ const LeadTask = () => {
     setDates({ startDate, endDate: now })
   }, [])
   useEffect(() => {
-      const userData = getLocalStorageItem("user")
-      const branch = userData?.selected?.map((branch) => {
-        return {
-          value: branch.branch_id,
-          label: branch.branchName
-        }
-      })
-      setloggedUserBranches(branch)
-      setselectedCompanyBranch(branch[0].value)
+    const userData = getLocalStorageItem("user")
+    const branch = userData?.selected?.map((branch) => {
+      return {
+        value: branch.branch_id,
+        label: branch.branchName
+      }
+    })
+    setloggedUserBranches(branch)
+    setselectedCompanyBranch(branch[0].value)
 
-      setloggedUser(userData)
-    
-  },[] )
+    setloggedUser(userData)
+  }, [])
 
   const { data, error, loading, refreshHook } = UseFetch(
     loggedUser &&
@@ -53,7 +53,6 @@ const LeadTask = () => {
   }
   useEffect(() => {
     if (data && pending && loggedUser && dates && dates.endDate) {
-      
       const finalOutput = []
       data.forEach((entry) => {
         const activitylog = entry.activityLog
@@ -65,10 +64,11 @@ const LeadTask = () => {
             log.taskTo &&
             log.taskTo !== "followup"
           ) {
+            console.log(log.taskallocatedTo)
             finalOutput.push({
               leadId: entry.leadId,
               leadDocId: entry._id,
-              allocatedTo: entry?.allocatedTo?._id,
+              allocatedTo: log?.taskallocatedTo?._id,
               leadDate: entry.leadDate,
               customerName:
                 entry?.customerName?.customerName || entry?.customerName,
@@ -120,12 +120,10 @@ const LeadTask = () => {
         Data = normalizeTableData(groupedLeads)
       }
 
-    
       setFilteredData(Data)
     } else if (data && !pending) {
-     
       const finalOutput = []
-      
+
       data.forEach((entry) => {
         const activitylog = entry.activityLog
 
@@ -154,7 +152,6 @@ const LeadTask = () => {
         }
       })
 
-    
       const totalNetAmount = data
         .reduce((total, lead) => {
           const leadTotal =
@@ -200,8 +197,11 @@ const LeadTask = () => {
     }
     return []
   }
+console.log(type)
+console.log(pending)
+  console.log("hhhh")
   return (
-    <div className="h-full flex flex-col ">
+    <div className="h-full flex flex-col bg-[#ADD8E6]">
       {loading && (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
@@ -334,6 +334,7 @@ const LeadTask = () => {
           <p className="text-sm"></p>
         </div>
       )}
+    
     </div>
   )
 }
