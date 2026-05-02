@@ -28,52 +28,6 @@ import TableSkeletonLoader from "../common/SkeletonLoader"
 import SkeletonTable from "../loader/SkeletonTable"
 import api from "../../api/api"
 import { useNavigate } from "react-router-dom"
-const statCards = [
-  {
-    title: "All Leads",
-    value: "866",
-    // sub: "All leads",
-    right: "15,200",
-    icon: <Users size={15} className="text-violet-700" strokeWidth={2.2} />
-  },
-  {
-    title: "Due Today",
-    value: "66",
-    // sub: "Follow-ups scheduled for today",
-    right: "15,200",
-    icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
-  },
-  {
-    title: "Over Due",
-    value: "16",
-    // sub: "Missed follow-ups pending",
-    right: "15,200",
-    icon: <Users size={15} className="text-violet-700" strokeWidth={2.2} />
-  },
-  {
-    title: "Up Coming",
-    value: "2",
-    // sub: "Upcoming scheduled follow-ups",
-    right: "15,200",
-    icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
-  },
-  {
-    title: "New Lead",
-    value: "4",
-    // sub: "Missed follow-up",
-    right: "15,200",
-    icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
-  },
-  {
-    title: "Converted",
-    value: "60",
-    // sub: "converted leads",
-    right: "15,200",
-    icon: (
-      <TrendingUp size={15} className="text-emerald-700" strokeWidth={2.2} />
-    )
-  }
-]
 
 const scoreItems = [
   { label: "Product", value: "25%" },
@@ -188,23 +142,31 @@ const MarketingDashboard = () => {
             title: "All Leads",
             detail: "Active leads",
             value: item.leadCount - item.lost,
-            right: item.leadAmount,
+            right:formatAmount(item.leadAmount),
             icon: (
               <Users size={15} className="text-violet-700" strokeWidth={2.2} />
             )
           },
           {
+            title: "New Lead",
+            detail: "Leads with no follow-up started",
+            value: item.neverFollowup,
+            right:formatAmount (item.neverFollowupAmount),
+            icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
+          },
+
+          {
             title: "Due Today",
             detail: "Follow-ups scheduled for today",
             value: item.dueToday,
-            right: item.dueTodayAmount,
+            right: formatAmount(item.dueTodayAmount),
             icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
           },
           {
             title: "Over Due",
             detail: "Pending follow-ups past due date",
             value: item.overDue,
-            right: item.overDueAmount,
+            right: formatAmount(item.overDueAmount),
             icon: (
               <Users size={15} className="text-violet-700" strokeWidth={2.2} />
             )
@@ -213,21 +175,15 @@ const MarketingDashboard = () => {
             title: "Up Coming",
             detail: "Future follow-ups",
             value: item.future,
-            right: item.futureAmount,
+            right: formatAmount(item.futureAmount),
             icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
           },
-          {
-            title: "New Lead",
-            detail: "Leads with no follow-up started",
-            value: item.neverFollowup,
-            right: item.neverFollowupAmount,
-            icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
-          },
+
           {
             title: "Converted",
             detail: "Leads successfully closed",
             value: item.converted,
-            right: item.convertedAmount,
+            right:formatAmount (item.convertedAmount),
             icon: (
               <TrendingUp
                 size={15}
@@ -248,6 +204,12 @@ const MarketingDashboard = () => {
             )
           },
           {
+            title: "New Lead",
+            value: 0,
+            right: 0,
+            icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
+          },
+          {
             title: "Due Today",
             value: 0,
             right: 0,
@@ -267,12 +229,7 @@ const MarketingDashboard = () => {
             right: 0,
             icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
           },
-          {
-            title: "New Lead",
-            value: 0,
-            right: 0,
-            icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
-          },
+          
           {
             title: "Converted",
             value: 0,
@@ -573,7 +530,7 @@ const MarketingDashboard = () => {
       setacheivedProducts([])
     }
   }
-
+const formatAmount = (value) => Number(value || 0).toLocaleString("en-IN");//amount shown like 12,000 with commmas
   const handleMoreClick = (id, name) => {
     const filteredList = branchProduct
       .filter(
@@ -763,13 +720,13 @@ cursor-pointer
 
                       <span
                         className="
-            ml-1 max-w-[48px] shrink-0 truncate
-            font-medium text-slate-500
-            text-[clamp(9px,0.75vw,11px)]
+            ml-1 max-w-[48px] shrink-0
+            font-medium text-black
+            text-[clamp(11px,0.9vw,13px)]
           "
                         title={card.right}
                       >
-                        {card.right}
+                        ₹{card.right}
                       </span>
                     </div>
 

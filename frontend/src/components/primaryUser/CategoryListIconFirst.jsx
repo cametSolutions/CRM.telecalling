@@ -1,5 +1,3 @@
-
-
 const COLOR_SCHEMES = [
   {
     border: "border-l-emerald-500",
@@ -41,9 +39,11 @@ const CategoryCardCompact = ({ item, index, onClick }) => {
   const percentage = target > 0 ? Math.min((achieved / target) * 100, 100) : 0
 
   const formatAmount = (num) => {
-    if (num >= 10000000) return (num / 10000000).toFixed(1) + "Cr"
+    console.log(num)
+    if (num >= 10000000) return (num / 10000000).toFixed(1) + "CR"
     if (num >= 100000) return (num / 100000).toFixed(1) + "L"
-    if (num >= 1000) return (num / 1000).toFixed(1) + "k"
+    if (num >= 1000) return (num / 1000).toFixed(1) + "K"
+
     return num.toString()
   }
 
@@ -74,7 +74,9 @@ const CategoryCardCompact = ({ item, index, onClick }) => {
           {formatAmount(achieved)}
         </p>
 
-        <p className="text-[12px] font-bold text-slate-900">/ {formatAmount(target)}</p>
+        <p className="text-[12px] font-bold text-slate-900">
+          {formatAmount(target)}
+        </p>
       </div>
 
       <div className="mt-1.5">
@@ -86,8 +88,6 @@ const CategoryCardCompact = ({ item, index, onClick }) => {
             style={{ width: `${percentage}%` }}
           />
         </div>
-
-       
       </div>
     </div>
   )

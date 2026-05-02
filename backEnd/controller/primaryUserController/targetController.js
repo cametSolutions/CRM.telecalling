@@ -1403,7 +1403,7 @@ import Service from "../../model/primaryUser/servicesSchema.js";
 // }new code
 export const gettargetResult = async (req, res) => {
     try {
-        const { month, year, periodMode,selectedBranch } = req.query
+        const { month, year, periodMode, selectedBranch } = req.query
 
         const monthNumber = Number(month)
         const yearNumber = Number(year)
@@ -1421,10 +1421,11 @@ export const gettargetResult = async (req, res) => {
 
         const configQuery = {
             startDate: { $lte: endOfMonth },
-            endDate: { $gte: startOfMonth }
+            endDate: { $gte: startOfMonth },
+            branch: selectedBranch
         }
 
-        const allTargetConfigs = await TargetConfiguration.find({})
+        const allTargetConfigs = await TargetConfiguration.find({ branch: selectedBranch })
             .select("periodName monthlyTargets startDate endDate measurementType")
 
         const allPeriods = [
