@@ -5,34 +5,42 @@ import { toast } from "react-toastify"
 import api from "../../api/api"
 export const PaymentHistoryModal = ({
   data,
+  balanceAmount,
+  isforcefullyclosed,
+  isChecked,
   leadid,
   onClose,
   leadDocId,
   loggedUser,
   refresh,
-  setdata
+  setdata,
+  verifiedLead,
+
+  setselectedLeadId,
+  isdepartmentisAccountant = false
 }) => {
+  console.log(verifiedLead)
+  console.log(data)
+  console.log(leadDocId)
+  console.log(isChecked)
+  console.log(balanceAmount)
+  const [messageRowIndex, setMessageRowIndex] = useState(null)
+  const [originalIndex, setOriginalIndex] = useState(null)
   const [editingRow, setEditingRow] = useState(null)
-  const [isdepartmentisAccountant, setisdepartmentAccountant] = useState(false)
+  const [editmessage, seteditMessage] = useState("")
+  const [warningMessage, setwarningMessage] = useState(
+    isChecked?.checked
+      ? `This is ${isChecked.month} target,you can forcefully closed this target`
+      : `This is ${isChecked.month} target,you can forcefully closed this target`
+  )
+  console.log(isChecked)
+  console.log(warningMessage)
   const [message, setMessage] = useState({})
   const [editedData, setEditedData] = useState({})
   const [checkverified, setcheckverified] = useState({})
   const [ispermissionEdit, setispermissionEdit] = useState(false)
+
   const [submitLoading, setsubmitLoading] = useState(false)
-  useEffect(() => {
-    if (
-      loggedUser?.department?.department === "Accounts" ||
-      loggedUser?.department?._id === "670c863652847bbebbd35743"
-    ) {
-      setisdepartmentAccountant(true)
-    }
-    data?.forEach((item, index) =>
-      setcheckverified((prev) => ({
-        ...prev,
-        [index]: item?.paymentVerified
-      }))
-    )
-  }, [])
 
   const formatDate = (dateString) => {
     const date = new Date(dateString)
@@ -53,7 +61,23 @@ export const PaymentHistoryModal = ({
     }).format(amount)
   }
 
-  const handleEdit = (row, index) => {
+  const handleEdit = (row, originalIndex, index) => {
+    console.log(index)
+    console.log("hh")
+    if (row.paymentVerified) {
+      seteditMessage("Amount is verified, can't edit")
+      setMessageRowIndex(index)
+
+      setTimeout(() => {
+        seteditMessage("")
+        setMessageRowIndex(null)
+      }, 2000)
+
+      return
+    }
+    console.log("hh")
+    seteditMessage("")
+    setMessageRowIndex(null)
     const checkpermission = loggedUser?._id === row.receivedBy._id
     setispermissionEdit(checkpermission)
     if (!checkpermission) {
@@ -70,23 +94,29 @@ export const PaymentHistoryModal = ({
       }))
     }
     setEditingRow(index)
+    setOriginalIndex(originalIndex)
     setEditedData({
       paymentDate: new Date(),
       receivedAmount: row.receivedAmount,
       remarks: row.remarks,
       bankRemarks: row.bankRemarks
     })
+    console.log("hhh")
   }
-
+  console.log(editedData)
   const handleSave = async () => {
     try {
       setsubmitLoading(true)
       const response = await api.post(
-        `/lead/updatereceivedAmount?leadDocId=${leadDocId}&index=${editingRow}`,
+        `/lead/updatereceivedAmount?leadDocId=${leadDocId}&index=${originalIndex}`,
         editedData
       )
       if (response.status === 200) {
         setsubmitLoading(false)
+        setEditedData({})
+        setEditingRow(null)
+        setOriginalIndex(null)
+        setispermissionEdit(false)
         toast.success("payment updated succesfully")
         refresh()
       }
@@ -99,17 +129,31 @@ export const PaymentHistoryModal = ({
 
   const handleCancel = () => {
     setEditingRow(null)
+    setOriginalIndex(null)
     setEditedData({})
   }
-
+  console.log("h")
   const handleInputChange = (field, value) => {
     setEditedData((prev) => ({
       ...prev,
       [field]: value
     }))
   }
-  const handleVerify = async (row, index, checkverified) => {
-  
+  const handleCloseTarget = async () => {
+    onClose(false)
+    console.log("h")
+    setwarningMessage("")
+    const response = await api.post(
+      `/lead/approveforcefullyclosetarget?leadDocId=${leadDocId}`
+    )
+    if (response.status === 200) {
+      console.log("Hhhh")
+    }
+  }
+
+  const handleVerify = async (index, checkverified) => {
+    console.log(index)
+
     try {
       setsubmitLoading(true)
       const payload = {
@@ -144,6 +188,7 @@ export const PaymentHistoryModal = ({
     (sum, item) => sum + (item.receivedAmount || 0),
     0
   )
+  console.log(data)
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col overflow-hidden">
@@ -167,6 +212,7 @@ export const PaymentHistoryModal = ({
                 warning: ""
               }))
               onClose(false)
+              setselectedLeadId(null)
             }}
             className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-colors"
           >
@@ -180,13 +226,21 @@ export const PaymentHistoryModal = ({
         )}
 
         {/* Total Amount Card */}
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200 px-4 sm:px-6 py-3">
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200 px-4 sm:px-6 py-3 flex justify-between">
           <div className="flex items-center justify-between">
             <span className="text-sm sm:text-base font-medium text-gray-700">
-              Total Received
+              Total Received :
             </span>
-            <span className="text-xl sm:text-2xl font-bold text-green-700">
+            <span className="text-xl sm:text-xl font-bold text-green-700">
               {formatAmount(totalAmount)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm sm:text-base font-medium text-gray-700">
+              Balance Amount :
+            </span>
+            <span className="text-xl sm:text-xl font-bold text-green-700">
+              {formatAmount(balanceAmount)}
             </span>
           </div>
         </div>
@@ -206,15 +260,15 @@ export const PaymentHistoryModal = ({
                   <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold  whitespace-nowrap">
                     Payment Amount
                   </th>
-                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold whitespace-nowrap">
-                    Remarks
-                  </th>
-                  <th className="px-3 sm:px-4 py-3 text-left text-xs sm:text-sm font-semibold whitespace-nowrap">
+
+                  <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold whitespace-nowrap">
                     Bank Remarks
                   </th>
-                  <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold  whitespace-nowrap">
-                    Actions
-                  </th>
+                  {!verifiedLead && (
+                    <th className="px-3 sm:px-4 py-3 text-center text-xs sm:text-sm font-semibold  whitespace-nowrap">
+                      Actions
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -260,24 +314,8 @@ export const PaymentHistoryModal = ({
                           </span>
                         )}
                       </td>
-                      <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm">
-                        {isEditing && ispermissionEdit ? (
-                          <input
-                            type="text"
-                            value={editedData.remarks}
-                            onChange={(e) =>
-                              handleInputChange("remarks", e.target.value)
-                            }
-                            className="w-full px-2 py-1.5 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                            placeholder="Enter remarks"
-                          />
-                        ) : (
-                          <span className="text-gray-700">
-                            {row.remarks || "-"}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-3 sm:px-4 py-3 text-xs sm:text-sm">
+
+                      <td className="px-3 sm:px-4 py-3 text-sm sm:text-xs ">
                         {isEditing && ispermissionEdit ? (
                           <input
                             type="text"
@@ -289,55 +327,71 @@ export const PaymentHistoryModal = ({
                             placeholder="Enter bank remarks"
                           />
                         ) : (
-                          <span className="text-gray-700">
-                            {row.bankRemarks || "-"}
+                          <span className="text-gray-700  block max-w-xs whitespace-normal break-all">
+                            
+                            {row.bankRemarks || "IMPS/ICIC/610610664157/BENJAMINJOSEPH/adtec/ICIa19a859c6b0345bea3e9c58f070c5601#919946839202#B"}
                           </span>
                         )}
                       </td>
-                      <td className="px-3 sm:px-4 py-3  whitespace-nowrap ">
-                        {isEditing ? (
-                          <div className="flex items-center justify-center gap-2">
+                      {!verifiedLead && (
+                        <td className="px-3 sm:px-4 py-3  whitespace-nowrap text-center">
+                          {isEditing ? (
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => handleSave()}
+                                className="p-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                                title="Save"
+                              >
+                                <Save className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={handleCancel}
+                                className="p-1.5 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors"
+                                title="Cancel"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            !isdepartmentisAccountant && (
+                              <div className="flex flex-col items-center gap-1">
+                                <button
+                                  onClick={() =>
+                                    handleEdit(row, row.originalIndex, index)
+                                  }
+                                  className="p-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                  title="Edit"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+
+                                {editmessage &&
+                                  messageRowIndex === row.originalIndex && (
+                                    <span className="text-sm text-red-600 font-medium">
+                                      {editmessage}
+                                    </span>
+                                  )}
+                              </div>
+                            )
+                          )}
+                          {isdepartmentisAccountant && (
                             <button
-                              onClick={() => handleSave()}
-                              className="p-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                              title="Save"
+                              onClick={() =>
+                                handleVerify(row.originalIndex, checkverified)
+                              }
+                              className={`p-1.5 ${
+                                checkverified?.[row.originalIndex]
+                                  ? "bg-green-500"
+                                  : "bg-orange-400"
+                              }  text-white rounded-lg  transition-colors ml-2 font-semibold text-sm`}
                             >
-                              <Save className="w-4 h-4" />
+                              {checkverified?.[row.originalIndex]
+                                ? "Verified"
+                                : "Not Verified"}
                             </button>
-                            <button
-                              onClick={handleCancel}
-                              className="p-1.5 bg-gray-400 text-white rounded-lg hover:bg-gray-500 transition-colors"
-                              title="Cancel"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ) : (
-                          !isdepartmentisAccountant && (
-                            <button
-                              onClick={() => handleEdit(row, index)}
-                              className="p-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                              title="Edit"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                          )
-                        )}
-                        {isdepartmentisAccountant && (
-                          <button
-                            onClick={() =>
-                              handleVerify(row, index, checkverified)
-                            }
-                            className={`p-1.5 ${
-                              checkverified?.[index]
-                                ? "bg-green-500"
-                                : "bg-orange-400"
-                            }  text-white rounded-lg  transition-colors ml-2 font-semibold text-sm`}
-                          >
-                            {checkverified?.[index] ? "Verified" : "Unverified"}
-                          </button>
-                        )}
-                      </td>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   )
                 })}
@@ -366,6 +420,19 @@ export const PaymentHistoryModal = ({
             Total Records:{" "}
             <span className="font-semibold text-gray-800">{data.length}</span>
           </p>
+          {isdepartmentisAccountant &&
+            warningMessage &&
+            !isforcefullyclosed && (
+              <>
+                <p className="text-red-500">{warningMessage}</p>
+                <button
+                  onClick={() => handleCloseTarget()}
+                  className="px-4 py-2 bg-orange-400 text-white rounded-lg hover:bg-orange-500 transition-colors text-sm font-medium"
+                >
+                  Closed Target
+                </button>
+              </>
+            )}
           <button
             onClick={() => {
               onClose(false)
@@ -373,6 +440,7 @@ export const PaymentHistoryModal = ({
                 ...prev,
                 warning: ""
               }))
+              setselectedLeadId(null)
             }}
             className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
           >

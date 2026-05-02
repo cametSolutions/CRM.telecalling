@@ -11,6 +11,7 @@ import { CollectionupdateModal } from "../../../components/primaryUser/Collectio
 import UseFetch from "../../../hooks/useFetch"
 const ReallocationTable = () => {
   const { label } = useParams()
+  console.log(label)
   const [status, setStatus] = useState("Pending")
 
   const [toggleLoading, setToggleLoading] = useState(false)
@@ -22,6 +23,9 @@ const ReallocationTable = () => {
   const [partner, setpartner] = useState([])
   const [submiterror, setsubmitError] = useState("")
   const [selectedAllocationType, setselectedAllocationType] = useState({})
+  const [selectedAllocationtypeNames, setselectedallocatiotypeNames] = useState(
+    {}
+  )
   const [validateError, setValidateError] = useState({})
   const [validatetypeError, setValidatetypeError] = useState({})
   const [loggedUserBranches, setLoggeduserBranches] = useState([])
@@ -51,6 +55,9 @@ const ReallocationTable = () => {
       selectedCompanyBranch &&
       `/lead/getallreallocatedLead?selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
   )
+  const { data: tasks } = UseFetch("/lead/getallTask")
+  console.log(tasks)
+  console.log(leadreallocation)
   const { data } = UseFetch("/auth/getallUsers")
   const { data: partners } = UseFetch("/customer/getallpartners")
   const navigate = useNavigate()
@@ -120,12 +127,16 @@ const ReallocationTable = () => {
       const logs = lead.activityLog
       if (!logs || logs.length === 0) return false
 
-      const lastLog = logs[logs.length - 1]
-      return lastLog.taskBy?.toLowerCase() === label.toLowerCase()
+      const lastLog = lead?.lasttask?.taskName
+      console.log(lastLog)
+      console.log(label)
+      return lastLog.toLowerCase() === label.toLowerCase()
     })
   }
 
   const handleSelectedAllocates = (item, value) => {
+console.log(item)
+console.log(value)
     setTableData((prevLeads) =>
       prevLeads.map((lead) =>
         lead._id === item._id ? { ...lead, allocatedTo: value } : lead
@@ -150,12 +161,16 @@ const ReallocationTable = () => {
         return
       }
       const selected = selectedAllocationType[selectedItem._id]
+console.log(selectedType)
+console.log(selected)
+console.log(selectedItem?.allocatedTo)
+console.log(formData)
       setsubmitLoading(true)
 
       const response = await api.post(
-        `/lead/leadReallocation?allocationType=${encodeURIComponent(
+        `/lead/leadReallocation?allocationTypeId=${encodeURIComponent(
           selected
-        )}&allocatedBy=${loggedUser._id}`,
+        )}&allocatedBy=${loggedUser._id}&allocationName=${encodeURIComponent(selectedType)}`,
         { selectedItem, formData }
       )
       toast.success(response.data.message)
@@ -170,14 +185,14 @@ const ReallocationTable = () => {
     } catch (error) {
       setsubmitError({ submissionerror: "something went wrong" })
       setsubmitLoading(false)
-      console.log(error)
+      console.log(error.message)
     }
   }
   const handleCollectionUpdate = async (formData) => {
     try {
-      const type = "leadClosed"
+      const isfrom = "reallocation"
       const response = await api.post(
-        `/lead/collectionUPdate?allocationType=${type}`,
+        `/lead/collectionUPdate?isFrom=${isfrom}`,
         formData
       )
       if (response.status === 200) {
@@ -253,8 +268,9 @@ const ReallocationTable = () => {
         </div>
       </div>
 
+
       {/* Responsive Table Container */}
-      <div className="flex-1  overflow-x-auto rounded-lg text-center overflow-y-auto border  shadow-xl mx-3 md:mx-5 mb-3">
+      <div className="h-auto overflow-auto rounded-lg text-center overflow-y-auto border  shadow-xl mx-3 md:mx-5 mb-3 bg-white">
         <table className="w-full text-sm">
           <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
             <tr>
@@ -357,11 +373,19 @@ const ReallocationTable = () => {
                       <select
                         value={selectedAllocationType?.item_id?.value}
                         onChange={(e) => {
+                          const selectedtask = tasks.find(
+                            (item) => item._id === e.target.value
+                          )
+
                           setselectedAllocationType((prev) => ({
                             ...prev,
                             [item._id]: e.target.value
                           }))
-                          setselectedType(e.target.value)
+                          setselectedallocatiotypeNames((prev) => ({
+                            ...prev,
+                            [item._id]: selectedtask
+                          }))
+                          setselectedType(selectedtask?.taskName)
                           setValidatetypeError((prev) => ({
                             ...prev,
                             [item._id]: ""
@@ -371,23 +395,12 @@ const ReallocationTable = () => {
                       >
                         <option>Select Type</option>
 
-                        <option value="followup">Followup</option>
-                        <option value="programming">Programming</option>
-                        <option value="testing-&-implementation">
-                          Testing & Implementation
-                        </option>
-                        <option value="coding-&-testing">
-                          Coding & Testing
-                        </option>
-                        <option value="software-services">
-                          Software Service
-                        </option>
-                        <option value="customermeet">Customer Meet</option>
-                        <option value="demo">Demo</option>
-                        <option value="training">Training</option>
-
-                        <option value="onsite">Onsite</option>
-                        <option value="office">Office</option>
+                        {tasks &&
+                          tasks.map((task) => (
+                            <option key={task._id} value={task._id}>
+                              {task?.taskName}
+                            </option>
+                          ))}
                       </select>
                       {validatetypeError[item._id] && (
                         <p className="text-red-500 text-sm">
@@ -540,11 +553,7 @@ const ReallocationTable = () => {
                           {item?.submittedUser?.name} -
                         </span>
                         <span className="mx-2">
-                          {
-                            item?.activityLog[item.activityLog.length - 1]
-                              .taskBy
-                          }{" "}
-                          -
+                          {item?.lasttask?.taskName}-
                         </span>
                         <span>
                           {
@@ -696,73 +705,6 @@ const ReallocationTable = () => {
             loggedUser={loggedUser}
             handleCollectionUpdate={handleCollectionUpdate}
           />
-
-          // <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-40 ">
-          //   <div className="bg-white md:w-1/4 grid grid-cols-1 rounded-lg shadow-xl p-5">
-          //     <h1 className="text-xl font-semibold">Lead Closed Amount</h1>
-          //     <div>
-          //       <label className="block text-left font-semibold text-gray-500">
-          //         Net Amount
-          //       </label>
-          //       <input
-          //         disabled
-          //         type="number"
-          //         value={formData?.netAmount}
-          //         className="py-1 pl-2 border border-gray-300 w-full rounded-md shadow-xl cursor-not-allowed bg-gray-100"
-          //       />
-          //     </div>
-          //     <div>
-          //       <label className="block text-left font-semibold text-gray-500">
-          //         Balance Amount
-          //       </label>
-          //       <input
-          //         disabled
-          //         type="number"
-          //         value={formData?.balanceAmount}
-          //         className="py-1 pl-2 border border-gray-300 w-full  rounded-md shadow-xl"
-          //       />
-          //     </div>
-          //     <div>
-          //       <label className="block text-left font-semibold text-gray-500">
-          //         Recieved Amount
-          //       </label>
-          //       <input
-          //         type="number"
-          //         value={formData?.recievedAmount}
-          //         onChange={(e) => {
-          //           if (submiterror.recievedAmount) {
-          //             setsubmitError((prev) => ({
-          //               ...prev,
-          //               recievedAmount: ""
-          //             }))
-          //           }
-          //           setFormData((prev) => ({
-          //             ...prev,
-          //             recievedAmount: e.target.value
-          //           }))
-          //         }}
-          //         className="py-1 pl-2 border border-gray-300 w-full  rounded-md shadow-xl focus:outline-none"
-          //       />
-          //       {submiterror.recievedAmount && (
-          //         <p className="text-red-500">{submiterror.recievedAmount}</p>
-          //       )}
-          //     </div>
-          //     <div className="mt-3 flex space-x-3 justify-center">
-          //       <button
-          //         onClick={() => setIsclosed(false)}
-          //         className="bg-gray-600 py-1 px-3 rounded-md hover:bg-gray-700 cursor-pointer text-white"
-          //       >
-          //         Close
-          //       </button>
-          //       <button
-          //         onClick={() => handleClosed()}
-          //         className="bg-blue-500 py-1 px-3 rounded-md hover:bg-blue-600 cursor-pointer text-white"
-          //       >
-          //         Submit
-          //       </button>
-          //     </div>
-          //   </div>
-          // </div>
         )}
       </div>
     </div>

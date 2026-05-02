@@ -22,23 +22,25 @@ const UserListform = () => {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
   const [users, setUser] = useState([])
+  console.log(users)
   const [allusers, setallusers] = useState([])
   const [selectedBranch, setselectedBranch] = useState(null)
   const [loggeduser, setloggeduser] = useState(null)
   const { data, loading } = UseFetch("/auth/getallUsers")
+  console.log(data)
   useEffect(() => {
     if (data) {
       const logged = getLocalStorageItem("user")
       const { allusers } = data
 
       setallusers(allusers)
-      const filtereusers = allusers.filter((user) =>
+      const filteredusers = allusers.filter((user) =>
         user.selected
           .map((branch) => branch.branch_id)
           .includes(logged.selected[0].branch_id)
       )
 
-      setUser(sortByVerified(filtereusers))
+      setUser(sortByVerified(filteredusers))
       setloggeduser(logged)
       setselectedBranch(logged.selected[0].branch_id)
     }
@@ -48,8 +50,10 @@ const UserListform = () => {
   }
 
   const handleSearch = debounce((query) => {
+    console.log("d")
     const { allusers } = data
     const input = query.trim()
+    setUser([])
     setSearchQuery(input)
 
     const lowerCaseQuery = input.toLowerCase()
@@ -109,7 +113,6 @@ const UserListform = () => {
     }
   }
   const handleDownload = (data) => {
-    
     // Using ExcelJS instead of XLSX for better styling control
     const workbook = new ExcelJS.Workbook()
     const worksheet = workbook.addWorksheet("UserReport")
@@ -127,7 +130,11 @@ const UserListform = () => {
       { header: "Joining Date", key: "joiningdate", width: 15 },
       { header: "Designation", key: "designation", width: 25 },
       { header: "Department", key: "department", width: 20 },
-      { header: "Privilege leave Starts", key: "privileageleavestartfrom", width: 25 },
+      {
+        header: "Privilege leave Starts",
+        key: "privileageleavestartfrom",
+        width: 25
+      },
       { header: "Casual leave Starts", key: "casualleavestartfrom", width: 25 },
       { header: "AssignedTo", key: "assignedto", width: 25 }
     ]
@@ -169,8 +176,8 @@ const UserListform = () => {
         joiningdate: user?.joiningdate,
         designation: user?.designation,
         department: user?.department?.department,
-        privileageleavestartfrom: user?.privilegeleavestartsfrom||"-",
-        casualleavestartfrom: user?.casualleavestartsfrom||"-",
+        privileageleavestartfrom: user?.privilegeleavestartsfrom || "-",
+        casualleavestartfrom: user?.casualleavestartsfrom || "-",
         assignedto: user?.assignedto?.name
       })
 
@@ -396,8 +403,8 @@ const UserListform = () => {
                                 user?.role === "Admin"
                                   ? "bg-purple-100 text-purple-800"
                                   : user?.role === "Manager"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-gray-100 text-gray-800"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-gray-100 text-gray-800"
                               }`}
                             >
                               {user?.role}
@@ -492,8 +499,8 @@ const UserListform = () => {
                                 user?.role === "Admin"
                                   ? "bg-purple-100 text-purple-800"
                                   : user?.role === "Manager"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-gray-100 text-gray-800"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-gray-100 text-gray-800"
                               }`}
                             >
                               {user?.role}

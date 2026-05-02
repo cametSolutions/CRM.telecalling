@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { X, Calendar, FileText, AlertCircle, IndianRupee } from "lucide-react"
-
+import NodataAvailable from "../../../components/NodataAvailable"
+import SkeletonTable from "../../../components/loader/SkeletonTable"
 import React from "react"
 import { toast } from "react-toastify"
 import { PropagateLoader } from "react-spinners"
@@ -17,6 +18,9 @@ const LeadAllocationTable = () => {
   const [showModal, setShowmodal] = useState(false)
   const [showeventLog, setshoweventLog] = useState(false)
   const [selectedAllocationType, setselectedAllocationType] = useState({})
+  const [selectedAllocationtypeNames, setselectedallocatiotypeNames] = useState(
+    {}
+  )
   const [validateError, setValidateError] = useState({})
   const [validatetypeError, setValidatetypeError] = useState({})
   const [loggedUserBranches, setLoggeduserBranches] = useState([])
@@ -36,6 +40,8 @@ const LeadAllocationTable = () => {
     allocationDate: "",
     allocationDescription: ""
   })
+  const { data: tasks } = UseFetch("/lead/getallTask")
+  console.log(tasks)
   const { data: leadPendinglist, loading } = UseFetch(
     status &&
       loggedUser &&
@@ -116,6 +122,7 @@ const LeadAllocationTable = () => {
 
     setTableData(groupedLeads)
   }
+  console.log(selectedAllocationType)
   const toggleStatus = async () => {
     setTableData([])
     setShowFullEmail(false)
@@ -202,7 +209,14 @@ const LeadAllocationTable = () => {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
     return diffDays
   }
+  console.log(selectedAllocationType)
+  const selected = selectedAllocationType[selectedItem?._id]
+  console.log(selected)
+  console.log(selectedAllocationType)
   const handleSubmit = async () => {
+    if (submitLoading) {
+      return
+    }
     // sanitize all string fields
     const cleanedData = Object.fromEntries(
       Object.entries(formData).map(([key, value]) => [
@@ -232,14 +246,17 @@ const LeadAllocationTable = () => {
       if (selectedAllocationType) {
         const selected = selectedAllocationType[selectedItem._id]
 
+        const allocationname =
+          selectedAllocationtypeNames[selectedItem._id]?.taskName
         setsubmitLoading(true)
+
         let response
         if (approvedToggleStatus) {
           response = await api.post(
             //change allocation to another staff means reassigning to another one
-            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationType=${encodeURIComponent(
-              selected
-            )}&allocatedBy=${loggedUser._id}`,
+            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationTypeName=${encodeURIComponent(
+              allocationname
+            )}&allocationtypeId=${selected}&allocatedBy=${loggedUser._id}`,
             { selectedItem, cleanedData }
           )
           if (response.status >= 200 && response.status < 300) {
@@ -250,9 +267,9 @@ const LeadAllocationTable = () => {
         } else {
           //set allocation to respected staff from allocation pending page
           response = await api.post(
-            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationType=${encodeURIComponent(
-              selected
-            )}&allocatedBy=${loggedUser._id}`,
+            `/lead/leadAllocation?allocationpending=${!approvedToggleStatus}&selectedbranch=${selectedCompanyBranch}&allocationTypeName=${encodeURIComponent(
+              allocationname
+            )}&allocationtypeId=${selected}&allocatedBy=${loggedUser._id}`,
             { selectedItem, cleanedData }
           )
 
@@ -299,6 +316,7 @@ const LeadAllocationTable = () => {
     }
   }
   const handleAllocate = (item) => {
+    console.log(item)
     if (!selectedAllocates.hasOwnProperty(item._id)) {
       setValidateError((prev) => ({
         ...prev,
@@ -316,16 +334,15 @@ const LeadAllocationTable = () => {
     setselectedLeadId(item.leadId)
     setShowmodal(true)
     setSelectedItem(item)
-    if (selectedAllocationType[item._id] === "followup") {
-      setFormData((prev) => ({
-        ...prev,
-        allocationDate: new Date()
-      }))
-    }
-  }
 
+    setFormData((prev) => ({
+      ...prev,
+      allocationDate: new Date()
+    }))
+  }
+  console.log(tasks)
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-[#ADD8E6]">
       {loading && (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
@@ -380,7 +397,7 @@ const LeadAllocationTable = () => {
         </div>
       </div>
       <div className="flex-1 ">
-        <div className="w-full mx-auto px-4 py-3">
+        {/* <div className="w-full mx-auto px-4 py-3">
           {tableData && Object.keys(tableData).length > 0 ? (
             <div className="space-y-4">
               {Object.entries(tableData).map(([staffName, leads]) => (
@@ -472,8 +489,8 @@ const LeadAllocationTable = () => {
                                           {
                                             state: {
                                               leadId: item._id,
-                                              isReadOnly: true
-                                            }
+                                              isReadOnly: true,
+                                            },
                                           }
                                         )
                                       : navigate(
@@ -481,8 +498,8 @@ const LeadAllocationTable = () => {
                                           {
                                             state: {
                                               leadId: item._id,
-                                              isReadOnly: true
-                                            }
+                                              isReadOnly: true,
+                                            },
                                           }
                                         )
                                   }
@@ -512,39 +529,33 @@ const LeadAllocationTable = () => {
                                 <select
                                   value={selectedAllocationType?.[item._id]}
                                   onChange={(e) => {
+                                    const selectedtask = tasks.find(
+                                      (item) => item._id === e.target.value
+                                    );
                                     setselectedAllocationType((prev) => ({
                                       ...prev,
-                                      [item._id]: e.target.value
-                                    }))
+                                      [item._id]: e.target.value,
+                                    }));
+                                    setselectedallocatiotypeNames((prev) => ({
+                                      ...prev,
+                                      [item._id]: selectedtask,
+                                    }));
+                                    console.log(selectedtask);
                                     setValidatetypeError((prev) => ({
                                       ...prev,
-                                      [item._id]: ""
-                                    }))
+                                      [item._id]: "",
+                                    }));
                                   }}
                                   className="py-0.5 border border-gray-400 rounded-md   focus:outline-none cursor-pointer"
                                 >
                                   <option>Select Type</option>
-                                  <option value="followup">Followup</option>
-                                  <option value="programming">
-                                    Programming
-                                  </option>
-                                  <option value="testing-&-implementation">
-                                    Testing & Implementation
-                                  </option>
-                                  <option value="coding-&-testing">
-                                    Coding & Testing
-                                  </option>
-                                  <option value="software-services">
-                                    Software Service
-                                  </option>
-                                  <option value="customermeet">
-                                    Customer Meet
-                                  </option>
-                                  <option value="demo">Demo</option>
-                                  <option value="training">Training</option>
-
-                                  <option value="onsite">Onsite</option>
-                                  <option value="office">Office</option>
+                                  {tasks &&
+                                    tasks.map((task) => (
+                                      <option key={task._id} value={task._id}>
+                                        {task?.taskName}
+                                      </option>
+                                    ))}
+                                  
                                 </select>
                                 {validatetypeError[item._id] && (
                                   <p className="text-red-500 text-sm">
@@ -556,9 +567,9 @@ const LeadAllocationTable = () => {
                                 {approvedToggleStatus && (
                                   <button
                                     onClick={() => {
-                                      setselectedData(item?.activityLog)
-                                      setselectedLeadId(item?.leadId)
-                                      setshoweventLog(true)
+                                      setselectedData(item?.activityLog);
+                                      setselectedLeadId(item?.leadId);
+                                      setshoweventLog(true);
                                     }}
                                     type="button"
                                   >
@@ -598,17 +609,17 @@ const LeadAllocationTable = () => {
                                       onChange={(selectedOption) => {
                                         setSelectedAllocates((prev) => ({
                                           ...prev,
-                                          [item._id]: selectedOption
-                                        }))
+                                          [item._id]: selectedOption,
+                                        }));
                                         handleSelectedAllocates(
                                           item,
                                           selectedOption.value,
                                           selectedOption.label
-                                        )
+                                        );
                                         setValidateError((prev) => ({
                                           ...prev,
-                                          [item._id]: ""
-                                        }))
+                                          [item._id]: "",
+                                        }));
                                       }}
                                       className="w-44 focus:outline-red-500"
                                       styles={{
@@ -622,8 +633,8 @@ const LeadAllocationTable = () => {
                                           paddingBottom: "0px",
                                           cursor: "pointer",
                                           "&:hover": {
-                                            borderColor: "red" // optional hover styling
-                                          }
+                                            borderColor: "red", // optional hover styling
+                                          },
                                         }),
                                         option: (base, state) => ({
                                           ...base,
@@ -631,27 +642,27 @@ const LeadAllocationTable = () => {
                                           backgroundColor: state.isFocused
                                             ? "#f0f0f0"
                                             : "white", // optional styling
-                                          color: "black"
+                                          color: "black",
                                         }),
                                         valueContainer: (base) => ({
                                           ...base,
                                           paddingTop: "2px", // Reduce vertical padding
-                                          paddingBottom: "2px"
+                                          paddingBottom: "2px",
                                         }),
                                         indicatorsContainer: (base) => ({
                                           ...base,
-                                          height: "30px"
+                                          height: "30px",
                                         }),
                                         menu: (provided) => ({
                                           ...provided,
                                           maxHeight: "200px", // Set dropdown max height
-                                          overflowY: "auto" // Enable scrolling
+                                          overflowY: "auto", // Enable scrolling
                                         }),
                                         menuList: (provided) => ({
                                           ...provided,
                                           maxHeight: "200px", // Ensures dropdown scrolls internally
-                                          overflowY: "auto"
-                                        })
+                                          overflowY: "auto",
+                                        }),
                                       }}
                                       menuPlacement="auto"
                                       menuPosition="absolute"
@@ -724,16 +735,330 @@ const LeadAllocationTable = () => {
               )}
             </div>
           )}
+        </div> */}
+        <div className=" mx-5">
+          {loading || toggleLoading ? (
+            // 1) While fetching → skeleton loader
+            <SkeletonTable rows={5} columns={8} />
+          ) : tableData && Object.keys(tableData).length > 0 ? (
+            // 2) After fetch and data exists → render grouped tables
+            <div className="space-y-4">
+              {Object.entries(tableData).map(([staffName, leads]) => (
+                <div
+                  key={staffName}
+                  className="bg-white rounded-lg border border-gray-200 overflow-hidden"
+                >
+                  {/* Group header */}
+                  <div className="bg-gray-50 px-4 py-1 border-b">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-blue-600">
+                        {staffName}
+                      </h3>
+                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-medium">
+                        {leads.length} Lead{leads.length !== 1 ? "s" : ""}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Table */}
+                  <div className="overflow-x-auto">
+                    <table className="border-collapse border border-gray-400 w-full text-sm">
+                      <thead className="whitespace-nowrap bg-blue-900 text-white">
+                        <tr>
+                          <th className="border border-r-0 border-gray-400 px-4 py-2">
+                            SNO.
+                          </th>
+                          <th className="border border-r-0 border-gray-400 px-4 py-2">
+                            Name
+                          </th>
+                          <th className="border border-r-0 border-l-0 border-gray-400 px-4 py-2 max-w-[200px] min-w-[200px]">
+                            Mobile
+                          </th>
+                          <th className="border border-r-0 border-l-0 border-gray-400 px-4 py-2">
+                            Phone
+                          </th>
+                          <th className="border border-r-0 border-l-0 border-gray-400 px-4 py-2">
+                            Email
+                          </th>
+                          <th className="border border-r-0 border-l-0 border-gray-400 px-4 py-2 min-w-[100px]">
+                            Lead Id
+                          </th>
+                          <th className="border border-t-0 w-36">
+                            Allocation Type
+                          </th>
+                          <th className="border border-gray-400 px-4 py-2 w-[100px] text-nowrap">
+                            Action
+                          </th>
+                          <th className="border border-gray-400 px-4 py-2 w-32">
+                            Net Amount
+                          </th>
+                          <th className="border border-r-0 border-l-0 border-gray-400 px-4 py-2 w-32">
+                            B.Amount
+                          </th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {leads.map((item, index) => (
+                          <React.Fragment key={item._id}>
+                            {/* Row 1 */}
+                            <tr className="bg-white border border-gray-400 border-b-0 hover:bg-gray-50 transition-colors text-center">
+                              <td className="px-4 border border-b-0 border-gray-400" />
+                              <td
+                                onClick={() => setShowFullName(!showFullName)}
+                                className={`px-4 cursor-pointer overflow-hidden text-black ${
+                                  showFullName
+                                    ? "whitespace-normal max-h-[3em]"
+                                    : "truncate whitespace-nowrap max-w-[120px]"
+                                }`}
+                                style={{ lineHeight: "1.5em" }}
+                              >
+                                {item?.customerName?.customerName}
+                              </td>
+                              <td className="px-4 text-black">
+                                {item?.mobile}
+                              </td>
+                              <td className="px-4 text-black">{item?.phone}</td>
+                              <td className="px-4 text-black">{item?.email}</td>
+                              <td className="px-4 text-black">
+                                {item?.leadId}
+                              </td>
+                              <td className="border border-b-0 border-gray-400 px-4" />
+                              <td className="border border-b-0 border-gray-400 px-1 text-yellow-500 font-semibold text-md">
+                                <button
+                                  onClick={() =>
+                                    loggedUser.role === "Admin"
+                                      ? navigate(
+                                          "/admin/transaction/lead/leadEdit",
+                                          {
+                                            state: {
+                                              leadId: item._id,
+                                              isReadOnly: true
+                                            }
+                                          }
+                                        )
+                                      : navigate(
+                                          "/staff/transaction/lead/leadEdit",
+                                          {
+                                            state: {
+                                              leadId: item._id,
+                                              isReadOnly: true
+                                            }
+                                          }
+                                        )
+                                  }
+                                  className="hover:text-blue-500 cursor-pointer transition-colors"
+                                >
+                                  View
+                                </button>
+                              </td>
+                              <td className="border border-b-0 border-gray-400 px-4" />
+                            </tr>
+
+                            {/* Row 2 (labels) */}
+                            <tr className="font-semibold bg-gray-200 text-center">
+                              <td className="px-4 border border-b-0 border-t-0 border-gray-400 text-black">
+                                {index + 1}
+                              </td>
+                              <td className="px-4 text-black">LeadBy</td>
+                              <td className="px-4 text-black">AssignedTo</td>
+                              <td className="px-4 text-black">AssignedBy</td>
+                              <td className="px-4 text-black">
+                                No.of FollowuUps
+                              </td>
+                              <td className="px-4 font-medium">LeadDate</td>
+
+                              <td className="border border-t-0 border-b-0 border-gray-400">
+                                <select
+                                  value={selectedAllocationType?.[item._id]}
+                                  onChange={(e) => {
+                                    const selectedtask = tasks.find(
+                                      (t) => t._id === e.target.value
+                                    )
+                                    setselectedAllocationType((prev) => ({
+                                      ...prev,
+                                      [item._id]: e.target.value
+                                    }))
+                                    setselectedallocatiotypeNames((prev) => ({
+                                      ...prev,
+                                      [item._id]: selectedtask
+                                    }))
+                                    setValidatetypeError((prev) => ({
+                                      ...prev,
+                                      [item._id]: ""
+                                    }))
+                                  }}
+                                  className="py-0.5 border border-gray-400 rounded-md focus:outline-none cursor-pointer"
+                                >
+                                  <option>Select Type</option>
+                                  {tasks &&
+                                    tasks.map((task) => (
+                                      <option key={task._id} value={task._id}>
+                                        {task?.taskName}
+                                      </option>
+                                    ))}
+                                </select>
+                                {validatetypeError[item._id] && (
+                                  <p className="text-red-500 text-sm">
+                                    {validatetypeError[item._id]}
+                                  </p>
+                                )}
+                              </td>
+                              <td className="border border-t-0 border-b-0 border-gray-400 px-4 text-blue-400 hover:text-blue-500 hover:cursor-pointer text-nowrap">
+                                {approvedToggleStatus && (
+                                  <button
+                                    onClick={() => {
+                                      setselectedData(item?.activityLog)
+                                      setselectedLeadId(item?.leadId)
+                                      setshoweventLog(true)
+                                    }}
+                                    type="button"
+                                  >
+                                    Event Log
+                                  </button>
+                                )}
+                              </td>
+                              <td className="border border-t-0 border-b-0 border-gray-400 px-4 text-black">
+                                <div className="flex items-center justify-center">
+                                  <IndianRupee className="w-3 h-3 text-green-600 mr-1" />
+                                  <span>
+                                    {item.netAmount?.toLocaleString()}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="border border-t-0 border-b-0 border-gray-400 px-4 text-black">
+                                <div className="flex items-center justify-center">
+                                  <IndianRupee className="w-3 h-3 text-red-600 mr-1" />
+                                  <span>{item?.balanceAmount}</span>
+                                </div>
+                              </td>
+                            </tr>
+
+                            {/* Row 3 (values) */}
+                            <tr className="bg-white text-center">
+                              <td className="border border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5" />
+                              <td className="border border-t-0 border-r-0 border-b-0 border-gray-400 px-4 py-0.5 text-black">
+                                {item?.leadBy?.name || "-"}
+                              </td>
+                              <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 text-md">
+                                <div className="text-center">
+                                  <div className="inline-block">
+                                    <Select
+                                      options={allocationOptions}
+                                      value={
+                                        selectedAllocates[item._id] || null
+                                      }
+                                      onChange={(selectedOption) => {
+                                        setSelectedAllocates((prev) => ({
+                                          ...prev,
+                                          [item._id]: selectedOption
+                                        }))
+                                        handleSelectedAllocates(
+                                          item,
+                                          selectedOption.value,
+                                          selectedOption.label
+                                        )
+                                        setValidateError((prev) => ({
+                                          ...prev,
+                                          [item._id]: ""
+                                        }))
+                                      }}
+                                      className="w-44"
+                                      styles={{
+                                        control: (base) => ({
+                                          ...base,
+                                          minHeight: "28px",
+                                          height: "28px",
+                                          boxShadow: "none",
+                                          borderColor: "red",
+                                          paddingTop: "0px",
+                                          paddingBottom: "0px",
+                                          cursor: "pointer",
+                                          "&:hover": { borderColor: "red" }
+                                        }),
+                                        option: (base, state) => ({
+                                          ...base,
+                                          cursor: "pointer",
+                                          backgroundColor: state.isFocused
+                                            ? "#f0f0f0"
+                                            : "white",
+                                          color: "black"
+                                        }),
+                                        valueContainer: (base) => ({
+                                          ...base,
+                                          paddingTop: "2px",
+                                          paddingBottom: "2px"
+                                        }),
+                                        indicatorsContainer: (base) => ({
+                                          ...base,
+                                          height: "30px"
+                                        }),
+                                        menu: (provided) => ({
+                                          ...provided,
+                                          maxHeight: "200px",
+                                          overflowY: "auto"
+                                        }),
+                                        menuList: (provided) => ({
+                                          ...provided,
+                                          maxHeight: "200px",
+                                          overflowY: "auto"
+                                        })
+                                      }}
+                                      menuPlacement="auto"
+                                      menuPosition="absolute"
+                                      menuPortalTarget={document.body}
+                                      menuShouldScrollIntoView={false}
+                                    />
+                                    {validateError[item._id] && (
+                                      <p className="text-red-500 text-sm">
+                                        {validateError[item._id]}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 text-md">
+                                {item?.allocatedBy?.name || "-"}
+                              </td>
+                              <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 text-black" />
+                              <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 text-black">
+                                {new Date(item.leadDate).toLocaleDateString(
+                                  "en-GB"
+                                )}
+                              </td>
+                              <td className="border border-t-0 border-b-0 border-gray-400 px-4 py-0.5" />
+                              <td
+                                onClick={() => handleAllocate(item)}
+                                className="border border-t-0 border-gray-400 border-b-0 px-4 py-0.5 text-red-400 hover:text-red-500 hover:cursor-pointer font-semibold"
+                              >
+                                Allocate
+                              </td>
+                              <td className="border border-t-0 border-b-0 border-gray-400 px-4 py-0.5" />
+                            </tr>
+                          </React.Fragment>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            // 3) After fetch, but no data
+            <NodataAvailable
+              title="No data available"
+              message="There are no leads to display for the selected filters or date range."
+            />
+          )}
         </div>
+
         {showModal && selectedData && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-3 z-50 backdrop-blur-sm">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg transform transition-all max-h-[95vh] flex flex-col">
-              {/* Loading Bar */}
               {submitLoading && (
                 <div className="h-1 bg-blue-500 rounded-t-xl animate-pulse" />
               )}
 
-              {/* Header - Compressed */}
               <div className="relative border-b border-gray-200 px-4 py-3">
                 <button
                   onClick={() => {
