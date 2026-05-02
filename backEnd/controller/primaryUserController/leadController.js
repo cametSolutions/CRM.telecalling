@@ -5529,13 +5529,13 @@ const verifiedBool = verified === "true";
           )
           : [];
 
-        if (!accountantMode && populatedpaymentHistory.length === 0) {
-          return null;
-        }
+        // if (!accountantMode && populatedpaymentHistory.length === 0) {
+        //   return null;
+        // }
 
-        if (accountantMode && populatedpaymentHistory.length === 0) {
-          return null;
-        }
+        // if (accountantMode && populatedpaymentHistory.length === 0) {
+        //   return null;
+        // }
 
         const lastActivity =
           populatedActivityLog[populatedActivityLog.length - 1];

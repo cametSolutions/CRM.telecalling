@@ -313,8 +313,10 @@ export function CollectionupdateModal({
   closemodal,
   partnerlist,
   loggedUser,
-  handleCollectionUpdate
+  handleCollectionUpdate,
+from
 }) {
+console.log(from)
   console.log(data)
   const [error, setError] = useState({})
   console.log("hh")
@@ -1217,7 +1219,7 @@ export function CollectionupdateModal({
               e.currentTarget.style.boxShadow = "0 2px 8px rgba(37,99,235,0.35)"
             }}
           >
-            <ClipboardCheck size={13} /> Update Collection
+            <ClipboardCheck size={13} /> {from==="followup"?"Continue":"Update Collection"}
           </button>
         </div>
       </div>

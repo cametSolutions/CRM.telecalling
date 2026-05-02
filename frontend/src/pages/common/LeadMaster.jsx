@@ -471,6 +471,7 @@ const LeadMaster = ({
   )
   const [leadList, setLeadList] = useState([])
   const [submitLoading, setsubmitLoading] = useState(false)
+  console.log(submitLoading)
   const [popupOpen, setPopupOpen] = useState(false)
   const [formData, setFormData] = useState(null)
   console.log("hhh")
@@ -1047,7 +1048,9 @@ const LeadMaster = ({
   }
   console.log(warningMessage)
   const handleAddRowFromTable = () => {
-    setwarningMessage("You can’t add more products; this is limited to a single product.")
+    setwarningMessage(
+      "You can’t add more products; this is limited to a single product."
+    )
     setTimeout(() => {
       setwarningMessage("")
     }, 3000) // 3 seconds
@@ -1117,6 +1120,7 @@ const LeadMaster = ({
   }
 
   const onSubmit = async (data) => {
+    if (submitLoading) return
     setsubmitLoading(true)
     if (submitLoading) return
     try {
@@ -1334,7 +1338,8 @@ const LeadMaster = ({
         editloadingState ||
         productLoading ||
         usersLoading ||
-        customerLoading) && (
+        customerLoading ||
+        submitLoading) && (
         <BarLoader
           cssOverride={{ width: "100%", height: "4px" }}
           color="#4A90E2"
