@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react"
 import { X, IndianRupee, ClipboardCheck, Lock } from "lucide-react"
 import { BarLoader } from "../../components/loader/BarLoader"
@@ -313,8 +312,13 @@ export function CollectionupdateModal({
   closemodal,
   partnerlist,
   loggedUser,
-  handleCollectionUpdate
+  handleCollectionUpdate,
+  from,
+  editData,
+  hasCollectionData
 }) {
+  console.log(hasCollectionData)
+  console.log(editData)
   console.log(data)
   const [error, setError] = useState({})
   console.log("hh")
@@ -393,12 +397,13 @@ export function CollectionupdateModal({
       : []
 
     const lastPayment = history.length ? history[history.length - 1] : null
+    console.log(lastPayment)
     const hasPaymentEntries =
       lastPayment &&
       Array.isArray(lastPayment.paymentEntries) &&
       lastPayment.paymentEntries.length > 0
 
-    if (hasPaymentEntries) {
+    if (hasPaymentEntries && !hasCollectionData) {
       console.log(lastPayment.paymentEntries)
       console.log("hh")
       // ✅ seed from last paymentHistory.paymentEntries
@@ -421,29 +426,36 @@ export function CollectionupdateModal({
         })
       )
     } else if (Array.isArray(data.leadFor) && data.leadFor.length > 0) {
-      console.log("hhhhh")
-      console.log(data.leadFor)
-      // ✅ fallback: seed from leadFor
-      setPaymentRows(
-        data.leadFor.map((p) => {
-          const net = safeNumber(p.netAmount ?? p.productPrice)
-          const paid = 0
+      if (hasCollectionData && hasPaymentEntries) {
+        console.log("Hhh")
+      } else if (hasCollectionData && !hasPaymentEntries) {
+        console.log("hh")
+      } else {
+        console.log("hhhhh")
+        console.log(data.leadFor)
+        // ✅ fallback: seed from leadFor
+        setPaymentRows(
+          data.leadFor.map((p) => {
+            const net = safeNumber(p.netAmount ?? p.productPrice)
+            const paid = 0
 
-          return {
-            id: crypto.randomUUID(),
-            label: p.productorServiceId?.productName ?? "Product",
-            productorServiceId:
-              p.productorServiceId?._id ?? p.productorServiceId,
-            productorServicemodel: p.productorServicemodel,
-            netAmount: String(net),
-            receivedAmount: "",
-            _balance: net - paid,
-            _netAmt: net,
-            _paidSoFar: paid
-          }
-        })
-      )
+            return {
+              id: crypto.randomUUID(),
+              label: p.productorServiceId?.productName ?? "Product",
+              productorServiceId:
+                p.productorServiceId?._id ?? p.productorServiceId,
+              productorServicemodel: p.productorServicemodel,
+              netAmount: String(net),
+              receivedAmount: "",
+              _balance: net - paid,
+              _netAmt: net,
+              _paidSoFar: paid
+            }
+          })
+        )
+      }
     } else {
+      console.log("HH")
       // optional: single row based on lead netAmount
       const net = safeNumber(data.netAmount)
       const paid = safeNumber(data.totalPaidAmount)
@@ -1217,7 +1229,8 @@ export function CollectionupdateModal({
               e.currentTarget.style.boxShadow = "0 2px 8px rgba(37,99,235,0.35)"
             }}
           >
-            <ClipboardCheck size={13} /> Update Collection
+            <ClipboardCheck size={13} />
+            {from === "followup" ? "Continue" : "Update Collection"}
           </button>
         </div>
       </div>
