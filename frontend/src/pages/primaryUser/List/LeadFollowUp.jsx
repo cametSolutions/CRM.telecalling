@@ -1,5 +1,3 @@
-
-
 import { useState, useEffect, useRef } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { formatDate } from "../../../utils/dateUtils"
@@ -49,6 +47,7 @@ const LeadFollowUp = () => {
   const [partner, setPartner] = useState([])
   const [isdemofollownotClosed, setisdemofollowedNotClosed] = useState(false)
   const [ishavePayment, setishavePayment] = useState(false)
+  const [collectionupdatedata, setcollectionupdateData] = useState({})
   const [showfollowupModal, setshowFollowupModal] = useState(false)
   const [isdropdownOpen, setIsdropdownOpen] = useState(false)
   const [taskClosed, setfollowupClosed] = useState(false)
@@ -126,7 +125,6 @@ const LeadFollowUp = () => {
   // [Keep all your existing useEffect hooks here - they remain the same]
   // ... (all the existing useEffect hooks from line 92 to line 600+)
 
- 
   useEffect(() => {
     // run only when location.state or selectedCompanyBranch / loggedUser change
     //this from productwisereport
@@ -147,10 +145,9 @@ const LeadFollowUp = () => {
       setPending(pendingFromState)
       // keep full loggedUser object, just compare ids
       setOwnFollowUp(staffIdFromState === loggedUser._id)
-    
+
       setproductwiseloader(true)
       try {
-      
         const res = await api.get(
           `/lead/getallLeadFollowUpforselectedProduct?branchSelected=${selectedbranch}` +
             `&loggeduserid=${staffIdFromState}` +
@@ -191,7 +188,6 @@ const LeadFollowUp = () => {
           dates.endDate &&
           loggedUser
         ) {
-        
           if (safeState?.header === "Total Leads") {
             const groupedLeads = {}
             let grandTotal = 0
@@ -209,9 +205,8 @@ const LeadFollowUp = () => {
             setnetTotalAmount(TotalAmount(filteredLeads))
             setTableData(groupedData)
           } else {
-       
             if (pending && ownFollowUp) {
-console.log("hhhhh")
+              console.log("hhhhh")
               const ownFollow = filteredLeads.filter((lead) =>
                 lead.activityLog?.some(
                   (log) =>
@@ -297,11 +292,11 @@ console.log("hhhhh")
               const havenextFollowup = filteredLeads.filter(
                 (lead) => lead.Nextfollowup
               )
-console.log(havenextFollowup)
+              console.log(havenextFollowup)
               const filteredcurrentdatefollowupLeads = havenextFollowup.filter(
                 (lead) => formatdate(lead.nextFollowUpDate) === fulldatecurrent
               )
-console.log(filteredcurrentdatefollowupLeads)
+              console.log(filteredcurrentdatefollowupLeads)
 
               const iscurrent =
                 fulldatecurrent === endDateLocal
@@ -328,10 +323,10 @@ console.log(filteredcurrentdatefollowupLeads)
                   lead.allocatedfollowup && lead.allocatedTaskClosed === false
               )
               setAllocatedLeads(nonsubmittedtakleads)
-console.log(neverfollowupedLeads)
-console.log(uniqueoverdueAndcurrentdate)
-console.log(postdatefollowup)
-console.log(safeState?.viewMode ? [] : taskSubmittedLeads)
+              console.log(neverfollowupedLeads)
+              console.log(uniqueoverdueAndcurrentdate)
+              console.log(postdatefollowup)
+              console.log(safeState?.viewMode ? [] : taskSubmittedLeads)
               const mergedall = [
                 ...neverfollowupedLeads,
                 ...uniqueoverdueAndcurrentdate,
@@ -733,7 +728,7 @@ console.log(safeState?.viewMode ? [] : taskSubmittedLeads)
       `&endDate=${safeState?.viewMode ? dates.endDate : null}` +
       `&header=${safeState?.header}`
     : null
-console.log(safeState)
+  console.log(safeState)
   console.log(selectedCompanyBranch)
   console.log(safeState?.header)
   console.log(dates)
@@ -1673,6 +1668,7 @@ console.log(safeState)
   // MODIFIED: Handle collection update with refresh
   const handleCollectionUpdate = async (formData) => {
     console.log(formData)
+    console.log(paymentUpdatedInSession)
 
     try {
       // Add flag to indicate if this is an update within the same session
@@ -1680,6 +1676,10 @@ console.log(safeState)
         ...formData,
         overwriteLastPayment: paymentUpdatedInSession // Send flag to backend
       }
+      console.log(requestData)
+      setcollectionupdateData(requestData)
+      setcollectionUpdateModal(false)
+      return
 
       const response = await api.post("/lead/collectionUPdate", requestData)
 
@@ -1799,7 +1799,7 @@ console.log(safeState)
       setfollowupDateLoader(true)
 
       const response = await api.put(
-        `/lead/followupDateUpdate?selectedleaddocId=${selectedDocId}&loggeduserid=${loggedUser._id}`,
+        `/lead/followupDateUpdate?selectedleaddocId=${selectedDocId}&loggeduserid=${loggedUser._id}&collectiondata=${collectionupdatedata}`,
         formData
       )
 
@@ -2482,7 +2482,7 @@ console.log(safeState)
                   {formData?.customerName}
                 </p>
               </div>
-              <div className="text-lg font-semibold flex-grow text-end font-bold">
+              <div className="text-lg font-semibold flex-grow text-end ">
                 <span>Lead ID:</span>
                 <span className="ml-1">{selectedLeadId}</span>
               </div>
@@ -2749,6 +2749,7 @@ console.log(safeState)
                       partner.length > 0 && (
                         <CollectionupdateModal
                           data={selectedData}
+                          from="followup"
                           closemodal={setcollectionUpdateModal}
                           partnerlist={partner}
                           loggedUser={loggedUser}
