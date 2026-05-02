@@ -8212,6 +8212,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
 
     const noonLimit = convertToMinutes(noonTime)
 
+
     let staffAttendanceStats = []
     const holidays = await Holymaster.find({
       holyDate: {
@@ -8510,6 +8511,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             punchOut < earlyLeaveLimit &&
             punchIn <= morningLimit
           ) {
+
             const b = getTimeDifference(att.outTime, evening)
             stats.attendancedates[dayTime].present = 1
             stats.attendancedates[dayTime].early = b
@@ -8539,6 +8541,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             stats.attendancedates[dayTime].notMarked = ""
             stats.attendancedates[dayTime].early = b
             stats.attendancedates[dayTime].late = a
+
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.onsite++
             } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
@@ -8550,11 +8553,9 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             (punchIn > lateLimit &&
               punchIn < noonLimit &&
               punchOut < minOutTime &&
-              punchOut > noonLimit)
+              punchOut > noonLimit) || (punchIn > lateLimit && punchIn < noonLimit && punchOut < earlyLeaveLimit)
           ) {
-            // if (stats.name === "Ponmari A") {
-            //   console.log("punchin1",punchIn)
-            // }
+
             stats.attendancedates[dayTime].notMarked = 1
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.onsite++
@@ -8704,6 +8705,19 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               punchOut >= earlyLeaveLimit &&
               punchIn > lateLimit)
           ) {
+            if (stats.name.trim() === "M P Rajasree") {
+              console.log("punchind", punchIn, att.inTime)
+              console.log("punchout", punchOut, att.outTime)
+            }
+            if (punchIn < lateLimit && punchIn > morningLimit &&
+              punchOut >= noonLimit &&
+              punchOut < minOutTime) {
+              if (stats.name.trim() === "Nimmi M Raju") {
+                console.log("late 8728", att.inTime)
+              }
+              const a = getTimeDifference(morning, att.inTime)
+              stats.attendancedates[dayTime].late = a
+            }
             arr.push(day)
             halfdayarr.push(day)
             stats.attendancedates[dayTime].present = 0.5
@@ -8832,9 +8846,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
           }
           daysInMonth.delete(day)
         })
-      // if (stats.name === "Ponmari A") {
-      //   console.log("punchin1", stats)
-      // }
+
 
       onsites?.length &&
         onsites?.forEach((onsite) => {
@@ -13170,6 +13182,7 @@ export const GetsomeAllsummary = async (
       const present = []
       const fulldayarr = []
       const halfdayarr = []
+
       attendances?.length &&
         attendances?.forEach((att) => {
           const day = att.attendanceDate.getDate()
@@ -13226,25 +13239,26 @@ export const GetsomeAllsummary = async (
 
           const leaveDetails = leaveRecord
             ? {
-              _id: leaveRecord?._id,
-              leaveDate: leaveRecord?.leaveDate,
-              leaveType: leaveRecord?.leaveType,
+              _id: leaveRecord._id,
+              leaveDate: leaveRecord.leaveDate,
+              leaveType: leaveRecord.leaveType,
               halfDayPeriod:
                 leaveRecord.leaveType === "Half Day"
                   ? leaveRecord.halfDayPeriod
                   : null,
               leaveCategory: leaveRecord?.leaveCategory || null,
-              reason: leaveRecord?.reason || ""
+              reason: leaveRecord?.reason || null
             }
             : null
-
-          // const leaveType = leaveRecord ? leaveRecord.leaveType : null
 
           if (!punchIn || !punchOut) {
             arr.push(day)
 
             stats.attendancedates[dayTime].notMarked = 1
+            if (!isOnsite && !isLeave) {
 
+              stats.attendancedates[dayTime].cantchange = true
+            }
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.attendancedates[dayTime].present = 1
               stats.attendancedates[dayTime].notMarked = ""
@@ -13260,16 +13274,19 @@ export const GetsomeAllsummary = async (
                     stats.attendancedates[dayTime].casualLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
+
                     break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
+
                     break
                   case "privileage Leave":
                     stats.attendancedates[dayTime].privileageLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
+
                     break
                   case "compensatory Leave":
                     stats.attendancedates[dayTime].compensatoryLeave = 1
@@ -13297,6 +13314,7 @@ export const GetsomeAllsummary = async (
                     stats.attendancedates[dayTime].halfDayperiod =
                       leaveDetails.halfDayPeriod
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
+
                     break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 0.5
@@ -13345,17 +13363,15 @@ export const GetsomeAllsummary = async (
 
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.onsite++
-              // stats.attendancedates[dayTime].onsite = 1
             } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
               stats.onsite += 0.5
-              // stats.attendancedates[dayTime].onsite = 0.5
             }
           } else if (
             punchIn >= morningLimit &&
             punchIn <= lateLimit &&
             punchOut >= earlyLeaveLimit
           ) {
-            const a = getTimeDifference("09:35 AM", att.inTime)
+            const a = getTimeDifference(morning, att.inTime)
 
             stats.attendancedates[dayTime].late = a
             stats.late++
@@ -13365,10 +13381,8 @@ export const GetsomeAllsummary = async (
             stats.attendancedates[dayTime].notMarked = ""
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.onsite++
-              // stats.attendancedates[dayTime].onsite = 1
             } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
               stats.onsite += 0.5
-              // stats.attendancedates[dayTime].onsite = 0.5
             }
             present.push(day)
           } else if (
@@ -13376,7 +13390,8 @@ export const GetsomeAllsummary = async (
             punchOut < earlyLeaveLimit &&
             punchIn <= morningLimit
           ) {
-            const b = getTimeDifference(att.outTime, "05:30 PM")
+
+            const b = getTimeDifference(att.outTime, evening)
             stats.attendancedates[dayTime].present = 1
             stats.attendancedates[dayTime].early = b
             stats.attendancedates[dayTime].inTime = att.inTime
@@ -13385,10 +13400,8 @@ export const GetsomeAllsummary = async (
             stats.earlyGoing++
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.onsite++
-              // stats.attendancedates[dayTime].onsite = 1
             } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
               stats.onsite += 0.5
-              // stats.attendancedates[dayTime].onsite = 0.5
             }
             present.push(day)
           } else if (
@@ -13397,8 +13410,8 @@ export const GetsomeAllsummary = async (
             punchOut >= minOutTime &&
             punchOut < earlyLeaveLimit
           ) {
-            const a = getTimeDifference("09:35 AM", att.inTime)
-            const b = getTimeDifference(att.outTime, "05:30 PM")
+            const a = getTimeDifference(morning, att.inTime)
+            const b = getTimeDifference(att.outTime, evening)
             stats.earlyGoing++
             stats.late++
             stats.attendancedates[dayTime].present = 1
@@ -13407,12 +13420,11 @@ export const GetsomeAllsummary = async (
             stats.attendancedates[dayTime].notMarked = ""
             stats.attendancedates[dayTime].early = b
             stats.attendancedates[dayTime].late = a
+
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.onsite++
-              // stats.attendancedates[dayTime].onsite = 1
             } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
               stats.onsite += 0.5
-              // stats.attendancedates[dayTime].onsite = 0.5
             }
           } else if (
             (punchIn < noonLimit && punchOut < noonLimit) ||
@@ -13420,8 +13432,9 @@ export const GetsomeAllsummary = async (
             (punchIn > lateLimit &&
               punchIn < noonLimit &&
               punchOut < minOutTime &&
-              punchOut > noonLimit)
+              punchOut > noonLimit) || (punchIn > lateLimit && punchIn < noonLimit && punchOut < earlyLeaveLimit)
           ) {
+
             stats.attendancedates[dayTime].notMarked = 1
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.onsite++
@@ -13432,8 +13445,8 @@ export const GetsomeAllsummary = async (
               stats.attendancedates[dayTime].present = 0.5
               stats.attendancedates[dayTime].notMarked = 0.5
             }
-
-            ///NEWLY ADDED
+            ///
+            fulldayarr.push(day)
             if (isLeave && leaveDetails.leaveType === "Full Day") {
               if (leaveDetails.leaveCategory) {
                 switch (leaveDetails.leaveCategory) {
@@ -13441,32 +13454,38 @@ export const GetsomeAllsummary = async (
                     stats.attendancedates[dayTime].casualLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
+                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
                     break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
+                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
                     break
                   case "privileage Leave":
                     stats.attendancedates[dayTime].privileageLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
+                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
                     break
                   case "compensatory Leave":
                     stats.attendancedates[dayTime].compensatoryLeave = 1
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
+                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
                     break
                   default:
                     stats.attendancedates[dayTime].otherLeave = 1 // Default case
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
+                    stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
                     break
                 }
               } else {
                 stats.attendancedates[dayTime].otherLeave = 1
                 stats.attendancedates[dayTime].reason = leaveDetails.reason
                 stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
+                stats.attendancedates[dayTime].leaveId = leaveDetails.leaveId
               }
               stats.attendancedates[dayTime].notMarked = ""
             } else if (isLeave && leaveDetails.leaveType === "Half Day") {
@@ -13476,35 +13495,36 @@ export const GetsomeAllsummary = async (
                     stats.attendancedates[dayTime].casualLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
-                      leaveDetails?.halfDayPeriod
+                      leaveDetails.halfDayPeriod
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
-                      leaveDetails?.halfDayPeriod
+                      leaveDetails.halfDayPeriod
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "privileage Leave":
                     stats.attendancedates[dayTime].privileageLeave = 0.5
+
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
-                      leaveDetails?.halfDayPeriod
+                      leaveDetails.halfDayPeriod
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "compensatory Leave":
                     stats.attendancedates[dayTime].compensatoryLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
-                      leaveDetails?.halfDayPeriod
+                      leaveDetails.halfDayPeriod
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   default:
                     stats.attendancedates[dayTime].otherLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
-                      leaveDetails?.halfDayPeriod // Default case
+                      leaveDetails.halfDayPeriod // Default case
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                 }
@@ -13512,13 +13532,11 @@ export const GetsomeAllsummary = async (
                 stats.attendancedates[dayTime].otherLeave = 0.5
                 stats.attendancedates[dayTime].reason = leaveDetails.reason
                 stats.attendancedates[dayTime].halfDayperiod =
-                  leaveDetails?.halfDayPeriod
+                  leaveDetails.halfDayPeriod
                 stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
               }
               stats.attendancedates[dayTime].notMarked = 0.5
             }
-
-            fulldayarr.push(day)
           } else if (
             (punchIn == lateLimit &&
               punchOut >= noonLimit &&
@@ -13566,6 +13584,19 @@ export const GetsomeAllsummary = async (
               punchOut >= earlyLeaveLimit &&
               punchIn > lateLimit)
           ) {
+            if (stats.name.trim() === "M P Rajasree") {
+              console.log("punchind", punchIn, att.inTime)
+              console.log("punchout", punchOut, att.outTime)
+            }
+            if (punchIn < lateLimit && punchIn > morningLimit &&
+              punchOut >= noonLimit &&
+              punchOut < minOutTime) {
+              if (stats.name.trim() === "Nimmi M Raju") {
+                console.log("late 8728", att.inTime)
+              }
+              const a = getTimeDifference(morning, att.inTime)
+              stats.attendancedates[dayTime].late = a
+            }
             arr.push(day)
             halfdayarr.push(day)
             stats.attendancedates[dayTime].present = 0.5
@@ -13583,21 +13614,18 @@ export const GetsomeAllsummary = async (
                 stats.onsite += 0.5
                 stats.attendancedates[dayTime].present = 1
                 stats.attendancedates[dayTime].notMarked = ""
-                // stats.attendancedates[dayTime].onsite = 0.5
               } else if (
                 punchIn < lateLimit &&
                 punchOut >= noonLimit &&
                 onsiteDetails.halfDayPeriod === "Morning"
               ) {
                 stats.onsite += 0.5
-                // stats.attendancedates[dayTime].onsite = 0.5
               } else if (
                 punchIn <= noonLimit &&
                 punchOut >= earlyLeaveLimit &&
                 onsiteDetails.halfDayPeriod === "Afternoon"
               ) {
                 stats.onsite += 0.5
-                // stats.attendancedates[dayTime].onsite = 0.5
               } else if (
                 punchIn <= noonLimit &&
                 punchOut >= earlyLeaveLimit &&
@@ -13605,7 +13633,6 @@ export const GetsomeAllsummary = async (
               ) {
                 stats.onsite += 0.5
                 stats.attendancedates[dayTime].present = 1
-                // stats.attendancedates[dayTime].onsite = 0.5
                 stats.attendancedates[dayTime].notMarked = ""
               }
             }
@@ -13615,12 +13642,13 @@ export const GetsomeAllsummary = async (
                 switch (leaveDetails.leaveCategory) {
                   case "casual Leave":
                     stats.attendancedates[dayTime].casualLeave = 1
-                    stats.attendancedates[dayTime].reason = leaveDetails?.reason
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
-                    break
+                    stats.attendancedates[dayTime].leaveId = leaveDetails.
+                      break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 1
-                    stats.attendancedates[dayTime].reason = leaveDetails?.reason
+                    stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "privileage Leave":
@@ -13644,7 +13672,6 @@ export const GetsomeAllsummary = async (
                 stats.attendancedates[dayTime].reason = leaveDetails.reason
                 stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
               }
-              // stats.absent++
               stats.attendancedates[dayTime].notMarked = ""
             } else if (isLeave && leaveDetails.leaveType === "Half Day") {
               if (leaveDetails.leaveCategory) {
@@ -13653,44 +13680,44 @@ export const GetsomeAllsummary = async (
                     stats.attendancedates[dayTime].casualLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
-                      leaveDetails?.halfDayPeriod
+                      leaveDetails.halfDayPeriod
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "other Leave":
                     stats.attendancedates[dayTime].otherLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
-                      leaveDetails?.halfDayPeriod
+                      leaveDetails.halfDayPeriod
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "privileage Leave":
                     stats.attendancedates[dayTime].privileageLeave = 0.5
+
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
-                      leaveDetails?.halfDayPeriod
+                      leaveDetails.halfDayPeriod
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   case "compensatory Leave":
                     stats.attendancedates[dayTime].compensatoryLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
-                      leaveDetails?.halfDayPeriod
+                      leaveDetails.halfDayPeriod
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                   default:
                     stats.attendancedates[dayTime].otherLeave = 0.5
                     stats.attendancedates[dayTime].reason = leaveDetails.reason
                     stats.attendancedates[dayTime].halfDayperiod =
-                      leaveDetails?.halfDayPeriod // Default case
+                      leaveDetails.halfDayPeriod // Default case
                     stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
                     break
                 }
-                // stats.attendancedates[dayTime].leaveDetails.leaveCategory = 0.5
               } else {
                 stats.attendancedates[dayTime].otherLeave = 0.5
                 stats.attendancedates[dayTime].reason = leaveDetails.reason
                 stats.attendancedates[dayTime].halfDayperiod =
-                  leaveDetails?.halfDayPeriod
+                  leaveDetails.halfDayPeriod
                 stats.attendancedates[dayTime].leaveDetails[leaveDetails._id] = leaveDetails
               }
               stats.attendancedates[dayTime].notMarked = ""
@@ -13698,7 +13725,6 @@ export const GetsomeAllsummary = async (
           }
           daysInMonth.delete(day)
         })
-
       onsites?.length &&
         onsites?.forEach((onsite) => {
           const onsiteDate = onsite.onsiteDate.toISOString().split("T")[0]
