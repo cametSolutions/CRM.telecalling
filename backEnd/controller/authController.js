@@ -8492,6 +8492,10 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             punchIn <= lateLimit &&
             punchOut >= earlyLeaveLimit
           ) {
+            if (stats.name.trim() === "Aleena Thadevues") {
+              console.log("in 8496", att.inTime)
+              console.log("out 8497", att.outTime)
+            }
             const a = getTimeDifference(morning, att.inTime)
 
             stats.attendancedates[dayTime].late = a
@@ -8511,7 +8515,10 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             punchOut < earlyLeaveLimit &&
             punchIn <= morningLimit
           ) {
-
+            if (stats.name.trim() === "Aleena Thadevues") {
+              console.log("in 8519", att.inTime)
+              console.log("out 8520", att.outTime)
+            }
             const b = getTimeDifference(att.outTime, evening)
             stats.attendancedates[dayTime].present = 1
             stats.attendancedates[dayTime].early = b
@@ -8525,12 +8532,60 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               stats.onsite += 0.5
             }
             present.push(day)
+          } else if (punchIn > lateLimit && punchIn < noonLimit && punchOut > minOutTime) {
+            if (stats.name.trim() === "Aleena Thadevues") {
+              console.log("intime 8537", att.inTime)
+              console.log("out 8538", att.outTime)
+            }
+            if (punchOut < earlyLeaveLimit && punchOut > minOutTime) {
+              const b = getTimeDifference(att.outTime, evening)
+
+              stats.attendancedates[dayTime].present = 0.5
+              stats.attendancedates[dayTime].early = b
+              stats.attendancedates[dayTime].inTime = att.inTime
+              stats.attendancedates[dayTime].outTime = att.outTime
+              stats.attendancedates[dayTime].notMarked = 0.5
+              stats.earlyGoing++
+              if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+                stats.onsite++
+                stats.attendancedates[dayTime].present = 1
+                stats.attendancedates[dayTime].early = ""
+                stats.attendancedates[dayTime].inTime = att.inTime
+                stats.attendancedates[dayTime].outTime = att.outTime
+                stats.attendancedates[dayTime].notMarked = 0
+                stats.earlyGoing--
+              } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
+                stats.onsite += 0.5
+                if (isOnsite && onsiteDetails.halfDayPeriod === "Morning") {
+                  stats.onsite += 0.5
+                  stats.attendancedates[dayTime].present = 1
+                  stats.attendancedates[dayTime].notMarked = ""
+                }
+              }
+            }
+            arr.push(day)
+            stats.attendancedates[dayTime].present = 0.5
+            stats.attendancedates[dayTime].notMarked = 0.5
+            if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+              stats.onsite++
+              stats.attendancedates[dayTime].present = 1
+              stats.attendancedates[dayTime].notMarked = ""
+            } else if (isOnsite && onsiteDetails.onsiteType === "Half Day" && onsiteDetails.halfDayPeriod === "Morning") {
+              stats.onsite += 0.5
+              stats.attendancedates[dayTime].present = 1
+              stats.attendancedates[dayTime].notMarked = ""
+
+            }
           } else if (
             punchIn <= lateLimit &&
             punchIn > morningLimit &&
             punchOut >= minOutTime &&
             punchOut < earlyLeaveLimit
           ) {
+            if (stats.name.trim() === "M P Rajasree") {
+              console.log("in 8573", att.inTime)
+              console.log("out 8574", att.outTime)
+            }
             const a = getTimeDifference(morning, att.inTime)
             const b = getTimeDifference(att.outTime, evening)
             stats.earlyGoing++
@@ -8553,9 +8608,12 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             (punchIn > lateLimit &&
               punchIn < noonLimit &&
               punchOut < minOutTime &&
-              punchOut > noonLimit) || (punchIn > lateLimit && punchIn < noonLimit && punchOut < earlyLeaveLimit)
+              punchOut > noonLimit) || (punchIn > lateLimit && punchIn < noonLimit && punchOut < minOutTime)
           ) {
-
+            if (stats.name.trim() === "Aleena Thadevues") {
+              console.log("in 8601", att.inTime)
+              console.log("out 8602", att.outTime)
+            }
             stats.attendancedates[dayTime].notMarked = 1
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.onsite++
@@ -8666,12 +8724,25 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               punchOut == minOutTime &&
               punchIn > lateLimit)
           ) {
+            if (stats.name.trim() === "Aleena Thadevues") {
+              console.log("in 8715", att.inTime)
+              console.log("out 8716", att.outTime)
+            }
+            if (punchIn <= noonLimit &&
+              punchOut >= minOutTime &&
+              punchIn > lateLimit && punchOut < earlyLeaveLimit) {
+              const b = getTimeDifference(att.outTime, evening)
+              stats.attendancedates[dayTime].early = b
+            }
+
+
             stats.attendancedates[dayTime].present = 0.5
             stats.attendancedates[dayTime].notMarked = 0.5
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.onsite++
               stats.attendancedates[dayTime].present = 1
               stats.attendancedates[dayTime].notMarked = ""
+              stats.attendancedates[dayTime].early = ""
             } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
               if (
                 punchIn == lateLimit &&
@@ -8702,21 +8773,22 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               punchOut >= noonLimit &&
               punchOut < minOutTime) ||
             (punchIn <= noonLimit &&
-              punchOut >= earlyLeaveLimit &&
+              punchOut > minOutTime &&
               punchIn > lateLimit)
           ) {
-            if (stats.name.trim() === "M P Rajasree") {
-              console.log("punchind", punchIn, att.inTime)
-              console.log("punchout", punchOut, att.outTime)
+            if (stats.name.trim() === "Aleena Thadevues") {
+              console.log("in 8740", att.inTime)
+              console.log("oout 8741", att.outTime)
             }
             if (punchIn < lateLimit && punchIn > morningLimit &&
               punchOut >= noonLimit &&
               punchOut < minOutTime) {
-              if (stats.name.trim() === "Nimmi M Raju") {
-                console.log("late 8728", att.inTime)
-              }
+
               const a = getTimeDifference(morning, att.inTime)
               stats.attendancedates[dayTime].late = a
+            } else if (punchIn < noonLimit && punchIn > lateLimit && punchOut < earlyLeaveLimit && puchout > minOutTime) {
+              const b = getTimeDifference(att.outTime, evening)
+              stats.attendancedates[dayTime].early = b
             }
             arr.push(day)
             halfdayarr.push(day)
@@ -8887,7 +8959,9 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               stats.attendancedates[onsiteDate].notMarked = ""
               stats.onsite++
             } else if (onsite.onsiteType === "Half Day") {
-
+if(stats.name.trim()==="Varsha P M"){
+console.log("onsitedatee",onsiteDate)}
+stats.onsite +=0.5
               stats.attendancedates[onsiteDate].present = 0.5
               stats.attendancedates[onsiteDate].notMarked = 0.5
             }
@@ -13182,8 +13256,7 @@ export const GetsomeAllsummary = async (
       const present = []
       const fulldayarr = []
       const halfdayarr = []
-
-      attendances?.length &&
+ attendances?.length &&
         attendances?.forEach((att) => {
           const day = att.attendanceDate.getDate()
           const dayTime = att.attendanceDate.toISOString().split("T")[0]
@@ -13371,6 +13444,10 @@ export const GetsomeAllsummary = async (
             punchIn <= lateLimit &&
             punchOut >= earlyLeaveLimit
           ) {
+            if (stats.name.trim() === "Aleena Thadevues") {
+              console.log("in 8496", att.inTime)
+              console.log("out 8497", att.outTime)
+            }
             const a = getTimeDifference(morning, att.inTime)
 
             stats.attendancedates[dayTime].late = a
@@ -13390,7 +13467,10 @@ export const GetsomeAllsummary = async (
             punchOut < earlyLeaveLimit &&
             punchIn <= morningLimit
           ) {
-
+            if (stats.name.trim() === "Aleena Thadevues") {
+              console.log("in 8519", att.inTime)
+              console.log("out 8520", att.outTime)
+            }
             const b = getTimeDifference(att.outTime, evening)
             stats.attendancedates[dayTime].present = 1
             stats.attendancedates[dayTime].early = b
@@ -13404,12 +13484,60 @@ export const GetsomeAllsummary = async (
               stats.onsite += 0.5
             }
             present.push(day)
+          } else if (punchIn > lateLimit && punchIn < noonLimit && punchOut > minOutTime) {
+            if (stats.name.trim() === "Aleena Thadevues") {
+              console.log("intime 8537", att.inTime)
+              console.log("out 8538", att.outTime)
+            }
+            if (punchOut < earlyLeaveLimit && punchOut > minOutTime) {
+              const b = getTimeDifference(att.outTime, evening)
+
+              stats.attendancedates[dayTime].present = 0.5
+              stats.attendancedates[dayTime].early = b
+              stats.attendancedates[dayTime].inTime = att.inTime
+              stats.attendancedates[dayTime].outTime = att.outTime
+              stats.attendancedates[dayTime].notMarked = 0.5
+              stats.earlyGoing++
+              if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+                stats.onsite++
+                stats.attendancedates[dayTime].present = 1
+                stats.attendancedates[dayTime].early = ""
+                stats.attendancedates[dayTime].inTime = att.inTime
+                stats.attendancedates[dayTime].outTime = att.outTime
+                stats.attendancedates[dayTime].notMarked = 0
+                stats.earlyGoing--
+              } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
+                stats.onsite += 0.5
+                if (isOnsite && onsiteDetails.halfDayPeriod === "Morning") {
+                  stats.onsite += 0.5
+                  stats.attendancedates[dayTime].present = 1
+                  stats.attendancedates[dayTime].notMarked = ""
+                }
+              }
+            }
+            arr.push(day)
+            stats.attendancedates[dayTime].present = 0.5
+            stats.attendancedates[dayTime].notMarked = 0.5
+            if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
+              stats.onsite++
+              stats.attendancedates[dayTime].present = 1
+              stats.attendancedates[dayTime].notMarked = ""
+            } else if (isOnsite && onsiteDetails.onsiteType === "Half Day" && onsiteDetails.halfDayPeriod === "Morning") {
+              stats.onsite += 0.5
+              stats.attendancedates[dayTime].present = 1
+              stats.attendancedates[dayTime].notMarked = ""
+
+            }
           } else if (
             punchIn <= lateLimit &&
             punchIn > morningLimit &&
             punchOut >= minOutTime &&
             punchOut < earlyLeaveLimit
           ) {
+            if (stats.name.trim() === "M P Rajasree") {
+              console.log("in 8573", att.inTime)
+              console.log("out 8574", att.outTime)
+            }
             const a = getTimeDifference(morning, att.inTime)
             const b = getTimeDifference(att.outTime, evening)
             stats.earlyGoing++
@@ -13432,9 +13560,12 @@ export const GetsomeAllsummary = async (
             (punchIn > lateLimit &&
               punchIn < noonLimit &&
               punchOut < minOutTime &&
-              punchOut > noonLimit) || (punchIn > lateLimit && punchIn < noonLimit && punchOut < earlyLeaveLimit)
+              punchOut > noonLimit) || (punchIn > lateLimit && punchIn < noonLimit && punchOut < minOutTime)
           ) {
-
+            if (stats.name.trim() === "Aleena Thadevues") {
+              console.log("in 8601", att.inTime)
+              console.log("out 8602", att.outTime)
+            }
             stats.attendancedates[dayTime].notMarked = 1
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.onsite++
@@ -13545,12 +13676,25 @@ export const GetsomeAllsummary = async (
               punchOut == minOutTime &&
               punchIn > lateLimit)
           ) {
+            if (stats.name.trim() === "Aleena Thadevues") {
+              console.log("in 8715", att.inTime)
+              console.log("out 8716", att.outTime)
+            }
+            if (punchIn <= noonLimit &&
+              punchOut >= minOutTime &&
+              punchIn > lateLimit && punchOut < earlyLeaveLimit) {
+              const b = getTimeDifference(att.outTime, evening)
+              stats.attendancedates[dayTime].early = b
+            }
+
+
             stats.attendancedates[dayTime].present = 0.5
             stats.attendancedates[dayTime].notMarked = 0.5
             if (isOnsite && onsiteDetails.onsiteType === "Full Day") {
               stats.onsite++
               stats.attendancedates[dayTime].present = 1
               stats.attendancedates[dayTime].notMarked = ""
+              stats.attendancedates[dayTime].early = ""
             } else if (isOnsite && onsiteDetails.onsiteType === "Half Day") {
               if (
                 punchIn == lateLimit &&
@@ -13581,21 +13725,22 @@ export const GetsomeAllsummary = async (
               punchOut >= noonLimit &&
               punchOut < minOutTime) ||
             (punchIn <= noonLimit &&
-              punchOut >= earlyLeaveLimit &&
+              punchOut > minOutTime &&
               punchIn > lateLimit)
           ) {
-            if (stats.name.trim() === "M P Rajasree") {
-              console.log("punchind", punchIn, att.inTime)
-              console.log("punchout", punchOut, att.outTime)
+            if (stats.name.trim() === "Aleena Thadevues") {
+              console.log("in 8740", att.inTime)
+              console.log("oout 8741", att.outTime)
             }
             if (punchIn < lateLimit && punchIn > morningLimit &&
               punchOut >= noonLimit &&
               punchOut < minOutTime) {
-              if (stats.name.trim() === "Nimmi M Raju") {
-                console.log("late 8728", att.inTime)
-              }
+
               const a = getTimeDifference(morning, att.inTime)
               stats.attendancedates[dayTime].late = a
+            } else if (punchIn < noonLimit && punchIn > lateLimit && punchOut < earlyLeaveLimit && puchout > minOutTime) {
+              const b = getTimeDifference(att.outTime, evening)
+              stats.attendancedates[dayTime].early = b
             }
             arr.push(day)
             halfdayarr.push(day)
@@ -13725,6 +13870,7 @@ export const GetsomeAllsummary = async (
           }
           daysInMonth.delete(day)
         })
+     
       onsites?.length &&
         onsites?.forEach((onsite) => {
           const onsiteDate = onsite.onsiteDate.toISOString().split("T")[0]
