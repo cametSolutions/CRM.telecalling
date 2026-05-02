@@ -493,8 +493,8 @@ console.log(todaysSolvedCount)
   }
   console.log(filteredCalls)
   return (
-    <div className=" mx-auto p-2  md:p-5 bg-blue-50">
-      <div className="w-auto shadow-lg rounded p-4 pt-1 h-full bg-neutral-50 ">
+    <div className=" mx-auto p-2  md:p-5 bg-blue-50 h-full">
+      <div className="w-auto shadow-lg rounded p-4 pt-1 flex flex-col bg-neutral-50 ">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
           {/* Search Bar for large screens */}
 
@@ -539,7 +539,7 @@ console.log(todaysSolvedCount)
             </select>
           </div>
 
-          <div>
+          <div className="flex-1">
             <table className="text-center">
               <tbody>
                 <tr>

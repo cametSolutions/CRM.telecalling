@@ -930,22 +930,27 @@ export default function PrimaryUserDashBoard() {
     }))
   }
   console.log(user)
-console.log( user?.department?._id === "670c866552847bbebbd35748" ? true : false)
+  console.log(
+    user?.department?._id === "670c866552847bbebbd35748" ? true : false
+  )
   // 670c866552847bbebbd35748
   const cards = [
     {
       label: "support department",
-      to:
-        user?.department?._id === "670c866552847bbebbd35748"
-          ? "/staff/support&department"
-          : "",
+      to: "/staff/support&department",
       icon: MdSupportAgent,
       show: true
     },
     {
       label: "sales & marketing",
       show: user?.department?._id === "670c866552847bbebbd35748" ? true : false,
-      to: (user?.department?._id === "670c866552847bbebbd35748"&&user.role.trim()==="Admin")?"/admin/reports/markettingdasboard":user?.department?._id === "670c866552847bbebbd35748"? "/staff/reports/markettingdashboard":"",
+      to:
+        user?.department?._id === "670c866552847bbebbd35748" &&
+        user.role.trim() === "Admin"
+          ? "/admin/reports/markettingdasboard"
+          : user?.department?._id === "670c866552847bbebbd35748"
+            ? "/staff/reports/markettingdashboard"
+            : "",
       icon: MdBarChart
     },
     {
