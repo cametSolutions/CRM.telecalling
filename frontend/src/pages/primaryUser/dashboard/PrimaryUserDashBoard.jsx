@@ -937,7 +937,7 @@ export default function PrimaryUserDashBoard() {
   const cards = [
     {
       label: "support department",
-      to: "/staff/support&department",
+      to: user?.role==="Admin"?"/admin/support&department":"/staff/support&department",
       icon: MdSupportAgent,
       show: true
     },
