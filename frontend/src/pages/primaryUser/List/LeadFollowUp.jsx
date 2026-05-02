@@ -1674,11 +1674,12 @@ const LeadFollowUp = () => {
   // MODIFIED: Handle collection update with refresh
   const handleCollectionUpdate = (formData) => {
     console.log(formData)
-    const requestData = {
+    const updateFormData = {
       ...formData,
       overwriteLastPayment: paymentUpdatedInSession // Send flag to backend
     }
-    setcollectionData(requestData)
+console.log(updateFormData)
+    setcollectionData(updateFormData)
     setcollectionUpdateModal(false)
   }
 

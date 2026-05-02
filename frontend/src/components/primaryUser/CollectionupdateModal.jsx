@@ -430,6 +430,27 @@ export function CollectionupdateModal({
         console.log("Hhh")
       } else if (hasCollectionData && !hasPaymentEntries) {
         console.log("hh")
+        console.log(editData)
+        console.log(String(editData?.paymentEntries[0]?.netAmount))
+        console.log(editData?.paymentEntries[0]?.receivedAmount)
+        console.log(
+          editData?.paymentEntries[0]?.netAmount -
+            editData?.paymentEntries[0]?.receivedAmount
+        )
+        setPaymentRows([{
+          id: crypto.randomUUID(),
+          label: editData?.paymentEntries[0].label,
+          productorServiceId: editData?.paymentEntries[0]?.productorServiceId,
+          productorServicemodel:
+            editData?.paymentEntries[0]?.productorServicemodel,
+          netAmount: String(editData?.paymentEntries[0]?.netAmount),
+          receivedAmount: editData?.paymentEntries[0]?.receivedAmount,
+          _balance:
+            editData?.paymentEntries[0]?.netAmount -
+            editData?.paymentEntries[0]?.receivedAmount,
+          _netAmt: editData?.paymentEntries[0]?.netAmount,
+          _paidSoFar: editData?.paymentEntries[0]?.receivedAmount
+        }])
       } else {
         console.log("hhhhh")
         console.log(data.leadFor)
