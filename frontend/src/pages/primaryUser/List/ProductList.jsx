@@ -46,7 +46,7 @@ function ProductList() {
   }, [error])
 
   return (
-    <div>
+    <div className="h-full">
       <ProductListform productlist={products} loading={loading}/>
     </div>
   )

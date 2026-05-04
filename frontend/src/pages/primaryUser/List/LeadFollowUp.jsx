@@ -51,6 +51,7 @@ const LeadFollowUp = () => {
   const [partner, setPartner] = useState([])
   const [isdemofollownotClosed, setisdemofollowedNotClosed] = useState(false)
   const [ishavePayment, setishavePayment] = useState(false)
+  const [collectionupdatedata, setcollectionupdateData] = useState({})
   const [showfollowupModal, setshowFollowupModal] = useState(false)
   const [isdropdownOpen, setIsdropdownOpen] = useState(false)
   const [taskClosed, setfollowupClosed] = useState(false)
@@ -1608,7 +1609,8 @@ const LeadFollowUp = () => {
   }
   const hasCollectionData =
     collectionData && Object.keys(collectionData).length > 0
-
+  console.log(collectionData)
+  console.log(hasCollectionData)
   const handleHistory = (
     history,
     leadid,
@@ -1674,15 +1676,19 @@ const LeadFollowUp = () => {
   // MODIFIED: Handle collection update with refresh
   const handleCollectionUpdate = (formData) => {
     console.log(formData)
-    const updateFormData = {
+    console.log(paymentUpdatedInSession)
+
+    // Add flag to indicate if this is an update within the same session
+    const requestData = {
       ...formData,
       overwriteLastPayment: paymentUpdatedInSession // Send flag to backend
     }
-console.log(updateFormData)
-    setcollectionData(updateFormData)
+console.log(requestData)
+    console.log(requestData)
+    setcollectionupdateData(requestData)
     setcollectionUpdateModal(false)
   }
-
+console.log(collectionData)
   const handleDemoSubmit = async () => {
     if (isdemofollownotClosed) {
       setDemoError((prev) => ({
@@ -1774,7 +1780,7 @@ console.log(updateFormData)
       setfollowupDateLoader(true)
 
       const response = await api.put(
-        `/lead/followupDateUpdate?selectedleaddocId=${selectedDocId}&loggeduserid=${loggedUser._id}`,
+        `/lead/followupDateUpdate?selectedleaddocId=${selectedDocId}&loggeduserid=${loggedUser._id}&collectiondata=${collectionupdatedata}`,
         formData
       )
 
@@ -2461,7 +2467,7 @@ console.log(updateFormData)
                   {formData?.customerName}
                 </p>
               </div>
-              <div className="text-lg font-semibold flex-grow text-end font-bold">
+              <div className="text-lg font-semibold flex-grow text-end ">
                 <span>Lead ID:</span>
                 <span className="ml-1">{selectedLeadId}</span>
               </div>
@@ -2743,17 +2749,17 @@ console.log(updateFormData)
                       partner.length > 0 && (
                         <CollectionupdateModal
                           data={selectedData}
+                          from="followup"
                           hasCollectionData={hasCollectionData}
+                          editData={collectionData}
                           closemodal={() => {
                             setishavePayment(false)
                             setcollectionUpdateModal(false)
                           }}
-                          editData={collectionData}
                           partnerlist={partner}
                           loggedUser={loggedUser}
                           setishavePayment={setishavePayment}
                           handleCollectionUpdate={handleCollectionUpdate}
-                          from="followup"
                           isUpdateMode={paymentUpdatedInSession}
                         />
                       )}

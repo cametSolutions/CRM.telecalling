@@ -39,7 +39,7 @@ console.log(user.role)
     }
   }
   return (
-    <div>
+    <div className="h-full">
       <ProductAdd process="Registration" handleProductData={handleSubmit} />
     </div>
   )

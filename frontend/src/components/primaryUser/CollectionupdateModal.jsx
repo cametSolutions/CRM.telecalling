@@ -313,12 +313,11 @@ export function CollectionupdateModal({
   partnerlist,
   loggedUser,
   handleCollectionUpdate,
-  from,
-  editData,
-  hasCollectionData
+from,
+hasCollectionData,
+editData
 }) {
-  console.log(hasCollectionData)
-  console.log(editData)
+console.log(from)
   console.log(data)
   const [error, setError] = useState({})
   console.log("hh")
