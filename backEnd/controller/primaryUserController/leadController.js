@@ -352,11 +352,11 @@ export const UpdatereceivedAmount = async (req, res) => {
       lead.totalPaidAmount = 0;
     }
 
-    for (let i = paymentIndex; i < lead.paymentHistory.length; i++) {
+    for (let i = paymentIndex;i < lead.paymentHistory.length;i++) {
       const currentPayment = lead.paymentHistory[i];
       if (!Array.isArray(currentPayment.paymentEntries)) continue;
 
-      for (let j = 0; j < currentPayment.paymentEntries.length; j++) {
+      for (let j = 0;j < currentPayment.paymentEntries.length;j++) {
         const currentEntry = currentPayment.paymentEntries[j];
         const currentNetAmount = Number(currentEntry.netAmount || 0);
         const currentReceived = Number(currentEntry.receivedAmount || 0);
@@ -533,7 +533,7 @@ export const UpdatereceivedAmount = async (req, res) => {
 //     const lead = await LeadMaster.findById(leadDocId).session(session);
 //     if (!lead) throw new Error("Lead not found");
 
-   
+
 
 //     const payment = lead.paymentHistory[index];
 
@@ -3154,34 +3154,167 @@ export const GetallLead = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+// export const UpdateLeadfollowUpDate = async (req, res) => {
+//   try {
+//     const { formData, collectionupdatedata } = req.body;
+//     console.log("formdata", formData)
+//     console.log("collecton", collectionupdatedata)
+//     return
+//     const { selectedleaddocId, loggeduserid } = req.query;
+
+//     let followedByModel;
+//     const isStaff = await Staff.findOne({ _id: loggeduserid });
+//     if (isStaff) {
+//       followedByModel = "Staff";
+//     } else {
+//       const isAdmin = await Admin.findOne({ _id: loggeduserid });
+//       if (isAdmin) {
+//         followedByModel = "Admin";
+//       }
+//     }
+//     if (!followedByModel) {
+//       return res.status(400).json({ message: "Invalid followedid reference" });
+//     }
+//     if (formData.followupType === "closed") {
+//       await LeadMaster.updateOne(
+//         { _id: selectedleaddocId },
+
+//         {
+//           $set: {
+//             "activityLog.$[elem].reallocatedTo": true,
+//             "activityLog.$[elem].taskClosed": true,
+//             "activityLog.$[elem].followupClosed": true,
+//           },
+//         },
+//         {
+//           arrayFilters: [
+//             {
+//               "elem.taskTo": { $exists: true },
+//               "elem.reallocatedTo": false,
+//               "elem.taskClosed": false,
+//               "elem.followupClosed": false,
+//             },
+//           ],
+//         }
+//       );
+//     }
+//     const allocationTask = await Task.findOne({ taskName: "Closing" });
+//     const activityEntry = {
+//       submissionDate: formData.followUpDate,
+//       submittedUser: loggeduserid,
+//       submissiondoneByModel: followedByModel,
+//       taskBy: allocationTask?._id,
+//       nextFollowUpDate: formData?.nextfollowUpDate,
+//       remarks: formData.Remarks,
+//       taskfromFollowup: false,
+//     };
+
+//     // Conditionally add fields only if `closed` is true
+//     if (formData.followupType === "closed") {
+//       activityEntry.taskClosed = true;
+//       activityEntry.followupClosed = true;
+//       activityEntry.reallocatedTo = true;
+//     } else if (formData.followupType === "lost") {
+//       activityEntry.taskClosed = true;
+//     }
+//     const updatefollowUpDate = await LeadMaster.findOneAndUpdate(
+//       { _id: selectedleaddocId },
+//       {
+//         $push: {
+//           activityLog: activityEntry,
+//         },
+
+//         reallocatedTo: formData.followupType === "closed",
+//         ...(formData.followupType === "closed" && {
+//           leadConvertedDate: new Date()
+//         }),
+//         ...(formData.followupType === "lost" && {
+//           leadLostDate: new Date(),
+//           leadLost: true
+//         }),
+//       },
+
+//       { upsert: true }
+//     );
+//     const normalizedpaymentEntries = collectionupdatedata.paymentEntries.map((e) => ({
+//       productorServiceId: e.productorServiceId,
+//       productorServicemodel: e.productorServicemodel,
+//       netAmount: Number(e.netAmount || 0),
+//       receivedAmount: Number(e.receivedAmount || 0),
+//       balanceAmount: Number(e.balanceAmount || 0)
+//     }))
+//     const receivedAmount = Number(
+//       collectionupdatedata?.totalReceivedAmount ??
+//       collectionupdatedata?.totalReceivedAmount ??
+//       0
+//     )
+//     const paymentRecord = {
+//       paymentDate: new Date(),
+//       receivedAmount,
+//       paymentVerified: false,
+//       paymentEntries: normalizedPaymentEntries,
+//       receivedBy: collectionupdatedata?.receivedBy,
+//       receivedModel:
+//         collectionupdatedata?.receivedModel,
+//       bankRemarks:
+//         collectionupdatedata?.bankRemark ?? formData?.bankRemarks ?? "",
+//       updatedAt: new Date()
+//     }
+//     if (updatefollowUpDate) {
+//       updatefollowUpDate.paymentHistory.push({
+//         ...paymentRecord,
+//         createdAt: new Date()
+//       })
+//       return res.status(200).json({ message: "Update followupDate" });
+//     }
+//   } catch (error) {
+//     console.log("errrr:", error);
+//     console.log("error:", error.message);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
+
+
 export const UpdateLeadfollowUpDate = async (req, res) => {
   try {
-    const formData = req.body;
+    const { formData, collectionupdatedata } = req.body;
     const { selectedleaddocId, loggeduserid } = req.query;
 
-    let followedByModel;
-    const isStaff = await Staff.findOne({ _id: loggeduserid });
+    if (!selectedleaddocId || !loggeduserid) {
+      return res.status(400).json({ message: "Missing lead or user reference" });
+    }
+
+    if (!formData || !formData.followupType) {
+      return res.status(400).json({ message: "Missing followup data" });
+    }
+
+    // 1) Resolve followedByModel
+    let followedByModel = null;
+
+    const isStaff = await Staff.findById(loggeduserid).lean();
     if (isStaff) {
       followedByModel = "Staff";
     } else {
-      const isAdmin = await Admin.findOne({ _id: loggeduserid });
+      const isAdmin = await Admin.findById(loggeduserid).lean();
       if (isAdmin) {
         followedByModel = "Admin";
       }
     }
+
     if (!followedByModel) {
-      return res.status(400).json({ message: "Invalid followedid reference" });
+      return res.status(400).json({ message: "Invalid followed user reference" });
     }
+
+    // 2) If lead is being closed, mark the last open followup in activityLog as closed
     if (formData.followupType === "closed") {
       await LeadMaster.updateOne(
         { _id: selectedleaddocId },
-
         {
           $set: {
             "activityLog.$[elem].reallocatedTo": true,
             "activityLog.$[elem].taskClosed": true,
-            "activityLog.$[elem].followupClosed": true,
-          },
+            "activityLog.$[elem].followupClosed": true
+          }
         },
         {
           arrayFilters: [
@@ -3189,24 +3322,26 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
               "elem.taskTo": { $exists: true },
               "elem.reallocatedTo": false,
               "elem.taskClosed": false,
-              "elem.followupClosed": false,
-            },
-          ],
+              "elem.followupClosed": false
+            }
+          ]
         }
       );
     }
-    const allocationTask = await Task.findOne({ taskName: "Closing" });
+
+    // 3) Build new activityLog entry
+    const allocationTask = await Task.findOne({ taskName: "Closing" }).lean();
+
     const activityEntry = {
       submissionDate: formData.followUpDate,
       submittedUser: loggeduserid,
       submissiondoneByModel: followedByModel,
-      taskBy: allocationTask?._id,
+      taskBy: allocationTask?._id || null,
       nextFollowUpDate: formData?.nextfollowUpDate,
       remarks: formData.Remarks,
-      taskfromFollowup: false,
+      taskfromFollowup: false
     };
 
-    // Conditionally add fields only if `closed` is true
     if (formData.followupType === "closed") {
       activityEntry.taskClosed = true;
       activityEntry.followupClosed = true;
@@ -3214,31 +3349,84 @@ export const UpdateLeadfollowUpDate = async (req, res) => {
     } else if (formData.followupType === "lost") {
       activityEntry.taskClosed = true;
     }
-    const updatefollowUpDate = await LeadMaster.findOneAndUpdate(
-      { _id: selectedleaddocId },
-      {
-        $push: {
-          activityLog: activityEntry,
-        },
 
-        reallocatedTo: formData.followupType === "closed",
-        ...(formData.followupType === "closed" && {
-          leadConvertedDate: new Date()
-        }),
-        ...(formData.followupType === "lost" && {
-          leadLostDate: new Date(),
-          leadLost: true
-        }),
-      },
+    // 4) Build payment record (if any)
+    let paymentRecord = null;
 
-      { upsert: true }
-    );
-    if (updatefollowUpDate) {
-      return res.status(200).json({ message: "Update followupDate" });
+    if (collectionupdatedata && Array.isArray(collectionupdatedata.paymentEntries)) {
+      const normalizedPaymentEntries = collectionupdatedata.paymentEntries.map((e) => ({
+        productorServiceId: e.productorServiceId,
+        productorServicemodel: e.productorServicemodel,
+        netAmount: Number(e.netAmount || 0),
+        receivedAmount: Number(e.receivedAmount || 0),
+        balanceAmount: Number(e.balanceAmount || 0)
+      }));
+
+      const receivedAmount = Number(collectionupdatedata?.totalReceivedAmount ?? 0);
+
+      // only create record if there is some payment info
+      if (normalizedPaymentEntries.length > 0 || receivedAmount > 0) {
+        paymentRecord = {
+          paymentDate: new Date(),
+          receivedAmount,
+          paymentVerified: false,
+          paymentEntries: normalizedPaymentEntries,
+          receivedBy: collectionupdatedata?.receivedBy || null,
+          receivedModel: collectionupdatedata?.receivedModel || null,
+          bankRemarks:
+            collectionupdatedata?.bankRemark ?? formData?.bankRemarks ?? "",
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+      }
     }
+
+    // 5) Build update doc with $push + $set
+    const updateDoc = {
+      $push: {
+        activityLog: activityEntry
+      },
+      $set: {}
+    };
+
+    // top-level flags for lead
+    if (formData.followupType === "closed") {
+      updateDoc.$set.reallocatedTo = true;
+      updateDoc.$set.leadConvertedDate = new Date();
+    }
+
+    if (formData.followupType === "lost") {
+      updateDoc.$set.leadLost = true;
+      updateDoc.$set.leadLostDate = new Date();
+    }
+
+    if (paymentRecord) {
+      updateDoc.$push.paymentHistory = paymentRecord;
+    }
+
+    // remove empty $set/$push if nothing inside (to avoid Mongo errors)
+    if (Object.keys(updateDoc.$set).length === 0) delete updateDoc.$set;
+    if (Object.keys(updateDoc.$push).length === 0) delete updateDoc.$push;
+
+    const updatedLead = await LeadMaster.findOneAndUpdate(
+      { _id: selectedleaddocId },
+      updateDoc,
+      {
+        upsert: false,
+        returnDocument: "after"
+      }
+    );
+
+    if (!updatedLead) {
+      return res.status(404).json({ message: "Lead not found" });
+    }
+
+    return res.status(200).json({
+      message: "Followup updated successfully",
+      data: updatedLead
+    });
   } catch (error) {
-    console.log("errrr:", error);
-    console.log("error:", error.message);
+    console.log("UpdateLeadfollowUpDate error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -5332,8 +5520,8 @@ export const Getdailystaffreport = async (req, res) => {
 }
 export const GetcollectionLeads = async (req, res) => {
   try {
-    const { selectedBranch, isAccountant, loggeduserby,verified } = req.query;
-const verifiedBool = verified === "true";
+    const { selectedBranch, isAccountant, loggeduserby, verified } = req.query;
+    const verifiedBool = verified === "true";
     const accountantMode = isAccountant === "true";
 
     const matchedCollectionlead = await LeadMaster.aggregate([
@@ -5459,7 +5647,7 @@ const verifiedBool = verified === "true";
 
         if (accountantMode) {
           filteredPaymentHistory = filteredPaymentHistory.filter(
-            (history) => history?.paymentVerified ===verifiedBool
+            (history) => history?.paymentVerified === verifiedBool
           );
         } else {
           filteredPaymentHistory = filteredPaymentHistory.filter((history) => {

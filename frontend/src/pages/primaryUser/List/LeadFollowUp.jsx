@@ -1761,7 +1761,7 @@ console.log(collectionData)
   const handleFollowUpDateSubmit = async () => {
 console.log(formData)
 console.log(collectionupdatedata)
-return
+
     if (followupDateLoader) return
     try {
       let newErrors = {}
@@ -1783,8 +1783,8 @@ return
       setfollowupDateLoader(true)
 
       const response = await api.put(
-        `/lead/followupDateUpdate?selectedleaddocId=${selectedDocId}&loggeduserid=${loggedUser._id}&collectiondata=${collectionupdatedata}`,
-        formData
+        `/lead/followupDateUpdate?selectedleaddocId=${selectedDocId}&loggeduserid=${loggedUser._id}`,
+       {formData,collectionupdatedata}
       )
 
       if (response.status === 200) {
