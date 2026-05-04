@@ -1864,33 +1864,12 @@ const LeaveApprovalAndPending = () => {
       </span>
     )
   }
-
-  const handleDate = (selectedDate) => {
-    const extractDateAndMonth = (date) => {
-      const year = date.getFullYear()
-      const month = date.getMonth() + 1
-      const day = date.getDate()
-      return `${year}-${month.toString().padStart(2, "0")}-${day
-        .toString()
-        .padStart(2, "0")}`
-    }
-
-    if (
-      selectedDate.startDate instanceof Date &&
-      !isNaN(selectedDate.startDate.getTime()) &&
-      selectedDate.endDate instanceof Date &&
-      !isNaN(selectedDate.endDate.getTime())
-    ) {
-      setDates({
-        startDate: extractDateAndMonth(selectedDate.startDate),
-        endDate: extractDateAndMonth(selectedDate.endDate)
-      })
-    } else {
-      setDates({
-        startDate: selectedDate.startDate,
-        endDate: selectedDate.endDate
-      })
-    }
+  console.log("hhh")
+  const handleDate = () => {
+    
+    console.log("llhhh")
+    setMisspunchList([])
+    setLeaveList([])
   }
 
   const handleDropdownSelect = (option) => {
