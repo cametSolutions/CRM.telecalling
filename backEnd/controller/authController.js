@@ -7613,25 +7613,26 @@ export const UploadImage = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-
-
 export const MisspunchRegister = async (req, res) => {
   try {
     const { userId, userModel, misspunchDate, misspunchType, remark } = req.body;
 
-    // Basic validation
-    if (!userId || !userModel || !misspunchType) {
+    if (!userId || !userModel || !misspunchType || !misspunchDate) {
       return res.status(400).json({ message: "Required fields missing" });
     }
-    // ✅ Normalize date (remove time part)
+
+    const normalizedType = String(misspunchType).trim().toLowerCase();
+
+    if (!["in", "out"].includes(normalizedType)) {
+      return res.status(400).json({ message: "Invalid misspunch type" });
+    }
+
     const startOfDay = new Date(misspunchDate);
     startOfDay.setHours(0, 0, 0, 0);
 
     const endOfDay = new Date(misspunchDate);
     endOfDay.setHours(23, 59, 59, 999);
-    console.log("startttt", startOfDay)
-    console.log("enddd", endOfDay)
-    // ✅ Check attendance
+
     const attendanceRecord = await Attendance.findOne({
       userId,
       attendanceDate: {
@@ -7640,21 +7641,45 @@ export const MisspunchRegister = async (req, res) => {
       }
     });
 
-
     if (!attendanceRecord) {
       return res.status(404).json({
         message: "No attendance found for this date"
       });
     }
 
+    if (normalizedType === "in" && attendanceRecord?.inTime) {
+      return res.status(400).json({
+        message: "In time already exists, misspunch cannot be created"
+      });
+    }
 
+    if (normalizedType === "out" && attendanceRecord?.outTime) {
+      return res.status(400).json({
+        message: "Out time already exists, misspunch cannot be created"
+      });
+    }
+
+    const alreadyApplied = await Misspunch.findOne({
+      userId,
+      misspunchType,
+      misspunchDate: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      }
+    });
+
+    if (alreadyApplied) {
+      return res.status(400).json({
+        message: `Misspunch already applied for ${misspunchType} on this date`
+      });
+    }
 
     const newMisspunch = await Misspunch.create({
       userId,
       remark,
-      userModel, // "Staff" or "Admin"
-      misspunchDate: misspunchDate ? new Date(misspunchDate) : new Date(),
-      applyDate: new Date(), // when user applied
+      userModel,
+      misspunchDate: new Date(misspunchDate),
+      applyDate: new Date(),
       misspunchType
     });
 
@@ -7662,12 +7687,65 @@ export const MisspunchRegister = async (req, res) => {
       message: "Misspunch registered successfully",
       data: newMisspunch
     });
-
   } catch (error) {
     console.log("error", error);
     return res.status(500).json({ message: "Internal server error" });
   }
-}
+};
+
+// export const MisspunchRegister = async (req, res) => {
+//   try {
+//     const { userId, userModel, misspunchDate, misspunchType, remark } = req.body;
+
+//     // Basic validation
+//     if (!userId || !userModel || !misspunchType) {
+//       return res.status(400).json({ message: "Required fields missing" });
+//     }
+//     // ✅ Normalize date (remove time part)
+//     const startOfDay = new Date(misspunchDate);
+//     startOfDay.setHours(0, 0, 0, 0);
+
+//     const endOfDay = new Date(misspunchDate);
+//     endOfDay.setHours(23, 59, 59, 999);
+//     console.log("startttt", startOfDay)
+//     console.log("enddd", endOfDay)
+//     // ✅ Check attendance
+//     const attendanceRecord = await Attendance.findOne({
+//       userId,
+//       attendanceDate: {
+//         $gte: startOfDay,
+//         $lte: endOfDay
+//       }
+//     });
+
+
+//     if (!attendanceRecord) {
+//       return res.status(404).json({
+//         message: "No attendance found for this date"
+//       });
+//     }
+
+
+
+//     const newMisspunch = await Misspunch.create({
+//       userId,
+//       remark,
+//       userModel, // "Staff" or "Admin"
+//       misspunchDate: misspunchDate ? new Date(misspunchDate) : new Date(),
+//       applyDate: new Date(), // when user applied
+//       misspunchType
+//     });
+
+//     return res.status(201).json({
+//       message: "Misspunch registered successfully",
+//       data: newMisspunch
+//     });
+
+//   } catch (error) {
+//     console.log("error", error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// }
 
 
 
@@ -7764,6 +7842,7 @@ export const OnsiteleaveApply = async (req, res) => {
 }
 export const Getallmisspunch = async (req, res) => {
   try {
+    console.log("mispunchhhhh")
     const startdate = req?.query?.startDate
     const start = new Date(startdate);
     start.setHours(0, 0, 0, 0); // Start of the day
@@ -8492,7 +8571,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             punchIn <= lateLimit &&
             punchOut >= earlyLeaveLimit
           ) {
-            if (stats.name.trim() === "Aleena Thadevues") {
+            if (stats.name.trim() === "Fathima Nazrin CM") {
               console.log("in 8496", att.inTime)
               console.log("out 8497", att.outTime)
             }
@@ -8515,7 +8594,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             punchOut < earlyLeaveLimit &&
             punchIn <= morningLimit
           ) {
-            if (stats.name.trim() === "Aleena Thadevues") {
+            if (stats.name.trim() === "Fathima Nazrin CM") {
               console.log("in 8519", att.inTime)
               console.log("out 8520", att.outTime)
             }
@@ -8533,7 +8612,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
             }
             present.push(day)
           } else if (punchIn > lateLimit && punchIn < noonLimit && punchOut > minOutTime) {
-            if (stats.name.trim() === "Aleena Thadevues") {
+            if (stats.name.trim() === "Fathima Nazrin CM") {
               console.log("intime 8537", att.inTime)
               console.log("out 8538", att.outTime)
             }
@@ -8610,7 +8689,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               punchOut < minOutTime &&
               punchOut > noonLimit) || (punchIn > lateLimit && punchIn < noonLimit && punchOut < minOutTime)
           ) {
-            if (stats.name.trim() === "Aleena Thadevues") {
+            if (stats.name.trim() === "Fathima Nazrin CM") {
               console.log("in 8601", att.inTime)
               console.log("out 8602", att.outTime)
             }
@@ -8724,7 +8803,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               punchOut == minOutTime &&
               punchIn > lateLimit)
           ) {
-            if (stats.name.trim() === "Aleena Thadevues") {
+            if (stats.name.trim() === "Fathima Nazrin CM") {
               console.log("in 8715", att.inTime)
               console.log("out 8716", att.outTime)
             }
@@ -8776,7 +8855,7 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               punchOut > minOutTime &&
               punchIn > lateLimit)
           ) {
-            if (stats.name.trim() === "Aleena Thadevues") {
+            if (stats.name.trim() === "Fathima Nazrin CM") {
               console.log("in 8740", att.inTime)
               console.log("oout 8741", att.outTime)
             }
@@ -8959,9 +9038,10 @@ export const GetsomeAll = async (req, res, yearParam = {}, monthParam = {}) => {
               stats.attendancedates[onsiteDate].notMarked = ""
               stats.onsite++
             } else if (onsite.onsiteType === "Half Day") {
-if(stats.name.trim()==="Varsha P M"){
-console.log("onsitedatee",onsiteDate)}
-stats.onsite +=0.5
+              if (stats.name.trim() === "Varsha P M") {
+                console.log("onsitedatee", onsiteDate)
+              }
+              stats.onsite += 0.5
               stats.attendancedates[onsiteDate].present = 0.5
               stats.attendancedates[onsiteDate].notMarked = 0.5
             }
@@ -11859,6 +11939,68 @@ export const ApproveOnsite = async (req, res) => {
     return res.status(500).json({ message: "Onsite approved" })
   }
 }
+export const RejectMisspunch = async (req, res) => {
+  try {
+    console.log("hhhh")
+    const selectedId = req?.query?.selectedId
+    const userId = req?.query?.userId
+    const startDate = req?.query?.startDate
+    const start = new Date(startDate)
+    start.setHours(0, 0, 0, 0)//Start of the day
+    const endDate = req?.query?.endDate
+    const end = new Date(endDate)
+    end.setHours(23, 59, 59, 999)
+    const selectedObjectId = new mongoose.Types.ObjectId(selectedId)
+    const userObjectId = new mongoose.Types.ObjectId(userId)
+
+    if (!userId) {
+      console.log("useridddd")
+      return res.status(400).json({ message: "User ID is required" })
+    }
+    const deletemisspunchRequest = await Misspunch.deleteOne({
+      _id: selectedObjectId
+    })
+    console.log("delterequwst", deletemisspunchRequest)
+    if (deletemisspunchRequest.deletedCount === 0) {
+      console.log("Hhhhhh")
+      return res.status(404).json({ messaage: "No misspunch request found to delete" })
+    } else if (deletemisspunchRequest.deletedCount > 0) {
+      console.log("deltedone")
+      const misspunchdata = await Misspunch.find({
+        misspunchDate: {
+          $gte: startDate,
+          $lte: endDate
+        }
+      }).populate({
+        path: "userId",
+        select: "name role department", // Select fields from User
+        populate: [
+          {
+            path: "department",
+            select: "department",
+            options: { strictPopulate: false } // Graceful fallback for missing departments
+          },
+          {
+            path: "selected.branch_id",
+            model: "Branch",
+            select: "branchName",
+            options: { strictPopulate: false } // Avoid errors for missing branches
+          }
+        ]
+      })
+      if (misspunchdata && misspunchdata.length) {
+        console.log("returndone")
+        return res.status(200).json({ message: "misspunchfound", data: misspunchdata })
+      } else {
+        return res.status(400).json({ message: "not found" })
+      }
+    }
+
+  } catch (error) {
+    console.log("error", error.message)
+    return res.status(500).json({ message: "Internal server error" })
+  }
+}
 export const RejectOnsite = async (req, res) => {
   try {
     const role = req?.query?.role
@@ -13256,7 +13398,7 @@ export const GetsomeAllsummary = async (
       const present = []
       const fulldayarr = []
       const halfdayarr = []
- attendances?.length &&
+      attendances?.length &&
         attendances?.forEach((att) => {
           const day = att.attendanceDate.getDate()
           const dayTime = att.attendanceDate.toISOString().split("T")[0]
@@ -13870,7 +14012,7 @@ export const GetsomeAllsummary = async (
           }
           daysInMonth.delete(day)
         })
-     
+
       onsites?.length &&
         onsites?.forEach((onsite) => {
           const onsiteDate = onsite.onsiteDate.toISOString().split("T")[0]
