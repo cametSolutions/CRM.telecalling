@@ -7677,7 +7677,7 @@ export const MisspunchRegister = async (req, res) => {
     const newMisspunch = await Misspunch.create({
       userId,
       remark,
-      userModel,
+      userModel:userModel.toLowerCase()==="admin"?userModel:"Staff",
       misspunchDate: new Date(misspunchDate),
       applyDate: new Date(),
       misspunchType
