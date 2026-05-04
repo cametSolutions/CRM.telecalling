@@ -16,8 +16,8 @@ const UserAdd = ({
   handleUserData,
   handleEditedData
 }) => {
-console.log(User)
-console.log(Selected)
+  console.log(User)
+  console.log(Selected)
   const {
     register,
     handleSubmit,
@@ -136,7 +136,7 @@ console.log(Selected)
       toast.error("please select a branch")
       return
     }
-  
+
     const isIncluded = tableData.some(
       (item) => JSON.stringify(item) === JSON.stringify(tableObject)
     )
@@ -229,7 +229,7 @@ console.log(Selected)
       setValue("email", User.email)
       setValue("mobile", User.mobile)
       setValue("privilegeleavestartsfrom", User.privilegeleavestartsfrom)
-console.log(User.casualleavestartsfrom)
+      console.log(User.casualleavestartsfrom)
       setValue("casualleavestartsfrom", User.casualleavestartsfrom)
       setValue("sickleavestartsfrom", User.sickleavestartsfrom)
       setValue("address", User.address)
@@ -352,13 +352,13 @@ console.log(User.casualleavestartsfrom)
   const onSubmit = (data) => {
     if (process === "Registration") {
       if (data) {
-        data.name.trim(),
+        ;(data.name.trim(),
           data.email.trim(),
           data.mobile.trim(),
           data.password.trim(),
           data.address.trim(),
           data.pincode.trim(),
-          data.designation.trim()
+          data.designation.trim())
       }
 
       const formattedData = {
@@ -666,6 +666,7 @@ console.log(User.casualleavestartsfrom)
                 <option value="Staff">Staff</option>
                 <option value="Admin">Admin</option>
                 <option value="Manager">Manager</option>
+                <option value="Team Leader">Team Leader</option>
               </select>
             </div>
 
@@ -902,8 +903,8 @@ console.log(User.casualleavestartsfrom)
                   >
                     {isEditMode ? (
                       <>
-                        <span className="text-xl font-bold mr-1">+</span>Update To
-                        Table
+                        <span className="text-xl font-bold mr-1">+</span>Update
+                        To Table
                       </>
                     ) : (
                       <>

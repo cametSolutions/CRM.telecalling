@@ -26,7 +26,7 @@ function LeadRegister() {
         // wait for toast to be visible, then reload
         setTimeout(() => {
           navigate(0) // or window.location.reload()
-        }, 1500)
+        }, 0)
       } else if (response.status === 201) {
         setpopUpMessage(response.data.message)
       }

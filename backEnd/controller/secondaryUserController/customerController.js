@@ -442,16 +442,226 @@ export const GetselectedDateCalls = async (req, res) => {
     end.setHours(23, 59, 59, 999); // End of the day
 
 
-    const customerCalls = await CallRegistration.aggregate([
+    // const customerCalls = await CallRegistration.aggregate([
 
+    //   {
+    //     $match: {
+    //       "callregistration": { $exists: true, $ne: [] },
+    //       "callregistration.formdata.attendedBy": { $type: "array" }
+    //     }
+    //   }
+    //   ,
+
+
+    //   {
+    //     $addFields: {
+    //       callregistration: {
+    //         $filter: {
+    //           input: "$callregistration",
+    //           as: "call",
+    //           cond: {
+    //             $gt: [
+    //               {
+    //                 $size: {
+    //                   $filter: {
+    //                     input: {
+    //                       $ifNull: ["$$call.formdata.attendedBy", []]
+    //                     },
+    //                     as: "attendee",
+    //                     cond: {
+    //                       $and: [
+    //                         { $ne: ["$$attendee.calldate", null] },
+    //                         { $ne: ["$$attendee.calldate", ""] },
+    //                         { $in: [{ $type: "$$attendee.calldate" }, ["string", "date"]] },
+    //                         {
+    //                           $gte: [
+    //                             { $toDate: "$$attendee.calldate" },
+    //                             start
+    //                           ]
+    //                         },
+    //                         {
+    //                           $lte: [
+    //                             { $toDate: "$$attendee.calldate" },
+    //                             end
+    //                           ]
+    //                         }
+    //                       ]
+    //                     }
+    //                   }
+    //                 }
+    //               },
+    //               0
+    //             ]
+    //           }
+    //         }
+    //       }
+    //     }
+    //   }
+
+    //   ,
+    //   {
+    //     $match: {
+    //       // Ensure callregistration array still contains at least one element after filtering
+    //       callregistration: { $ne: [] }
+    //     }
+    //   },
+
+    //   // Lookup for product details (and directly enrich the existing product field)
+    //   {
+    //     $lookup: {
+    //       from: "products",
+    //       localField: "callregistration.product",
+    //       foreignField: "_id",
+    //       as: "productDetails" // We temporarily store product details here
+    //     }
+    //   },
+
+    //   // Lookup for attendedBy details (and directly enrich the existing attendedBy field)
+    //   {
+    //     $lookup: {
+    //       from: "staffs",
+    //       localField: "callregistration.formdata.attendedBy.callerId",
+    //       foreignField: "_id",
+    //       as: "attendedByDetails" // Temporary storage for attendedBy details
+    //     }
+    //   },
+
+    //   // Lookup for completedBy details (and directly enrich the existing completedBy field)
+    //   {
+    //     $lookup: {
+    //       from: "staffs",
+    //       localField: "callregistration.formdata.completedBy.callerId",
+    //       foreignField: "_id",
+    //       as: "completedByDetails" // Temporary storage for completedBy details
+    //     }
+    //   },
+    //   {
+    //     $addFields: {
+    //       // Map callregistration to include matched product details
+    //       callregistration: {
+    //         $map: {
+    //           input: "$callregistration", // Iterate over callregistration array
+    //           as: "registration",
+    //           in: {
+    //             $mergeObjects: [
+    //               "$$registration", // Preserve existing callregistration fields
+    //               {
+    //                 productdetails: {
+    //                   $arrayElemAt: [
+    //                     {
+    //                       $filter: {
+    //                         input: "$productDetails", // Filter joined products
+    //                         as: "product",
+    //                         cond: {
+    //                           $eq: ["$$product._id", "$$registration.product"] // Match product ID
+    //                         }
+    //                       }
+    //                     },
+    //                     0
+    //                   ]
+    //                 }
+    //               }
+    //             ]
+    //           }
+    //         }
+    //       }
+    //     }
+    //   },
+    //   {
+    //     $addFields: {
+    //       // Map callregistration to include attendedBy details
+    //       callregistration: {
+    //         $map: {
+    //           input: "$callregistration", // Iterate over callregistration array
+    //           as: "registration",
+    //           in: {
+    //             $mergeObjects: [
+    //               "$$registration", // Preserve existing callregistration fields
+    //               {
+    //                 attendeddetails: {
+    //                   $arrayElemAt: [
+    //                     {
+    //                       $filter: {
+    //                         input: "$attendedByDetails", // Filter attendedBy details
+    //                         as: "attended",
+    //                         cond: {
+    //                           $eq: [
+    //                             "$$attended._id", // Match attendedBy user ID
+    //                             {
+    //                               $arrayElemAt: [
+    //                                 "$$registration.formdata.attendedBy.callerId",
+    //                                 0
+    //                               ]
+    //                             }
+    //                           ]
+    //                         }
+    //                       }
+    //                     },
+    //                     0
+    //                   ]
+    //                 }
+    //               }
+    //             ]
+    //           }
+    //         }
+    //       }
+    //     }
+    //   },
+    //   {
+    //     $addFields: {
+    //       // Map callregistration to include completedBy details
+    //       callregistration: {
+    //         $map: {
+    //           input: "$callregistration", // Iterate over callregistration array
+    //           as: "registration",
+    //           in: {
+    //             $mergeObjects: [
+    //               "$$registration", // Preserve existing callregistration fields
+    //               {
+    //                 completedbydetails: {
+    //                   $arrayElemAt: [
+    //                     {
+    //                       $filter: {
+    //                         input: "$completedByDetails", // Filter completedBy details
+    //                         as: "completed",
+    //                         cond: {
+    //                           $eq: [
+    //                             "$$completed._id", // Match completedBy user ID
+    //                             {
+    //                               $arrayElemAt: [
+    //                                 "$$registration.formdata.completedBy.callerId",
+    //                                 0
+    //                               ]
+    //                             }
+    //                           ]
+    //                         }
+    //                       }
+    //                     },
+    //                     0
+    //                   ]
+    //                 }
+    //               }
+    //             ]
+    //           }
+    //         }
+    //       }
+    //     }
+    //   },
+    //   {
+    //     $project: {
+    //       customerName: 1, // Include necessary fields in the result
+
+    //       callregistration: 1
+    //     }
+    //   }
+    // ])
+    const customerCalls = await CallRegistration.aggregate([
       {
         $match: {
-          "callregistration": { $exists: true, $ne: [] },
+          callregistration: { $exists: true, $ne: [] },
           "callregistration.formdata.attendedBy": { $type: "array" }
         }
-      }
-      ,
-
+      },
 
       {
         $addFields: {
@@ -472,7 +682,12 @@ export const GetselectedDateCalls = async (req, res) => {
                           $and: [
                             { $ne: ["$$attendee.calldate", null] },
                             { $ne: ["$$attendee.calldate", ""] },
-                            { $in: [{ $type: "$$attendee.calldate" }, ["string", "date"]] },
+                            {
+                              $in: [
+                                { $type: "$$attendee.calldate" },
+                                ["string", "date"]
+                              ]
+                            },
                             {
                               $gte: [
                                 { $toDate: "$$attendee.calldate" },
@@ -496,64 +711,94 @@ export const GetselectedDateCalls = async (req, res) => {
             }
           }
         }
-      }
+      },
 
-      ,
       {
         $match: {
-          // Ensure callregistration array still contains at least one element after filtering
           callregistration: { $ne: [] }
         }
       },
 
-      // Lookup for product details (and directly enrich the existing product field)
       {
         $lookup: {
           from: "products",
           localField: "callregistration.product",
           foreignField: "_id",
-          as: "productDetails" // We temporarily store product details here
+          as: "productDetails"
         }
       },
 
-      // Lookup for attendedBy details (and directly enrich the existing attendedBy field)
       {
         $lookup: {
           from: "staffs",
           localField: "callregistration.formdata.attendedBy.callerId",
           foreignField: "_id",
-          as: "attendedByDetails" // Temporary storage for attendedBy details
+          as: "attendedByStaffDetails"
         }
       },
 
-      // Lookup for completedBy details (and directly enrich the existing completedBy field)
+      {
+        $lookup: {
+          from: "admins",
+          localField: "callregistration.formdata.attendedBy.callerId",
+          foreignField: "_id",
+          as: "attendedByAdminDetails"
+        }
+      },
+
       {
         $lookup: {
           from: "staffs",
           localField: "callregistration.formdata.completedBy.callerId",
           foreignField: "_id",
-          as: "completedByDetails" // Temporary storage for completedBy details
+          as: "completedByStaffDetails"
         }
       },
+
+      {
+        $lookup: {
+          from: "admins",
+          localField: "callregistration.formdata.completedBy.callerId",
+          foreignField: "_id",
+          as: "completedByAdminDetails"
+        }
+      },
+
       {
         $addFields: {
-          // Map callregistration to include matched product details
+          attendedByDetails: {
+            $concatArrays: [
+              { $ifNull: ["$attendedByStaffDetails", []] },
+              { $ifNull: ["$attendedByAdminDetails", []] }
+            ]
+          },
+          completedByDetails: {
+            $concatArrays: [
+              { $ifNull: ["$completedByStaffDetails", []] },
+              { $ifNull: ["$completedByAdminDetails", []] }
+            ]
+          }
+        }
+      },
+
+      {
+        $addFields: {
           callregistration: {
             $map: {
-              input: "$callregistration", // Iterate over callregistration array
+              input: "$callregistration",
               as: "registration",
               in: {
                 $mergeObjects: [
-                  "$$registration", // Preserve existing callregistration fields
+                  "$$registration",
                   {
                     productdetails: {
                       $arrayElemAt: [
                         {
                           $filter: {
-                            input: "$productDetails", // Filter joined products
+                            input: "$productDetails",
                             as: "product",
                             cond: {
-                              $eq: ["$$product._id", "$$registration.product"] // Match product ID
+                              $eq: ["$$product._id", "$$registration.product"]
                             }
                           }
                         },
@@ -567,29 +812,34 @@ export const GetselectedDateCalls = async (req, res) => {
           }
         }
       },
+
       {
         $addFields: {
-          // Map callregistration to include attendedBy details
           callregistration: {
             $map: {
-              input: "$callregistration", // Iterate over callregistration array
+              input: "$callregistration",
               as: "registration",
               in: {
                 $mergeObjects: [
-                  "$$registration", // Preserve existing callregistration fields
+                  "$$registration",
                   {
                     attendeddetails: {
                       $arrayElemAt: [
                         {
                           $filter: {
-                            input: "$attendedByDetails", // Filter attendedBy details
+                            input: "$attendedByDetails",
                             as: "attended",
                             cond: {
                               $eq: [
-                                "$$attended._id", // Match attendedBy user ID
+                                "$$attended._id",
                                 {
                                   $arrayElemAt: [
-                                    "$$registration.formdata.attendedBy.callerId",
+                                    {
+                                      $ifNull: [
+                                        "$$registration.formdata.attendedBy.callerId",
+                                        []
+                                      ]
+                                    },
                                     0
                                   ]
                                 }
@@ -607,29 +857,34 @@ export const GetselectedDateCalls = async (req, res) => {
           }
         }
       },
+
       {
         $addFields: {
-          // Map callregistration to include completedBy details
           callregistration: {
             $map: {
-              input: "$callregistration", // Iterate over callregistration array
+              input: "$callregistration",
               as: "registration",
               in: {
                 $mergeObjects: [
-                  "$$registration", // Preserve existing callregistration fields
+                  "$$registration",
                   {
                     completedbydetails: {
                       $arrayElemAt: [
                         {
                           $filter: {
-                            input: "$completedByDetails", // Filter completedBy details
+                            input: "$completedByDetails",
                             as: "completed",
                             cond: {
                               $eq: [
-                                "$$completed._id", // Match completedBy user ID
+                                "$$completed._id",
                                 {
                                   $arrayElemAt: [
-                                    "$$registration.formdata.completedBy.callerId",
+                                    {
+                                      $ifNull: [
+                                        "$$registration.formdata.completedBy.callerId",
+                                        []
+                                      ]
+                                    },
                                     0
                                   ]
                                 }
@@ -647,15 +902,14 @@ export const GetselectedDateCalls = async (req, res) => {
           }
         }
       },
+
       {
         $project: {
-          customerName: 1, // Include necessary fields in the result
-
+          customerName: 1,
           callregistration: 1
         }
       }
     ])
-
 
     return res
       .status(200)
@@ -1780,7 +2034,7 @@ export const customerCallRegistration = async (req, res) => {
 
           }
           callToUpdate.license = calldata.license
-        
+
           callToUpdate.branchName = Array.isArray(calldata.branchName)
             ? calldata.branchName
             : [calldata.branchName];

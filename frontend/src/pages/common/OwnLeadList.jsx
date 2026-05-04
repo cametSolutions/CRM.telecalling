@@ -478,6 +478,7 @@ export default function OwnLeadList() {
         value: b.branch_id,
         label: b.branchName
       }))
+console.log(branch)
       setcompanyBranches(branch)
       setselectedCompanyBranch(branch[0].value)
       setLoggedUser(userData)

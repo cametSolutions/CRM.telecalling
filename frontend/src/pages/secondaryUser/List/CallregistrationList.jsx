@@ -493,25 +493,25 @@ console.log(todaysSolvedCount)
   }
   console.log(filteredCalls)
   return (
-    <div className=" mx-auto p-2  md:p-5 bg-white">
-      <div className="w-auto shadow-lg rounded p-4 pt-1 h-full bg-neutral-50 ">
-        <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
-          {/* Search Bar for large screens */}
+    <div className=" mx-auto p-2  md:p-5 bg-blue-50 h-full">
+      <div className="w-auto shadow-lg rounded p-4 pt-1 flex flex-col bg-neutral-50 ">
+        {/* <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-2">
+    
 
           <div className="mx-4 flex items-center space-x-4">
-            {/* Search Input Wrapper */}
+          
             <div className="relative flex items-center w-full">
               <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
               <input
                 type="text"
-                // value={searchTerm||""}
+            
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-full py-2 px-4 pl-10 focus:outline-none"
                 placeholder="Search for..."
               />
             </div>
 
-            {/* Label for Call */}
+        
             <label
               onClick={() =>
                 navigate(
@@ -539,7 +539,7 @@ console.log(todaysSolvedCount)
             </select>
           </div>
 
-          <div>
+          <div className="flex-1">
             <table className="text-center">
               <tbody>
                 <tr>
@@ -609,13 +609,79 @@ console.log(todaysSolvedCount)
               </tbody>
             </table>
           </div>
-        </div>
-        {/* <div>
-          <button onClick={handleupdateadmin}>update</button>
         </div> */}
+       
+<div className="mb-2 flex flex-col gap-4 px-4 lg:flex-row lg:items-start lg:justify-between lg:px-6 xl:px-8">
+  {/* Left side */}
+  <div className="flex w-full flex-col gap-3 lg:max-w-2xl">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="relative flex-1">
+        <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+        <input
+          type="text"
+          onChange={handleChange}
+          className="w-full rounded-full border border-gray-300 py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Search for..."
+        />
+      </div>
 
+      <button
+        type="button"
+        onClick={() =>
+          navigate(`/${users.role.toLowerCase()}/transaction/call-registration`)
+        }
+        className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition-all hover:bg-blue-700"
+      >
+        Call
+      </button>
+
+      <select
+        onChange={(e) => {
+          setLoading(true);
+          setFilteredCalls([]);
+          setSelectedCompanyBranch(e.target.value);
+        }}
+        className="min-w-[140px] cursor-pointer rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        {loggedUserBranches?.map((branch) => (
+          <option key={branch._id} value={branch.label}>
+            {branch.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  </div>
+
+  {/* Right side */}
+  <div className="w-full lg:w-auto">
+    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white shadow-sm">
+      <table className="min-w-max text-center text-sm">
+        <tbody>
+          <tr className="border-b bg-gray-50">
+            <td className="px-3 py-2 font-bold text-[#010bff]">Total Calls</td>
+            <td className="px-3 py-2 font-bold text-purple-700">Colleague Solved</td>
+            <td className="px-3 py-2 font-bold text-red-600">Pending Calls</td>
+            <td className="px-3 py-2 font-bold text-green-600">Solved Calls</td>
+            <td className="px-3 py-2 font-bold text-gray-600">Total Duration</td>
+          </tr>
+          <tr>
+            <td className="px-3 py-2 text-[#010bff]">{userCallStatus?.totalCalls}</td>
+            <td className="px-3 py-2 text-purple-700">
+              {userCallStatus?.collegeSolvedCalls}
+            </td>
+            <td className="px-3 py-2 text-red-600">{userCallStatus?.pendingCalls}</td>
+            <td className="px-3 py-2 text-green-600">{userCallStatus?.solvedCalls}</td>
+            <td className="px-3 py-2 text-gray-600">
+              {formatDuration(userCallStatus?.totalDuration)}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
         <hr className="border-t-2 border-gray-300 mb-2 " />
-        {/* <Tiles datas={registeredcalllist?.alltokens} /> */}
+        
         <div className="flex justify-around">
           <Tiles
             title="Pending Calls"

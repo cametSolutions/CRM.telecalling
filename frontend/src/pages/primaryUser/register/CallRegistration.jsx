@@ -199,6 +199,7 @@ export default function CallRegistration() {
   useEffect(() => {
     const handler = setTimeout(() => {
       if (search && !selectedCustomer) {
+        console.log("H")
         fetchCustomerData(search)
         setloading(true)
       } else {
@@ -278,7 +279,7 @@ export default function CallRegistration() {
   const fetchCallDetails = async (callId) => {
     setLoader(true)
     const response = await fetch(
-      `https://www.crmtest.camet.in/api/customer/getcallregister/${callId}`,
+      `https://www.crm.camet.in/api/customer/getcallregister/${callId}`,
       {
         method: "GET",
         credentials: "include" // This allows cookies to be sent with the request
@@ -425,7 +426,9 @@ export default function CallRegistration() {
         }
         updatedformData.completedBy = {
           callerId: user._id,
-          role: user.role
+          role: user.role,
+          duration: timeData?.duration,
+          calldate: startTime
         }
         // Set both attendedBy and completedBy if status is solved
       }
@@ -451,6 +454,7 @@ export default function CallRegistration() {
 
         return
       }
+      console.log(calldata)
 
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
@@ -519,7 +523,9 @@ export default function CallRegistration() {
         }
         updatedformData.completedBy = {
           callerId: user._id,
-          role: user.role
+          role: user.role,
+          duration: timeData.duration,
+          calldate: startTime
         }
         // Set both attendedBy and completedBy if status is solved
       }
@@ -540,11 +546,13 @@ export default function CallRegistration() {
 
       setcallReport(calldata)
       if (!calldata.branchName) {
-        console.log("if branchname is null",calldata.branchName)
+        console.log("if branchname is null", calldata.branchName)
         alert("Unable to load branch details. Please refresh and try again.")
 
         return
       }
+      console.log(calldata)
+
       const response = await api.post(
         `/customer/callRegistration?customerid=${selectedCustomer._id}&customer=${selectedCustomer.customerName}&branchName=${branchName}&username=${user.name}`,
         calldata,
@@ -671,7 +679,7 @@ Problem:    \t${selectedText}
     let url
     if (user.role === "Admin") {
       // url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
-      url = `https://www.crmtest.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
+      url = `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
     } else {
       const branches = JSON.stringify(branch)
 
@@ -684,7 +692,7 @@ Problem:    \t${selectedText}
       url =
         branches &&
         branches.length > 0 &&
-        `https://www.crmtest.camet.in/api/customer/getCustomer?search=${query}&role=${
+        `https://www.crm.camet.in/api/customer/getCustomer?search=${query}&role=${
           user.role
         }&userBranch=${encodeURIComponent(branches)}`
     }

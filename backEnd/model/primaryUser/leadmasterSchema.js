@@ -1,12 +1,12 @@
 import mongoose from "mongoose";
 const paymentEntrySchema = new mongoose.Schema(
   {
-    productorServiceId:{
+    productorServiceId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Product",
       required: true,
     },
-productorServicemodel:{type:String},
+    productorServicemodel: { type: String },
     netAmount: { type: Number, required: true },
     receivedAmount: { type: Number, required: true },
     balanceAmount: { type: Number, required: true },
@@ -33,7 +33,7 @@ const leadSchema = new mongoose.Schema(
     leadClosedDate: { type: Date },
     leadLostDate: { type: Date },
     leadConvertedDate: { type: Date },
-forcefullyClosedTarget:{type:Boolean},
+    forcefullyClosedTarget: { type: Boolean },
     //may some leads are not confirmed may customers leaves from leads so to check the leads is lost or confirmed
     leadLost: { type: Boolean, default: false },
     //leads are gets from branchwise so to know the leads are in which branch
@@ -108,7 +108,7 @@ forcefullyClosedTarget:{type:Boolean},
         paymentverifiedModel: { type: String, enum: ["Staff", "Admin"] },
         verifiedAt: { type: Date },
         receivedAmount: { type: Number },
-        paymentEntries:[paymentEntrySchema],
+        paymentEntries: [paymentEntrySchema],
         receivedBy: {
           type: mongoose.Schema.Types.ObjectId,
           refpath: "recievedModel",
