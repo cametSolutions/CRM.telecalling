@@ -2068,7 +2068,7 @@
 //               <div className="text-center text-red-700 py-3">
 //                 <p>{message.bottom}</p>
 //               </div>
-//                         
+//
 //             </div>
 //           </div>
 //         )
@@ -2812,7 +2812,6 @@
 // }
 
 // export default LeaveApplication
-
 
 import React, { useEffect, useState } from "react"
 import { toast } from "react-toastify"
@@ -3596,7 +3595,7 @@ function LeaveApplication() {
       }
     })
   }
-console.log(user)
+  console.log(user)
   const handleSubmit = async (tab) => {
     console.log(tab)
     console.log("enddddddddddddddddddddddddddddddddddddddddd")
@@ -3862,7 +3861,8 @@ console.log(user)
           remark: formData?.remark,
           misspunchType: formData?.mispunchType,
           userId: user?._id,
-          userModel: user?.role
+          userModel: user?.role,
+          assignedto: user?.assignedto
         }
         // const response = await api.post(
         //   "http://localhost:9000/api/auth/misspunchRegister",
@@ -3894,7 +3894,6 @@ console.log(user)
       console.log("error:", error)
     }
   }
- 
 
   const resetApplicationFlow = () => {
     setShowModal(false)
@@ -3948,7 +3947,6 @@ console.log(user)
     resetApplicationFlow()
   }
 
-  
   const selectedTabContent = (value) => {
     let existingEvent
     switch (true) {
@@ -5316,8 +5314,6 @@ console.log(user)
         ))}
       </div>
 
-     
-
       {/* TYPE SELECTOR POPUP */}
       {showTypeSelector && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -5734,4 +5730,3 @@ console.log(user)
 }
 
 export default LeaveApplication
-
