@@ -2068,7 +2068,7 @@
 //               <div className="text-center text-red-700 py-3">
 //                 <p>{message.bottom}</p>
 //               </div>
-//                         
+//
 //             </div>
 //           </div>
 //         )
@@ -2812,7 +2812,6 @@
 // }
 
 // export default LeaveApplication
-
 
 import React, { useEffect, useState } from "react"
 import { toast } from "react-toastify"
@@ -3596,7 +3595,7 @@ function LeaveApplication() {
       }
     })
   }
-console.log(user)
+  console.log(user)
   const handleSubmit = async (tab) => {
     console.log(tab)
     console.log("enddddddddddddddddddddddddddddddddddddddddd")
@@ -3654,20 +3653,8 @@ console.log(user)
           setMessage({ top: "", bottom: "" })
           console.log("hhhhh")
           //Assuming you have an API endpoint for creating leave requests
-          // const response = await fetch(
-          //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
-          //   {
-          //     method: "POST",
-          //     headers: {
-          //       "Content-Type": "application/json"
-          //     },
-          //     body: JSON.stringify(formData),
-          //     credentials: "include"
-          //   }
-          // )
-
           const response = await fetch(
-            `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+            `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
             {
               method: "POST",
               headers: {
@@ -3677,6 +3664,18 @@ console.log(user)
               credentials: "include"
             }
           )
+
+          // const response = await fetch(
+          //   `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+          //   {
+          //     method: "POST",
+          //     headers: {
+          //       "Content-Type": "application/json"
+          //     },
+          //     body: JSON.stringify(formData),
+          //     credentials: "include"
+          //   }
+          // )
 
           const responseData = await response.json()
 
@@ -3807,15 +3806,15 @@ console.log(user)
 
         // Proceed with API call
         setLoader(true)
-        // const response = await api.post(
-        //   `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
-        //   { formData, tableRows }
-        // )
-
         const response = await api.post(
-          `https://www.crm.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
+          `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
           { formData, tableRows }
         )
+
+        // const response = await api.post(
+        //   `https://www.crm.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
+        //   { formData, tableRows }
+        // )
 
         if (response.status === 200) {
           setcompensatoryLeave(false)
@@ -3862,17 +3861,18 @@ console.log(user)
           remark: formData?.remark,
           misspunchType: formData?.mispunchType,
           userId: user?._id,
-          userModel: user?.role
+          userModel: user?.role,
+          assignedto: user?.assignedto
         }
-        // const response = await api.post(
-        //   "http://localhost:9000/api/auth/misspunchRegister",
-        //   misspunchData
-        // )
-
         const response = await api.post(
-          "https://www.crm.camet.in/api/auth/misspunchRegister",
+          "http://localhost:9000/api/auth/misspunchRegister",
           misspunchData
         )
+
+        // const response = await api.post(
+        //   "https://www.crm.camet.in/api/auth/misspunchRegister",
+        //   misspunchData
+        // )
         if (response.status === 201 || response.status === 200) {
           console.log("Success:", response.data)
           toast.success("Misspunch registered")
@@ -3894,7 +3894,6 @@ console.log(user)
       console.log("error:", error)
     }
   }
- 
 
   const resetApplicationFlow = () => {
     setShowModal(false)
@@ -3948,7 +3947,6 @@ console.log(user)
     resetApplicationFlow()
   }
 
-  
   const selectedTabContent = (value) => {
     let existingEvent
     switch (true) {
@@ -5316,8 +5314,6 @@ console.log(user)
         ))}
       </div>
 
-     
-
       {/* TYPE SELECTOR POPUP */}
       {showTypeSelector && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -5734,4 +5730,3 @@ console.log(user)
 }
 
 export default LeaveApplication
-

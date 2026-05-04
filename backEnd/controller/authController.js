@@ -6327,7 +6327,8 @@ import Attendance from "../model/primaryUser/attendanceSchema.js"
 import Holymaster from "../model/secondaryUser/holydaymasterSchema.js"
 import Onsite from "../model/primaryUser/onsiteSchema.js"
 const { Staff, Admin } = models
-import Misspunch from "../model/primaryUser/missPunchSchema.js"
+// import Misspunch from "../model/primaryUser/missPunchSchema.js"
+import Misspunch from "../model/primaryUser/misspunchingSchema.js"
 import bcrypt from "bcrypt"
 import CompensatoryLeave from "../model/primaryUser/compensatoryLeaveSchema.js"
 import generateToken from "../utils/generateToken.js"
@@ -7376,7 +7377,7 @@ export const ApproveMisspunch = async (req, res) => {
     // STEP 2: GET USER ID FROM MISSPUNCH RECORD
     // ============================================
     const misspunchRecord = await Misspunch.findById(selectedObjectId)
-      .select('userId')
+      .select('userId attendanceId')
       .session(session);
 
     if (!misspunchRecord || !misspunchRecord.userId) {
@@ -7390,13 +7391,13 @@ export const ApproveMisspunch = async (req, res) => {
     // ============================================
     // STEP 3: FIND ATTENDANCE RECORD FOR EXACT DATE
     // ============================================
+    console.log("misspunchRecord", misspunchRecord)
     const attendanceRecord = await Attendance.findOne({
+      _id: misspunchRecord.attendanceId,
       userId: misspunchUserId,
-      attendanceDate: {
-        $gte: startdate,
-        $lte: enddate
-      }
+
     }).session(session);
+    console.log("attendanerecoreeddd", misspunchRecord)
 
     if (!attendanceRecord) {
       await session.abortTransaction();
@@ -7613,85 +7614,88 @@ export const UploadImage = async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 };
-export const MisspunchRegister = async (req, res) => {
-  try {
-    const { userId, userModel, misspunchDate, misspunchType, remark } = req.body;
+// export const MisspunchRegister = async (req, res) => {
+//   try {
+//     const { userId, userModel, misspunchDate, misspunchType, remark } = req.body;
 
-    if (!userId || !userModel || !misspunchType || !misspunchDate) {
-      return res.status(400).json({ message: "Required fields missing" });
-    }
+//     if (!userId || !userModel || !misspunchType || !misspunchDate) {
+//       return res.status(400).json({ message: "Required fields missing" });
+//     }
 
-    const normalizedType = String(misspunchType).trim().toLowerCase();
+//     const normalizedType = String(misspunchType).trim().toLowerCase();
 
-    if (!["in", "out"].includes(normalizedType)) {
-      return res.status(400).json({ message: "Invalid misspunch type" });
-    }
+//     if (!["in", "out"].includes(normalizedType)) {
+//       return res.status(400).json({ message: "Invalid misspunch type" });
+//     }
 
-    const startOfDay = new Date(misspunchDate);
-    startOfDay.setHours(0, 0, 0, 0);
+//     const startOfDay = new Date(misspunchDate);
+//     startOfDay.setHours(0, 0, 0, 0);
 
-    const endOfDay = new Date(misspunchDate);
-    endOfDay.setHours(23, 59, 59, 999);
+//     const endOfDay = new Date(misspunchDate);
+//     endOfDay.setHours(23, 59, 59, 999);
 
-    const attendanceRecord = await Attendance.findOne({
-      userId,
-      attendanceDate: {
-        $gte: startOfDay,
-        $lte: endOfDay
-      }
-    });
+//     const attendanceRecord = await Attendance.findOne({
+//       userId,
+//       attendanceDate: {
+//         $gte: startOfDay,
+//         $lte: endOfDay
+//       }
+//     });
 
-    if (!attendanceRecord) {
-      return res.status(404).json({
-        message: "No attendance found for this date"
-      });
-    }
+//     if (!attendanceRecord) {
+//       return res.status(404).json({
+//         message: "No attendance found for this date"
+//       });
+//     }
 
-    if (normalizedType === "in" && attendanceRecord?.inTime) {
-      return res.status(400).json({
-        message: "In time already exists, misspunch cannot be created"
-      });
-    }
+//     if (normalizedType === "in" && attendanceRecord?.inTime) {
+//       return res.status(400).json({
+//         message: "In time already exists, misspunch cannot be created"
+//       });
+//     }
 
-    if (normalizedType === "out" && attendanceRecord?.outTime) {
-      return res.status(400).json({
-        message: "Out time already exists, misspunch cannot be created"
-      });
-    }
+//     if (normalizedType === "out" && attendanceRecord?.outTime) {
+//       return res.status(400).json({
+//         message: "Out time already exists, misspunch cannot be created"
+//       });
+//     }
 
-    const alreadyApplied = await Misspunch.findOne({
-      userId,
-      misspunchType,
-      misspunchDate: {
-        $gte: startOfDay,
-        $lte: endOfDay
-      }
-    });
+//     const alreadyApplied = await Misspunch.findOne({
+//       userId,
+//       misspunchType,
+//       misspunchDate: {
+//         $gte: startOfDay,
+//         $lte: endOfDay
+//       },
 
-    if (alreadyApplied) {
-      return res.status(400).json({
-        message: `Misspunch already applied for ${misspunchType} on this date`
-      });
-    }
+//     });
 
-    const newMisspunch = await Misspunch.create({
-      userId,
-      remark,
-      userModel:userModel.toLowerCase()==="admin"?userModel:"Staff",
-      misspunchDate: new Date(misspunchDate),
-      applyDate: new Date(),
-      misspunchType
-    });
+//     if (alreadyApplied) {
+//       return res.status(400).json({
+//         message: `Misspunch already applied for ${misspunchType} on this date`
+//       });
+//     }
 
-    return res.status(201).json({
-      message: "Misspunch registered successfully",
-      data: newMisspunch
-    });
-  } catch (error) {
-    console.log("error", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
+//     const newMisspunch = await Misspunch.create({
+//       userId,
+//       remark,
+//       userModel: userModel.toLowerCase() === "admin" ? userModel : "Staff",
+//       misspunchDate: new Date(misspunchDate),
+//       applyDate: new Date(),
+//       misspunchType,
+//       attendanceId: attendanceRecord._id
+//     });
+// console.log("aaaaaatendanidddd",attendanceRecord)
+
+//     return res.status(201).json({
+//       message: "Misspunch registered successfully",
+//       data: newMisspunch
+//     });
+//   } catch (error) {
+//     console.log("error", error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 
 // export const MisspunchRegister = async (req, res) => {
 //   try {
@@ -7797,6 +7801,124 @@ export const MisspunchRegister = async (req, res) => {
 //     return res.status(500).json({ message: "Internal server error" })
 //   }
 // }
+export const MisspunchRegister = async (req, res) => {
+  try {
+    const { userId, userModel, misspunchDate, misspunchType, remark, assignedto } = req.body;
+
+
+
+    if (!userId || !userModel || !misspunchType || !misspunchDate) {
+      return res.status(400).json({ message: "Required fields missing" });
+    }
+
+    const normalizedType = String(misspunchType).trim().toLowerCase();
+    if (!["in", "out"].includes(normalizedType)) {
+      return res.status(400).json({ message: "Invalid misspunch type" });
+    }
+
+    const startOfDay = new Date(misspunchDate);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(misspunchDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const attendanceRecord = await Attendance.findOne({
+      userId,
+      attendanceDate: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      }
+    });
+
+    // 1) Make sure there *is* a record and log it
+    if (!attendanceRecord) {
+      return res.status(404).json({
+        message: "No attendance found for this date"
+      });
+    }
+
+    console.log("attendanceRecord from DB =>", attendanceRecord);
+    console.log("iddddddddddddddd", attendanceRecord._id)
+
+    if (normalizedType === "in" && attendanceRecord?.inTime) {
+      return res.status(400).json({
+        message: "In time already exists, misspunch cannot be created"
+      });
+    }
+
+    if (normalizedType === "out" && attendanceRecord?.outTime) {
+      return res.status(400).json({
+        message: "Out time already exists, misspunch cannot be created"
+      });
+    }
+
+    const alreadyApplied = await Misspunch.findOne({
+      userId,
+      misspunchType,
+      misspunchDate: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      }
+    });
+
+    if (alreadyApplied) {
+      return res.status(400).json({
+        message: `Misspunch already applied for ${misspunchType} on this date`
+      });
+    }
+
+    // 2) Normalize userModel to match schema enum: ["Staff", "Admin"]
+    const normalizedUserModel =
+      String(userModel).toLowerCase() === "admin" ? "Admin" : "Staff";
+    // let assignedto = null
+    // let assignedtoModel = null
+    // const isstaff = await Staff.findOne({ _id: assignedto })
+    // if (isstaff)
+    const isstaff = await Staff.findOne({ _id: assignedto })
+    console.log("isstaffff", isstaff)
+    const isadmin = await Admin.findOne({ _id: assignedto })
+    console.log("isadmin", isadmin)
+    let assignedtoModel
+    if (isstaff) {
+      assignedtoModel = "Staff"
+    } else if (isadmin) {
+      assignedtoModel = "Admin"
+    }
+
+    // 3) Prepare payload and log it
+    const misspunchPayload = {
+      userId,
+      remark,
+      userModel: normalizedUserModel,
+      misspunchDate: new Date(misspunchDate),
+      applyDate: new Date(),
+      misspunchType,
+      assignedto,
+      assignedtoModel,
+      attendanceId: attendanceRecord._id
+    };
+
+    console.log("misspunchPayload before create =>", misspunchPayload);
+    console.log("has attendanceId path =>", !!Misspunch.schema.path("attendanceId"));
+    console.log("typeof attendanceRecord._id =>", typeof attendanceRecord._id);
+    console.log(
+      "isValidObjectId =>",
+      mongoose.isValidObjectId(attendanceRecord._id)
+    )
+    // 4) Create and log saved doc
+    const newMisspunch = await Misspunch.create(misspunchPayload);
+
+    console.log("saved newMisspunch =>", newMisspunch);
+
+    return res.status(201).json({
+      message: "Misspunch registered successfully",
+      data: newMisspunch
+    });
+  } catch (error) {
+    console.log("error", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 export const OnsiteleaveApply = async (req, res) => {
   try {
     const { selectedid, assignedto } = req.query
@@ -7847,17 +7969,23 @@ export const Getallmisspunch = async (req, res) => {
     const start = new Date(startdate);
     start.setHours(0, 0, 0, 0); // Start of the day
     const enddate = req?.query?.endDate
-
+    const userid = req?.query?.userid
+    const role = req?.query?.role
     const end = new Date(enddate);
     end.setHours(23, 59, 59, 999)
     console.log("startdate", startdate)
     console.log("enddate", enddate)
-    const misspunchdata = await Misspunch.find({
+    const query = {
       misspunchDate: {
         $gte: startdate,
         $lte: enddate
       }
-    }).populate({
+    };
+
+    if (role?.toLowerCase() !== "admin") {
+      query.assignedto = new mongoose.Types.ObjectId(userid);
+    }
+    const misspunchdata = await Misspunch.find(query).populate({
       path: "userId",
       select: "name role department", // Select fields from User
       populate: [
