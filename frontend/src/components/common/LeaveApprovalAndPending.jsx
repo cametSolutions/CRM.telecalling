@@ -1751,7 +1751,7 @@ const LeaveApprovalAndPending = () => {
           (key) => states[key] === true
         )
         console.log(trueState)
-        return
+        
         const checkOnsite = pendingOnsite || approvedOnsite
 
         if (checkOnsite) {
