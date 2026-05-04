@@ -3,6 +3,7 @@ import { MdDelete } from "react-icons/md"
 
 function DeleteAlert({ onDelete, Id, category, branchId }) {
 console.log(category)
+console.log(branchId)
 
   //catergory used in leaveapplication delete
   const handleDelete = async () => {

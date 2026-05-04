@@ -3,6 +3,7 @@ import ExcelJS from "exceljs"
 import { saveAs } from "file-saver"
 import BarLoader from "react-spinners/BarLoader"
 import ResponsiveTable from "./ResponsiveTable"
+import { CardSkeletonLoader } from "../common/CardSkeletonLoader"
 import Modal from "./Modal"
 import api from "../../api/api"
 import BranchDropdown from "./BranchDropdown"
@@ -67,8 +68,6 @@ const LeaveSummary = () => {
       setleaveSummary(
         filterAttendance(staffAttendanceStats, searchTerm, selectedBranch, user)
       )
-
-      
     }
   }, [data, searchTerm])
   useEffect(() => {
@@ -81,7 +80,6 @@ const LeaveSummary = () => {
       setleaveSummary(
         filterAttendance(newattende, searchTerm, selectedBranch, user)
       )
-     
     }
   }, [selectedBranch])
 
@@ -493,7 +491,7 @@ const LeaveSummary = () => {
       </div>
       {/* Main Content */}
       {loading ? (
-        ""
+        <CardSkeletonLoader count={5} />
       ) : (
         <>
           <div className="flex-1 flex flex-col overflow-y-auto mx-4 mb-4 overflow-hidden shadow-xl rounded-lg">
