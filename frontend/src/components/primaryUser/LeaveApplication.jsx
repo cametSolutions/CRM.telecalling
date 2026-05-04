@@ -3596,7 +3596,7 @@ function LeaveApplication() {
       }
     })
   }
-
+console.log(user)
   const handleSubmit = async (tab) => {
     console.log(tab)
     console.log("enddddddddddddddddddddddddddddddddddddddddd")
@@ -3855,7 +3855,6 @@ function LeaveApplication() {
         }
       } else if (tab === "Mispunch") {
         console.log("hhhhhh")
-
         console.log(formData)
         setLoader(true)
         const misspunchData = {
