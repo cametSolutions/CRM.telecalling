@@ -1608,8 +1608,8 @@ const LeadFollowUp = () => {
     }
   }
   const hasCollectionData =
-    collectionData && Object.keys(collectionData).length > 0
-  console.log(collectionData)
+    collectionData && Object.keys(collectionupdatedata).length > 0
+  console.log(collectionupdatedata)
   console.log(hasCollectionData)
   const handleHistory = (
     history,
@@ -1759,6 +1759,9 @@ console.log(collectionData)
   }
 
   const handleFollowUpDateSubmit = async () => {
+console.log(formData)
+console.log(collectionupdatedata)
+return
     if (followupDateLoader) return
     try {
       let newErrors = {}
@@ -2751,7 +2754,7 @@ console.log(collectionData)
                           data={selectedData}
                           from="followup"
                           hasCollectionData={hasCollectionData}
-                          editData={collectionData}
+                          editData={collectionupdatedata}
                           closemodal={() => {
                             setishavePayment(false)
                             setcollectionUpdateModal(false)
