@@ -198,6 +198,7 @@ const LeaveSummary = () => {
     leaveData,
     leavetype
   ) => {
+console.log(leaveData)
     // Find the matching leave entry
     const matchingLeave = Object.values(leaveData).find(
       (entry) => entry.leaveCategory === leavetype
@@ -237,6 +238,10 @@ const LeaveSummary = () => {
   }
 
   const handleApply = async (staffId, selected, setIsApplying, type) => {
+console.log("adddd")
+console.log(type)
+
+
     try {
       if (type === "Leave") {
         const matchedStaff = leavesummaryList.find(
