@@ -39,7 +39,7 @@ const LeaveSummary = () => {
 
     loading
   } = UseFetch(`/auth/getsomeall?year=${selectedYear}&month=${selectedMonth}`)
-
+console.log(data)
   useEffect(() => {
     const userData = getLocalStorageItem("user")
     if (userData.selected && userData.selected.length > 1) {
@@ -62,6 +62,9 @@ const LeaveSummary = () => {
   useEffect(() => {
     if (data) {
       const { staffAttendanceStats, listofHolidays, sundayFulldate } = data
+console.log(staffAttendanceStats)
+const a=staffAttendanceStats.filter((item)=>item.name==="Sreeraj Vijay")
+console.log(a)
       setnewattendee(staffAttendanceStats)
       setHoly(listofHolidays)
       setCurrentmonthSundays(sundayFulldate)
@@ -512,7 +515,7 @@ console.log(type)
                       //     : ""
                       // }`}
                     >
-                      {/* Your existing summary card code */}
+                      
                       <div
                         className={` md:h-20 md:mr-4 shadow-lg rounded-lg w-full border cursor-pointer
                       ${
