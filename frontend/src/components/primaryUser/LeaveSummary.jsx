@@ -322,7 +322,7 @@ console.log(type)
       { header: "Employ_Name", key: "name", width: 25 },
       { header: "EMP_ID", key: "staffId", width: 15 },
       { header: "Casual_Leave", key: "casualLeave", width: 15 },
-      { header: "Privileage_Leave", key: "privLeave", width: 15 },
+      { header: "Privilege_Leave", key: "privLeave", width: 15 },
       { header: "Comp_Leave", key: "compLeave", width: 15 },
       { header: "Other_Leave", key: "otherLeave", width: 15 },
       { header: "Late_Cutting", key: "lateCutting", width: 15 },
@@ -367,7 +367,7 @@ console.log(type)
 
       Object.values(user.attendancedates).forEach((details) => {
         casualLeave += details.casualLeave || 0
-        privilegeLeave += details.privileageLeave || 0
+        privilegeLeave += details.privilegeLeave || 0
         compensatoryLeave += details.compensatoryLeave || 0
         otherLeave += details.otherLeave || 0
       })

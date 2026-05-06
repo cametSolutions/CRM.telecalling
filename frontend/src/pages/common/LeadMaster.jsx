@@ -443,6 +443,7 @@ const LeadMaster = ({
   showmessage,
   showpopupMessage
 }) => {
+  console.log(Data)
   const {
     register: registerMain,
     handleSubmit: handleSubmitMain,
@@ -763,6 +764,34 @@ const LeadMaster = ({
       setallcustomer(customerData)
     }
   }, [customerData])
+  useEffect(() => {
+    if (Data && Data.length) {
+      console.log("hh")
+      console.log(Data)
+      setValueModal("customerName", Data[0]?.customerName?.customerName)
+      setValueModal("email", Data[0]?.customerName?.email)
+      setValueModal("mobile", Data[0]?.customerName?.mobile)
+
+      setValueModal("landline", Data[0]?.customerName?.landline)
+
+      setValueModal("contactPerson", Data[0]?.customerName?.contactPerson)
+
+      setValueModal("address1", Data[0]?.customerName?.address1)
+
+      setValueModal("pincode", Data[0]?.customerName?.pincode)
+
+      setValueModal("partner", Data[0]?.customerName?.partner?._id)
+
+      setValueModal("registrationType", Data[0]?.customerName?.registrationType)
+
+      setValueModal("gstNo", Data[0]?.customerName?.gstNo)
+
+      setValueModal("city", Data[0]?.customerName?.city)
+
+      setValueModal("industry", Data[0]?.customerName?.industry)
+      console.log("hh")
+    }
+  }, [])
 
   useEffect(() => {
     if (customerData && customerData.length && selectedBranch) {
@@ -1454,7 +1483,7 @@ const LeadMaster = ({
                           isReadOnly ? "cursor-not-allowed opacity-70" : ""
                         }`}
                       >
-                        NEW
+                        {Data ? "UPDATE" : "NEW"}
                       </button>
                     </div>
                     {errorsMain.customerName && (
@@ -2068,11 +2097,13 @@ const LeadMaster = ({
                 <div className="bg-[#1B2A4A] px-6 py-4 flex items-center justify-between flex-shrink-0">
                   <div>
                     <h2 className="text-white text-base font-bold tracking-wide">
-                      Add New Customer
+                      {Data ? "Update Customer Details" : "Add New Customer"}
                     </h2>
-                    <p className="text-blue-300 text-xs mt-0.5">
-                      Fill in the details to register a new customer
-                    </p>
+                    {!Data && (
+                      <p className="text-blue-300 text-xs mt-0.5">
+                        Fill in the details to register a new customer
+                      </p>
+                    )}
                   </div>
                   <button
                     type="button"
