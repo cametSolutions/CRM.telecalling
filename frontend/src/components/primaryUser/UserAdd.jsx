@@ -127,7 +127,7 @@ const UserAdd = ({
         value: state.isoCode
       }))
     : [selectedCountry]
-
+console.log(stateOptions)
   const handleTableData = () => {
     if (tableObject.company_id.trim() === "") {
       toast.error("please select a company")
@@ -551,6 +551,7 @@ const UserAdd = ({
                 }}
                 isDisabled={!selectedCountry}
               />
+             
               {errors.state && (
                 <p className="text-red-500 text-xs mt-1">State is required</p>
               )}

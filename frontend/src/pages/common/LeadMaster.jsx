@@ -10,6 +10,7 @@ import PopUp from "../../components/common/PopUp"
 import { toast } from "react-toastify"
 import UseFetch from "../../hooks/useFetch"
 import api from "../../api/api"
+import { useNavigate } from "react-router-dom"
 import { Loader } from "lucide-react"
 import { selectedBranch } from "../../../slices/companyBranchSlice"
 
@@ -432,7 +433,7 @@ function ProductDropdown({
 // ─────────────────────────────────────────────────────────────────────────────
 const LeadMaster = ({
   process,
-  Data,
+  Data=null,
   isReadOnly,
   handleleadData,
   handleEditData,
@@ -460,6 +461,7 @@ const LeadMaster = ({
     setValue: setValueModal,
     getValues: getValuesModal,
     watch: watchModal,
+    control: controlModal,
     setError,
     clearErrors: clearmodalErros,
     formState: { errors: errorsModal },
@@ -508,10 +510,12 @@ const LeadMaster = ({
   const [selectedBranch, setSelectedBranch] = useState(null)
   const [tasklist, settasklist] = useState([])
   const [allcustomer, setallcustomer] = useState([])
+  console.log(allcustomer)
   const dropdownLicenseRef = useRef(null)
   const dropdownLeadforRef = useRef(null)
   const registrationType = watchModal("registrationType")
-
+  const navigate = useNavigate()
+  console.log(loggeduser)
   const { data: productData, loading: productLoading } = UseFetch(
     loggeduser &&
       selectedBranch &&
@@ -764,34 +768,35 @@ const LeadMaster = ({
       setallcustomer(customerData)
     }
   }, [customerData])
-  useEffect(() => {
-    if (Data && Data.length) {
-      console.log("hh")
-      console.log(Data)
-      setValueModal("customerName", Data[0]?.customerName?.customerName)
-      setValueModal("email", Data[0]?.customerName?.email)
-      setValueModal("mobile", Data[0]?.customerName?.mobile)
+  console.log(Data)
+  // useEffect(() => {
+  //   if (Data && Data.length) {
+  //     console.log("hh")
+  //     console.log(Data)
+  //     setValueModal("customerName", Data[0]?.customerName?.customerName)
+  //     setValueModal("email", Data[0]?.customerName?.email)
+  //     setValueModal("mobile", Data[0]?.customerName?.mobile)
 
-      setValueModal("landline", Data[0]?.customerName?.landline)
+  //     setValueModal("landline", Data[0]?.customerName?.landline)
 
-      setValueModal("contactPerson", Data[0]?.customerName?.contactPerson)
+  //     setValueModal("contactPerson", Data[0]?.customerName?.contactPerson)
 
-      setValueModal("address1", Data[0]?.customerName?.address1)
+  //     setValueModal("address1", Data[0]?.customerName?.address1)
 
-      setValueModal("pincode", Data[0]?.customerName?.pincode)
+  //     setValueModal("pincode", Data[0]?.customerName?.pincode)
 
-      setValueModal("partner", Data[0]?.customerName?.partner?._id)
+  //     setValueModal("partner", Data[0]?.customerName?.partner?._id)
 
-      setValueModal("registrationType", Data[0]?.customerName?.registrationType)
+  //     setValueModal("registrationType", Data[0]?.customerName?.registrationType)
 
-      setValueModal("gstNo", Data[0]?.customerName?.gstNo)
+  //     setValueModal("gstNo", Data[0]?.customerName?.gstNo)
 
-      setValueModal("city", Data[0]?.customerName?.city)
+  //     setValueModal("city", Data[0]?.customerName?.city)
 
-      setValueModal("industry", Data[0]?.customerName?.industry)
-      console.log("hh")
-    }
-  }, [])
+  //     setValueModal("industry", Data[0]?.customerName?.industry)
+  //     console.log("hh")
+  //   }
+  // }, [])
 
   useEffect(() => {
     if (customerData && customerData.length && selectedBranch) {
@@ -854,6 +859,7 @@ const LeadMaster = ({
       })),
     []
   )
+  console.log(countryOptions)
   const stateOptions = selectedCountry
     ? State.getStatesOfCountry(selectedCountry.value).map((state) => ({
         label: state.name,
@@ -883,7 +889,38 @@ const LeadMaster = ({
       setValueModal("state", defaultState.value)
     }
   }, [defaultState, getValuesModal, setValueModal])
+  const handleOpenmodal = () => {
+    console.log("Hhh")
+    setModalOpen(true)
+    clearMainerrors()
+    if (Data && Data.length) {
+      console.log(Data)
+      console.log("hhh")
+      setValueModal("customerName", Data[0]?.customerName?.customerName)
+      setValueModal("customerid", Data[0]?.customerName?._id)
+      setValueModal("leadid", Data[0]?._id)
+      setValueModal("email", Data[0]?.customerName?.email)
+      setValueModal("mobile", Data[0]?.customerName?.mobile)
 
+      setValueModal("landline", Data[0]?.customerName?.landline)
+
+      setValueModal("contactPerson", Data[0]?.customerName?.contactPerson)
+
+      setValueModal("address1", Data[0]?.customerName?.address1)
+
+      setValueModal("pincode", Data[0]?.customerName?.pincode)
+
+      setValueModal("partner", Data[0]?.customerName?.partner?._id)
+
+      setValueModal("registrationType", Data[0]?.customerName?.registrationType)
+
+      setValueModal("gstNo", Data[0]?.customerName?.gstNo)
+
+      setValueModal("city", Data[0]?.customerName?.city)
+
+      setValueModal("industry", Data[0]?.customerName?.industry)
+    }
+  }
   const Industries = [
     "Whole sailor/Distributors",
     "Retailer",
@@ -1228,17 +1265,40 @@ const LeadMaster = ({
     return number.replace(/\D/g, "").slice(-10)
   }
 
-  const isMobileExists = (inputMobile, existingCustomers) => {
+  const isMobileExists = (
+    inputMobile,
+    existingCustomers,
+    customerid = null
+  ) => {
     const normalizedInput = normalizeMobile(inputMobile)
+    if (customerid) {
+      console.log(customerid)
+      return existingCustomers.some((customer) => {
+        const normalizedStored = normalizeMobile(customer.mobile)
+        return (
+          normalizedStored === normalizedInput && customer._id !== customerid
+        )
+      })
+      console.log("hhh")
+    }
+    console.log("hhh")
     return existingCustomers.some((customer) => {
       const normalizedStored = normalizeMobile(customer.mobile)
       return normalizedStored === normalizedInput
     })
   }
-
+  console.log(Data)
   const onmodalsubmit = async (data) => {
+    console.log(data)
+
     try {
-      const checkexistingNumber = isMobileExists(data.mobile, allcustomer)
+      const checkexistingNumber = isMobileExists(
+        data?.mobile,
+        allcustomer,
+        data?.customerid
+      )
+      console.log(checkexistingNumber)
+
       if (checkexistingNumber) {
         setError("mobile", {
           type: "manual",
@@ -1247,10 +1307,39 @@ const LeadMaster = ({
         return
       }
       setModalLoader(true)
-      const response = await api.post("/customer/customerRegistration", {
-        customerData: data
-      })
-      if (response.status === 200) {
+      let response
+      if (data?.customerid) {
+        console.log("Hh")
+        response = await api.post("/customer/customereditonlead", {
+          customerData: data
+        })
+      } else {
+        
+        response = await api.post("/customer/customerRegistration", {
+          customerData: data
+        })
+      }
+      if (data?.customerid && response.status === 200) {
+        toast.success("Customer updated successfully")
+        setModalLoader(false)
+        setModalOpen(false)
+        loggeduser?.role === "Admin"
+          ? navigate("/admin/transaction/lead/leadEdit", {
+              state: {
+                leadId: Data[0]?._id,
+                isReadOnly: false,
+                refreshKey: Date.now()
+              }
+            })
+          : navigate("/staff/transaction/lead/leadEdit", {
+              state: {
+                leadId: Data[0]?._id,
+                isReadOnly: false,
+                refreshKey: Date.now()
+              }
+            })
+        console.log("hhh")
+      } else if (response.status === 200) {
         refreshHook()
         setModalLoader(false)
         resetModal()
@@ -1474,10 +1563,7 @@ const LeadMaster = ({
                       </div>
                       <button
                         type="button"
-                        onClick={() => {
-                          setModalOpen(true)
-                          clearMainerrors()
-                        }}
+                        onClick={() => handleOpenmodal()}
                         disabled={isReadOnly}
                         className={`bg-[#1B2A4A] hover:bg-[#243660] text-white text-xs font-bold px-4 rounded flex items-center justify-center ${
                           isReadOnly ? "cursor-not-allowed opacity-70" : ""
@@ -2234,6 +2320,40 @@ const LeadMaster = ({
                         </p>
                       )}
                     </div>
+                    <div>
+                      <input
+                        type="hidden"
+                        {...registerModal("customerid", {
+                          required: "Customerid is Required"
+                        })}
+                        onBlur={(e) =>
+                          setValueModal("customerid", e.target.value.trim())
+                        }
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
+                      />
+                      {errorsModal.customerid && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errorsModal.customerid.message}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <input
+                        type="hidden"
+                        {...registerModal("leadid", {
+                          required: "leadid is Required"
+                        })}
+                        onBlur={(e) =>
+                          setValueModal("leadid", e.target.value.trim())
+                        }
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
+                      />
+                      {errorsModal.leadid && (
+                        <p className="text-red-500 text-xs mt-1">
+                          {errorsModal.leadid.message}
+                        </p>
+                      )}
+                    </div>
                     <div className="md:col-span-2">
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
                         Address
@@ -2258,13 +2378,15 @@ const LeadMaster = ({
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
                         Country
                       </label>
-                      <Select
+                      {/* <Select
                         options={countryOptions}
                         value={selectedCountry}
                         getOptionLabel={(o) => o.label}
                         getOptionValue={(o) => o.value}
                         {...registerModal("country")}
+                        
                         onChange={(option) => {
+                          console.log("hhhh")
                           setSelectedCountry(option)
                           setValueModal("country", option.value)
                         }}
@@ -2283,13 +2405,32 @@ const LeadMaster = ({
                           }),
                           menuList: (base) => ({ ...base, maxHeight: 200 })
                         }}
+                      /> */}
+                      <Controller
+                        name="country"
+                        control={controlModal}
+                        render={({ field }) => (
+                          <Select
+                            options={countryOptions}
+                            value={
+                              countryOptions.find(
+                                (opt) => opt.value === field.value
+                              ) || null
+                            }
+                            onChange={(option) =>
+                              field.onChange(option?.value || "")
+                            }
+                            getOptionLabel={(o) => o.label}
+                            getOptionValue={(o) => o.value}
+                          />
+                        )}
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
                         State
                       </label>
-                      <Select
+                      {/* <Select
                         options={stateOptions}
                         value={selectedState}
                         getOptionLabel={(o) => o.label}
@@ -2317,6 +2458,25 @@ const LeadMaster = ({
                           }),
                           menuList: (base) => ({ ...base, maxHeight: 200 })
                         }}
+                      /> */}
+                      <Controller
+                        name="state"
+                        control={controlModal}
+                        render={({ field }) => (
+                          <Select
+                            options={stateOptions}
+                            value={
+                              stateOptions.find(
+                                (opt) => opt.value === field.value
+                              ) || null
+                            }
+                            onChange={(option) => {
+                              field.onChange(option?.value || "")
+                              setSelectedState(option)
+                            }}
+                            isDisabled={!selectedCountry}
+                          />
+                        )}
                       />
                     </div>
                     <div>

@@ -1,5 +1,3 @@
-
-
 import React, { useEffect, useState } from "react"
 import { toast } from "react-toastify"
 import dayjs from "dayjs"
@@ -58,7 +56,7 @@ function LeaveApplication() {
     description: "",
     eventId: null
   })
-
+  console.log(formData)
   const [isOnsite, setIsOnsite] = useState(false)
   const [loader, setLoader] = useState(false)
   const [tableRows, setTableRows] = useState([])
@@ -1046,11 +1044,14 @@ function LeaveApplication() {
         const misspunchData = {
           misspunchDate: formData.misspunchDate,
           remark: formData?.remark,
+          misspunchTime: formData?.misspunchTime,
           misspunchType: formData?.mispunchType,
           userId: user?._id,
           userModel: user?.role,
           assignedto: user?.assignedto
         }
+        console.log(misspunchData)
+        
         // const response = await api.post(
         //   "http://localhost:9000/api/auth/misspunchRegister",
         //   misspunchData
@@ -1080,6 +1081,57 @@ function LeaveApplication() {
       toast.error(error?.response?.data?.message || "error occured")
       console.log("error:", error)
     }
+  }
+
+  const formatTo12Hour = (time) => {
+    if (!time) return "--:--"
+
+    if (time.includes("AM") || time.includes("PM")) return time
+
+    const [hours, minutes] = time.split(":").map(Number)
+    const suffix = hours >= 12 ? "PM" : "AM"
+    const hour12 = hours % 12 || 12
+
+    return `${String(hour12).padStart(2, "0")}:${String(minutes).padStart(2, "0")} ${suffix}`
+  }
+
+  const convertTimeStringToParts = (time) => {
+    if (!time) {
+      return { hour: "09", minute: "30", period: "AM" }
+    }
+
+    if (time.includes("AM") || time.includes("PM")) {
+      const [timePart, period] = time.split(" ")
+      const [hour, minute] = timePart.split(":")
+
+      return {
+        hour: hour.padStart(2, "0"),
+        minute: minute.padStart(2, "0"),
+        period
+      }
+    }
+
+    const [hours, minutes] = time.split(":").map(Number)
+    const period = hours >= 12 ? "PM" : "AM"
+    const hour12 = hours % 12 || 12
+
+    return {
+      hour: String(hour12).padStart(2, "0"),
+      minute: String(minutes).padStart(2, "0"),
+      period
+    }
+  }
+
+  const updateMisspunchTime = (hour, minute, period) => {
+    const finalTime = `${hour}:${minute} ${period}`
+
+    setFormData((prev) => ({
+      ...prev,
+      editHour: hour,
+      editMinute: minute,
+      editPeriod: period,
+      misspunchTime: finalTime
+    }))
   }
 
   const resetApplicationFlow = () => {
@@ -1867,541 +1919,6 @@ function LeaveApplication() {
     }
   }
   return (
-    //updated
-    // <div className="w-full ">
-    //   {/* HEADER */}
-    //   <div className="flex items-center justify-between sticky top-0 py-3 px-4 z-30 bg-white">
-    //     <h2 className="text-xl font-semibold">{visibleMonth}</h2>
-    //     <div className="flex space-x-2">
-    //       <button
-    //         onClick={prevMonth}
-    //         className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"
-    //       >
-    //         <HiChevronLeft className="w-5 h-5" />
-    //       </button>
-
-    //       <button
-    //         onClick={goToToday}
-    //         className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
-    //       >
-    //         Today
-    //       </button>
-
-    //       <button
-    //         onClick={nextMonth}
-    //         className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"
-    //       >
-    //         <HiChevronRight className="w-5 h-5" />
-    //       </button>
-    //     </div>
-    //   </div>
-
-    //   {/* DATE LIST */}
-    //   <div className="overflow-y-auto border rounded-lg mx-4">
-    //     {visibleDays.map((date, index) => (
-    //       <div
-    //         key={index}
-    //         onClick={() => {
-    //           setSelectedDate(date)
-    //           setSelectedType("")
-    //           setShowTypeSelector(true) // 🔥 FIRST POPUP
-    //         }}
-    //         className="flex justify-between items-center px-4 py-2 mb-2 cursor-pointer bg-gray-200"
-    //       >
-    //         <div>
-    //           <div className="flex items-center">
-    //             <div className="rounded-full border mr-4 font-bold text-sm sm:text-lg px-2">
-    //               {date.fullMonthDay}
-    //             </div>
-    //             <div className="font-medium">
-    //               {new Date(date.fullDate).toLocaleString("default", {
-    //                 weekday: "long"
-    //               })}
-    //             </div>
-    //           </div>
-    //         </div>
-
-    //         {/* LEAVE DATA */}
-    //         <div className="flex flex-col">
-    //           {currentmonthleaveData?.length > 0 &&
-    //             currentmonthleaveData
-    //               .filter(
-    //                 (leave) =>
-    //                   new Date(leave.leaveDate).toISOString().split("T")[0] ===
-    //                   date.fullDate
-    //               )
-    //               .map((leave, i) => (
-    //                 <div key={i} className="flex items-center mb-1">
-    //                   <div className="flex flex-col text-gray-600">
-    //                     <span className="text-sm">{leave?.leaveType}</span>
-    //                     <span className="text-sm font-semibold">
-    //                       {leave?.leaveCategory}
-    //                     </span>
-    //                   </div>
-
-    //                   <div
-    //                     className={`px-3 ml-2 py-1 text-sm rounded-full text-white ${
-    //                       leave.departmentstatus === "Dept Approved" ||
-    //                       leave.hrstatus === "HR/Onsite Approved"
-    //                         ? "bg-green-500"
-    //                         : leave.departmentstatus === "Not Approved" &&
-    //                             leave.hrstatus === "Not Approved"
-    //                           ? "bg-yellow-500"
-    //                           : "bg-red-500"
-    //                     }`}
-    //                   >
-    //                     {leave.departmentstatus === "Dept Approved" ||
-    //                     leave.hrstatus === "HR/Onsite Approved"
-    //                       ? "Approved"
-    //                       : leave.departmentstatus === "Not Approved" &&
-    //                           leave.hrstatus === "Not Approved"
-    //                         ? "Pending"
-    //                         : ""}
-    //                   </div>
-    //                 </div>
-    //               ))}
-    //         </div>
-    //       </div>
-    //     ))}
-    //   </div>
-
-    //   {/* 🔴 TYPE SELECTOR POPUP */}
-    //   {showTypeSelector && (
-    //     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-    //       <div className="bg-white rounded-lg p-6 w-80 shadow-lg">
-    //         <h3 className="text-lg font-semibold mb-4 text-center">
-    //           Select Request Type
-    //         </h3>
-
-    //         <div className="flex flex-col space-y-3">
-    //           {["leave", "onsite", "mispunch"].map((type) => (
-    //             <label key={type} className="flex items-center space-x-2">
-    //               <input
-    //                 type="radio"
-    //                 name="type"
-    //                 value={type}
-    //                 checked={selectedType === type}
-    //                 onChange={(e) => setSelectedType(e.target.value)}
-    //               />
-    //               <span className="capitalize">{type}</span>
-    //             </label>
-    //           ))}
-    //         </div>
-
-    //         <div className="flex justify-between mt-5">
-    //           <button
-    //             className="bg-gray-400 text-white px-4 py-1 rounded"
-    //             onClick={() => {
-    //               setShowTypeSelector(false)
-    //               setSelectedType("")
-    //             }}
-    //           >
-    //             Cancel
-    //           </button>
-
-    //           <button
-    //             disabled={!selectedType}
-    //             className={`px-4 py-1 rounded text-white ${
-    //               selectedType ? "bg-blue-600" : "bg-gray-300"
-    //             }`}
-    //             onClick={() => {
-    //               setShowTypeSelector(false)
-
-    //               if (selectedType === "leave") setSelectedTab("Leave")
-    //               if (selectedType === "onsite") setSelectedTab("Onsite")
-    //               if (selectedType === "mispunch") setSelectedTab("Mispunch")
-
-    //               handleDateClick(selectedDate.fullDate)
-    //               setShowModal(true)
-    //             }}
-    //           >
-    //             Continue
-    //           </button>
-    //         </div>
-    //       </div>
-    //     </div>
-    //   )}
-
-    //   {/* 🔴 MAIN MODAL */}
-    //   {showModal && leaveBalance && (
-    //     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    //       <div
-    //         className={`bg-white rounded-lg shadow-lg mx-4 max-h-[90vh] overflow-y-auto flex flex-col ${
-    //           selectedTab === "New Onsite" ? "md:w-3/4" : "sm:w-auto"
-    //         }`}
-    //       >
-    //         {loader && (
-    //           <BarLoader
-    //             cssOverride={{ width: "100%", height: "6px" }}
-    //             color="#4A90E2"
-    //           />
-    //         )}
-    //         <div className="p-3">
-    //           {/* TABS (ONLY SELECTED TYPE) */}
-    //           <div className="flex justify-center space-x-4">
-    //             {tabs
-    //               ?.filter((tab) => {
-    //                 if (selectedType === "leave")
-    //                   return ["Leave", "New Leave", "Edit Leave"].includes(tab)
-    //                 if (selectedType === "onsite")
-    //                   return ["Onsite", "New Onsite", "Edit Onsite"].includes(
-    //                     tab
-    //                   )
-    //                 if (selectedType === "mispunch") return tab === "Mispunch"
-    //                 return false
-    //               })
-    //               .map((tab) => (
-    //                 <span
-    //                   key={tab}
-    //                   onClick={() => {
-    //                     setSelectedTab(tab)
-    //                     setMessage("")
-    //                     selectedTabContent(tab)
-    //                     setIsOnsite(tab === "Onsite")
-    //                   }}
-    //                   className={`cursor-pointer ${
-    //                     selectedTab === tab
-    //                       ? "text-blue-500 font-semibold underline"
-    //                       : "text-black"
-    //                   }`}
-    //                 >
-    //                   {tab}
-    //                 </span>
-    //               ))}
-    //           </div>
-
-    //           {/* CONTENT */}
-    //           <div className="mt-4">
-    //             {/* ✅ EXISTING CONTENT FOR LEAVE & ONSITE */}
-    //             {selectedTab !== "Mispunch" && renderContent()}
-
-    //             {/* ✅ MISPUNCH CONTENT */}
-    //             {selectedTab === "Mispunch" && (
-    //               <div className="space-y-4 max-h-[calc(100vh-280px)] overflow-y-auto px-1">
-    //                 {/* Date Display */}
-    //                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-    //                   <div className="flex items-center justify-between">
-    //                     <div className="flex items-center gap-2">
-    //                       <svg
-    //                         className="w-4 h-4 text-blue-600"
-    //                         fill="none"
-    //                         stroke="currentColor"
-    //                         viewBox="0 0 24 24"
-    //                       >
-    //                         <path
-    //                           strokeLinecap="round"
-    //                           strokeLinejoin="round"
-    //                           strokeWidth={2}
-    //                           d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-    //                         />
-    //                       </svg>
-    //                       <span className="text-xs font-medium text-blue-900">
-    //                         Request Date
-    //                       </span>
-    //                     </div>
-    //                     <span className="text-sm font-semibold text-blue-700">
-    //                       {(formData.misspunchDate
-    //                         ? new Date(formData.misspunchDate)
-    //                         : new Date()
-    //                       ).toLocaleDateString("en-GB", {
-    //                         day: "2-digit",
-    //                         month: "short",
-    //                         year: "numeric"
-    //                       })}
-    //                     </span>
-    //                   </div>
-    //                 </div>
-
-    //                 {/* Header Section */}
-    //                 <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 rounded-lg p-3">
-    //                   <div className="flex items-start gap-2">
-    //                     <div className="bg-amber-100 rounded-full p-1.5 mt-0.5 flex-shrink-0">
-    //                       <svg
-    //                         className="w-4 h-4 text-amber-600"
-    //                         fill="none"
-    //                         stroke="currentColor"
-    //                         viewBox="0 0 24 24"
-    //                       >
-    //                         <path
-    //                           strokeLinecap="round"
-    //                           strokeLinejoin="round"
-    //                           strokeWidth={2}
-    //                           d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-    //                         />
-    //                       </svg>
-    //                     </div>
-    //                     <div>
-    //                       <h3 className="text-sm font-semibold text-gray-800 mb-0.5">
-    //                         Report a Misspunch
-    //                       </h3>
-    //                       <p className="text-xs text-gray-600 leading-tight">
-    //                         Missed clocking in or out? Let us know and we'll
-    //                         help correct your attendance.
-    //                       </p>
-    //                     </div>
-    //                   </div>
-    //                 </div>
-
-    //                 {/* Form Fields */}
-    //                 <div className="space-y-4">
-    //                   {/* Misspunch Type */}
-    //                   <div>
-    //                     <label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 mb-2">
-    //                       <svg
-    //                         className="w-3.5 h-3.5 text-gray-500"
-    //                         fill="none"
-    //                         stroke="currentColor"
-    //                         viewBox="0 0 24 24"
-    //                       >
-    //                         <path
-    //                           strokeLinecap="round"
-    //                           strokeLinejoin="round"
-    //                           strokeWidth={2}
-    //                           d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-    //                         />
-    //                       </svg>
-    //                       Punch Type
-    //                     </label>
-    //                     <div className="grid grid-cols-2 gap-2.5">
-    //                       {["In", "Out"].map((type) => (
-    //                         <button
-    //                           key={type}
-    //                           type="button"
-    //                           onClick={() =>
-    //                             setFormData((prev) => ({
-    //                               ...prev,
-    //                               mispunchType: type
-    //                             }))
-    //                           }
-    //                           className={`
-    //                         relative px-3 py-2.5 rounded-lg border-2 transition-all duration-200
-    //                         ${
-    //                           formData.mispunchType === type
-    //                             ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm"
-    //                             : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
-    //                         }
-    //                       `}
-    //                         >
-    //                           <div className="flex items-center justify-center gap-1.5">
-    //                             {type === "In" ? (
-    //                               <svg
-    //                                 className="w-4 h-4"
-    //                                 fill="none"
-    //                                 stroke="currentColor"
-    //                                 viewBox="0 0 24 24"
-    //                               >
-    //                                 <path
-    //                                   strokeLinecap="round"
-    //                                   strokeLinejoin="round"
-    //                                   strokeWidth={2}
-    //                                   d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
-    //                                 />
-    //                               </svg>
-    //                             ) : (
-    //                               <svg
-    //                                 className="w-4 h-4"
-    //                                 fill="none"
-    //                                 stroke="currentColor"
-    //                                 viewBox="0 0 24 24"
-    //                               >
-    //                                 <path
-    //                                   strokeLinecap="round"
-    //                                   strokeLinejoin="round"
-    //                                   strokeWidth={2}
-    //                                   d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-    //                                 />
-    //                               </svg>
-    //                             )}
-    //                             <span className="text-sm font-medium">
-    //                               Punch {type}
-    //                             </span>
-    //                           </div>
-    //                           {formData.mispunchType === type && (
-    //                             <div className="absolute -top-1 -right-1 bg-blue-500 text-white rounded-full p-0.5">
-    //                               <svg
-    //                                 className="w-2.5 h-2.5"
-    //                                 fill="currentColor"
-    //                                 viewBox="0 0 20 20"
-    //                               >
-    //                                 <path
-    //                                   fillRule="evenodd"
-    //                                   d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-    //                                   clipRule="evenodd"
-    //                                 />
-    //                               </svg>
-    //                             </div>
-    //                           )}
-    //                         </button>
-    //                       ))}
-    //                     </div>
-    //                   </div>
-
-    //                   {/* Remark */}
-    //                   <div>
-    //                     <label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 mb-2">
-    //                       <svg
-    //                         className="w-3.5 h-3.5 text-gray-500"
-    //                         fill="none"
-    //                         stroke="currentColor"
-    //                         viewBox="0 0 24 24"
-    //                       >
-    //                         <path
-    //                           strokeLinecap="round"
-    //                           strokeLinejoin="round"
-    //                           strokeWidth={2}
-    //                           d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-    //                         />
-    //                       </svg>
-    //                       Reason for Misspunch
-    //                     </label>
-    //                     <textarea
-    //                       className="w-full border-2 border-gray-200 px-3 py-2 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200 resize-none"
-    //                       rows={3}
-    //                       placeholder="Please explain why you missed the punch (e.g., forgot to clock in, system error, etc.)"
-    //                       value={formData.remark || ""}
-    //                       onChange={(e) =>
-    //                         setFormData((prev) => ({
-    //                           ...prev,
-    //                           remark: e.target.value
-    //                         }))
-    //                       }
-    //                     />
-
-    //                     <p className="text-xs text-gray-500 mt-1">
-    //                       Provide clear details to help us process your request
-    //                       faster
-    //                     </p>
-    //                   </div>
-    //                 </div>
-    //               </div>
-    //             )}
-    //           </div>
-
-    //           {/* BUTTONS SECTION */}
-    //           <div className="flex justify-center mt-4 gap-4">
-    //             {/* MISPUNCH SUBMIT BUTTON */}
-    //             {selectedTab === "Mispunch" && (
-    //               <button
-    //                 className="group relative bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-200 hover:shadow-xl hover:shadow-blue-300 hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-    //                 onClick={() => handleSubmit("Mispunch")}
-    //                 disabled={!formData.mispunchType || !formData.remark}
-    //               >
-    //                 <span className="flex items-center gap-1.5">
-    //                   Submit Request
-    //                   <svg
-    //                     className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform"
-    //                     fill="none"
-    //                     stroke="currentColor"
-    //                     viewBox="0 0 24 24"
-    //                   >
-    //                     <path
-    //                       strokeLinecap="round"
-    //                       strokeLinejoin="round"
-    //                       strokeWidth={2}
-    //                       d="M13 7l5 5m0 0l-5 5m5-5H6"
-    //                     />
-    //                   </svg>
-    //                 </span>
-    //               </button>
-    //             )}
-
-    //             {/* LEAVE - APPLY NEW BUTTON */}
-    //             {selectedTab === "Leave" && (
-    //               <button
-    //                 className="bg-blue-800 rounded-lg px-4 py-2 text-white hover:bg-blue-700"
-    //                 onClick={() => {
-    //                   setSelectedTab("New Leave")
-    //                   setFormData((prev) => ({
-    //                     ...prev,
-    //                     leaveType: "Full Day",
-    //                     leaveCategory: "",
-    //                     halfDayPeriod: "",
-    //                     reason: ""
-    //                   }))
-    //                 }}
-    //               >
-    //                 Apply New Leaves
-    //               </button>
-    //             )}
-
-    //             {/* ONSITE - APPLY NEW BUTTON */}
-    //             {selectedTab === "Onsite" && (
-    //               <button
-    //                 onClick={() => {
-    //                   setSelectedTab("New Onsite")
-    //                   setFormData((prev) => ({
-    //                     ...prev,
-    //                     onsiteType: "Full Day",
-    //                     halfDayPeriod: "",
-    //                     description: ""
-    //                   }))
-    //                   setTableRows([])
-    //                 }}
-    //                 className="py-2 bg-blue-800 shadow-lg text-white rounded-lg px-4 hover:bg-blue-900"
-    //               >
-    //                 Apply New Onsite
-    //               </button>
-    //             )}
-
-    //             {/* SUBMIT/UPDATE BUTTON FOR NEW LEAVE, EDIT LEAVE, NEW ONSITE, EDIT ONSITE */}
-    //             {(selectedTab === "Edit Onsite" ||
-    //               selectedTab === "Edit Leave" ||
-    //               selectedTab === "New Leave" ||
-    //               selectedTab === "New Onsite") && (
-    //               <>
-    //                 <button
-    //                   className="bg-gradient-to-b from-blue-400 to-blue-500 px-4 py-2 hover:from-blue-400 hover:to-blue-600 text-white rounded"
-    //                   onClick={() => handleSubmit(selectedTab)}
-    //                 >
-    //                   {selectedTab === "Edit Onsite" ||
-    //                   selectedTab === "Edit Leave"
-    //                     ? "Update"
-    //                     : "Submit"}
-    //                 </button>
-
-    //                 {/* DELETE BUTTON */}
-    //                 {(selectedTab === "Edit Onsite" ||
-    //                   selectedTab === "Edit Leave") && (
-    //                   <button
-    //                     className="bg-red-600 px-4 py-2 rounded-md text-white font-semibold shadow-lg hover:bg-red-700 active:shadow-md active:translate-y-[2px] transition-all duration-200"
-    //                     onClick={() => handledelete(formData)}
-    //                   >
-    //                     Delete
-    //                   </button>
-    //                 )}
-    //               </>
-    //             )}
-
-    //             {/* CLOSE BUTTON - ALWAYS VISIBLE */}
-    //             <button
-    //               className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-    //               onClick={() => {
-    //                 setShowModal(false)
-    //                 setSelectedType("")
-    //                 setcompensatoryLeave(false)
-    //                 setEdit(false)
-    //                 setFormData({
-    //                   description: "",
-    //                   onsite: false,
-    //                   halfDayPeriod: "",
-    //                   leaveType: "Full Day",
-    //                   mispunchType: "",
-    //                   remark: ""
-    //                 })
-    //                 setSelectedTab("Leave")
-    //                 setTableRows([])
-    //                 setMessage("")
-    //                 setErrors("")
-    //               }}
-    //             >
-    //               Close
-    //             </button>
-    //           </div>
-    //         </div>
-    //       </div>
-    //     </div>
-    //   )}
-    // </div>
     <div className="w-full">
       {/* HEADER */}
       <div className="sticky top-0 z-30 flex items-center justify-between bg-white px-4 py-3">
@@ -2601,9 +2118,9 @@ function LeaveApplication() {
               <div className="mt-4">
                 {selectedTab !== "Mispunch" && renderContent()}
 
-                {selectedTab === "Mispunch" && (
+                {/* {selectedTab === "Mispunch" && (
                   <div className="max-h-[calc(100vh-280px)] space-y-4 overflow-y-auto px-1">
-                    {/* Date Display */}
+                    
                     <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -2639,7 +2156,7 @@ function LeaveApplication() {
                       </div>
                     </div>
 
-                    {/* Header Section */}
+                  
                     <div className="rounded-lg border-l-4 border-amber-500 bg-gradient-to-r from-amber-50 to-orange-50 p-3">
                       <div className="flex items-start gap-2">
                         <div className="mt-0.5 flex-shrink-0 rounded-full bg-amber-100 p-1.5">
@@ -2670,9 +2187,9 @@ function LeaveApplication() {
                       </div>
                     </div>
 
-                    {/* Form Fields */}
+                
                     <div className="space-y-4">
-                      {/* Misspunch Type */}
+              
                       <div>
                         <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-gray-700">
                           <svg
@@ -2764,7 +2281,7 @@ function LeaveApplication() {
                         </div>
                       </div>
 
-                      {/* Remark */}
+                    
                       <div>
                         <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-gray-700">
                           <svg
@@ -2800,6 +2317,285 @@ function LeaveApplication() {
                           Provide clear details to help us process your request
                           faster
                         </p>
+                      </div>
+                    </div>
+                  </div>
+                )} */}
+                {selectedTab === "Mispunch" && (
+                  <div className="max-h-[calc(100vh-280px)] space-y-4 overflow-y-auto px-1">
+                    {/* Date Display */}
+                    <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <svg
+                            className="h-4 w-4 text-blue-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+
+                          <span className="text-xs font-medium text-blue-900">
+                            Request Date
+                          </span>
+                        </div>
+
+                        <span className="text-sm font-semibold text-blue-700">
+                          {(formData.misspunchDate
+                            ? new Date(formData.misspunchDate)
+                            : new Date()
+                          ).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric"
+                          })}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Header Section */}
+                    <div className="rounded-lg border-l-4 border-amber-500 bg-gradient-to-r from-amber-50 to-orange-50 p-3">
+                      <div className="flex items-start gap-2">
+                        <div className="mt-0.5 flex-shrink-0 rounded-full bg-amber-100 p-1.5">
+                          <svg
+                            className="h-4 w-4 text-amber-600"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                        </div>
+
+                        <div>
+                          <h3 className="mb-0.5 text-sm font-semibold text-gray-800">
+                            Report a Misspunch
+                          </h3>
+                          <p className="text-xs leading-tight text-gray-600">
+                            Missed clocking in or out? Let us know and we'll
+                            help correct your attendance.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Form Fields */}
+                    <div className="space-y-4">
+                      {/* Punch Type */}
+                      <div>
+                        <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-gray-700">
+                          <svg
+                            className="h-3.5 w-3.5 text-gray-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                            />
+                          </svg>
+                          Punch Type
+                        </label>
+
+                        <div className="grid grid-cols-2 gap-2.5">
+                          {["In", "Out"].map((type) => (
+                            <button
+                              key={type}
+                              type="button"
+                              onClick={() => {
+                                const defaultTime =
+                                  type === "In" ? "09:30 AM" : "05:30 PM"
+                                const selectedTime =
+                                  formData.mispunchType === type &&
+                                  formData.misspunchTime
+                                    ? formData.misspunchTime
+                                    : defaultTime
+
+                                const timeParts =
+                                  convertTimeStringToParts(selectedTime)
+
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  mispunchType: type,
+                                  showMisspunchTime: true,
+                                  isTimeEditable: false,
+                                  misspunchTime: selectedTime,
+                                  editHour: timeParts.hour,
+                                  editMinute: timeParts.minute,
+                                  editPeriod: timeParts.period
+                                }))
+                              }}
+                              className={`relative rounded-lg border-2 px-3 py-2.5 transition-all duration-200 ${
+                                formData.mispunchType === type
+                                  ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm"
+                                  : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                              }`}
+                            >
+                              <div className="flex items-center justify-center gap-1.5">
+                                <span className="text-sm font-medium">
+                                  Punch {type}
+                                </span>
+                              </div>
+
+                              {formData.mispunchType === type && (
+                                <div className="absolute -right-1 -top-1 rounded-full bg-blue-500 p-0.5 text-white">
+                                  <svg
+                                    className="h-2.5 w-2.5"
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path
+                                      fillRule="evenodd"
+                                      clipRule="evenodd"
+                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    />
+                                  </svg>
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Time Section */}
+                      {formData.showMisspunchTime && (
+                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                          <div className="mb-2 flex items-center justify-between">
+                            <label className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
+                              {formData.mispunchType === "In"
+                                ? "Punch In Time"
+                                : "Punch Out Time"}
+                            </label>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  isTimeEditable: !prev.isTimeEditable
+                                }))
+                              }
+                              className={`rounded-md px-3 py-1 text-xs font-medium transition ${
+                                formData.isTimeEditable
+                                  ? "bg-green-100 text-green-700 hover:bg-green-200"
+                                  : "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                              }`}
+                            >
+                              {formData.isTimeEditable ? "Done" : "Edit"}
+                            </button>
+                          </div>
+
+                          {!formData.isTimeEditable ? (
+                            <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2">
+                              <span className="text-sm text-gray-600">
+                                Selected Time
+                              </span>
+                              <span className="text-sm font-semibold text-gray-800">
+                                {formatTo12Hour(formData.misspunchTime)}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-white px-2 py-1.5">
+                              <select
+                                value={formData.editHour || "09"}
+                                onChange={(e) =>
+                                  updateMisspunchTime(
+                                    e.target.value,
+                                    formData.editMinute || "30",
+                                    formData.editPeriod || "AM"
+                                  )
+                                }
+                                className="h-8 w-14 rounded-md border border-gray-200 bg-white px-1 text-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200"
+                              >
+                                {Array.from({ length: 12 }, (_, i) => {
+                                  const hour = String(i + 1).padStart(2, "0")
+                                  return (
+                                    <option key={hour} value={hour}>
+                                      {hour}
+                                    </option>
+                                  )
+                                })}
+                              </select>
+
+                              <span className="text-xs text-gray-500">:</span>
+
+                              <select
+                                value={formData.editMinute || "30"}
+                                onChange={(e) =>
+                                  updateMisspunchTime(
+                                    formData.editHour || "09",
+                                    e.target.value,
+                                    formData.editPeriod || "AM"
+                                  )
+                                }
+                                className="h-8 w-14 rounded-md border border-gray-200 bg-white px-1 text-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200"
+                              >
+                                {Array.from({ length: 60 }, (_, i) => {
+                                  const minute = String(i).padStart(2, "0")
+                                  return (
+                                    <option key={minute} value={minute}>
+                                      {minute}
+                                    </option>
+                                  )
+                                })}
+                              </select>
+
+                              <select
+                                value={formData.editPeriod || "AM"}
+                                onChange={(e) =>
+                                  updateMisspunchTime(
+                                    formData.editHour || "09",
+                                    formData.editMinute || "30",
+                                    e.target.value
+                                  )
+                                }
+                                className="h-8 w-14 rounded-md border border-gray-200 bg-white px-1 text-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200"
+                              >
+                                <option value="AM">AM</option>
+                                <option value="PM">PM</option>
+                              </select>
+                            </div>
+                          )}
+
+                          <p className="mt-2 text-xs text-gray-500">
+                            Default time is shown based on selected punch type.
+                            Click Edit to change it.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Remark */}
+                      <div>
+                        <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-gray-700">
+                          Reason for Misspunch
+                        </label>
+
+                        <textarea
+                          className="w-full resize-none rounded-lg border-2 border-gray-200 px-3 py-2 text-sm transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                          rows={3}
+                          placeholder="Please explain why you missed the punch"
+                          value={formData.remark || ""}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              remark: e.target.value
+                            }))
+                          }
+                        />
                       </div>
                     </div>
                   </div>

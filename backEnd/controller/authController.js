@@ -8054,7 +8054,8 @@ export const ApproveMisspunch = async (req, res) => {
       endDate,
       name,
       misspunchDate,
-      misspunchType
+      misspunchType,
+      misspunchTime
     } = req.query;
 
     // Validate common parameters
@@ -8178,12 +8179,10 @@ export const ApproveMisspunch = async (req, res) => {
     // Update inTime or outTime based on misspunchType
     if (misspunchType.toLowerCase() === 'in') {
       // Set inTime to "9:30 AM" as string
-      attendanceUpdateFields.inTime = "9:30 AM";
-      console.log(`✓ Prepared inTime update: 9:30 AM`);
+      attendanceUpdateFields.inTime = misspunchTime;
     } else if (misspunchType.toLowerCase() === 'out') {
       // Set outTime to "5:30 PM" as string
-      attendanceUpdateFields.outTime = "5:30 PM";
-      console.log(`✓ Prepared outTime update: 5:30 PM`);
+      attendanceUpdateFields.outTime = misspunchTime;
     }
 
     // ============================================
@@ -8560,7 +8559,7 @@ export const UploadImage = async (req, res) => {
 // }
 export const MisspunchRegister = async (req, res) => {
   try {
-    const { userId, userModel, misspunchDate, misspunchType, remark, assignedto } = req.body;
+    const { userId, userModel, misspunchDate, misspunchType, misspunchTime, remark, assignedto } = req.body;
 
 
 
@@ -8650,6 +8649,7 @@ export const MisspunchRegister = async (req, res) => {
       misspunchDate: new Date(misspunchDate),
       applyDate: new Date(),
       misspunchType,
+      misspunchTime,
       assignedto,
       assignedtoModel,
       attendanceId: attendanceRecord._id
@@ -10600,12 +10600,12 @@ export const GetallCurrentMonthbirthDay = async (req, res) => {
       isVerified: true,
       dateofbirth: { $regex: `^\\d{ 4} - ${currentMonth}` }
     }) // Matches "YYYY-04"})
-console.log("currentmonth",currentMonth)
-console.log("stafffs",staffbirthdays)
+    console.log("currentmonth", currentMonth)
+    console.log("stafffs", staffbirthdays)
     const adminbirthdays = await Admin.find({
       dateofbirth: { $regex: `^\\d{ 4} - ${currentMonth}` }
     })
-console.log("admin",adminbirthdays)
+    console.log("admin", adminbirthdays)
 
     const currentmonthBirthDays = [...staffbirthdays, ...adminbirthdays].map(
       (item) => ({
