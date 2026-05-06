@@ -10596,14 +10596,14 @@ export const GetallCurrentMonthbirthDay = async (req, res) => {
   try {
     const currentMonth = new Date().toISOString().slice(5, 7) // "04"
 
+ 
     const staffbirthdays = await Staff.find({
       isVerified: true,
-      dateofbirth: { $regex: `^\\d{ 4} - ${currentMonth}` }
-    }) // Matches "YYYY-04"})
-    console.log("currentmonth", currentMonth)
-    console.log("stafffs", staffbirthdays)
+      dateofbirth: { $regex: `^\\d{4}-${currentMonth}-\\d{2}$` }
+    })
+  
     const adminbirthdays = await Admin.find({
-      dateofbirth: { $regex: `^\\d{ 4} - ${currentMonth}` }
+      dateofbirth: { $regex: `^\\d{4}-${currentMonth}-\\d{2}$` }
     })
     console.log("admin", adminbirthdays)
 
