@@ -12,8 +12,9 @@ import CallNote from "../../model/secondaryUser/callNotesSchema.js"
 import models from "../../model/auth/authSchema.js"
 import { sendEmail } from "../../helper/nodemailer.js"
 const { Staff, Admin } = models
-import mongoose from "mongoose"
+import mongoose, { isValidObjectId } from "mongoose"
 import Holymaster from "../../model/secondaryUser/holydaymasterSchema.js"
+import LeadMaster from "../../model/primaryUser/leadmasterSchema.js"
 
 //CUSTOMELIST PAGE
 export const GetscrollCustomer = async (req, res) => {
@@ -1019,6 +1020,7 @@ export const CustomerRegister = async (req, res) => {
 
   const {
     customerName,
+    customerid,
     address1,
     address2,
     country,
@@ -1093,6 +1095,103 @@ export const CustomerRegister = async (req, res) => {
     res.status(500).json({ message: "server error" })
   }
 }
+export const CustomereditonLead = async (req, res) => {
+  const session = await mongoose.startSession();
+
+  try {
+    const { customerData } = req.body;
+
+    console.log("customerData", customerData);
+
+    if (!customerData?.customerid) {
+      return res.status(400).json({ message: "Customerid is required" });
+    }
+
+    if (!customerData?.leadid) {
+      return res.status(400).json({ message: "Leadid is required" });
+    }
+
+    if (
+      !isValidObjectId(customerData.customerid) ||
+      !isValidObjectId(customerData.leadid)
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Customerid or leadid is not a valid ObjectId" });
+    }
+
+    let updatedcustomer = null;
+    let updateleadmaster = null;
+
+    await session.withTransaction(async () => {
+      updatedcustomer = await Customer.findOneAndUpdate(
+        { _id: customerData.customerid },
+        {
+          $set: {
+            customerName: customerData?.customerName?.trim(),
+            email: customerData?.email?.trim(),
+            mobile: customerData?.mobile?.trim(),
+            landline: customerData?.landline?.trim(),
+            contactPerson: customerData?.contactPerson?.trim(),
+            address1: customerData?.address1?.trim(),
+            country: customerData?.country?.trim(),
+            state: customerData?.state?.trim(),
+            city: customerData?.city?.trim(),
+            pincode: customerData?.pincode?.trim(),
+            industry: customerData?.industry || null,
+            partner: customerData?.partner || null,
+            registrationType: customerData?.registrationType || null
+          }
+        },
+        {
+          returnDocument: "after",
+          runValidators: true,
+          session
+        }
+      );
+
+      if (!updatedcustomer) {
+        throw new Error("Customer not found");
+      }
+
+      updateleadmaster = await LeadMaster.findOneAndUpdate(
+        { _id: customerData.leadid },
+        {
+          $set: {
+            mobile: customerData?.mobile?.trim(),
+            email: customerData?.email?.trim(),
+            phone: customerData?.landline?.trim(),
+            partner: customerData?.partner || null
+          }
+        },
+        {
+          returnDocument: "after",
+          runValidators: true,
+          session
+        }
+      );
+
+      if (!updateleadmaster) {
+        throw new Error("LeadMaster not found");
+      }
+    });
+
+    return res.status(200).json({
+      message: "Customer and lead updated successfully",
+      data: updatedcustomer
+    });
+  } catch (error) {
+    console.log("error", error.message);
+
+    if (error.message === "Customer not found" || error.message === "LeadMaster not found") {
+      return res.status(404).json({ message: error.message });
+    }
+
+    return res.status(500).json({ message: "Internal server error" });
+  } finally {
+    await session.endSession();
+  }
+};
 export const CustomerEdit = async (req, res) => {
   const { customerData, tableData } = req.body
 

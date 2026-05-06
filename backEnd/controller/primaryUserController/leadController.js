@@ -352,11 +352,11 @@ export const UpdatereceivedAmount = async (req, res) => {
       lead.totalPaidAmount = 0;
     }
 
-    for (let i = paymentIndex; i < lead.paymentHistory.length; i++) {
+    for (let i = paymentIndex;i < lead.paymentHistory.length;i++) {
       const currentPayment = lead.paymentHistory[i];
       if (!Array.isArray(currentPayment.paymentEntries)) continue;
 
-      for (let j = 0; j < currentPayment.paymentEntries.length; j++) {
+      for (let j = 0;j < currentPayment.paymentEntries.length;j++) {
         const currentEntry = currentPayment.paymentEntries[j];
         const currentNetAmount = Number(currentEntry.netAmount || 0);
         const currentReceived = Number(currentEntry.receivedAmount || 0);
@@ -533,7 +533,7 @@ export const UpdatereceivedAmount = async (req, res) => {
 //     const lead = await LeadMaster.findById(leadDocId).session(session);
 //     if (!lead) throw new Error("Lead not found");
 
-   
+
 
 //     const payment = lead.paymentHistory[index];
 
@@ -4031,6 +4031,9 @@ export const GetselectedLeadData = async (req, res) => {
     const selectedLead = await LeadMaster.findById({ _id: leadId })
       .populate({
         path: "customerName",
+        populate: {
+          path: "partner"
+        }
       })
       .lean();
 
@@ -5332,8 +5335,8 @@ export const Getdailystaffreport = async (req, res) => {
 }
 export const GetcollectionLeads = async (req, res) => {
   try {
-    const { selectedBranch, isAccountant, loggeduserby,verified } = req.query;
-const verifiedBool = verified === "true";
+    const { selectedBranch, isAccountant, loggeduserby, verified } = req.query;
+    const verifiedBool = verified === "true";
     const accountantMode = isAccountant === "true";
 
     const matchedCollectionlead = await LeadMaster.aggregate([
@@ -5459,7 +5462,7 @@ const verifiedBool = verified === "true";
 
         if (accountantMode) {
           filteredPaymentHistory = filteredPaymentHistory.filter(
-            (history) => history?.paymentVerified ===verifiedBool
+            (history) => history?.paymentVerified === verifiedBool
           );
         } else {
           filteredPaymentHistory = filteredPaymentHistory.filter((history) => {
