@@ -10600,9 +10600,12 @@ export const GetallCurrentMonthbirthDay = async (req, res) => {
       isVerified: true,
       dateofbirth: { $regex: `^\\d{ 4} - ${currentMonth}` }
     }) // Matches "YYYY-04"})
+console.log("currentmonth",currentMonth)
+console.log("stafffs",staffbirthdays)
     const adminbirthdays = await Admin.find({
       dateofbirth: { $regex: `^\\d{ 4} - ${currentMonth}` }
     })
+console.log("admin",adminbirthdays)
 
     const currentmonthBirthDays = [...staffbirthdays, ...adminbirthdays].map(
       (item) => ({
