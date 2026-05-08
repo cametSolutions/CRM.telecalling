@@ -14,7 +14,7 @@
 //   console.log(attendee)
 //   console.log(!modalOpen)
 //   return (
-//     <div 
+//     <div
 // className="flex h-full min-h-0 flex-col rounded-lg border border-gray-300 bg-white"
 // // className="relative overflow-x-auto  overflow-y-auto rounded-lg  h-full min-h-0 flex-col m-2"
 // >
@@ -575,7 +575,7 @@
 
 // export default React.memo(ResponsiveTable)
 
-import React from "react";
+import React from "react"
 
 const ResponsiveTable = ({
   attendee,
@@ -588,14 +588,16 @@ const ResponsiveTable = ({
   sundays,
   holiday
 }) => {
+  console.log(attendee)
   return (
     <div className="relative  flex h-full min-h-0 flex-col rounded-lg border border-gray-300 bg-white">
-      <div
-        className="flex-1 min-h-0 overflow-auto"
-        onScroll={handleScroll}
-      >
+      <div className="flex-1 min-h-0 overflow-auto" onScroll={handleScroll}>
         <table className="w-full min-w-max border-separate border-spacing-0 text-sm">
-          <thead className={!modalOpen ? "sticky top-0 z-30 bg-blue-200" : "bg-blue-200"}>
+          <thead
+            className={
+              !modalOpen ? "sticky top-0 z-30 bg-blue-200" : "bg-blue-200"
+            }
+          >
             <tr>
               <th
                 rowSpan={2}
@@ -684,253 +686,301 @@ const ResponsiveTable = ({
           </thead>
 
           <tbody>
-            {Object.entries(attendee.attendancedates).map(([date, details], idx) => {
-              const currentDate = new Date(date);
-              const isSunday = currentDate.getDay() === 0;
+            {Object.entries(attendee.attendancedates).map(
+              ([date, details], idx) => {
+                const currentDate = new Date(date)
+                const isSunday = currentDate.getDay() === 0
 
-              const isHolidayAbsent = holiday.some((holy) => {
-                if (holy.date !== date) return false;
-                const matchedItem = attendee.attendancedates[holy.date];
-                if (!matchedItem) return false;
+                const isHolidayAbsent = holiday.some((holy) => {
+                  if (holy.date !== date) return false
+                  const matchedItem = attendee.attendancedates[holy.date]
+                  if (!matchedItem) return false
 
-                const notMarkedEmpty = matchedItem.notMarked === "";
-                const hasLeave =
-                  matchedItem.compensatoryLeave !== "" ||
-                  matchedItem.casualLeave !== "" ||
-                  matchedItem.otherLeave !== "" ||
-                  matchedItem.privilegeLeave !== "";
-                const notMarkedOne = matchedItem.notMarked === 1;
+                  const notMarkedEmpty = matchedItem.notMarked === ""
+                  const hasLeave =
+                    matchedItem.compensatoryLeave !== "" ||
+                    matchedItem.casualLeave !== "" ||
+                    matchedItem.otherLeave !== "" ||
+                    matchedItem.privilegeLeave !== ""
+                  const notMarkedOne = matchedItem.notMarked === 1
 
-                return (notMarkedEmpty && hasLeave) || notMarkedOne;
-              });
+                  return (notMarkedEmpty && hasLeave) || notMarkedOne
+                })
 
-              const isSundayAbsent = sundays.some((sunday) => {
-                const matched = date === sunday;
-                if (!matched) return false;
+                const isSundayAbsent = sundays.some((sunday) => {
+                  const matched = date === sunday
+                  if (!matched) return false
 
-                const matchedItem = attendee.attendancedates[date];
-                const notMarkedEmpty = matchedItem.notMarked === "";
-                const hasLeave =
-                  matchedItem.compensatoryLeave !== "" ||
-                  matchedItem.casualLeave !== "" ||
-                  matchedItem.otherLeave !== "" ||
-                  matchedItem.privilegeLeave !== "";
-                const notMarkedOne = matchedItem.notMarked === 1;
+                  const matchedItem = attendee.attendancedates[date]
+                  const notMarkedEmpty = matchedItem.notMarked === ""
+                  const hasLeave =
+                    matchedItem.compensatoryLeave !== "" ||
+                    matchedItem.casualLeave !== "" ||
+                    matchedItem.otherLeave !== "" ||
+                    matchedItem.privilegeLeave !== ""
+                  const notMarkedOne = matchedItem.notMarked === 1
 
-                return (notMarkedEmpty && hasLeave) || notMarkedOne;
-              });
+                  return (notMarkedEmpty && hasLeave) || notMarkedOne
+                })
 
-              const holidayName =
-                holiday.find((h) => h.date === date)?.holyname || null;
+                const holidayName =
+                  holiday.find((h) => h.date === date)?.holyname || null
 
-              const highlightClass =
-                isSundayAbsent || isHolidayAbsent ? "bg-red-500" : "bg-green-300";
+                const highlightClass =
+                  isSundayAbsent || isHolidayAbsent
+                    ? "bg-red-500"
+                    : "bg-green-300"
 
-              return (
-                <tr key={idx} className="text-center hover:bg-gray-50">
-                  <td
-                    className={`border border-gray-400 p-2 bg-white ${
-                      !modalOpen ? "sticky left-0 z-20" : ""
-                    }`}
-                  >
-                    {date}
-                  </td>
+                return (
+                  <tr key={idx} className="text-center hover:bg-gray-50">
+                    <td
+                      className={`border border-gray-400 p-2 bg-white ${
+                        !modalOpen ? "sticky left-0 z-20" : ""
+                      }`}
+                    >
+                      {date}
+                    </td>
 
-                  <td
-                    className="border border-gray-400 p-2 hover:cursor-pointer"
-                    onClick={() => {
-                      if (user?.role === "Admin") {
-                        handleAttendance(
-                          date,
-                          "Attendance",
-                          details?.inTime,
-                          details?.outTime
-                        );
-                      }
-                    }}
-                  >
-                    {details?.inTime || "-"}
-                  </td>
+                    <td
+                      className="border border-gray-400 p-2 hover:cursor-pointer"
+                      onClick={() => {
+                        if (user?.role === "Admin") {
+                          handleAttendance(
+                            date,
+                            "Attendance",
+                            details?.inTime,
+                            details?.outTime
+                          )
+                        }
+                      }}
+                    >
+                      {details?.inTime || "-"}
+                    </td>
 
-                  <td
-                    className="border border-gray-400 p-2 hover:cursor-pointer"
-                    onClick={() => {
-                      if (user?.role === "Admin") {
-                        handleAttendance(
-                          date,
-                          "Attendance",
-                          details?.inTime,
-                          details?.outTime
-                        );
-                      }
-                    }}
-                  >
-                    {details?.outTime || "-"}
-                  </td>
+                    <td
+                      className="border border-gray-400 p-2 hover:cursor-pointer"
+                      onClick={() => {
+                        if (user?.role === "Admin") {
+                          handleAttendance(
+                            date,
+                            "Attendance",
+                            details?.inTime,
+                            details?.outTime
+                          )
+                        }
+                      }}
+                    >
+                      {details?.outTime || "-"}
+                    </td>
 
-                  {isSunday || holidayName ? (
-                    <>
-                      <td
-                        onClick={() => {
-                          if (user?.role === "Admin") {
-                            handleLeave(
-                              date,
-                              "Leave",
-                              details?.leaveDetails,
-                              "casual Leave"
-                            );
-                          }
-                        }}
-                        className={`border border-r-0 border-gray-400 p-2 text-center font-semibold text-white hover:cursor-pointer ${highlightClass}`}
-                      >
-                        {details?.casualLeave}
-                      </td>
+                    {isSunday || holidayName ? (
+                      <>
+                        <td
+                          onClick={() => {
+                            if (user?.role === "Admin") {
+                              handleLeave(
+                                date,
+                                "Leave",
+                                details?.leaveDetails,
+                                "casual Leave"
+                              )
+                            }
+                          }}
+                          className={`border border-r-0 border-gray-400 p-2 text-center font-semibold text-white hover:cursor-pointer ${highlightClass}`}
+                        >
+                          {details?.casualLeave}
+                        </td>
 
-                      <td
-                        onClick={() => {
-                          if (user?.role === "Admin") {
-                            handleLeave(
-                              date,
-                              "Leave",
-                              details?.leaveDetails,
-                              "privileage Leave"
-                            );
-                          }
-                        }}
-                        className={`border border-l-0 border-r-0 border-gray-400 p-2 text-center font-semibold text-white hover:cursor-pointer ${highlightClass}`}
-                      >
-                        {details?.privilegeLeave}
-                      </td>
+                        <td
+                          onClick={() => {
+                            if (user?.role === "Admin") {
+                              handleLeave(
+                                date,
+                                "Leave",
+                                details?.leaveDetails,
+                                "privileage Leave"
+                              )
+                            }
+                          }}
+                          className={`border border-l-0 border-r-0 border-gray-400 p-2 text-center font-semibold text-white hover:cursor-pointer ${highlightClass}`}
+                        >
+                          {details?.privilegeLeave}
+                        </td>
 
-                      <td
-                        onClick={() => {
-                          if (user?.role === "Admin") {
-                            handleLeave(
-                              date,
-                              "Leave",
-                              details?.leaveDetails,
-                              "compensatory Leave"
-                            );
-                          }
-                        }}
-                        className={`border border-l-0 border-r-0 border-gray-400 p-2 text-center font-semibold text-white hover:cursor-pointer ${highlightClass}`}
-                      >
-                        {details?.compensatoryLeave}
-                      </td>
+                        <td
+                          onClick={() => {
+                            if (user?.role === "Admin") {
+                              handleLeave(
+                                date,
+                                "Leave",
+                                details?.leaveDetails,
+                                "compensatory Leave"
+                              )
+                            }
+                          }}
+                          className={`border border-l-0 border-r-0 border-gray-400 p-2 text-center font-semibold text-white hover:cursor-pointer ${highlightClass}`}
+                        >
+                          {details?.compensatoryLeave}
+                        </td>
 
-                      <td
-                        onClick={() => {
-                          if (user?.role === "Admin") {
-                            handleLeave(
-                              date,
-                              "Leave",
-                              details?.leaveDetails,
-                              "other Leave"
-                            );
-                          }
-                        }}
-                        className={`border border-l-0 border-r-0 border-gray-400 p-2 text-center font-semibold text-white hover:cursor-pointer ${highlightClass}`}
-                      >
-                        {details?.otherLeave}
-                      </td>
+                        <td
+                          onClick={() => {
+                            if (user?.role === "Admin") {
+                              handleLeave(
+                                date,
+                                "Leave",
+                                details?.leaveDetails,
+                                "other Leave"
+                              )
+                            }
+                          }}
+                          className={`border border-l-0 border-r-0 border-gray-400 p-2 text-center font-semibold text-white hover:cursor-pointer ${highlightClass}`}
+                        >
+                          {details?.otherLeave}
+                        </td>
 
-                      <td
-                        className={`border border-l-0 border-r-0 border-gray-400 p-2 font-bold ${highlightClass}`}
-                      >
-                        {isSunday ? "SUNDAY" : holidayName}
-                      </td>
+                        <td
+                          className={`border border-l-0 border-r-0 border-gray-400 p-2 font-bold ${highlightClass}`}
+                        >
+                          {isSunday ? "SUNDAY" : holidayName}
+                        </td>
 
-                      <td
-                        className={`border border-l-0 border-r-0 border-gray-400 p-2 text-white ${highlightClass}`}
-                      ></td>
+                        <td
+                          className={`border border-l-0 border-r-0 border-gray-400 p-2 text-white ${highlightClass}`}
+                        ></td>
 
-                      <td
-                        className={`border border-l-0 border-gray-400 p-2 ${highlightClass}`}
-                      >
-                        {details.notMarked}
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td
-                        className="border border-gray-400 p-2 hover:cursor-pointer"
-                        onClick={() => {
-                          if (user?.role === "Admin") {
-                            handleLeave(
-                              date,
-                              "Leave",
-                              details?.leaveDetails,
-                              "casual Leave"
-                            );
-                          }
-                        }}
-                      >
-                        {details?.casualLeave || "-"}
-                      </td>
+                        <td
+                          className={`border border-l-0 border-gray-400 p-2 ${highlightClass}`}
+                        >
+                          {details.notMarked}
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td
+                          className="border border-gray-400 p-2 hover:cursor-pointer"
+                          onClick={() => {
+                            if (user?.role === "Admin") {
+                              handleLeave(
+                                date,
+                                "Leave",
+                                details?.leaveDetails,
+                                "casual Leave"
+                              )
+                            }
+                          }}
+                        >
+                          {details?.casualLeave || "-"}
+                        </td>
 
-                      <td
-                        className="border border-gray-400 p-2 hover:cursor-pointer"
-                        onClick={() => {
-                          if (user?.role === "Admin") {
-                            handleLeave(
-                              date,
-                              "Leave",
-                              details?.leaveDetails,
-                              "privileage Leave"
-                            );
-                          }
-                        }}
-                      >
-                        {details?.privilegeLeave || "-"}
-                      </td>
+                        <td
+                          className="border border-gray-400 p-2 hover:cursor-pointer"
+                          onClick={() => {
+                            if (user?.role === "Admin") {
+                              handleLeave(
+                                date,
+                                "Leave",
+                                details?.leaveDetails,
+                                "privileage Leave"
+                              )
+                            }
+                          }}
+                        >
+                          {details?.privilegeLeave || "-"}
+                        </td>
 
-                      <td
-                        className="border border-gray-400 p-2 hover:cursor-pointer"
-                        onClick={() => {
-                          if (user?.role === "Admin") {
-                            handleLeave(
-                              date,
-                              "Leave",
-                              details?.leaveDetails,
-                              "compensatory Leave"
-                            );
-                          }
-                        }}
-                      >
-                        {details?.compensatoryLeave || "-"}
-                      </td>
+                        <td
+                          className="border border-gray-400 p-2 hover:cursor-pointer"
+                          onClick={() => {
+                            if (user?.role === "Admin") {
+                              handleLeave(
+                                date,
+                                "Leave",
+                                details?.leaveDetails,
+                                "compensatory Leave"
+                              )
+                            }
+                          }}
+                        >
+                          {details?.compensatoryLeave || "-"}
+                        </td>
 
-                      <td
-                        className="border border-gray-400 p-2 hover:cursor-pointer"
-                        onClick={() => {
-                          if (user?.role === "Admin") {
-                            handleLeave(
-                              date,
-                              "Leave",
-                              details?.leaveDetails,
-                              "other Leave"
-                            );
-                          }
-                        }}
-                      >
-                        {details?.otherLeave || "-"}
-                      </td>
+                        <td
+                          className="border border-gray-400 p-2 hover:cursor-pointer"
+                          onClick={() => {
+                            if (user?.role === "Admin") {
+                              handleLeave(
+                                date,
+                                "Leave",
+                                details?.leaveDetails,
+                                "other Leave"
+                              )
+                            }
+                          }}
+                        >
+                          {details?.otherLeave || "-"}
+                        </td>
 
-                      <td className="border border-gray-400 p-2">
-                        {details?.early ? `${details.early} minutes` : "-"}
-                      </td>
+                        <td className="border border-gray-400 p-2">
+                          {details?.early ? `${details.early} minutes` : "-"}
+                        </td>
 
-                      <td className="border border-gray-400 p-2">
-                        {details?.late ? `${details.late} minutes` : "-"}
-                      </td>
+                        <td className="border border-gray-400 p-2">
+                          {details?.late ? `${details.late} minutes` : "-"}
+                        </td>
 
-                      <td className="border border-gray-400 p-2">
-                        {details?.notMarked}
-                      </td>
-                    </>
-                  )}
+                        <td className="border border-gray-400 p-2">
+                          {details?.notMarked}
+                        </td>
+                      </>
+                    )}
+                    <td
+                      className="border border-gray-400 p-2 hover:cursor-pointer"
+                      onClick={() => {
+                        if (
+                          user?.role === "Admin" &&
+                          details.onsite.length > 0
+                        ) {
+                          handleOnsite(date, "Onsite", details?.onsite)
+                        }
+                      }}
+                    >
+                      {details?.onsite?.length > 0
+                        ? details.onsite.map((item, index) => (
+                            <div key={index}>{item.place || "-"}</div>
+                          ))
+                        : "-"}
+                    </td>
 
-                  <td
+                    <td className="border border-gray-400 p-2 hover:cursor-pointer">
+                      {details?.onsite?.length > 0
+                        ? details.onsite.map((item, index) => (
+                            <div key={index}>{item.siteName || "-"}</div>
+                          ))
+                        : "-"}
+                    </td>
+
+                    <td className="border border-gray-400 p-2 hover:cursor-pointer">
+                      {details?.onsite?.length > 0
+                        ? details.onsite.map((item, index) => (
+                            <div key={index}>{item.onsiteType || "-"}</div>
+                          ))
+                        : "-"}
+                    </td>
+
+                    <td className="border border-gray-400 p-2 hover:cursor-pointer">
+                      {details?.onsite?.length > 0
+                        ? details.onsite.map((item, index) => (
+                            <div key={index}>
+                              {item.onsiteType === "Half Day"
+                                ? item.halfDayPeriod
+                                : "-"}
+                            </div>
+                          ))
+                        : "-"}
+                    </td>
+
+                    {/* <td
                     className="border border-gray-400 p-2 hover:cursor-pointer"
                     onClick={() => {
                       if (user?.role === "Admin" && details.onsite.length > 0) {
@@ -998,15 +1048,16 @@ const ResponsiveTable = ({
                     {details?.onsite?.[0]?.onsiteType === "Half Day"
                       ? details?.onsite?.[0]?.halfDayPeriod
                       : "-"}
-                  </td>
-                </tr>
-              );
-            })}
+                  </td> */}
+                  </tr>
+                )
+              }
+            )}
           </tbody>
         </table>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default React.memo(ResponsiveTable);
+export default React.memo(ResponsiveTable)
