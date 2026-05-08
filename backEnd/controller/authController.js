@@ -8729,19 +8729,25 @@ export const Getallmisspunch = async (req, res) => {
     const userid = req?.query?.userid
     const role = req?.query?.role
     const end = new Date(enddate);
-    end.setHours(23, 59, 59, 999)
-    console.log("startdate", startdate)
-    console.log("enddate", enddate)
-    const query = {
-      misspunchDate: {
-        $gte: startdate,
-        $lte: enddate
-      }
-    };
+    const from = req?.query?.from || null
 
-    if (role?.toLowerCase() !== "admin") {
+    end.setHours(23, 59, 59, 999)
+    let query={}
+    if (!from) {
+      query = {
+        misspunchDate: {
+          $gte: startdate,
+          $lte: enddate
+        }
+      };
+    }
+
+    if (from) {
+      query.userId = userid
+    } else if (role?.toLowerCase() !== "admin") {
       query.assignedto = new mongoose.Types.ObjectId(userid);
     }
+    console.log("queryerqreewrerer", query)
     const misspunchdata = await Misspunch.find(query).populate({
       path: "userId",
       select: "name role department", // Select fields from User
@@ -10596,12 +10602,12 @@ export const GetallCurrentMonthbirthDay = async (req, res) => {
   try {
     const currentMonth = new Date().toISOString().slice(5, 7) // "04"
 
- 
+
     const staffbirthdays = await Staff.find({
       isVerified: true,
       dateofbirth: { $regex: `^\\d{4}-${currentMonth}-\\d{2}$` }
     })
-  
+
     const adminbirthdays = await Admin.find({
       dateofbirth: { $regex: `^\\d{4}-${currentMonth}-\\d{2}$` }
     })
