@@ -4,7 +4,7 @@ import StaffHeader from "../header/StaffHeader.jsx"
 
 import Mainrouter from "../router/Mainrouter.jsx"
 
-import { useLocation,matchPath  } from "react-router-dom"
+import { useLocation, matchPath } from "react-router-dom"
 import useAutoLogout from "../hooks/useAutoLogout.jsx"
 const Layout = () => {
   const [headerHeight, setHeaderHeight] = useState(0)
@@ -21,7 +21,8 @@ const Layout = () => {
   }, [location.pathname]) // Update height on route change
   const hideHeaderRoutes = [
     "/staff/reports/markettingdashboard",
-    "/admin/reports/markettingdashboard"
+    "/admin/reports/markettingdashboard",
+    "/staff/transaction/lead/ownedLeadlist"
   ]
 
   const shouldHideHeader = hideHeaderRoutes.some((route) =>

@@ -429,20 +429,33 @@
 //   )
 // }
 
-
-
-
-
-
-
-
 import { useEffect, useState } from "react"
 import UseFetch from "../../hooks/useFetch"
 import { useLocation, useNavigate } from "react-router-dom"
 import { LeadhistoryModal } from "../../components/primaryUser/LeadhistoryModal"
 import SkeletonTable from "../../components/loader/SkeletonTable"
 import NodataAvailable from "../../components/NodataAvailable"
-import { Eye, IndianRupee, ChevronDown, ChevronRight, BellRing } from "lucide-react"
+import {
+  Mail,
+  MessageSquareText,
+  Settings,
+  User,
+  Users,
+  Send,
+  TrendingUp,
+  Menu,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  IndianRupee,
+  ChevronDown,
+  BellRing
+} from "lucide-react"
+
+import AdminHeader from "../../header/AdminHeader"
+import StaffHeader from "../../header/StaffHeader"
+import Sidebar from "../../components/primaryUser/Sidebar"
+import { StaticSidebar } from "../../components/primaryUser/StaticSidebar"
 import { getLocalStorageItem } from "../../helper/localstorage"
 
 export default function OwnLeadList() {
@@ -478,7 +491,7 @@ export default function OwnLeadList() {
         value: b.branch_id,
         label: b.branchName
       }))
-console.log(branch)
+      console.log(branch)
       setcompanyBranches(branch)
       setselectedCompanyBranch(branch[0].value)
       setLoggedUser(userData)
@@ -652,7 +665,7 @@ console.log(branch)
       </>
     )
   }
-
+  console.log("hhh")
   const renderTable = (data) => (
     <table className="border-collapse border border-gray-200 w-full text-sm">
       <thead className="bg-blue-600 text-white text-xs sticky top-0 z-10">
@@ -660,11 +673,19 @@ console.log(branch)
           <th className="border border-blue-500 w-5" />
           <th className="border border-blue-500 px-3 py-2 text-left">Name</th>
           <th className="border border-blue-500 px-3 py-2 text-left">Mobile</th>
-          <th className="border border-blue-500 px-3 py-2 text-left">Last Remark</th>
-          <th className="border border-blue-500 px-3 py-2 text-left">Followup</th>
-          <th className="border border-blue-500 px-3 py-2 text-center">Event</th>
+          <th className="border border-blue-500 px-3 py-2 text-left">
+            Last Remark
+          </th>
+          <th className="border border-blue-500 px-3 py-2 text-left">
+            Followup
+          </th>
+          <th className="border border-blue-500 px-3 py-2 text-center">
+            Event
+          </th>
           <th className="border border-blue-500 px-3 py-2 text-center">View</th>
-          <th className="border border-blue-500 px-3 py-2 text-right">Net Amount</th>
+          <th className="border border-blue-500 px-3 py-2 text-right">
+            Net Amount
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -680,113 +701,155 @@ console.log(branch)
     tableData.some(
       (group) => Array.isArray(group.leads) && group.leads.length > 0
     )
-
+  console.log(selectedCompanyBranch)
   return (
-    <div className="h-full bg-[#ADD8E6] flex flex-col overflow-hidden">
+    <div className="h-full bg-[#ADD8E6]  overflow-hidden">
+      <div className="flex h-full  lg:flex-row">
+        {selectedCompanyBranch && (
+          <StaticSidebar selectedCompanyBranch={selectedCompanyBranch} setselectedCompanyBranch={setselectedCompanyBranch} />
+        )}
 
-      {/* ── Top bar ── */}
-      <div className="flex-shrink-0 flex justify-between items-center px-3 py-2 md:px-5">
-        <h2 className="text-base font-bold">
-          {ownLead ? "Own Lead" : "All Lead"}
-        </h2>
-        <div className="flex items-center gap-2">
-          {loggedUser?.role !== "Staff" && (
-            <>
-              <span className="text-xs font-semibold whitespace-nowrap">
-                {ownLead ? "Own Lead" : "All Lead"}
-              </span>
-              <button
-                onClick={() => {
-                  setTableData([])
-                  setownLead((prev) => !prev)
-                }}
-                className={`${
-                  ownLead ? "bg-green-500" : "bg-gray-300"
-                } w-10 h-5 flex items-center rounded-full transition-colors duration-300`}
-              >
-                <div
-                  className={`${
-                    ownLead ? "translate-x-5" : "translate-x-0"
-                  } w-5 h-5 bg-white rounded-full shadow transform transition-transform duration-300`}
-                />
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <header className="flex items-center justify-between border-b border-slate-200 bg-[#0F172A]/95 py-0.5 ">
+            {loggedUser?.role?.toLowerCase() === "admin" ? (
+              <AdminHeader />
+            ) : (
+              <StaffHeader hide={true} />
+            )}
+
+            <div className="flex items-center gap-1.5 text-slate-700 mr-3">
+              <button className="rounded-full p-1.5 transition bg-slate-100">
+                <Mail size={15} strokeWidth={2.2} />
               </button>
-            </>
-          )}
-
-          <select
-            value={selectedCompanyBranch || ""}
-            onChange={(e) => {
-              setTableData([])
-              setselectedCompanyBranch(e.target.value)
-            }}
-            className="border border-gray-300 py-1 rounded px-2 text-xs focus:outline-none min-w-[130px] cursor-pointer"
-          >
-            {companyBranches?.map((branch) => (
-              <option key={branch.value} value={branch.value}>
-                {branch.label}
-              </option>
-            ))}
-          </select>
-
-          <button
-            onClick={() =>
-              loggedUser?.role === "Admin"
-                ? navigate("/admin/transaction/lead")
-                : navigate("/staff/transaction/lead")
-            }
-            className="bg-black text-white text-xs py-1 px-3 rounded shadow hover:bg-gray-700 whitespace-nowrap"
-          >
-            New Lead
-          </button>
-        </div>
-      </div>
-
-      {/* ── Table container ── */}
-      <div className="flex-1 mx-2 md:mx-3 mb-2 bg-white rounded-lg shadow-xl overflow-hidden flex flex-col">
-        {loading ? (
-          <div className="p-4">
-            <SkeletonTable rows={5} columns={8} />
-          </div>
-        ) : !hasLeads ? (
-          <div className="p-4">
-            <NodataAvailable
-              title="No Lead Available"
-              message="There are no leads to display for the selected filters."
-            />
-          </div>
-        ) : (
-          /* overflow-auto here makes the table scroll; sticky thead works inside */
-          <div className="overflow-auto flex-1">
-            {tableData.map(({ staffName, leads }, index) => (
-              <div key={staffName || `group-${index}`}>
-                {staffName && (
-                  <h3 className="text-sm font-semibold text-gray-800 px-3 pt-3 pb-1">
-                    {staffName}{" "}
-                    <span className="text-xs text-gray-500 font-normal">
-                      ({leads?.length || 0} Leads)
-                    </span>
-                  </h3>
-                )}
-                {Array.isArray(leads) && leads.length > 0 ? (
-                  renderTable(leads)
-                ) : (
-                  <p className="text-center text-gray-400 py-3 text-xs">
-                    No leads under {staffName || "this group"}.
-                  </p>
-                )}
+              <div className="relative">
+                <button className="rounded-full p-1.5 transition bg-slate-100">
+                  <MessageSquareText size={15} strokeWidth={2.2} />
+                </button>
+                <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
               </div>
-            ))}
+              <button className="rounded-full p-1.5 transition bg-slate-100">
+                <Settings size={15} strokeWidth={2.2} />
+              </button>
+              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+                <User size={15} strokeWidth={2.2} />
+              </button> */}
+
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowUserMenu((prev) => !prev)
+                  }}
+                  className="rounded-full p-1.5 transition bg-slate-100"
+                >
+                  <User size={15} strokeWidth={2.2} />
+                </button>
+
+                {/* {showUserMenu && (
+                  <div
+                    onClick={(e) => e.stopPropagation()} 
+                    className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
+                  >
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )} */}
+              </div>
+            </div>
+          </header>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <h2 className="text-base font-bold">
+              {ownLead ? "Own Lead" : "All Lead"}
+            </h2>
+            <div className="flex items-center gap-2">
+              {loggedUser?.role !== "Staff" && (
+                <>
+                  <span className="text-xs font-semibold whitespace-nowrap">
+                    {ownLead ? "Own Lead" : "All Lead"}
+                  </span>
+                  <button
+                    onClick={() => {
+                      setTableData([])
+                      setownLead((prev) => !prev)
+                    }}
+                    className={`${
+                      ownLead ? "bg-green-500" : "bg-gray-300"
+                    } w-10 h-5 flex items-center rounded-full transition-colors duration-300`}
+                  >
+                    <div
+                      className={`${
+                        ownLead ? "translate-x-5" : "translate-x-0"
+                      } w-5 h-5 bg-white rounded-full shadow transform transition-transform duration-300`}
+                    />
+                  </button>
+                </>
+              )}
+
+
+              <button
+                onClick={() =>
+                  loggedUser?.role === "Admin"
+                    ? navigate("/admin/transaction/lead")
+                    : navigate("/staff/transaction/lead")
+                }
+                className="bg-black text-white text-xs py-1 px-3 rounded shadow hover:bg-gray-700 whitespace-nowrap"
+              >
+                New Lead
+              </button>
+            </div>
+            {/* ── Table container ── */}
+            <div className="flex-1 mx-2 md:mx-3 mb-2 bg-white rounded-lg shadow-xl overflow-hidden flex flex-col">
+              {loading ? (
+                <div className="p-4">
+                  <SkeletonTable rows={5} columns={8} />
+                </div>
+              ) : !hasLeads ? (
+                <div className="p-4">
+                  <NodataAvailable
+                    title="No Lead Available"
+                    message="There are no leads to display for the selected filters."
+                  />
+                </div>
+              ) : (
+                /* overflow-auto here makes the table scroll; sticky thead works inside */
+                <div className="overflow-auto flex-1">
+                  {tableData.map(({ staffName, leads }, index) => (
+                    <div key={staffName || `group-${index}`}>
+                      {staffName && (
+                        <h3 className="text-sm font-semibold text-gray-800 px-3 pt-3 pb-1">
+                          {staffName}{" "}
+                          <span className="text-xs text-gray-500 font-normal">
+                            ({leads?.length || 0} Leads)
+                          </span>
+                        </h3>
+                      )}
+                      {Array.isArray(leads) && leads.length > 0 ? (
+                        renderTable(leads)
+                      ) : (
+                        <p className="text-center text-gray-400 py-3 text-xs">
+                          No leads under {staffName || "this group"}.
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
+        </div>
+
+        {showhistoryModal && historyList.length > 0 && (
+          <LeadhistoryModal
+            selectedLeadId={selectedLeadId}
+            historyList={historyList}
+            handlecloseModal={() => sethistoryModal(false)}
+          />
         )}
       </div>
-
-      {showhistoryModal && historyList.length > 0 && (
-        <LeadhistoryModal
-          selectedLeadId={selectedLeadId}
-          historyList={historyList}
-          handlecloseModal={() => sethistoryModal(false)}
-        />
-      )}
     </div>
   )
 }

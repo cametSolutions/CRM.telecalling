@@ -305,6 +305,7 @@ const MarketingDashboard = () => {
   console.log(loggedusedTarget)
   useEffect(() => {
     const storedUser = getLocalStorageItem("user")
+console.log(storedUser)
     if (storedUser) {
       setUser(storedUser)
       setselecteduserName(storedUser.name)
