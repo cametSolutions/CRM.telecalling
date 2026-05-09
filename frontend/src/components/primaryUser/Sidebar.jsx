@@ -25,6 +25,7 @@ console.log(categorylist)
   const [selectedCategory, setSelectedCategory] = useState(null)
 
   const handleCategoryClick = (categoryId, categoryName) => {
+console.log("hh")
     const category = categorylist.find(
       (cat) => String(cat.categoryId) === String(categoryId)
     )
@@ -33,6 +34,7 @@ console.log(categorylist)
     setModalOpen(true)
 
     if (handleMoreClick) {
+console.log("hhh")
       handleMoreClick(categoryId, categoryName)
     }
   }

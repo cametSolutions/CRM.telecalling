@@ -4219,6 +4219,9 @@ export const GetselectedLeadData = async (req, res) => {
     const selectedLead = await LeadMaster.findById({ _id: leadId })
       .populate({
         path: "customerName",
+        populate: {
+          path: "partner"
+        }
       })
       .lean();
 

@@ -142,7 +142,7 @@ const MarketingDashboard = () => {
             title: "All Leads",
             detail: "Active leads",
             value: item.leadCount - item.lost,
-            right:formatAmount(item.leadAmount),
+            right: formatAmount(item.leadAmount),
             icon: (
               <Users size={15} className="text-violet-700" strokeWidth={2.2} />
             )
@@ -151,7 +151,7 @@ const MarketingDashboard = () => {
             title: "New Lead",
             detail: "Leads with no follow-up started",
             value: item.neverFollowup,
-            right:formatAmount (item.neverFollowupAmount),
+            right: formatAmount(item.neverFollowupAmount),
             icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
           },
 
@@ -183,7 +183,7 @@ const MarketingDashboard = () => {
             title: "Converted",
             detail: "Leads successfully closed",
             value: item.converted,
-            right:formatAmount (item.convertedAmount),
+            right: formatAmount(item.convertedAmount),
             icon: (
               <TrendingUp
                 size={15}
@@ -229,7 +229,7 @@ const MarketingDashboard = () => {
             right: 0,
             icon: <Send size={15} className="text-sky-700" strokeWidth={2.2} />
           },
-          
+
           {
             title: "Converted",
             value: 0,
@@ -268,13 +268,18 @@ const MarketingDashboard = () => {
       )
       setloggeduserTarget(selectedUser)
       setachievedPoints(selectedUser?.incentive)
-
+      console.log(uniqueCategories)
+      console.log(data?.userWiseResults)
       const updatedCategories = uniqueCategories.map((cat) => {
         // Get ALL matching categories (for different months)
+        // const matchedCategories =
+        //   data?.userWiseResults?.categories.filter(
+        //     (c) => c.categoryId === cat.categoryId
+        //   ) || []
         const matchedCategories =
-          selectedUser?.categories.filter(
-            (c) => c.categoryId === cat.categoryId
-          ) || []
+          data?.userWiseResults
+            ?.flatMap((user) => user.categories || [])
+            .filter((c) => c.categoryId === cat.categoryId) || []
 
         // Sum up all targets and achieved amounts
         const totalTarget = matchedCategories.reduce(
@@ -292,6 +297,8 @@ const MarketingDashboard = () => {
           targetamount: totalTarget
         }
       })
+      console.log(data?.userWiseResults)
+      console.log(updatedCategories)
       setcategorylist(updatedCategories)
     }
   }, [data])
@@ -530,8 +537,9 @@ const MarketingDashboard = () => {
       setacheivedProducts([])
     }
   }
-const formatAmount = (value) => Number(value || 0).toLocaleString("en-IN");//amount shown like 12,000 with commmas
+  const formatAmount = (value) => Number(value || 0).toLocaleString("en-IN") //amount shown like 12,000 with commmas
   const handleMoreClick = (id, name) => {
+    console.log("hh")
     const filteredList = branchProduct
       .filter(
         (item) =>
@@ -540,15 +548,25 @@ const formatAmount = (value) => Number(value || 0).toLocaleString("en-IN");//amo
           ) || String(item.category_id) === String(id)
       )
       .map((item) => item.productName || item.serviceName)
+    console.log(filteredList)
     setproductList(filteredList)
     setselectedCategory({ Id: id, categoryName: name })
     const filteredloggedUserItem = data?.userWiseResults.filter(
       (item) => item.userId === user._id
     )
-    const filteredselectedCategory =
-      filteredloggedUserItem[0].categories.filter(
-        (item) => item.categoryId === id
-      )
+    const Datas = data?.userWiseResults
+    console.log(Datas)
+    console.log("hhhh")
+    console.log(filteredloggedUserItem)
+    console.log(id)
+    // const filteredselectedCategory =
+    //   filteredloggedUserItem[0].categories.filter(
+    //     (item) => item.categoryId === id
+    //   )
+    const filteredselectedCategory = Datas.flatMap(
+      (user) => user.categories || []
+    ).filter((item) => item.categoryId === id)
+    console.log("Hh")
     const summary = filteredselectedCategory.reduce(
       (acc, cur) => {
         acc.target += Number(cur.target || 0)
@@ -558,8 +576,9 @@ const formatAmount = (value) => Number(value || 0).toLocaleString("en-IN");//amo
       },
       { target: 0, achieved: 0, balance: 0 }
     )
-
+    console.log("hhh")
     setselectedDataPopup(summary)
+    console.log(filteredselectedCategory && filteredselectedCategory.length)
     if (filteredselectedCategory && filteredselectedCategory.length) {
       setacheivedProducts((prev) => [
         ...prev,

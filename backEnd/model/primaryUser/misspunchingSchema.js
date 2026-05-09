@@ -41,7 +41,8 @@ const missPunchSchema = new Schema({
     remark: { type: String },
     misspunchDate: { type: Date },
     applyDate: { type: Date },
-    misspunchType: { type: String }
+    misspunchType: { type: String },
+    misspunchTime: { type: String }
 }, { timestamps: true })
 const Misspunch = mongoose.model("Misspunch", missPunchSchema)
 export default Misspunch
