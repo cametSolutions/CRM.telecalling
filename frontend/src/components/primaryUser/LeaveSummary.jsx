@@ -39,7 +39,7 @@ const LeaveSummary = () => {
 
     loading
   } = UseFetch(`/auth/getsomeall?year=${selectedYear}&month=${selectedMonth}`)
-
+console.log(data)
   useEffect(() => {
     const userData = getLocalStorageItem("user")
     if (userData.selected && userData.selected.length > 1) {
@@ -62,6 +62,9 @@ const LeaveSummary = () => {
   useEffect(() => {
     if (data) {
       const { staffAttendanceStats, listofHolidays, sundayFulldate } = data
+console.log(staffAttendanceStats)
+const a=staffAttendanceStats.filter((item)=>item.name==="Sreeraj Vijay")
+console.log(a)
       setnewattendee(staffAttendanceStats)
       setHoly(listofHolidays)
       setCurrentmonthSundays(sundayFulldate)
@@ -198,6 +201,7 @@ const LeaveSummary = () => {
     leaveData,
     leavetype
   ) => {
+console.log(leaveData)
     // Find the matching leave entry
     const matchingLeave = Object.values(leaveData).find(
       (entry) => entry.leaveCategory === leavetype
@@ -237,6 +241,10 @@ const LeaveSummary = () => {
   }
 
   const handleApply = async (staffId, selected, setIsApplying, type) => {
+console.log("adddd")
+console.log(type)
+
+
     try {
       if (type === "Leave") {
         const matchedStaff = leavesummaryList.find(
@@ -314,7 +322,7 @@ const LeaveSummary = () => {
       { header: "Employ_Name", key: "name", width: 25 },
       { header: "EMP_ID", key: "staffId", width: 15 },
       { header: "Casual_Leave", key: "casualLeave", width: 15 },
-      { header: "Privileage_Leave", key: "privLeave", width: 15 },
+      { header: "Privilege_Leave", key: "privLeave", width: 15 },
       { header: "Comp_Leave", key: "compLeave", width: 15 },
       { header: "Other_Leave", key: "otherLeave", width: 15 },
       { header: "Late_Cutting", key: "lateCutting", width: 15 },
@@ -359,7 +367,7 @@ const LeaveSummary = () => {
 
       Object.values(user.attendancedates).forEach((details) => {
         casualLeave += details.casualLeave || 0
-        privilegeLeave += details.privileageLeave || 0
+        privilegeLeave += details.privilegeLeave || 0
         compensatoryLeave += details.compensatoryLeave || 0
         otherLeave += details.otherLeave || 0
       })
@@ -507,7 +515,7 @@ const LeaveSummary = () => {
                       //     : ""
                       // }`}
                     >
-                      {/* Your existing summary card code */}
+                      
                       <div
                         className={` md:h-20 md:mr-4 shadow-lg rounded-lg w-full border cursor-pointer
                       ${

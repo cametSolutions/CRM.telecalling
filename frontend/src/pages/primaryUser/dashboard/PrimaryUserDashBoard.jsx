@@ -766,6 +766,9 @@
 //     </div>
 //   )
 // }
+
+
+
 import { useEffect, useState, useRef } from "react"
 import {
   MdSupportAgent,
@@ -805,6 +808,9 @@ export default function PrimaryUserDashBoard() {
   const { data: currrentMonthBirthDays } = UseFetch(
     "/auth/getallcurrentmonthBirthdays"
   )
+
+console.log(currentyearholydays)
+console.log(currrentMonthBirthDays)
   const { data: todayOnsite } = UseFetch("/auth/getallUsersOnsite?today=true")
   const { data: staffs } = UseFetch("/auth/getallStaffs")
   const { data: acheivementlist, refreshHook } = UseFetch(

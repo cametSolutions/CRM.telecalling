@@ -1381,7 +1381,7 @@
 
 // export default LeaveApprovalAndPending
 
-import { useState, useEffect, useMemo, useRef } from "react"
+import { useState, useEffect, useMemo, useRef } from "react" /////git code upadted uiiii
 import DeleteAlert from "./DeleteAlert"
 import { CardSkeletonLoader } from "./CardSkeletonLoader"
 import { toast } from "react-toastify"
@@ -1653,7 +1653,7 @@ const LeaveApprovalAndPending = () => {
     setPending(true)
   }
 
-  const singleApprovalOrCancel = async (id, userId) => {
+  const singleApprovalOrCancel = async (id, userId,misspunchTime) => {
     try {
       setLoader(true)
 
@@ -1671,7 +1671,7 @@ const LeaveApprovalAndPending = () => {
           )
         } else {
           response = await api.put(
-            `/auth/approveMispunch/?role=${user?.role}&selectedId=${id}&userId=${user?._id}&startDate=${dates.startDate}&endDate=${dates.endDate}&misspunchDate=${selectedItem?.misspunchDate}&misspunchType=${selectedItem?.misspunchType}`
+            `/auth/approveMispunch/?role=${user?.role}&selectedId=${id}&userId=${user?._id}&startDate=${dates.startDate}&endDate=${dates.endDate}&misspunchDate=${selectedItem?.misspunchDate}&misspunchType=${selectedItem?.misspunchType}&misspunchTime=${misspunchTime}`
           )
         }
       } else if (isApproved) {
@@ -1751,7 +1751,7 @@ const LeaveApprovalAndPending = () => {
           (key) => states[key] === true
         )
         console.log(trueState)
-        return
+
         const checkOnsite = pendingOnsite || approvedOnsite
 
         if (checkOnsite) {
@@ -1864,33 +1864,11 @@ const LeaveApprovalAndPending = () => {
       </span>
     )
   }
-
-  const handleDate = (selectedDate) => {
-    const extractDateAndMonth = (date) => {
-      const year = date.getFullYear()
-      const month = date.getMonth() + 1
-      const day = date.getDate()
-      return `${year}-${month.toString().padStart(2, "0")}-${day
-        .toString()
-        .padStart(2, "0")}`
-    }
-
-    if (
-      selectedDate.startDate instanceof Date &&
-      !isNaN(selectedDate.startDate.getTime()) &&
-      selectedDate.endDate instanceof Date &&
-      !isNaN(selectedDate.endDate.getTime())
-    ) {
-      setDates({
-        startDate: extractDateAndMonth(selectedDate.startDate),
-        endDate: extractDateAndMonth(selectedDate.endDate)
-      })
-    } else {
-      setDates({
-        startDate: selectedDate.startDate,
-        endDate: selectedDate.endDate
-      })
-    }
+  console.log("hhh")
+  const handleDate = () => {
+    console.log("llhhh")
+    setMisspunchList([])
+    setLeaveList([])
   }
 
   const handleDropdownSelect = (option) => {
@@ -1942,7 +1920,7 @@ const LeaveApprovalAndPending = () => {
         : "Approved Leave"
 
   const dateColHeader = mispunchMode
-    ? "Mispunch Date"
+    ? "Miss punch Date"
     : pendingLeave || approvedLeave
       ? "Leave Date"
       : "Onsite Date"
@@ -2117,6 +2095,11 @@ const LeaveApprovalAndPending = () => {
                     <th className="px-3 py-2 text-center font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
                       Type
                     </th>
+                    {mispunchMode && (
+                      <th className="px-3 py-2 text-center font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden md:table-cell">
+                        Miss punch Time
+                      </th>
+                    )}
                     {!mispunchMode && (
                       <th className="px-3 py-2 text-center font-semibold text-gray-600 uppercase tracking-wider whitespace-nowrap hidden xl:table-cell">
                         Shift
@@ -2207,6 +2190,13 @@ const LeaveApprovalAndPending = () => {
                                 : userRow?.onsiteType}
                           </span>
                         </td>
+                        {mispunchMode && (
+                          <td className="px-3 py-2 whitespace-nowrap hidden md:table-cell text-center">
+                            <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-purple-100 text-purple-700 border border-purple-200">
+                              {userRow?.misspunchTime}
+                            </span>
+                          </td>
+                        )}
 
                         {!mispunchMode && (
                           <td className="px-3 py-2 text-gray-700 whitespace-nowrap hidden xl:table-cell text-center">
@@ -2243,7 +2233,8 @@ const LeaveApprovalAndPending = () => {
                               onClick={() =>
                                 singleApprovalOrCancel(
                                   userRow?._id,
-                                  userRow?.userId?._id
+                                  userRow?.userId?._id,
+                                  userRow?.misspunchTime
                                 )
                               }
                               aria-label={

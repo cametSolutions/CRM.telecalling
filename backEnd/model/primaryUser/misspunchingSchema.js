@@ -23,10 +23,26 @@ const missPunchSchema = new Schema({
         enum: ["Not Approved", "HR Approved", "HR Rejected"],
         default: "Not Approved"
     },
+    assignedto: {
+        type: mongoose.Schema.Types.ObjectId,
+        refPath: "assignedtoModel",
+        required: true
+    },
+    assignedtoModel: {
+        type: String,
+        required: true, enum: ["Staff", "Admin"]
+    },
+
+    attendanceId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Attendance", required: true
+    },
+    // branch: { type: mongoose.Schema.Types.ObjectId, ref: "Branch", required: true }
     remark: { type: String },
     misspunchDate: { type: Date },
     applyDate: { type: Date },
-    misspunchType: { type: String }
+    misspunchType: { type: String },
+    misspunchTime: { type: String }
 }, { timestamps: true })
 const Misspunch = mongoose.model("Misspunch", missPunchSchema)
 export default Misspunch

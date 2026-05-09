@@ -47,13 +47,21 @@ import DatePicker from "react-datepicker"
 import "react-datepicker/dist/react-datepicker.css"
 import { FaCalendarAlt } from "react-icons/fa"
 
-const MyDatePicker = ({ setDates, dates, onClear, loader, view = false }) => {
+const MyDatePicker = ({
+  setDates,
+  dates,
+  onChange,
+  onClear,
+  loader,
+  view = false
+}) => {
   const handleDateRange = (date) => {
     if (view) return // block changes in view mode
     setDates({
       startDate: date?.[0] || null,
       endDate: date?.[1] || null
     })
+    onChange()
   }
 
   const CustomInput = forwardRef(({ value, onClick }, ref) => (
@@ -61,9 +69,7 @@ const MyDatePicker = ({ setDates, dates, onClear, loader, view = false }) => {
       ref={ref}
       className={
         "flex items-center border border-gray-300 px-2 py-0.5 rounded-md w-[220px] md:w-[250px] gap-2 " +
-        (view
-          ? "bg-white cursor-not-allowed "
-          : "bg-white cursor-pointer")
+        (view ? "bg-white cursor-not-allowed " : "bg-white cursor-pointer")
       }
       onClick={view ? undefined : onClick} // disable opening popup in view mode
     >
