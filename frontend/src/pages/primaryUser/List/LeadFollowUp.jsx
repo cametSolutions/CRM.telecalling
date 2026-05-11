@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react"
+import { Pencil } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { formatDate } from "../../../utils/dateUtils"
 import MyDatePicker from "../../../components/common/MyDatePicker"
@@ -43,6 +44,9 @@ const LeadFollowUp = () => {
   })
   const [expandedRows, setExpandedRows] = useState(new Set())
   const [selectedData, setselectedData] = useState(null)
+
+  const [collectionData, setcollectionData] = useState({})
+  console.log(collectionData)
   const [collectionupdateModal, setcollectionUpdateModal] = useState(false)
   const [partner, setPartner] = useState([])
   const [isdemofollownotClosed, setisdemofollowedNotClosed] = useState(false)
@@ -1603,7 +1607,10 @@ const LeadFollowUp = () => {
       }
     }
   }
-
+  const hasCollectionData =
+    collectionData && Object.keys(collectionupdatedata).length > 0
+  console.log(collectionupdatedata)
+  console.log(hasCollectionData)
   const handleHistory = (
     history,
     leadid,
@@ -1653,6 +1660,7 @@ const LeadFollowUp = () => {
   console.log(selectedData)
   // MODIFIED: Fetch updated lead data after collection update
   const fetchUpdatedLeadData = async (leadDocId) => {
+    console.log("b")
     try {
       const response = await api.get(`/lead/getLeadById/${leadDocId}`)
       if (response.status === 200) {
@@ -1666,48 +1674,21 @@ const LeadFollowUp = () => {
   }
   console.log(formData)
   // MODIFIED: Handle collection update with refresh
-  const handleCollectionUpdate = async (formData) => {
+  const handleCollectionUpdate = (formData) => {
     console.log(formData)
     console.log(paymentUpdatedInSession)
 
-    try {
-      // Add flag to indicate if this is an update within the same session
-      const requestData = {
-        ...formData,
-        overwriteLastPayment: paymentUpdatedInSession // Send flag to backend
-      }
-      console.log(requestData)
-      setcollectionupdateData(requestData)
-      setcollectionUpdateModal(false)
-      return
-
-      const response = await api.post("/lead/collectionUPdate", requestData)
-
-      if (response.status === 200) {
-        toast.success("Payment and customer details updated")
-
-        // Mark that payment was updated in this session
-        setPaymentUpdatedInSession(true)
-
-        // Fetch updated lead data
-        if (selectedDocId) {
-          const updatedLead = await fetchUpdatedLeadData(selectedDocId)
-          if (updatedLead) {
-            setselectedData(updatedLead)
-          }
-        }
-
-        // Close the modal
-        setcollectionUpdateModal(false)
-
-        return response
-      }
-    } catch (error) {
-      toast.error("Something went wrong")
-      console.log("error", error)
+    // Add flag to indicate if this is an update within the same session
+    const requestData = {
+      ...formData,
+      overwriteLastPayment: paymentUpdatedInSession // Send flag to backend
     }
+console.log(requestData)
+    console.log(requestData)
+    setcollectionupdateData(requestData)
+    setcollectionUpdateModal(false)
   }
-
+console.log(collectionData)
   const handleDemoSubmit = async () => {
     if (isdemofollownotClosed) {
       setDemoError((prev) => ({
@@ -1778,6 +1759,9 @@ const LeadFollowUp = () => {
   }
 
   const handleFollowUpDateSubmit = async () => {
+console.log(formData)
+console.log(collectionupdatedata)
+
     if (followupDateLoader) return
     try {
       let newErrors = {}
@@ -1799,8 +1783,8 @@ const LeadFollowUp = () => {
       setfollowupDateLoader(true)
 
       const response = await api.put(
-        `/lead/followupDateUpdate?selectedleaddocId=${selectedDocId}&loggeduserid=${loggedUser._id}&collectiondata=${collectionupdatedata}`,
-        formData
+        `/lead/followupDateUpdate?selectedleaddocId=${selectedDocId}&loggeduserid=${loggedUser._id}`,
+       {formData,collectionupdatedata}
       )
 
       if (response.status === 200) {
@@ -1840,6 +1824,7 @@ const LeadFollowUp = () => {
   }
 
   const handleFollowUp = (Item) => {
+    console.log(Item)
     setshowFollowupModal(true)
     setFormData((prev) => ({
       ...prev,
@@ -1878,7 +1863,10 @@ const LeadFollowUp = () => {
     setselectedDocid(Item._id)
     setSelectedLeadId(Item.leadId)
   }
-
+  const handleeditcollection = () => {
+    console.log("dd")
+    setcollectionUpdateModal(true)
+  }
   const handlecloseModal = () => {
     setSelectedLeadId(null)
     setShowModal(false)
@@ -2451,12 +2439,14 @@ const LeadFollowUp = () => {
                       <select
                         disabled={isAllocated}
                         value={formData.followupType}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           setFormData((prev) => ({
                             ...prev,
                             followupType: e.target.value
                           }))
-                        }
+                          setishavePayment(false)
+                          setcollectionData({})
+                        }}
                         onFocus={() => setIsdropdownOpen(true)}
                         onBlur={() => setIsdropdownOpen(false)}
                         className="w-full appearance-none px-4 py-1.5 pr-10 border border-gray-300 rounded-lg bg-white text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all cursor-pointer"
@@ -2656,6 +2646,19 @@ const LeadFollowUp = () => {
                           Check if payment has been collected
                         </p>
                       </div>
+
+                      {hasCollectionData && (
+                        <div className="flex flex-grow justify-end">
+                          <button
+                            type="button"
+                            onClick={handleeditcollection}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-700 shadow-sm transition-all hover:bg-amber-100 hover:border-amber-300 hover:shadow-md active:scale-[0.98]"
+                          >
+                            <Pencil className="h-4 w-4" />
+                            Edit
+                          </button>
+                        </div>
+                      )}
                     </label>
 
                     {ishavePayment &&
@@ -2666,7 +2669,12 @@ const LeadFollowUp = () => {
                         <CollectionupdateModal
                           data={selectedData}
                           from="followup"
-                          closemodal={setcollectionUpdateModal}
+                          hasCollectionData={hasCollectionData}
+                          editData={collectionupdatedata}
+                          closemodal={() => {
+                            setishavePayment(false)
+                            setcollectionUpdateModal(false)
+                          }}
                           partnerlist={partner}
                           loggedUser={loggedUser}
                           setishavePayment={setishavePayment}

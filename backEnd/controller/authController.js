@@ -8426,11 +8426,14 @@ export const UploadImage = async (req, res) => {
 
 //     });
 
-//     if (alreadyApplied) {
-//       return res.status(400).json({
-//         message: `Misspunch already applied for ${misspunchType} on this date`
-//       });
-//     }
+    // const newMisspunch = await Misspunch.create({
+    //   userId,
+    //   remark,
+    //   userModel: userModel.toLowerCase() === "admin" ? userModel : "Staff",
+    //   misspunchDate: new Date(misspunchDate),
+    //   applyDate: new Date(),
+    //   misspunchType
+    // });
 
 //     const newMisspunch = await Misspunch.create({
 //       userId,
