@@ -13,7 +13,10 @@ import SkeletonTable from "../loader/SkeletonTable"
 import Sidebar from "./Sidebar"
 export const StaticSidebar = ({
   selectedCompanyBranch,
-  setselectedCompanyBranch
+  setselectedCompanyBranch,
+parenttargetData,
+parentyear,
+parentperiodmode,
 }) => {
   console.log(selectedCompanyBranch)
   const [categorylist, setcategorylist] = useState([])
@@ -44,6 +47,7 @@ export const StaticSidebar = ({
   )
   useEffect(() => {
     if (data?.userWiseResults && data?.userWiseResults.length) {
+parenttargetData(data?.userWiseResults)
       setselectedPeriod(data?.selectedPeriodName)
       const uniqueCategories = [
         ...new Map(

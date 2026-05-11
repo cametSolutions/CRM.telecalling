@@ -22,7 +22,8 @@ const Layout = () => {
   const hideHeaderRoutes = [
     "/staff/reports/markettingdashboard",
     "/admin/reports/markettingdashboard",
-    "/staff/transaction/lead/ownedLeadlist"
+    "/staff/transaction/lead/ownedLeadlist",
+    "/staff/transaction/lead/leadAllocation"
   ]
 
   const shouldHideHeader = hideHeaderRoutes.some((route) =>
