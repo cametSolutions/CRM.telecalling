@@ -1314,7 +1314,7 @@ const LeadMaster = ({
           customerData: data
         })
       } else {
-        
+        console.log("hhh")
         response = await api.post("/customer/customerRegistration", {
           customerData: data
         })
@@ -2323,36 +2323,24 @@ const LeadMaster = ({
                     <div>
                       <input
                         type="hidden"
-                        {...registerModal("customerid", {
-                          required: "Customerid is Required"
-                        })}
+                        {...registerModal("customerid")}
                         onBlur={(e) =>
                           setValueModal("customerid", e.target.value.trim())
                         }
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
                       />
-                      {errorsModal.customerid && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errorsModal.customerid.message}
-                        </p>
-                      )}
+                     
                     </div>
                     <div>
                       <input
                         type="hidden"
-                        {...registerModal("leadid", {
-                          required: "leadid is Required"
-                        })}
+                        {...registerModal("leadid")}
                         onBlur={(e) =>
                           setValueModal("leadid", e.target.value.trim())
                         }
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
                       />
-                      {errorsModal.leadid && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errorsModal.leadid.message}
-                        </p>
-                      )}
+                     
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
