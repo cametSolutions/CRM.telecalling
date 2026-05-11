@@ -11,7 +11,7 @@ function LeadRegister() {
   const user = JSON.parse(userData)
   const navigate = useNavigate()
   // reset functions exposed from LeadMaster
- 
+ console.log("hh")
   const handleSubmit = async (leadData, selectedtableLeadData, role) => {
     try {
       const response = await api.post("/lead/leadRegister", {
