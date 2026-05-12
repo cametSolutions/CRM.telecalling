@@ -433,7 +433,7 @@ function ProductDropdown({
 // ─────────────────────────────────────────────────────────────────────────────
 const LeadMaster = ({
   process,
-  Data=null,
+  Data = null,
   isReadOnly,
   handleleadData,
   handleEditData,
@@ -1222,7 +1222,17 @@ const LeadMaster = ({
         setFormData(data)
         setPopupMessage(validation.message)
         if (validation.message === "") {
-          await handlePopupOk(true, data)
+console.log("HHh")
+          const saved = await handlePopupOk(true, data)
+console.log(saved)
+
+          if (saved) {
+console.log(process)
+            if (process === "Registration") {
+console.log("Hhhh")
+              toast.success("lead created successfully")
+            }
+          }
         } else {
           setPopupOpen(true)
         }
@@ -1238,7 +1248,14 @@ const LeadMaster = ({
           return
         }
         seteditLoadingState(true)
-        await handleEditData(data, selectedleadlist, Data[0]?._id)
+        const updated = await handleEditData(
+          data,
+          selectedleadlist,
+          Data[0]?._id
+        )
+        if (updated) {
+          toast.success("Lead updated successfully")
+        }
       }
     } catch (error) {
       console.log("error on onsubmit:", error)
@@ -1253,11 +1270,21 @@ const LeadMaster = ({
     const filteredleadlist = selectedleadlist.filter(
       (item) => item.productorServiceId && item.productorServiceId !== ""
     )
+    let saveorupdate = false
     if (isEligible && leadData === null) {
-      await handleleadData(formData, filteredleadlist, loggeduser.role)
+      saveorupdate = await handleleadData(
+        formData,
+        filteredleadlist,
+        loggeduser.role
+      )
     } else if (ischek && leadData) {
-      await handleleadData(leadData, filteredleadlist, loggeduser.role)
+      saveorupdate = await handleleadData(
+        leadData,
+        filteredleadlist,
+        loggeduser.role
+      )
     }
+    return saveorupdate
   }
 
   const normalizeMobile = (number) => {
@@ -2329,7 +2356,6 @@ const LeadMaster = ({
                         }
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
                       />
-                     
                     </div>
                     <div>
                       <input
@@ -2340,7 +2366,6 @@ const LeadMaster = ({
                         }
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
                       />
-                     
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
