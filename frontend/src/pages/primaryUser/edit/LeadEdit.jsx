@@ -11,7 +11,7 @@ function LeadEdit() {
   const navigate = useNavigate()
 
   const location = useLocation()
-  const { leadId, isReadOnly,refreshKey } = location.state || {}
+  const { leadId, isReadOnly, refreshKey } = location.state || {}
   console.log(location?.state)
   const userData = localStorage.getItem("user")
   const user = JSON.parse(userData)
@@ -29,7 +29,7 @@ function LeadEdit() {
       }
       fetchselectedLeadData()
     }
-  }, [leadId,refreshKey])
+  }, [leadId, refreshKey])
 
   const handleSubmit = async (data, leadData, objectId) => {
     try {
@@ -44,6 +44,7 @@ function LeadEdit() {
       if (response.status === 200) {
         toast.success(response.data.message)
         setLoader(false)
+        return true
       }
       user?.role === "Admin"
         ? navigate("/admin/transaction/lead/leadAllocation")
@@ -52,6 +53,7 @@ function LeadEdit() {
       setLoader(false)
       toast.error("Something went wrong")
       console.error("error:", error)
+
     }
   }
   return (

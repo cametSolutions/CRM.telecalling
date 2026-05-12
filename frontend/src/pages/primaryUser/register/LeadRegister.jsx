@@ -11,7 +11,7 @@ function LeadRegister() {
   const user = JSON.parse(userData)
   const navigate = useNavigate()
   // reset functions exposed from LeadMaster
- console.log("hh")
+  console.log("hh")
   const handleSubmit = async (leadData, selectedtableLeadData, role) => {
     try {
       const response = await api.post("/lead/leadRegister", {
@@ -27,6 +27,7 @@ function LeadRegister() {
         setTimeout(() => {
           navigate(0) // or window.location.reload()
         }, 0)
+        return true
       } else if (response.status === 201) {
         setpopUpMessage(response.data.message)
       }
@@ -53,7 +54,6 @@ function LeadRegister() {
         setLoadingState={setLoader}
         showmessage={popupMessage}
         showpopupMessage={setpopUpMessage}
-      
       />
     </div>
   )
