@@ -13,17 +13,19 @@ import SkeletonTable from "../loader/SkeletonTable"
 import Sidebar from "./Sidebar"
 export const StaticSidebar = ({
   selectedCompanyBranch,
+setselectedPeriod,
+  handleMoreClick,
   setselectedCompanyBranch,
-parenttargetData,
-parentyear,
-parentperiodmode,
+  parenttargetData,
+  parentyear,
+  parentperiodmode
 }) => {
   console.log(selectedCompanyBranch)
   const [categorylist, setcategorylist] = useState([])
   const [avatarOpen, setAvatarOpen] = useState(false)
   const [user, setUser] = useState(null)
   const now = new Date()
-  const [selectedPeriod, setselectedPeriod] = useState("")
+  // const [selectedPeriod, setselectedPeriod] = useState("")
   const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedBranch, setselectedBranch] = useState(null)
   console.log(selectedCompanyBranch)
@@ -47,7 +49,7 @@ parentperiodmode,
   )
   useEffect(() => {
     if (data?.userWiseResults && data?.userWiseResults.length) {
-parenttargetData(data?.userWiseResults)
+      parenttargetData(data)
       setselectedPeriod(data?.selectedPeriodName)
       const uniqueCategories = [
         ...new Map(
@@ -122,62 +124,7 @@ parenttargetData(data?.userWiseResults)
       ])
     }
   }, [])
-  const handleMoreClick = (id, name) => {
-    console.log("hh")
-    const filteredList = branchProduct
-      .filter(
-        (item) =>
-          item.selected?.some(
-            (selectedItem) => String(selectedItem.category_id) === String(id)
-          ) || String(item.category_id) === String(id)
-      )
-      .map((item) => item.productName || item.serviceName)
-    console.log(filteredList)
-    setproductList(filteredList)
-    setselectedCategory({ Id: id, categoryName: name })
-    const filteredloggedUserItem = data?.userWiseResults.filter(
-      (item) => item.userId === user._id
-    )
-    const Datas = data?.userWiseResults
-    console.log(Datas)
-    console.log("hhhh")
-    console.log(filteredloggedUserItem)
-    console.log(id)
-    // const filteredselectedCategory =
-    //   filteredloggedUserItem[0].categories.filter(
-    //     (item) => item.categoryId === id
-    //   )
-    const filteredselectedCategory = Datas.flatMap(
-      (user) => user.categories || []
-    ).filter((item) => item.categoryId === id)
-    console.log("Hh")
-    const summary = filteredselectedCategory.reduce(
-      (acc, cur) => {
-        acc.target += Number(cur.target || 0)
-        acc.achieved += Number(cur.achieved || 0)
-        acc.balance += Number(cur.balance || 0)
-        return acc
-      },
-      { target: 0, achieved: 0, balance: 0 }
-    )
-    console.log("hhh")
-    setselectedDataPopup(summary)
-    console.log(filteredselectedCategory && filteredselectedCategory.length)
-    if (filteredselectedCategory && filteredselectedCategory.length) {
-      setacheivedProducts((prev) => [
-        ...prev,
-        ...filteredselectedCategory.flatMap((item) =>
-          (item?.products || []).map((product) => ({
-            productname: product.name,
-            amount: product.achieved
-          }))
-        )
-      ])
-    } else {
-      setacheivedProducts([])
-    }
-    setOpenModal(true)
-  }
+
   console.log("b")
   const toggleSidebar = () => setSidebarOpen((prev) => !prev)
   return (

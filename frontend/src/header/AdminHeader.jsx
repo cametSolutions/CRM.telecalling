@@ -809,7 +809,7 @@ import { FaUserCircle } from "react-icons/fa";
 import { toast } from "react-toastify";
 import api from "../api/api";
 
-export default function AdminHeader() {
+export default function AdminHeader({hide=false}) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);

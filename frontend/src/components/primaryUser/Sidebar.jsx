@@ -47,7 +47,7 @@ const Sidebar = ({
           flex flex-col border-r border-teal-900/40
           bg-gradient-to-b from-[#0f766e] to-[#115e59] text-white
           transition-[width] duration-200 ease-in-out
-          lg:h-full lg:flex-shrink-0
+          h-full lg:flex-shrink-0
           ${sidebarOpen ? "w-full lg:w-[240px]" : "w-full lg:w-[64px]"}
         `}
       >

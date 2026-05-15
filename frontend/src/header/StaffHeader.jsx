@@ -1259,13 +1259,13 @@ export default function StaffHeader({ hide = false }) {
         })}
     </div>
   )
-
+console.log(hide)
   return (
     <>
       <header
         className={`sticky top-0 z-50 border-b border-white/10 bg-[#0F172A]/95 ${hide?"flex-grow":""} text-white backdrop-blur-xl`}
       >
-        <div className={`mx-auto flex ${hide?"h-10":"h-16"} w-full items-center gap-3 px-3 sm:px-4 lg:px-6`}>
+        <div className={`mx-auto flex h-14 w-full items-center gap-3 px-3 sm:px-4 lg:px-6`}>
           {!hide && (
             <div className="flex min-w-0 items-center gap-3">
               <button

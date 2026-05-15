@@ -28,17 +28,21 @@ import { StaticSidebar } from "../../components/primaryUser/StaticSidebar"
 import { getLocalStorageItem } from "../../helper/localstorage"
 
 export default function OwnLeadList() {
+  const [selectedCategory, setselectedCategory] = useState(null)
+  const [selectedUserName, setselecteduserName] = useState(null)
   const [tableData, setTableData] = useState([])
-const [targetData,settargetData]=useState([])
- const [periodMode, setperiodMode] = useState("all")
+  const [targetData, settargetData] = useState([])
+  console.log(targetData)
+  const [periodMode, setperiodMode] = useState("all")
   const [productlist, setproductList] = useState([])
- const [selectedYear, setSelectedYear] = useState(null)
+  const [selectedYear, setSelectedYear] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
- const [selectedPeriod, setselectedPeriod] = useState("")
+  const [selectedPeriod, setselectedPeriod] = useState("")
   const [openModal, setOpenModal] = useState(false)
   const [loggedUser, setLoggedUser] = useState(null)
   const [selectedLeadId, setselectedLeadId] = useState(null)
   const [ownLead, setownLead] = useState(false)
+  const [achievedproducts, setacheivedProducts] = useState([])
   const [companyBranches, setcompanyBranches] = useState(null)
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
   const [showhistoryModal, sethistoryModal] = useState(false)
@@ -58,6 +62,9 @@ const [targetData,settargetData]=useState([])
       }&selectedBranch=${selectedCompanyBranch}&ownlead=${
         location?.state?.role ? false : ownLead
       }`
+  )
+  const { data: branchProduct } = UseFetch(
+    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
   )
 
   useEffect(() => {
@@ -108,7 +115,7 @@ const [targetData,settargetData]=useState([])
     setselectedLeadId(item.leadId)
     sethistoryModal(true)
   }
-const handleSelectedUser = (category, userId, userName) => {
+  const handleSelectedUser = (category, userId, userName) => {
     setselecteduserName(userName)
     setselectedCategory({
       Id: category.Id,
@@ -142,6 +149,70 @@ const handleSelectedUser = (category, userId, userName) => {
     } else {
       setacheivedProducts([])
     }
+  }
+console.log(targetData)
+  const handleMoreClick = (id, name) => {
+    const Datas = targetData?.userWiseResults
+    console.log(id)
+    console.log(name)
+    console.log("hh")
+    const filteredList = branchProduct
+      .filter(
+        (item) =>
+          item.selected?.some(
+            (selectedItem) => String(selectedItem.category_id) === String(id)
+          ) || String(item.category_id) === String(id)
+      )
+      .map((item) => item.productName || item.serviceName)
+    console.log(filteredList)
+    setproductList(filteredList)
+    setselectedCategory({ Id: id, categoryName: name })
+    console.log("J")
+    console.log(targetData)
+    console.log(loggedUser?._id)
+    const filteredloggedUserItem = Datas.filter(
+      (item) => item.userId === loggedUser._id
+    )
+    console.log("hhh")
+
+    console.log(Datas)
+    console.log("hhhh")
+    console.log(filteredloggedUserItem)
+    console.log(id)
+    // const filteredselectedCategory =
+    //   filteredloggedUserItem[0].categories.filter(
+    //     (item) => item.categoryId === id
+    //   )
+    const filteredselectedCategory = Datas.flatMap(
+      (user) => user.categories || []
+    ).filter((item) => item.categoryId === id)
+    console.log("Hh")
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+    console.log("hhh")
+    setselectedDataPopup(summary)
+    console.log(filteredselectedCategory && filteredselectedCategory.length)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      setacheivedProducts((prev) => [
+        ...prev,
+        ...filteredselectedCategory.flatMap((item) =>
+          (item?.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
+      ])
+    } else {
+      setacheivedProducts([])
+    }
+    setOpenModal(true)
   }
   const LeadRow = ({ item }) => {
     const open = openRow === item._id
@@ -317,23 +388,25 @@ const handleSelectedUser = (category, userId, userName) => {
       <div className="flex h-full  lg:flex-row">
         {selectedCompanyBranch && (
           <StaticSidebar
+            handleMoreClick={handleMoreClick}
             selectedCompanyBranch={selectedCompanyBranch}
             setselectedCompanyBranch={setselectedCompanyBranch}
-parenttargetData={settargetData}
-parentperiodmode={setperiodMode}
-parentyear={setSelectedYear}
+            parenttargetData={settargetData}
+            parentperiodmode={setperiodMode}
+            parentyear={setSelectedYear}
+            setselectedPeriod={setselectedPeriod}
           />
         )}
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <header className="flex items-center justify-between border-b border-slate-200 bg-[#0F172A]/95 py-0.5 ">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden ">
+          <header className="flex items-center justify-between border-b border-white/10 bg-[#0F172A]/95 ">
             {loggedUser?.role?.toLowerCase() === "admin" ? (
-              <AdminHeader />
+              <AdminHeader hide={true} />
             ) : (
               <StaffHeader hide={true} />
             )}
 
-            <div className="flex items-center gap-1.5 text-slate-700 mr-3">
+            <div className="flex items-center gap-1.5  border-b border-white/10 bg-[#0F172A]/95 pr-3 h-full">
               <button className="rounded-full p-1.5 transition bg-slate-100">
                 <Mail size={15} strokeWidth={2.2} />
               </button>
@@ -378,10 +451,11 @@ parentyear={setSelectedYear}
             </div>
           </header>
           <div className="min-h-0 flex-1 overflow-y-auto">
-            <h2 className="text-base font-bold">
+          
+            <div className="flex justify-between items-center gap-2  m-4">
+  <h2 className="text-base font-bold">
               {ownLead ? "Own Lead" : "All Lead"}
             </h2>
-            <div className="flex items-center gap-2">
               {loggedUser?.role !== "Staff" && (
                 <>
                   <span className="text-xs font-semibold whitespace-nowrap">
@@ -487,7 +561,7 @@ parentyear={setSelectedYear}
           }}
           productlist={productlist}
           onClose={() => {
-            setselecteduserName(user?.name)
+            setselecteduserName(loggedUser?.name)
             setacheivedProducts([])
             setOpenModal(false)
           }}
@@ -502,8 +576,8 @@ parentyear={setSelectedYear}
                 : selectedDatapopup?.balance
           }}
           products={achievedproducts}
-          targetData={targetData}
-          loggedUser={user}
+          targetData={targetData?.userWiseResults}
+          loggedUser={loggedUser}
           selectedUser={selectedUserName}
           category={selectedCategory}
           handleSelectedUser={handleSelectedUser}
