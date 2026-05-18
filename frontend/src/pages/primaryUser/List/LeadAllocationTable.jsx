@@ -1388,9 +1388,9 @@ const LeadAllocationTable = () => {
                               <th className="border border-r-0 border-l-0 border-gray-400 px-4 py-2">
                                 Phone
                               </th>
-                              <th className="border border-r-0 border-l-0 border-gray-400 px-4 py-2">
+                              {/* <th className="border border-r-0 border-l-0 border-gray-400 px-4 py-2">
                                 Email
-                              </th>
+                              </th> */}
                               <th className="border border-r-0 border-l-0 border-gray-400 px-4 py-2 min-w-[100px]">
                                 Lead Id
                               </th>
@@ -1403,9 +1403,9 @@ const LeadAllocationTable = () => {
                               <th className="border border-gray-400 px-4 py-2 w-32">
                                 Net Amount
                               </th>
-                              <th className="border border-r-0 border-l-0 border-gray-400 px-4 py-2 w-32">
+                              {/* <th className="border border-r-0 border-l-0 border-gray-400 px-4 py-2 w-32">
                                 B.Amount
-                              </th>
+                              </th> */}
                             </tr>
                           </thead>
 
@@ -1434,9 +1434,9 @@ const LeadAllocationTable = () => {
                                   <td className="px-4 text-black">
                                     {item?.phone}
                                   </td>
-                                  <td className="px-4 text-black">
+                                  {/* <td className="px-4 text-black">
                                     {item?.email}
-                                  </td>
+                                  </td> */}
                                   <td className="px-4 text-black">
                                     {item?.leadId}
                                   </td>
@@ -1484,9 +1484,9 @@ const LeadAllocationTable = () => {
                                   <td className="px-4 text-black">
                                     AssignedBy
                                   </td>
-                                  <td className="px-4 text-black">
+                                  {/* <td className="px-4 text-black">
                                     No.of FollowuUps
-                                  </td>
+                                  </td> */}
                                   <td className="px-4 font-medium">LeadDate</td>
 
                                   <td className="border border-t-0 border-b-0 border-gray-400">
@@ -1552,12 +1552,12 @@ const LeadAllocationTable = () => {
                                       </span>
                                     </div>
                                   </td>
-                                  <td className="border border-t-0 border-b-0 border-gray-400 px-4 text-black">
+                                  {/* <td className="border border-t-0 border-b-0 border-gray-400 px-4 text-black">
                                     <div className="flex items-center justify-center">
                                       <IndianRupee className="w-3 h-3 text-red-600 mr-1" />
                                       <span>{item?.balanceAmount}</span>
                                     </div>
-                                  </td>
+                                  </td> */}
                                 </tr>
 
                                 {/* Row 3 (values) */}
@@ -1646,7 +1646,7 @@ const LeadAllocationTable = () => {
                                   <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 text-md">
                                     {item?.allocatedBy?.name || "-"}
                                   </td>
-                                  <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 text-black" />
+                                  {/* <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 text-black" /> */}
                                   <td className="border border-t-0 border-r-0 border-l-0 border-b-0 border-gray-400 px-4 py-0.5 text-black">
                                     {new Date(item.leadDate).toLocaleDateString(
                                       "en-GB"
@@ -1659,7 +1659,7 @@ const LeadAllocationTable = () => {
                                   >
                                     Allocate
                                   </td>
-                                  <td className="border border-t-0 border-b-0 border-gray-400 px-4 py-0.5" />
+                                  {/* <td className="border border-t-0 border-b-0 border-gray-400 px-4 py-0.5" /> */}
                                 </tr>
                               </React.Fragment>
                             ))}

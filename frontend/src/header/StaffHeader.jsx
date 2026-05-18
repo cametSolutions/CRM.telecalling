@@ -1294,7 +1294,7 @@ console.log(hide)
             </div>
           )}
 
-          <div className="hidden min-w-0 flex-1 items-center justify-center xl:flex">
+          <div className="hidden min-w-0 flex-1 items-center justify-center md:flex ">
             <div className="flex items-center gap-1 rounded-2xl border border-white/10 bg-[#162033]  p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
               <NavLink to="/staff/dashBoard" className={navLinkClass}>
                 Dashboard

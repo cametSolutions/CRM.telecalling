@@ -23,11 +23,26 @@ const Layout = () => {
     "/staff/reports/markettingdashboard",
     "/admin/reports/markettingdashboard",
     "/staff/transaction/lead/ownedLeadlist",
+    "/admin/transaction/lead/ownedLeadlist",
     "/staff/transaction/lead/leadAllocation",
-    "/staff/transaction/lead/leadFollowUp",
-  "/admin/transaction/lead/ownedLeadlist",
     "/admin/transaction/lead/leadAllocation",
-    "/admin/transaction/lead/leadFollowUp"
+    "/staff/transaction/lead/leadFollowUp",
+    "/admin/transaction/lead/leadFollowUp",
+
+    "/staff/transaction/lead/leadTask",
+    "/admin/transaction/lead/leadTask",
+    "/staff/transaction/lead/leadReallocation",
+    "/admin/transaction/lead/leadReallocation",
+    "/staff/transaction/lead/reallocationTable/*",
+    "/admin/transaction/lead/reallocationTable/*",
+    "/staff/transaction/lead/taskAnalysis",
+    "/admin/transaction/lead/taskAnalysis",
+    "/staff/transaction/lead/taskanalysisTable/*",
+    "/admin/transaction/lead/taskanalysisTable/*",
+    "/staff/transaction/lead/collectionUpdate",
+    "/admin/transaction/lead/collectionUpdate",
+    "/staff/transaction/lead/lostLeads",
+    "/admin/transaction/lead/lostLeads"
   ]
 
   const shouldHideHeader = hideHeaderRoutes.some((route) =>

@@ -49,6 +49,7 @@ const LeadFollowUp = () => {
     allocationDate: "",
     demoDescription: ""
   })
+  const [selectedUserName, setselecteduserName] = useState(null)
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedDatapopup, setselectedDataPopup] = useState({})
   const [selectedYear, setSelectedYear] = useState(null)
@@ -75,7 +76,7 @@ const LeadFollowUp = () => {
     editfollowUpDatesandRemarksEditIndex,
     setfollowUpDatesandRemarksEditIndex
   ] = useState(null)
-  const [selectedUserName, setselecteduserName] = useState(null)
+
   const [startMonth, setStartMonth] = useState(new Date())
   const [endMonth, setEndMonth] = useState(new Date())
   const [netTotalAmount, setnetTotalAmount] = useState(0)
