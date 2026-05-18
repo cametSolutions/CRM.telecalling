@@ -379,7 +379,7 @@ const { data: branchProduct } = UseFetch(
         <div className="flex flex-1 flex-col overflow-hidden ">
           <header className="flex items-center justify-between border-b border-white/10 bg-[#0F172A]/95">
             {loggedUser?.role?.toLowerCase() === "admin" ? (
-              <AdminHeader />
+              <AdminHeader hide={true} />
             ) : (
               <StaffHeader hide={true} />
             )}
