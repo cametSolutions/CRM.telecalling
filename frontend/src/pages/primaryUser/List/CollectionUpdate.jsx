@@ -9,6 +9,8 @@ import {
   Eye,
   Phone,
   Mail,
+  Settings,
+  MessageSquareText,
   User,
   Calendar,
   Clock,
@@ -23,6 +25,11 @@ import {
   ChevronRight
 } from "lucide-react"
 import { getLocalStorageItem } from "../../../helper/localstorage"
+import AdminHeader from "../../../header/AdminHeader"
+import StaffHeader from "../../../header/StaffHeader"
+import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
+import { PerformanceModal } from "../../../components/primaryUser/PerformanceModal"
+import SkeletonTable from "../../../components/loader/SkeletonTable"
 import { PropagateLoader } from "react-spinners"
 import { toast } from "react-toastify"
 
@@ -57,6 +64,17 @@ export default function CollectionUpdate() {
   const [paymentHistoryList, setpaymentHistoryList] = useState([])
   const [historyList, setHistoryList] = useState([])
   const [loggedUserBranches, setloggedUserBranches] = useState([])
+  const [selectedUserName, setselecteduserName] = useState(null)
+  const [selectedCategory, setselectedCategory] = useState(null)
+  const [selectedDatapopup, setselectedDataPopup] = useState({})
+  const [selectedYear, setSelectedYear] = useState(null)
+  const [periodMode, setperiodMode] = useState("all")
+  const [targetData, settargetData] = useState([])
+  console.log(targetData)
+  const [openModal, setOpenModal] = useState(false)
+  const [productlist, setproductList] = useState([])
+  const [achievedproducts, setacheivedProducts] = useState([])
+  const [selectedPeriod, setselectedPeriod] = useState("")
   const navigate = useNavigate()
   const { data: companybranches } = UseFetch("/branch/getBranch")
   // const {data}=UseFetch("/lead/fix-leadverified")
@@ -68,6 +86,9 @@ export default function CollectionUpdate() {
     selectedCompanyBranch &&
       loggedUser &&
       `/lead/collectionLeads?selectedBranch=${selectedCompanyBranch}&verified=${verifiedLead}&isAccountant=${isdepartmentisAccountant}&loggeduserby=${loggedUser._id}`
+  )
+  const { data: branchProduct } = UseFetch(
+    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
   )
   console.log(selectedCompanyBranch)
   console.log(verifiedLead)
@@ -253,9 +274,6 @@ export default function CollectionUpdate() {
     return (item || [])
       .filter((history) => history?.paymentVerified === false)
       .reduce((sum, history) => sum + Number(history?.receivedAmount || 0), 0)
-    
-
-  
   }
   const handleCollectionUpdate = async (formData, setsubmitLoader) => {
     setsubmitLoader(true)
@@ -272,6 +290,104 @@ export default function CollectionUpdate() {
     } catch (error) {
       toast.error("something went wrong")
       console.log("error", error.message)
+    }
+  }
+  const handleMoreClick = (id, name) => {
+    const Datas = targetData?.userWiseResults
+    console.log(id)
+    console.log(name)
+    console.log("hh")
+    const filteredList = branchProduct
+      .filter(
+        (item) =>
+          item.selected?.some(
+            (selectedItem) => String(selectedItem.category_id) === String(id)
+          ) || String(item.category_id) === String(id)
+      )
+      .map((item) => item.productName || item.serviceName)
+    console.log(filteredList)
+    setproductList(filteredList)
+    setselectedCategory({ Id: id, categoryName: name })
+    console.log("J")
+    console.log(targetData)
+    console.log(loggedUser?._id)
+    const filteredloggedUserItem = Datas.filter(
+      (item) => item.userId === loggedUser._id
+    )
+    console.log("hhh")
+
+    console.log(Datas)
+    console.log("hhhh")
+    console.log(filteredloggedUserItem)
+    console.log(id)
+    // const filteredselectedCategory =
+    //   filteredloggedUserItem[0].categories.filter(
+    //     (item) => item.categoryId === id
+    //   )
+    const filteredselectedCategory = Datas.flatMap(
+      (user) => user.categories || []
+    ).filter((item) => item.categoryId === id)
+    console.log("Hh")
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+    console.log("hhh")
+    setselectedDataPopup(summary)
+    console.log(filteredselectedCategory && filteredselectedCategory.length)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      setacheivedProducts((prev) => [
+        ...prev,
+        ...filteredselectedCategory.flatMap((item) =>
+          (item?.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
+      ])
+    } else {
+      setacheivedProducts([])
+    }
+    setOpenModal(true)
+  }
+  const handleSelectedUser = (category, userId, userName) => {
+    setselecteduserName(userName)
+    setselectedCategory({
+      Id: category.Id,
+      categoryName: category.categoryName
+    })
+    const filteredloggedUserItem = data?.userWiseResults.filter(
+      (item) => item.userId === userId
+    )
+    const filteredselectedCategory =
+      filteredloggedUserItem[0].categories.filter(
+        (item) => item.categoryId === category.Id
+      )
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+
+    setselectedDataPopup(summary)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      setacheivedProducts(
+        filteredselectedCategory[0]?.products?.map((product) => ({
+          productname: product.name,
+          amount: product.achieved
+        })) || []
+      )
+    } else {
+      setacheivedProducts([])
     }
   }
   console.log(forcefullyclosedLeads)
@@ -301,9 +417,14 @@ export default function CollectionUpdate() {
                 <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
               )}
             </td>
-            <td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap uppercase">
+            {/* <td className="px-3 py-2 font-semibold text-gray-900 text-sm border border-gray-300 whitespace-nowrap uppercase truncate">
               {item?.customerName?.customerName}
-            </td>
+            </td> */}
+<td className="px-3 py-2 border border-gray-300">
+  <div className="font-semibold text-gray-900 text-sm uppercase max-w-[200px] truncate">
+    {item?.customerName?.customerName}
+  </div>
+</td>
             <td className="px-3 py-2 text-gray-700 text-sm border border-gray-300 whitespace-nowrap">
               {item?.mobile}
             </td>
@@ -537,148 +658,215 @@ export default function CollectionUpdate() {
     )
   }
   return (
-    <div className="h-full flex flex-col bg-[#ADD8E6]">
-      <div className="flex justify-between items-center p-3 md:p-5 md:pb-2 sticky top-0 z-30">
-        <h2 className="text-lg font-bold">
-          {isdepartmentisAccountant
-            ? verifiedLead
-              ? "All Verified Payment Leads"
-              : forcefullyclosedLeads.length > 0 && isforcefullyclosed
-                ? "Forcefully Closed amount Leads"
-                : "Pending Verified Collections"
-            : "Pending Collection Leads"}
-        </h2>
+    <div className="h-full  bg-[#ADD8E6]">
+      <div className="flex h-full flex-row">
+        <StaticSidebar
+          handleMoreClick={handleMoreClick}
+          selectedCompanyBranch={selectedCompanyBranch}
+          setselectedCompanyBranch={setselectedCompanyBranch}
+          parenttargetData={settargetData}
+          parentperiodmode={setperiodMode}
+          parentyear={setSelectedYear}
+          setselectedPeriod={setselectedPeriod}
+        />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <header className="flex items-center justify-between border-b border-white/10 bg-[#0F172A]/95">
+            {loggedUser?.role?.toLowerCase() === "admin" ? (
+              <AdminHeader />
+            ) : (
+              <StaffHeader hide={true} />
+            )}
 
-        <div className="flex justify-end items-center">
-          {isdepartmentisAccountant && (
-            <>
-              {!verifiedLead && (
-                <div className="mr-3 flex">
-                  <span className="text-sm whitespace-nowrap font-semibold">
-                    Forcefully closed Leads
-                  </span>
-                  <div className="">
+            <div className="flex items-center gap-1.5  border-b border-white/10 bg-[#0F172A]/95 pr-3 h-full">
+              <button className="rounded-full p-1.5 transition bg-slate-100">
+                <Mail size={15} strokeWidth={2.2} />
+              </button>
+              <div className="relative">
+                <button className="rounded-full p-1.5 transition bg-slate-100">
+                  <MessageSquareText size={15} strokeWidth={2.2} />
+                </button>
+                <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
+              </div>
+              <button className="rounded-full p-1.5 transition bg-slate-100">
+                <Settings size={15} strokeWidth={2.2} />
+              </button>
+              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+                <User size={15} strokeWidth={2.2} />
+              </button> */}
+
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowUserMenu((prev) => !prev)
+                  }}
+                  className="rounded-full p-1.5 transition bg-slate-100"
+                >
+                  <User size={15} strokeWidth={2.2} />
+                </button>
+
+                {/* {showUserMenu && (
+                  <div
+                    onClick={(e) => e.stopPropagation()} 
+                    className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
+                  >
                     <button
-                      onClick={() => {
-                        // setTableData([])
-                        setisforcefullyclosed(!isforcefullyclosed)
-                        // setverifiedLead(!verifiedLead)
-                      }}
-                      className={`${
-                        isforcefullyclosed ? "bg-green-500" : "bg-gray-300"
-                      } w-11 h-6 flex items-center rounded-full transition-colors duration-300 mx-2`}
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
                     >
-                      <div
-                        className={`${
-                          isforcefullyclosed ? "translate-x-5" : "translate-x-0"
-                        } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                      ></div>
+                      Logout
                     </button>
                   </div>
-                </div>
-              )}
-
-              <div className="flex">
-                <span className="text-sm whitespace-nowrap font-semibold">
-                  {verifiedLead ? "Payment Verified" : "Pending Verified"}
-                </span>
-                <div className="">
-                  {" "}
-                  <button
-                    onClick={() => {
-                      setTableData([])
-                      setverifiedLead(!verifiedLead)
-                    }}
-                    className={`${
-                      verifiedLead ? "bg-green-500" : "bg-gray-300"
-                    } w-11 h-6 flex items-center rounded-full transition-colors duration-300 mx-2`}
-                  >
-                    <div
-                      className={`${
-                        verifiedLead ? "translate-x-5" : "translate-x-0"
-                      } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                    ></div>
-                  </button>
-                </div>
+                )} */}
               </div>
-            </>
-          )}
-          <select
-            value={selectedCompanyBranch || ""}
-            onChange={(e) => {
-              setTableData([])
-              setselectedCompanyBranch(e.target.value)
-            }}
-            className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[150px] mx-2 cursor-pointer "
-          >
-            {loggedUserBranches?.map((branch) => (
-              <option key={branch.value} value={branch.value}>
-                {branch.label}
-              </option>
-            ))}
-          </select>
+            </div>
+          </header>
+          <div className="flex justify-between items-center p-3 md:p-5 md:pb-2 sticky top-0 z-30">
+            <h2 className="text-lg font-bold">
+              {isdepartmentisAccountant
+                ? verifiedLead
+                  ? "All Verified Payment Leads"
+                  : forcefullyclosedLeads.length > 0 && isforcefullyclosed
+                    ? "Forcefully Closed amount Leads"
+                    : "Pending Verified Collections"
+                : "Pending Collection Leads"}
+            </h2>
 
-          <button
-            onClick={() =>
-              loggedUser?.role === "Admin"
-                ? navigate("/admin/transaction/lead")
-                : navigate("/staff/transaction/lead")
-            }
-            className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600"
-          >
-            New Lead
-          </button>
-        </div>
-      </div>
-      {/* Responsive Table Container this is the newest design*/}
-      <div className="h-auto overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
-        <>
-          {(() => {
-            const currentData = isforcefullyclosed
-              ? forcefullyclosedLeads
-              : tableData
-            console.log(currentData)
-            const hasLeads =
-              Array.isArray(currentData) &&
-              currentData.some(
-                (group) => Array.isArray(group.leads) && group.leads.length > 0
-              )
-            console.log(hasLeads)
-            if (!hasLeads || currentData.length === 0) {
-              return loading ? (
-                <div className="flex justify-center py-6">
-                  <PropagateLoader color="#3b82f6" size={10} />
-                </div>
-              ) : (
-                <div className="text-center text-gray-500 py-6">
-                  No Data Available
-                </div>
-              )
-            }
+            <div className="flex justify-end items-center">
+              {isdepartmentisAccountant && (
+                <>
+                  {!verifiedLead && (
+                    <div className="mr-3 flex">
+                      <span className="text-sm whitespace-nowrap font-semibold">
+                        Forcefully closed Leads
+                      </span>
+                      <div className="">
+                        <button
+                          onClick={() => {
+                            // setTableData([])
+                            setisforcefullyclosed(!isforcefullyclosed)
+                            // setverifiedLead(!verifiedLead)
+                          }}
+                          className={`${
+                            isforcefullyclosed ? "bg-green-500" : "bg-gray-300"
+                          } w-11 h-6 flex items-center rounded-full transition-colors duration-300 mx-2`}
+                        >
+                          <div
+                            className={`${
+                              isforcefullyclosed
+                                ? "translate-x-5"
+                                : "translate-x-0"
+                            } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                          ></div>
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
-            return currentData.map(({ staffName, leads }, index) => (
-              <div key={staffName || `group-${index}`} className="mb-6">
-                {staffName && (
-                  <h3 className="text-base font-semibold text-gray-800 mb-2">
-                    {staffName}{" "}
-                    <span className="text-sm text-gray-500">
-                      ({leads?.length || 0} Leads)
+                  <div className="flex">
+                    <span className="text-sm whitespace-nowrap font-semibold">
+                      {verifiedLead ? "Payment Verified" : "Pending Verified"}
                     </span>
-                  </h3>
-                )}
-
-                {/* only render table if there are leads */}
-                {leads.length > 0 ? (
-                  renderTable(leads)
-                ) : (
-                  <div className="text-center text-gray-400 py-3 text-sm">
-                    No Lead under {staffName || "this group"}.
+                    <div className="">
+                      {" "}
+                      <button
+                        onClick={() => {
+                          setTableData([])
+                          setverifiedLead(!verifiedLead)
+                        }}
+                        className={`${
+                          verifiedLead ? "bg-green-500" : "bg-gray-300"
+                        } w-11 h-6 flex items-center rounded-full transition-colors duration-300 mx-2`}
+                      >
+                        <div
+                          className={`${
+                            verifiedLead ? "translate-x-5" : "translate-x-0"
+                          } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                        ></div>
+                      </button>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))
-          })()}
-        </>
+                </>
+              )}
+              <select
+                value={selectedCompanyBranch || ""}
+                onChange={(e) => {
+                  setTableData([])
+                  setselectedCompanyBranch(e.target.value)
+                }}
+                className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[150px] mx-2 cursor-pointer "
+              >
+                {loggedUserBranches?.map((branch) => (
+                  <option key={branch.value} value={branch.value}>
+                    {branch.label}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                onClick={() =>
+                  loggedUser?.role === "Admin"
+                    ? navigate("/admin/transaction/lead")
+                    : navigate("/staff/transaction/lead")
+                }
+                className="bg-black text-white py-1 px-3 rounded-lg shadow-lg hover:bg-gray-600"
+              >
+                New Lead
+              </button>
+            </div>
+          </div>
+          {/* Responsive Table Container this is the newest design*/}
+          <div className="h-auto overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
+            <>
+              {(() => {
+                const currentData = isforcefullyclosed
+                  ? forcefullyclosedLeads
+                  : tableData
+                console.log(currentData)
+                const hasLeads =
+                  Array.isArray(currentData) &&
+                  currentData.some(
+                    (group) =>
+                      Array.isArray(group.leads) && group.leads.length > 0
+                  )
+                console.log(hasLeads)
+                if (!hasLeads || currentData.length === 0) {
+                  return loading ? (
+                    <div className="flex justify-center py-6">
+                      <PropagateLoader color="#3b82f6" size={10} />
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-500 py-6">
+                      No Data Available
+                    </div>
+                  )
+                }
+
+                return currentData.map(({ staffName, leads }, index) => (
+                  <div key={staffName || `group-${index}`} className="mb-6">
+                    {staffName && (
+                      <h3 className="text-base font-semibold text-gray-800 mb-2">
+                        {staffName}{" "}
+                        <span className="text-sm text-gray-500">
+                          ({leads?.length || 0} Leads)
+                        </span>
+                      </h3>
+                    )}
+
+                    {/* only render table if there are leads */}
+                    {leads.length > 0 ? (
+                      renderTable(leads)
+                    ) : (
+                      <div className="text-center text-gray-400 py-3 text-sm">
+                        No Lead under {staffName || "this group"}.
+                      </div>
+                    )}
+                  </div>
+                ))
+              })()}
+            </>
+          </div>
+        </div>
       </div>
 
       {showhistoryModal && historyList && historyList.length > 0 && (
@@ -718,6 +906,50 @@ export default function CollectionUpdate() {
           isdepartmentisAccountant={isdepartmentisAccountant}
         />
       )}
+      <PerformanceModal
+        modalOpen={openModal}
+        splitType={targetData?.selectedMeasurementType}
+        selectedperiod={selectedPeriod}
+        allperiods={targetData?.periods}
+        onselectedPeriodChange={(val, val2) => {
+          setSelectedMonth(val2)
+          setselectedPeriod(val)
+        }}
+        onMonthChange={(val) => {
+          setcategorylist([])
+          setacheivedProducts([])
+          setselectedDataPopup([])
+          setperiodMode(val)
+        }}
+        onYearChange={(val) => {
+          setcategorylist([])
+          setacheivedProducts([])
+          setselectedDataPopup([])
+          setSelectedYear(val)
+        }}
+        productlist={productlist}
+        onClose={() => {
+          setselecteduserName(loggedUser?.name)
+          setacheivedProducts([])
+          setOpenModal(false)
+        }}
+        selectedMonth={periodMode}
+        selectedYear={selectedYear}
+        summary={{
+          target: selectedDatapopup?.target,
+          achieved: selectedDatapopup?.achieved,
+          balance:
+            selectedDatapopup?.achieved > selectedDatapopup?.target
+              ? 0
+              : selectedDatapopup?.balance
+        }}
+        products={achievedproducts}
+        targetData={targetData?.userWiseResults}
+        loggedUser={loggedUser}
+        selectedUser={selectedUserName}
+        category={selectedCategory}
+        handleSelectedUser={handleSelectedUser}
+      />
     </div>
   )
 }

@@ -271,11 +271,7 @@ const MarketingDashboard = () => {
       console.log(uniqueCategories)
       console.log(data?.userWiseResults)
       const updatedCategories = uniqueCategories.map((cat) => {
-        // Get ALL matching categories (for different months)
-        // const matchedCategories =
-        //   data?.userWiseResults?.categories.filter(
-        //     (c) => c.categoryId === cat.categoryId
-        //   ) || []
+       
         const matchedCategories =
           data?.userWiseResults
             ?.flatMap((user) => user.categories || [])
@@ -299,6 +295,7 @@ const MarketingDashboard = () => {
       })
       console.log(data?.userWiseResults)
       console.log(updatedCategories)
+console.log(updatedCategories)
       setcategorylist(updatedCategories)
     }
   }, [data])

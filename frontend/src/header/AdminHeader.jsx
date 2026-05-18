@@ -804,12 +804,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { FiLogOut, FiMenu, FiX, FiChevronDown, FiChevronRight } from "react-icons/fi";
+import { FiLogOut,FiSearch, FiMenu, FiX, FiChevronDown, FiChevronRight } from "react-icons/fi";
 import { FaUserCircle } from "react-icons/fa";
 import { toast } from "react-toastify";
 import api from "../api/api";
 
-export default function AdminHeader() {
+export default function AdminHeader({hide=false}) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -974,334 +974,742 @@ export default function AdminHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-slate-950 text-slate-100 border-b border-slate-800 shadow-md">
-      <div className="mx-auto max-w-7xl px-3 md:px-5">
-        <div className="flex h-16 items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="inline-flex items-center justify-center rounded-md p-2 text-slate-100 hover:bg-slate-800 transition lg:hidden"
-            >
-              <FiMenu className="h-6 w-6" />
-            </button>
+    // <header className={`sticky top-0 z-50 border-b border-white/10 bg-[#0F172A]/95 ${hide?"flex-grow":""} text-white backdrop-blur-xl`}>
+    //   <div className="mx-auto max-w-7xl px-3 md:px-5">
+    //     <div className="flex h-16 items-center justify-between gap-3">
+    //       <div className="flex items-center gap-3">
+    //         <button
+    //           onClick={() => setMobileMenuOpen(true)}
+    //           className="inline-flex items-center justify-center rounded-md p-2 text-slate-100 hover:bg-slate-800 transition lg:hidden"
+    //         >
+    //           <FiMenu className="h-6 w-6" />
+    //         </button>
 
-            <Link to="/admin/dashBoard" className="flex items-center gap-2">
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-300 text-md font-bold tracking-[0.18em] border border-cyan-400/20">
+    //         <Link to="/admin/dashBoard" className="flex items-center gap-2">
+    //           <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-300 text-md font-bold tracking-[0.18em] border border-cyan-400/20">
+    //             CRM
+    //           </div>
+    //           <div className="leading-tight">
+    //             <p className="text-sm md:text-base font-semibold tracking-wide text-white">
+    //               MANAGEMENT
+    //             </p>
+    //             <p className="hidden md:block text-[11px] text-slate-400">
+    //               Admin Panel
+    //             </p>
+    //           </div>
+    //         </Link>
+    //       </div>
+
+    //       <nav className="hidden lg:flex items-center gap-2 text-sm">
+    //         {links.map((link) => {
+    //           const hasDropdown = !link.to;
+    //           const menuOpen = openMenu === link.label;
+
+    //           return (
+    //             <div
+    //               key={link.label}
+    //               className="relative"
+    //               onMouseEnter={() => {
+    //                 if (hasDropdown) {
+    //                   setOpenMenu(link.label);
+    //                   setOpenChildMenu(null);
+    //                 }
+    //               }}
+    //               onMouseLeave={() => {
+    //                 if (hasDropdown) {
+    //                   setOpenMenu(null);
+    //                   setOpenChildMenu(null);
+    //                 }
+    //               }}
+    //             >
+    //               {link.to ? (
+    //                 <NavLink
+    //                   to={link.to}
+    //                   className={({ isActive }) =>
+    //                     `rounded-lg px-3 py-2 transition ${
+    //                       isActive
+    //                         ? "bg-cyan-500/10 text-cyan-300"
+    //                         : "text-slate-200 hover:bg-slate-800 hover:text-white"
+    //                     }`
+    //                   }
+    //                 >
+    //                   {link.label}
+    //                 </NavLink>
+    //               ) : (
+    //                 <button
+    //                   className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 transition ${
+    //                     menuOpen
+    //                       ? "bg-slate-800 text-white"
+    //                       : "text-slate-200 hover:bg-slate-800 hover:text-white"
+    //                   }`}
+    //                 >
+    //                   <span>{link.label}</span>
+    //                   <FiChevronDown
+    //                     className={`h-4 w-4 transition ${menuOpen ? "rotate-180" : ""}`}
+    //                   />
+    //                 </button>
+    //               )}
+
+    //               {hasDropdown && menuOpen && (
+    //                 <div className="absolute left-0 top-full pt-2">
+    //                   <div className="relative w-56 rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
+    //                     {getMenuItems(link.label).map((item) => {
+    //                       const childOpen = openChildMenu === item.label;
+
+    //                       return (
+    //                         <div
+    //                           key={item.label}
+    //                           className="relative"
+    //                           onMouseEnter={() => {
+    //                             if (item.hasChildren) {
+    //                               setOpenChildMenu(item.label);
+    //                             }
+    //                           }}
+    //                         >
+    //                           {item.to ? (
+    //                             <NavLink
+    //                               to={item.to}
+    //                               className={({ isActive }) =>
+    //                                 `block px-4 py-2 text-sm transition ${
+    //                                   isActive
+    //                                     ? "bg-cyan-500/10 text-cyan-300"
+    //                                     : "text-slate-200 hover:bg-slate-800"
+    //                                 }`
+    //                               }
+    //                             >
+    //                               {item.label}
+    //                             </NavLink>
+    //                           ) : (
+    //                             <button
+    //                               type="button"
+    //                               className={`flex w-full items-center justify-between px-4 py-2 text-sm transition ${
+    //                                 childOpen
+    //                                   ? "bg-slate-800 text-white"
+    //                                   : "text-slate-200 hover:bg-slate-800"
+    //                               }`}
+    //                             >
+    //                               <span>{item.label}</span>
+    //                               <FiChevronRight className="h-4 w-4 text-slate-400" />
+    //                             </button>
+    //                           )}
+
+    //                           {item.hasChildren && childOpen && (
+    //                             <div className="absolute top-0 left-full -ml-1 pl-2">
+    //                               <div className="w-56 rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
+    //                                 {getChildItems(item.label).map((child) => (
+    //                                   <NavLink
+    //                                     key={child.to}
+    //                                     to={child.to}
+    //                                     className={({ isActive }) =>
+    //                                       `block px-4 py-2 text-sm transition ${
+    //                                         isActive
+    //                                           ? "bg-cyan-500/10 text-cyan-300"
+    //                                           : "text-slate-200 hover:bg-slate-800"
+    //                                       }`
+    //                                     }
+    //                                   >
+    //                                     {child.label}
+    //                                   </NavLink>
+    //                                 ))}
+    //                               </div>
+    //                             </div>
+    //                           )}
+    //                         </div>
+    //                       );
+    //                     })}
+    //                   </div>
+    //                 </div>
+    //               )}
+    //             </div>
+    //           );
+    //         })}
+    //       </nav>
+
+    //       <div className="hidden md:flex items-center gap-3">
+    //         <div
+    //           className="relative"
+    //           onMouseEnter={() => setProfileMenuOpen(true)}
+    //           onMouseLeave={() => setProfileMenuOpen(false)}
+    //         >
+    //           <button className="flex items-center gap-2 rounded-full bg-slate-800 px-2 py-1.5 text-sm hover:bg-slate-700 transition">
+    //             {user?.profileUrl ? (
+    //               <img
+    //                 src={user.profileUrl}
+    //                 alt={user?.name || "Profile"}
+    //                 className="h-8 w-8 rounded-full object-cover"
+    //               />
+    //             ) : (
+    //               <FaUserCircle className="h-8 w-8 text-slate-100" />
+    //             )}
+    //             <span className="max-w-[130px] truncate font-medium text-slate-100">
+    //               {user?.name || "Profile"}
+    //             </span>
+    //             <FiChevronDown className="h-4 w-4 text-slate-400" />
+    //           </button>
+
+    //           {profileMenuOpen && (
+    //             <div className="absolute right-0 top-full pt-2">
+    //               <div className="w-56 rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
+    //                 <div className="border-b border-slate-800 px-4 py-3">
+    //                   <p className="truncate text-sm font-semibold text-white">
+    //                     {user?.name}
+    //                   </p>
+    //                   <p className="text-xs text-slate-400">{user?.role}</p>
+    //                   <p className="mt-1 line-clamp-2 text-[11px] text-slate-300">
+    //                     {user?.branchName?.join(" | ")}
+    //                   </p>
+    //                 </div>
+
+    //                 <button
+    //                   onClick={logout}
+    //                   className="flex w-full items-center gap-2 px-4 py-3 text-sm text-red-300 transition hover:bg-slate-800"
+    //                 >
+    //                   <FiLogOut className="h-4 w-4" />
+    //                   <span>Logout</span>
+    //                 </button>
+    //               </div>
+    //             </div>
+    //           )}
+    //         </div>
+
+    //         <button
+    //           onClick={logout}
+    //           className="hidden xl:inline-flex items-center gap-2 rounded-lg border border-red-400/20 bg-red-500/10 px-3 py-2 text-sm text-red-300 hover:bg-red-500/20 transition"
+    //         >
+    //           <FiLogOut className="h-4 w-4" />
+    //           <span>Logout</span>
+    //         </button>
+    //       </div>
+    //     </div>
+    //   </div>
+
+    //   {mobileMenuOpen && (
+    //     <div
+    //       className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+    //       onClick={() => setMobileMenuOpen(false)}
+    //     />
+    //   )}
+
+    //   <div
+    //     className={`fixed top-0 left-0 z-50 flex h-screen w-[85%] max-w-xs flex-col bg-slate-950 text-slate-100 shadow-xl transition-transform duration-300 lg:hidden ${
+    //       mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+    //     }`}
+    //   >
+    //     <div className="flex items-center justify-between border-b border-slate-800 px-4 py-4">
+    //       <div className="flex items-center gap-2">
+    //         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-300 text-[11px] font-bold tracking-[0.18em] border border-cyan-400/20">
+    //           CRM
+    //         </div>
+    //         <div>
+    //           <p className="text-sm font-semibold text-white">MANAGEMENT</p>
+    //           <p className="text-[11px] text-slate-400">Admin Panel</p>
+    //         </div>
+    //       </div>
+    //       <button
+    //         onClick={() => setMobileMenuOpen(false)}
+    //         className="rounded-md p-2 hover:bg-slate-800"
+    //       >
+    //         <FiX className="h-5 w-5" />
+    //       </button>
+    //     </div>
+
+    //     <div className="border-b border-slate-800 px-4 py-4">
+    //       <div className="flex items-center gap-3">
+    //         {user?.profileUrl ? (
+    //           <img
+    //             src={user.profileUrl}
+    //             alt={user?.name || "Profile"}
+    //             className="h-10 w-10 rounded-full object-cover"
+    //           />
+    //         ) : (
+    //           <FaUserCircle className="h-9 w-9 text-slate-100" />
+    //         )}
+    //         <div className="min-w-0">
+    //           <p className="truncate text-sm font-medium text-white">{user?.name}</p>
+    //           <p className="text-xs text-slate-400">{user?.role}</p>
+    //         </div>
+    //       </div>
+    //       <p className="mt-2 line-clamp-2 text-[11px] text-slate-400">
+    //         {user?.branchName?.join(" | ")}
+    //       </p>
+    //     </div>
+
+    //     <div className="flex-1 overflow-y-auto px-2 py-3">
+    //       {desiredMobileMenu.map((link, index) => (
+    //         <div key={index} className="mb-1">
+    //           <button
+    //             onClick={() => toggleSubmenu(index)}
+    //             className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-sm text-slate-100 hover:bg-slate-800"
+    //           >
+    //             <span>{link.label}</span>
+    //             {activeSubmenu === index ? (
+    //               <FiChevronDown className="h-4 w-4 text-slate-400" />
+    //             ) : (
+    //               <FiChevronRight className="h-4 w-4 text-slate-400" />
+    //             )}
+    //           </button>
+
+    //           {activeSubmenu === index && (
+    //             <div className="ml-2 rounded-lg border-l border-slate-700 bg-slate-900/70 py-2">
+    //               {(link.label === "Transactions"
+    //                 ? transactions
+    //                 : link.label === "Reports"
+    //                 ? reports
+    //                 : tasks
+    //               ).map((item, innerIndex) => (
+    //                 <div key={item.label}>
+    //                   {item.hasChildren ? (
+    //                     <>
+    //                       <button
+    //                         onClick={() => toggleInnerMenu(innerIndex)}
+    //                         className="flex w-full items-center justify-between px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+    //                       >
+    //                         <span>{item.label}</span>
+    //                         {openInnerMenu === innerIndex ? (
+    //                           <FiChevronDown className="h-4 w-4 text-slate-400" />
+    //                         ) : (
+    //                           <FiChevronRight className="h-4 w-4 text-slate-400" />
+    //                         )}
+    //                       </button>
+
+    //                       {openInnerMenu === innerIndex && item.label === "Lead" && (
+    //                         <div className="ml-3 border-l border-slate-700 pl-2">
+    //                           {leads.map((child) => (
+    //                             <NavLink
+    //                               key={child.to}
+    //                               to={child.to}
+    //                               onClick={() => setMobileMenuOpen(false)}
+    //                               className={({ isActive }) =>
+    //                                 `block rounded-md px-3 py-2 text-sm ${
+    //                                   isActive
+    //                                     ? "bg-cyan-500/10 text-cyan-300"
+    //                                     : "text-slate-300 hover:bg-slate-800"
+    //                                 }`
+    //                               }
+    //                             >
+    //                               {child.label}
+    //                             </NavLink>
+    //                           ))}
+    //                         </div>
+    //                       )}
+    //                     </>
+    //                   ) : (
+    //                     <NavLink
+    //                       to={item.to}
+    //                       onClick={() => setMobileMenuOpen(false)}
+    //                       className={({ isActive }) =>
+    //                         `block px-4 py-2 text-sm ${
+    //                           isActive
+    //                             ? "bg-cyan-500/10 text-cyan-300"
+    //                             : "text-slate-300 hover:bg-slate-800"
+    //                         }`
+    //                       }
+    //                     >
+    //                       {item.label}
+    //                     </NavLink>
+    //                   )}
+    //                 </div>
+    //               ))}
+    //             </div>
+    //           )}
+    //         </div>
+    //       ))}
+    //     </div>
+
+    //     <div className="border-t border-slate-800 p-3">
+    //       <button
+    //         onClick={logout}
+    //         className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-300 hover:bg-red-500/20 transition"
+    //       >
+    //         <FiLogOut className="h-4 w-4" />
+    //         <span>Logout</span>
+    //       </button>
+    //     </div>
+    //   </div>
+    // </header>
+  <>
+  <header
+    className={`sticky top-0 z-50 border-b border-white/10 bg-[#0F172A]/95 ${
+      hide ? "flex-grow" : ""
+    } text-white backdrop-blur-xl`}
+  >
+    <div className="mx-auto flex h-14 w-full items-center gap-3 px-3 sm:px-4 lg:px-6">
+      {!hide && (
+        <div className="flex min-w-0 items-center gap-3">
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[#162033] text-slate-200 transition hover:bg-[#1E293B] xl:hidden"
+          >
+            <FiMenu size={18} />
+          </button>
+
+          <Link to="/admin/dashBoard" className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 shadow-[0_10px_30px_rgba(59,130,246,0.28)]">
+              <span className="text-[16px] font-bold tracking-[0.16em] text-white">
                 CRM
-              </div>
-              <div className="leading-tight">
-                <p className="text-sm md:text-base font-semibold tracking-wide text-white">
-                  MANAGEMENT
-                </p>
-                <p className="hidden md:block text-[11px] text-slate-400">
-                  Admin Panel
-                </p>
-              </div>
-            </Link>
-          </div>
+              </span>
+            </div>
 
-          <nav className="hidden lg:flex items-center gap-2 text-sm">
-            {links.map((link) => {
-              const hasDropdown = !link.to;
-              const menuOpen = openMenu === link.label;
+            <div className="hidden sm:block">
+              <div className="text-[14px] font-semibold leading-4 text-white">
+                Management Suite
+              </div>
+              <div className="text-[11px] leading-4 text-slate-400">
+                Admin panel
+              </div>
+            </div>
+          </Link>
+        </div>
+      )}
 
-              return (
-                <div
-                  key={link.label}
-                  className="relative"
-                  onMouseEnter={() => {
-                    if (hasDropdown) {
-                      setOpenMenu(link.label);
-                      setOpenChildMenu(null);
+      <div className="hidden min-w-0 flex-1 items-center justify-center md:flex">
+        <div className="flex items-center gap-1 rounded-2xl border border-white/10 bg-[#162033] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+          {links.map((link) => {
+            const hasDropdown = !link.to
+            const menuOpen = openMenu === link.label
+
+            return (
+              <div
+                key={link.label}
+                className="relative"
+                onMouseEnter={() => {
+                  if (hasDropdown) {
+                    setOpenMenu(link.label)
+                    setOpenChildMenu(null)
+                  }
+                }}
+                onMouseLeave={() => {
+                  if (hasDropdown) {
+                    setOpenMenu(null)
+                    setOpenChildMenu(null)
+                  }
+                }}
+              >
+                {link.to ? (
+                  <NavLink
+                    to={link.to}
+                    className={({ isActive }) =>
+                      `rounded-xl px-3.5 py-2 text-[13px] font-medium transition ${
+                        isActive
+                          ? "bg-[#243145] text-white"
+                          : "text-slate-300 hover:bg-[#1E293B] hover:text-white"
+                      }`
                     }
-                  }}
-                  onMouseLeave={() => {
-                    if (hasDropdown) {
-                      setOpenMenu(null);
-                      setOpenChildMenu(null);
-                    }
-                  }}
-                >
-                  {link.to ? (
-                    <NavLink
-                      to={link.to}
-                      className={({ isActive }) =>
-                        `rounded-lg px-3 py-2 transition ${
-                          isActive
-                            ? "bg-cyan-500/10 text-cyan-300"
-                            : "text-slate-200 hover:bg-slate-800 hover:text-white"
-                        }`
-                      }
-                    >
-                      {link.label}
-                    </NavLink>
-                  ) : (
-                    <button
-                      className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 transition ${
-                        menuOpen
-                          ? "bg-slate-800 text-white"
-                          : "text-slate-200 hover:bg-slate-800 hover:text-white"
+                  >
+                    {link.label}
+                  </NavLink>
+                ) : (
+                  <button
+                    type="button"
+                    className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-[13px] font-medium transition ${
+                      menuOpen
+                        ? "bg-[#1E293B] text-white"
+                        : "text-slate-300 hover:bg-[#1E293B] hover:text-white"
+                    }`}
+                  >
+                    <span>{link.label}</span>
+                    <FiChevronDown
+                      size={14}
+                      className={`text-slate-400 transition ${
+                        menuOpen ? "rotate-180" : ""
                       }`}
-                    >
-                      <span>{link.label}</span>
-                      <FiChevronDown
-                        className={`h-4 w-4 transition ${menuOpen ? "rotate-180" : ""}`}
-                      />
-                    </button>
-                  )}
+                    />
+                  </button>
+                )}
 
-                  {hasDropdown && menuOpen && (
-                    <div className="absolute left-0 top-full pt-2">
-                      <div className="relative w-56 rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
-                        {getMenuItems(link.label).map((item) => {
-                          const childOpen = openChildMenu === item.label;
+                {hasDropdown && menuOpen && (
+                  <div className="absolute left-0 top-full pt-2">
+                    <div className="relative w-56 rounded-2xl border border-white/10 bg-[#162033] shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
+                      {getMenuItems(link.label).map((item) => {
+                        const childOpen = openChildMenu === item.label
 
-                          return (
-                            <div
-                              key={item.label}
-                              className="relative"
-                              onMouseEnter={() => {
-                                if (item.hasChildren) {
-                                  setOpenChildMenu(item.label);
+                        return (
+                          <div
+                            key={item.label}
+                            className="relative"
+                            onMouseEnter={() => {
+                              if (item.hasChildren) {
+                                setOpenChildMenu(item.label)
+                              }
+                            }}
+                          >
+                            {item.to ? (
+                              <NavLink
+                                to={item.to}
+                                className={({ isActive }) =>
+                                  `block px-4 py-2.5 text-[13px] font-medium transition ${
+                                    isActive
+                                      ? "bg-[#243145] text-white"
+                                      : "text-slate-300 hover:bg-[#1E293B]"
+                                  }`
                                 }
-                              }}
-                            >
-                              {item.to ? (
-                                <NavLink
-                                  to={item.to}
-                                  className={({ isActive }) =>
-                                    `block px-4 py-2 text-sm transition ${
-                                      isActive
-                                        ? "bg-cyan-500/10 text-cyan-300"
-                                        : "text-slate-200 hover:bg-slate-800"
-                                    }`
-                                  }
-                                >
-                                  {item.label}
-                                </NavLink>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className={`flex w-full items-center justify-between px-4 py-2 text-sm transition ${
-                                    childOpen
-                                      ? "bg-slate-800 text-white"
-                                      : "text-slate-200 hover:bg-slate-800"
-                                  }`}
-                                >
-                                  <span>{item.label}</span>
-                                  <FiChevronRight className="h-4 w-4 text-slate-400" />
-                                </button>
-                              )}
+                              >
+                                {item.label}
+                              </NavLink>
+                            ) : (
+                              <button
+                                type="button"
+                                className={`flex w-full items-center justify-between px-4 py-2.5 text-[13px] font-medium transition ${
+                                  childOpen
+                                    ? "bg-[#1E293B] text-white"
+                                    : "text-slate-300 hover:bg-[#1E293B]"
+                                }`}
+                              >
+                                <span>{item.label}</span>
+                                <FiChevronRight className="h-4 w-4 text-slate-400" />
+                              </button>
+                            )}
 
-                              {item.hasChildren && childOpen && (
-                                <div className="absolute top-0 left-full -ml-1 pl-2">
-                                  <div className="w-56 rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
-                                    {getChildItems(item.label).map((child) => (
-                                      <NavLink
-                                        key={child.to}
-                                        to={child.to}
-                                        className={({ isActive }) =>
-                                          `block px-4 py-2 text-sm transition ${
-                                            isActive
-                                              ? "bg-cyan-500/10 text-cyan-300"
-                                              : "text-slate-200 hover:bg-slate-800"
-                                          }`
-                                        }
-                                      >
-                                        {child.label}
-                                      </NavLink>
-                                    ))}
-                                  </div>
+                            {item.hasChildren && childOpen && (
+                              <div className="absolute top-0 left-full -ml-1 pl-2">
+                                <div className="w-56 rounded-2xl border border-white/10 bg-[#162033] shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
+                                  {getChildItems(item.label).map((child) => (
+                                    <NavLink
+                                      key={child.to}
+                                      to={child.to}
+                                      className={({ isActive }) =>
+                                        `block px-4 py-2.5 text-[13px] font-medium transition ${
+                                          isActive
+                                            ? "bg-[#243145] text-white"
+                                            : "text-slate-300 hover:bg-[#1E293B]"
+                                        }`
+                                      }
+                                    >
+                                      {child.label}
+                                    </NavLink>
+                                  ))}
                                 </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </nav>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
 
-          <div className="hidden md:flex items-center gap-3">
-            <div
-              className="relative"
-              onMouseEnter={() => setProfileMenuOpen(true)}
-              onMouseLeave={() => setProfileMenuOpen(false)}
-            >
-              <button className="flex items-center gap-2 rounded-full bg-slate-800 px-2 py-1.5 text-sm hover:bg-slate-700 transition">
+      {!hide && (
+        <div className="ml-auto flex items-center gap-2">
+          <button className="hidden lg:flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-[#162033] px-3 text-slate-400 transition hover:bg-[#1E293B] hover:text-slate-200">
+            <FiSearch size={15} />
+            <span className="text-[12px]">Search</span>
+          </button>
+
+          <div
+            className="relative hidden md:block"
+            onMouseEnter={() => setProfileMenuOpen(true)}
+            onMouseLeave={() => setProfileMenuOpen(false)}
+          >
+            <button className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#162033] px-2.5 py-1.5 transition hover:bg-[#1E293B]">
+              <div className="flex min-w-0 items-center gap-2">
                 {user?.profileUrl ? (
                   <img
                     src={user.profileUrl}
                     alt={user?.name || "Profile"}
-                    className="h-8 w-8 rounded-full object-cover"
+                    className="h-9 w-9 rounded-xl object-cover ring-1 ring-white/10"
                   />
                 ) : (
-                  <FaUserCircle className="h-8 w-8 text-slate-100" />
+                  <FaUserCircle className="text-[30px] text-slate-400" />
                 )}
-                <span className="max-w-[130px] truncate font-medium text-slate-100">
-                  {user?.name || "Profile"}
-                </span>
-                <FiChevronDown className="h-4 w-4 text-slate-400" />
-              </button>
 
-              {profileMenuOpen && (
-                <div className="absolute right-0 top-full pt-2">
-                  <div className="w-56 rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
-                    <div className="border-b border-slate-800 px-4 py-3">
-                      <p className="truncate text-sm font-semibold text-white">
-                        {user?.name}
-                      </p>
-                      <p className="text-xs text-slate-400">{user?.role}</p>
-                      <p className="mt-1 line-clamp-2 text-[11px] text-slate-300">
-                        {user?.branchName?.join(" | ")}
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={logout}
-                      className="flex w-full items-center gap-2 px-4 py-3 text-sm text-red-300 transition hover:bg-slate-800"
-                    >
-                      <FiLogOut className="h-4 w-4" />
-                      <span>Logout</span>
-                    </button>
+                <div className="min-w-0 text-left">
+                  <div className="truncate text-[13px] font-semibold text-white">
+                    {user?.name || "Admin User"}
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                    <span className="truncate">
+                      {Array.isArray(user?.branchName)
+                        ? user.branchName.join(" | ")
+                        : user?.branchName || "Branch"}
+                    </span>
+                    <span className="h-1 w-1 rounded-full bg-slate-500" />
+                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-emerald-400">
+                      {user?.role || "Admin"}
+                    </span>
                   </div>
                 </div>
-              )}
-            </div>
-
-            <button
-              onClick={logout}
-              className="hidden xl:inline-flex items-center gap-2 rounded-lg border border-red-400/20 bg-red-500/10 px-3 py-2 text-sm text-red-300 hover:bg-red-500/20 transition"
-            >
-              <FiLogOut className="h-4 w-4" />
-              <span>Logout</span>
+              </div>
+              <FiChevronDown className="h-4 w-4 text-slate-400" />
             </button>
+
+            {profileMenuOpen && (
+              <div className="absolute right-0 top-full pt-2">
+                <div className="w-56 rounded-2xl border border-white/10 bg-[#162033] shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
+                  <div className="border-b border-white/10 px-4 py-3">
+                    <p className="truncate text-sm font-semibold text-white">
+                      {user?.name}
+                    </p>
+                    <p className="text-xs text-slate-400">{user?.role}</p>
+                    <p className="mt-1 line-clamp-2 text-[11px] text-slate-300">
+                      {Array.isArray(user?.branchName)
+                        ? user.branchName.join(" | ")
+                        : user?.branchName}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={logout}
+                    className="flex w-full items-center gap-2 px-4 py-3 text-sm text-rose-300 transition hover:bg-[#1E293B]"
+                  >
+                    <FiLogOut className="h-4 w-4" />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
+
+          <button
+            onClick={logout}
+            className="flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-[#162033] px-3 text-[13px] font-medium text-slate-300 transition hover:bg-rose-500/10 hover:text-rose-300"
+          >
+            <FiLogOut size={15} />
+            <span className="hidden sm:inline">Logout</span>
+          </button>
         </div>
-      </div>
-
-      {mobileMenuOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
-          onClick={() => setMobileMenuOpen(false)}
-        />
       )}
+    </div>
+  </header>
 
+  {mobileMenuOpen && (
+    <>
       <div
-        className={`fixed top-0 left-0 z-50 flex h-screen w-[85%] max-w-xs flex-col bg-slate-950 text-slate-100 shadow-xl transition-transform duration-300 lg:hidden ${
-          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <div className="flex items-center justify-between border-b border-slate-800 px-4 py-4">
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-300 text-[11px] font-bold tracking-[0.18em] border border-cyan-400/20">
-              CRM
+        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm xl:hidden"
+        onClick={() => setMobileMenuOpen(false)}
+      />
+
+      <aside className="fixed left-0 top-0 z-50 h-screen w-[88%] max-w-[360px] overflow-y-auto border-r border-white/10 bg-[#0F172A] text-white shadow-[0_20px_80px_rgba(0,0,0,0.55)] xl:hidden">
+        <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600">
+              <span className="text-[11px] font-bold tracking-[0.16em]">
+                CRM
+              </span>
             </div>
             <div>
-              <p className="text-sm font-semibold text-white">MANAGEMENT</p>
-              <p className="text-[11px] text-slate-400">Admin Panel</p>
+              <div className="text-[14px] font-semibold">Management Suite</div>
+              <div className="text-[11px] text-slate-400">Admin panel</div>
             </div>
           </div>
+
           <button
             onClick={() => setMobileMenuOpen(false)}
-            className="rounded-md p-2 hover:bg-slate-800"
+            className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[#162033]"
           >
-            <FiX className="h-5 w-5" />
+            <FiX size={18} />
           </button>
         </div>
 
-        <div className="border-b border-slate-800 px-4 py-4">
+        <div className="border-b border-white/10 px-4 py-4">
           <div className="flex items-center gap-3">
             {user?.profileUrl ? (
               <img
                 src={user.profileUrl}
                 alt={user?.name || "Profile"}
-                className="h-10 w-10 rounded-full object-cover"
+                className="h-11 w-11 rounded-2xl object-cover ring-1 ring-white/10"
               />
             ) : (
-              <FaUserCircle className="h-9 w-9 text-slate-100" />
+              <FaUserCircle className="text-[36px] text-slate-400" />
             )}
+
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-white">{user?.name}</p>
-              <p className="text-xs text-slate-400">{user?.role}</p>
+              <div className="truncate text-[14px] font-semibold">
+                {user?.name || "Admin User"}
+              </div>
+              <div className="truncate text-[12px] text-slate-400">
+                {user?.role || "Admin"}
+              </div>
             </div>
           </div>
+
           <p className="mt-2 line-clamp-2 text-[11px] text-slate-400">
-            {user?.branchName?.join(" | ")}
+            {Array.isArray(user?.branchName)
+              ? user.branchName.join(" | ")
+              : user?.branchName || "Branch"}
           </p>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-2 py-3">
+        <div className="p-3">
           {desiredMobileMenu.map((link, index) => (
-            <div key={index} className="mb-1">
+            <div
+              key={index}
+              className="mb-2 rounded-2xl border border-white/10 bg-[#162033]"
+            >
               <button
                 onClick={() => toggleSubmenu(index)}
-                className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-sm text-slate-100 hover:bg-slate-800"
+                className="flex w-full items-center justify-between px-4 py-3 text-[14px] font-medium text-slate-200"
               >
                 <span>{link.label}</span>
                 {activeSubmenu === index ? (
-                  <FiChevronDown className="h-4 w-4 text-slate-400" />
+                  <FiChevronDown size={16} className="text-slate-400" />
                 ) : (
-                  <FiChevronRight className="h-4 w-4 text-slate-400" />
+                  <FiChevronRight size={16} className="text-slate-400" />
                 )}
               </button>
 
               {activeSubmenu === index && (
-                <div className="ml-2 rounded-lg border-l border-slate-700 bg-slate-900/70 py-2">
+                <div className="border-t border-white/10 px-2 pb-2">
                   {(link.label === "Transactions"
                     ? transactions
                     : link.label === "Reports"
-                    ? reports
-                    : tasks
+                      ? reports
+                      : tasks
                   ).map((item, innerIndex) => (
                     <div key={item.label}>
                       {item.hasChildren ? (
                         <>
                           <button
                             onClick={() => toggleInnerMenu(innerIndex)}
-                            className="flex w-full items-center justify-between px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
+                            className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-300 hover:bg-[#1E293B]"
                           >
                             <span>{item.label}</span>
                             {openInnerMenu === innerIndex ? (
-                              <FiChevronDown className="h-4 w-4 text-slate-400" />
+                              <FiChevronDown
+                                className="h-4 w-4 text-slate-400"
+                              />
                             ) : (
-                              <FiChevronRight className="h-4 w-4 text-slate-400" />
+                              <FiChevronRight
+                                className="h-4 w-4 text-slate-400"
+                              />
                             )}
                           </button>
 
-                          {openInnerMenu === innerIndex && item.label === "Lead" && (
-                            <div className="ml-3 border-l border-slate-700 pl-2">
-                              {leads.map((child) => (
-                                <NavLink
-                                  key={child.to}
-                                  to={child.to}
-                                  onClick={() => setMobileMenuOpen(false)}
-                                  className={({ isActive }) =>
-                                    `block rounded-md px-3 py-2 text-sm ${
-                                      isActive
-                                        ? "bg-cyan-500/10 text-cyan-300"
-                                        : "text-slate-300 hover:bg-slate-800"
-                                    }`
-                                  }
-                                >
-                                  {child.label}
-                                </NavLink>
-                              ))}
-                            </div>
-                          )}
+                          {openInnerMenu === innerIndex &&
+                            item.label === "Lead" && (
+                              <div className="ml-3 border-l border-white/10 pl-2">
+                                {leads.map((child) => (
+                                  <NavLink
+                                    key={child.to}
+                                    to={child.to}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className={({ isActive }) =>
+                                      `block rounded-xl px-3 py-2.5 text-[13px] ${
+                                        isActive
+                                          ? "bg-[#243145] text-white"
+                                          : "text-slate-300 hover:bg-[#1E293B]"
+                                      }`
+                                    }
+                                  >
+                                    {child.label}
+                                  </NavLink>
+                                ))}
+                              </div>
+                            )}
                         </>
                       ) : (
                         <NavLink
                           to={item.to}
                           onClick={() => setMobileMenuOpen(false)}
                           className={({ isActive }) =>
-                            `block px-4 py-2 text-sm ${
+                            `block rounded-xl px-3 py-2.5 text-[13px] font-medium ${
                               isActive
-                                ? "bg-cyan-500/10 text-cyan-300"
-                                : "text-slate-300 hover:bg-slate-800"
+                                ? "bg-[#243145] text-white"
+                                : "text-slate-300 hover:bg-[#1E293B]"
                             }`
                           }
                         >
@@ -1314,18 +1722,18 @@ export default function AdminHeader() {
               )}
             </div>
           ))}
-        </div>
 
-        <div className="border-t border-slate-800 p-3">
           <button
             onClick={logout}
-            className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm text-red-300 hover:bg-red-500/20 transition"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[14px] font-semibold text-rose-300"
           >
-            <FiLogOut className="h-4 w-4" />
-            <span>Logout</span>
+            <FiLogOut size={15} />
+            Logout
           </button>
         </div>
-      </div>
-    </header>
+      </aside>
+    </>
+  )}
+</>
   );
 }
