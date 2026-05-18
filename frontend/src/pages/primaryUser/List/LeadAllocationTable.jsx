@@ -1241,7 +1241,7 @@ const LeadAllocationTable = () => {
         <header  className="flex items-center justify-between border-b border-white/10 bg-[#0F172A]/95" >
           {/* Header */}
           {loggedUser?.role?.toLowerCase() === "admin" ? (
-            <AdminHeader />
+            <AdminHeader hide={true}/>
           ) : (
             <StaffHeader hide={true} />
           )}
