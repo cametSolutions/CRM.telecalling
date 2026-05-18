@@ -514,6 +514,10 @@ export function PerformanceModal({
   handleSelectedUser,
   selectedUser
 }) {
+console.log(modalOpen)
+console.log(targetData)
+console.log(selectedperiod)
+console.log(allperiods)
   const [activeUserId, setActiveUserId] = useState(loggedUser?._id || "")
   const [activeMetric, setActiveMetric] = useState("achieved")
   const [allusersData, setallusersData] = useState([])
@@ -590,7 +594,7 @@ export function PerformanceModal({
       }
     })
   }, [allperiods])
-
+console.log(allperiods)
   const monthOptions = useMemo(() => {
     const parsed = getPeriodRange(localSelectedPeriod)
 
@@ -616,7 +620,7 @@ export function PerformanceModal({
       return { value: String(year), label: String(year) }
     })
   }, [])
-
+console.log(targetData)
   const handleMetricTab = (tab) => {
     setActiveMetric(tab)
 
