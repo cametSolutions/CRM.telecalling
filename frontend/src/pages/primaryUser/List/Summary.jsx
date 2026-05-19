@@ -5,8 +5,29 @@ import { BarLoader } from "react-spinners"
 import api from "../../../api/api"
 import Tiles from "../../../components/common/Tiles"
 import UseFetch from "../../../hooks/useFetch"
+import { PerformanceModal } from "../../../components/primaryUser/PerformanceModal"
+import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
+import AdminHeader from "../../../header/AdminHeader"
+import StaffHeader from "../../../header/StaffHeader"
 import BranchDropdown from "../../../components/primaryUser/BranchDropdown"
-
+import {
+  Eye,
+  Phone,
+  Mail,
+  Settings,
+  MessageSquareText,
+  User,
+  Calendar,
+  Clock,
+  UserPlus,
+  UserCheck,
+  IndianRupee,
+  BellRing,
+  History,
+  ChevronDown,
+  ChevronRight,
+  X
+} from "lucide-react"
 const Summary = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   const [totalcalls, setTotalCalls] = useState(0)
@@ -26,10 +47,22 @@ const Summary = () => {
   const [indiviDualCallList, setIndividualCallList] = useState([])
   const [loggedusers, setloggedUsers] = useState(null)
   const [selectedBranch, setSelectedBranch] = useState("All")
+const [selectedCompanyBranch,setselectedCompanyBranch]=useState(null)
   const [selectedbranchName, setselectedBranchName] = useState(null)
   const [isToggled, setIsToggled] = useState(false)
   const [dates, setDates] = useState({ startDate: "", endDate: "" })
   const [loading, setLoading] = useState(true)
+  const [selectedUserName, setselecteduserName] = useState(null)
+  const [selectedCategory, setselectedCategory] = useState(null)
+  const [selectedDatapopup, setselectedDataPopup] = useState({})
+  const [selectedYear, setSelectedYear] = useState(null)
+  const [periodMode, setperiodMode] = useState("all")
+  const [targetData, settargetData] = useState([])
+  console.log(targetData)
+  const [performanceopenModal, setperformanceOpenModal] = useState(false)
+  const [productlist, setproductList] = useState([])
+  const [achievedproducts, setacheivedProducts] = useState([])
+  const [selectedPeriod, setselectedPeriod] = useState("")
   const { data: branches, loading: branchLoader } =
     UseFetch("/branch/getBranch")
   const { data: staffCallList, loading: staffLoader } = UseFetch(
@@ -38,6 +71,9 @@ const Summary = () => {
       dates.endDate &&
       `/auth/staffcallList?startDate=${dates.startDate}&endDate=${dates.endDate}`
   )
+ const { data: branchProduct } = UseFetch(
+    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
+  )
   console.log(staffCallList)
   console.log("l")
   useEffect(() => {
@@ -45,7 +81,8 @@ const Summary = () => {
       const userData = localStorage.getItem("user")
       const user = JSON.parse(userData)
       setloggedUsers(user)
-
+console.log(user.selected[0].branch_id)
+setselectedCompanyBranch(user.selected[0].branch_id)
       user.selected.forEach((branches) =>
         setBranch((prev) => [
           ...prev,
@@ -553,7 +590,104 @@ const Summary = () => {
       return
     }
   }, [branch, loggedusers, dates])
+  const handleMoreClick = (id, name) => {
+    const Datas = targetData?.userWiseResults
+    console.log(id)
+    console.log(name)
+    console.log("hh")
+    const filteredList = branchProduct
+      .filter(
+        (item) =>
+          item.selected?.some(
+            (selectedItem) => String(selectedItem.category_id) === String(id)
+          ) || String(item.category_id) === String(id)
+      )
+      .map((item) => item.productName || item.serviceName)
+    console.log(filteredList)
+    setproductList(filteredList)
+    setselectedCategory({ Id: id, categoryName: name })
+    console.log("J")
+    console.log(targetData)
+    console.log(loggedusers?._id)
+    const filteredloggedUserItem = Datas.filter(
+      (item) => item.userId === loggedusers._id
+    )
+    console.log("hhh")
 
+    console.log(Datas)
+    console.log("hhhh")
+    console.log(filteredloggedUserItem)
+    console.log(id)
+    // const filteredselectedCategory =
+    //   filteredloggedUserItem[0].categories.filter(
+    //     (item) => item.categoryId === id
+    //   )
+    const filteredselectedCategory = Datas.flatMap(
+      (user) => user.categories || []
+    ).filter((item) => item.categoryId === id)
+    console.log("Hh")
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+    console.log("hhh")
+    setselectedDataPopup(summary)
+    console.log(filteredselectedCategory && filteredselectedCategory.length)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      setacheivedProducts((prev) => [
+        ...prev,
+        ...filteredselectedCategory.flatMap((item) =>
+          (item?.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
+      ])
+    } else {
+      setacheivedProducts([])
+    }
+    setperformanceOpenModal(true)
+  }
+  const handleSelectedUser = (category, userId, userName) => {
+    setselecteduserName(userName)
+    setselectedCategory({
+      Id: category.Id,
+      categoryName: category.categoryName
+    })
+    const filteredloggedUserItem = data?.userWiseResults.filter(
+      (item) => item.userId === userId
+    )
+    const filteredselectedCategory =
+      filteredloggedUserItem[0].categories.filter(
+        (item) => item.categoryId === category.Id
+      )
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+
+    setselectedDataPopup(summary)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      setacheivedProducts(
+        filteredselectedCategory[0]?.products?.map((product) => ({
+          productname: product.name,
+          amount: product.achieved
+        })) || []
+      )
+    } else {
+      setacheivedProducts([])
+    }
+  }
   const handleBranchChange = (id, branchName) => {
     setTotalCalls(0)
     setselectedBranchName(branchName)
@@ -580,7 +714,7 @@ const Summary = () => {
     setSelectedUser(null)
   }
   const formatDuration = (seconds, name) => {
-console.log(seconds)
+    console.log(seconds)
     if (!seconds || isNaN(seconds)) {
       return "0 hr 0 min 0 sec"
     }
@@ -591,202 +725,274 @@ console.log(seconds)
     return `${hrs} hr ${mins} min ${secs} sec`
   }
   console.log(isModalOpen)
-const callfor=(e)=>{
-console.log(e?.attendedBy)
-}
+  const callfor = (e) => {
+    console.log(e?.attendedBy)
+  }
+console.log(selectedBranch)
   return (
-    <div className="flex flex-col h-full">
-      {loading && (
-        <div>
-          <BarLoader
-            cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
-            color="#4A90E2" // Change color as needed
-            // loader={true}
-          />
-        </div>
-      )}
-      <div className="md:px-5 lg:px-6 ">
-        <div className="flex justify-center text-2xl font-semibold ">
-          <h1 className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-red-500 to-pink-600">
-            {isToggled ? "User Summary" : "Customer Summary"}
-          </h1>
-        </div>
+    <div className="h-full bg-[#ADD8E6] overflow-hidden">
+      <div className="flex h-full flex-row">
+        <StaticSidebar
+          handleMoreClick={handleMoreClick}
+          selectedCompanyBranch={selectedCompanyBranch}
+          setselectedCompanyBranch={setselectedCompanyBranch}
+          parenttargetData={settargetData}
+          parentperiodmode={setperiodMode}
+          parentyear={setSelectedYear}
+          setselectedPeriod={setselectedPeriod}
+        />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <header className="flex items-center justify-between border-b border-white/10 bg-[#0F172A]/95">
+            {loggedusers?.role?.toLowerCase() === "admin" ? (
+              <AdminHeader hide={true} />
+            ) : (
+              <StaffHeader hide={true} />
+            )}
 
-        <div>
-          <h2 className="text-xl font-semibold leading-tight">Branches</h2>
+            <div className="flex items-center gap-1.5  border-b border-white/10 bg-[#0F172A]/95 pr-3 h-full">
+              <button className="rounded-full p-1.5 transition bg-slate-100">
+                <Mail size={15} strokeWidth={2.2} />
+              </button>
+              <div className="relative">
+                <button className="rounded-full p-1.5 transition bg-slate-100">
+                  <MessageSquareText size={15} strokeWidth={2.2} />
+                </button>
+                <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
+              </div>
+              <button className="rounded-full p-1.5 transition bg-slate-100">
+                <Settings size={15} strokeWidth={2.2} />
+              </button>
+              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+                <User size={15} strokeWidth={2.2} />
+              </button> */}
 
-          <div className="flex">
-            <div className="flex md:w-1/4 gap-2">
-              <BranchDropdown
-                branches={branch}
-                onBranchChange={handleBranchChange}
-                branchSelected={selectedBranch}
-              />
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowUserMenu((prev) => !prev)
+                  }}
+                  className="rounded-full p-1.5 transition bg-slate-100"
+                >
+                  <User size={15} strokeWidth={2.2} />
+                </button>
 
-              <input
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value)
-                  setTotalCalls(0)
-                }}
-                className="w-full border border-gray-300 rounded-full py-1 px-4 pl-10 focus:outline-none cursor-pointer"
-                placeholder="Search Name.."
+                {/* {showUserMenu && (
+                  <div
+                    onClick={(e) => e.stopPropagation()} 
+                    className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
+                  >
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )} */}
+              </div>
+            </div>
+          </header>
+          {loading && (
+            <div>
+              <BarLoader
+                cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
+                color="#4A90E2" // Change color as needed
+                // loader={true}
               />
             </div>
-
-            <div className=" flex flex-grow justify-end items-center">
-              <div className="flex gap-2">
-                <span>{isToggled ? "User" : "Customer"}</span>
-                <button
-                  onClick={toggle}
-                  className={`${
-                    isToggled ? "bg-green-500" : "bg-gray-300"
-                  } w-12 h-6 flex items-center rounded-full p-0 mr-2 transition-colors duration-300`}
-                >
-                  <div
-                    className={`${
-                      isToggled ? "translate-x-6" : "translate-x-0"
-                    } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                  ></div>
-                </button>
+          )}
+          <div className="flex flex-col flex-1 bg-[#ADD8E6]">
+            <div className="md:px-5 lg:px-6 ">
+              <div className="flex justify-center text-2xl font-semibold ">
+                <h1 className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-red-500 to-pink-600">
+                  {isToggled ? "User Summary" : "Customer Summary"}
+                </h1>
               </div>
 
-              {dates.startDate && (
-                <MyDatePicker setDates={setDates} dates={dates} />
-              )}
+              <div>
+                <h2 className="text-xl font-semibold leading-tight">
+                  Branches
+                </h2>
+
+                <div className="flex">
+                  <div className="flex md:w-1/4 gap-2">
+                    <BranchDropdown
+                      branches={branch}
+                      onBranchChange={handleBranchChange}
+                      branchSelected={selectedBranch}
+                    />
+
+                    <input
+                      value={searchTerm}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value)
+                        setTotalCalls(0)
+                      }}
+                      className="w-full border border-gray-300 rounded-full py-1 px-4 pl-10 focus:outline-none cursor-pointer"
+                      placeholder="Search Name.."
+                    />
+                  </div>
+
+                  <div className=" flex flex-grow justify-end items-center">
+                    <div className="flex gap-2">
+                      <span>{isToggled ? "User" : "Customer"}</span>
+                      <button
+                        onClick={toggle}
+                        className={`${
+                          isToggled ? "bg-green-500" : "bg-gray-300"
+                        } w-12 h-6 flex items-center rounded-full p-0 mr-2 transition-colors duration-300`}
+                      >
+                        <div
+                          className={`${
+                            isToggled ? "translate-x-6" : "translate-x-0"
+                          } w-6 h-6 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                        ></div>
+                      </button>
+                    </div>
+
+                    {dates.startDate && (
+                      <MyDatePicker setDates={setDates} dates={dates} />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-between md:flex md:justify-start">
+                <div className="text-blue-700">
+                  {isToggled
+                    ? `Total Staff-${userList.length}`
+                    : `Total customer-${customerSummary.length}`}
+                </div>
+                <div className="text-blue-700 ml-5">
+                  {`Total Calls-${totalcalls}`}
+                </div>
+              </div>
+            </div>
+            <div className="md:mx-5 lg:mx-6 mb-3 mt-1 overflow-y-auto rounded-lg shadow-xl border border-gray-300">
+              <table className="min-w-full leading-normal text-left max-w-7xl mx-auto  ">
+                <thead className="sticky top-0 z-30 bg-purple-300">
+                  <tr>
+                    <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                      {isToggled ? "User Name" : "Customer Name"}
+                    </th>
+                    {!isToggled && (
+                      <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                        Total Calls
+                      </th>
+                    )}
+                    {!isToggled && (
+                      <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                        Mobile No
+                      </th>
+                    )}
+                    {!isToggled && (
+                      <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                        License No
+                      </th>
+                    )}
+
+                    <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                      date Calls
+                    </th>
+                    <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                      Solved Calls
+                    </th>
+                    <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                      Pending Calls
+                    </th>
+                    {isToggled && (
+                      <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                        Colleague Solved
+                      </th>
+                    )}
+                    {!isToggled && (
+                      <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                        Today's Calls
+                      </th>
+                    )}
+                    <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
+                      View
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.isArray(isToggled ? userList : customerSummary) &&
+                    ((isToggled ? userList : customerSummary).length > 0 ? (
+                      (isToggled ? userList : customerSummary).map((item) => (
+                        <tr key={item._id || item.customerId}>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm">
+                            {isToggled ? item.name : item.customerName}
+                          </td>
+                          {!isToggled && (
+                            <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                              {item.totalCalls}
+                            </td>
+                          )}
+                          {!isToggled && (
+                            <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                              {item.mobileNumbers?.join(", ")}
+                            </td>
+                          )}
+                          {!isToggled && (
+                            <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                              {item.serialNumbers?.join(", ")}
+                            </td>
+                          )}
+
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            {isToggled ? item.datecalls : item.dateCalls}
+                          </td>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            {isToggled ? item.solvedCalls : item.solvedCalls}
+                          </td>
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            {isToggled ? item.pendingCalls : item.pendingCalls}
+                          </td>
+                          {isToggled && (
+                            <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                              {item.colleagueSolved}
+                            </td>
+                          )}
+                          {!isToggled && (
+                            <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                              {item.todaysCalls}
+                            </td>
+                          )}
+                          <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
+                            <button
+                              onClick={() =>
+                                openModal(
+                                  isToggled ? item.name : item.customerId
+                                )
+                              }
+                              className="text-blue-500 hover:text-blue-700"
+                            >
+                              View Calls
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="9" className="text-center py-4">
+                          {loading || branchLoader || staffLoader ? (
+                            <div className="justify center">
+                              <PropagateLoader color="#3b82f6" size={10} />
+                            </div>
+                          ) : (
+                            <div className="text-blue-500">
+                              No Data Available!.
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
-
-        <div className="flex justify-between md:flex md:justify-start">
-          <div className="text-blue-700">
-            {isToggled
-              ? `Total Staff-${userList.length}`
-              : `Total customer-${customerSummary.length}`}
-          </div>
-          <div className="text-blue-700 ml-5">
-            {`Total Calls-${totalcalls}`}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 md:mx-5 lg:mx-6 mb-3 mt-1 overflow-y-auto rounded-lg shadow-xl border border-gray-300">
-        <table className="min-w-full leading-normal text-left max-w-7xl mx-auto  ">
-          <thead className="sticky top-0 z-30 bg-purple-300">
-            <tr>
-              <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                {isToggled ? "User Name" : "Customer Name"}
-              </th>
-              {!isToggled && (
-                <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
-                  Total Calls
-                </th>
-              )}
-              {!isToggled && (
-                <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
-                  Mobile No
-                </th>
-              )}
-              {!isToggled && (
-                <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
-                  License No
-                </th>
-              )}
-
-              <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
-                date Calls
-              </th>
-              <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
-                Solved Calls
-              </th>
-              <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
-                Pending Calls
-              </th>
-              {isToggled && (
-                <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
-                  Colleague Solved
-                </th>
-              )}
-              {!isToggled && (
-                <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
-                  Today's Calls
-                </th>
-              )}
-              <th className="px-5 py-3 border-b-2 border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wider text-center">
-                View
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {Array.isArray(isToggled ? userList : customerSummary) &&
-              ((isToggled ? userList : customerSummary).length > 0 ? (
-                (isToggled ? userList : customerSummary).map((item) => (
-                  <tr key={item._id || item.customerId}>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-sm">
-                      {isToggled ? item.name : item.customerName}
-                    </td>
-                    {!isToggled && (
-                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                        {item.totalCalls}
-                      </td>
-                    )}
-                    {!isToggled && (
-                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                        {item.mobileNumbers?.join(", ")}
-                      </td>
-                    )}
-                    {!isToggled && (
-                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                        {item.serialNumbers?.join(", ")}
-                      </td>
-                    )}
-
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      {isToggled ? item.datecalls : item.dateCalls}
-                    </td>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      {isToggled ? item.solvedCalls : item.solvedCalls}
-                    </td>
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      {isToggled ? item.pendingCalls : item.pendingCalls}
-                    </td>
-                    {isToggled && (
-                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                        {item.colleagueSolved}
-                      </td>
-                    )}
-                    {!isToggled && (
-                      <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                        {item.todaysCalls}
-                      </td>
-                    )}
-                    <td className="px-5 py-3 border-b border-gray-200 bg-white text-center text-sm">
-                      <button
-                        onClick={() =>
-                          openModal(isToggled ? item.name : item.customerId)
-                        }
-                        className="text-blue-500 hover:text-blue-700"
-                      >
-                        View Calls
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="9" className="text-center py-4">
-                    {loading || branchLoader || staffLoader ? (
-                      <div className="justify center">
-                        <PropagateLoader color="#3b82f6" size={10} />
-                      </div>
-                    ) : (
-                      <div className="text-blue-500">No Data Available!.</div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
       </div>
 
       {isModalOpen && (
@@ -1064,13 +1270,11 @@ console.log(e?.attendedBy)
                                     )} days`}
                                   </span>
                                   <span className="ml-1">
-
-                                
                                     {formatDuration(
                                       reg?.formdata?.attendedBy?.reduce(
                                         (sum, item) => {
                                           return (
-                                            sum + Number(item?.duration||0 )
+                                            sum + Number(item?.duration || 0)
                                           )
                                         },
                                         0
@@ -1213,7 +1417,6 @@ console.log(e?.attendedBy)
                                 )} days`}
                               </span>
                               <span className="ml-1">
-                             
                                 {formatDuration(
                                   call?.formdata?.attendedBy?.reduce(
                                     (sum, item) => {
@@ -1250,6 +1453,50 @@ console.log(e?.attendedBy)
           </div>
         </div>
       )}
+  <PerformanceModal
+          modalOpen={performanceopenModal}
+          splitType={targetData?.selectedMeasurementType}
+          selectedperiod={selectedPeriod}
+          allperiods={targetData?.periods}
+          onselectedPeriodChange={(val, val2) => {
+            setSelectedMonth(val2)
+            setselectedPeriod(val)
+          }}
+          onMonthChange={(val) => {
+            setcategorylist([])
+            setacheivedProducts([])
+            setselectedDataPopup([])
+            setperiodMode(val)
+          }}
+          onYearChange={(val) => {
+            setcategorylist([])
+            setacheivedProducts([])
+            setselectedDataPopup([])
+            setSelectedYear(val)
+          }}
+          productlist={productlist}
+          onClose={() => {
+            setselecteduserName(loggedusers?.name)
+            setacheivedProducts([])
+            setperformanceOpenModal(false)
+          }}
+          selectedMonth={periodMode}
+          selectedYear={selectedYear}
+          summary={{
+            target: selectedDatapopup?.target,
+            achieved: selectedDatapopup?.achieved,
+            balance:
+              selectedDatapopup?.achieved > selectedDatapopup?.target
+                ? 0
+                : selectedDatapopup?.balance
+          }}
+          products={achievedproducts}
+          targetData={targetData?.userWiseResults}
+          loggedUser={loggedusers}
+          selectedUser={selectedUserName}
+          category={selectedCategory}
+          handleSelectedUser={handleSelectedUser}
+        />
     </div>
   )
 }
