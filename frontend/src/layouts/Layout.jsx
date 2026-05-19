@@ -42,7 +42,9 @@ const Layout = () => {
     "/staff/transaction/lead/collectionUpdate",
     "/admin/transaction/lead/collectionUpdate",
     "/staff/transaction/lead/lostLeads",
-    "/admin/transaction/lead/lostLeads"
+    "/admin/transaction/lead/lostLeads",
+    "/staff/reports/summary",
+    "/admin/reports/summary"
   ]
 
   const shouldHideHeader = hideHeaderRoutes.some((route) =>
