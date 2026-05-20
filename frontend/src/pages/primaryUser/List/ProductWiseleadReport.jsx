@@ -490,11 +490,32 @@ import { useNavigate } from "react-router-dom"
 import ReportTable from "../../../components/primaryUser/ReportTable"
 import { MonthRangePicker } from "../../../components/primaryUser/MonthRangePicker"
 import UseFetch from "../../../hooks/useFetch"
-// import SkeletonTable from "../../../components/loader/SkeletonTable"
+import { PerformanceModal } from "../../../components/primaryUser/PerformanceModal"
+import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
+import AdminHeader from "../../../header/AdminHeader"
+import StaffHeader from "../../../header/StaffHeader"
 import SkeletonTable from "../../../components/loader/SkeletonTable"
 import NodataAvailable from "../../../components/NodataAvailable"
 import { getLocalStorageItem } from "../../../helper/localstorage"
-
+import {
+  Eye,
+  Phone,
+  Mail,
+  Settings,
+  MessageSquareText,
+  User,
+  Calendar,
+  Clock,
+  UserPlus,
+  UserCheck,
+  IndianRupee,
+  BellRing,
+  History,
+  ChevronDown,
+  ChevronRight,
+  X
+} from "lucide-react"
+import { loggeduserBranches } from "../../../../slices/companyBranchSlice"
 export default function ProductWiseleadReport() {
   const [filterRange, setFilterRange] = useState({
     startDate: null,
@@ -511,12 +532,24 @@ export default function ProductWiseleadReport() {
   const [drillDown, setDrillDown] = useState(false)
   const [userbranches, setuserBranches] = useState([])
   const [selectedBranch, setselectedBranch] = useState(null)
-
+  const [selectedUserName, setselecteduserName] = useState(null)
+  const [selectedCategory, setselectedCategory] = useState(null)
+  const [selectedDatapopup, setselectedDataPopup] = useState({})
+  const [selectedYear, setSelectedYear] = useState(null)
+  const [periodMode, setperiodMode] = useState("all")
+  const [targetData, settargetData] = useState([])
+  console.log(targetData)
+  const [openModal, setOpenModal] = useState(false)
+  const [productlist, setproductList] = useState([])
+  const [achievedproducts, setacheivedProducts] = useState([])
+  const [selectedPeriod, setselectedPeriod] = useState("")
+  const [loggeduser, setloggeduser] = useState(null)
   const navigate = useNavigate()
 
   // Get logged user branches from localStorage
   useEffect(() => {
     const userData = getLocalStorageItem("user")
+    setloggeduser(userData)
     if (!userData?.selected?.length) return
 
     setselectedBranch(userData.selected[0]?.branch_id)
@@ -534,6 +567,9 @@ export default function ProductWiseleadReport() {
       filterRange.lastDay &&
       selectedBranch &&
       `/lead/getallproductwisereport?startDate=${filterRange.firstDay}&endDate=${filterRange.lastDay}&branchId=${selectedBranch}`
+  )
+  const { data: branchProduct } = UseFetch(
+    `/product/getallbranchProduct?branch=${selectedBranch}`
   )
   console.log(report?.re)
   // Aggregate staff data when report or branch changes
@@ -639,6 +675,104 @@ export default function ProductWiseleadReport() {
     }))
 
     setData(mapped)
+  }
+  const handleMoreClick = (id, name) => {
+    const Datas = targetData?.userWiseResults
+    console.log(id)
+    console.log(name)
+    console.log("hh")
+    const filteredList = branchProduct
+      .filter(
+        (item) =>
+          item.selected?.some(
+            (selectedItem) => String(selectedItem.category_id) === String(id)
+          ) || String(item.category_id) === String(id)
+      )
+      .map((item) => item.productName || item.serviceName)
+    console.log(filteredList)
+    setproductList(filteredList)
+    setselectedCategory({ Id: id, categoryName: name })
+    console.log("J")
+    console.log(targetData)
+    console.log(loggeduser?._id)
+    const filteredloggedUserItem = Datas.filter(
+      (item) => item.userId === loggeduser._id
+    )
+    console.log("hhh")
+
+    console.log(Datas)
+    console.log("hhhh")
+    console.log(filteredloggedUserItem)
+    console.log(id)
+    // const filteredselectedCategory =
+    //   filteredloggedUserItem[0].categories.filter(
+    //     (item) => item.categoryId === id
+    //   )
+    const filteredselectedCategory = Datas.flatMap(
+      (user) => user.categories || []
+    ).filter((item) => item.categoryId === id)
+    console.log("Hh")
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+    console.log("hhh")
+    setselectedDataPopup(summary)
+    console.log(filteredselectedCategory && filteredselectedCategory.length)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      setacheivedProducts((prev) => [
+        ...prev,
+        ...filteredselectedCategory.flatMap((item) =>
+          (item?.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
+      ])
+    } else {
+      setacheivedProducts([])
+    }
+    setOpenModal(true)
+  }
+  const handleSelectedUser = (category, userId, userName) => {
+    setselecteduserName(userName)
+    setselectedCategory({
+      Id: category.Id,
+      categoryName: category.categoryName
+    })
+    const filteredloggedUserItem = data?.userWiseResults.filter(
+      (item) => item.userId === userId
+    )
+    const filteredselectedCategory =
+      filteredloggedUserItem[0].categories.filter(
+        (item) => item.categoryId === category.Id
+      )
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+
+    setselectedDataPopup(summary)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      setacheivedProducts(
+        filteredselectedCategory[0]?.products?.map((product) => ({
+          productname: product.name,
+          amount: product.achieved
+        })) || []
+      )
+    } else {
+      setacheivedProducts([])
+    }
   }
 
   // Handle "See All" - return to staff aggregated view
@@ -777,200 +911,212 @@ export default function ProductWiseleadReport() {
   const effectiveData = data
   console.log(data)
   return (
-    // <div className="h-full bg-[#ADD8E6] flex flex-col">
-    //   {/* Top bar */}
-    //   <div className="px-4 md:px-6 py-3 bg-[#ADD8E6]">
-    //     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-    //       {/* Left: title + range */}
-    //       <div className="flex flex-col gap-1">
-    //         <h1 className="text-lg md:text-xl font-bold text-gray-900">
-    //           Product‑Wise Lead Report
-    //         </h1>
-    //         {formattedRange && (
-    //           <p className="text-xs text-slate-500">
-    //             Period{" "}
-    //             <span className="inline-flex items-center rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
-    //               {formattedRange}
-    //             </span>
-    //           </p>
-    //         )}
-    //       </div>
-
-    //       {/* Right: branch + toggle + date range */}
-    //       <div className="flex flex-wrap items-center gap-3 md:gap-4">
-    //         {/* Branch select */}
-    //         <div className="flex flex-col gap-1">
-    //           <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-    //             Branch
-    //           </span>
-    //           <div className="relative">
-    //             <select
-    //               value={selectedBranch || ""}
-    //               onChange={(e) => setselectedBranch(e.target.value)}
-    //               className="h-8 min-w-[150px] rounded-md border border-slate-300 bg-white cursor-pointer pr-7 pl-3 text-xs text-slate-800 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
-    //             >
-    //               {userbranches.map((b) => (
-    //                 <option key={b.id} value={b.id}>
-    //                   {b.branchName}
-    //                 </option>
-    //               ))}
-    //             </select>
-    //           </div>
-    //         </div>
-
-    //         {/* Toggle */}
-    //         <div className="flex items-center bg-white rounded-full px-1 py-0.5 text-xs font-medium shadow-sm border border-gray-200 mt-4">
-    //           <button
-    //             type="button"
-    //             onClick={handleSeeAll}
-    //             className={`px-3 py-1 rounded-full transition-colors ${
-    //               viewMode === "staff"
-    //                 ? "bg-blue-600 text-white shadow"
-    //                 : "text-gray-600"
-    //             }`}
-    //           >
-    //             Staff
-    //           </button>
-    //           <button
-    //             type="button"
-    //             onClick={handleProductToggle}
-    //             className={`px-3 py-1 rounded-full transition-colors ${
-    //               viewMode === "product"
-    //                 ? "bg-blue-600 text-white shadow"
-    //                 : "text-gray-600"
-    //             }`}
-    //           >
-    //             Product
-    //           </button>
-    //         </div>
-
-    //         {/* MonthRangePicker */}
-    //         <div className="bg-white rounded-lg px-3 py-1.5 shadow-sm border border-gray-200 flex items-center">
-    //           <MonthRangePicker onChange={handleDateRange} />
-    //         </div>
-    //       </div>
-    //     </div>
-    //   </div>
-
-    //   {/* Table wrapper */}
-    //   <div className="flex-1 overflow-hidden mb-3 mx-3">
-    //     {loading ? (
-    //       <SkeletonTable rows={8} />
-    //     ) : effectiveData.length === 0 ? (
-    //       <NodataAvailable />
-    //     ) : (
-    //       <ReportTable
-    //         headers={headersName}
-    //         reportName="Product-Wise Lead Report"
-    //         data={effectiveData}
-    //         mode={viewMode}
-    //         selectedStaff={selectedStaff}
-    //         drillDown={drillDown}
-    //         onStaffClick={handleStaffClick}
-    //         onSeeAll={handleSeeAll}
-    //         onTotalLeadsClick={handleTotalLeadsClick}
-    //       />
-    //     )}
-    //   </div>
-    // </div>
-    <div className="h-full bg-gradient-to-br from-[#ADD8E6]/60 to-blue-100 p-4">
-      {/* MAIN CONTAINER */}
-      <div className="h-full bg-white rounded-2xl shadow-lg flex flex-col overflow-hidden">
-        {/* ================= HEADER ================= */}
-        <div className="px-5 py-4 border-b bg-white">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            {/* LEFT: TITLE */}
-            <div className="flex flex-col gap-1">
-              <h1 className="text-xl font-semibold text-gray-800 tracking-tight">
-                Product-Wise Lead Report
-              </h1>
-
-              {formattedRange && (
-                <p className="text-xs text-gray-500">
-                  Period{" "}
-                  <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
-                    {formattedRange}
-                  </span>
-                </p>
-              )}
-            </div>
-
-            {/* RIGHT CONTROLS */}
-            <div className="flex flex-wrap items-end gap-4">
-              {/* Branch */}
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
-                  Branch
-                </span>
-
-                <select
-                  value={selectedBranch || ""}
-                  onChange={(e) => setselectedBranch(e.target.value)}
-                  className="h-9 min-w-[160px] rounded-lg border border-gray-300 bg-white cursor-pointer px-3 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 outline-none"
-                >
-                  {userbranches.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.branchName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Toggle */}
-              <div className="flex items-center bg-gray-100 rounded-full p-1 text-xs font-medium">
-                <button
-                  onClick={handleSeeAll}
-                  className={`px-4 py-1.5 rounded-full transition-all ${
-                    viewMode === "staff"
-                      ? "bg-blue-600 text-white shadow"
-                      : "text-gray-600 hover:text-black"
-                  }`}
-                >
-                  Staff
-                </button>
-
-                <button
-                  onClick={handleProductToggle}
-                  className={`px-4 py-1.5 rounded-full transition-all ${
-                    viewMode === "product"
-                      ? "bg-blue-600 text-white shadow"
-                      : "text-gray-600 hover:text-black"
-                  }`}
-                >
-                  Product
-                </button>
-              </div>
-
-              {/* Date Picker */}
-              <div className="bg-white rounded-lg px-3 py-2 border border-gray-200 shadow-sm">
-                <MonthRangePicker onChange={handleDateRange} />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ================= CONTENT ================= */}
-        <div className="flex-1 p-4 overflow-hidden">
-          <div className="h-full bg-gray-50 rounded-xl border border-gray-200 overflow-hidden ">
-            {loading ? (
-              <SkeletonTable rows={8} />
-            ) : effectiveData.length === 0 ? (
-              <NodataAvailable />
+    <div className="h-full bg-[#ADD8E6]">
+      <div className="flex h-full flex-row">
+        <StaticSidebar
+          handleMoreClick={handleMoreClick}
+          selectedCompanyBranch={selectedBranch}
+          setselectedCompanyBranch={setselectedBranch}
+          parenttargetData={settargetData}
+          parentperiodmode={setperiodMode}
+          parentyear={setSelectedYear}
+          setselectedPeriod={setselectedPeriod}
+        />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <header className="flex items-center justify-between border-b border-white/10 bg-[#0F172A]/95">
+            {loggeduser?.role?.toLowerCase() === "admin" ? (
+              <AdminHeader hide={true} />
             ) : (
-              <ReportTable
-                headers={headersName}
-                reportName="Product-Wise Lead Report"
-                data={effectiveData}
-                mode={viewMode}
-                selectedStaff={selectedStaff}
-                drillDown={drillDown}
-                onStaffClick={handleStaffClick}
-                onSeeAll={handleSeeAll}
-                onTotalLeadsClick={handleTotalLeadsClick}
-              />
+              <StaffHeader hide={true} />
             )}
+
+            <div className="flex items-center gap-1.5  border-b border-white/10 bg-[#0F172A]/95 pr-3 h-full">
+              <button className="rounded-full p-1.5 transition bg-slate-100">
+                <Mail size={15} strokeWidth={2.2} />
+              </button>
+              <div className="relative">
+                <button className="rounded-full p-1.5 transition bg-slate-100">
+                  <MessageSquareText size={15} strokeWidth={2.2} />
+                </button>
+                <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
+              </div>
+              <button className="rounded-full p-1.5 transition bg-slate-100">
+                <Settings size={15} strokeWidth={2.2} />
+              </button>
+              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+                <User size={15} strokeWidth={2.2} />
+              </button> */}
+
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowUserMenu((prev) => !prev)
+                  }}
+                  className="rounded-full p-1.5 transition bg-slate-100"
+                >
+                  <User size={15} strokeWidth={2.2} />
+                </button>
+
+                {/* {showUserMenu && (
+                  <div
+                    onClick={(e) => e.stopPropagation()} 
+                    className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
+                  >
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )} */}
+              </div>
+            </div>
+          </header>
+          {/* MAIN CONTAINER */}
+          <div className="h-full flex flex-col overflow-hidden p-2">
+            {/* ================= HEADER ================= */}
+            
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-2">
+                {/* LEFT: TITLE */}
+                <div className="flex flex-col gap-1">
+                  <h1 className="text-xl font-semibold text-gray-800 tracking-tight">
+                    Product-Wise Lead Report
+                  </h1>
+
+                  {formattedRange && (
+                    <p className="text-xs text-gray-500">
+                      Period{" "}
+                      <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
+                        {formattedRange}
+                      </span>
+                    </p>
+                  )}
+                </div>
+
+                {/* RIGHT CONTROLS */}
+                <div className="flex flex-wrap items-end gap-4">
+                  {/* Branch */}
+                  {/* <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                      Branch
+                    </span>
+
+                    <select
+                      value={selectedBranch || ""}
+                      onChange={(e) => setselectedBranch(e.target.value)}
+                      className="h-9 min-w-[160px] rounded-lg border border-gray-300 bg-white cursor-pointer px-3 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 outline-none"
+                    >
+                      {userbranches.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.branchName}
+                        </option>
+                      ))}
+                    </select>
+                  </div> */}
+
+                  {/* Toggle */}
+                  <div className="flex items-center bg-gray-100 rounded-full p-1 text-xs font-medium">
+                    <button
+                      onClick={handleSeeAll}
+                      className={`px-4 py-1.5 rounded-full transition-all ${
+                        viewMode === "staff"
+                          ? "bg-blue-600 text-white shadow"
+                          : "text-gray-600 hover:text-black"
+                      }`}
+                    >
+                      Staff
+                    </button>
+
+                    <button
+                      onClick={handleProductToggle}
+                      className={`px-4 py-1.5 rounded-full transition-all ${
+                        viewMode === "product"
+                          ? "bg-blue-600 text-white shadow"
+                          : "text-gray-600 hover:text-black"
+                      }`}
+                    >
+                      Product
+                    </button>
+                  </div>
+
+                  {/* Date Picker */}
+                  <div className="bg-white rounded-lg px-3 py-2 border border-gray-200 shadow-sm">
+                    <MonthRangePicker onChange={handleDateRange} />
+                  </div>
+                </div>
+              </div>
+          
+
+            {/* ================= CONTENT ================= */}
+          
+              <div className="flex-1 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden ">
+                {loading ? (
+                  <SkeletonTable rows={8} />
+                ) : effectiveData.length === 0 ? (
+                  <NodataAvailable />
+                ) : (
+                  <ReportTable
+                    headers={headersName}
+                    reportName="Product-Wise Lead Report"
+                    data={effectiveData}
+                    mode={viewMode}
+                    selectedStaff={selectedStaff}
+                    drillDown={drillDown}
+                    onStaffClick={handleStaffClick}
+                    onSeeAll={handleSeeAll}
+                    onTotalLeadsClick={handleTotalLeadsClick}
+                  />
+                )}
+              </div>
+            
           </div>
         </div>
+        <PerformanceModal
+          modalOpen={openModal}
+          splitType={targetData?.selectedMeasurementType}
+          selectedperiod={selectedPeriod}
+          allperiods={targetData?.periods}
+          onselectedPeriodChange={(val, val2) => {
+            setSelectedMonth(val2)
+            setselectedPeriod(val)
+          }}
+          onMonthChange={(val) => {
+            setcategorylist([])
+            setacheivedProducts([])
+            setselectedDataPopup([])
+            setperiodMode(val)
+          }}
+          onYearChange={(val) => {
+            setcategorylist([])
+            setacheivedProducts([])
+            setselectedDataPopup([])
+            setSelectedYear(val)
+          }}
+          productlist={productlist}
+          onClose={() => {
+            setselecteduserName(loggeduser?.name)
+            setacheivedProducts([])
+            setOpenModal(false)
+          }}
+          selectedMonth={periodMode}
+          selectedYear={selectedYear}
+          summary={{
+            target: selectedDatapopup?.target,
+            achieved: selectedDatapopup?.achieved,
+            balance:
+              selectedDatapopup?.achieved > selectedDatapopup?.target
+                ? 0
+                : selectedDatapopup?.balance
+          }}
+          products={achievedproducts}
+          targetData={targetData?.userWiseResults}
+          loggedUser={loggeduser}
+          selectedUser={selectedUserName}
+          category={selectedCategory}
+          handleSelectedUser={handleSelectedUser}
+        />
       </div>
     </div>
   )

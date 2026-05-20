@@ -45,8 +45,16 @@ const Layout = () => {
     "/admin/transaction/lead/lostLeads",
     "/staff/reports/summary",
     "/admin/reports/summary",
-    "/staff/reports/expiry-register",
-    "/admin/reports/expiry-register"
+"/staff/reports/expiry-register",
+"/admin/reports/expiry-register",
+"/staff/reports/leave-summary",
+"/admin/reports/leave-summary",
+"/staff/reports/product-wise-report",
+"/admin/reports/product-wise-report",
+"/staff/reports/follow-up-summary",
+"/admin/reports/follow-up-summary",
+"/staff/reports/sales-funel",
+"/admin/reports/sales-funel"
   ]
 
   const shouldHideHeader = hideHeaderRoutes.some((route) =>
