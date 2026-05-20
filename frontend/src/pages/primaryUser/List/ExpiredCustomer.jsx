@@ -1,4 +1,5 @@
-import { useEffect, useState,useRef } from "react"
+
+import { useEffect, useState, useRef } from "react"
 import { PropagateLoader } from "react-spinners"
 import { CiEdit } from "react-icons/ci"
 import MyDatePicker from "../../../components/common/MyDatePicker"
@@ -9,7 +10,29 @@ import { useNavigate } from "react-router-dom"
 import { formatDate } from "../../../utils/dateUtils"
 import Tiles from "../../../components/common/Tiles"
 import { parseISO, differenceInDays } from "date-fns"
-
+import { PerformanceModal } from "../../../components/primaryUser/PerformanceModal"
+import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
+import AdminHeader from "../../../header/AdminHeader"
+import StaffHeader from "../../../header/StaffHeader"
+import UseFetch from "../../../hooks/useFetch"
+import {
+  Eye,
+  Phone,
+  Mail,
+  Settings,
+  MessageSquareText,
+  User,
+  Calendar,
+  Clock,
+  UserPlus,
+  UserCheck,
+  IndianRupee,
+  BellRing,
+  History,
+  ChevronDown,
+  ChevronRight,
+  X
+} from "lucide-react"
 const ExpiredCustomer = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null)
   const [dates, setDates] = useState({ startDate: "", endDate: "" })
@@ -34,12 +57,28 @@ const ExpiredCustomer = () => {
   const [isCallsToggled, setIscallsToggled] = useState(false)
   const [loading, setLoading] = useState(false)
   const [selectedBranch, setSelectedBranch] = useState("All")
+  const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
   const [selectedBranchName, setselectedBranchName] = useState(null)
   const [expiredCustomerCalls, setExpiredCustomerCalls] = useState([])
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-const filterRef = useRef(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [selectedUserName, setselecteduserName] = useState(null)
+  const [selectedCategory, setselectedCategory] = useState(null)
+  const [selectedDatapopup, setselectedDataPopup] = useState({})
+  const [selectedYear, setSelectedYear] = useState(null)
+  const [periodMode, setperiodMode] = useState("all")
+  const [targetData, settargetData] = useState([])
+  console.log(targetData)
+  const [performanceopenModal, setperformanceOpenModal] = useState(false)
+  const [productlist, setproductList] = useState([])
+  const [achievedproducts, setacheivedProducts] = useState([])
+  const [selectedPeriod, setselectedPeriod] = useState("")
+  const filterRef = useRef(null)
   // const { data: branches } = UseFetch("/branch/getBranch")
   const navigate = useNavigate()
+  const { data: branchProduct } = UseFetch(
+selectedCompanyBranch&&
+    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
+  )
   console.log("hhh")
   useEffect(() => {
     const now = new Date()
@@ -65,6 +104,8 @@ const filterRef = useRef(null);
         { id: branch.branch_id, branchName: branch.branchName }
       ])
     )
+    console.log(user.selected[0].branch_id)
+    setselectedCompanyBranch(user.selected[0].branch_id)
     setUser(user)
     // if (user.role !== "Admin") {
     //   const branchid = user.selected.map((branch) => branch.branch_id)
@@ -118,7 +159,7 @@ const filterRef = useRef(null);
   //       const endpoint = isToggled
   //         ? `/customer/getallExpiryregisterCustomer?nextmonthReport=${isToggled}`
   //         : `/customer/getallExpiryregisterCustomer?startDate=${dates.startDate}&endDate=${dates.endDate}`
-  
+
   //       const response = await api.get(endpoint)
   //       const data = response.data.data
   //       if (user.role === "Admin") {
@@ -219,15 +260,15 @@ const filterRef = useRef(null);
     }
   }, [callList])
   // Close dropdown when clicking outside
-useEffect(() => {
-  const handleClickOutside = (event) => {
-    if (filterRef.current && !filterRef.current.contains(event.target)) {
-      setIsFilterOpen(false);
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (filterRef.current && !filterRef.current.contains(event.target)) {
+        setIsFilterOpen(false)
+      }
     }
-  };
-  document.addEventListener('mousedown', handleClickOutside);
-  return () => document.removeEventListener('mousedown', handleClickOutside);
-}, [])
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   useEffect(() => {
     setHasMounted(true) // Set this to true AFTER the first render
@@ -533,7 +574,107 @@ useEffect(() => {
       }
     }
   }
-const toggleFilter = () => setIsFilterOpen(!isFilterOpen);
+  const handleSelectedUser = (category, userId, userName) => {
+    setselecteduserName(userName)
+    setselectedCategory({
+      Id: category.Id,
+      categoryName: category.categoryName
+    })
+    const filteredloggedUserItem = data?.userWiseResults.filter(
+      (item) => item.userId === userId
+    )
+    const filteredselectedCategory =
+      filteredloggedUserItem[0].categories.filter(
+        (item) => item.categoryId === category.Id
+      )
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+
+    setselectedDataPopup(summary)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      setacheivedProducts(
+        filteredselectedCategory[0]?.products?.map((product) => ({
+          productname: product.name,
+          amount: product.achieved
+        })) || []
+      )
+    } else {
+      setacheivedProducts([])
+    }
+  }
+  const handleMoreClick = (id, name) => {
+    const Datas = targetData?.userWiseResults
+    console.log(id)
+    console.log(name)
+    console.log("hh")
+console.log("abhi")
+console.log(branchProduct)
+    const filteredList = branchProduct
+      .filter(
+        (item) =>
+          item.selected?.some(
+            (selectedItem) => String(selectedItem.category_id) === String(id)
+          ) || String(item.category_id) === String(id)
+      )
+      .map((item) => item.productName || item.serviceName)
+    console.log(filteredList)
+    setproductList(filteredList)
+    setselectedCategory({ Id: id, categoryName: name })
+    console.log("J")
+    console.log(targetData)
+    console.log(user?._id)
+    const filteredloggedUserItem = Datas.filter(
+      (item) => item.userId === user._id
+    )
+    console.log("hhh")
+
+    console.log(Datas)
+    console.log("hhhh")
+    console.log(filteredloggedUserItem)
+    console.log(id)
+    // const filteredselectedCategory =
+    //   filteredloggedUserItem[0].categories.filter(
+    //     (item) => item.categoryId === id
+    //   )
+    const filteredselectedCategory = Datas.flatMap(
+      (user) => user.categories || []
+    ).filter((item) => item.categoryId === id)
+    console.log("Hh")
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+    console.log("hhh")
+    setselectedDataPopup(summary)
+    console.log(filteredselectedCategory && filteredselectedCategory.length)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      setacheivedProducts((prev) => [
+        ...prev,
+        ...filteredselectedCategory.flatMap((item) =>
+          (item?.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
+      ])
+    } else {
+      setacheivedProducts([])
+    }
+    setperformanceOpenModal(true)
+  }
+  const toggleFilter = () => setIsFilterOpen(!isFilterOpen)
 
   const toggle = () => {
     setexpiryRegisterList([])
@@ -589,421 +730,523 @@ const toggleFilter = () => setIsFilterOpen(!isFilterOpen);
       : address
   }
   return (
-    <div className="h-full">
-      {loading && (
-        <BarLoader
-          cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
-          color="#4A90E2" // Change color as needed
+    <div className="h-full bg-[#ADD8E6] overflow-hidden">
+      <div className="flex h-full flex-row">
+        <StaticSidebar
+          handleMoreClick={handleMoreClick}
+          selectedCompanyBranch={selectedCompanyBranch}
+          setselectedCompanyBranch={setselectedCompanyBranch}
+          parenttargetData={settargetData}
+          parentperiodmode={setperiodMode}
+          parentyear={setSelectedYear}
+          setselectedPeriod={setselectedPeriod}
         />
-      )}
-      <div className="">
-        <div className="w-full border-b border-gray-200  sticky top-0 z-20 shadow-sm pb-3 bg-white">
-          {/* Page Heading */}
-          <div className="text-center mb-4 bg-blue-900 py-2">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-transparent bg-clip-text text-white">
-              {isToggled
-                ? isCallsToggled
-                  ? "Upcoming Month Expired Customer Calls"
-                  : "Upcoming Month Expired Customer's"
-                : isCallsToggled
-                ? "Expired Customer Calls"
-                : "Expired Customer's"}
-            </h1>
-          </div>
-          <div className="mx-3">
-            <span className="text-blue-500">
-              Count:{" "}
-              {isCallsToggled
-                ? expiredCustomerCalls.length
-                : expiredCustomerList.length}
-            </span>
-          </div>
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <header className="flex items-center justify-between border-b border-white/10 bg-[#0F172A]/95">
+            {user?.role?.toLowerCase() === "admin" ? (
+              <AdminHeader hide={true} />
+            ) : (
+              <StaffHeader hide={true} />
+            )}
 
-          {/* Filters Row */}
-          <div className="w-full flex flex-col gap-3 lg:flex-row lg:items-center sm:justify-between px-3">
-            {/* Left: Dropdown + Search + Date */}
-            <div className="flex flex-col sm:flex-row gap-3 flex-1">
-              {/* Branch Dropdown */}
-              <div className="sm:w-48">
-                <BranchDropdown
-                  branches={userBranch}
-                  branchSelected={selectedBranch}
-                  onBranchChange={handleChange}
-                />
+            <div className="flex items-center gap-1.5  border-b border-white/10 bg-[#0F172A]/95 pr-3 h-full">
+              <button className="rounded-full p-1.5 transition bg-slate-100">
+                <Mail size={15} strokeWidth={2.2} />
+              </button>
+              <div className="relative">
+                <button className="rounded-full p-1.5 transition bg-slate-100">
+                  <MessageSquareText size={15} strokeWidth={2.2} />
+                </button>
+                <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
               </div>
+              <button className="rounded-full p-1.5 transition bg-slate-100">
+                <Settings size={15} strokeWidth={2.2} />
+              </button>
+              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+                <User size={15} strokeWidth={2.2} />
+              </button> */}
 
-              {/* Search */}
-              <div className="relative flex-1 min-w-40">
-                <svg
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowUserMenu((prev) => !prev)
+                  }}
+                  className="rounded-full p-1.5 transition bg-slate-100"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-                <input
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search customers..."
-                  className="w-full pl-10 pr-4 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none"
-                />
-              </div>
+                  <User size={15} strokeWidth={2.2} />
+                </button>
 
-              {/* Date Picker */}
-              <div className="w-auto">
-                {dates && dates.startDate && (
-                  <MyDatePicker setDates={setDates} dates={dates} />
-                )}
+                {/* {showUserMenu && (
+                  <div
+                    onClick={(e) => e.stopPropagation()} 
+                    className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
+                  >
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )} */}
               </div>
             </div>
+          </header>
+          {loading && (
+            <BarLoader
+              cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
+              color="#4A90E2" // Change color as needed
+            />
+          )}
+          <div className="flex flex-col flex-1 bg-[#ADD8E6]">
+            <div className="">
+              <div className="w-full border-b border-gray-200  sticky top-0 z-20 shadow-sm pb-3 bg-white">
+                {/* Page Heading */}
+          
+                  <h1 className="text-sm md:text-xl font-semibold  bg-clip-text text-black ml-2">
+                    {isToggled
+                      ? isCallsToggled
+                        ? "Upcoming Month Expired Customer Calls"
+                        : "Upcoming Month Expired Customer's"
+                      : isCallsToggled
+                        ? "Expired Customer Calls"
+                        : "Expired Customer's"}
+                  </h1>
+                
+                <div className="mx-3">
+                  <span className="text-blue-500">
+                    Count:{" "}
+                    {isCallsToggled
+                      ? expiredCustomerCalls.length
+                      : expiredCustomerList.length}
+                  </span>
+                </div>
 
-            {/* Right: Toggles */}
-            <div className="relative" ref={filterRef}>
-    {/* Filter Icon Button */}
-    <button
-      onClick={toggleFilter}
-      className="p-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm flex items-center gap-1 text-gray-700 hover:text-gray-900"
-    >
-      <svg 
-        className="w-5 h-5" 
-        fill="none" 
-        stroke="currentColor" 
-        viewBox="0 0 24 24"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-3 3v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-      </svg>
-      <span className="text-xs font-medium hidden sm:inline">Filters</span>
-    </button>
+                {/* Filters Row */}
+                <div className="w-full flex flex-col gap-3 lg:flex-row lg:items-center sm:justify-between px-3">
+                  {/* Left: Dropdown + Search + Date */}
+                  <div className="flex flex-col sm:flex-row gap-3 flex-1">
+                    {/* Branch Dropdown */}
+                    <div className="sm:w-48">
+                      <BranchDropdown
+                        branches={userBranch}
+                        branchSelected={selectedBranch}
+                        onBranchChange={handleChange}
+                      />
+                    </div>
 
-    {/* Dropdown Panel */}
-    {isFilterOpen && (
-      <div className="absolute top-full right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-200 py-4 px-6 z-50 animate-in slide-in-from-top-2 duration-200">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
-          <h3 className="text-sm font-semibold text-gray-900">Filters</h3>
-          <button
-            onClick={toggleFilter}
-            className="text-gray-400 hover:text-gray-600 p-1 -m-1 rounded-lg transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Upcoming Toggle */}
-        <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
-          <span className="text-sm font-medium text-gray-700">{isToggled?"Upcoming Month Expired Customer":"Expired Customer"}</span>
-          <button
-            onClick={toggle}
-            className={`w-11 h-6 ${
-              isToggled ? "bg-green-500" : "bg-gray-300"
-            } rounded-full relative focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300`}
-          >
-            <div
-              className={`w-5 h-5 bg-white rounded-full shadow-md absolute top-0.5 left-0.5 transform transition-transform duration-300 ${
-                isToggled ? "translate-x-5" : "translate-x-0"
-              }`}
-            ></div>
-          </button>
-        </div>
-
-        {/* Calls Toggle */}
-        <div className="flex items-center justify-between py-3">
-          <span className="text-sm font-medium text-gray-700">Expired Customer Calls</span>
-          <button
-            onClick={callstoggle}
-            className={`w-11 h-6 ${
-              isCallsToggled ? "bg-green-500" : "bg-gray-300"
-            } rounded-full relative focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300`}
-          >
-            <div
-              className={`w-5 h-5 bg-white rounded-full shadow-md absolute top-0.5 left-0.5 transform transition-transform duration-300 ${
-                isCallsToggled ? "translate-x-5" : "translate-x-0"
-              }`}
-            ></div>
-          </button>
-        </div>
-      </div>
-    )}
-  </div>
-
-           
-          </div>
-        </div>
-
-        <div className="w-full shadow-lg mt-6 rounded-lg overflow-hidden px-3">
-          <div className="overflow-x-auto lg:max-h-[440px] md:max-h-[390px] overflow-y-auto">
-            <table className="min-w-full table-auto text-sm text-left border-collapse">
-              <thead className="sticky top-0 bg-purple-300">
-                {isCallsToggled ? (
-                  <tr>
-                    <th className="px-4 py-3 border-b text-gray-700 font-semibold">
-                      Customer Name
-                    </th>
-                    <th className="px-4 py-3 border-b text-gray-700 font-semibold">
-                      Mobile No
-                    </th>
-                    <th className="px-4 py-3 border-b text-gray-700 font-semibold">
-                      License No
-                    </th>
-                    <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
-                      Total Calls
-                    </th>
-                    <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
-                      Solved Calls
-                    </th>
-                    <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
-                      Pending Calls
-                    </th>
-                    <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
-                      Today's Calls
-                    </th>
-                    <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
-                      View
-                    </th>
-                  </tr>
-                ) : (
-                  <tr>
-                    <th className="px-4 py-3 border-b text-gray-700 font-semibold">
-                      Customer Name
-                    </th>
-                    <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
-                      Mobile/Phn
-                    </th>
-                    <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
-                      Product Name
-                    </th>
-                    <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
-                      License No
-                    </th>
-                   
-                    <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
-                      AMC End (D-M-Y)
-                    </th>
-                    <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
-                      TUV Expiry (D-M-Y)
-                    </th>
-                    <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
-                      License Expiry (D-M-Y)
-                    </th>
-                    <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
-                      Edit
-                    </th>
-                    <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
-                      View
-                    </th>
-                  </tr>
-                )}
-              </thead>
-
-              <tbody>
-                {isCallsToggled ? (
-                  expiredCustomerCalls?.length > 0 ? (
-                    expiredCustomerCalls.map((item) => (
-                      <tr
-                        key={item._id || item.customerId}
-                        className="even:bg-gray-200"
+                    {/* Search */}
+                    <div className="relative flex-1 min-w-40">
+                      <svg
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
                       >
-                        <td className="px-4 py-2 border-b">
-                          {showFullAddress[item?.id || item?.customerId] ? (
-                            <span>
-                              {item?.name || item?.customerName}
-                              <button
-                                onClick={() =>
-                                  handleShowMore(item?.id || item?.customerId)
-                                }
-                                className="text-blue-600 hover:text-blue-800 font-medium"
-                              >
-                                Show less
-                              </button>
-                            </span>
-                          ) : (
-                            <span>
-                              {truncateAddress(
-                                item?.name || item?.customerName
-                              )}
-                              {(item?.name || item?.customerName)?.length >
-                                20 && (
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                        />
+                      </svg>
+                      <input
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search customers..."
+                        className="w-full pl-10 pr-4 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none"
+                      />
+                    </div>
+
+                    {/* Date Picker */}
+                    <div className="w-auto">
+                      {dates && dates.startDate && (
+                        <MyDatePicker setDates={setDates} dates={dates} />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right: Toggles */}
+                  <div className="relative" ref={filterRef}>
+                    {/* Filter Icon Button */}
+                    <button
+                      onClick={toggleFilter}
+                      className="p-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm flex items-center gap-1 text-gray-700 hover:text-gray-900"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-3 3v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                        />
+                      </svg>
+                      <span className="text-xs font-medium hidden sm:inline">
+                        Filters
+                      </span>
+                    </button>
+
+                    {/* Dropdown Panel */}
+                    {isFilterOpen && (
+                      <div className="absolute top-full right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-200 py-4 px-6 z-50 animate-in slide-in-from-top-2 duration-200">
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
+                          <h3 className="text-sm font-semibold text-gray-900">
+                            Filters
+                          </h3>
+                          <button
+                            onClick={toggleFilter}
+                            className="text-gray-400 hover:text-gray-600 p-1 -m-1 rounded-lg transition-colors"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+
+                        {/* Upcoming Toggle */}
+                        <div className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
+                          <span className="text-sm font-medium text-gray-700">
+                            {isToggled
+                              ? "Upcoming Month Expired Customer"
+                              : "Expired Customer"}
+                          </span>
+                          <button
+                            onClick={toggle}
+                            className={`w-11 h-6 ${
+                              isToggled ? "bg-green-500" : "bg-gray-300"
+                            } rounded-full relative focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300`}
+                          >
+                            <div
+                              className={`w-5 h-5 bg-white rounded-full shadow-md absolute top-0.5 left-0.5 transform transition-transform duration-300 ${
+                                isToggled ? "translate-x-5" : "translate-x-0"
+                              }`}
+                            ></div>
+                          </button>
+                        </div>
+
+                        {/* Calls Toggle */}
+                        <div className="flex items-center justify-between py-3">
+                          <span className="text-sm font-medium text-gray-700">
+                            Expired Customer Calls
+                          </span>
+                          <button
+                            onClick={callstoggle}
+                            className={`w-11 h-6 ${
+                              isCallsToggled ? "bg-green-500" : "bg-gray-300"
+                            } rounded-full relative focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-300`}
+                          >
+                            <div
+                              className={`w-5 h-5 bg-white rounded-full shadow-md absolute top-0.5 left-0.5 transform transition-transform duration-300 ${
+                                isCallsToggled
+                                  ? "translate-x-5"
+                                  : "translate-x-0"
+                              }`}
+                            ></div>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="w-full shadow-lg mt-6 rounded-lg overflow-hidden px-3">
+                <div className="overflow-x-auto lg:max-h-[440px] md:max-h-[390px] overflow-y-auto">
+                  <table className="min-w-full table-auto text-sm text-left border-collapse">
+                    <thead className="sticky top-0 bg-purple-300">
+                      {isCallsToggled ? (
+                        <tr>
+                          <th className="px-4 py-3 border-b text-gray-700 font-semibold">
+                            Customer Name
+                          </th>
+                          <th className="px-4 py-3 border-b text-gray-700 font-semibold">
+                            Mobile No
+                          </th>
+                          <th className="px-4 py-3 border-b text-gray-700 font-semibold">
+                            License No
+                          </th>
+                          <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
+                            Total Calls
+                          </th>
+                          <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
+                            Solved Calls
+                          </th>
+                          <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
+                            Pending Calls
+                          </th>
+                          <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
+                            Today's Calls
+                          </th>
+                          <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
+                            View
+                          </th>
+                        </tr>
+                      ) : (
+                        <tr>
+                          <th className="px-4 py-3 border-b text-gray-700 font-semibold">
+                            Customer Name
+                          </th>
+                          <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
+                            Mobile/Phn
+                          </th>
+                          <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
+                            Product Name
+                          </th>
+                          <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
+                            License No
+                          </th>
+
+                          <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
+                            AMC End (D-M-Y)
+                          </th>
+                          <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
+                            TUV Expiry (D-M-Y)
+                          </th>
+                          <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
+                            License Expiry (D-M-Y)
+                          </th>
+                          <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
+                            Status
+                          </th>
+                          <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
+                            Edit
+                          </th>
+                          <th className="px-4 py-3 border-b text-gray-700 font-semibold text-center">
+                            View
+                          </th>
+                        </tr>
+                      )}
+                    </thead>
+
+                    <tbody>
+                      {isCallsToggled ? (
+                        expiredCustomerCalls?.length > 0 ? (
+                          expiredCustomerCalls.map((item) => (
+                            <tr
+                              key={item._id || item.customerId}
+                              className="even:bg-gray-200"
+                            >
+                              <td className="px-4 py-2 border-b">
+                                {showFullAddress[
+                                  item?.id || item?.customerId
+                                ] ? (
+                                  <span>
+                                    {item?.name || item?.customerName}
+                                    <button
+                                      onClick={() =>
+                                        handleShowMore(
+                                          item?.id || item?.customerId
+                                        )
+                                      }
+                                      className="text-blue-600 hover:text-blue-800 font-medium"
+                                    >
+                                      Show less
+                                    </button>
+                                  </span>
+                                ) : (
+                                  <span>
+                                    {truncateAddress(
+                                      item?.name || item?.customerName
+                                    )}
+                                    {(item?.name || item?.customerName)
+                                      ?.length > 20 && (
+                                      <button
+                                        onClick={() =>
+                                          handleShowMore(
+                                            item?.id || item?.customerId
+                                          )
+                                        }
+                                        className="text-blue-600 hover:text-blue-800 font-medium"
+                                      >
+                                        ...more
+                                      </button>
+                                    )}
+                                  </span>
+                                )}
+                                {/* {isToggled ? item.name : item.customerName} */}
+                              </td>
+                              <td className="px-4 py-2 border-b">
+                                {/* {item.mobileNumbers?.join(", ") ||"N/A"} */}
+                                {item.mobileNumbers &&
+                                item.mobileNumbers.length > 0 ? (
+                                  <div className="flex flex-col">
+                                    {item.mobileNumbers.map((num, idx) => (
+                                      <span key={idx} className="block">
+                                        {num}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  "N/A"
+                                )}
+                              </td>
+                              <td className="px-4 py-2 border-b">
+                                {item.serialNumbers &&
+                                item.serialNumbers.length > 0 ? (
+                                  <div className="flex flex-col">
+                                    {item.serialNumbers.map((num, idx) => (
+                                      <span key={idx} className="block">
+                                        {num}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  "N/A"
+                                )}
+                                {/* {item.serialNumbers?.join(", ")} */}
+                              </td>
+                              <td className="px-4 py-2 border-b text-center">
+                                {item.callstatus?.totalCall ||
+                                  item.totalCalls ||
+                                  "0"}
+                              </td>
+                              <td className="px-4 py-2 border-b text-center">
+                                {item.callstatus?.solvedCalls ||
+                                  item.solvedCalls ||
+                                  "0"}
+                              </td>
+                              <td className="px-4 py-2 border-b text-center">
+                                {item.callstatus?.pendingCalls ||
+                                  item.pendingCalls ||
+                                  "0"}
+                              </td>
+                              <td className="px-4 py-2 border-b text-center">
+                                {item.todaysCalls || "0"}
+                              </td>
+                              <td className="px-4 py-2 border-b text-center">
                                 <button
                                   onClick={() =>
-                                    handleShowMore(item?.id || item?.customerId)
+                                    openModal(
+                                      isToggled ? item.name : item.customerId
+                                    )
                                   }
-                                  className="text-blue-600 hover:text-blue-800 font-medium"
+                                  className="text-blue-500 hover:text-blue-700"
                                 >
-                                  ...more
+                                  View Calls
                                 </button>
-                              )}
-                            </span>
-                          )}
-                          {/* {isToggled ? item.name : item.customerName} */}
-                        </td>
-                        <td className="px-4 py-2 border-b">
-                          {/* {item.mobileNumbers?.join(", ") ||"N/A"} */}
-                          {item.mobileNumbers &&
-                          item.mobileNumbers.length > 0 ? (
-                            <div className="flex flex-col">
-                              {item.mobileNumbers.map((num, idx) => (
-                                <span key={idx} className="block">
-                                  {num}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            "N/A"
-                          )}
-                        </td>
-                        <td className="px-4 py-2 border-b">
-                          {item.serialNumbers &&
-                          item.serialNumbers.length > 0 ? (
-                            <div className="flex flex-col">
-                              {item.serialNumbers.map((num, idx) => (
-                                <span key={idx} className="block">
-                                  {num}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            "N/A"
-                          )}
-                          {/* {item.serialNumbers?.join(", ")} */}
-                        </td>
-                        <td className="px-4 py-2 border-b text-center">
-                          {item.callstatus?.totalCall || item.totalCalls || "0"}
-                        </td>
-                        <td className="px-4 py-2 border-b text-center">
-                          {item.callstatus?.solvedCalls ||
-                            item.solvedCalls ||
-                            "0"}
-                        </td>
-                        <td className="px-4 py-2 border-b text-center">
-                          {item.callstatus?.pendingCalls ||
-                            item.pendingCalls ||
-                            "0"}
-                        </td>
-                        <td className="px-4 py-2 border-b text-center">
-                          {item.todaysCalls || "0"}
-                        </td>
-                        <td className="px-4 py-2 border-b text-center">
-                          <button
-                            onClick={() =>
-                              openModal(isToggled ? item.name : item.customerId)
-                            }
-                            className="text-blue-500 hover:text-blue-700"
-                          >
-                            View Calls
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="8" className="text-center py-4">
-                        No data available
-                      </td>
-                    </tr>
-                  )
-                ) : (
-                  expiredCustomerList?.map((customer) =>
-                    customer.selected?.length > 0 ? (
-                      customer.selected.map((item, index) => (
-                        <tr
-                          key={`${customer._id}-${index}`}
-                          className="even:bg-gray-200"
-                        >
-                          <td className="px-4 py-2 border-b">
-                            {customer.customerName || "N/A"}
-                          </td>
-                          <td className="px-4 py-2 border-b text-center">
-                            {customer.mobile || "N/A"}
-                          </td>
-                          <td className="px-4 py-2 border-b text-center">
-                            {item.productName || "N/A"}
-                          </td>
-                          <td className="px-4 py-2 border-b text-center">
-                            {item.licensenumber || "N/A"}
-                          </td>
-                         
-                          <td className="px-4 py-2 border-b text-center min-w-40">
-                            {item.amcendDate
-                              ? new Date(item.amcendDate).toLocaleDateString(
-                                  "en-GB"
-                                )
-                              : "N/A"}
-                          </td>
-                          <td className="px-4 py-2 border-b text-center min-w-40">
-                            {item.tvuexpiryDate
-                              ? new Date(item.tvuexpiryDate).toLocaleDateString(
-                                  "en-GB"
-                                )
-                              : "N/A"}
-                          </td>
-                          <td className="px-4 py-2 border-b text-center min-w-48">
-                            {item.licenseExpiryDate
-                              ? new Date(
-                                  item.licenseExpiryDate
-                                ).toLocaleDateString("en-GB")
-                              : "N/A"}
-                          </td>
-                          <td className="px-4 py-2 border-b text-center">
-                            {customer.isActive || "N/A"}
-                          </td>
-                          <td className="px-4 py-2 border-b text-center">
-                            <CiEdit
-                              onClick={() =>
-                                navigate(
-                                  user.role === "Admin"
-                                    ? "/admin/masters/customerEdit"
-                                    : "/staff/masters/customerEdit",
-                                  {
-                                    state: {
-                                      customerId:customer._id,
-                                      
-                                      index,
-                                      navigatebackto:
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="8" className="text-center py-4">
+                              No data available
+                            </td>
+                          </tr>
+                        )
+                      ) : (
+                        expiredCustomerList?.map((customer) =>
+                          customer.selected?.length > 0 ? (
+                            customer.selected.map((item, index) => (
+                              <tr
+                                key={`${customer._id}-${index}`}
+                                className="even:bg-gray-200"
+                              >
+                                <td className="px-4 py-2 border-b">
+                                  {customer.customerName || "N/A"}
+                                </td>
+                                <td className="px-4 py-2 border-b text-center">
+                                  {customer.mobile || "N/A"}
+                                </td>
+                                <td className="px-4 py-2 border-b text-center">
+                                  {item.productName || "N/A"}
+                                </td>
+                                <td className="px-4 py-2 border-b text-center">
+                                  {item.licensenumber || "N/A"}
+                                </td>
+
+                                <td className="px-4 py-2 border-b text-center min-w-40">
+                                  {item.amcendDate
+                                    ? new Date(
+                                        item.amcendDate
+                                      ).toLocaleDateString("en-GB")
+                                    : "N/A"}
+                                </td>
+                                <td className="px-4 py-2 border-b text-center min-w-40">
+                                  {item.tvuexpiryDate
+                                    ? new Date(
+                                        item.tvuexpiryDate
+                                      ).toLocaleDateString("en-GB")
+                                    : "N/A"}
+                                </td>
+                                <td className="px-4 py-2 border-b text-center min-w-48">
+                                  {item.licenseExpiryDate
+                                    ? new Date(
+                                        item.licenseExpiryDate
+                                      ).toLocaleDateString("en-GB")
+                                    : "N/A"}
+                                </td>
+                                <td className="px-4 py-2 border-b text-center">
+                                  {customer.isActive || "N/A"}
+                                </td>
+                                <td className="px-4 py-2 border-b text-center">
+                                  <CiEdit
+                                    onClick={() =>
+                                      navigate(
                                         user.role === "Admin"
-                                          ? "/admin/reports/expiry-register"
-                                          : "/staff/reports/expiry-register"
+                                          ? "/admin/masters/customerEdit"
+                                          : "/staff/masters/customerEdit",
+                                        {
+                                          state: {
+                                            customerId: customer._id,
+
+                                            index,
+                                            navigatebackto:
+                                              user.role === "Admin"
+                                                ? "/admin/reports/expiry-register"
+                                                : "/staff/reports/expiry-register"
+                                          }
+                                        }
+                                      )
                                     }
-                                  }
-                                )
-                              }
-                              className="cursor-pointer text-lg"
-                            />
-                          </td>
-                          <td className="px-4 py-2 border-b text-center">
-                            <button
-                              onClick={() => openModal(customer._id)}
-                              className="text-blue-500 hover:text-blue-700"
-                            >
-                              View Details
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr key={customer._id}>
-                        <td colSpan="11" className="text-center py-4">
-                          No Products Selected
-                        </td>
-                      </tr>
-                    )
-                  )
-                )}
-              </tbody>
-            </table>
+                                    className="cursor-pointer text-lg"
+                                  />
+                                </td>
+                                <td className="px-4 py-2 border-b text-center">
+                                  <button
+                                    onClick={() => openModal(customer._id)}
+                                    className="text-blue-500 hover:text-blue-700"
+                                  >
+                                    View Details
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr key={customer._id}>
+                              <td colSpan="11" className="text-center py-4">
+                                No Products Selected
+                              </td>
+                            </tr>
+                          )
+                        )
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 h-screen">
           <div className="container mx-auto  p-8  h-screen">
@@ -1340,10 +1583,10 @@ const toggleFilter = () => setIsFilterOpen(!isFilterOpen);
                           const rowColor = isCompletedToday
                             ? "linear-gradient(135deg, rgba(0, 140, 0, 1), rgba(128, 255, 128, 1))"
                             : isToday
-                            ? "linear-gradient(135deg,rgba(255,255,1,1),rgba(255,255,128,1))"
-                            : isPast
-                            ? "linear-gradient(135deg,rgba(255,0,0,1),rgba(255,128,128,1))"
-                            : ""
+                              ? "linear-gradient(135deg,rgba(255,255,1,1),rgba(255,255,128,1))"
+                              : isPast
+                                ? "linear-gradient(135deg,rgba(255,0,0,1),rgba(255,128,128,1))"
+                                : ""
 
                           return (
                             <>
@@ -1423,10 +1666,10 @@ const toggleFilter = () => setIsFilterOpen(!isFilterOpen);
                                   call?.formdata?.status === "solved"
                                     ? "bg-[linear-gradient(135deg,_rgba(0,140,0,1),_rgba(128,255,128,1))]"
                                     : call?.formdata?.status === "pending"
-                                    ? callDate === today
-                                      ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                      ? callDate === today
+                                        ? "bg-[linear-gradient(135deg,_rgba(255,255,1,1),_rgba(255,255,128,1))]"
+                                        : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                       : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
-                                    : "bg-[linear-gradient(135deg,_rgba(255,0,0,1),_rgba(255,128,128,1))]"
                                 }`}
                                 style={{ height: "5px" }}
                               >
@@ -1491,8 +1734,53 @@ const toggleFilter = () => setIsFilterOpen(!isFilterOpen);
           </div>
         </div>
       )}
+  <PerformanceModal
+          modalOpen={performanceopenModal}
+          splitType={targetData?.selectedMeasurementType}
+          selectedperiod={selectedPeriod}
+          allperiods={targetData?.periods}
+          onselectedPeriodChange={(val, val2) => {
+            setSelectedMonth(val2)
+            setselectedPeriod(val)
+          }}
+          onMonthChange={(val) => {
+            setcategorylist([])
+            setacheivedProducts([])
+            setselectedDataPopup([])
+            setperiodMode(val)
+          }}
+          onYearChange={(val) => {
+            setcategorylist([])
+            setacheivedProducts([])
+            setselectedDataPopup([])
+            setSelectedYear(val)
+          }}
+          productlist={productlist}
+          onClose={() => {
+            setselecteduserName(user?.name)
+            setacheivedProducts([])
+            setperformanceOpenModal(false)
+          }}
+          selectedMonth={periodMode}
+          selectedYear={selectedYear}
+          summary={{
+            target: selectedDatapopup?.target,
+            achieved: selectedDatapopup?.achieved,
+            balance:
+              selectedDatapopup?.achieved > selectedDatapopup?.target
+                ? 0
+                : selectedDatapopup?.balance
+          }}
+          products={achievedproducts}
+          targetData={targetData?.userWiseResults}
+          loggedUser={user}
+          selectedUser={selectedUserName}
+          category={selectedCategory}
+          handleSelectedUser={handleSelectedUser}
+        />
     </div>
   )
 }
 
 export default ExpiredCustomer
+
