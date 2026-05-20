@@ -7,7 +7,7 @@ import LeadMaster from "../model/primaryUser/leadmasterSchema.js";
 import models from "../../backEnd/model/auth/authSchema.js"
 const { Staff, Admin } = models;
 
-async function getLeadMetricsForSingleDay(date, reportEnd) {
+async function getLeadMetricsForSingleDay(date, reportEnd, branchId) {
   const startOfDay = new Date(date);
   startOfDay.setHours(0, 0, 0, 0);
 
@@ -22,7 +22,7 @@ async function getLeadMetricsForSingleDay(date, reportEnd) {
     {
       $lookup: {
         from: "leadmasters",
-        let: { staffId: "$_id" },
+        let: { staffId: "$_id", branchId: branchId },
         pipeline: [
           {
             $addFields: {
@@ -33,6 +33,7 @@ async function getLeadMetricsForSingleDay(date, reportEnd) {
             $match: {
               $expr: {
                 $and: [
+                  { $eq: ["$leadBranch", "$$branchId"] },
                   { $eq: ["$firstActivity.submittedUser", "$$staffId"] },
                   { $gte: ["$firstActivity.submissionDate", startOfDay] },
                   { $lte: ["$firstActivity.submissionDate", endOfDay] }

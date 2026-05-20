@@ -2720,7 +2720,28 @@ import BarLoader from "react-spinners/BarLoader"
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi"
 import UseFetch from "../../hooks/useFetch"
 import api from "../../api/api"
-
+import { StaticSidebar } from "./StaticSidebar"
+import { PerformanceModal } from "./PerformanceModal"
+import AdminHeader from "../../header/AdminHeader"
+import StaffHeader from "../../header/StaffHeader"
+import {
+  Eye,
+  Phone,
+  Mail,
+  Settings,
+  MessageSquareText,
+  User,
+  Calendar,
+  Clock,
+  UserPlus,
+  UserCheck,
+  IndianRupee,
+  BellRing,
+  History,
+  ChevronDown,
+  ChevronRight,
+  X
+} from "lucide-react"
 function LeaveApplication() {
   const [events, setEvents] = useState([])
   const [edit, setEdit] = useState(null)
@@ -2749,6 +2770,17 @@ function LeaveApplication() {
     top: "",
     bottom: ""
   })
+  const [selectedUserName, setselecteduserName] = useState(null)
+  const [selectedCategory, setselectedCategory] = useState(null)
+  const [selectedDatapopup, setselectedDataPopup] = useState({})
+  const [selectedYear, setSelectedYear] = useState(null)
+  const [periodMode, setperiodMode] = useState("all")
+  const [targetData, settargetData] = useState([])
+  console.log(targetData)
+  const [openModal, setOpenModal] = useState(false)
+  const [productlist, setproductList] = useState([])
+  const [achievedproducts, setacheivedProducts] = useState([])
+  const [selectedPeriod, setselectedPeriod] = useState("")
   const [showModal, setShowModal] = useState(false)
   const [pastDate, setPastDate] = useState(null)
   const [selectedTab, setSelectedTab] = useState("Leave")
@@ -2781,8 +2813,10 @@ function LeaveApplication() {
   const [currentmonthleaveData, setcurrentmonthLeaveData] = useState([])
   const [currentmonthonsiteData, setcurrentmonthOnsiteData] = useState([])
   const [currentmonthmisspunchData, setcurrentmonthMisspunchData] = useState([])
-console.log("hhh")
+
+  console.log("hhh")
   const userData = localStorage.getItem("user")
+
   const tabs = [
     "Leave",
     "New Leave",
@@ -2794,11 +2828,16 @@ console.log("hhh")
     "New Mispunch"
   ]
   const user = JSON.parse(userData)
+  const [selectedcompanyBranch, setselectedcompanyBranch] = useState(
+    user?.selected[0]?.branch_id
+  )
 
   const { data: leaves, refreshHook } = UseFetch(
     user && `/auth/getallLeave?userid=${user._id}`
   )
-
+  const { data: branchProduct } = UseFetch(
+    `/product/getallbranchProduct?branch=${selectedcompanyBranch}`
+  )
   const { data: misspunchData, refreshHook: misspunchRefresh } = UseFetch(
     user && `/auth/getallmisspunch?userid=${user._id}&from="leaveApplicatiion"`
   )
@@ -2821,20 +2860,20 @@ console.log("hhh")
 
   useEffect(() => {
     if (MonthData && currentMonth) {
-console.log("hhh")
+      console.log("hhh")
       setcurrentMonthData(MonthData[currentMonth])
     }
   }, [currentMonth, MonthData])
 
   useEffect(() => {
-console.log("hh")
+    console.log("hh")
     const year = currentDate.getFullYear()
     const month = String(currentDate.getMonth() + 1).padStart(2, "0")
     setCurrentMonth(`${year}-${month}`)
   }, [currentDate])
 
   useEffect(() => {
-console.log("hh")
+    console.log("hh")
     const filteredcurrentmonthlyLeaves = allleaves?.filter((leave) => {
       const leaveMonth = leave.leaveDate.split("T")[0].slice(0, 7)
       return leaveMonth === currentMonth
@@ -2846,7 +2885,7 @@ console.log("hh")
     if ((leaves && leaves.length > 0) || (allonsite && allonsite.length) > 0) {
       setAllleaves(leaves || [])
       setAllOnsite(allonsite || [])
-console.log("hhh")
+      console.log("hhh")
     }
   }, [leaves, allonsite])
 
@@ -2856,10 +2895,10 @@ console.log("hhh")
         const onsiteMonth = onsite.onsiteDate.split("T")[0].slice(0, 7)
         return onsiteMonth === currentMonth
       })
-console.log("hh")
+      console.log("hh")
       setcurrentmonthOnsiteData(filteredcurrentmonthlyOnsites || [])
     } else {
-console.log("H")
+      console.log("H")
       setcurrentmonthOnsiteData([])
     }
   }, [allOnsites, currentMonth])
@@ -2870,10 +2909,10 @@ console.log("H")
         const misspunchMonth = item.misspunchDate?.split("T")[0]?.slice(0, 7)
         return misspunchMonth === currentMonth
       })
-console.log("h")
+      console.log("h")
       setcurrentmonthMisspunchData(filteredCurrentMonthlyMisspunch)
     } else {
-console.log("h")
+      console.log("h")
       setcurrentmonthMisspunchData([])
     }
   }, [misspunchData, currentMonth])
@@ -2904,7 +2943,7 @@ console.log("h")
         day: date
       })
     }
-console.log("hhh")
+    console.log("hhh")
     setVisibleDays(days)
   }, [currentDate])
 
@@ -2913,7 +2952,7 @@ console.log("hhh")
     const isPastDate =
       formData?.leaveDate && dayjs(formData.leaveDate).isBefore(today)
     setPastDate(isPastDate)
-console.log("hh")
+    console.log("hh")
   }, [formData])
 
   useEffect(() => {
@@ -2923,7 +2962,7 @@ console.log("hh")
       leavemasterleavecount &&
       compensatoryleaves >= 0
     ) {
-console.log("Hh")
+      console.log("Hh")
       const currentDate = new Date()
       const currentYear = currentDate.getFullYear()
       const currentmonth = currentDate.getMonth() + 1
@@ -3043,7 +3082,7 @@ console.log("Hh")
       (allleaves && allleaves.length === 0 && leavemasterleavecount) ||
       compensatoryleaves >= 0
     ) {
-console.log("h")
+      console.log("h")
       const currentDate = new Date()
       const currentYear = currentDate.getFullYear()
       const currentmonth = currentDate.getMonth() + 1
@@ -3123,10 +3162,9 @@ console.log("h")
     allleaves,
     leavemasterleavecount,
     formData,
-    compensatoryleaves,
-  
+    compensatoryleaves
   ])
-console.log("hh")
+  console.log("hh")
   useEffect(() => {
     if (isOnsite) {
       setFormData((prev) => ({
@@ -3206,7 +3244,104 @@ console.log("hh")
       }
     ])
   }
+  const handleMoreClick = (id, name) => {
+    const Datas = targetData?.userWiseResults
+    console.log(id)
+    console.log(name)
+    console.log("hh")
+    const filteredList = branchProduct
+      .filter(
+        (item) =>
+          item.selected?.some(
+            (selectedItem) => String(selectedItem.category_id) === String(id)
+          ) || String(item.category_id) === String(id)
+      )
+      .map((item) => item.productName || item.serviceName)
+    console.log(filteredList)
+    setproductList(filteredList)
+    setselectedCategory({ Id: id, categoryName: name })
+    console.log("J")
+    console.log(targetData)
+    console.log(user?._id)
+    const filteredloggedUserItem = Datas.filter(
+      (item) => item.userId === user._id
+    )
+    console.log("hhh")
 
+    console.log(Datas)
+    console.log("hhhh")
+    console.log(filteredloggedUserItem)
+    console.log(id)
+    // const filteredselectedCategory =
+    //   filteredloggedUserItem[0].categories.filter(
+    //     (item) => item.categoryId === id
+    //   )
+    const filteredselectedCategory = Datas.flatMap(
+      (user) => user.categories || []
+    ).filter((item) => item.categoryId === id)
+    console.log("Hh")
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+    console.log("hhh")
+    setselectedDataPopup(summary)
+    console.log(filteredselectedCategory && filteredselectedCategory.length)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      setacheivedProducts((prev) => [
+        ...prev,
+        ...filteredselectedCategory.flatMap((item) =>
+          (item?.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
+      ])
+    } else {
+      setacheivedProducts([])
+    }
+    setOpenModal(true)
+  }
+  const handleSelectedUser = (category, userId, userName) => {
+    setselecteduserName(userName)
+    setselectedCategory({
+      Id: category.Id,
+      categoryName: category.categoryName
+    })
+    const filteredloggedUserItem = data?.userWiseResults.filter(
+      (item) => item.userId === userId
+    )
+    const filteredselectedCategory =
+      filteredloggedUserItem[0].categories.filter(
+        (item) => item.categoryId === category.Id
+      )
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+
+    setselectedDataPopup(summary)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      setacheivedProducts(
+        filteredselectedCategory[0]?.products?.map((product) => ({
+          productname: product.name,
+          amount: product.achieved
+        })) || []
+      )
+    } else {
+      setacheivedProducts([])
+    }
+  }
   const handledelete = async (data) => {
     try {
       setLoader(true)
@@ -4932,320 +5067,430 @@ console.log("hh")
   }
 
   return (
-    <div className="w-full">
-      <div className="sticky top-0 z-30 flex items-center justify-between bg-white px-4 py-3">
-        <h2 className="text-xl font-semibold">{visibleMonth}</h2>
+    <div className="h-full bg-[#ADD8E6] overflow-hidden">
+      <div className="flex h-full flex-row">
+        <StaticSidebar
+          handleMoreClick={handleMoreClick}
+          selectedCompanyBranch={selectedcompanyBranch}
+          setselectedCompanyBranch={setselectedcompanyBranch}
+          parenttargetData={settargetData}
+          parentperiodmode={setperiodMode}
+          parentyear={setSelectedYear}
+          setselectedPeriod={setselectedPeriod}
+        />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <header className="flex items-center justify-between border-b border-white/10 bg-[#0F172A]/95">
+            {user?.role?.toLowerCase() === "admin" ? (
+              <AdminHeader hide={true} />
+            ) : (
+              <StaffHeader hide={true} />
+            )}
 
-        <div className="flex space-x-2">
-          <button
-            onClick={prevMonth}
-            className="rounded-full bg-gray-100 p-2 transition hover:bg-gray-200"
-          >
-            <HiChevronLeft className="h-5 w-5" />
-          </button>
+            <div className="flex items-center gap-1.5  border-b border-white/10 bg-[#0F172A]/95 pr-3 h-full">
+              <button className="rounded-full p-1.5 transition bg-slate-100">
+                <Mail size={15} strokeWidth={2.2} />
+              </button>
+              <div className="relative">
+                <button className="rounded-full p-1.5 transition bg-slate-100">
+                  <MessageSquareText size={15} strokeWidth={2.2} />
+                </button>
+                <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
+              </div>
+              <button className="rounded-full p-1.5 transition bg-slate-100">
+                <Settings size={15} strokeWidth={2.2} />
+              </button>
+              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+                <User size={15} strokeWidth={2.2} />
+              </button> */}
 
-          <button
-            onClick={goToToday}
-            className="rounded-lg bg-gray-100 px-4 py-2 transition hover:bg-gray-200"
-          >
-            Today
-          </button>
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowUserMenu((prev) => !prev)
+                  }}
+                  className="rounded-full p-1.5 transition bg-slate-100"
+                >
+                  <User size={15} strokeWidth={2.2} />
+                </button>
 
-          <button
-            onClick={nextMonth}
-            className="rounded-full bg-gray-100 p-2 transition hover:bg-gray-200"
-          >
-            <HiChevronRight className="h-5 w-5" />
-          </button>
-        </div>
-      </div>
-
-      <div className="mx-4 overflow-y-auto rounded-lg border">
-        {visibleDays.map((date, index) => (
-          <div
-            key={index}
-            onClick={() => {
-              setSelectedDate(date)
-              setSelectedType("")
-              setShowTypeSelector(true)
-            }}
-            className="mb-2 flex cursor-pointer items-center justify-between bg-gray-200 px-4 py-2"
-          >
-            <div>
-              <div className="flex items-center">
-                <div className="mr-4 rounded-full border px-2 text-sm font-bold sm:text-lg">
-                  {date.fullMonthDay}
-                </div>
-
-                <div className="font-medium">
-                  {new Date(date.fullDate).toLocaleString("default", {
-                    weekday: "long"
-                  })}
-                </div>
+                {/* {showUserMenu && (
+                  <div
+                    onClick={(e) => e.stopPropagation()} 
+                    className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
+                  >
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )} */}
               </div>
             </div>
+          </header>
+          <div className="sticky top-0 z-30 flex items-center justify-between px-4 py-3">
+            <h2 className="text-xl font-semibold">{visibleMonth}</h2>
 
-            <div className="flex flex-col">
-              {currentmonthleaveData?.length > 0 &&
-                currentmonthleaveData
-                  .filter(
-                    (leave) =>
-                      new Date(leave.leaveDate).toISOString().split("T")[0] ===
-                      date.fullDate
-                  )
-                  .map((leave, i) => (
-                    <div key={i} className="mb-1 flex items-center">
-                      <div className="flex flex-col text-gray-600">
-                        <span className="text-sm">{leave?.leaveType}</span>
-                        <span className="text-sm font-semibold">
-                          {leave?.leaveCategory}
-                        </span>
-                      </div>
-
-                      <div
-                        className={`ml-2 rounded-full px-3 py-1 text-sm text-white ${
-                          leave.departmentstatus === "Dept Approved" ||
-                          leave.hrstatus === "HR/Onsite Approved"
-                            ? "bg-green-500"
-                            : leave.departmentstatus === "Not Approved" &&
-                                leave.hrstatus === "Not Approved"
-                              ? "bg-yellow-500"
-                              : "bg-red-500"
-                        }`}
-                      >
-                        {leave.departmentstatus === "Dept Approved" ||
-                        leave.hrstatus === "HR/Onsite Approved"
-                          ? "Approved"
-                          : leave.departmentstatus === "Not Approved" &&
-                              leave.hrstatus === "Not Approved"
-                            ? "Pending"
-                            : ""}
-                      </div>
-                    </div>
-                  ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {showTypeSelector && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-80 rounded-lg bg-white p-6 shadow-lg">
-            <h3 className="mb-4 text-center text-lg font-semibold">
-              Select Request Type
-            </h3>
-
-            <div className="flex flex-col space-y-3">
-              {["leave", "onsite", "mispunch"].map((type) => (
-                <label
-                  key={type}
-                  className="flex cursor-pointer items-center space-x-2 rounded-md px-2 py-2 transition hover:bg-gray-50"
-                >
-                  <input
-                    type="radio"
-                    name="type"
-                    value={type}
-                    checked={selectedType === type}
-                    onChange={(e) =>
-                      handleTypeSelection(e.target.value, selectedDate)
-                    }
-                  />
-                  <span className="capitalize">{type}</span>
-                </label>
-              ))}
-            </div>
-
-            <div className="mt-5 flex justify-end">
+            <div className="flex space-x-2">
               <button
-                className="rounded bg-gray-400 px-4 py-1 text-white transition hover:bg-gray-500"
-                onClick={() => {
-                  setShowTypeSelector(false)
-                  setSelectedType("")
-                }}
+                onClick={prevMonth}
+                className="rounded-full bg-gray-100 p-2 transition hover:bg-gray-200"
               >
-                Cancel
+                <HiChevronLeft className="h-5 w-5" />
+              </button>
+
+              <button
+                onClick={goToToday}
+                className="rounded-lg bg-gray-100 px-4 py-2 transition hover:bg-gray-200"
+              >
+                Today
+              </button>
+
+              <button
+                onClick={nextMonth}
+                className="rounded-full bg-gray-100 p-2 transition hover:bg-gray-200"
+              >
+                <HiChevronRight className="h-5 w-5" />
               </button>
             </div>
           </div>
-        </div>
-      )}
+          <div className="mx-4 overflow-y-auto rounded-lg border">
+            {visibleDays.map((date, index) => (
+              <div
+                key={index}
+                onClick={() => {
+                  setSelectedDate(date)
+                  setSelectedType("")
+                  setShowTypeSelector(true)
+                }}
+                className="mb-2 flex cursor-pointer items-center justify-between bg-gray-200 px-4 py-2"
+              >
+                <div>
+                  <div className="flex items-center">
+                    <div className="mr-4 rounded-full border px-2 text-sm font-bold sm:text-lg">
+                      {date.fullMonthDay}
+                    </div>
 
-      {showModal && leaveBalance && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div
-            className={`mx-4 flex max-h-[90vh] flex-col overflow-y-auto rounded-lg bg-white shadow-lg ${
-              selectedTab === "New Onsite" ? "md:w-3/4" : "sm:w-auto"
-            }`}
-          >
-            {loader && (
-              <BarLoader
-                cssOverride={{ width: "100%", height: "6px" }}
-                color="#4A90E2"
-              />
-            )}
+                    <div className="font-medium">
+                      {new Date(date.fullDate).toLocaleString("default", {
+                        weekday: "long"
+                      })}
+                    </div>
+                  </div>
+                </div>
 
-            <div className="p-3">
-              <div className="flex justify-center space-x-4">
-                {tabs
-                  ?.filter((tab) => {
-                    if (selectedType === "leave") {
-                      return ["Leave", "New Leave", "Edit Leave"].includes(tab)
-                    }
-                    if (selectedType === "onsite") {
-                      return ["Onsite", "New Onsite", "Edit Onsite"].includes(
-                        tab
+                <div className="flex flex-col">
+                  {currentmonthleaveData?.length > 0 &&
+                    currentmonthleaveData
+                      .filter(
+                        (leave) =>
+                          new Date(leave.leaveDate)
+                            .toISOString()
+                            .split("T")[0] === date.fullDate
                       )
-                    }
-                    if (selectedType === "mispunch") {
-                      return ["Mispunch", "New Mispunch"].includes(tab)
-                    }
-                    return false
-                  })
-                  .map((tab) => (
-                    <span
-                      key={tab}
-                      onClick={() => {
-                        setSelectedTab(tab)
-                        setMessage({ top: "", bottom: "" })
-                        selectedTabContent(tab)
-                        setIsOnsite(tab === "Onsite")
-                      }}
-                      className={`cursor-pointer ${
-                        selectedTab === tab
-                          ? "font-semibold text-blue-500 underline"
-                          : "text-black"
-                      }`}
-                    >
-                      {tab}
-                    </span>
-                  ))}
+                      .map((leave, i) => (
+                        <div key={i} className="mb-1 flex items-center">
+                          <div className="flex flex-col text-gray-600">
+                            <span className="text-sm">{leave?.leaveType}</span>
+                            <span className="text-sm font-semibold">
+                              {leave?.leaveCategory}
+                            </span>
+                          </div>
+
+                          <div
+                            className={`ml-2 rounded-full px-3 py-1 text-sm text-white ${
+                              leave.departmentstatus === "Dept Approved" ||
+                              leave.hrstatus === "HR/Onsite Approved"
+                                ? "bg-green-500"
+                                : leave.departmentstatus === "Not Approved" &&
+                                    leave.hrstatus === "Not Approved"
+                                  ? "bg-yellow-500"
+                                  : "bg-red-500"
+                            }`}
+                          >
+                            {leave.departmentstatus === "Dept Approved" ||
+                            leave.hrstatus === "HR/Onsite Approved"
+                              ? "Approved"
+                              : leave.departmentstatus === "Not Approved" &&
+                                  leave.hrstatus === "Not Approved"
+                                ? "Pending"
+                                : ""}
+                          </div>
+                        </div>
+                      ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {showTypeSelector && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="w-80 rounded-lg bg-white p-6 shadow-lg">
+              <h3 className="mb-4 text-center text-lg font-semibold">
+                Select Request Type
+              </h3>
+
+              <div className="flex flex-col space-y-3">
+                {["leave", "onsite", "mispunch"].map((type) => (
+                  <label
+                    key={type}
+                    className="flex cursor-pointer items-center space-x-2 rounded-md px-2 py-2 transition hover:bg-gray-50"
+                  >
+                    <input
+                      type="radio"
+                      name="type"
+                      value={type}
+                      checked={selectedType === type}
+                      onChange={(e) =>
+                        handleTypeSelection(e.target.value, selectedDate)
+                      }
+                    />
+                    <span className="capitalize">{type}</span>
+                  </label>
+                ))}
               </div>
 
-              <div className="mt-4">{renderContent()}</div>
-
-              <div className="mt-4 flex justify-center gap-4">
-                {selectedTab === "Leave" && (
-                  <button
-                    className="rounded-lg bg-blue-800 px-4 py-2 text-white hover:bg-blue-700"
-                    onClick={() => {
-                      setSelectedTab("New Leave")
-                      setFormData((prev) => ({
-                        ...prev,
-                        leaveType: "Full Day",
-                        leaveCategory: "",
-                        halfDayPeriod: "",
-                        reason: ""
-                      }))
-                    }}
-                  >
-                    Apply New Leaves
-                  </button>
-                )}
-
-                {selectedTab === "Onsite" && (
-                  <button
-                    onClick={() => {
-                      setSelectedTab("New Onsite")
-                      setFormData((prev) => ({
-                        ...prev,
-                        onsiteType: "Full Day",
-                        halfDayPeriod: "",
-                        description: ""
-                      }))
-                      setTableRows([])
-                    }}
-                    className="rounded-lg bg-blue-800 px-4 py-2 text-white shadow-lg hover:bg-blue-900"
-                  >
-                    Apply New Onsite
-                  </button>
-                )}
-
-                {selectedTab === "Mispunch" && (
-                  <button
-                    onClick={() => {
-                      setSelectedTab("New Mispunch")
-                      setFormData((prev) => ({
-                        ...prev,
-                        misspunchDate: clickedDate || prev.misspunchDate,
-                        mispunchType: "",
-                        misspunchTime: "",
-                        remark: "",
-                        showMisspunchTime: false,
-                        isTimeEditable: false,
-                        editHour: "09",
-                        editMinute: "30",
-                        editPeriod: "AM"
-                      }))
-                    }}
-                    className="rounded-lg bg-blue-800 px-4 py-2 text-white shadow-lg hover:bg-blue-900"
-                  >
-                    Apply New Misspunch
-                  </button>
-                )}
-
-                {selectedTab === "New Mispunch" && (
-                  <button
-                    className="group relative rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-200 transition-all duration-200 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl hover:shadow-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
-                    onClick={() => handleSubmitAndReset("New Mispunch")}
-                    disabled={!formData.mispunchType || !formData.remark}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      Submit Request
-                      <svg
-                        className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 7l5 5m0 0l-5 5m5-5H6"
-                        />
-                      </svg>
-                    </span>
-                  </button>
-                )}
-
-                {(selectedTab === "Edit Onsite" ||
-                  selectedTab === "Edit Leave" ||
-                  selectedTab === "New Leave" ||
-                  selectedTab === "New Onsite") && (
-                  <>
-                    <button
-                      className="rounded bg-gradient-to-b from-blue-400 to-blue-500 px-4 py-2 text-white hover:from-blue-400 hover:to-blue-600"
-                      onClick={() => handleSubmitAndReset(selectedTab)}
-                    >
-                      {selectedTab === "Edit Onsite" ||
-                      selectedTab === "Edit Leave"
-                        ? "Update"
-                        : "Submit"}
-                    </button>
-
-                    {(selectedTab === "Edit Onsite" ||
-                      selectedTab === "Edit Leave") && (
-                      <button
-                        className="rounded-md bg-red-600 px-4 py-2 font-semibold text-white shadow-lg transition-all duration-200 hover:bg-red-700 active:translate-y-[2px] active:shadow-md"
-                        onClick={() => handledelete(formData)}
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </>
-                )}
-
+              <div className="mt-5 flex justify-end">
                 <button
-                  className="rounded bg-gray-500 px-4 py-2 text-white hover:bg-gray-600"
-                  onClick={resetApplicationFlow}
+                  className="rounded bg-gray-400 px-4 py-1 text-white transition hover:bg-gray-500"
+                  onClick={() => {
+                    setShowTypeSelector(false)
+                    setSelectedType("")
+                  }}
                 >
-                  Close
+                  Cancel
                 </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {showModal && leaveBalance && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div
+              className={`mx-4 flex max-h-[90vh] flex-col overflow-y-auto rounded-lg bg-white shadow-lg ${
+                selectedTab === "New Onsite" ? "md:w-3/4" : "sm:w-auto"
+              }`}
+            >
+              {loader && (
+                <BarLoader
+                  cssOverride={{ width: "100%", height: "6px" }}
+                  color="#4A90E2"
+                />
+              )}
+
+              <div className="p-3">
+                <div className="flex justify-center space-x-4">
+                  {tabs
+                    ?.filter((tab) => {
+                      if (selectedType === "leave") {
+                        return ["Leave", "New Leave", "Edit Leave"].includes(
+                          tab
+                        )
+                      }
+                      if (selectedType === "onsite") {
+                        return ["Onsite", "New Onsite", "Edit Onsite"].includes(
+                          tab
+                        )
+                      }
+                      if (selectedType === "mispunch") {
+                        return ["Mispunch", "New Mispunch"].includes(tab)
+                      }
+                      return false
+                    })
+                    .map((tab) => (
+                      <span
+                        key={tab}
+                        onClick={() => {
+                          setSelectedTab(tab)
+                          setMessage({ top: "", bottom: "" })
+                          selectedTabContent(tab)
+                          setIsOnsite(tab === "Onsite")
+                        }}
+                        className={`cursor-pointer ${
+                          selectedTab === tab
+                            ? "font-semibold text-blue-500 underline"
+                            : "text-black"
+                        }`}
+                      >
+                        {tab}
+                      </span>
+                    ))}
+                </div>
+
+                <div className="mt-4">{renderContent()}</div>
+
+                <div className="mt-4 flex justify-center gap-4">
+                  {selectedTab === "Leave" && (
+                    <button
+                      className="rounded-lg bg-blue-800 px-4 py-2 text-white hover:bg-blue-700"
+                      onClick={() => {
+                        setSelectedTab("New Leave")
+                        setFormData((prev) => ({
+                          ...prev,
+                          leaveType: "Full Day",
+                          leaveCategory: "",
+                          halfDayPeriod: "",
+                          reason: ""
+                        }))
+                      }}
+                    >
+                      Apply New Leaves
+                    </button>
+                  )}
+
+                  {selectedTab === "Onsite" && (
+                    <button
+                      onClick={() => {
+                        setSelectedTab("New Onsite")
+                        setFormData((prev) => ({
+                          ...prev,
+                          onsiteType: "Full Day",
+                          halfDayPeriod: "",
+                          description: ""
+                        }))
+                        setTableRows([])
+                      }}
+                      className="rounded-lg bg-blue-800 px-4 py-2 text-white shadow-lg hover:bg-blue-900"
+                    >
+                      Apply New Onsite
+                    </button>
+                  )}
+
+                  {selectedTab === "Mispunch" && (
+                    <button
+                      onClick={() => {
+                        setSelectedTab("New Mispunch")
+                        setFormData((prev) => ({
+                          ...prev,
+                          misspunchDate: clickedDate || prev.misspunchDate,
+                          mispunchType: "",
+                          misspunchTime: "",
+                          remark: "",
+                          showMisspunchTime: false,
+                          isTimeEditable: false,
+                          editHour: "09",
+                          editMinute: "30",
+                          editPeriod: "AM"
+                        }))
+                      }}
+                      className="rounded-lg bg-blue-800 px-4 py-2 text-white shadow-lg hover:bg-blue-900"
+                    >
+                      Apply New Misspunch
+                    </button>
+                  )}
+
+                  {selectedTab === "New Mispunch" && (
+                    <button
+                      className="group relative rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-200 transition-all duration-200 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl hover:shadow-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      onClick={() => handleSubmitAndReset("New Mispunch")}
+                      disabled={!formData.mispunchType || !formData.remark}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        Submit Request
+                        <svg
+                          className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 7l5 5m0 0l-5 5m5-5H6"
+                          />
+                        </svg>
+                      </span>
+                    </button>
+                  )}
+
+                  {(selectedTab === "Edit Onsite" ||
+                    selectedTab === "Edit Leave" ||
+                    selectedTab === "New Leave" ||
+                    selectedTab === "New Onsite") && (
+                    <>
+                      <button
+                        className="rounded bg-gradient-to-b from-blue-400 to-blue-500 px-4 py-2 text-white hover:from-blue-400 hover:to-blue-600"
+                        onClick={() => handleSubmitAndReset(selectedTab)}
+                      >
+                        {selectedTab === "Edit Onsite" ||
+                        selectedTab === "Edit Leave"
+                          ? "Update"
+                          : "Submit"}
+                      </button>
+
+                      {(selectedTab === "Edit Onsite" ||
+                        selectedTab === "Edit Leave") && (
+                        <button
+                          className="rounded-md bg-red-600 px-4 py-2 font-semibold text-white shadow-lg transition-all duration-200 hover:bg-red-700 active:translate-y-[2px] active:shadow-md"
+                          onClick={() => handledelete(formData)}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </>
+                  )}
+
+                  <button
+                    className="rounded bg-gray-500 px-4 py-2 text-white hover:bg-gray-600"
+                    onClick={resetApplicationFlow}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        <PerformanceModal
+          modalOpen={openModal}
+          splitType={targetData?.selectedMeasurementType}
+          selectedperiod={selectedPeriod}
+          allperiods={targetData?.periods}
+          onselectedPeriodChange={(val, val2) => {
+            setSelectedMonth(val2)
+            setselectedPeriod(val)
+          }}
+          onMonthChange={(val) => {
+            setcategorylist([])
+            setacheivedProducts([])
+            setselectedDataPopup([])
+            setperiodMode(val)
+          }}
+          onYearChange={(val) => {
+            setcategorylist([])
+            setacheivedProducts([])
+            setselectedDataPopup([])
+            setSelectedYear(val)
+          }}
+          productlist={productlist}
+          onClose={() => {
+            setselecteduserName(user?.name)
+            setacheivedProducts([])
+            setOpenModal(false)
+          }}
+          selectedMonth={periodMode}
+          selectedYear={selectedYear}
+          summary={{
+            target: selectedDatapopup?.target,
+            achieved: selectedDatapopup?.achieved,
+            balance:
+              selectedDatapopup?.achieved > selectedDatapopup?.target
+                ? 0
+                : selectedDatapopup?.balance
+          }}
+          products={achievedproducts}
+          targetData={targetData?.userWiseResults}
+          loggedUser={user}
+          selectedUser={selectedUserName}
+          category={selectedCategory}
+          handleSelectedUser={handleSelectedUser}
+        />
+      </div>
     </div>
   )
 }

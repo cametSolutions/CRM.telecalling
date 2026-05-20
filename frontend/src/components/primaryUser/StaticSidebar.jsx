@@ -47,6 +47,11 @@ setselectedPeriod,
       periodMode &&
       `/target/gettargetresult?month=${selectedMonth}&year=${selectedYear}&periodMode=${periodMode}&selectedBranch=${selectedBranch}`
   )
+console.log(selectedBranch)
+console.log(selectedMonth)
+console.log(selectedYear)
+console.log(periodMode)
+console.log(data)
   useEffect(() => {
     if (data?.userWiseResults && data?.userWiseResults.length) {
       parenttargetData(data)

@@ -5464,7 +5464,7 @@ export const Getalltasktoreport = async (req, res) => {
 }
 export const Getdailystaffreport = async (req, res) => {
   try {
-    const { startDate, endDate } = req.query
+    const { startDate, endDate,selectedBranch } = req.query
 
     if (!startDate || !endDate) {
       return res.status(400).json({ message: "startDate and endDate required" });
@@ -5487,7 +5487,7 @@ export const Getdailystaffreport = async (req, res) => {
     const dateStr = currentDate.toLocaleDateString('en-IN'); // "25-1-2026"
 
     // Pass ONLY the day's date to helper - it handles start/end of day
-    const leadMetrics = await getLeadMetricsForSingleDay(currentDate, reportEnd);
+    const leadMetrics = await getLeadMetricsForSingleDay(currentDate, reportEnd,selectedBranch);
     const callMetrics = await getCallMetricsForSingleDay(currentDate, reportEnd)
 
     const dayReport = leadMetrics.map(lead => {
