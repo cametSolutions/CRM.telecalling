@@ -11732,12 +11732,11 @@ export const RejectMisspunch = async (req, res) => {
           }
         ]
       })
-      if (misspunchdata && misspunchdata.length) {
+      
         console.log("returndone")
-        return res.status(200).json({ message: "misspunchfound", data: misspunchdata })
-      } else {
-        return res.status(400).json({ message: "not found" })
-      }
+        return res.status(200).json({ message:misspunchdata.length>0? "misspunchfound":"not found", data: misspunchdata })
+      
+      
     }
 
   } catch (error) {
