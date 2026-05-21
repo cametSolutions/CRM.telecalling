@@ -3707,6 +3707,8 @@ function LeaveApplication() {
           }))
           return false
         } else {
+console.log(
+"GGGGGGGGGggggggggggggggggggggggggg")
           setMessage({ top: "", bottom: "" })
           // const response = await fetch(
           //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
@@ -5156,7 +5158,7 @@ function LeaveApplication() {
               </button>
             </div>
           </div>
-          <div className="mx-4 overflow-y-auto rounded-lg border">
+          {/* <div className="mx-4 overflow-y-auto rounded-lg border">
             {visibleDays.map((date, index) => (
               <div
                 key={index}
@@ -5165,7 +5167,7 @@ function LeaveApplication() {
                   setSelectedType("")
                   setShowTypeSelector(true)
                 }}
-                className="mb-2 flex cursor-pointer items-center justify-between bg-gray-200 px-4 py-2"
+                className="mb-2 flex cursor-pointer items-center justify-between bg-white px-4 py-2"
               >
                 <div>
                   <div className="flex items-center">
@@ -5223,7 +5225,104 @@ function LeaveApplication() {
                 </div>
               </div>
             ))}
+          </div> */}
+<div className="mx-4 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/80 p-3 shadow-sm">
+  <div className="space-y-3">
+    {visibleDays.map((date, index) => {
+      const dayLeaves =
+        currentmonthleaveData?.filter(
+          (leave) =>
+            new Date(leave.leaveDate).toISOString().split("T")[0] ===
+            date.fullDate
+        ) || []
+
+      return (
+        <div
+          key={index}
+          onClick={() => {
+            setSelectedDate(date)
+            setSelectedType("")
+            setShowTypeSelector(true)
+          }}
+          className="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex min-w-0 items-center gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-center text-sm font-bold text-white shadow-sm sm:h-16 sm:w-16 sm:text-base">
+                {date.fullMonthDay}
+              </div>
+
+              <div className="min-w-0">
+                <div className="text-base font-semibold text-slate-900 sm:text-lg">
+                  {new Date(date.fullDate).toLocaleString("default", {
+                    weekday: "long"
+                  })}
+                </div>
+                <div className="mt-1 text-sm text-slate-500">
+                  {new Date(date.fullDate).toLocaleDateString("en-IN", {
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric"
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 md:min-w-[280px] md:items-end">
+              {dayLeaves.length > 0 ? (
+                dayLeaves.map((leave, i) => {
+                  const isApproved =
+                    leave.departmentstatus === "Dept Approved" ||
+                    leave.hrstatus === "HR/Onsite Approved"
+
+                  const isPending =
+                    leave.departmentstatus === "Not Approved" &&
+                    leave.hrstatus === "Not Approved"
+
+                  return (
+                    <div
+                      key={i}
+                      className="flex w-full flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-slate-700">
+                          {leave?.leaveType}
+                        </div>
+                        <div className="truncate text-sm font-semibold text-slate-900">
+                          {leave?.leaveCategory}
+                        </div>
+                      </div>
+
+                      <span
+                        className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${
+                          isApproved
+                            ? "bg-emerald-100 text-emerald-700"
+                            : isPending
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-rose-100 text-rose-700"
+                        }`}
+                      >
+                        {isApproved
+                          ? "Approved"
+                          : isPending
+                            ? "Pending"
+                            : "Rejected"}
+                      </span>
+                    </div>
+                  )
+                })
+              ) : (
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-400 md:text-right">
+                  No leave applied
+                </div>
+              )}
+            </div>
           </div>
+        </div>
+      )
+    })}
+  </div>
+</div>
         </div>
 
         {showTypeSelector && (
