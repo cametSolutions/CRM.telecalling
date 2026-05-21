@@ -2741,6 +2741,7 @@ function LeaveApplication() {
   const [allleaves, setAllleaves] = useState([])
   const [allOnsites, setAllOnsite] = useState([])
   const [errors, setErrors] = useState({})
+console.log(errors)
   const [MonthData, setMonthData] = useState({})
   const [currentMonthData, setcurrentMonthData] = useState({})
   const [currentMonth, setCurrentMonth] = useState(null)
@@ -3519,7 +3520,7 @@ console.log("hh")
       misspunchTime: finalTime
     }))
   }
-
+console.log(formData)
   const handleSubmit = async (tab) => {
     try {
       if (tab === "New Leave" || tab === "Edit Leave") {
@@ -3759,18 +3760,20 @@ console.log("hh")
           return false
         }
       } else if (tab === "New Mispunch") {
+console.log("hhh")
         let newErrors = {}
-        if (!formData.mispunchDate)
+        if (!formData.misspunchDate)
           newErrors.misspunchDate = "Misspunch date is required"
         if (!formData.mispunchType)
           newErrors.mispunchType = "Punch type is required"
         if (!formData.remark) newErrors.remark = "Remark is required"
 
         if (Object.keys(newErrors).length > 0) {
+console.log("hhh")
           setErrors(newErrors)
           return false
         }
-
+console.log("hh")
         setLoader(true)
 
         const misspunchPayload = {
@@ -3873,6 +3876,7 @@ console.log("hh")
   }
 
   const handleSubmitAndReset = async (tabName) => {
+console.log("hhh")
     const success = await handleSubmit(tabName)
     if (success && tabName !== "New Mispunch") {
       resetApplicationFlow()
