@@ -4022,7 +4022,9 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
           log.taskTo // ensures the field exists
       );
       const task = matchLead.activityLog[matchingIndex]?.taskId;
-      if (task !== allocationtypeId) {
+console.log("taskkk",task)
+console.log("alocationtupeid",allocationtypeId)
+      if (!task?.equals(allocationtypeId)) {
         return res.status(409).json({
           message:
             "Cannot change task name. It's already running.only possible to change the allocatedUser",
