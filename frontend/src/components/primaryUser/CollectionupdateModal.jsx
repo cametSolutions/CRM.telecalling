@@ -1845,7 +1845,7 @@ export function CollectionupdateModal({
       updatedBy: loggedUser?._id
     }
 
-    const res = await handleCollectionUpdate(payload, setsubmitLoader)
+    const res = await handleCollectionUpdate(payload, setsubmitLoader,submitLoader)
     if (res?.status === 200) closemodal(false)
   }
 
