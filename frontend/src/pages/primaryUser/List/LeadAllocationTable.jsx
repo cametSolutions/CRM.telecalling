@@ -217,6 +217,7 @@ const LeadAllocationTable = () => {
     if (submitLoading) {
       return
     }
+console.log("hh")
     // sanitize all string fields
     const cleanedData = Object.fromEntries(
       Object.entries(formData).map(([key, value]) => [
