@@ -6782,7 +6782,9 @@ export const GetallproductwiseReport = async (req, res) => {
 };
 export const GetownLeadList = async (req, res) => {
   try {
-    const { userId, selectedBranch, role, ownlead } = req.query;
+    const { userId, selectedBranch, role, ownlead,startDate,endDate } = req.query;
+console.log("stardate",startDate)
+console.log("endatae",endDate)
     const objectId = new mongoose.Types.ObjectId(userId);
 
     let query;
@@ -6795,9 +6797,23 @@ export const GetownLeadList = async (req, res) => {
       query = { leadBranch: new mongoose.Types.ObjectId(selectedBranch) };
     }
 
+const parsedStart = startDate ? new Date(startDate) : null
+const parsedEnd = endDate ? new Date(endDate) : null
+
+if (parsedStart && !isNaN(parsedStart.getTime()) && parsedEnd && !isNaN(parsedEnd.getTime())) {
+  parsedStart.setHours(0, 0, 0, 0)
+  parsedEnd.setHours(0, 0, 0, 0)
+  parsedEnd.setDate(parsedEnd.getDate() + 1)
+
+  query.leadDate = {
+    $gte: parsedStart,
+    $lt: parsedEnd,
+  }
+}
     const matchedLead = await LeadMaster.find(query)
       .populate({ path: "customerName", select: "customerName" })
       .lean();
+console.log("mathced",matchedLead)
 
     const populatedOwnLeads = await Promise.all(
       matchedLead.map(async (lead) => {

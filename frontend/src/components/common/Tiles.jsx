@@ -3,7 +3,7 @@ import React from "react"
 
 const Tiles = ({ title, count, style, onClick }) => {
   return (
-    <div className="w-1/6 text-center mb-2">
+    <div className="w-[130px] text-center mb-2">
       <h2 className="text-sm font-semibold">{title}</h2>
       <div
         // className={`p-4 shadow-lg rounded text-center cursor-pointer  `}

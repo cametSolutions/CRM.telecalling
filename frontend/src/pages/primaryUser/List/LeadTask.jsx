@@ -33,6 +33,7 @@ import { PropagateLoader } from "react-spinners"
 const LeadTask = () => {
   const [loggedUser, setloggedUser] = useState(null)
   const [dates, setDates] = useState({ startDate: "", endDate: "" })
+console.log(dates)
   const [type, settype] = useState("leadTask")
   const [filteredData, setFilteredData] = useState([])
   const [netTotalAmount, setnetTotalAmount] = useState(0)
