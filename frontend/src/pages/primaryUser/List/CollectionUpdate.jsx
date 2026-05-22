@@ -31,6 +31,7 @@ export default function CollectionUpdate() {
   const [showFullName, setShowFullName] = useState(false)
   const [tableData, setTableData] = useState([])
   console.log(tableData)
+  console.log(tableData)
   const [forcefullyclosedLeads, setforcefullyClosedLeads] = useState([])
   const [isforcefullyclosed, setisforcefullyclosed] = useState(false)
   console.log(tableData)
@@ -140,6 +141,7 @@ export default function CollectionUpdate() {
       setselectedCompanyBranch(defaultbranch.value)
     }
   }, [loggedUserBranches])
+  console.log("Hh")
   useEffect(() => {
     if (
       collectionlead &&
@@ -253,11 +255,15 @@ export default function CollectionUpdate() {
     return (item || [])
       .filter((history) => history?.paymentVerified === false)
       .reduce((sum, history) => sum + Number(history?.receivedAmount || 0), 0)
-    
-
-  
   }
-  const handleCollectionUpdate = async (formData, setsubmitLoader) => {
+  const handleCollectionUpdate = async (
+    formData,
+    setsubmitLoader,
+    submitLoader
+  ) => {
+console.log("H")
+    if (submitLoader) return
+console.log("Hh")
     setsubmitLoader(true)
     console.log(formData)
 
