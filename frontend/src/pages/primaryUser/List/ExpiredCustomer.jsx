@@ -742,14 +742,14 @@ console.log(branchProduct)
           setselectedPeriod={setselectedPeriod}
         />
         <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="flex items-center justify-between border-b border-white/10 bg-[#0F172A]/95">
+          <header className="flex items-center justify-between bg-[#ADD8E6]">
             {user?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
               <StaffHeader hide={true} />
             )}
 
-            <div className="flex items-center gap-1.5  border-b border-white/10 bg-[#0F172A]/95 pr-3 h-full">
+            <div className="flex items-center gap-1.5 bg-[#ADD8E6] pr-3 h-full">
               <button className="rounded-full p-1.5 transition bg-slate-100">
                 <Mail size={15} strokeWidth={2.2} />
               </button>
@@ -801,7 +801,7 @@ console.log(branchProduct)
           )}
           <div className="flex flex-col flex-1 bg-[#ADD8E6]">
             <div className="">
-              <div className="w-full border-b border-gray-200  sticky top-0 z-20 shadow-sm pb-3 bg-white">
+              <div className="w-full   sticky top-0 z-20 shadow-sm pb-3">
                 {/* Page Heading */}
           
                   <h1 className="text-sm md:text-xl font-semibold  bg-clip-text text-black ml-2">

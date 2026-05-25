@@ -316,20 +316,20 @@ export default function CallRegistration() {
 
   const fetchCallDetails = async (callId) => {
     setLoader(true)
-    // const response = await fetch(
-    //   `https://www.crmtest.camet.in/api/customer/getcallregister/${callId}`,
-    //   {
-    //     method: "GET",
-    //     credentials: "include" // This allows cookies to be sent with the request
-    //   }
-    // )
     const response = await fetch(
-      `http://localhost:9000/api/customer/getcallregister/${callId}`,
+      `https://www.crmtest.camet.in/api/customer/getcallregister/${callId}`,
       {
         method: "GET",
         credentials: "include" // This allows cookies to be sent with the request
       }
     )
+    // const response = await fetch(
+    //   `http://localhost:9000/api/customer/getcallregister/${callId}`,
+    //   {
+    //     method: "GET",
+    //     credentials: "include" // This allows cookies to be sent with the request
+    //   }
+    // )
     const data = await response.json()
 
     return data
@@ -813,23 +813,23 @@ Problem:    \t${selectedText}
   const fetchCustomerData = async (query) => {
     let url
     if (user.role === "Admin") {
-      url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
-      // url = `https://www.crmtest.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
+      // url = `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${user.role}`
+      url = `https://www.crmtest.camet.in/api/customer/getCustomer?search=${query}&role=${user.role}`
     } else {
       const branches = JSON.stringify(branch)
 
-      url =
-        branches &&
-        branches.length > 0 &&
-        `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
-          user.role
-        }&userBranch=${encodeURIComponent(branches)}`
       // url =
       //   branches &&
       //   branches.length > 0 &&
-      //   `https://www.crmtest.camet.in/api/customer/getCustomer?search=${query}&role=${
+      //   `http://localhost:9000/api/customer/getCustomer?search=${query}&role=${
       //     user.role
       //   }&userBranch=${encodeURIComponent(branches)}`
+      url =
+        branches &&
+        branches.length > 0 &&
+        `https://www.crmtest.camet.in/api/customer/getCustomer?search=${query}&role=${
+          user.role
+        }&userBranch=${encodeURIComponent(branches)}`
     }
 
     try {
@@ -2093,14 +2093,14 @@ Problem:    \t${selectedText}
     />
 
     <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-      <header className="flex shrink-0 items-center justify-between border-b border-white/10 bg-[#0F172A]/95">
+      <header className="flex shrink-0 items-center justify-between bg-[#ADD8E6]">
         {user?.role?.toLowerCase() === "admin" ? (
           <AdminHeader hide={true} />
         ) : (
           <StaffHeader hide={true} />
         )}
 
-        <div className="flex h-full items-center gap-1.5 border-b border-white/10 bg-[#0F172A]/95 px-3">
+        <div className="flex h-full items-center gap-1.5 bg-[#ADD8E6] px-3">
           <button className="rounded-full bg-slate-100 p-1.5 transition">
             <Mail size={15} strokeWidth={2.2} />
           </button>
