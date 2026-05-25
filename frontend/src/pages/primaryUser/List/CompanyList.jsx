@@ -24,7 +24,7 @@ function CompanyList() {
   }, [error])
 
   return (
-    <div>
+    <div className="h-full">
       <CompanyListForm companies={company} />
     </div>
   )

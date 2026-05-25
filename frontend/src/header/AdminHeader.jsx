@@ -1329,7 +1329,7 @@ export default function AdminHeader({hide=false}) {
     // </header>
   <>
   <header
-    className={`sticky top-0 z-50 border-b border-white/10 bg-[#0F172A]/95 ${
+    className={`sticky top-0 z-50  bg-[#ADD8E6] ${
       hide ? "flex-grow" : ""
     } text-white backdrop-blur-xl`}
   >
@@ -1495,10 +1495,10 @@ export default function AdminHeader({hide=false}) {
 
       {!hide && (
         <div className="ml-auto flex items-center gap-2">
-          <button className="hidden lg:flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-[#162033] px-3 text-slate-400 transition hover:bg-[#1E293B] hover:text-slate-200">
+          {/* <button className="hidden lg:flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-[#162033] px-3 text-slate-400 transition hover:bg-[#1E293B] hover:text-slate-200">
             <FiSearch size={15} />
             <span className="text-[12px]">Search</span>
-          </button>
+          </button> */}
 
           <div
             className="relative hidden md:block"

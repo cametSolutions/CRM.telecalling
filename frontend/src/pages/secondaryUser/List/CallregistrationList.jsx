@@ -30,7 +30,8 @@ import {
   History,
   ChevronDown,
   ChevronRight,
-  X
+  X,
+PhoneCall, PhoneMissed, PhoneIncoming, BadgeCheck
 } from "lucide-react"
 const CallregistrationList = () => {
   const navigate = useNavigate()
@@ -2058,14 +2059,14 @@ const CallregistrationList = () => {
         />
 
         <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="flex shrink-0 items-center justify-between border-b border-white/10 bg-[#0F172A]/95">
+          <header className="flex shrink-0 items-center justify-between ">
             {users?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
               <StaffHeader hide={true} />
             )}
 
-            <div className="flex h-full items-center gap-1.5 border-b border-white/10 bg-[#0F172A]/95 pr-3">
+            <div className="flex h-full items-center gap-1.5  pr-3">
               <button className="rounded-full bg-slate-100 p-1.5 transition">
                 <Mail size={15} strokeWidth={2.2} />
               </button>
@@ -2185,7 +2186,7 @@ const CallregistrationList = () => {
 
               <hr className="mb-2 shrink-0 border-t border-gray-300" />
 
-              <div className="mb-2 grid shrink-0 grid-cols-2 gap-2 lg:grid-cols-4">
+              {/* <div className="mb-2 grid shrink-0 grid-cols-2 gap-2 lg:grid-cols-4">
                 <Tiles
                   title="Pending Calls"
                   count={pendingCallsCount}
@@ -2240,7 +2241,128 @@ const CallregistrationList = () => {
                     setFilteredCalls(applyFilter())
                   }}
                 />
-              </div>
+              </div> */}
+
+<div className="mb-2 grid shrink-0 grid-cols-2 gap-4 lg:grid-cols-4">
+  {/* <Tiles
+    title="Pending Calls"
+    count={pendingCallsCount}
+    subtitle="Awaiting follow-up"
+    icon={<PhoneMissed size={12} strokeWidth={2.2} />}
+    // style={{
+    //   background:
+    //     "linear-gradient(135deg, #b91c1c 0%, #ef4444 55%, #fca5a5 100%)",
+    // }}
+ style={{
+      background:
+            "linear-gradient(to right, #fda4af 0%, #fecaca 50%, #fce7f3 100%)",
+    }}
+    onClick={() => {
+      setActiveFilter("Pending")
+      setFilteredCalls(applyFilter())
+    }}
+    active={activeFilter === "Pending"}
+  />
+
+  <Tiles
+    title="Today Calls"
+    count={todayCallsCount}
+    subtitle="Scheduled today"
+    icon={<PhoneIncoming size={12} strokeWidth={2.2} />}
+    // style={{
+    //   background:
+    //     "linear-gradient(135deg, #9a3412 0%, #f97316 55%, #fdba74 100%)",
+    // }}
+ style={{
+      background:
+        "linear-gradient(90deg, #fcd34d 0%, #fdba74 50%, #fef3c7 100%)",
+    }}
+    onClick={() => {
+      setActiveFilter("Today")
+      setFilteredCalls(applyFilter())
+    }}
+    active={activeFilter === "Today"}
+  />
+
+  <Tiles
+    title="Solved Calls"
+    count={solvedCallsCount}
+    subtitle="Resolved"
+    icon={<BadgeCheck size={12} strokeWidth={2.2} />}
+    style={{
+      background:
+         "linear-gradient(to right, #6ee7b7 0%, #bbf7d0 50%, #ccfbf1 100%)",
+    }}
+    onClick={() => {
+      setActiveFilter("Solved")
+      setFilteredCalls(applyFilter())
+    }}
+    active={activeFilter === "Solved"}
+  /> */}
+
+<Tiles
+  title="Pending Calls"
+  count={pendingCallsCount}
+  subtitle="Awaiting follow-up"
+  icon={<PhoneMissed size={12} strokeWidth={2.2} />}
+  style={{
+    background:
+      "linear-gradient(135deg, #be123c 0%, #f43f5e 52%, #fda4af 100%)",
+  }}
+  onClick={() => {
+    setActiveFilter("Pending")
+    setFilteredCalls(applyFilter())
+  }}
+  active={activeFilter === "Pending"}
+/>
+
+<Tiles
+  title="Today Calls"
+  count={todayCallsCount}
+  subtitle="Scheduled today"
+  icon={<PhoneIncoming size={12} strokeWidth={2.2} />}
+  style={{
+    background:
+      "linear-gradient(135deg, #c2410c 0%, #f59e0b 52%, #fde68a 100%)",
+  }}
+  onClick={() => {
+    setActiveFilter("Today")
+    setFilteredCalls(applyFilter())
+  }}
+  active={activeFilter === "Today"}
+/>
+
+<Tiles
+  title="Solved Calls"
+  count={solvedCallsCount}
+  subtitle="Resolved"
+  icon={<BadgeCheck size={12} strokeWidth={2.2} />}
+  style={{
+    background:
+      "linear-gradient(135deg, #047857 0%, #34d399 52%, #99f6e4 100%)",
+  }}
+  onClick={() => {
+    setActiveFilter("Solved")
+    setFilteredCalls(applyFilter())
+  }}
+  active={activeFilter === "Solved"}
+/>
+  <Tiles
+    title="Online Calls"
+    count={0}
+    subtitle="Online"
+    icon={<PhoneCall size={12} strokeWidth={2.2} />}
+    style={{
+      background:
+        "linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #93c5fd 100%)",
+    }}
+    onClick={() => {
+      setActiveFilter("online")
+      setFilteredCalls(applyFilter())
+    }}
+    active={activeFilter === "online"}
+  />
+</div>
 
               <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-300 bg-slate-50 shadow-[0_8px_24px_rgba(15,23,42,0.10)]">
                 <div className="h-full overflow-y-auto">

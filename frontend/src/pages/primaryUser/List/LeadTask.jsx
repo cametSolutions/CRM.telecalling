@@ -347,13 +347,13 @@ console.log(dates)
           setselectedPeriod={setselectedPeriod}
         />
         <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="flex items-center justify-between border-b border-white/10 bg-[#0F172A]/95">
+          <header className="flex items-center justify-between bg-[#ADD8E6]">
             {loggedUser?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
               <StaffHeader hide={true} />
             )}
-            <div className="flex items-center gap-1.5  border-b border-white/10 bg-[#0F172A]/95 pr-3 h-full">
+            <div className="flex items-center gap-1.5  pr-3 h-full">
               <button className="rounded-full p-1.5 transition bg-slate-100">
                 <Mail size={15} strokeWidth={2.2} />
               </button>
