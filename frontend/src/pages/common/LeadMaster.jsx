@@ -1596,7 +1596,7 @@ console.log("Hhhh")
                           isReadOnly ? "cursor-not-allowed opacity-70" : ""
                         }`}
                       >
-                        {Data ? "UPDATE" : "NEW"}
+                        {Data ? "UPDATE CUSTOMER" : "NEW"}
                       </button>
                     </div>
                     {errorsMain.customerName && (
