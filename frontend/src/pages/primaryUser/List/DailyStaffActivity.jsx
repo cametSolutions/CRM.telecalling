@@ -354,14 +354,14 @@ export default function DailyStaffActivity() {
         />
 
         <div className="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden">
-          <header className="flex items-center justify-between border-b border-white/10 bg-[#0F172A]/95">
+          <header className="flex items-center justify-between bg-[#ADD8E6]">
             {loggedUser?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true} />
             ) : (
               <StaffHeader hide={true} />
             )}
 
-            <div className="flex h-full items-center gap-1.5 border-b border-white/10 bg-[#0F172A]/95 pr-3">
+            <div className="flex h-full items-center gap-1.5 bg-[#ADD8E6] pr-3">
               <button className="rounded-full bg-slate-100 p-1.5 transition">
                 <Mail size={15} strokeWidth={2.2} />
               </button>

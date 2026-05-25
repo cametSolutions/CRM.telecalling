@@ -670,7 +670,13 @@ const LeadMaster = ({
   console.log("hhh")
   useEffect(() => {
     if (loggeduser?._id) {
-      setValueMain("leadBy", loggeduser._id)
+console.log(Data)
+if(Data&&Data.length){
+setValueMain("leadBy", Data[0].leadBy._id)
+}else{
+   setValueMain("leadBy", loggeduser._id)
+}
+   
     }
   }, [loggeduser, setValueMain])
 
@@ -2708,7 +2714,7 @@ const LeadMaster = ({
     //   </div>
     // </div>
 
-    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#ADD8E6]">
       {(modalloader ||
         loadingState ||
         editloadingState ||
@@ -3396,7 +3402,7 @@ const LeadMaster = ({
                         <p className="text-sm italic text-gray-500 whitespace-nowrap">
                           Lead by:{" "}
                           <span className="font-semibold text-[#1B2A4A]">
-                            {loggeduser?.name}
+                            {Data&&Data.length?Data[0]?.leadBy?.name:loggeduser?.name}
                           </span>
                         </p>
                       </div>

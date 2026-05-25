@@ -1263,7 +1263,7 @@ console.log(hide)
   return (
     <>
       <header
-        className={`sticky top-0 z-50 border-b border-white/10 bg-[#0F172A]/95 ${hide?"flex-grow":""} text-white backdrop-blur-xl`}
+        className={`sticky top-0 z-50 bg-[#ADD8E6] ${hide?"flex-grow":""} text-white backdrop-blur-xl`}
       >
         <div className={`mx-auto flex h-14 w-full items-center gap-3 px-3 sm:px-4 lg:px-6`}>
           {!hide && (
@@ -1283,10 +1283,10 @@ console.log(hide)
                 </div>
 
                 <div className="hidden sm:block">
-                  <div className="text-[14px] font-semibold leading-4 text-white">
+                  <div className="text-[14px] font-semibold leading-4 text-black">
                     Management Suite
                   </div>
-                  <div className="text-[11px] leading-4 text-slate-400">
+                  <div className="text-[11px] leading-4 text-black">
                     Staff workspace
                   </div>
                 </div>
@@ -1322,10 +1322,10 @@ console.log(hide)
           </div>
           {!hide && (
             <div className="ml-auto flex items-center gap-2">
-              <button className="hidden lg:flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-[#162033] px-3 text-slate-400 transition hover:bg-[#1E293B] hover:text-slate-200">
+              {/* <button className="hidden lg:flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-[#162033] px-3 text-slate-400 transition hover:bg-[#1E293B] hover:text-slate-200">
                 <FiSearch size={15} />
                 <span className="text-[12px]">Search</span>
-              </button>
+              </button> */}
               <div className="hidden md:flex items-center gap-3 rounded-2xl border border-white/10 bg-[#162033] px-2.5 py-1.5">
                 <div className="flex min-w-0 items-center gap-2">
                   {user?.profileUrl ? (
@@ -1383,10 +1383,10 @@ console.log(hide)
                   </span>
                 </div>
                 <div>
-                  <div className="text-[14px] font-semibold">
+                  <div className="text-[14px] font-semibold text-black">
                     Management Suite
                   </div>
-                  <div className="text-[11px] text-slate-400">
+                  <div className="text-[11px] text-black">
                     Staff workspace
                   </div>
                 </div>

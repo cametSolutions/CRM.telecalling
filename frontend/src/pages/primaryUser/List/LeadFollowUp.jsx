@@ -153,15 +153,16 @@ const LeadFollowUp = () => {
   )
   // [Keep all your existing useEffect hooks here - they remain the same]
   // ... (all the existing useEffect hooks from line 92 to line 600+)
-
+console.log(ownFollowUp)
+console.log(pending)
   useEffect(() => {
     // run only when location.state or selectedCompanyBranch / loggedUser change
     //this from productwisereport
     if (safeState?.viewMode !== "product" || !loggedUser) return
+console.log("HHH")
     const selectedbranch = safeState?.branchId
 
     setselectedCompanyBranch(selectedbranch)
-
     const fetchFollowups = async () => {
       const staffIdFromState = location.state.staffId
       const pendingFromState = location.state.pending
@@ -821,6 +822,7 @@ const LeadFollowUp = () => {
       `&endDate=${safeState?.viewMode ? dates.endDate : null}` +
       `&header=${safeState?.header}`
     : null
+console.log(shouldFetch)
   console.log(safeState)
   console.log(selectedCompanyBranch)
   console.log(safeState?.header)
@@ -839,6 +841,7 @@ const LeadFollowUp = () => {
   // Initial loggedUser + branches from dashboard
   useEffect(() => {
     if (!safeState.branchId || !branches || !data) return
+console.log(safeState.branchId)
     console.log("Hhh")
     const { allusers = [], allAdmins = [] } = data
     const mergeduser = [...allusers, ...allAdmins]
@@ -969,7 +972,8 @@ const LeadFollowUp = () => {
     }, 2000)
     return () => clearTimeout(handler)
   }, [input])
-
+console.log(ownFollowUp)
+console.log(pending)
   const formatdate = (date) => new Date(date).toISOString().split("T")[0]
   const getLocalDate = (date) => {
     const local = new Date(date)
@@ -1089,6 +1093,7 @@ const LeadFollowUp = () => {
         // console.log(groupedData)
         setnetTotalAmount(TotalAmount(filteredLeads))
         setTableData(groupedData)
+
         console.log(safeState)
         console.log(loggedUser)
         console.log(groupedData)
@@ -1672,6 +1677,7 @@ const LeadFollowUp = () => {
           }
         }
       }
+setOwnFollowUp(true)
 
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
     } else {
@@ -2323,14 +2329,14 @@ console.log(tableData)
           setselectedPeriod={setselectedPeriod}
         />
         <div className="flex flex-1 flex-col overflow-hidden ">
-          <header className="flex items-center justify-between border-b border-white/10 bg-[#0F172A]/95">
+          <header className="flex items-center justify-between ">
             {loggedUser?.role?.toLowerCase() === "admin" ? (
               <AdminHeader hide={true}/>
             ) : (
               <StaffHeader hide={true} />
             )}
 
-            <div className="flex items-center gap-1.5  border-b border-white/10 bg-[#0F172A]/95 pr-3 h-full">
+            <div className="flex items-center gap-1.5   pr-3 h-full">
               <button className="rounded-full p-1.5 transition bg-slate-100">
                 <Mail size={15} strokeWidth={2.2} />
               </button>

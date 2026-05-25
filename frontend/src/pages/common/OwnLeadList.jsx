@@ -5,6 +5,7 @@ import { LeadhistoryModal } from "../../components/primaryUser/LeadhistoryModal"
 import { PerformanceModal } from "../../components/primaryUser/PerformanceModal"
 import SkeletonTable from "../../components/loader/SkeletonTable"
 import NodataAvailable from "../../components/NodataAvailable"
+import MyDatePicker from "../../components/common/MyDatePicker"
 import {
   Mail,
   MessageSquareText,
@@ -31,6 +32,8 @@ export default function OwnLeadList() {
   const [selectedCategory, setselectedCategory] = useState(null)
   const [selectedUserName, setselecteduserName] = useState(null)
   const [tableData, setTableData] = useState([])
+  const [dates, setDates] = useState({ startDate: "", endDate: "" })
+console.log(dates)
   const [targetData, settargetData] = useState([])
   console.log(targetData)
   const [periodMode, setperiodMode] = useState("all")
@@ -56,17 +59,32 @@ export default function OwnLeadList() {
 
   const { data: ownedlead, loading } = UseFetch(
     loggedUser &&
-      selectedCompanyBranch &&
+      selectedCompanyBranch &&dates.startDate&&
       `/lead/ownregisteredLead?userId=${loggedUser._id}&role=${
         location?.state?.role ? location?.state?.role : loggedUser.role
       }&selectedBranch=${selectedCompanyBranch}&ownlead=${
         location?.state?.role ? false : ownLead
-      }`
+      }&startDate=${dates.startDate}&endDate=${dates.endDate}`
   )
+console.log(ownedlead)
   const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
   )
+  useEffect(() => {
+  
+ const now = new Date()
 
+  const formatDate = (date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, "0")
+    const day = String(date.getDate()).padStart(2, "0")
+    return `${year}-${month}-${day}`
+  }
+
+  const today = formatDate(now)
+    setDates({ startDate:now, endDate: now})
+  }, [])
+console.log(dates)
   useEffect(() => {
     if (companybranches && companybranches.length > 0) {
       const userData = getLocalStorageItem("user")
@@ -150,7 +168,7 @@ export default function OwnLeadList() {
       setacheivedProducts([])
     }
   }
-console.log(targetData)
+  console.log(targetData)
   const handleMoreClick = (id, name) => {
     const Datas = targetData?.userWiseResults
     console.log(id)
@@ -384,99 +402,309 @@ console.log(targetData)
     )
   console.log(selectedCompanyBranch)
   return (
-    <div className="h-full bg-[#ADD8E6]  overflow-hidden">
-      <div className="flex h-full  lg:flex-row">
-        {selectedCompanyBranch && (
-          <StaticSidebar
-            handleMoreClick={handleMoreClick}
-            selectedCompanyBranch={selectedCompanyBranch}
-            setselectedCompanyBranch={setselectedCompanyBranch}
-            parenttargetData={settargetData}
-            parentperiodmode={setperiodMode}
-            parentyear={setSelectedYear}
-            setselectedPeriod={setselectedPeriod}
-          />
+    // <div className="h-full bg-[#ADD8E6]  overflow-hidden">
+    //   <div className="flex h-full  lg:flex-row">
+    //     {selectedCompanyBranch && (
+    //       <StaticSidebar
+    //         handleMoreClick={handleMoreClick}
+    //         selectedCompanyBranch={selectedCompanyBranch}
+    //         setselectedCompanyBranch={setselectedCompanyBranch}
+    //         parenttargetData={settargetData}
+    //         parentperiodmode={setperiodMode}
+    //         parentyear={setSelectedYear}
+    //         setselectedPeriod={setselectedPeriod}
+    //       />
+    //     )}
+
+    //     <div className="flex min-h-0 flex-1 flex-col overflow-hidden ">
+    //       <header className="flex items-center justify-between border-b border-white/10 bg-[#0F172A]/95 ">
+    //         {loggedUser?.role?.toLowerCase() === "admin" ? (
+    //           <AdminHeader hide={true} />
+    //         ) : (
+    //           <StaffHeader hide={true} />
+    //         )}
+
+    //         <div className="flex items-center gap-1.5  border-b border-white/10 bg-[#0F172A]/95 pr-3 h-full">
+    //           <button className="rounded-full p-1.5 transition bg-slate-100">
+    //             <Mail size={15} strokeWidth={2.2} />
+    //           </button>
+    //           <div className="relative">
+    //             <button className="rounded-full p-1.5 transition bg-slate-100">
+    //               <MessageSquareText size={15} strokeWidth={2.2} />
+    //             </button>
+    //             <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
+    //           </div>
+    //           <button className="rounded-full p-1.5 transition bg-slate-100">
+    //             <Settings size={15} strokeWidth={2.2} />
+    //           </button>
+    //           {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+    //             <User size={15} strokeWidth={2.2} />
+    //           </button> */}
+
+    //           <div className="relative">
+    //             <button
+    //               onClick={(e) => {
+    //                 e.stopPropagation()
+    //                 setShowUserMenu((prev) => !prev)
+    //               }}
+    //               className="rounded-full p-1.5 transition bg-slate-100"
+    //             >
+    //               <User size={15} strokeWidth={2.2} />
+    //             </button>
+
+    //             {/* {showUserMenu && (
+    //               <div
+    //                 onClick={(e) => e.stopPropagation()} 
+    //                 className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
+    //               >
+    //                 <button
+    //                   onClick={handleLogout}
+    //                   className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+    //                 >
+    //                   Logout
+    //                 </button>
+    //               </div>
+    //             )} */}
+    //           </div>
+    //         </div>
+    //       </header>
+    //       <div className="flex-1">
+           
+    //         <div className="m-4 rounded-xl border border-slate-200 bg-white/70 px-4 py-3 shadow-sm">
+    //           <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+    //             {/* Left section */}
+    //             <div className="flex min-w-0 flex-wrap items-center gap-3">
+    //               <h2 className="shrink-0 text-lg font-bold tracking-tight text-slate-800">
+    //                 {ownLead ? "Own Lead" : "All Lead"}
+    //               </h2>
+
+    //               {loggedUser?.role !== "Staff" && (
+    //                 <div className="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5">
+    //                   <span className="text-xs font-medium text-slate-600">
+    //                     {ownLead ? "Own" : "All"}
+    //                   </span>
+
+    //                   <button
+    //                     onClick={() => {
+    //                       setTableData([])
+    //                       setownLead((prev) => !prev)
+    //                     }}
+    //                     className={`relative h-6 w-11 rounded-full transition-colors duration-300 ${
+    //                       ownLead ? "bg-emerald-500" : "bg-slate-300"
+    //                     }`}
+    //                   >
+    //                     <div
+    //                       className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-300 ${
+    //                         ownLead ? "translate-x-5" : "translate-x-0.5"
+    //                       }`}
+    //                     />
+    //                   </button>
+    //                 </div>
+    //               )}
+    //             </div>
+
+    //             {/* Right section */}
+    //             <div className="flex flex-wrap items-center justify-start gap-3 xl:justify-end">
+    //               {dates.startDate && (
+    //                 <div className="min-w-[240px]">
+    //                   <MyDatePicker setDates={setDates} dates={dates} />
+    //                 </div>
+    //               )}
+
+    //               <button
+    //                 onClick={() =>
+    //                   loggedUser?.role === "Admin"
+    //                     ? navigate("/admin/transaction/lead")
+    //                     : navigate("/staff/transaction/lead")
+    //                 }
+    //                 className="inline-flex h-10 items-center justify-center rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700"
+    //               >
+    //                 New Lead
+    //               </button>
+    //             </div>
+    //           </div>
+    //         </div>
+    //         {/* ── Table container ── */}
+    //         <div className="flex-1 mx-2 md:mx-3 mb-2 bg-white rounded-lg shadow-xl  flex flex-col overflow-auto">
+    //           {loading ? (
+    //             <div className="p-4">
+    //               <SkeletonTable rows={5} columns={8} />
+    //             </div>
+    //           ) : !hasLeads ? (
+    //             <div className="p-4">
+    //               <NodataAvailable
+    //                 title="No Lead Available"
+    //                 message="There are no leads to display for the selected filters."
+    //               />
+    //             </div>
+    //           ) : (
+    //             /* overflow-auto here makes the table scroll; sticky thead works inside */
+    //             <div className="overflow-auto flex-1">
+    //               {tableData.map(({ staffName, leads }, index) => (
+    //                 <div key={staffName || `group-${index}`}>
+    //                   {staffName && (
+    //                     <h3 className="text-sm font-semibold text-gray-800 px-3 pt-3 pb-1">
+    //                       {staffName}{" "}
+    //                       <span className="text-xs text-gray-500 font-normal">
+    //                         ({leads?.length || 0} Leads)
+    //                       </span>
+    //                     </h3>
+    //                   )}
+    //                   {Array.isArray(leads) && leads.length > 0 ? (
+    //                     renderTable(leads)
+    //                   ) : (
+    //                     <p className="text-center text-gray-400 py-3 text-xs">
+    //                       No leads under {staffName || "this group"}.
+    //                     </p>
+    //                   )}
+    //                 </div>
+    //               ))}
+    //             </div>
+    //           )}
+    //         </div>
+    //       </div>
+    //     </div>
+
+    //     {showhistoryModal && historyList.length > 0 && (
+    //       <LeadhistoryModal
+    //         selectedLeadId={selectedLeadId}
+    //         historyList={historyList}
+    //         handlecloseModal={() => sethistoryModal(false)}
+    //       />
+    //     )}
+    //     <PerformanceModal
+    //       modalOpen={openModal}
+    //       splitType={targetData?.selectedMeasurementType}
+    //       selectedperiod={selectedPeriod}
+    //       allperiods={targetData?.periods}
+    //       onselectedPeriodChange={(val, val2) => {
+    //         setSelectedMonth(val2)
+    //         setselectedPeriod(val)
+    //       }}
+    //       onMonthChange={(val) => {
+    //         setcategorylist([])
+    //         setacheivedProducts([])
+    //         setselectedDataPopup([])
+    //         setperiodMode(val)
+    //       }}
+    //       onYearChange={(val) => {
+    //         setcategorylist([])
+    //         setacheivedProducts([])
+    //         setselectedDataPopup([])
+    //         setSelectedYear(val)
+    //       }}
+    //       productlist={productlist}
+    //       onClose={() => {
+    //         setselecteduserName(loggedUser?.name)
+    //         setacheivedProducts([])
+    //         setOpenModal(false)
+    //       }}
+    //       selectedMonth={periodMode}
+    //       selectedYear={selectedYear}
+    //       summary={{
+    //         target: selectedDatapopup?.target,
+    //         achieved: selectedDatapopup?.achieved,
+    //         balance:
+    //           selectedDatapopup?.achieved > selectedDatapopup?.target
+    //             ? 0
+    //             : selectedDatapopup?.balance
+    //       }}
+    //       products={achievedproducts}
+    //       targetData={targetData?.userWiseResults}
+    //       loggedUser={loggedUser}
+    //       selectedUser={selectedUserName}
+    //       category={selectedCategory}
+    //       handleSelectedUser={handleSelectedUser}
+    //     />
+    //   </div>
+    // </div>
+<div className="h-full overflow-hidden bg-[#ADD8E6]">
+  <div className="flex h-full overflow-hidden lg:flex-row">
+    {selectedCompanyBranch && (
+      <StaticSidebar
+        handleMoreClick={handleMoreClick}
+        selectedCompanyBranch={selectedCompanyBranch}
+        setselectedCompanyBranch={setselectedCompanyBranch}
+        parenttargetData={settargetData}
+        parentperiodmode={setperiodMode}
+        parentyear={setSelectedYear}
+        setselectedPeriod={setselectedPeriod}
+      />
+    )}
+
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <header className="flex items-center justify-between ">
+        {loggedUser?.role?.toLowerCase() === "admin" ? (
+          <AdminHeader hide={true} />
+        ) : (
+          <StaffHeader hide={true} />
         )}
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden ">
-          <header className="flex items-center justify-between border-b border-white/10 bg-[#0F172A]/95 ">
-            {loggedUser?.role?.toLowerCase() === "admin" ? (
-              <AdminHeader hide={true} />
-            ) : (
-              <StaffHeader hide={true} />
-            )}
+        <div className="flex h-full items-center gap-1.5 pr-3">
+          <button className="rounded-full bg-slate-100 p-1.5 transition">
+            <Mail size={15} strokeWidth={2.2} />
+          </button>
 
-            <div className="flex items-center gap-1.5  border-b border-white/10 bg-[#0F172A]/95 pr-3 h-full">
-              <button className="rounded-full p-1.5 transition bg-slate-100">
-                <Mail size={15} strokeWidth={2.2} />
-              </button>
-              <div className="relative">
-                <button className="rounded-full p-1.5 transition bg-slate-100">
-                  <MessageSquareText size={15} strokeWidth={2.2} />
-                </button>
-                <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
-              </div>
-              <button className="rounded-full p-1.5 transition bg-slate-100">
-                <Settings size={15} strokeWidth={2.2} />
-              </button>
-              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
-                <User size={15} strokeWidth={2.2} />
-              </button> */}
+          <div className="relative">
+            <button className="rounded-full bg-slate-100 p-1.5 transition">
+              <MessageSquareText size={15} strokeWidth={2.2} />
+            </button>
+            <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
+          </div>
 
-              <div className="relative">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowUserMenu((prev) => !prev)
-                  }}
-                  className="rounded-full p-1.5 transition bg-slate-100"
-                >
-                  <User size={15} strokeWidth={2.2} />
-                </button>
+          <button className="rounded-full bg-slate-100 p-1.5 transition">
+            <Settings size={15} strokeWidth={2.2} />
+          </button>
 
-                {/* {showUserMenu && (
-                  <div
-                    onClick={(e) => e.stopPropagation()} 
-                    className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
-                  >
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )} */}
-              </div>
-            </div>
-          </header>
-          <div className="min-h-0 flex-1 overflow-y-auto">
-          
-            <div className="flex justify-between items-center gap-2  m-4">
-  <h2 className="text-base font-bold">
-              {ownLead ? "Own Lead" : "All Lead"}
-            </h2>
+          <div className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowUserMenu((prev) => !prev)
+              }}
+              className="rounded-full bg-slate-100 p-1.5 transition"
+            >
+              <User size={15} strokeWidth={2.2} />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        <div className="m-4 shrink-0 rounded-xl border border-slate-200 bg-white/70 px-4 py-3 shadow-sm">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex min-w-0 flex-wrap items-center gap-3">
+              <h2 className="shrink-0 text-lg font-bold tracking-tight text-slate-800">
+                {ownLead ? "Own Lead" : "All Lead"}
+              </h2>
+
               {loggedUser?.role !== "Staff" && (
-                <>
-                  <span className="text-xs font-semibold whitespace-nowrap">
-                    {ownLead ? "Own Lead" : "All Lead"}
-                  </span>
+                <div className="flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5">
+              
                   <button
                     onClick={() => {
                       setTableData([])
                       setownLead((prev) => !prev)
                     }}
-                    className={`${
-                      ownLead ? "bg-green-500" : "bg-gray-300"
-                    } w-10 h-5 flex items-center rounded-full transition-colors duration-300`}
+                    className={`relative h-6 w-11 rounded-full transition-colors duration-300 ${
+                      ownLead ? "bg-emerald-500" : "bg-slate-300"
+                    }`}
                   >
                     <div
-                      className={`${
-                        ownLead ? "translate-x-5" : "translate-x-0"
-                      } w-5 h-5 bg-white rounded-full shadow transform transition-transform duration-300`}
+                      className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-300 ${
+                        ownLead ? "translate-x-5" : "translate-x-0.5"
+                      }`}
                     />
                   </button>
-                </>
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center justify-start gap-3 xl:justify-end">
+              {dates.startDate && (
+                <div className="min-w-[240px]">
+                  <MyDatePicker setDates={setDates} dates={dates} />
+                </div>
               )}
 
               <button
@@ -485,104 +713,107 @@ console.log(targetData)
                     ? navigate("/admin/transaction/lead")
                     : navigate("/staff/transaction/lead")
                 }
-                className="bg-black text-white text-xs py-1 px-3 rounded shadow hover:bg-gray-700 whitespace-nowrap"
+                className="inline-flex h-10 items-center justify-center rounded-lg bg-slate-900 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700"
               >
                 New Lead
               </button>
             </div>
-            {/* ── Table container ── */}
-            <div className="flex-1 mx-2 md:mx-3 mb-2 bg-white rounded-lg shadow-xl overflow-hidden flex flex-col">
-              {loading ? (
-                <div className="p-4">
-                  <SkeletonTable rows={5} columns={8} />
-                </div>
-              ) : !hasLeads ? (
-                <div className="p-4">
-                  <NodataAvailable
-                    title="No Lead Available"
-                    message="There are no leads to display for the selected filters."
-                  />
-                </div>
-              ) : (
-                /* overflow-auto here makes the table scroll; sticky thead works inside */
-                <div className="overflow-auto flex-1">
-                  {tableData.map(({ staffName, leads }, index) => (
-                    <div key={staffName || `group-${index}`}>
-                      {staffName && (
-                        <h3 className="text-sm font-semibold text-gray-800 px-3 pt-3 pb-1">
-                          {staffName}{" "}
-                          <span className="text-xs text-gray-500 font-normal">
-                            ({leads?.length || 0} Leads)
-                          </span>
-                        </h3>
-                      )}
-                      {Array.isArray(leads) && leads.length > 0 ? (
-                        renderTable(leads)
-                      ) : (
-                        <p className="text-center text-gray-400 py-3 text-xs">
-                          No leads under {staffName || "this group"}.
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         </div>
 
-        {showhistoryModal && historyList.length > 0 && (
-          <LeadhistoryModal
-            selectedLeadId={selectedLeadId}
-            historyList={historyList}
-            handlecloseModal={() => sethistoryModal(false)}
-          />
-        )}
-        <PerformanceModal
-          modalOpen={openModal}
-          splitType={targetData?.selectedMeasurementType}
-          selectedperiod={selectedPeriod}
-          allperiods={targetData?.periods}
-          onselectedPeriodChange={(val, val2) => {
-            setSelectedMonth(val2)
-            setselectedPeriod(val)
-          }}
-          onMonthChange={(val) => {
-            setcategorylist([])
-            setacheivedProducts([])
-            setselectedDataPopup([])
-            setperiodMode(val)
-          }}
-          onYearChange={(val) => {
-            setcategorylist([])
-            setacheivedProducts([])
-            setselectedDataPopup([])
-            setSelectedYear(val)
-          }}
-          productlist={productlist}
-          onClose={() => {
-            setselecteduserName(loggedUser?.name)
-            setacheivedProducts([])
-            setOpenModal(false)
-          }}
-          selectedMonth={periodMode}
-          selectedYear={selectedYear}
-          summary={{
-            target: selectedDatapopup?.target,
-            achieved: selectedDatapopup?.achieved,
-            balance:
-              selectedDatapopup?.achieved > selectedDatapopup?.target
-                ? 0
-                : selectedDatapopup?.balance
-          }}
-          products={achievedproducts}
-          targetData={targetData?.userWiseResults}
-          loggedUser={loggedUser}
-          selectedUser={selectedUserName}
-          category={selectedCategory}
-          handleSelectedUser={handleSelectedUser}
-        />
+        <div className="mx-2 mb-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-white shadow-xl md:mx-3">
+          {loading ? (
+            <div className="p-4">
+              <SkeletonTable rows={5} columns={8} />
+            </div>
+          ) : !hasLeads ? (
+            <div className="p-4">
+              <NodataAvailable
+                title="No Lead Available"
+                message="There are no leads to display for the selected filters."
+              />
+            </div>
+          ) : (
+            <div className="min-h-0 flex-1 overflow-auto">
+              {tableData.map(({ staffName, leads }, index) => (
+                <div key={staffName || `group-${index}`}>
+                  {staffName && (
+                    <h3 className="px-3 pt-3 pb-1 text-sm font-semibold text-gray-800">
+                      {staffName}{" "}
+                      <span className="text-xs font-normal text-gray-500">
+                        ({leads?.length || 0} Leads)
+                      </span>
+                    </h3>
+                  )}
+
+                  {Array.isArray(leads) && leads.length > 0 ? (
+                    renderTable(leads)
+                  ) : (
+                    <p className="py-3 text-center text-xs text-gray-400">
+                      No leads under {staffName || "this group"}.
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
+
+    {showhistoryModal && historyList.length > 0 && (
+      <LeadhistoryModal
+        selectedLeadId={selectedLeadId}
+        historyList={historyList}
+        handlecloseModal={() => sethistoryModal(false)}
+      />
+    )}
+
+    <PerformanceModal
+      modalOpen={openModal}
+      splitType={targetData?.selectedMeasurementType}
+      selectedperiod={selectedPeriod}
+      allperiods={targetData?.periods}
+      onselectedPeriodChange={(val, val2) => {
+        setSelectedMonth(val2)
+        setselectedPeriod(val)
+      }}
+      onMonthChange={(val) => {
+        setcategorylist([])
+        setacheivedProducts([])
+        setselectedDataPopup([])
+        setperiodMode(val)
+      }}
+      onYearChange={(val) => {
+        setcategorylist([])
+        setacheivedProducts([])
+        setselectedDataPopup([])
+        setSelectedYear(val)
+      }}
+      productlist={productlist}
+      onClose={() => {
+        setselecteduserName(loggedUser?.name)
+        setacheivedProducts([])
+        setOpenModal(false)
+      }}
+      selectedMonth={periodMode}
+      selectedYear={selectedYear}
+      summary={{
+        target: selectedDatapopup?.target,
+        achieved: selectedDatapopup?.achieved,
+        balance:
+          selectedDatapopup?.achieved > selectedDatapopup?.target
+            ? 0
+            : selectedDatapopup?.balance,
+      }}
+      products={achievedproducts}
+      targetData={targetData?.userWiseResults}
+      loggedUser={loggedUser}
+      selectedUser={selectedUserName}
+      category={selectedCategory}
+      handleSelectedUser={handleSelectedUser}
+    />
+  </div>
+</div>
   )
 }
