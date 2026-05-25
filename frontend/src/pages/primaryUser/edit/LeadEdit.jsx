@@ -46,14 +46,14 @@ function LeadEdit() {
         setLoader(false)
         return true
       }
-      user?.role === "Admin"
-        ? navigate("/admin/transaction/lead/leadAllocation")
-        : navigate("/staff/transaction/lead/leadFollowUp")
+      navigate(-1)
+      // user?.role === "Admin"
+      //   ? navigate("/admin/transaction/lead/leadAllocation")
+      //   : navigate("/staff/transaction/lead/leadFollowUp")
     } catch (error) {
       setLoader(false)
       toast.error("Something went wrong")
       console.error("error:", error)
-
     }
   }
   return (
