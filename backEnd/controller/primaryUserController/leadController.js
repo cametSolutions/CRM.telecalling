@@ -24,7 +24,6 @@ export const LeadRegister = async (req, res) => {
       location,
       source,
       pincode,
-      trade,
       remark,
       dueDate,
       taxAmount,
@@ -117,7 +116,6 @@ export const LeadRegister = async (req, res) => {
       location,
       pincode,
       dueDate,
-      trade,
       source,
       partner,
       leadBranch,
@@ -155,8 +153,18 @@ export const LeadRegister = async (req, res) => {
       assignedtoleadByModel: leadByModel, // Now set dynamically
     });
     await leadidonly.save({ session });
+    console.log("custeomernameee", customerName)
+    const updatecustomer = await Customer.findByIdAndUpdate(customerName, {
+      $set: {
+        mobile: mobile,
+        email: email,
+        landline: phone
+      }
+    }, { session, new: true })
+
     await session.commitTransaction();
     session.endSession();
+    console.log("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHh")
     res.status(200).json({
       success: true,
       message: "Lead created successfully",
@@ -1024,6 +1032,13 @@ export const UpdateLeadRegister = async (req, res) => {
       balanceAmount: newbalance,
       leadFor: mappedleadData,
     });
+    const updatedcustomer = await Customer.findByIdAndUpdate(data.customerName, {
+      $set: {
+        mobile: data.mobile,
+        email: data.email,
+        landline: data.phone
+      }
+    })
 
     if (!updatedLead) {
       return res.status(404).json({ message: "Lead not found" });
@@ -4022,8 +4037,8 @@ export const UpadateOrLeadAllocationRegister = async (req, res) => {
           log.taskTo // ensures the field exists
       );
       const task = matchLead.activityLog[matchingIndex]?.taskId;
-console.log("taskkk",task)
-console.log("alocationtupeid",allocationtypeId)
+      console.log("taskkk", task)
+      console.log("alocationtupeid", allocationtypeId)
       if (!task?.equals(allocationtypeId)) {
         return res.status(409).json({
           message:

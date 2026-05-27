@@ -656,7 +656,8 @@ const LeadMaster = ({
   }, [])
   console.log("hhh")
   useEffect(() => {
-    if (loggeduser?._id) {
+    if (loggeduser?._id&&!(Data&&Data.length)) {
+console.log(Data)
       setValueMain("leadBy", loggeduser._id)
     }
   }, [loggeduser, setValueMain])
@@ -680,7 +681,7 @@ const LeadMaster = ({
       }
       setValueMain("leadId", Data[0]?.leadId)
       setValueMain("partner", Data[0]?.partner)
-      setValueMain("trade", Data[0]?.trade)
+   setValueMain("leadBy",Data[0].leadBy._id)
       setValueMain(
         "selfAllocation",
         Data[0]?.selfAllocation === true ? "true" : "false"
@@ -699,6 +700,7 @@ const LeadMaster = ({
       setValueMain("mobile", Data[0]?.customerName?.mobile)
       setValueMain("phone", Data[0]?.customerName?.phone)
       setValueMain("email", Data[0]?.customerName?.email)
+setValueMain("remark",Data[0].remark)
       const leadData = Data[0]?.leadFor.map((item) => ({
         licenseNumber: item?.licenseNumber,
         productorServiceName:
@@ -793,7 +795,6 @@ const LeadMaster = ({
 
   //     setValueModal("city", Data[0]?.customerName?.city)
 
-  //     setValueModal("industry", Data[0]?.customerName?.industry)
   //     console.log("hh")
   //   }
   // }, [])
@@ -918,7 +919,6 @@ const LeadMaster = ({
 
       setValueModal("city", Data[0]?.customerName?.city)
 
-      setValueModal("industry", Data[0]?.customerName?.industry)
     }
   }
   const Industries = [
@@ -1222,14 +1222,14 @@ const LeadMaster = ({
         setFormData(data)
         setPopupMessage(validation.message)
         if (validation.message === "") {
-console.log("HHh")
+          console.log("HHh")
           const saved = await handlePopupOk(true, data)
-console.log(saved)
+          console.log(saved)
 
           if (saved) {
-console.log(process)
+            console.log(process)
             if (process === "Registration") {
-console.log("Hhhh")
+              console.log("Hhhh")
               toast.success("lead created successfully")
             }
           }
@@ -1253,9 +1253,7 @@ console.log("Hhhh")
           selectedleadlist,
           Data[0]?._id
         )
-        if (updated) {
-          toast.success("Lead updated successfully")
-        }
+       
       }
     } catch (error) {
       console.log("error on onsubmit:", error)
@@ -1596,7 +1594,7 @@ console.log("Hhhh")
                           isReadOnly ? "cursor-not-allowed opacity-70" : ""
                         }`}
                       >
-                        {Data ? "UPDATE" : "NEW"}
+                        {Data ? "UPDATE CUSTOMER" : "NEW"}
                       </button>
                     </div>
                     {errorsMain.customerName && (
@@ -1685,6 +1683,7 @@ console.log("Hhhh")
                       <option value="instagram">Instagram</option>
                       <option value="facebook">Facebook</option>
                       <option value="Direct">Direct</option>
+                      <option value="justDial">Just Dial</option>
                     </select>
                     {errorsMain.source && (
                       <p className="text-red-500 text-xs mt-1">
@@ -1692,65 +1691,7 @@ console.log("Hhhh")
                       </p>
                     )}
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">
-                      Trade
-                    </label>
-                    <Controller
-                      name="trade"
-                      control={controlMain}
-                      rules={{ required: "Trade is required" }}
-                      render={({ field }) => (
-                        <Select
-                          {...field}
-                          options={tradeOptions}
-                          isDisabled={isReadOnly}
-                          placeholder="Select Trade"
-                          classNamePrefix="react-select"
-                          className={`
-          text-sm
-          ${isReadOnly ? "cursor-not-allowed opacity-70" : "cursor-pointer"}
-        `}
-                          styles={{
-                            control: (base, state) => ({
-                              ...base,
-                              minHeight: "34px",
-                              borderColor: errorsMain.trade
-                                ? "#ef4444"
-                                : "#d1d5db",
-                              backgroundColor: "#EEF2F8",
-                              boxShadow: state.isFocused
-                                ? "0 0 0 1px #3b82f6"
-                                : "none",
-                              "&:hover": {
-                                borderColor: errorsMain.trade
-                                  ? "#ef4444"
-                                  : "#9ca3af"
-                              }
-                            }),
-                            menuPortal: (base) => ({ ...base, zIndex: 9999 })
-                          }}
-                          menuPortalTarget={document.body}
-                          // react-select expects { value, label }, but your form needs just the value:
-                          onChange={(option) =>
-                            field.onChange(option?.value || "")
-                          }
-                          value={
-                            tradeOptions.find(
-                              (opt) => opt.value === field.value
-                            ) || null
-                          }
-                          isClearable
-                        />
-                      )}
-                    />
-
-                    {errorsMain.trade && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errorsMain.trade.message}
-                      </p>
-                    )}
-                  </div>
+                
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
                       Associate with
@@ -2155,10 +2096,10 @@ console.log("Hhhh")
                     ) : (
                       <div className="flex items-center">
                         <input type="hidden" {...registerMain("leadBy")} />
-                        <p className="text-sm italic text-gray-500 whitespace-nowrap">
+                        <p className="text-sm  text-gray-500 whitespace-nowrap uppercase">
                           Lead by:{" "}
                           <span className="font-semibold text-[#1B2A4A]">
-                            {loggeduser?.name}
+                            {Data&&Data.length?Data[0].leadBy.name:loggeduser?.name}
                           </span>
                         </p>
                       </div>
@@ -2247,6 +2188,26 @@ console.log("Hhhh")
                   onSubmit={handleSubmitModal(onmodalsubmit)}
                   className="overflow-y-auto flex-1 px-6 py-4"
                 >
+                  <div>
+                    <input
+                      type="hidden"
+                      {...registerModal("customerid")}
+                      onBlur={(e) =>
+                        setValueModal("customerid", e.target.value.trim())
+                      }
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="hidden"
+                      {...registerModal("leadid")}
+                      onBlur={(e) =>
+                        setValueModal("leadid", e.target.value.trim())
+                      }
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
+                    />
+                  </div>
                   <p className="text-[10px] font-bold text-[#1B2A4A] uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">
                     Basic Information
                   </p>
@@ -2347,26 +2308,7 @@ console.log("Hhhh")
                         </p>
                       )}
                     </div>
-                    <div>
-                      <input
-                        type="hidden"
-                        {...registerModal("customerid")}
-                        onBlur={(e) =>
-                          setValueModal("customerid", e.target.value.trim())
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-                      />
-                    </div>
-                    <div>
-                      <input
-                        type="hidden"
-                        {...registerModal("leadid")}
-                        onBlur={(e) =>
-                          setValueModal("leadid", e.target.value.trim())
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-                      />
-                    </div>
+
                     <div className="md:col-span-2">
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
                         Address
@@ -2526,29 +2468,7 @@ console.log("Hhhh")
                     Business Information
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-2">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">
-                        Industry <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        {...registerModal("industry", {
-                          required: "Industry is required"
-                        })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] bg-gray-50 cursor-pointer transition"
-                      >
-                        <option value="">Select Industry</option>
-                        {Industries.map((industry, index) => (
-                          <option key={index} value={industry}>
-                            {industry}
-                          </option>
-                        ))}
-                      </select>
-                      {errorsModal.industry && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errorsModal.industry.message}
-                        </p>
-                      )}
-                    </div>
+                   
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
                         Partnership Type

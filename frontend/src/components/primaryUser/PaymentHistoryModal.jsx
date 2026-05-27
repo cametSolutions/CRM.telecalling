@@ -329,7 +329,7 @@ export const PaymentHistoryModal = ({
                         ) : (
                           <span className="text-gray-700  block max-w-xs whitespace-normal break-all">
                             
-                            {row.bankRemarks || "IMPS/ICIC/610610664157/BENJAMINJOSEPH/adtec/ICIa19a859c6b0345bea3e9c58f070c5601#919946839202#B"}
+                            {row.bankRemarks || ""}
                           </span>
                         )}
                       </td>

@@ -1031,7 +1031,6 @@ export const CustomerRegister = async (req, res) => {
     email,
     mobile,
     landline,
-    industry,
     registrationType,
     gstNo
   } = customerData
@@ -1066,7 +1065,6 @@ export const CustomerRegister = async (req, res) => {
       email,
       mobile,
       landline,
-      industry,
       registrationType,
       gstNo,
       partner: normalizedPartner,

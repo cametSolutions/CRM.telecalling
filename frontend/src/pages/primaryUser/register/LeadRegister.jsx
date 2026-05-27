@@ -20,8 +20,10 @@ function LeadRegister() {
         role,
         selectedtableLeadData
       })
+console.log("Hhhhh")
       if (response.status === 200) {
-        toast.success(response && response.data && response.data.message)
+console.log("Hhh")
+        toast.success("Lead registered succesfully")
 
         // wait for toast to be visible, then reload
         setTimeout(() => {
@@ -29,6 +31,7 @@ function LeadRegister() {
         }, 0)
         return true
       } else if (response.status === 201) {
+console.log("hhhhh")
         setpopUpMessage(response.data.message)
       }
       setLoader(false)
