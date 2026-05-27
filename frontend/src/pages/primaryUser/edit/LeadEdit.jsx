@@ -44,7 +44,6 @@ function LeadEdit() {
       if (response.status === 200) {
         toast.success(response.data.message)
         setLoader(false)
-        return true
       }
       navigate(-1)
       // user?.role === "Admin"

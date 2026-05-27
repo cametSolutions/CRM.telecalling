@@ -681,7 +681,6 @@ console.log(Data)
       }
       setValueMain("leadId", Data[0]?.leadId)
       setValueMain("partner", Data[0]?.partner)
-      setValueMain("trade", Data[0]?.trade)
    setValueMain("leadBy",Data[0].leadBy._id)
       setValueMain(
         "selfAllocation",
@@ -701,6 +700,7 @@ console.log(Data)
       setValueMain("mobile", Data[0]?.customerName?.mobile)
       setValueMain("phone", Data[0]?.customerName?.phone)
       setValueMain("email", Data[0]?.customerName?.email)
+setValueMain("remark",Data[0].remark)
       const leadData = Data[0]?.leadFor.map((item) => ({
         licenseNumber: item?.licenseNumber,
         productorServiceName:
@@ -795,7 +795,6 @@ console.log(Data)
 
   //     setValueModal("city", Data[0]?.customerName?.city)
 
-  //     setValueModal("industry", Data[0]?.customerName?.industry)
   //     console.log("hh")
   //   }
   // }, [])
@@ -920,7 +919,6 @@ console.log(Data)
 
       setValueModal("city", Data[0]?.customerName?.city)
 
-      setValueModal("industry", Data[0]?.customerName?.industry)
     }
   }
   const Industries = [
@@ -1255,9 +1253,7 @@ console.log(Data)
           selectedleadlist,
           Data[0]?._id
         )
-        if (updated) {
-          toast.success("Lead updated successfully")
-        }
+       
       }
     } catch (error) {
       console.log("error on onsubmit:", error)
@@ -1695,65 +1691,7 @@ console.log(Data)
                       </p>
                     )}
                   </div>
-                  {/* <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">
-                      Trade
-                    </label>
-                    <Controller
-                      name="trade"
-                      control={controlMain}
-                      rules={{ required: "Trade is required" }}
-                      render={({ field }) => (
-                        <Select
-                          {...field}
-                          options={tradeOptions}
-                          isDisabled={isReadOnly}
-                          placeholder="Select Trade"
-                          classNamePrefix="react-select"
-                          className={`
-          text-sm
-          ${isReadOnly ? "cursor-not-allowed opacity-70" : "cursor-pointer"}
-        `}
-                          styles={{
-                            control: (base, state) => ({
-                              ...base,
-                              minHeight: "34px",
-                              borderColor: errorsMain.trade
-                                ? "#ef4444"
-                                : "#d1d5db",
-                              backgroundColor: "#EEF2F8",
-                              boxShadow: state.isFocused
-                                ? "0 0 0 1px #3b82f6"
-                                : "none",
-                              "&:hover": {
-                                borderColor: errorsMain.trade
-                                  ? "#ef4444"
-                                  : "#9ca3af"
-                              }
-                            }),
-                            menuPortal: (base) => ({ ...base, zIndex: 9999 })
-                          }}
-                          menuPortalTarget={document.body}
-                          // react-select expects { value, label }, but your form needs just the value:
-                          onChange={(option) =>
-                            field.onChange(option?.value || "")
-                          }
-                          value={
-                            tradeOptions.find(
-                              (opt) => opt.value === field.value
-                            ) || null
-                          }
-                          isClearable
-                        />
-                      )}
-                    />
-
-                    {errorsMain.trade && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errorsMain.trade.message}
-                      </p>
-                    )}
-                  </div> */}
+                
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
                       Associate with
@@ -2530,29 +2468,7 @@ console.log(Data)
                     Business Information
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-2">
-                    {/* <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">
-                        Industry <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        {...registerModal("industry", {
-                          required: "Industry is required"
-                        })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] bg-gray-50 cursor-pointer transition"
-                      >
-                        <option value="">Select Industry</option>
-                        {Industries.map((industry, index) => (
-                          <option key={index} value={industry}>
-                            {industry}
-                          </option>
-                        ))}
-                      </select>
-                      {errorsModal.industry && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errorsModal.industry.message}
-                        </p>
-                      )}
-                    </div> */}
+                   
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
                         Partnership Type
