@@ -442,7 +442,8 @@ const LeadMaster = ({
   editloadingState,
   seteditLoadingState,
   showmessage,
-  showpopupMessage
+  showpopupMessage,
+selectedcompanyBranch
 }) => {
   console.log(Data)
   const {
@@ -670,13 +671,12 @@ const LeadMaster = ({
   console.log("hhh")
   useEffect(() => {
     if (loggeduser?._id) {
-console.log(Data)
-if(Data&&Data.length){
-setValueMain("leadBy", Data[0].leadBy._id)
-}else{
-   setValueMain("leadBy", loggeduser._id)
-}
-   
+      console.log(Data)
+      if (Data && Data.length) {
+        setValueMain("leadBy", Data[0].leadBy._id)
+      } else {
+        setValueMain("leadBy", loggeduser._id)
+      }
     }
   }, [loggeduser, setValueMain])
 
@@ -699,7 +699,7 @@ setValueMain("leadBy", Data[0].leadBy._id)
       }
       setValueMain("leadId", Data[0]?.leadId)
       setValueMain("partner", Data[0]?.partner)
-      setValueMain("trade", Data[0]?.trade)
+setValueMain("remark",Data[0].remark)
       setValueMain(
         "selfAllocation",
         Data[0]?.selfAllocation === true ? "true" : "false"
@@ -816,7 +816,7 @@ setValueMain("leadBy", Data[0].leadBy._id)
   //     console.log("hh")
   //   }
   // }, [])
-
+console.log(selectedBranch)
   useEffect(() => {
     if (customerData && customerData.length && selectedBranch) {
       const options = customerData.map((item) => {
@@ -1217,7 +1217,6 @@ setValueMain("leadBy", Data[0].leadBy._id)
       phone: "",
       mobile: "",
       source: "",
-      trade: "",
       partner: "",
       allocationType: "followup",
       dueDate: "",
@@ -1255,6 +1254,7 @@ setValueMain("leadBy", Data[0].leadBy._id)
     if (submitLoading) return
     try {
       if (hasDuplicateLeadRows(selectedleadlist)) {
+console.log("HHH")
         setValidateError((prev) => ({
           ...prev,
           duplicate:
@@ -1263,10 +1263,14 @@ setValueMain("leadBy", Data[0].leadBy._id)
         setsubmitLoading(false)
         return
       } else if (validateError.duplicate) {
+console.log(
+"LLL")
         setValidateError((prev) => ({ ...prev, duplicate: "" }))
       }
 
       if (process === "Registration") {
+console.log(
+"hhh")
         const filteredleadlist = selectedleadlist.filter(
           (item) => item.productorServiceId && item.productorServiceId !== ""
         )
@@ -1283,11 +1287,14 @@ setValueMain("leadBy", Data[0].leadBy._id)
           filteredleadlist,
           loggeduser.role
         )
+console.log(validation.eligible)
         setFormData(data)
         setPopupMessage(validation.message)
         if (validation.message === "") {
+console.log("HHh")
           await handlePopupOk(true, data)
         } else {
+console.log("Hhh")
           setPopupOpen(true)
         }
         setIseligible(validation.eligible)
@@ -1319,21 +1326,29 @@ setValueMain("leadBy", Data[0].leadBy._id)
     )
     let response
     if (isEligible && leadData === null) {
+console.log(
+"pppp")
       response = await handleleadData(
         formData,
         filteredleadlist,
         loggeduser.role
       )
     } else if (ischek && leadData) {
+console.log(
+"Hhh")
       response = await handleleadData(
         leadData,
         filteredleadlist,
         loggeduser.role
       )
+console.log(response)
     }
     if (response?.success) {
+console.log("hhhhh")
       resetLeadForm()
     }
+console.log(
+"OOo")
   }
 
   const normalizeMobile = (number) => {
@@ -1429,97 +1444,6 @@ setValueMain("leadBy", Data[0].leadBy._id)
       setModalLoader(false)
     }
   }
-  const tradeOptions = [
-    { value: "Wholesale Trading", label: "Wholesale Trading" },
-    { value: "Retail Trading", label: "Retail Trading" },
-    { value: "Import & Export", label: "Import & Export" },
-    { value: "Distribution / Dealers", label: "Distribution / Dealers" },
-    {
-      value: "E-commerce / Online Trading",
-      label: "E-commerce / Online Trading"
-    },
-    { value: "IT Services", label: "IT Services" },
-    { value: "Web Design & Development", label: "Web Design & Development" },
-    { value: "Cyber Security Services", label: "Cyber Security Services" },
-    { value: "Hardware & Networking", label: "Hardware & Networking" },
-    { value: "Construction Companies", label: "Construction Companies" },
-    {
-      value: "Pharmaceutical Manufacturing",
-      label: "Pharmaceutical Manufacturing"
-    },
-    { value: "Food Manufacturing", label: "Food Manufacturing" },
-    {
-      value: "Textile / Garment Manufacturing",
-      label: "Textile / Garment Manufacturing"
-    },
-    { value: "Chemical Manufacturing", label: "Chemical Manufacturing" },
-    { value: "Plastic Manufacturing", label: "Plastic Manufacturing" },
-    {
-      value: "Steel / Metal Manufacturing",
-      label: "Steel / Metal Manufacturing"
-    },
-    { value: "Furniture Manufacturing", label: "Furniture Manufacturing" },
-    { value: "Building Contractors", label: "Building Contractors" },
-    { value: "Real Estate Developers", label: "Real Estate Developers" },
-    {
-      value: "Electrical Equipment Manufacturing",
-      label: "Electrical Equipment Manufacturing"
-    },
-    { value: "Electronics Manufacturing", label: "Electronics Manufacturing" },
-    { value: "Automobile Manufacturing", label: "Automobile Manufacturing" },
-    { value: "Hospitals", label: "Hospitals" },
-    { value: "Clinics", label: "Clinics" },
-    { value: "Medical Laboratories", label: "Medical Laboratories" },
-    {
-      value: "Medical Equipment Suppliers",
-      label: "Medical Equipment Suppliers"
-    },
-    {
-      value: "Pharmacies / Medical Stores",
-      label: "Pharmacies / Medical Stores"
-    },
-    { value: "Interior Design", label: "Interior Design" },
-    { value: "Vehicle Dealers", label: "Vehicle Dealers" },
-    {
-      value: "Automobile Service Centres",
-      label: "Automobile Service Centres"
-    },
-    { value: "Insurance Companies", label: "Insurance Companies" },
-    { value: "Spare Parts Dealers", label: "Spare Parts Dealers" },
-    { value: "Transport & Logistics", label: "Transport & Logistics" },
-    { value: "Banks", label: "Banks" },
-    { value: "Finance Companies", label: "Finance Companies" },
-    { value: "Hotels & Resorts", label: "Hotels & Resorts" },
-    { value: "Schools", label: "Schools" },
-    { value: "Colleges", label: "Colleges" },
-    { value: "Training Institutes", label: "Training Institutes" },
-    { value: "Coaching Centers", label: "Coaching Centers" },
-    { value: "Educational Consultants", label: "Educational Consultants" },
-    { value: "Software Development", label: "Software Development" },
-    { value: "Restaurants / Cafes", label: "Restaurants / Cafes" },
-    { value: "Travel Agencies", label: "Travel Agencies" },
-    { value: "Tourism Operators", label: "Tourism Operators" },
-    {
-      value: "Advertising & Marketing Agencies",
-      label: "Advertising & Marketing Agencies"
-    },
-    { value: "Event Management", label: "Event Management" },
-    { value: "Security Services", label: "Security Services" },
-    {
-      value: "Cleaning / Facility Management",
-      label: "Cleaning / Facility Management"
-    },
-    {
-      value: "Chartered Accountants / Audit Firms",
-      label: "Chartered Accountants / Audit Firms"
-    },
-    { value: "Tax Consultants", label: "Tax Consultants" },
-    {
-      value: "NGOs / Non-Profit Organizations",
-      label: "NGOs / Non-Profit Organizations"
-    },
-    { value: "Government Organizations", label: "Government Organizations" }
-  ]
 
   const tableRows = selectedleadlist || []
   console.log(tableRows)
@@ -2837,7 +2761,7 @@ setValueMain("leadBy", Data[0].leadBy._id)
                           isReadOnly ? "cursor-not-allowed opacity-70" : ""
                         }`}
                       >
-                        {Data ? "UPDATE" : "NEW"}
+                        {Data ? "UPDATE CUSTOMER" : "NEW CUSTOMER"}
                       </button>
                     </div>
                     {errorsMain.customerName && (
@@ -2926,6 +2850,7 @@ setValueMain("leadBy", Data[0].leadBy._id)
                       <option value="instagram">Instagram</option>
                       <option value="facebook">Facebook</option>
                       <option value="Direct">Direct</option>
+                      <option value="justdial">Just Dial</option>
                     </select>
                     {errorsMain.source && (
                       <p className="text-red-500 text-xs mt-1">
@@ -2933,68 +2858,7 @@ setValueMain("leadBy", Data[0].leadBy._id)
                       </p>
                     )}
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">
-                      Trade
-                    </label>
-                    <Controller
-                      name="trade"
-                      control={controlMain}
-                      rules={{ required: "Trade is required" }}
-                      render={({ field }) => (
-                        <Select
-                          {...field}
-                          options={tradeOptions}
-                          isDisabled={isReadOnly}
-                          placeholder="Select Trade"
-                          classNamePrefix="react-select"
-                          className={`
-          text-sm
-          ${isReadOnly ? "cursor-not-allowed opacity-70" : "cursor-pointer"}
-        `}
-                          styles={{
-                            control: (base, state) => ({
-                              ...base,
-                              minHeight: "34px",
-                              borderColor: errorsMain.trade
-                                ? "#ef4444"
-                                : "#d1d5db",
-                              backgroundColor: "#EEF2F8",
-                              boxShadow: state.isFocused
-                                ? "0 0 0 1px #3b82f6"
-                                : "none",
-                              "&:hover": {
-                                borderColor: errorsMain.trade
-                                  ? "#ef4444"
-                                  : "#9ca3af"
-                              }
-                            }),
-                            menuPortal: (base) => ({
-                              ...base,
-                              zIndex: 9999
-                            })
-                          }}
-                          menuPortalTarget={document.body}
-                          // react-select expects { value, label }, but your form needs just the value:
-                          onChange={(option) =>
-                            field.onChange(option?.value || "")
-                          }
-                          value={
-                            tradeOptions.find(
-                              (opt) => opt.value === field.value
-                            ) || null
-                          }
-                          isClearable
-                        />
-                      )}
-                    />
 
-                    {errorsMain.trade && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errorsMain.trade.message}
-                      </p>
-                    )}
-                  </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
                       Associate with
@@ -3399,10 +3263,12 @@ setValueMain("leadBy", Data[0].leadBy._id)
                     ) : (
                       <div className="flex items-center">
                         <input type="hidden" {...registerMain("leadBy")} />
-                        <p className="text-sm italic text-gray-500 whitespace-nowrap">
+                        <p className="text-sm text-gray-500 whitespace-nowrap uppercase">
                           Lead by:{" "}
                           <span className="font-semibold text-[#1B2A4A]">
-                            {Data&&Data.length?Data[0]?.leadBy?.name:loggeduser?.name}
+                            {Data && Data.length
+                              ? Data[0]?.leadBy?.name
+                              : loggeduser?.name}
                           </span>
                         </p>
                       </div>
@@ -3426,7 +3292,7 @@ setValueMain("leadBy", Data[0].leadBy._id)
                       type="submit"
                       className="bg-[#1B2A4A] hover:bg-[#243660] text-white py-2 px-8 rounded text-sm font-semibold tracking-wide transition-colors mt-1"
                     >
-                      {process === "Registration" ? "SUBMIT" : "UPDATE"}
+                      {process === "Registration" ? "SUBMIT LEAD" : "UPDATE LEAD"}
                     </button>
                   </div>
                 </div>
@@ -3491,6 +3357,40 @@ setValueMain("leadBy", Data[0].leadBy._id)
                   onSubmit={handleSubmitModal(onmodalsubmit)}
                   className="overflow-y-auto flex-1 px-6 py-4"
                 >
+                  <div>
+                    <input
+                      type="hidden"
+                      {...registerModal("customerid", {
+                        required: "Customerid is Required"
+                      })}
+                      onBlur={(e) =>
+                        setValueModal("customerid", e.target.value.trim())
+                      }
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
+                    />
+                    {errorsModal.customerid && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errorsModal.customerid.message}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <input
+                      type="hidden"
+                      {...registerModal("leadid", {
+                        required: "leadid is Required"
+                      })}
+                      onBlur={(e) =>
+                        setValueModal("leadid", e.target.value.trim())
+                      }
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
+                    />
+                    {errorsModal.leadid && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errorsModal.leadid.message}
+                      </p>
+                    )}
+                  </div>
                   <p className="text-[10px] font-bold text-[#1B2A4A] uppercase tracking-widest mb-2 border-b border-gray-200 pb-1">
                     Basic Information
                   </p>
@@ -3591,40 +3491,7 @@ setValueMain("leadBy", Data[0].leadBy._id)
                         </p>
                       )}
                     </div>
-                    <div>
-                      <input
-                        type="hidden"
-                        {...registerModal("customerid", {
-                          required: "Customerid is Required"
-                        })}
-                        onBlur={(e) =>
-                          setValueModal("customerid", e.target.value.trim())
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-                      />
-                      {errorsModal.customerid && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errorsModal.customerid.message}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <input
-                        type="hidden"
-                        {...registerModal("leadid", {
-                          required: "leadid is Required"
-                        })}
-                        onBlur={(e) =>
-                          setValueModal("leadid", e.target.value.trim())
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] focus:ring-1 focus:ring-[#1B2A4A] bg-gray-50 transition"
-                      />
-                      {errorsModal.leadid && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errorsModal.leadid.message}
-                        </p>
-                      )}
-                    </div>
+
                     <div className="md:col-span-2">
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
                         Address
@@ -3649,34 +3516,7 @@ setValueMain("leadBy", Data[0].leadBy._id)
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
                         Country
                       </label>
-                      {/* <Select
-                        options={countryOptions}
-                        value={selectedCountry}
-                        getOptionLabel={(o) => o.label}
-                        getOptionValue={(o) => o.value}
-                        {...registerModal("country")}
-                        
-                        onChange={(option) => {
-                          console.log("hhhh")
-                          setSelectedCountry(option)
-                          setValueModal("country", option.value)
-                        }}
-                        menuPortalTarget={document.body}
-                        menuShouldScrollIntoView={false}
-                        styles={{
-                          control: (base) => ({
-                            ...base,
-                            border: "1px solid #D1D5DB",
-                            borderRadius: "0.5rem",
-                            backgroundColor: "#F9FAFB",
-                            boxShadow: "none",
-                            minHeight: 38,
-                            fontSize: 14,
-                            "&:hover": { borderColor: "#1B2A4A" }
-                          }),
-                          menuList: (base) => ({ ...base, maxHeight: 200 })
-                        }}
-                      /> */}
+
                       <Controller
                         name="country"
                         control={controlModal}
@@ -3701,35 +3541,7 @@ setValueMain("leadBy", Data[0].leadBy._id)
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
                         State
                       </label>
-                      {/* <Select
-                        options={stateOptions}
-                        value={selectedState}
-                        getOptionLabel={(o) => o.label}
-                        getOptionValue={(o) => o.value}
-                        {...registerModal("state")}
-                        onChange={(option) => {
-                          setSelectedState(option)
-                          setValueModal("state", option.value)
-                        }}
-                        isDisabled={!selectedCountry}
-                        menuPortalTarget={document.body}
-                        menuShouldScrollIntoView={false}
-                        styles={{
-                          control: (base, state) => ({
-                            ...base,
-                            border: "1px solid #D1D5DB",
-                            borderRadius: "0.5rem",
-                            backgroundColor: state.isDisabled
-                              ? "#F3F4F6"
-                              : "#F9FAFB",
-                            boxShadow: "none",
-                            minHeight: 38,
-                            fontSize: 14,
-                            "&:hover": { borderColor: "#1B2A4A" }
-                          }),
-                          menuList: (base) => ({ ...base, maxHeight: 200 })
-                        }}
-                      /> */}
+
                       <Controller
                         name="state"
                         control={controlModal}
@@ -3784,29 +3596,6 @@ setValueMain("leadBy", Data[0].leadBy._id)
                     Business Information
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-2">
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">
-                        Industry <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        {...registerModal("industry", {
-                          required: "Industry is required"
-                        })}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#1B2A4A] bg-gray-50 cursor-pointer transition"
-                      >
-                        <option value="">Select Industry</option>
-                        {Industries.map((industry, index) => (
-                          <option key={index} value={industry}>
-                            {industry}
-                          </option>
-                        ))}
-                      </select>
-                      {errorsModal.industry && (
-                        <p className="text-red-500 text-xs mt-1">
-                          {errorsModal.industry.message}
-                        </p>
-                      )}
-                    </div>
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
                         Partnership Type

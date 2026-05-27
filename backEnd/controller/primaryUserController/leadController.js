@@ -11,11 +11,172 @@ import Service from "../../model/primaryUser/servicesSchema.js";
 import getLeadMetricsForSingleDay from "../../helper/leadandtaskcount.js";
 import { getCallMetricsForSingleDay } from "../../helper/callcount.js";
 import { formatDate } from "../../../frontend/src/utils/dateUtils.js";
-export const LeadRegister = async (req, res) => {
-  try {
-    const { leadData, selectedtableLeadData, role } = req.body;
+// export const LeadRegister = async (req, res) => {
+//   try {
+//     const { leadData, selectedtableLeadData, role } = req.body;
 
-    // return
+//     // return
+//     const {
+//       customerName,
+//       mobile,
+//       phone,
+//       email,
+//       location,
+//       source,
+//       pincode,
+//       remark,
+//       dueDate,
+//       taxAmount,
+//       taxableAmount,
+//       netAmount,
+
+//       partner,
+//       allocationType = null,
+//       selfAllocation,
+//       leadBy,
+//       leadBranch,
+//     } = leadData;
+
+//     const leadDate = new Date();
+//     const lastLead = await LeadId.findOne().sort({ leadId: -1 });
+
+//     // Generate new leadId
+//     let newLeadId = "00001"; // Default if no leads exist
+
+//     if (lastLead) {
+//       const lastId = parseInt(lastLead.leadId, 10); // Convert to number
+//       newLeadId = String(lastId + 1).padStart(5, "0"); // Convert back to 5-digit string
+//     }
+
+//     let leadByModel = null; // Determine dynamically
+//     // Check if leadBy exists in Staff or Admin collection
+
+//     const isStaff = await Staff.findById(leadBy).lean();
+
+//     if (isStaff) {
+//       leadByModel = "Staff";
+//     } else {
+//       const isAdmin = await Admin.findById(leadBy).lean();
+//       if (isAdmin) {
+//         leadByModel = "Admin";
+//       }
+//     }
+
+//     if (!leadByModel) {
+//       return res.status(400).json({ message: "Invalid leadBy reference" });
+//     }
+//     const session = await mongoose.startSession();
+//     session.startTransaction();
+//     const leadtask = await Task.findOne({ taskName: "Lead" });
+//     let allocationtask = null;
+//     if (allocationType) {
+//       allocationtask = await Task.findOne({ taskName: "Allocation" });
+//     }
+//     const activityLog = [
+//       {
+//         submissionDate: leadDate,
+//         submittedUser: leadBy,
+//         submissiondoneByModel: leadByModel,
+//         remarks: remark,
+//         taskBy: leadtask?._id,
+//       },
+//     ];
+//     const allocationName = await Task.findOne({
+//       taskName: { $regex: new RegExp(`^${allocationType}$`, 'i') }
+//     });
+//     console.log("alocationtype", allocationType)
+//     if (allocationType) {
+//       // const allocationName = await Task.findOne({ taskName: allocationType });
+
+//       activityLog.push({
+//         submissionDate: leadDate,
+//         submittedUser: leadBy,
+//         submissiondoneByModel: leadByModel,
+//         taskallocatedBy: leadBy,
+//         taskallocatedByModel: leadByModel,
+//         taskallocatedTo: leadBy,
+//         taskallocatedToModel: leadByModel,
+//         remarks: remark,
+//         taskBy: allocationtask?._id,
+//         taskTo: allocationName?.taskName.toLowerCase(),
+//         taskId: allocationName?._id,
+//         allocationChanged: false,
+//         followupClosed: false,
+//         taskfromFollowup: false,
+//         allocationDate: dueDate,
+//       });
+//     }
+//     const lead = new LeadMaster({
+//       leadId: newLeadId,
+//       leadDate,
+//       customerName,
+//       mobile,
+//       phone,
+//       email,
+//       location,
+//       pincode,
+//       dueDate,
+//       source,
+//       partner,
+//       leadBranch,
+//       remark,
+//       leadBy,
+//       leadByModel, // Now set dynamically
+//       taxAmount: Number(taxAmount),
+//       taxableAmount: Number(taxableAmount),
+//       netAmount: Number(netAmount),
+
+//       balanceAmount: Number(netAmount),
+//       selfAllocation: selfAllocation,
+//       ...(allocationType && { allocationType: allocationName?._id }),
+//       ...(selfAllocation && {
+//         selfAllocationType: allocationName?._id,
+//         selfAllocationDueDate: dueDate,
+//       }),
+//       activityLog,
+//     });
+//     selectedtableLeadData.forEach((item) =>
+//       lead.leadFor.push({
+//         productorServiceId: item.productorServiceId,
+//         productorServicemodel: item.itemType,
+//         licenseNumber: item.licenseNumber,
+//         productPrice: item.productPrice,
+//         hsn: item.hsn,
+//         netAmount: item.netAmount,
+//         price: item.price,
+//       })
+//     );
+//     await lead.save({ session });
+//     const leadidonly = new LeadId({
+//       leadId: newLeadId,
+//       leadBy,
+//       assignedtoleadByModel: leadByModel, // Now set dynamically
+//     });
+//     await leadidonly.save({ session });
+// const updatedcustomer=await Customer.findByIdAndUpdate({_id:customerName},{
+// {$set:{
+// mobile:mobile,
+// landline:phone,
+// email:email
+// }}
+// })
+//     await session.commitTransaction();
+//     session.endSession();
+//     res.status(200).json({
+//       success: true,
+//       message: "Lead created successfully",
+//     });
+//   } catch (error) {
+//     console.log("error:", error);
+//     return res.status(500).json({ message: "Internal server error" });
+//   }
+// };
+export const LeadRegister = async (req, res) => {
+  const session = await mongoose.startSession()
+
+  try {
+    const { leadData, selectedtableLeadData, role } = req.body
+
     const {
       customerName,
       mobile,
@@ -24,55 +185,55 @@ export const LeadRegister = async (req, res) => {
       location,
       source,
       pincode,
-      trade,
       remark,
       dueDate,
       taxAmount,
       taxableAmount,
       netAmount,
-
       partner,
       allocationType = null,
       selfAllocation,
       leadBy,
       leadBranch,
-    } = leadData;
+    } = leadData
 
-    const leadDate = new Date();
-    const lastLead = await LeadId.findOne().sort({ leadId: -1 });
+    const leadDate = new Date()
+    const lastLead = await LeadId.findOne().sort({ leadId: -1 }).session(session)
 
-    // Generate new leadId
-    let newLeadId = "00001"; // Default if no leads exist
+    let newLeadId = "00001"
 
     if (lastLead) {
-      const lastId = parseInt(lastLead.leadId, 10); // Convert to number
-      newLeadId = String(lastId + 1).padStart(5, "0"); // Convert back to 5-digit string
+      const lastId = parseInt(lastLead.leadId, 10)
+      newLeadId = String(lastId + 1).padStart(5, "0")
     }
 
-    let leadByModel = null; // Determine dynamically
-    // Check if leadBy exists in Staff or Admin collection
+    let leadByModel = null
 
-    const isStaff = await Staff.findById(leadBy).lean();
+    const isStaff = await Staff.findById(leadBy).lean().session(session)
 
     if (isStaff) {
-      leadByModel = "Staff";
+      leadByModel = "Staff"
     } else {
-      const isAdmin = await Admin.findById(leadBy).lean();
+      const isAdmin = await Admin.findById(leadBy).lean().session(session)
       if (isAdmin) {
-        leadByModel = "Admin";
+        leadByModel = "Admin"
       }
     }
 
     if (!leadByModel) {
-      return res.status(400).json({ message: "Invalid leadBy reference" });
+      await session.endSession()
+      return res.status(400).json({ message: "Invalid leadBy reference" })
     }
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    const leadtask = await Task.findOne({ taskName: "Lead" });
-    let allocationtask = null;
+
+    await session.startTransaction()
+
+    const leadtask = await Task.findOne({ taskName: "Lead" }).session(session)
+
+    let allocationtask = null
     if (allocationType) {
-      allocationtask = await Task.findOne({ taskName: "Allocation" });
+      allocationtask = await Task.findOne({ taskName: "Allocation" }).session(session)
     }
+
     const activityLog = [
       {
         submissionDate: leadDate,
@@ -81,14 +242,13 @@ export const LeadRegister = async (req, res) => {
         remarks: remark,
         taskBy: leadtask?._id,
       },
-    ];
-    const allocationName = await Task.findOne({
-      taskName: { $regex: new RegExp(`^${allocationType}$`, 'i') }
-    });
-    console.log("alocationtype", allocationType)
-    if (allocationType) {
-      // const allocationName = await Task.findOne({ taskName: allocationType });
+    ]
 
+    const allocationName = await Task.findOne({
+      taskName: { $regex: new RegExp(`^${allocationType}$`, "i") },
+    }).session(session)
+
+    if (allocationType) {
       activityLog.push({
         submissionDate: leadDate,
         submittedUser: leadBy,
@@ -105,8 +265,9 @@ export const LeadRegister = async (req, res) => {
         followupClosed: false,
         taskfromFollowup: false,
         allocationDate: dueDate,
-      });
+      })
     }
+
     const lead = new LeadMaster({
       leadId: newLeadId,
       leadDate,
@@ -117,17 +278,15 @@ export const LeadRegister = async (req, res) => {
       location,
       pincode,
       dueDate,
-      trade,
       source,
       partner,
       leadBranch,
       remark,
       leadBy,
-      leadByModel, // Now set dynamically
+      leadByModel,
       taxAmount: Number(taxAmount),
       taxableAmount: Number(taxableAmount),
       netAmount: Number(netAmount),
-
       balanceAmount: Number(netAmount),
       selfAllocation: selfAllocation,
       ...(allocationType && { allocationType: allocationName?._id }),
@@ -136,7 +295,8 @@ export const LeadRegister = async (req, res) => {
         selfAllocationDueDate: dueDate,
       }),
       activityLog,
-    });
+    })
+
     selectedtableLeadData.forEach((item) =>
       lead.leadFor.push({
         productorServiceId: item.productorServiceId,
@@ -147,25 +307,44 @@ export const LeadRegister = async (req, res) => {
         netAmount: item.netAmount,
         price: item.price,
       })
-    );
-    await lead.save({ session });
+    )
+
+    await lead.save({ session })
+
     const leadidonly = new LeadId({
       leadId: newLeadId,
       leadBy,
-      assignedtoleadByModel: leadByModel, // Now set dynamically
-    });
-    await leadidonly.save({ session });
-    await session.commitTransaction();
-    session.endSession();
-    res.status(200).json({
+      assignedtoleadByModel: leadByModel,
+    })
+
+    await leadidonly.save({ session })
+
+    await Customer.findByIdAndUpdate(
+      customerName,
+      {
+        $set: {
+          mobile: mobile,
+          landline: phone,
+          email: email,
+        },
+      },
+      { session, new: true }
+    )
+
+    await session.commitTransaction()
+    await session.endSession()
+
+    return res.status(200).json({
       success: true,
       message: "Lead created successfully",
-    });
+    })
   } catch (error) {
-    console.log("error:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    await session.abortTransaction()
+    await session.endSession()
+    console.log("error:", error)
+    return res.status(500).json({ message: "Internal server error" })
   }
-};
+}
 export const Checkexistinglead = async (req, res) => {
   try {
     const { leadData, role, selectedleadlist } = req.query;
@@ -1024,6 +1203,13 @@ export const UpdateLeadRegister = async (req, res) => {
       balanceAmount: newbalance,
       leadFor: mappedleadData,
     });
+    const updatedcustomer = await Customer.findByIdAndUpdate(data.customerName, {
+      $set: {
+        mobile: data.mobile,
+        email: data.email,
+        landline: data.phone
+      }
+    })
 
     if (!updatedLead) {
       return res.status(404).json({ message: "Lead not found" });
@@ -5525,7 +5711,7 @@ export const Getalltasktoreport = async (req, res) => {
 }
 export const Getdailystaffreport = async (req, res) => {
   try {
-    const { startDate, endDate,selectedBranch } = req.query
+    const { startDate, endDate, selectedBranch } = req.query
 
     if (!startDate || !endDate) {
       return res.status(400).json({ message: "startDate and endDate required" });
@@ -5548,7 +5734,7 @@ export const Getdailystaffreport = async (req, res) => {
     const dateStr = currentDate.toLocaleDateString('en-IN'); // "25-1-2026"
 
     // Pass ONLY the day's date to helper - it handles start/end of day
-    const leadMetrics = await getLeadMetricsForSingleDay(currentDate, reportEnd,selectedBranch);
+    const leadMetrics = await getLeadMetricsForSingleDay(currentDate, reportEnd, selectedBranch);
     const callMetrics = await getCallMetricsForSingleDay(currentDate, reportEnd)
 
     const dayReport = leadMetrics.map(lead => {
@@ -6843,9 +7029,9 @@ export const GetallproductwiseReport = async (req, res) => {
 };
 export const GetownLeadList = async (req, res) => {
   try {
-    const { userId, selectedBranch, role, ownlead,startDate,endDate } = req.query;
-console.log("stardate",startDate)
-console.log("endatae",endDate)
+    const { userId, selectedBranch, role, ownlead, startDate, endDate } = req.query;
+    console.log("stardate", startDate)
+    console.log("endatae", endDate)
     const objectId = new mongoose.Types.ObjectId(userId);
 
     let query;
@@ -6858,23 +7044,23 @@ console.log("endatae",endDate)
       query = { leadBranch: new mongoose.Types.ObjectId(selectedBranch) };
     }
 
-const parsedStart = startDate ? new Date(startDate) : null
-const parsedEnd = endDate ? new Date(endDate) : null
+    const parsedStart = startDate ? new Date(startDate) : null
+    const parsedEnd = endDate ? new Date(endDate) : null
 
-if (parsedStart && !isNaN(parsedStart.getTime()) && parsedEnd && !isNaN(parsedEnd.getTime())) {
-  parsedStart.setHours(0, 0, 0, 0)
-  parsedEnd.setHours(0, 0, 0, 0)
-  parsedEnd.setDate(parsedEnd.getDate() + 1)
+    if (parsedStart && !isNaN(parsedStart.getTime()) && parsedEnd && !isNaN(parsedEnd.getTime())) {
+      parsedStart.setHours(0, 0, 0, 0)
+      parsedEnd.setHours(0, 0, 0, 0)
+      parsedEnd.setDate(parsedEnd.getDate() + 1)
 
-  query.leadDate = {
-    $gte: parsedStart,
-    $lt: parsedEnd,
-  }
-}
+      query.leadDate = {
+        $gte: parsedStart,
+        $lt: parsedEnd,
+      }
+    }
     const matchedLead = await LeadMaster.find(query)
       .populate({ path: "customerName", select: "customerName" })
       .lean();
-console.log("mathced",matchedLead)
+    console.log("mathced", matchedLead)
 
     const populatedOwnLeads = await Promise.all(
       matchedLead.map(async (lead) => {
