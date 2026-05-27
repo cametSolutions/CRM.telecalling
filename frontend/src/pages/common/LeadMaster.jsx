@@ -699,7 +699,7 @@ selectedcompanyBranch
       }
       setValueMain("leadId", Data[0]?.leadId)
       setValueMain("partner", Data[0]?.partner)
-
+setValueMain("remark",Data[0].remark)
       setValueMain(
         "selfAllocation",
         Data[0]?.selfAllocation === true ? "true" : "false"
@@ -3263,7 +3263,7 @@ console.log(
                     ) : (
                       <div className="flex items-center">
                         <input type="hidden" {...registerMain("leadBy")} />
-                        <p className="text-sm italic text-gray-500 whitespace-nowrap">
+                        <p className="text-sm text-gray-500 whitespace-nowrap uppercase">
                           Lead by:{" "}
                           <span className="font-semibold text-[#1B2A4A]">
                             {Data && Data.length
