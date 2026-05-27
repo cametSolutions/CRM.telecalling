@@ -53,6 +53,8 @@ function LeadRegister() {
   )
 
   const handleSubmit = async (leadData, selectedtableLeadData, role) => {
+    console.log(leadData)
+  
     try {
       const response = await api.post("/lead/leadRegister", {
         assignedto: user?.assignedto,
@@ -62,20 +64,20 @@ function LeadRegister() {
       })
       if (response.status === 200) {
         toast.success(response && response.data && response.data.message)
-console.log("hhh")
+        console.log("hhh")
         return { success: true, data: response.data }
         // wait for toast to be visible, then reload
         // setTimeout(() => {
         //   navigate(0) // or window.location.reload()
         // }, 0)
       } else if (response.status === 201) {
-console.log("hhh")
+        console.log("hhh")
         setpopUpMessage(response.data.message)
         return { success: false, warning: response.data.message }
       }
       setLoader(false)
     } catch (error) {
-console.log("hh")
+      console.log("hh")
       console.error("Error creating product:", error)
       if (
         error.response &&
@@ -187,82 +189,6 @@ console.log("hh")
     }
   }
   return (
-    // <div className="h-full bg-[#ADD8E6] overflow-hidden">
-    //   <div className="flex h-full flex-row">
-    //     <StaticSidebar
-    //       handleMoreClick={handleMoreClick}
-    //       selectedCompanyBranch={selectedcompanyBranch}
-    //       setselectedCompanyBranch={setselectedcompanyBranch}
-    //       parenttargetData={settargetData}
-    //       parentperiodmode={setperiodMode}
-    //       parentyear={setSelectedYear}
-    //       setselectedPeriod={setselectedPeriod}
-    //     />
-    //     <div className="flex flex-1 flex-col overflow-hidden">
-    //       <header className="flex items-center justify-between border-b border-white/10 bg-[#0F172A]/95">
-    //         {user?.role?.toLowerCase() === "admin" ? (
-    //           <AdminHeader hide={true} />
-    //         ) : (
-    //           <StaffHeader hide={true} />
-    //         )}
-
-    //         <div className="flex items-center gap-1.5  border-b border-white/10 bg-[#0F172A]/95 pr-3 h-full">
-    //           <button className="rounded-full p-1.5 transition bg-slate-100">
-    //             <Mail size={15} strokeWidth={2.2} />
-    //           </button>
-    //           <div className="relative">
-    //             <button className="rounded-full p-1.5 transition bg-slate-100">
-    //               <MessageSquareText size={15} strokeWidth={2.2} />
-    //             </button>
-    //             <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
-    //           </div>
-    //           <button className="rounded-full p-1.5 transition bg-slate-100">
-    //             <Settings size={15} strokeWidth={2.2} />
-    //           </button>
-    //           {/* <button className="rounded-full p-1.5 transition bg-slate-100">
-    //             <User size={15} strokeWidth={2.2} />
-    //           </button> */}
-
-    //           <div className="relative">
-    //             <button
-    //               onClick={(e) => {
-    //                 e.stopPropagation()
-    //                 setShowUserMenu((prev) => !prev)
-    //               }}
-    //               className="rounded-full p-1.5 transition bg-slate-100"
-    //             >
-    //               <User size={15} strokeWidth={2.2} />
-    //             </button>
-
-    //             {/* {showUserMenu && (
-    //               <div
-    //                 onClick={(e) => e.stopPropagation()}
-    //                 className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
-    //               >
-    //                 <button
-    //                   onClick={handleLogout}
-    //                   className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
-    //                 >
-    //                   Logout
-    //                 </button>
-    //               </div>
-    //             )} */}
-    //           </div>
-    //         </div>
-    //       </header>
-    //       <div className="flex flex-1 ">
-    //         <LeadMaster
-    //           process="Registration"
-    //           handleleadData={handleSubmit}
-    //           loadingState={loader}
-    //           setLoadingState={setLoader}
-    //           showmessage={popupMessage}
-    //           showpopupMessage={setpopUpMessage}
-    //         />
-    //       </div>
-    //     </div>
-    //   </div>
-    // </div>
     <div className="h-full bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full flex-row overflow-hidden">
         <StaticSidebar
@@ -321,6 +247,7 @@ console.log("hh")
               setLoadingState={setLoader}
               showmessage={popupMessage}
               showpopupMessage={setpopUpMessage}
+              selectedcompanyBranch={selectedcompanyBranch}
             />
           </div>
         </div>

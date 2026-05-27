@@ -1031,7 +1031,6 @@ export const CustomerRegister = async (req, res) => {
     email,
     mobile,
     landline,
-    industry,
     registrationType,
     gstNo
   } = customerData
@@ -1066,7 +1065,6 @@ export const CustomerRegister = async (req, res) => {
       email,
       mobile,
       landline,
-      industry,
       registrationType,
       gstNo,
       partner: normalizedPartner,
@@ -1138,7 +1136,6 @@ export const CustomereditonLead = async (req, res) => {
             state: customerData?.state?.trim(),
             city: customerData?.city?.trim(),
             pincode: customerData?.pincode?.trim(),
-            industry: customerData?.industry || null,
             partner: customerData?.partner || null,
             registrationType: customerData?.registrationType || null
           }

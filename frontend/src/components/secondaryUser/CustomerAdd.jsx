@@ -102,7 +102,6 @@ const CustomerAdd = ({
     tvuAmount: "",
     tvuamountDescription: "",
     isActive: "Running",
-    industry: "",
     reasonofStatus: ""
   })
   //now created
@@ -151,7 +150,6 @@ const CustomerAdd = ({
         email: customer.email,
         mobile: customer.mobile,
         landline: customer.landline,
-        industry: customer.industry,
         partner: customer.partner,
         registrationType: customer.registrationType,
 
@@ -221,7 +219,6 @@ const CustomerAdd = ({
         tvuAmount: sel.tvuAmount || "",
         tvuamountDescription: sel.tvuamountDescription || "",
         isActive: sel.isActive || "",
-        industry: sel.industry || "",
         reasonofStatus: sel.reasonofStatus || ""
       }))
 
@@ -556,7 +553,6 @@ const CustomerAdd = ({
       tvuAmount: "",
       tvuamountDescription: "",
       isActive: "Running",
-      industry: "",
       reasonofStatus: ""
     })
     seteditState(false)
@@ -852,7 +848,7 @@ const CustomerAdd = ({
                 </span>
               )}
             </div>
-            <div className="">
+            {/* <div className="">
               <label className="block text-sm font-medium text-gray-700">
                 Type's of Industry
               </label>
@@ -873,7 +869,7 @@ const CustomerAdd = ({
                   {errors.industry.message}
                 </span>
               )}
-            </div>
+            </div> */}
             <div className="">
               <label className="block text-sm font-medium text-gray-700">
                 Partnership
