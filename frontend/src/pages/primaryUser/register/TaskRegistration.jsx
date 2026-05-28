@@ -89,7 +89,7 @@ export default function TaskRegistration() {
   }
   console.log(items)
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full bg-[#ADD8E6]">
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden px-6 py-4 space-y-6">
         {/* Form Section - Fixed Height */}

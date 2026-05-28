@@ -47,7 +47,7 @@ function HsnList() {
  
 
   return (
-    <section className="antialiased text-gray-600">
+    <section className="antialiased text-gray-600 bg-[#ADD8E6] h-full p-5">
       <div className="md:hidden sticky top-0  text-white mb-2 p-3 flex items-center gap-3 text-lg">
         <IoReorderThreeSharp
           //onClick={handleToggleSidebar}
@@ -63,7 +63,7 @@ function HsnList() {
         </div>
       </div>
 
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full bg-white rounded-md">
         {/* <!-- Table --> */}
         <div className="w-full  shadow-lg  ">
           <header className="hidden md:block px-5 py-3  bg-[#261b56] text-white">
