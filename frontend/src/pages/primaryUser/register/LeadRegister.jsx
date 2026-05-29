@@ -188,6 +188,7 @@ function LeadRegister() {
       setacheivedProducts([])
     }
   }
+console.log(selectedcompanyBranch)
   return (
     <div className="h-full bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full flex-row overflow-hidden">

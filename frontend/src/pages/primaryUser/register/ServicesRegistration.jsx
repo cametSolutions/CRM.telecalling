@@ -260,20 +260,19 @@ padding:20px;
 }
 
 
-.sr-header {
-  background: #1a1d2e;
 
-  padding: 18px 28px;
-
-  display: flex;
-  align-items: center;
-
-  flex-shrink: 0;
-
-  border-radius: 24px 24px 0 0;
-
-  box-shadow: 0 1px 0 rgba(255,255,255,.08);
-}
+ .sr-header {
+    background: #1a1d2e;
+    padding: 18px 28px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    flex-shrink: 0;
+    box-shadow: 0 1px 0 rgba(255,255,255,.08);
+  }
 
   .sr-title {
     color: #fff;
@@ -820,7 +819,7 @@ export default function ServicesRegistration() {
 
       <div className="sr-root">
         <header className="sr-header">
-          <span className="sr-title">Services Registration</span>
+          <span className="sr-title">Manage Services</span>
 
           <span className="sr-badge">Services</span>
         </header>

@@ -115,10 +115,10 @@ const Sidebar = ({
             <div className="mt-1.5">
               <BranchSelect
                 value={selectedBranch}
-                onChange={(value) => 
-// console.log(value)
-                  // setselectedParentBranch(value)
-                  setselectedBranch(value)
+                onChange={(value) =>{
+
+                  setselectedParentBranch(value)
+                  setselectedBranch(value)}
                 }
                 options={branchOptions}
               />

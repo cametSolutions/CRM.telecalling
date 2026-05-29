@@ -149,8 +149,10 @@ const LeadFollowUp = () => {
   const { data: branches } = UseFetch("/branch/getBranch")
   const { data } = UseFetch("/auth/getallUsers")
   const { data: branchProduct } = UseFetch(
+selectedCompanyBranch&&
     `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
   )
+console.log(selectedCompanyBranch)
   // [Keep all your existing useEffect hooks here - they remain the same]
   // ... (all the existing useEffect hooks from line 92 to line 600+)
 console.log(ownFollowUp)
@@ -175,7 +177,7 @@ console.log("HHH")
       setPending(pendingFromState)
       // keep full loggedUser object, just compare ids
       setOwnFollowUp(staffIdFromState === loggedUser._id)
-
+console.log(staffIdFromState === loggedUser._id)
       setproductwiseloader(true)
       try {
         const res = await api.get(
@@ -486,6 +488,7 @@ console.log("HHH")
       setPending(pendingorcleared)
       if (!loggedUser) return // NEW: guard
       setOwnFollowUp(staffIdFromState === loggedUser._id)
+console.log(staffIdFromState === loggedUser._id)
       setproductwiseloader(true)
       try {
         const res = await api.get(
@@ -1678,7 +1681,7 @@ console.log(pending)
         }
       }
 setOwnFollowUp(true)
-
+console.log("hhhhdd")
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
     } else {
       console.log("hh")
@@ -2315,7 +2318,9 @@ console.log(collectionupdatedata)
   )
 console.log(tableData)
   const currentData = statusAllocated ? allocatedLeads : tableData
+console.log(statusAllocated)
   console.log(loggedUser)
+console.log(ownFollowUp)
   return (
     <div className="h-full  bg-[#ADD8E6] overflow-hidden">
       <div className="flex h-full  flex-row">
@@ -2461,6 +2466,7 @@ console.log(tableData)
                           label: ownFollowUp ? "Own Followup" : "All Followup",
                           value: ownFollowUp,
                           toggle: () => {
+console.log(ownFollowUp)
                             setOwnFollowUp(!ownFollowUp)
                             setTableData([])
                             setAllocatedLeads([])

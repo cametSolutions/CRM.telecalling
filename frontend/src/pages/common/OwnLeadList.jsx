@@ -66,6 +66,7 @@ console.log(dates)
         location?.state?.role ? false : ownLead
       }&startDate=${dates.startDate}&endDate=${dates.endDate}`
   )
+console.log(selectedCompanyBranch)
 console.log(ownedlead)
   const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
