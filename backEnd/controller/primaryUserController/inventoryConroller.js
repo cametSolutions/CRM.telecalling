@@ -95,9 +95,7 @@ import Product  from "../../model/primaryUser/productSchema.js";
 //   }
 // }
 export const ProductSubdetailsRegistration = async (req, res) => {
-console.log("77777777777777777777")
   const cmp_id = req.owner.cmp_id; // ✅ from JWT
-  console.log("cmp_id:", cmp_id);
 
   const formData = req.body;
 
@@ -105,7 +103,7 @@ console.log("77777777777777777777")
   const value = formData[tab];
 
   let data;
-
+console.log("tabbbbbbbbbbb",tab)
   switch (tab) {
     case "brand":
       data = {
@@ -137,13 +135,15 @@ console.log("77777777777777777777")
         message: `${tab} already exists for this company`,
       });
     }
-
+console.log("data",data)
+console.log("cmpid",cmp_id)
     // ✅ Create new record with cmp_id
     const collection = new data.model({
       [data.field]: value,
       cmp_id: cmp_id,
     });
-
+console.log(
+"PPPPp")
     await collection.save();
 
     res.status(200).json({
@@ -157,44 +157,92 @@ console.log("77777777777777777777")
   }
 };
 
+// export const GetproductsubDetails = async (req, res) => {
+//   const { tab, page = 1, limit = 10 } = req.query // Assuming the tab (either 'brand' or 'category') is passed as a query parameter
+
+//   let model
+//   switch (tab) {
+//     case "brand":
+//       model = Brand
+//       break
+//     case "category":
+//       model = Category
+//       break
+//     default:
+//       return res.status(400).json({ message: "Invalid tab provided" })
+//   }
+
+//   try {
+//     const skip = (page - 1) * limit // Calculate how many items to skip
+//     const items = await model.find().skip(skip).limit(parseInt(limit)) // Fetch the items
+
+//     if (!items || items.length === 0) {
+//       return res.status(404).json({
+//         message: `${tab.charAt(0).toUpperCase() + tab.slice(1)}s not found`
+//       })
+//     }
+
+//     const totalItems = await model.countDocuments() // Get total number of documents
+//     const totalPages = Math.ceil(totalItems / limit) // Calculate total number of pages
+
+//     res.status(200).json({
+//       message: `${tab.charAt(0).toUpperCase() + tab.slice(1)}s found`,
+//       data: items,
+//       totalItems, // Total number of items
+//       totalPages, // Total number of pages
+//       currentPage: parseInt(page) // Current page number
+//     })
+//   } catch (error) {
+//     console.error(error.message)
+//     res.status(500).json({ message: "Server error", error })
+//   }
+// }
 export const GetproductsubDetails = async (req, res) => {
-  const { tab, page = 1, limit = 10 } = req.query // Assuming the tab (either 'brand' or 'category') is passed as a query parameter
+  const { tab } = req.query
 
   let model
+
   switch (tab) {
     case "brand":
       model = Brand
       break
+
     case "category":
       model = Category
       break
+
     default:
-      return res.status(400).json({ message: "Invalid tab provided" })
+      return res
+        .status(400)
+        .json({ message: "Invalid tab provided" })
   }
 
   try {
-    const skip = (page - 1) * limit // Calculate how many items to skip
-    const items = await model.find().skip(skip).limit(parseInt(limit)) // Fetch the items
+    const items = await model.find()
 
     if (!items || items.length === 0) {
       return res.status(404).json({
-        message: `${tab.charAt(0).toUpperCase() + tab.slice(1)}s not found`
+        message: `${
+          tab.charAt(0).toUpperCase() + tab.slice(1)
+        }s not found`
       })
     }
 
-    const totalItems = await model.countDocuments() // Get total number of documents
-    const totalPages = Math.ceil(totalItems / limit) // Calculate total number of pages
-
     res.status(200).json({
-      message: `${tab.charAt(0).toUpperCase() + tab.slice(1)}s found`,
+      message: `${
+        tab.charAt(0).toUpperCase() + tab.slice(1)
+      }s found`,
       data: items,
-      totalItems, // Total number of items
-      totalPages, // Total number of pages
-      currentPage: parseInt(page) // Current page number
+      totalItems: items.length
     })
+
   } catch (error) {
     console.error(error.message)
-    res.status(500).json({ message: "Server error", error })
+
+    res.status(500).json({
+      message: "Server error",
+      error
+    })
   }
 }
 

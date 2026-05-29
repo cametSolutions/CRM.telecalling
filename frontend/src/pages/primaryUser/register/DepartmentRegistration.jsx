@@ -80,7 +80,7 @@ export default function DepartmentRegistration() {
     }
   }
   return (
-    <div className=" ">
+    <div className=" bg-[#ADD8E6] h-full">
       <div className="bg-[#201450] py-3 px-5 sticky top-0 z-100  text-white text-lg font-bold  items-center flex flex-grow">
         <IoReorderThreeSharp
           // onClick={handleToggleSidebar}

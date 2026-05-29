@@ -5,7 +5,7 @@ import CustomerRegistration from "../../../pages/secondaryUser/register/Customer
 import CustomerEdit from "../../../pages/secondaryUser/edit/CustomerEdit"
 import UserRegistration from "../../../pages/primaryUser/register/UserRegistration"
 import { PartnerRegistration } from "../../../pages/primaryUser/register/PartnerRegistration"
-import { ServicesRegistration } from "../../../pages/primaryUser/register/ServicesRegistration"
+import  ServicesRegistration  from "../../../pages/primaryUser/register/ServicesRegistration"
 import BranchList from "../../../pages/primaryUser/List/BranchList"
 import CompanyEdit from "../../../pages/primaryUser/edit/CompanyEdit"
 import BranchEdit from "../../../pages/primaryUser/edit/BranchEdit"
