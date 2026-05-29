@@ -20,7 +20,6 @@
 //     }
 //   }, [data])
 
- 
 //   const handleEdit = (id) => {
 //     seteditState(false)
 //     const itemToEdit = items.find((item) => item._id === id)
@@ -72,9 +71,9 @@
 
 //         toast.success(`${tab.toUpperCase()} created successfully`)
 //       }
-     
+
 //       refreshHook()
-    
+
 //       setEditId(null)
 //     } catch (error) {
 //       console.error(error)
@@ -91,7 +90,7 @@
 //       <div className="flex items-center  w-full px-6  ">
 //         <input
 //           type="text"
-        
+
 //           onChange={(e) => {
 //             handleChange(e)
 //           }}
@@ -102,7 +101,7 @@
 //         />
 //         <div className="flex justify-between m-4">
 //           <button
-          
+
 //             onClick={handleSubmit}
 //             className="bg-blue-500 hover:bg-blue-700 text-white px-4 py-1 rounded "
 //           >
@@ -159,7 +158,7 @@
 //                 </tbody>
 //               </table>
 //             </div>
-           
+
 //           </div>
 //         </div>
 //       </section>
@@ -754,7 +753,7 @@
 import { useState, useEffect, useRef } from "react"
 import api from "../../api/api"
 import UseFetch from "../../hooks/useFetch"
-import toast from "react-hot-toast"
+import { toast } from "react-toastify"
 
 /* ─────────────────────────────────────────────
    Inline styles
@@ -1225,26 +1224,52 @@ const styles = `
 `
 
 const PencilIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
   </svg>
 )
 
 const TrashIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6"/>
-    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-    <path d="M10 11v6M14 11v6"/>
-    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+    <path d="M10 11v6M14 11v6" />
+    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
   </svg>
 )
 
 const MenuIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <line x1="3" y1="6" x2="21" y2="6"/>
-    <line x1="3" y1="12" x2="21" y2="12"/>
-    <line x1="3" y1="18" x2="21" y2="18"/>
+  <svg
+    width="22"
+    height="22"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+  >
+    <line x1="3" y1="6" x2="21" y2="6" />
+    <line x1="3" y1="12" x2="21" y2="12" />
+    <line x1="3" y1="18" x2="21" y2="18" />
   </svg>
 )
 
@@ -1333,8 +1358,10 @@ export default function ProductSubDetailsForm({ tab, onToggleSidebar }) {
 
   const inputRef = useRef(null)
 
-  const { data, refreshHook } = UseFetch(`/inventory/getproductsubDetails?tab=${tab}`)
-
+  const { data, refreshHook } = UseFetch(
+    `/inventory/getproductsubDetails?tab=${tab}`
+  )
+console.log(data)
   useEffect(() => {
     if (data) {
       setItems(data)
@@ -1371,6 +1398,7 @@ export default function ProductSubDetailsForm({ tab, onToggleSidebar }) {
       setItems((prev) => prev.filter((i) => i._id !== id))
 
       if (editId === id) resetForm()
+      toast.success(`${tab} Deleted successfully`)
     } catch {
       toast.error("Failed to delete. Try again.")
     }
@@ -1380,20 +1408,28 @@ export default function ProductSubDetailsForm({ tab, onToggleSidebar }) {
     const trimmed = value.trim()
 
     if (!trimmed) {
+console.log("hhh")
       toast.error("Field cannot be empty.")
       inputRef.current?.focus()
       return
     }
-
+console.log(tab)
     const formData = { [tab]: trimmed }
 
     try {
       if (isEditing && editId) {
-        await api.put(`/inventory/productSubdetailsEdit?tab=${tab}&id=${editId}`, formData)
+        await api.put(
+          `/inventory/productSubdetailsEdit?tab=${tab}&id=${editId}`,
+          formData
+        )
         toast.success(`${tab} updated successfully`)
       } else {
+console.log("hhh")
+console.log(formData)
         await api.post("/inventory/productSubdetailsRegistration", formData)
+console.log("hh")
         toast.success(`${tab} added successfully`)
+console.log("hhh")
       }
 
       resetForm()
@@ -1431,13 +1467,9 @@ export default function ProductSubDetailsForm({ tab, onToggleSidebar }) {
             <MenuIcon />
           </button>
 
-          <span className="psdf-header-title">
-            Manage {label}s
-          </span>
+          <span className="psdf-header-title">Manage {label}s</span>
 
-          <span className="psdf-header-badge">
-            Inventory
-          </span>
+          <span className="psdf-header-badge">Inventory</span>
         </header>
 
         <div className="psdf-body">
@@ -1497,21 +1529,13 @@ export default function ProductSubDetailsForm({ tab, onToggleSidebar }) {
                 <table className="psdf-table">
                   <thead>
                     <tr>
-                      <th style={{ width: "60%" }}>
-                        {label} Name
-                      </th>
+                      <th style={{ width: "60%" }}>{label} Name</th>
 
-                      <th
-                        className="center"
-                        style={{ width: "20%" }}
-                      >
+                      <th className="center" style={{ width: "20%" }}>
                         Edit
                       </th>
 
-                      <th
-                        className="right"
-                        style={{ width: "20%" }}
-                      >
+                      <th className="right" style={{ width: "20%" }}>
                         Delete
                       </th>
                     </tr>
@@ -1576,9 +1600,7 @@ export default function ProductSubDetailsForm({ tab, onToggleSidebar }) {
                             <div className="psdf-item-name">
                               <span className="psdf-item-dot" />
 
-                              <span className="psdf-item-text">
-                                {el[tab]}
-                              </span>
+                              <span className="psdf-item-text">{el[tab]}</span>
                             </div>
                           </td>
 

@@ -2987,9 +2987,9 @@ const styles = `
     overflow: hidden;
     display: flex;
     flex-direction: column;
-max-width:800px;
-  /* ADD THESE */
-  width: 100%;
+width:63%;
+  
+
   margin: 0 auto;
   }
 
