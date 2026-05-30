@@ -1010,7 +1010,7 @@ console.log(
           //   }
           // )
           const response = await fetch(
-            `https://www.crmtest.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
+            `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
             {
               method: "POST",
               headers: {
@@ -1141,7 +1141,7 @@ console.log(
         //   { formData, tableRows }
         // )
         const response = await api.post(
-          `https://www.crmtest.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
+          `https://www.crm.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
           { formData, tableRows }
         )
 
