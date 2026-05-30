@@ -3077,6 +3077,38 @@ const createOrUpdateTargetConfiguration = async (req, res) => {
         session.endSession()
     }
 }
+const deleteTargetConfiguration = async (req, res) => {
+  try {
+    const { categoryId, branchId, year, periodName } = req.body
+
+    if (!categoryId || !branchId || !year || !periodName) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields"
+      })
+    }
+
+    const deleted = await TargetConfiguration.deleteOne({
+      categoryId,
+      branch: branchId,
+      year,
+      periodName
+    })
+
+    return res.status(200).json({
+      success: true,
+      message: "Target configuration deleted successfully",
+      data: deleted
+    })
+  } catch (error) {
+    console.error("Delete Target Error:", error)
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to delete target configuration"
+    })
+  }
+}
 // const createOrUpdateTargetConfiguration = async (req, res) => {
 //     const session = await mongoose.startSession()
 //     session.startTransaction()
@@ -3636,52 +3668,52 @@ const updateTargetStatus = async (req, res) => {
  * Delete a target configuration
  * @route DELETE /api/targets/:id
  */
-const deleteTargetConfiguration = async (req, res) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+// const deleteTargetConfiguration = async (req, res) => {
+//     const session = await mongoose.startSession();
+//     session.startTransaction();
 
-    try {
-        const { id } = req.params;
+//     try {
+//         const { id } = req.params;
 
-        const targetConfig = await TargetConfiguration.findById(id);
-        if (!targetConfig) {
-            return res.status(404).json({
-                success: false,
-                message: 'Target configuration not found'
-            });
-        }
+//         const targetConfig = await TargetConfiguration.findById(id);
+//         if (!targetConfig) {
+//             return res.status(404).json({
+//                 success: false,
+//                 message: 'Target configuration not found'
+//             });
+//         }
 
-        // Check if there are any achievements
-        const achievementCount = await TargetAchievement.countDocuments({
-            targetConfigId: id
-        });
+//         // Check if there are any achievements
+//         const achievementCount = await TargetAchievement.countDocuments({
+//             targetConfigId: id
+//         });
 
-        if (achievementCount > 0) {
-            return res.status(400).json({
-                success: false,
-                message:
-                    'Cannot delete target with existing achievements. Archive it instead.'
-            });
-        }
+//         if (achievementCount > 0) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message:
+//                     'Cannot delete target with existing achievements. Archive it instead.'
+//             });
+//         }
 
-        await targetConfig.deleteOne({ session });
-        await session.commitTransaction();
+//         await targetConfig.deleteOne({ session });
+//         await session.commitTransaction();
 
-        res.json({
-            success: true,
-            message: 'Target configuration deleted successfully'
-        });
-    } catch (error) {
-        await session.abortTransaction();
-        console.error('Error deleting target configuration:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Failed to delete target configuration'
-        });
-    } finally {
-        session.endSession();
-    }
-};
+//         res.json({
+//             success: true,
+//             message: 'Target configuration deleted successfully'
+//         });
+//     } catch (error) {
+//         await session.abortTransaction();
+//         console.error('Error deleting target configuration:', error);
+//         res.status(500).json({
+//             success: false,
+//             message: 'Failed to delete target configuration'
+//         });
+//     } finally {
+//         session.endSession();
+//     }
+// };//original code from ai-but its not called its need to check
 
 // =====================================================
 // 7. GET USER TARGETS FOR SPECIFIC PERIOD
