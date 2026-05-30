@@ -45,7 +45,7 @@ const CompanyAdd = ({
   }
 
   return (
-    <div className="container justify-center items-center min-h-screen p-8 bg-gray-100">
+    <div className=" justify-center items-center min-h-screen p-8 bg-[#ADD8E6]">
       <div className="w-auto bg-white shadow-lg rounded p-8 ">
         <h2 className="text-2xl font-semibold mb-6">Company Registration</h2>
 

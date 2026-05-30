@@ -442,7 +442,8 @@ const LeadMaster = ({
   editloadingState,
   seteditLoadingState,
   showmessage,
-  showpopupMessage
+  showpopupMessage,
+selectedcompanyBranch
 }) => {
   console.log(Data)
   const {
@@ -451,6 +452,7 @@ const LeadMaster = ({
     setValue: setValueMain,
     watch: watchMain,
     control: controlMain,
+    reset: resetMain,
     clearErrors: clearMainerrors,
     formState: { errors: errorsMain }
   } = useForm()
@@ -507,9 +509,22 @@ const LeadMaster = ({
   const [validateError, setValidateError] = useState({})
   const [loggeduser, setloggedUser] = useState(null)
   const [allstaff, setallStaffs] = useState([])
-  const [selectedBranch, setSelectedBranch] = useState(null)
+  const [selectedBranch, setSelectedBranch] = useState(selectedcompanyBranch)
+console.log(selectedcompanyBranch)
+console.log(selectedBranch)
   const [tasklist, settasklist] = useState([])
   const [allcustomer, setallcustomer] = useState([])
+  const [selectedUserName, setselecteduserName] = useState(null)
+  const [selectedCategory, setselectedCategory] = useState(null)
+  const [selectedDatapopup, setselectedDataPopup] = useState({})
+  const [selectedYear, setSelectedYear] = useState(null)
+  const [periodMode, setperiodMode] = useState("all")
+  const [targetData, settargetData] = useState([])
+  console.log(targetData)
+  const [openModal, setOpenModal] = useState(false)
+  const [productlist, setproductList] = useState([])
+  const [achievedproducts, setacheivedProducts] = useState([])
+  const [selectedPeriod, setselectedPeriod] = useState("")
   console.log(allcustomer)
   const dropdownLicenseRef = useRef(null)
   const dropdownLeadforRef = useRef(null)
@@ -532,6 +547,7 @@ const LeadMaster = ({
       selectedBranch &&
       `/product/getallServices?branchselected=${selectedBranch}`
   )
+
   const { data: alluser, loading: usersLoading } = UseFetch("/auth/getallUsers")
   console.log(selectedBranch)
   const {
@@ -556,7 +572,9 @@ const LeadMaster = ({
   const canSelfAllocate =
     loggeduser?.department?._id === "670c866552847bbebbd35748" ||
     loggeduser?.department?._id === "670c867352847bbebbd35750"
-
+useEffect(() => {
+  setSelectedBranch(selectedcompanyBranch)
+}, [selectedcompanyBranch])
   useEffect(() => {
     if (!selectedleadlist || selectedleadlist.length === 0) {
       setSelectedLeadList([{ ...emptyRow }])
@@ -604,10 +622,10 @@ const LeadMaster = ({
       const defaultBranch = companybranches[0]._id
       if (Data && Data.length) {
         const customerBranch = Data[0].leadBranch
-        setSelectedBranch([customerBranch])
+        // setSelectedBranch([customerBranch])
         setValueMain("leadBranch", customerBranch)
       } else if (defaultBranch) {
-        setSelectedBranch([defaultBranch])
+        // setSelectedBranch([defaultBranch])
         setValueMain("leadBranch", defaultBranch)
       }
     }
@@ -656,9 +674,13 @@ const LeadMaster = ({
   }, [])
   console.log("hhh")
   useEffect(() => {
-    if (loggeduser?._id&&!(Data&&Data.length)) {
-console.log(Data)
-      setValueMain("leadBy", loggeduser._id)
+    if (loggeduser?._id) {
+      console.log(Data)
+      if (Data && Data.length) {
+        setValueMain("leadBy", Data[0].leadBy._id)
+      } else {
+        setValueMain("leadBy", loggeduser._id)
+      }
     }
   }, [loggeduser, setValueMain])
 
@@ -681,7 +703,7 @@ console.log(Data)
       }
       setValueMain("leadId", Data[0]?.leadId)
       setValueMain("partner", Data[0]?.partner)
-   setValueMain("leadBy",Data[0].leadBy._id)
+setValueMain("remark",Data[0].remark)
       setValueMain(
         "selfAllocation",
         Data[0]?.selfAllocation === true ? "true" : "false"
@@ -798,7 +820,7 @@ setValueMain("remark",Data[0].remark)
   //     console.log("hh")
   //   }
   // }, [])
-
+console.log(selectedBranch)
   useEffect(() => {
     if (customerData && customerData.length && selectedBranch) {
       const options = customerData.map((item) => {
@@ -860,6 +882,7 @@ setValueMain("remark",Data[0].remark)
       })),
     []
   )
+
   console.log(countryOptions)
   const stateOptions = selectedCountry
     ? State.getStatesOfCountry(selectedCountry.value).map((state) => ({
@@ -1184,13 +1207,57 @@ setValueMain("remark",Data[0].remark)
     setPopupMessage(result.data.message)
     return isEligible
   }
+  const resetLeadForm = () => {
+    const defaultBranch =
+      Array.isArray(companybranches) && companybranches.length > 0
+        ? companybranches[0]?._id || companybranches[0]?.id
+        : ""
 
+    resetMain({
+      customerName: "",
+      leadBranch: defaultBranch || "",
+      email: "",
+      phone: "",
+      mobile: "",
+      source: "",
+      partner: "",
+      allocationType: "followup",
+      dueDate: "",
+      remark: "",
+      taxableAmount: "",
+      taxAmount: "",
+      netAmount: "",
+      selfAllocation: false,
+      leadId: "",
+      leadBy: loggeduser?._id || loggeduser?.id || ""
+    })
+
+    clearMainerrors()
+    setValidateError({})
+    setwarningMessage("")
+    setSelectedCustomer(null)
+    setSelectedLicense(null)
+    setcustomerTableData([])
+    setSelectedLeadList([{ ...emptyRow }])
+    setProductorServiceSelections({})
+    setlicenseWithoutProductSelection([])
+    setselfAllocation(false)
+    setPopupMessage("")
+    setPopupOpen(false)
+    setIseligible(false)
+
+    if (defaultBranch) {
+      // setSelectedBranch([defaultBranch])
+      setValueMain("leadBranch", defaultBranch)
+    }
+  }
   const onSubmit = async (data) => {
     if (submitLoading) return
     setsubmitLoading(true)
     if (submitLoading) return
     try {
       if (hasDuplicateLeadRows(selectedleadlist)) {
+console.log("HHH")
         setValidateError((prev) => ({
           ...prev,
           duplicate:
@@ -1199,10 +1266,14 @@ setValueMain("remark",Data[0].remark)
         setsubmitLoading(false)
         return
       } else if (validateError.duplicate) {
+console.log(
+"LLL")
         setValidateError((prev) => ({ ...prev, duplicate: "" }))
       }
 
       if (process === "Registration") {
+console.log(
+"hhh")
         const filteredleadlist = selectedleadlist.filter(
           (item) => item.productorServiceId && item.productorServiceId !== ""
         )
@@ -1219,6 +1290,7 @@ setValueMain("remark",Data[0].remark)
           filteredleadlist,
           loggeduser.role
         )
+console.log(validation.eligible)
         setFormData(data)
         setPopupMessage(validation.message)
         if (validation.message === "") {
@@ -1234,6 +1306,7 @@ setValueMain("remark",Data[0].remark)
             }
           }
         } else {
+console.log("Hhh")
           setPopupOpen(true)
         }
         setIseligible(validation.eligible)
@@ -1268,21 +1341,31 @@ setValueMain("remark",Data[0].remark)
     const filteredleadlist = selectedleadlist.filter(
       (item) => item.productorServiceId && item.productorServiceId !== ""
     )
-    let saveorupdate = false
+    let response
     if (isEligible && leadData === null) {
-      saveorupdate = await handleleadData(
+console.log(
+"pppp")
+      response = await handleleadData(
         formData,
         filteredleadlist,
         loggeduser.role
       )
     } else if (ischek && leadData) {
-      saveorupdate = await handleleadData(
+console.log(
+"Hhh")
+      response = await handleleadData(
         leadData,
         filteredleadlist,
         loggeduser.role
       )
+console.log(response)
     }
-    return saveorupdate
+    if (response?.success) {
+console.log("hhhhh")
+      resetLeadForm()
+    }
+console.log(
+"OOo")
   }
 
   const normalizeMobile = (number) => {
@@ -1339,7 +1422,6 @@ setValueMain("remark",Data[0].remark)
           customerData: data
         })
       } else {
-        console.log("hhh")
         response = await api.post("/customer/customerRegistration", {
           customerData: data
         })
@@ -1379,103 +1461,14 @@ setValueMain("remark",Data[0].remark)
       setModalLoader(false)
     }
   }
-  const tradeOptions = [
-    { value: "Wholesale Trading", label: "Wholesale Trading" },
-    { value: "Retail Trading", label: "Retail Trading" },
-    { value: "Import & Export", label: "Import & Export" },
-    { value: "Distribution / Dealers", label: "Distribution / Dealers" },
-    {
-      value: "E-commerce / Online Trading",
-      label: "E-commerce / Online Trading"
-    },
-    { value: "IT Services", label: "IT Services" },
-    { value: "Web Design & Development", label: "Web Design & Development" },
-    { value: "Cyber Security Services", label: "Cyber Security Services" },
-    { value: "Hardware & Networking", label: "Hardware & Networking" },
-    { value: "Construction Companies", label: "Construction Companies" },
-    {
-      value: "Pharmaceutical Manufacturing",
-      label: "Pharmaceutical Manufacturing"
-    },
-    { value: "Food Manufacturing", label: "Food Manufacturing" },
-    {
-      value: "Textile / Garment Manufacturing",
-      label: "Textile / Garment Manufacturing"
-    },
-    { value: "Chemical Manufacturing", label: "Chemical Manufacturing" },
-    { value: "Plastic Manufacturing", label: "Plastic Manufacturing" },
-    {
-      value: "Steel / Metal Manufacturing",
-      label: "Steel / Metal Manufacturing"
-    },
-    { value: "Furniture Manufacturing", label: "Furniture Manufacturing" },
-    { value: "Building Contractors", label: "Building Contractors" },
-    { value: "Real Estate Developers", label: "Real Estate Developers" },
-    {
-      value: "Electrical Equipment Manufacturing",
-      label: "Electrical Equipment Manufacturing"
-    },
-    { value: "Electronics Manufacturing", label: "Electronics Manufacturing" },
-    { value: "Automobile Manufacturing", label: "Automobile Manufacturing" },
-    { value: "Hospitals", label: "Hospitals" },
-    { value: "Clinics", label: "Clinics" },
-    { value: "Medical Laboratories", label: "Medical Laboratories" },
-    {
-      value: "Medical Equipment Suppliers",
-      label: "Medical Equipment Suppliers"
-    },
-    {
-      value: "Pharmacies / Medical Stores",
-      label: "Pharmacies / Medical Stores"
-    },
-    { value: "Interior Design", label: "Interior Design" },
-    { value: "Vehicle Dealers", label: "Vehicle Dealers" },
-    {
-      value: "Automobile Service Centres",
-      label: "Automobile Service Centres"
-    },
-    { value: "Insurance Companies", label: "Insurance Companies" },
-    { value: "Spare Parts Dealers", label: "Spare Parts Dealers" },
-    { value: "Transport & Logistics", label: "Transport & Logistics" },
-    { value: "Banks", label: "Banks" },
-    { value: "Finance Companies", label: "Finance Companies" },
-    { value: "Hotels & Resorts", label: "Hotels & Resorts" },
-    { value: "Schools", label: "Schools" },
-    { value: "Colleges", label: "Colleges" },
-    { value: "Training Institutes", label: "Training Institutes" },
-    { value: "Coaching Centers", label: "Coaching Centers" },
-    { value: "Educational Consultants", label: "Educational Consultants" },
-    { value: "Software Development", label: "Software Development" },
-    { value: "Restaurants / Cafes", label: "Restaurants / Cafes" },
-    { value: "Travel Agencies", label: "Travel Agencies" },
-    { value: "Tourism Operators", label: "Tourism Operators" },
-    {
-      value: "Advertising & Marketing Agencies",
-      label: "Advertising & Marketing Agencies"
-    },
-    { value: "Event Management", label: "Event Management" },
-    { value: "Security Services", label: "Security Services" },
-    {
-      value: "Cleaning / Facility Management",
-      label: "Cleaning / Facility Management"
-    },
-    {
-      value: "Chartered Accountants / Audit Firms",
-      label: "Chartered Accountants / Audit Firms"
-    },
-    { value: "Tax Consultants", label: "Tax Consultants" },
-    {
-      value: "NGOs / Non-Profit Organizations",
-      label: "NGOs / Non-Profit Organizations"
-    },
-    { value: "Government Organizations", label: "Government Organizations" }
-  ]
 
   const tableRows = selectedleadlist || []
   console.log(tableRows)
 
   return (
-    <div className="bg-[#ADD8E6] h-auto">
+  
+
+    <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-[#ADD8E6]">
       {(modalloader ||
         loadingState ||
         editloadingState ||
@@ -1489,9 +1482,9 @@ setValueMain("remark",Data[0].remark)
         />
       )}
 
-      <div className="overflow-y-auto flex justify-center items-center p-3 shadow-xl ">
+      <div className="flex-1 min-h-0 overflow-y-auto p-3">
         <div
-          className="bg-white shadow-xl rounded md:w-3/5 "
+          className="mx-auto w-full max-w-4xl rounded bg-white shadow-xl"
           style={{
             opacity:
               productLoading || usersLoading || customerLoading ? 0.2 : 1,
@@ -1502,6 +1495,7 @@ setValueMain("remark",Data[0].remark)
             transition: "opacity 0.3s ease-in-out"
           }}
         >
+          {/* your existing form content */}
           {showmessage && (
             <PopUp
               isOpen={ispopupModalOpen}
@@ -1579,7 +1573,10 @@ setValueMain("remark",Data[0].remark)
                                 : "pointer",
                               opacity: state.isDisabled ? 0.7 : 1
                             }),
-                            menuList: (base) => ({ ...base, maxHeight: 200 })
+                            menuList: (base) => ({
+                              ...base,
+                              maxHeight: 200
+                            })
                           }}
                           menuPortalTarget={document.body}
                           menuShouldScrollIntoView={false}
@@ -1594,7 +1591,7 @@ setValueMain("remark",Data[0].remark)
                           isReadOnly ? "cursor-not-allowed opacity-70" : ""
                         }`}
                       >
-                        {Data ? "UPDATE CUSTOMER" : "NEW"}
+                        {Data ? "UPDATE CUSTOMER" : "NEW CUSTOMER"}
                       </button>
                     </div>
                     {errorsMain.customerName && (
@@ -1604,7 +1601,7 @@ setValueMain("remark",Data[0].remark)
                     )}
                   </div>
 
-                  <div className="flex md:justify-end items-end">
+                  {/* <div className="flex md:justify-end items-end">
                     <select
                       {...registerMain("leadBranch")}
                       disabled={!iscustomerchangeandbranch}
@@ -1625,7 +1622,7 @@ setValueMain("remark",Data[0].remark)
                         </option>
                       ))}
                     </select>
-                  </div>
+                  </div> */}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1691,7 +1688,6 @@ setValueMain("remark",Data[0].remark)
                       </p>
                     )}
                   </div>
-                
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 mb-1">
                       Associate with
@@ -2096,10 +2092,12 @@ setValueMain("remark",Data[0].remark)
                     ) : (
                       <div className="flex items-center">
                         <input type="hidden" {...registerMain("leadBy")} />
-                        <p className="text-sm  text-gray-500 whitespace-nowrap uppercase">
+                        <p className="text-sm text-gray-500 whitespace-nowrap uppercase">
                           Lead by:{" "}
                           <span className="font-semibold text-[#1B2A4A]">
-                            {Data&&Data.length?Data[0].leadBy.name:loggeduser?.name}
+                            {Data && Data.length
+                              ? Data[0]?.leadBy?.name
+                              : loggeduser?.name}
                           </span>
                         </p>
                       </div>
@@ -2123,7 +2121,7 @@ setValueMain("remark",Data[0].remark)
                       type="submit"
                       className="bg-[#1B2A4A] hover:bg-[#243660] text-white py-2 px-8 rounded text-sm font-semibold tracking-wide transition-colors mt-1"
                     >
-                      {process === "Registration" ? "SUBMIT" : "UPDATE"}
+                      {process === "Registration" ? "SUBMIT LEAD" : "UPDATE LEAD"}
                     </button>
                   </div>
                 </div>
@@ -2333,34 +2331,7 @@ setValueMain("remark",Data[0].remark)
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
                         Country
                       </label>
-                      {/* <Select
-                        options={countryOptions}
-                        value={selectedCountry}
-                        getOptionLabel={(o) => o.label}
-                        getOptionValue={(o) => o.value}
-                        {...registerModal("country")}
-                        
-                        onChange={(option) => {
-                          console.log("hhhh")
-                          setSelectedCountry(option)
-                          setValueModal("country", option.value)
-                        }}
-                        menuPortalTarget={document.body}
-                        menuShouldScrollIntoView={false}
-                        styles={{
-                          control: (base) => ({
-                            ...base,
-                            border: "1px solid #D1D5DB",
-                            borderRadius: "0.5rem",
-                            backgroundColor: "#F9FAFB",
-                            boxShadow: "none",
-                            minHeight: 38,
-                            fontSize: 14,
-                            "&:hover": { borderColor: "#1B2A4A" }
-                          }),
-                          menuList: (base) => ({ ...base, maxHeight: 200 })
-                        }}
-                      /> */}
+
                       <Controller
                         name="country"
                         control={controlModal}
@@ -2385,35 +2356,7 @@ setValueMain("remark",Data[0].remark)
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
                         State
                       </label>
-                      {/* <Select
-                        options={stateOptions}
-                        value={selectedState}
-                        getOptionLabel={(o) => o.label}
-                        getOptionValue={(o) => o.value}
-                        {...registerModal("state")}
-                        onChange={(option) => {
-                          setSelectedState(option)
-                          setValueModal("state", option.value)
-                        }}
-                        isDisabled={!selectedCountry}
-                        menuPortalTarget={document.body}
-                        menuShouldScrollIntoView={false}
-                        styles={{
-                          control: (base, state) => ({
-                            ...base,
-                            border: "1px solid #D1D5DB",
-                            borderRadius: "0.5rem",
-                            backgroundColor: state.isDisabled
-                              ? "#F3F4F6"
-                              : "#F9FAFB",
-                            boxShadow: "none",
-                            minHeight: 38,
-                            fontSize: 14,
-                            "&:hover": { borderColor: "#1B2A4A" }
-                          }),
-                          menuList: (base) => ({ ...base, maxHeight: 200 })
-                        }}
-                      /> */}
+
                       <Controller
                         name="state"
                         control={controlModal}
@@ -2468,7 +2411,6 @@ setValueMain("remark",Data[0].remark)
                     Business Information
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-2">
-                   
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1">
                         Partnership Type

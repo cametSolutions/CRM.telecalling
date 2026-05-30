@@ -63,7 +63,7 @@ const BranchAdd = ({
   }
 
   return (
-    <div className="container justify-center items-center min-h-screen py-5 bg-gray-100">
+    <div className="justify-center items-center min-h-screen py-5 bg-[#ADD8E6]">
       <div className="w-5/6 bg-white shadow-lg rounded p-5 mx-auto">
         <h2 className="text-2xl font-semibold mb-2">Branch Registration</h2>
 

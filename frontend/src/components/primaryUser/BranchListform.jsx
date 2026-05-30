@@ -32,8 +32,8 @@ const BranchListform = ({ branchlist }) => {
   }, [searchQuery, handleSearch])
 
   return (
-    <div className="container mx-auto  p-8">
-      <div className="w-auto  bg-white shadow-lg rounded p-8 ">
+    <div className="mx-auto  p-8 bg-[#ADD8E6] h-full">
+      <div className="w-auto shadow-lg rounded p-8 h-auto bg-white">
         <div className="flex justify-between items-center px-4 lg:px-6 xl:px-8 mb-4">
           <h3 className="text-2xl text-black font-bold">BranchList</h3>
           {/* Search Bar for large screens */}
@@ -69,11 +69,11 @@ const BranchListform = ({ branchlist }) => {
             <FaPrint className="mr-2" />
           </button>
         </div>
-        <div className="overflow-x-auto overflow-y-auto text-center max-h-60 sm:max-h-80 md:max-h-96 lg:max-h-[420px]">
+        <div className="overflow-x-auto overflow-y-auto text-center max-h-60 sm:max-h-80 md:max-h-96 lg:max-h-[420px] rounded-md">
         
           <table className="min-w-ful border border-t-0">
           
-            <thead className="bg-green-300 sticky top-0 z-10">
+            <thead className="bg-green-300 sticky top-0 z-10 whitespace-nowrap">
               <tr>
                 <th className="py-2 px-4 border-b border-gray-300 ">
                   Company Name

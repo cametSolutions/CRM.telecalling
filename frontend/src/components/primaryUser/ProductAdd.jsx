@@ -376,7 +376,7 @@ const ProductAdd = ({
   }
 
   return (
-    <div className="justify-center items-center m-5">
+    <div className="justify-center items-center">
       <div className="w-auto bg-white shadow-lg rounded p-3 md:p-8 mx-auto">
         <h2 className="text-2xl font-semibold mb-6">Product Master</h2>
 

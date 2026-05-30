@@ -4,6 +4,28 @@ import { saveAs } from "file-saver"
 import BarLoader from "react-spinners/BarLoader"
 import ResponsiveTable from "./ResponsiveTable"
 import { CardSkeletonLoader } from "../common/CardSkeletonLoader"
+import { PerformanceModal } from "./PerformanceModal"
+import { StaticSidebar } from "./StaticSidebar"
+import AdminHeader from "../../header/AdminHeader"
+import StaffHeader from "../../header/StaffHeader"
+import {
+  Eye,
+  Phone,
+  Mail,
+  Settings,
+  MessageSquareText,
+  User,
+  Calendar,
+  Clock,
+  UserPlus,
+  UserCheck,
+  IndianRupee,
+  BellRing,
+  History,
+  ChevronDown,
+  ChevronRight,
+  X
+} from "lucide-react"
 import Modal from "./Modal"
 import api from "../../api/api"
 import BranchDropdown from "./BranchDropdown"
@@ -29,7 +51,20 @@ const LeaveSummary = () => {
   const [holiday, setHoly] = useState(null)
   const [currentmonthSundays, setCurrentmonthSundays] = useState(null)
   const [selectedBranch, setselectedBranch] = useState(null)
+  const [selectedCompanyBranch, setselectedCompanyBranch] = useState(null)
   const [leavesummaryList, setleaveSummary] = useState([])
+
+  const [selectedUserName, setselecteduserName] = useState(null)
+  const [selectedCategory, setselectedCategory] = useState(null)
+  const [selectedDatapopup, setselectedDataPopup] = useState({})
+  // const [selectedYear, setSelectedYear] = useState(null)
+  const [periodMode, setperiodMode] = useState("all")
+  const [targetData, settargetData] = useState([])
+  console.log(targetData)
+  const [openModal, setOpenModal] = useState(false)
+  const [productlist, setproductList] = useState([])
+  const [achievedproducts, setacheivedProducts] = useState([])
+  const [selectedPeriod, setselectedPeriod] = useState("")
   const listRef = useRef(null)
   const isFirstRender = useRef(true)
 
@@ -39,7 +74,10 @@ const LeaveSummary = () => {
 
     loading
   } = UseFetch(`/auth/getsomeall?year=${selectedYear}&month=${selectedMonth}`)
-console.log(data)
+  console.log(data)
+  const { data: branchProduct } = UseFetch(
+    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
+  )
   useEffect(() => {
     const userData = getLocalStorageItem("user")
     if (userData.selected && userData.selected.length > 1) {
@@ -57,14 +95,18 @@ console.log(data)
         }
       ])
     })
+    console.log(userData.selected[0].branch_id)
+    setselectedCompanyBranch(userData?.selected[0].branch_id)
     setUser(userData)
   }, [])
   useEffect(() => {
     if (data) {
       const { staffAttendanceStats, listofHolidays, sundayFulldate } = data
-console.log(staffAttendanceStats)
-const a=staffAttendanceStats.filter((item)=>item.name==="Sreeraj Vijay")
-console.log(a)
+      console.log(staffAttendanceStats)
+      const a = staffAttendanceStats.filter(
+        (item) => item.name === "Sreeraj Vijay"
+      )
+      console.log(a)
       setnewattendee(staffAttendanceStats)
       setHoly(listofHolidays)
       setCurrentmonthSundays(sundayFulldate)
@@ -194,6 +236,104 @@ console.log(a)
       })
     }
   }
+  const handleMoreClick = (id, name) => {
+    const Datas = targetData?.userWiseResults
+    console.log(id)
+    console.log(name)
+    console.log("hh")
+    const filteredList = branchProduct
+      .filter(
+        (item) =>
+          item.selected?.some(
+            (selectedItem) => String(selectedItem.category_id) === String(id)
+          ) || String(item.category_id) === String(id)
+      )
+      .map((item) => item.productName || item.serviceName)
+    console.log(filteredList)
+    setproductList(filteredList)
+    setselectedCategory({ Id: id, categoryName: name })
+    console.log("J")
+    console.log(targetData)
+    console.log(user?._id)
+    const filteredloggedUserItem = Datas.filter(
+      (item) => item.userId === user._id
+    )
+    console.log("hhh")
+
+    console.log(Datas)
+    console.log("hhhh")
+    console.log(filteredloggedUserItem)
+    console.log(id)
+    // const filteredselectedCategory =
+    //   filteredloggedUserItem[0].categories.filter(
+    //     (item) => item.categoryId === id
+    //   )
+    const filteredselectedCategory = Datas.flatMap(
+      (user) => user.categories || []
+    ).filter((item) => item.categoryId === id)
+    console.log("Hh")
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+    console.log("hhh")
+    setselectedDataPopup(summary)
+    console.log(filteredselectedCategory && filteredselectedCategory.length)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      setacheivedProducts((prev) => [
+        ...prev,
+        ...filteredselectedCategory.flatMap((item) =>
+          (item?.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
+      ])
+    } else {
+      setacheivedProducts([])
+    }
+    setOpenModal(true)
+  }
+  const handleSelectedUser = (category, userId, userName) => {
+    setselecteduserName(userName)
+    setselectedCategory({
+      Id: category.Id,
+      categoryName: category.categoryName
+    })
+    const filteredloggedUserItem = data?.userWiseResults.filter(
+      (item) => item.userId === userId
+    )
+    const filteredselectedCategory =
+      filteredloggedUserItem[0].categories.filter(
+        (item) => item.categoryId === category.Id
+      )
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+
+    setselectedDataPopup(summary)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      setacheivedProducts(
+        filteredselectedCategory[0]?.products?.map((product) => ({
+          productname: product.name,
+          amount: product.achieved
+        })) || []
+      )
+    } else {
+      setacheivedProducts([])
+    }
+  }
   const handleLeave = (
     date,
     type,
@@ -201,7 +341,7 @@ console.log(a)
     leaveData,
     leavetype
   ) => {
-console.log(leaveData)
+    console.log(leaveData)
     // Find the matching leave entry
     const matchingLeave = Object.values(leaveData).find(
       (entry) => entry.leaveCategory === leavetype
@@ -241,9 +381,8 @@ console.log(leaveData)
   }
 
   const handleApply = async (staffId, selected, setIsApplying, type) => {
-console.log("adddd")
-console.log(type)
-
+    console.log("adddd")
+    console.log(type)
 
     try {
       if (type === "Leave") {
@@ -421,185 +560,517 @@ console.log(type)
     })
   }
   return (
-    <div className="w-full flex flex-col h-full">
-      {loading && (
-        <BarLoader
-          cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
-          color="#4A90E2" // Change color as needed
-        />
-      )}
-      {/* Header Section */}
+    // <div className="h-full bg-[#ADD8E6] overflow-hidden">
+    //   <div className="flex h-full flex-row">
+    //     <StaticSidebar
+    //       handleMoreClick={handleMoreClick}
+    //       selectedCompanyBranch={selectedCompanyBranch}
+    //       setselectedCompanyBranch={setselectedCompanyBranch}
+    //       parenttargetData={settargetData}
+    //       parentperiodmode={setperiodMode}
+    //       parentyear={setSelectedYear}
+    //       setselectedPeriod={setselectedPeriod}
+    //     />
+    //     <div className="flex flex-1 flex-col overflow-hidden">
+    //       <header className="flex items-center justify-between border-b border-white/10 bg-[#0F172A]/95">
+    //         {user?.role?.toLowerCase() === "admin" ? (
+    //           <AdminHeader hide={true} />
+    //         ) : (
+    //           <StaffHeader hide={true} />
+    //         )}
 
-      <div className=" text-center">
-        <h1 className=" sm:text-md md:text-2xl font-bold mb-1">
-          User Leave Summary
-        </h1>
-        <div className="grid grid-cols-2 md:flex md:flex-row md:items-center md:justify-end gap-2 md:gap-4 mb-3 md:mr-8 mx-5">
-          {leavesummaryList && leavesummaryList.length > 0 && (
-            // If more than one leave summary exists,
-            // it means the logged-in user is a manager/super manager
-            // and has staff under them. Show branch dropdown in this case.
-            <BranchDropdown
-              branches={userBranches}
-              onBranchChange={handleBranchChange}
-              branchSelected={selectedBranch}
+    //         <div className="flex items-center gap-1.5  border-b border-white/10 bg-[#0F172A]/95 pr-3 h-full">
+    //           <button className="rounded-full p-1.5 transition bg-slate-100">
+    //             <Mail size={15} strokeWidth={2.2} />
+    //           </button>
+    //           <div className="relative">
+    //             <button className="rounded-full p-1.5 transition bg-slate-100">
+    //               <MessageSquareText size={15} strokeWidth={2.2} />
+    //             </button>
+    //             <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
+    //           </div>
+    //           <button className="rounded-full p-1.5 transition bg-slate-100">
+    //             <Settings size={15} strokeWidth={2.2} />
+    //           </button>
+    //           {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+    //             <User size={15} strokeWidth={2.2} />
+    //           </button> */}
+
+    //           <div className="relative">
+    //             <button
+    //               onClick={(e) => {
+    //                 e.stopPropagation()
+    //                 setShowUserMenu((prev) => !prev)
+    //               }}
+    //               className="rounded-full p-1.5 transition bg-slate-100"
+    //             >
+    //               <User size={15} strokeWidth={2.2} />
+    //             </button>
+
+    //             {/* {showUserMenu && (
+    //               <div
+    //                 onClick={(e) => e.stopPropagation()}
+    //                 className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
+    //               >
+    //                 <button
+    //                   onClick={handleLogout}
+    //                   className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+    //                 >
+    //                   Logout
+    //                 </button>
+    //               </div>
+    //             )} */}
+    //           </div>
+    //         </div>
+    //       </header>
+    //       {loading && (
+    //         <BarLoader
+    //           cssOverride={{ width: "100%", height: "4px" }} // Tailwind's `h-4` corresponds to `16px`
+    //           color="#4A90E2" // Change color as needed
+    //         />
+    //       )}
+    //       <div className="flex flex-col flex-1 bg-[#ADD8E6]">
+    //         <div className=" text-center">
+    //           <h1 className=" sm:text-md md:text-2xl font-bold mb-1">
+    //             User Leave Summary
+    //           </h1>
+    //           <div className="grid grid-cols-2 md:flex md:flex-row md:items-center md:justify-end gap-2 md:gap-4 mb-3 md:mr-8 mx-5">
+    //             {leavesummaryList && leavesummaryList.length > 0 && (
+    //               // If more than one leave summary exists,
+    //               // it means the logged-in user is a manager/super manager
+    //               // and has staff under them. Show branch dropdown in this case.
+    //               <BranchDropdown
+    //                 branches={userBranches}
+    //                 onBranchChange={handleBranchChange}
+    //                 branchSelected={selectedBranch}
+    //               />
+    //             )}
+
+    //             {/* Search Input */}
+    //             <div className="w-full md:w-auto">
+    //               <input
+    //                 value={
+    //                   selectedStaff !== "" ? selectedStaff[0]?.name : searchTerm
+    //                 }
+    //                 onChange={(e) => {
+    //                   if (selectedStaff !== "") {
+    //                     setSelectedName(null)
+    //                     setselectedStaff("") // Clear selected staff
+    //                   }
+    //                   setSearchTerm(e.target.value)
+    //                 }}
+    //                 placeholder="Search..."
+    //                 className="appearance-none border border-gray-400 rounded px-3 py-2 w-full md:w-auto bg-white text-sm placeholder-gray-400 text-gray-700 focus:outline-none"
+    //               />
+    //             </div>
+
+    //             {/* Download Button */}
+    //             <button
+    //               className="bg-blue-600 rounded px-3 py-2 text-white text-sm"
+    //               onClick={() => handleDownload(newattende)}
+    //             >
+    //               Download to Excel
+    //             </button>
+
+    //             {/* Year Select */}
+    //             <select
+    //               value={selectedYear}
+    //               onChange={(e) => setSelectedYear(Number(e.target.value))}
+    //               className="border p-2 rounded w-full md:w-auto"
+    //             >
+    //               {years.map((year) => (
+    //                 <option key={year} value={year}>
+    //                   {year}
+    //                 </option>
+    //               ))}
+    //             </select>
+
+    //             {/* Month Select */}
+    //             <select
+    //               value={selectedMonth}
+    //               onChange={(e) => setSelectedMonth(Number(e.target.value))}
+    //               className="border p-2 rounded w-full md:w-auto"
+    //             >
+    //               {months.map((month) => (
+    //                 <option key={month.value} value={month.value}>
+    //                   {month.name}
+    //                 </option>
+    //               ))}
+    //             </select>
+    //           </div>
+    //         </div>
+    //         {/* Main Content */}
+    //         {loading ? (
+    //           <CardSkeletonLoader count={5} />
+    //         ) : (
+    //           <>
+    //             <div className="flex-1 flex flex-col overflow-y-auto mx-4 mb-4  shadow-xl rounded-lg">
+    //               {leavesummaryList && leavesummaryList.length > 0 ? (
+    //                 leavesummaryList?.map((attendee, index) => (
+    //                   <div key={index}>
+    //                     {selectedName === null ||
+    //                     selectedName === attendee.name ? (
+    //                       <div
+    //                         ref={listRef}
+    //                         // className={`${
+    //                         //   selectedName === attendee.name && !modalOpen
+    //                         //     ? "sticky top-0 z-20 "
+    //                         //     : ""
+    //                         // }`}
+    //                       >
+    //                         <div
+    //                           className={` md:h-20 md:mr-4 shadow-lg rounded-lg w-full border cursor-pointer
+    //                   ${
+    //                     selectedName === attendee.name
+    //                       ? "bg-gray-200 sticky top-0 z-40"
+    //                       : "bg-gray-200 mb-2"
+    //                   }`}
+    //                           onClick={() => handleSelectAttendee(attendee)}
+    //                         >
+    //                           <div className="md:flex w-full">
+    //                             <div className=" text-sm md:text-md font-semibold text-gray-800 w-full  md:w-[225px] p-2">
+    //                               {attendee.name}
+    //                             </div>
+    //                             <div className="w-full overflow-x-auto">
+    //                               <table className="w-full ">
+    //                                 <thead className="bg-gray-200 text-gray-800">
+    //                                   <tr>
+    //                                     {[
+    //                                       "Present",
+    //                                       "Leave",
+    //                                       "Late Cutting",
+    //                                       "Not Marked",
+    //                                       "Onsite"
+    //                                     ].map((label, idx) => (
+    //                                       <th
+    //                                         key={idx}
+    //                                         className="s py-1 text-gray-800 text-sm font-medium text-center min-w-[100px]"
+    //                                       >
+    //                                         {label}
+    //                                       </th>
+    //                                     ))}
+    //                                   </tr>
+    //                                 </thead>
+    //                                 <tbody>
+    //                                   <tr className="bg-gray-200 text-gray-800">
+    //                                     {[
+    //                                       attendee.present,
+    //                                       attendee.absent,
+    //                                       attendee.latecutting,
+    //                                       attendee.notMarked,
+    //                                       attendee.onsite
+    //                                     ].map((value, idx) => (
+    //                                       <td
+    //                                         key={idx}
+    //                                         className="px-4 py-2 text-lg font-semibold text-center "
+    //                                       >
+    //                                         {value}
+    //                                       </td>
+    //                                     ))}
+    //                                   </tr>
+    //                                 </tbody>
+    //                               </table>
+    //                             </div>
+    //                           </div>
+    //                         </div>
+    //                         {selectedName === attendee.name &&
+    //                           currentmonthSundays &&
+    //                           holiday && (
+    //                             <div className="flex-1  ">
+    //                               <ResponsiveTable
+    //                                 attendee={attendee}
+    //                                 user={user}
+    //                                 handleAttendance={handleAttendance}
+    //                                 handleOnsite={handleOnsite}
+    //                                 handleLeave={handleLeave}
+    //                                 handleScroll={handleScroll}
+    //                                 modalOpen={modalOpen}
+    //                                 sundays={currentmonthSundays}
+    //                                 holiday={holiday}
+    //                               />
+    //                             </div>
+    //                           )}
+    //                       </div>
+    //                     ) : null}
+    //                   </div>
+    //                 ))
+    //               ) : (
+    //                 <div className="text-blue-500 text-center">
+    //                   {loading ? "" : "Oops! No staff found."}
+    //                 </div>
+    //               )}
+    //             </div>
+    //           </>
+    //         )}
+    //       </div>
+    //     </div>
+    //   </div>
+
+    //   {/* Header Section */}
+
+    //   {modalOpen && (
+    //     <Modal
+    //       type={type}
+    //       onClose={handleClose}
+    //       selectedDate={selectedDate}
+    //       isOpen={modalOpen}
+    //       formData={formData}
+    //       staffId={selectedStaff[0]?.userId}
+    //       assignedto={selectedStaff[0]?.assignedto}
+    //       staffName={selectedStaff[0]?.name}
+    //       casualleavestartsfrom={selectedStaff[0]?.casualleavestartsfrom}
+    //       sickleavestartsfrom={selectedStaff[0]?.sickleavestartsfrom}
+    //       privilegeleavestartsfrom={selectedStaff[0]?.privilegeleavestartsfrom}
+    //       handleApply={handleApply}
+    //       errorMessage={warningMessage}
+    //       setErrorMessage={setWarningMessage}
+    //     />
+    //   )}
+    // </div>
+    <div className="h-full bg-[#ADD8E6] overflow-hidden">
+      <div className="flex h-full flex-row overflow-hidden">
+        <StaticSidebar
+          handleMoreClick={handleMoreClick}
+          selectedCompanyBranch={selectedCompanyBranch}
+          setselectedCompanyBranch={setselectedCompanyBranch}
+          parenttargetData={settargetData}
+          parentperiodmode={setperiodMode}
+          parentyear={setSelectedYear}
+          setselectedPeriod={setselectedPeriod}
+        />
+
+        <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
+          <header className="flex items-center justify-between bg-[#ADD8E6]">
+            {user?.role?.toLowerCase() === "admin" ? (
+              <AdminHeader hide={true} />
+            ) : (
+              <StaffHeader hide={true} />
+            )}
+
+            <div className="flex h-full items-center gap-1.5 bg-[#ADD8E6] pr-3">
+              <button className="rounded-full bg-slate-100 p-1.5 transition">
+                <Mail size={15} strokeWidth={2.2} />
+              </button>
+
+              <div className="relative">
+                <button className="rounded-full bg-slate-100 p-1.5 transition">
+                  <MessageSquareText size={15} strokeWidth={2.2} />
+                </button>
+                <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
+              </div>
+
+              <button className="rounded-full bg-slate-100 p-1.5 transition">
+                <Settings size={15} strokeWidth={2.2} />
+              </button>
+
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowUserMenu((prev) => !prev)
+                  }}
+                  className="rounded-full bg-slate-100 p-1.5 transition"
+                >
+                  <User size={15} strokeWidth={2.2} />
+                </button>
+
+                {/* {showUserMenu && (
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 z-50 mt-2 w-32 rounded-md border border-slate-200 bg-white shadow-lg"
+              >
+                <button
+                  onClick={handleLogout}
+                  className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100"
+                >
+                  Logout
+                </button>
+              </div>
+            )} */}
+              </div>
+            </div>
+          </header>
+
+          {loading && (
+            <BarLoader
+              cssOverride={{ width: "100%", height: "4px" }}
+              color="#4A90E2"
             />
           )}
 
-          {/* Search Input */}
-          <div className="w-full md:w-auto">
-            <input
-              value={selectedStaff !== "" ? selectedStaff[0]?.name : searchTerm}
-              onChange={(e) => {
-                if (selectedStaff !== "") {
-                  setSelectedName(null)
-                  setselectedStaff("") // Clear selected staff
-                }
-                setSearchTerm(e.target.value)
-              }}
-              placeholder="Search..."
-              className="appearance-none border border-gray-400 rounded px-3 py-2 w-full md:w-auto bg-white text-sm placeholder-gray-400 text-gray-700 focus:outline-none"
-            />
-          </div>
+          <div className="flex flex-1 min-h-0 flex-col bg-[#ADD8E6]">
+            <div className="shrink-0 text-center">
+              <h1 className="mb-1 font-bold sm:text-md md:text-2xl">
+                User Leave Summary
+              </h1>
 
-          {/* Download Button */}
-          <button
-            className="bg-blue-600 rounded px-3 py-2 text-white text-sm"
-            onClick={() => handleDownload(newattende)}
-          >
-            Download to Excel
-          </button>
+              <div className="mx-5 mb-3 grid grid-cols-2 gap-2 md:mr-8 md:flex md:flex-row md:items-center md:justify-end md:gap-4">
+                {leavesummaryList && leavesummaryList.length > 0 && (
+                  <BranchDropdown
+                    branches={userBranches}
+                    onBranchChange={handleBranchChange}
+                    branchSelected={selectedBranch}
+                  />
+                )}
 
-          {/* Year Select */}
-          <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(Number(e.target.value))}
-            className="border p-2 rounded w-full md:w-auto"
-          >
-            {years.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
-
-          {/* Month Select */}
-          <select
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(Number(e.target.value))}
-            className="border p-2 rounded w-full md:w-auto"
-          >
-            {months.map((month) => (
-              <option key={month.value} value={month.value}>
-                {month.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-      {/* Main Content */}
-      {loading ? (
-        <CardSkeletonLoader count={5} />
-      ) : (
-        <>
-          <div className="flex-1 flex flex-col overflow-y-auto mx-4 mb-4 overflow-hidden shadow-xl rounded-lg">
-            {leavesummaryList && leavesummaryList.length > 0 ? (
-              leavesummaryList?.map((attendee, index) => (
-                <div key={index}>
-                  {selectedName === null || selectedName === attendee.name ? (
-                    <div
-                      ref={listRef}
-                      // className={`${
-                      //   selectedName === attendee.name && !modalOpen
-                      //     ? "sticky top-0 z-20 "
-                      //     : ""
-                      // }`}
-                    >
-                      
-                      <div
-                        className={` md:h-20 md:mr-4 shadow-lg rounded-lg w-full border cursor-pointer
-                      ${
-                        selectedName === attendee.name
-                          ? "bg-gray-200 sticky top-0 z-40"
-                          : "bg-gray-200 mb-2"
-                      }`}
-                        onClick={() => handleSelectAttendee(attendee)}
-                      >
-                        <div className="md:flex w-full">
-                          <div className=" text-sm md:text-md font-semibold text-gray-800 w-full  md:w-[225px] p-2">
-                            {attendee.name}
-                          </div>
-                          <div className="w-full overflow-x-auto">
-                            <table className="w-full ">
-                              <thead className="bg-gray-200 text-gray-800">
-                                <tr>
-                                  {[
-                                    "Present",
-                                    "Leave",
-                                    "Late Cutting",
-                                    "Not Marked",
-                                    "Onsite"
-                                  ].map((label, idx) => (
-                                    <th
-                                      key={idx}
-                                      className="s py-1 text-gray-800 text-sm font-medium text-center min-w-[100px]"
-                                    >
-                                      {label}
-                                    </th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <tr className="bg-gray-200 text-gray-800">
-                                  {[
-                                    attendee.present,
-                                    attendee.absent,
-                                    attendee.latecutting,
-                                    attendee.notMarked,
-                                    attendee.onsite
-                                  ].map((value, idx) => (
-                                    <td
-                                      key={idx}
-                                      className="px-4 py-2 text-lg font-semibold text-center "
-                                    >
-                                      {value}
-                                    </td>
-                                  ))}
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      </div>
-                      {selectedName === attendee.name &&
-                        currentmonthSundays &&
-                        holiday && (
-                          <div className="flex-1  ">
-                            <ResponsiveTable
-                              attendee={attendee}
-                              user={user}
-                              handleAttendance={handleAttendance}
-                              handleOnsite={handleOnsite}
-                              handleLeave={handleLeave}
-                              handleScroll={handleScroll}
-                              modalOpen={modalOpen}
-                              sundays={currentmonthSundays}
-                              holiday={holiday}
-                            />
-                          </div>
-                        )}
-                    </div>
-                  ) : null}
+                <div className="w-full md:w-auto">
+                  <input
+                    value={
+                      selectedStaff !== "" ? selectedStaff[0]?.name : searchTerm
+                    }
+                    onChange={(e) => {
+                      if (selectedStaff !== "") {
+                        setSelectedName(null)
+                        setselectedStaff("")
+                      }
+                      setSearchTerm(e.target.value)
+                    }}
+                    placeholder="Search..."
+                    className="w-full appearance-none rounded border border-gray-400 bg-white px-3 py-2 text-sm text-gray-700 placeholder-gray-400 focus:outline-none md:w-auto"
+                  />
                 </div>
-              ))
+
+                <button
+                  className="rounded bg-blue-600 px-3 py-2 text-sm text-white"
+                  onClick={() => handleDownload(newattende)}
+                >
+                  Download to Excel
+                </button>
+
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  className="w-full rounded border p-2 md:w-auto"
+                >
+                  {years.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                  className="w-full rounded border p-2 md:w-auto"
+                >
+                  {months.map((month) => (
+                    <option key={month.value} value={month.value}>
+                      {month.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="min-h-0 flex-1 overflow-y-auto p-5">
+                <CardSkeletonLoader count={5} />
+              </div>
             ) : (
-              <div className="text-blue-500 text-center">
-                {loading ? "" : "Oops! No staff found."}
+              <div className="min-h-0 flex-1 overflow-hidden">
+                <div className="h-full overflow-y-auto px-4 pb-4">
+                  <div className="rounded-lg shadow-xl">
+                    {leavesummaryList && leavesummaryList.length > 0 ? (
+                      leavesummaryList.map((attendee, index) => (
+                        <div key={index}>
+                          {selectedName === null ||
+                          selectedName === attendee.name ? (
+                            <div
+                              ref={
+                                selectedName === attendee.name ? listRef : null
+                              }
+                            >
+                              <div
+                                className={`w-full cursor-pointer rounded-lg border bg-white shadow-lg ${
+                                  selectedName === attendee.name
+                                    ? "z-10 md:mr-4"
+                                    : "mb-2"
+                                } md:h-20`}
+                                onClick={() => handleSelectAttendee(attendee)}
+                              >
+                                <div className="w-full md:flex">
+                                  <div className="w-full p-2 text-sm font-semibold text-gray-800 md:w-[225px] md:text-md">
+                                    {attendee.name}
+                                  </div>
+
+                                  <div className="w-full overflow-x-auto">
+                                    <table className="w-full min-w-[520px]">
+                                      <thead className="bg-white text-gray-800">
+                                        <tr>
+                                          {[
+                                            "Present",
+                                            "Leave",
+                                            "Late Cutting",
+                                            "Not Marked",
+                                            "Onsite"
+                                          ].map((label, idx) => (
+                                            <th
+                                              key={idx}
+                                              className="min-w-[100px] py-1 text-center text-sm font-medium text-gray-800"
+                                            >
+                                              {label}
+                                            </th>
+                                          ))}
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        <tr className="bg-white text-gray-800">
+                                          {[
+                                            attendee.present,
+                                            attendee.absent,
+                                            attendee.latecutting,
+                                            attendee.notMarked,
+                                            attendee.onsite
+                                          ].map((value, idx) => (
+                                            <td
+                                              key={idx}
+                                              className="px-4 py-2 text-center text-lg font-semibold"
+                                            >
+                                              {value}
+                                            </td>
+                                          ))}
+                                        </tr>
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {selectedName === attendee.name &&
+                                currentmonthSundays &&
+                                holiday && (
+                                  <div className="mt-2 flex-1">
+                                    <ResponsiveTable
+                                      attendee={attendee}
+                                      user={user}
+                                      handleAttendance={handleAttendance}
+                                      handleOnsite={handleOnsite}
+                                      handleLeave={handleLeave}
+                                      handleScroll={handleScroll}
+                                      modalOpen={modalOpen}
+                                      sundays={currentmonthSundays}
+                                      holiday={holiday}
+                                    />
+                                  </div>
+                                )}
+                            </div>
+                          ) : null}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center text-blue-500">
+                        {loading ? "" : "Oops! No staff found."}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>
-        </>
-      )}
+        </div>
+      </div>
+
       {modalOpen && (
         <Modal
           type={type}
@@ -618,6 +1089,50 @@ console.log(type)
           setErrorMessage={setWarningMessage}
         />
       )}
+      <PerformanceModal
+        modalOpen={openModal}
+        splitType={targetData?.selectedMeasurementType}
+        selectedperiod={selectedPeriod}
+        allperiods={targetData?.periods}
+        onselectedPeriodChange={(val, val2) => {
+          setSelectedMonth(val2)
+          setselectedPeriod(val)
+        }}
+        onMonthChange={(val) => {
+          setcategorylist([])
+          setacheivedProducts([])
+          setselectedDataPopup([])
+          setperiodMode(val)
+        }}
+        onYearChange={(val) => {
+          setcategorylist([])
+          setacheivedProducts([])
+          setselectedDataPopup([])
+          setSelectedYear(val)
+        }}
+        productlist={productlist}
+        onClose={() => {
+          setselecteduserName(user?.name)
+          setacheivedProducts([])
+          setOpenModal(false)
+        }}
+        selectedMonth={periodMode}
+        selectedYear={selectedYear}
+        summary={{
+          target: selectedDatapopup?.target,
+          achieved: selectedDatapopup?.achieved,
+          balance:
+            selectedDatapopup?.achieved > selectedDatapopup?.target
+              ? 0
+              : selectedDatapopup?.balance
+        }}
+        products={achievedproducts}
+        targetData={targetData?.userWiseResults}
+        loggedUser={user}
+        selectedUser={selectedUserName}
+        category={selectedCategory}
+        handleSelectedUser={handleSelectedUser}
+      />
     </div>
   )
 }
