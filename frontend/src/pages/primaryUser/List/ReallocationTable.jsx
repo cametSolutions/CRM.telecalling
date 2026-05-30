@@ -91,7 +91,7 @@ const ReallocationTable = () => {
       selectedCompanyBranch &&
       `/lead/getallreallocatedLead?selectedBranch=${selectedCompanyBranch}&role=${loggedUser.role}`
   )
-const { data: branchProduct } = UseFetch(
+  const { data: branchProduct } = UseFetch(
     `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
   )
   const { data: tasks } = UseFetch("/lead/getallTask")
@@ -162,6 +162,7 @@ const { data: branchProduct } = UseFetch(
     }
   }, [leadreallocation])
   const filterLeadsByLastTaskLabel = (leads, label) => {
+    console.log(label)
     return leads.filter((lead) => {
       const logs = lead.activityLog
       if (!logs || logs.length === 0) return false
@@ -169,7 +170,7 @@ const { data: branchProduct } = UseFetch(
       const lastLog = lead?.lasttask?.taskName
       console.log(lastLog)
       console.log(label)
-      return lastLog.toLowerCase() === label.toLowerCase()
+      return lastLog?.toLowerCase() === label.toLowerCase()
     })
   }
 
@@ -294,10 +295,7 @@ const { data: branchProduct } = UseFetch(
     console.log("hhhh")
     console.log(filteredloggedUserItem)
     console.log(id)
-    // const filteredselectedCategory =
-    //   filteredloggedUserItem[0].categories.filter(
-    //     (item) => item.categoryId === id
-    //   )
+
     const filteredselectedCategory = Datas.flatMap(
       (user) => user.categories || []
     ).filter((item) => item.categoryId === id)
@@ -438,21 +436,7 @@ const { data: branchProduct } = UseFetch(
             <div className="flex justify-between items-center mx-3 md:mx-5 mt-3 mb-3 ">
               <h2 className="text-lg font-bold ml-5 mt-3">ReAllocation List</h2>
               <div className="flex justify-end  ml-auto gap-6 items-center">
-                {/* Branch Dropdown */}
-                <select
-                  value={selectedCompanyBranch || ""}
-                  onChange={(e) => {
-                    setSelectedCompanyBranch(e.target.value)
-                    setStatus(approvedToggleStatus ? "Approved" : "Pending")
-                  }}
-                  className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[120px]"
-                >
-                  {loggedUserBranches?.map((branch) => (
-                    <option key={branch._id} value={branch.value}>
-                      {branch.label}
-                    </option>
-                  ))}
-                </select>
+               
 
                 <button
                   onClick={() =>
@@ -467,7 +451,7 @@ const { data: branchProduct } = UseFetch(
               </div>
             </div>
             {/* Responsive Table Container */}
-            <div className="h-auto overflow-auto rounded-lg text-center overflow-y-auto border  shadow-xl mx-3 md:mx-5 mb-3 bg-white">
+            <div className=" overflow-auto rounded-lg text-center overflow-y-auto border  shadow-xl mx-3 md:mx-5 mb-3 bg-white">
               <table className="w-full text-sm">
                 <thead className=" whitespace-nowrap bg-blue-600 text-white sticky top-0 z-30">
                   <tr>
@@ -569,7 +553,7 @@ const { data: branchProduct } = UseFetch(
                           <td className=" px-4 ">Assignedby</td>
                           <td className="px-4 ">No. of Followups</td>
                           <td className="px-4 min-w-[120px]">Lead Date</td>
-                          <td className="px-4 min-w-[120px] border border-t-0 border-b-0 border-gray-400">
+                          <td className="px-4 min-w-[120px] border border-t-0 border-b-0 border-gray-400 whitespace-nowrap">
                             {
                               item?.activityLog[item.activityLog.length - 1]
                                 .remarks
@@ -773,32 +757,7 @@ const { data: branchProduct } = UseFetch(
                           </td>
                           <td className="border border-t-0 border-gray-400 "></td>
                           <td className="border border-t-0 border-gray-400 "></td>
-                          <td
-                            // onClick={() => {
-                            //   if (!selectedAllocates.hasOwnProperty(item._id)) {
-                            //     setValidateError((prev) => ({
-                            //       ...prev,
-                            //       [item._id]: "Allocate to Someone"
-                            //     }))
-                            //     return
-                            //   }
-                            //   if (!selectedAllocationType.hasOwnProperty(item._id)) {
-                            //     setValidatetypeError((prev) => ({
-                            //       ...prev,
-                            //       [item._id]: "please select a Type"
-                            //     }))
-                            //     return
-                            //   }
-                            //   setselectedLeadId(item.leadId)
-                            //   setShowmodal(true)
-                            //   setSelectedItem(item)
-                            //   setFormData((prev) => ({
-                            //     ...prev,
-                            //     allocationDate: new Date()
-                            //   }))
-                            // }}
-                            className="border border-t-0 border-gray-400"
-                          ></td>
+                          <td className="border border-t-0 border-gray-400"></td>
                           <td className="border border-t-0 border-gray-400 "></td>
                         </tr>
                         <tr>
@@ -922,7 +881,7 @@ const { data: branchProduct } = UseFetch(
             </div>
           </div>
         </div>
- <PerformanceModal
+        <PerformanceModal
           modalOpen={openModal}
           splitType={targetData?.selectedMeasurementType}
           selectedperiod={selectedPeriod}

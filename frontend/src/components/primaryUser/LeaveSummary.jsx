@@ -964,7 +964,7 @@ const LeaveSummary = () => {
             </div>
 
             {loading ? (
-              <div className="min-h-0 flex-1 overflow-y-auto">
+              <div className="min-h-0 flex-1 overflow-y-auto p-5">
                 <CardSkeletonLoader count={5} />
               </div>
             ) : (
@@ -982,7 +982,7 @@ const LeaveSummary = () => {
                               }
                             >
                               <div
-                                className={`w-full cursor-pointer rounded-lg border bg-gray-200 shadow-lg ${
+                                className={`w-full cursor-pointer rounded-lg border bg-white shadow-lg ${
                                   selectedName === attendee.name
                                     ? "z-10 md:mr-4"
                                     : "mb-2"
@@ -996,7 +996,7 @@ const LeaveSummary = () => {
 
                                   <div className="w-full overflow-x-auto">
                                     <table className="w-full min-w-[520px]">
-                                      <thead className="bg-gray-200 text-gray-800">
+                                      <thead className="bg-white text-gray-800">
                                         <tr>
                                           {[
                                             "Present",
@@ -1015,7 +1015,7 @@ const LeaveSummary = () => {
                                         </tr>
                                       </thead>
                                       <tbody>
-                                        <tr className="bg-gray-200 text-gray-800">
+                                        <tr className="bg-white text-gray-800">
                                           {[
                                             attendee.present,
                                             attendee.absent,

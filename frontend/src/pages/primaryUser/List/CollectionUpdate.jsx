@@ -788,7 +788,7 @@ export default function CollectionUpdate() {
                   </div>
                 </>
               )}
-              <select
+              {/* <select
                 value={selectedCompanyBranch || ""}
                 onChange={(e) => {
                   setTableData([])
@@ -801,7 +801,7 @@ export default function CollectionUpdate() {
                     {branch.label}
                   </option>
                 ))}
-              </select>
+              </select> */}
 
               <button
                 onClick={() =>

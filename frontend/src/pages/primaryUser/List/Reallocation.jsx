@@ -406,7 +406,7 @@ const Reallocation = () => {
             {/* Header row (title + branch select) */}
             <div className="flex justify-between mt-2 mb-2 mx-5">
               <h2 className="text-lg font-bold">ReAllocation List</h2>
-              <select
+              {/* <select
                 onChange={(e) => {
                   setSelectedCompanyBranch(e.target.value)
                   setStatus(approvedToggleStatus ? "Approved" : "Pending")
@@ -418,7 +418,7 @@ const Reallocation = () => {
                     {branch.label}
                   </option>
                 ))}
-              </select>
+              </select> */}
             </div>
 
             {/* Card that fills leftover height */}

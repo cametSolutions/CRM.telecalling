@@ -363,7 +363,7 @@ const TaskAnalysisTable = () => {
                 {/* Branch Selector */}
                 <div className="relative">
                   <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                  <select
+                  {/* <select
                     onChange={(e) => {
                       setTableData([])
                       setSelectedCompanyBranch(e.target.value)
@@ -376,7 +376,7 @@ const TaskAnalysisTable = () => {
                         {branch.label}
                       </option>
                     ))}
-                  </select>
+                  </select> */}
                 </div>
                 <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-md">
                   <IndianRupee className="w-4 h-4 text-green-600" />

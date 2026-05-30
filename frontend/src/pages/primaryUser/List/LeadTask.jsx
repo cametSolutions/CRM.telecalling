@@ -452,8 +452,8 @@ console.log(dates)
                   </>
                 )}
               </div>
-              {/* Branch Dropdown */}
-              <select
+            
+              {/* <select
                 value={selectedCompanyBranch || ""}
                 onChange={(e) => setselectedCompanyBranch(e.target.value)}
                 className="border border-gray-300 py-1 rounded-md px-2 focus:outline-none min-w-[150px]"
@@ -463,7 +463,7 @@ console.log(dates)
                     {branch.label}
                   </option>
                 ))}
-              </select>
+              </select> */}
 
               {/* New Lead Button */}
               <div className="">

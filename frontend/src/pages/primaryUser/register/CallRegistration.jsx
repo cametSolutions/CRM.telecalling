@@ -95,6 +95,7 @@ export default function CallRegistration() {
       `/customer/getcallregister?customerid=${selectedCustomer?._id || null}`
   )
   const { data: branchProduct } = UseFetch(
+selectedcompanyBranch&&
     `/product/getallbranchProduct?branch=${selectedcompanyBranch}`
   )
   const { data } = UseFetch(
