@@ -1,17 +1,19 @@
 import { useState, useEffect, useRef } from "react"
 import { Pencil } from "lucide-react"
 import { useLocation, useNavigate } from "react-router-dom"
+
 import { formatDate } from "../../../utils/dateUtils"
 import MyDatePicker from "../../../components/common/MyDatePicker"
 import { FaSpinner } from "react-icons/fa"
 import { LeadhistoryModal } from "../../../components/primaryUser/LeadhistoryModal"
 import { CollectionupdateModal } from "../../../components/primaryUser/CollectionupdateModal"
-import SkeletonTable from "../../../components/loader/SkeletonTable"
 import { BsFilterLeft } from "react-icons/bs"
 import {
   Eye,
   Phone,
   Mail,
+  Settings,
+  MessageSquareText,
   User,
   Calendar,
   Clock,
@@ -25,7 +27,13 @@ import {
   X
 } from "lucide-react"
 import BarLoader from "react-spinners/BarLoader"
+import AdminHeader from "../../../header/AdminHeader"
+import StaffHeader from "../../../header/StaffHeader"
+import { getLocalStorageItem } from "../../../helper/localstorage"
+import { PerformanceModal } from "../../../components/primaryUser/PerformanceModal"
 import api from "../../../api/api"
+import SkeletonTable from "../../../components/loader/SkeletonTable"
+import { StaticSidebar } from "../../../components/primaryUser/StaticSidebar"
 import { toast } from "react-toastify"
 import UseFetch from "../../../hooks/useFetch"
 import React from "react"
@@ -42,6 +50,19 @@ const LeadFollowUp = () => {
     allocationDate: "",
     demoDescription: ""
   })
+  const [selectedUserName, setselecteduserName] = useState(null)
+  const [selectedCategory, setselectedCategory] = useState(null)
+  const [selectedDatapopup, setselectedDataPopup] = useState({})
+  const [selectedYear, setSelectedYear] = useState(null)
+  const [periodMode, setperiodMode] = useState("all")
+  const [targetData, settargetData] = useState([])
+  console.log(targetData)
+  const [openModal, setOpenModal] = useState(false)
+  const [productlist, setproductList] = useState([])
+  const [achievedproducts, setacheivedProducts] = useState([])
+  const [selectedPeriod, setselectedPeriod] = useState("")
+
+
   const [expandedRows, setExpandedRows] = useState(new Set())
   const [selectedData, setselectedData] = useState(null)
 
@@ -61,6 +82,7 @@ const LeadFollowUp = () => {
     editfollowUpDatesandRemarksEditIndex,
     setfollowUpDatesandRemarksEditIndex
   ] = useState(null)
+
   const [startMonth, setStartMonth] = useState(new Date())
   const [endMonth, setEndMonth] = useState(new Date())
   const [netTotalAmount, setnetTotalAmount] = useState(0)
@@ -76,6 +98,7 @@ const LeadFollowUp = () => {
   const [productwiseloader, setproductwiseloader] = useState(false)
   const [allocationOptions, setAllocationOptions] = useState([])
   const [selectedCompanyBranch, setselectedCompanyBranch] = useState("")
+  console.log(selectedCompanyBranch)
   const [isHaveEditchoice, setIsEditable] = useState(false)
   const [selectedDocId, setselectedDocid] = useState(null)
   const [selectedTab, setselectedTab] = useState("")
@@ -125,18 +148,23 @@ const LeadFollowUp = () => {
   const { data: partners } = UseFetch("/customer/getallpartners")
   const { data: branches } = UseFetch("/branch/getBranch")
   const { data } = UseFetch("/auth/getallUsers")
-
+  const { data: branchProduct } = UseFetch(
+selectedCompanyBranch&&
+    `/product/getallbranchProduct?branch=${selectedCompanyBranch}`
+  )
+console.log(selectedCompanyBranch)
   // [Keep all your existing useEffect hooks here - they remain the same]
   // ... (all the existing useEffect hooks from line 92 to line 600+)
-
+console.log(ownFollowUp)
+console.log(pending)
   useEffect(() => {
     // run only when location.state or selectedCompanyBranch / loggedUser change
     //this from productwisereport
     if (safeState?.viewMode !== "product" || !loggedUser) return
+console.log("HHH")
     const selectedbranch = safeState?.branchId
 
     setselectedCompanyBranch(selectedbranch)
-
     const fetchFollowups = async () => {
       const staffIdFromState = location.state.staffId
       const pendingFromState = location.state.pending
@@ -149,7 +177,7 @@ const LeadFollowUp = () => {
       setPending(pendingFromState)
       // keep full loggedUser object, just compare ids
       setOwnFollowUp(staffIdFromState === loggedUser._id)
-
+console.log(staffIdFromState === loggedUser._id)
       setproductwiseloader(true)
       try {
         const res = await api.get(
@@ -431,6 +459,7 @@ const LeadFollowUp = () => {
 
           setHasownLeads(filteredLeads?.ischekCollegueLeads)
         }
+
         console.log("hh")
         setproductwiseloader(false)
         // console.log(pending)
@@ -441,7 +470,7 @@ const LeadFollowUp = () => {
         console.error(err)
       }
     }
-
+    console.log("hhh")
     fetchFollowups()
   }, [safeState?.state, selectedCompanyBranch, loggedUser])
   console.log(pending)
@@ -459,6 +488,7 @@ const LeadFollowUp = () => {
       setPending(pendingorcleared)
       if (!loggedUser) return // NEW: guard
       setOwnFollowUp(staffIdFromState === loggedUser._id)
+console.log(staffIdFromState === loggedUser._id)
       setproductwiseloader(true)
       try {
         const res = await api.get(
@@ -699,6 +729,69 @@ const LeadFollowUp = () => {
     }
     fetchFollowups()
   }
+  const handleMoreClick = (id, name) => {
+    const Datas = targetData?.userWiseResults
+    console.log(id)
+    console.log(name)
+    console.log("hh")
+    const filteredList = branchProduct
+      .filter(
+        (item) =>
+          item.selected?.some(
+            (selectedItem) => String(selectedItem.category_id) === String(id)
+          ) || String(item.category_id) === String(id)
+      )
+      .map((item) => item.productName || item.serviceName)
+    console.log(filteredList)
+    setproductList(filteredList)
+    setselectedCategory({ Id: id, categoryName: name })
+    console.log("J")
+    console.log(targetData)
+    console.log(loggedUser?._id)
+    const filteredloggedUserItem = Datas.filter(
+      (item) => item.userId === loggedUser._id
+    )
+    console.log("hhh")
+
+    console.log(Datas)
+    console.log("hhhh")
+    console.log(filteredloggedUserItem)
+    console.log(id)
+    // const filteredselectedCategory =
+    //   filteredloggedUserItem[0].categories.filter(
+    //     (item) => item.categoryId === id
+    //   )
+    const filteredselectedCategory = Datas.flatMap(
+      (user) => user.categories || []
+    ).filter((item) => item.categoryId === id)
+    console.log("Hh")
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+    console.log("hhh")
+    setselectedDataPopup(summary)
+    console.log(filteredselectedCategory && filteredselectedCategory.length)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      setacheivedProducts((prev) => [
+        ...prev,
+        ...filteredselectedCategory.flatMap((item) =>
+          (item?.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
+      ])
+    } else {
+      setacheivedProducts([])
+    }
+    setOpenModal(true)
+  }
 
   // const shouldFetch =
   //   (safeState.istotal &&
@@ -732,6 +825,7 @@ const LeadFollowUp = () => {
       `&endDate=${safeState?.viewMode ? dates.endDate : null}` +
       `&header=${safeState?.header}`
     : null
+console.log(shouldFetch)
   console.log(safeState)
   console.log(selectedCompanyBranch)
   console.log(safeState?.header)
@@ -750,6 +844,7 @@ const LeadFollowUp = () => {
   // Initial loggedUser + branches from dashboard
   useEffect(() => {
     if (!safeState.branchId || !branches || !data) return
+console.log(safeState.branchId)
     console.log("Hhh")
     const { allusers = [], allAdmins = [] } = data
     const mergeduser = [...allusers, ...allAdmins]
@@ -880,14 +975,49 @@ const LeadFollowUp = () => {
     }, 2000)
     return () => clearTimeout(handler)
   }, [input])
-
+console.log(ownFollowUp)
+console.log(pending)
   const formatdate = (date) => new Date(date).toISOString().split("T")[0]
   const getLocalDate = (date) => {
     const local = new Date(date)
     local.setMinutes(date.getMinutes() - date.getTimezoneOffset())
     return local.toISOString().split("T")[0]
   }
+  const handleSelectedUser = (category, userId, userName) => {
+    setselecteduserName(userName)
+    setselectedCategory({
+      Id: category.Id,
+      categoryName: category.categoryName
+    })
+    const filteredloggedUserItem = data?.userWiseResults.filter(
+      (item) => item.userId === userId
+    )
+    const filteredselectedCategory =
+      filteredloggedUserItem[0].categories.filter(
+        (item) => item.categoryId === category.Id
+      )
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
 
+    setselectedDataPopup(summary)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      setacheivedProducts(
+        filteredselectedCategory[0]?.products?.map((product) => ({
+          productname: product.name,
+          amount: product.achieved
+        })) || []
+      )
+    } else {
+      setacheivedProducts([])
+    }
+  }
   const TotalAmount = (dataArr) => {
     const total = (dataArr || []).reduce((total, lead) => {
       if (!Array.isArray(lead.leadFor)) return total
@@ -966,6 +1096,7 @@ const LeadFollowUp = () => {
         // console.log(groupedData)
         setnetTotalAmount(TotalAmount(filteredLeads))
         setTableData(groupedData)
+
         console.log(safeState)
         console.log(loggedUser)
         console.log(groupedData)
@@ -1549,8 +1680,12 @@ const LeadFollowUp = () => {
           }
         }
       }
-
+setOwnFollowUp(true)
+console.log("hhhhdd")
       setHasownLeads(loggedusersallocatedleads.ischekCollegueLeads)
+    } else {
+      console.log("hh")
+      setTableData([])
     }
   }, [
     loggedusersallocatedleads,
@@ -2181,566 +2316,667 @@ console.log(collectionupdatedata)
       </tbody>
     </table>
   )
-
+console.log(tableData)
   const currentData = statusAllocated ? allocatedLeads : tableData
-
+console.log(statusAllocated)
+  console.log(loggedUser)
+console.log(ownFollowUp)
   return (
-    <div className="h-full flex flex-col bg-[#ADD8E6]">
-      {(loading || productwiseloader) && (
-        <BarLoader
-          cssOverride={{ width: "100%", height: "4px" }}
-          color="#4A90E2"
+    <div className="h-full  bg-[#ADD8E6] overflow-hidden">
+      <div className="flex h-full  flex-row">
+        <StaticSidebar
+          handleMoreClick={handleMoreClick}
+          selectedCompanyBranch={selectedCompanyBranch}
+          setselectedCompanyBranch={setselectedCompanyBranch}
+          parenttargetData={settargetData}
+          parentperiodmode={setperiodMode}
+          parentyear={setSelectedYear}
+          setselectedPeriod={setselectedPeriod}
         />
-      )}
+        <div className="flex flex-1 flex-col overflow-hidden ">
+          <header className="flex items-center justify-between ">
+            {loggedUser?.role?.toLowerCase() === "admin" ? (
+              <AdminHeader hide={true}/>
+            ) : (
+              <StaffHeader hide={true} />
+            )}
 
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center mx-3 md:mx-5 mt-2 gap-4 bg-[#ADD8E6]">
-        <h2 className="text-lg font-bold">Lead Follow Up</h2>
-
-        <div className="grid grid-cols-2 md:flex md:flex-nowrap md:gap-6 gap-3 md:items-center w-full md:w-auto">
-          {dates.startDate && (
-            <div className="w-full ">
-              <MyDatePicker
-                setDates={setDates}
-                dates={dates}
-                view={!!safeState.staffId}
-              />
-            </div>
-          )}
-          {!safeState?.staffId && (
-            <div className="relative flex justify-end " ref={dropdownRef}>
-              <button
-                type="button"
-                onClick={() => setfilterOpen(!filterOpen)}
-                className="p-1 rounded-md bg-gray-100 md:bg-white border border-gray-300 shadow-sm hover:shadow-md hover:bg-gray-50 transition"
-                title="Filter Options"
-              >
-                <BsFilterLeft className="text-md md:text-xl text-gray-800 md:text-gray-700 hover:text-black" />
+            <div className="flex items-center gap-1.5   pr-3 h-full">
+              <button className="rounded-full p-1.5 transition bg-slate-100">
+                <Mail size={15} strokeWidth={2.2} />
               </button>
+              <div className="relative">
+                <button className="rounded-full p-1.5 transition bg-slate-100">
+                  <MessageSquareText size={15} strokeWidth={2.2} />
+                </button>
+                <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
+              </div>
+              <button className="rounded-full p-1.5 transition bg-slate-100">
+                <Settings size={15} strokeWidth={2.2} />
+              </button>
+              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+                <User size={15} strokeWidth={2.2} />
+              </button> */}
 
-            
-              {filterOpen && (
-                <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 p-4 space-y-5 animate-fade-in-down">
-                  <h3 className="text-base font-semibold text-gray-800 border-b pb-2">
-                    Filters
-                  </h3>
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowUserMenu((prev) => !prev)
+                  }}
+                  className="rounded-full p-1.5 transition bg-slate-100"
+                >
+                  <User size={15} strokeWidth={2.2} />
+                </button>
 
-                  {[
-                    {
-                      label: statusAll ? "All Leads" : "Filtered Leads",
-                      value: statusAll,
-                      toggle: () => {
-                        setstatusAll(!statusAll)
-                        setTableData([])
-                        setAllocatedLeads([])
-                      },
-                      show: false,
-                      disabled: false
-                    },
-                    {
-                      label: "Task Allocated Followups",
-                      value: statusAllocated,
-                      toggle: () => {
-                        setstatusAllocated(!statusAllocated)
-                        setTableData([])
-                        setAllocatedLeads([])
-                      },
-                      show: safeState.staffId ? false : pending === true
-                      // disabled: safeState.staffId && safeState.istotal
-                    },
-                    {
-                      label: pending ? "Pending Followup" : "Cleared Followup",
-                      value: pending,
-                      toggle: () => {
-                        setPending(!pending)
-                        setTableData([])
-                        setAllocatedLeads([])
-                        if (safeState.staffId && !safeState.istotal) {
-                          console.log("hhh")
-                          handletoogle(pending)
-                        }
-                      },
-                      show: true
-                      //  disabled: safeState.staffId && safeState.istotal
-                    },
-                    {
-                      label: ownFollowUp ? "Own Followup" : "All Followup",
-                      value: ownFollowUp,
-                      toggle: () => {
-                        setOwnFollowUp(!ownFollowUp)
-                        setTableData([])
-                        setAllocatedLeads([])
-                      },
-                      show: safeState.staffId
-                        ? false
-                        : loggedUser?.role !== "Staff"
-                      // disabled: safeState.staffId && safeState.istotal
-                    }
-                  ]
-                    .filter((item) => item.show)
-                    .map((item, idx) => {
-                      const isDisabled = item.disabled
-                      return (
-                        <div
-                          key={idx}
-                          className="flex items-center justify-between text-sm font-medium text-gray-700 group"
-                        >
-                          <span
-                            className={`transition ${
-                              item.label === "Task Allocated Followups" &&
-                              !item.value
-                                ? "text-gray-400 opacity-60 blur-[1px]"
-                                : isDisabled
-                                  ? "text-gray-400 cursor-not-allowed"
-                                  : "text-gray-700 group-hover:text-black"
-                            }`}
-                          >
-                            {item.label}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (isDisabled) return
-                              item.toggle()
-                            }}
-                            className={`${
-                              item.value ? "bg-emerald-400" : "bg-gray-300"
-                            } w-8 h-5 flex items-center rounded-full transition-colors duration-300 ${
-                              isDisabled
-                                ? "cursor-not-allowed opacity-60"
-                                : "cursor-pointer"
-                            }`}
-                          >
-                            <div
-                              className={`${
-                                item.value ? "translate-x-3" : "translate-x-0"
-                              } w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300`}
-                            />
-                          </button>
-                        </div>
-                      )
-                    })}
+                {/* {showUserMenu && (
+                  <div
+                    onClick={(e) => e.stopPropagation()} 
+                    className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
+                  >
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )} */}
+              </div>
+            </div>
+          </header>
+
+          {(loading || productwiseloader) && (
+            <BarLoader
+              cssOverride={{ width: "100%", height: "4px" }}
+              color="#4A90E2"
+            />
+          )}
+          <div className="flex flex-col flex-1 bg-[#ADD8E6]">
+            <h2 className="text-lg font-bold mx-4">Lead Follow Up</h2>
+
+            <div className="grid grid-cols-2 md:flex md:flex-nowrap md:gap-6 gap-3 md:items-center w-full md:w-auto mx-4">
+              {dates.startDate && (
+                <div className="w-full ">
+                  <MyDatePicker
+                    setDates={setDates}
+                    dates={dates}
+                    view={!!safeState.staffId}
+                  />
                 </div>
               )}
+              {!safeState?.staffId && (
+                <div className="relative flex justify-end " ref={dropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setfilterOpen(!filterOpen)}
+                    className="p-1 rounded-md bg-gray-100 md:bg-white border border-gray-300 shadow-sm hover:shadow-md hover:bg-gray-50 transition"
+                    title="Filter Options"
+                  >
+                    <BsFilterLeft className="text-md md:text-xl text-gray-800 md:text-gray-700 hover:text-black" />
+                  </button>
+
+                  {filterOpen && (
+                    <div className="absolute top-full right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 p-4 space-y-5 animate-fade-in-down">
+                      <h3 className="text-base font-semibold text-gray-800 border-b pb-2">
+                        Filters
+                      </h3>
+
+                      {[
+                        {
+                          label: statusAll ? "All Leads" : "Filtered Leads",
+                          value: statusAll,
+                          toggle: () => {
+                            setstatusAll(!statusAll)
+                            setTableData([])
+                            setAllocatedLeads([])
+                          },
+                          show: false,
+                          disabled: false
+                        },
+                        {
+                          label: "Task Allocated Followups",
+                          value: statusAllocated,
+                          toggle: () => {
+                            setstatusAllocated(!statusAllocated)
+                            setTableData([])
+                            setAllocatedLeads([])
+                          },
+                          show: safeState.staffId ? false : pending === true
+                          // disabled: safeState.staffId && safeState.istotal
+                        },
+                        {
+                          label: pending
+                            ? "Pending Followup"
+                            : "Cleared Followup",
+                          value: pending,
+                          toggle: () => {
+                            setPending(!pending)
+                            setTableData([])
+                            setAllocatedLeads([])
+                            if (safeState.staffId && !safeState.istotal) {
+                              console.log("hhh")
+                              handletoogle(pending)
+                            }
+                          },
+                          show: true
+                          //  disabled: safeState.staffId && safeState.istotal
+                        },
+                        {
+                          label: ownFollowUp ? "Own Followup" : "All Followup",
+                          value: ownFollowUp,
+                          toggle: () => {
+console.log(ownFollowUp)
+                            setOwnFollowUp(!ownFollowUp)
+                            setTableData([])
+                            setAllocatedLeads([])
+                          },
+                          show: safeState.staffId
+                            ? false
+                            : loggedUser?.role !== "Staff"
+                          // disabled: safeState.staffId && safeState.istotal
+                        }
+                      ]
+                        .filter((item) => item.show)
+                        .map((item, idx) => {
+                          const isDisabled = item.disabled
+                          return (
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between text-sm font-medium text-gray-700 group"
+                            >
+                              <span
+                                className={`transition ${
+                                  item.label === "Task Allocated Followups" &&
+                                  !item.value
+                                    ? "text-gray-400 opacity-60 blur-[1px]"
+                                    : isDisabled
+                                      ? "text-gray-400 cursor-not-allowed"
+                                      : "text-gray-700 group-hover:text-black"
+                                }`}
+                              >
+                                {item.label}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (isDisabled) return
+                                  item.toggle()
+                                }}
+                                className={`${
+                                  item.value ? "bg-emerald-400" : "bg-gray-300"
+                                } w-8 h-5 flex items-center rounded-full transition-colors duration-300 ${
+                                  isDisabled
+                                    ? "cursor-not-allowed opacity-60"
+                                    : "cursor-pointer"
+                                }`}
+                              >
+                                <div
+                                  className={`${
+                                    item.value
+                                      ? "translate-x-3"
+                                      : "translate-x-0"
+                                  } w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300`}
+                                />
+                              </button>
+                            </div>
+                          )
+                        })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <select
+                value={selectedCompanyBranch || ""}
+                onChange={(e) => setselectedCompanyBranch(e.target.value)}
+                className="border border-gray-300 py-0.5 rounded-md px-2 focus:outline-none w-36 md:min-w-[120px] cursor-pointer"
+              >
+                {loggedUserBranches?.map((branch) => (
+                  <option key={branch.value} value={branch.value}>
+                    {branch.label}
+                  </option>
+                ))}
+              </select>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={() =>
+                    loggedUser?.role === "Admin"
+                      ? navigate("/admin/transaction/lead")
+                      : navigate("/staff/transaction/lead")
+                  }
+                  className="bg-black text-white py-0.5 px-3 rounded-lg shadow-lg hover:bg-gray-600 w-24"
+                >
+                  New Lead
+                </button>
+              </div>
             </div>
-          )}
+            <div className="flex justify-end mr-5">
+              <span className="text-blue-700 font-semibold">
+                Total Amount -
+              </span>
+              <div className="flex items-center ml-1">
+                <IndianRupee className="w-3 h-3 text-green-600 mr-1" />
+                <span>
+                  {statusAllocated ? allocatednetAmount : netTotalAmount}
+                </span>
+              </div>
+            </div>
 
-          <select
-            value={selectedCompanyBranch || ""}
-            onChange={(e) => setselectedCompanyBranch(e.target.value)}
-            className="border border-gray-300 py-0.5 rounded-md px-2 focus:outline-none w-36 md:min-w-[120px] cursor-pointer"
-          >
-            {loggedUserBranches?.map((branch) => (
-              <option key={branch.value} value={branch.value}>
-                {branch.label}
-              </option>
-            ))}
-          </select>
-
-          <div className="flex justify-end">
-            <button
-              onClick={() =>
-                loggedUser?.role === "Admin"
-                  ? navigate("/admin/transaction/lead")
-                  : navigate("/staff/transaction/lead")
-              }
-              className="bg-black text-white py-0.5 px-3 rounded-lg shadow-lg hover:bg-gray-600 w-24"
-            >
-              New Lead
-            </button>
+            <div className="h-auto overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
+              {renderTable(currentData)}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="flex justify-end mr-5">
-        <span className="text-blue-700 font-semibold">Total Amount -</span>
-        <div className="flex items-center ml-1">
-          <IndianRupee className="w-3 h-3 text-green-600 mr-1" />
-          <span>{statusAllocated ? allocatednetAmount : netTotalAmount}</span>
-        </div>
-      </div>
+        {showModal && (
+          <LeadhistoryModal
+            open={showModal}
+            handlecloseModal={handlecloseModal}
+            historyList={historyList}
+            selectedLeadId={selectedLeadId}
+            isOwner={isOwner}
+            loggedUser={loggedUser}
+          />
+        )}
 
-      <div className="h-auto overflow-x-auto rounded-lg overflow-y-auto shadow-xl mx-2 md:mx-3 mb-3 bg-white">
-        {renderTable(currentData)}
-      </div>
-
-      {showModal && (
-        <LeadhistoryModal
-          open={showModal}
-          handlecloseModal={handlecloseModal}
-          historyList={historyList}
-          selectedLeadId={selectedLeadId}
-          isOwner={isOwner}
-          loggedUser={loggedUser}
-        />
-      )}
-
-      {/* MODIFIED: Follow-up Modal with proper state management */}
-      {showfollowupModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-[#ADD8E6] rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
-            {/* Header */}
-            <div className="bg-[#ADD8E6] flex items-center justify-between px-6 py-2 border-b border-gray-200">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800">Follow-Up</h2>
-                <p className="text-sm text-blue-600 mt-0.5 font-semibold">
-                  {formData?.customerName}
-                </p>
-              </div>
-              <div className="text-lg font-semibold flex-grow text-end ">
-                <span>Lead ID:</span>
-                <span className="ml-1">{selectedLeadId}</span>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleCloseFollowupModal}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-
-            {/* Body - Scrollable */}
-            <div className="flex-1 overflow-y-auto px-6 py-5">
-              <div className="space-y-2">
-                {/* Follow Up Date - Read Only */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                      Follow Up Date
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        readOnly
-                        value={
-                          demoData.demoassignedDate
-                            ? demoData.demoassignedDate.toString().split("T")[0]
-                            : formData?.followUpDate
-                              ? new Date(formData.followUpDate)
-                                  .toLocaleDateString("en-GB")
-                                  .replace(/\//g, "-")
-                              : ""
-                        }
-                        className="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium cursor-not-allowed focus:outline-none"
-                      />
-                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Status Dropdown */}
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
-                      Status
-                    </label>
-                    <div className="relative">
-                      <select
-                        disabled={isAllocated}
-                        value={formData.followupType}
-                        onChange={(e) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            followupType: e.target.value
-                          }))
-                          setishavePayment(false)
-                          setcollectionData({})
-                        }}
-                        onFocus={() => setIsdropdownOpen(true)}
-                        onBlur={() => setIsdropdownOpen(false)}
-                        className="w-full appearance-none px-4 py-1.5 pr-10 border border-gray-300 rounded-lg bg-white text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all cursor-pointer"
-                      >
-                        <option value="infollowup">In Follow-up</option>
-                        <option value="closed">Closed</option>
-                        <option value="lost">Lost</option>
-                      </select>
-                      <ChevronDown
-                        className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none transition-transform duration-200 ${
-                          isdropdownOpen ? "rotate-180" : ""
-                        }`}
-                      />
-                    </div>
-                  </div>
+        {/* MODIFIED: Follow-up Modal with proper state management */}
+        {showfollowupModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-[#ADD8E6] rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+              {/* Header */}
+              <div className="bg-[#ADD8E6] flex items-center justify-between px-6 py-2 border-b border-gray-200">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    Follow-Up
+                  </h2>
+                  <p className="text-sm text-blue-600 mt-0.5 font-semibold">
+                    {formData?.customerName}
+                  </p>
+                </div>
+                <div className="text-lg font-semibold flex-grow text-end ">
+                  <span>Lead ID:</span>
+                  <span className="ml-1">{selectedLeadId}</span>
                 </div>
 
-                {/* Allocation Checkbox */}
-                {formData.followupType === "infollowup" && (
-                  <div className="bg-blue-50 border-l-4 border-blue-500 rounded-r-lg p-2">
-                    <label className="flex items-start cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        disabled={isdemofollownotClosed}
-                        checked={isAllocated}
-                        onChange={() => {
-                          if (
-                            formData.followupType === "closed" ||
-                            formData.followupType === "lost"
-                          )
-                            return
-                          setIsAllocated(!isAllocated)
-                          setFormData((prev) => ({
-                            ...prev,
-                            Remarks: "",
-                            nextfollowUpDate: ""
-                          }))
-                        }}
-                        className="mt-0.5 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
-                      />
-                      <div className="ml-3">
-                        <span className="text-sm font-semibold text-gray-800 group-hover:text-blue-700 transition-colors">
-                          Enable Allocation
-                        </span>
-                        <p className="text-xs text-gray-600 mt-0.5">
-                          Assign a Task to a team member
-                        </p>
-                      </div>
-                    </label>
-                  </div>
-                )}
+                <button
+                  type="button"
+                  onClick={handleCloseFollowupModal}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
 
-                {/* Allocation Details */}
-                {isAllocated && (
-                  <div className="border-2 border-blue-200 rounded-xl p-5 bg-gradient-to-br from-blue-50 to-indigo-50">
-                    <h3 className="text-sm font-bold text-gray-800 mb-1 flex items-center">
-                      <div className="w-1 h-5 bg-blue-600 rounded mr-2"></div>
-                      Allocation Details
-                    </h3>
-
-                    <div className="space-y-2">
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
-                          Allocation Type
-                        </label>
-                        <select
-                          value={
-                            demoData.selectedType && demoData.selectedTypeName
-                              ? `${demoData.selectedType}||${demoData.selectedTypeName}`
-                              : ""
-                          }
-                          onChange={(e) => {
-                            const [id, name] = e.target.value.split("||")
-                            setDemodata((prev) => ({
-                              ...prev,
-                              selectedType: id,
-                              selectedTypeName: name
-                            }))
-                            setDemoError((prev) => ({
-                              ...prev,
-                              allocationTyperror: ""
-                            }))
-                          }}
-                          className="w-full px-4 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                        >
-                          <option>Select Type</option>
-                          {tasks &&
-                            tasks.map((task) => (
-                              <option
-                                key={task._id}
-                                value={`${task._id}||${task.taskName}`}
-                              >
-                                {task?.taskName}
-                              </option>
-                            ))}
-                        </select>
-                        {demoerror.allocationTyperror && (
-                          <p className="mt-1.5 text-xs text-red-600 font-medium">
-                            {demoerror.allocationTyperror}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
-                          Assign To Staff
-                        </label>
-                        <select
-                          value={demoData.demoallocatedTo}
-                          onChange={(e) => {
-                            setDemodata((prev) => ({
-                              ...prev,
-                              demoallocatedTo: e.target.value
-                            }))
-                            setDemoError((prev) => ({
-                              ...prev,
-                              selectStaff: ""
-                            }))
-                          }}
-                          className="w-full px-4 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                        >
-                          <option value="">Select staff member...</option>
-                          {allocationOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                        {demoerror.selectStaff && (
-                          <p className="mt-1.5 text-xs text-red-600 font-medium">
-                            {demoerror.selectStaff}
-                          </p>
-                        )}
-                      </div>
-
-                      <div>
-                        <label className="block text-xs font-semibold text-gray-700 mb-1">
-                          Completion Date
-                        </label>
+              {/* Body - Scrollable */}
+              <div className="flex-1 overflow-y-auto px-6 py-5">
+                <div className="space-y-2">
+                  {/* Follow Up Date - Read Only */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                        Follow Up Date
+                      </label>
+                      <div className="relative">
                         <input
-                          type="date"
-                          value={demoData.demoallocatedDate}
-                          onChange={handleDataChange}
-                          name="allocationDate"
-                          className="w-full px-4 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                          type="text"
+                          readOnly
+                          value={
+                            demoData.demoassignedDate
+                              ? demoData.demoassignedDate
+                                  .toString()
+                                  .split("T")[0]
+                              : formData?.followUpDate
+                                ? new Date(formData.followUpDate)
+                                    .toLocaleDateString("en-GB")
+                                    .replace(/\//g, "-")
+                                : ""
+                          }
+                          className="w-full px-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 font-medium cursor-not-allowed focus:outline-none"
                         />
-                        {demoerror.allocationDate && (
-                          <p className="mt-1.5 text-xs text-red-600 font-medium">
-                            {demoerror.allocationDate}
-                          </p>
-                        )}
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status Dropdown */}
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                        Status
+                      </label>
+                      <div className="relative">
+                        <select
+                          disabled={isAllocated}
+                          value={formData.followupType}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              followupType: e.target.value
+                            }))
+                          }
+                          onFocus={() => setIsdropdownOpen(true)}
+                          onBlur={() => setIsdropdownOpen(false)}
+                          className="w-full appearance-none px-4 py-1.5 pr-10 border border-gray-300 rounded-lg bg-white text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-all cursor-pointer"
+                        >
+                          <option value="infollowup">In Follow-up</option>
+                          <option value="closed">Closed</option>
+                          <option value="lost">Lost</option>
+                        </select>
+                        <ChevronDown
+                          className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none transition-transform duration-200 ${
+                            isdropdownOpen ? "rotate-180" : ""
+                          }`}
+                        />
                       </div>
                     </div>
                   </div>
-                )}
 
-                {/* Next Follow Up Date */}
-                {formData.followupType === "infollowup" && !isAllocated && (
+                  {/* Allocation Checkbox */}
+                  {formData.followupType === "infollowup" && (
+                    <div className="bg-blue-50 border-l-4 border-blue-500 rounded-r-lg p-2">
+                      <label className="flex items-start cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          disabled={isdemofollownotClosed}
+                          checked={isAllocated}
+                          onChange={() => {
+                            if (
+                              formData.followupType === "closed" ||
+                              formData.followupType === "lost"
+                            )
+                              return
+                            setIsAllocated(!isAllocated)
+                            setFormData((prev) => ({
+                              ...prev,
+                              Remarks: "",
+                              nextfollowUpDate: ""
+                            }))
+                          }}
+                          className="mt-0.5 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 disabled:cursor-not-allowed"
+                        />
+                        <div className="ml-3">
+                          <span className="text-sm font-semibold text-gray-800 group-hover:text-blue-700 transition-colors">
+                            Enable Allocation
+                          </span>
+                          <p className="text-xs text-gray-600 mt-0.5">
+                            Assign a Task to a team member
+                          </p>
+                        </div>
+                      </label>
+                    </div>
+                  )}
+
+                  {/* Allocation Details */}
+                  {isAllocated && (
+                    <div className="border-2 border-blue-200 rounded-xl p-5 bg-gradient-to-br from-blue-50 to-indigo-50">
+                      <h3 className="text-sm font-bold text-gray-800 mb-1 flex items-center">
+                        <div className="w-1 h-5 bg-blue-600 rounded mr-2"></div>
+                        Allocation Details
+                      </h3>
+
+                      <div className="space-y-2">
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            Allocation Type
+                          </label>
+                          <select
+                            value={
+                              demoData.selectedType && demoData.selectedTypeName
+                                ? `${demoData.selectedType}||${demoData.selectedTypeName}`
+                                : ""
+                            }
+                            onChange={(e) => {
+                              const [id, name] = e.target.value.split("||")
+                              setDemodata((prev) => ({
+                                ...prev,
+                                selectedType: id,
+                                selectedTypeName: name
+                              }))
+                              setDemoError((prev) => ({
+                                ...prev,
+                                allocationTyperror: ""
+                              }))
+                            }}
+                            className="w-full px-4 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                          >
+                            <option>Select Type</option>
+                            {tasks &&
+                              tasks.map((task) => (
+                                <option
+                                  key={task._id}
+                                  value={`${task._id}||${task.taskName}`}
+                                >
+                                  {task?.taskName}
+                                </option>
+                              ))}
+                          </select>
+                          {demoerror.allocationTyperror && (
+                            <p className="mt-1.5 text-xs text-red-600 font-medium">
+                              {demoerror.allocationTyperror}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            Assign To Staff
+                          </label>
+                          <select
+                            value={demoData.demoallocatedTo}
+                            onChange={(e) => {
+                              setDemodata((prev) => ({
+                                ...prev,
+                                demoallocatedTo: e.target.value
+                              }))
+                              setDemoError((prev) => ({
+                                ...prev,
+                                selectStaff: ""
+                              }))
+                            }}
+                            className="w-full px-4 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                          >
+                            <option value="">Select staff member...</option>
+                            {allocationOptions.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                          {demoerror.selectStaff && (
+                            <p className="mt-1.5 text-xs text-red-600 font-medium">
+                              {demoerror.selectStaff}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-700 mb-1">
+                            Completion Date
+                          </label>
+                          <input
+                            type="date"
+                            value={demoData.demoallocatedDate}
+                            onChange={handleDataChange}
+                            name="allocationDate"
+                            className="w-full px-4 py-1.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                          />
+                          {demoerror.allocationDate && (
+                            <p className="mt-1.5 text-xs text-red-600 font-medium">
+                              {demoerror.allocationDate}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Next Follow Up Date */}
+                  {formData.followupType === "infollowup" && !isAllocated && (
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
+                        Next Follow Up Date
+                      </label>
+                      <input
+                        type="date"
+                        disabled={isdemofollownotClosed}
+                        value={formData.nextfollowUpDate}
+                        onChange={handleDataChange}
+                        name="nextfollowUpDate"
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      />
+                      {errors.nextfollowUpDate && (
+                        <p className="mt-1.5 text-xs text-red-600 font-medium">
+                          {errors.nextfollowUpDate}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* MODIFIED: Payment Section with updated data */}
+                  {formData.followupType === "closed" && (
+                    <div className="border-2 border-green-200 rounded-xl p-5 bg-gradient-to-br from-green-50 to-emerald-50">
+                      <label className="flex items-start cursor-pointer group mb-4">
+                        <input
+                          type="checkbox"
+                          checked={ishavePayment}
+                          onChange={() => {
+                            setcollectionUpdateModal(true)
+                            setishavePayment(!ishavePayment)
+                          }}
+                          className="mt-0.5 w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                        />
+                        <div className="ml-3">
+                          <span className="text-sm font-semibold text-gray-800 group-hover:text-green-700 transition-colors">
+                            Payment Received
+                          </span>
+                          <p className="text-xs text-gray-600 mt-0.5">
+                            Check if payment has been collected
+                          </p>
+                        </div>
+                      </label>
+
+                      {ishavePayment &&
+                        selectedData &&
+                        collectionupdateModal &&
+                        partner &&
+                        partner.length > 0 && (
+                          <CollectionupdateModal
+                            data={selectedData}
+                            from="followup"
+                            closemodal={setcollectionUpdateModal}
+                            partnerlist={partner}
+                            loggedUser={loggedUser}
+                            setishavePayment={setishavePayment}
+                            handleCollectionUpdate={handleCollectionUpdate}
+                            isUpdateMode={paymentUpdatedInSession}
+                          />
+                        )}
+                    </div>
+                  )}
+
+                  {/* Remarks */}
                   <div>
                     <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
-                      Next Follow Up Date
+                      Remarks
                     </label>
-                    <input
-                      type="date"
-                      disabled={isdemofollownotClosed}
-                      value={formData.nextfollowUpDate}
+                    <textarea
+                      rows={4}
+                      name="Remarks"
+                      value={formData.Remarks || demoData.demoDescription}
                       onChange={handleDataChange}
-                      name="nextfollowUpDate"
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      placeholder="Add detailed remarks or notes here..."
                     />
-                    {errors.nextfollowUpDate && (
+                    {errors.Remarks && (
                       <p className="mt-1.5 text-xs text-red-600 font-medium">
-                        {errors.nextfollowUpDate}
+                        {errors.Remarks}
+                      </p>
+                    )}
+                    {demoerror.demoDescription && (
+                      <p className="mt-1.5 text-xs text-red-600 font-medium">
+                        {demoerror.demoDescription}
                       </p>
                     )}
                   </div>
-                )}
-
-                {/* MODIFIED: Payment Section with updated data */}
-                {formData.followupType === "closed" && (
-                  <div className="border-2 border-green-200 rounded-xl p-5 bg-gradient-to-br from-green-50 to-emerald-50">
-                    <label className="flex items-start cursor-pointer group mb-4">
-                      <input
-                        type="checkbox"
-                        checked={ishavePayment}
-                        onChange={() => {
-                          setcollectionUpdateModal(true)
-                          setishavePayment(!ishavePayment)
-                        }}
-                        className="mt-0.5 w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-2 focus:ring-green-500"
-                      />
-                      <div className="ml-3">
-                        <span className="text-sm font-semibold text-gray-800 group-hover:text-green-700 transition-colors">
-                          Payment Received
-                        </span>
-                        <p className="text-xs text-gray-600 mt-0.5">
-                          Check if payment has been collected
-                        </p>
-                      </div>
-
-                      {hasCollectionData && (
-                        <div className="flex flex-grow justify-end">
-                          <button
-                            type="button"
-                            onClick={handleeditcollection}
-                            className="inline-flex items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-700 shadow-sm transition-all hover:bg-amber-100 hover:border-amber-300 hover:shadow-md active:scale-[0.98]"
-                          >
-                            <Pencil className="h-4 w-4" />
-                            Edit
-                          </button>
-                        </div>
-                      )}
-                    </label>
-
-                    {ishavePayment &&
-                      selectedData &&
-                      collectionupdateModal &&
-                      partner &&
-                      partner.length > 0 && (
-                        <CollectionupdateModal
-                          data={selectedData}
-                          from="followup"
-                          hasCollectionData={hasCollectionData}
-                          editData={collectionupdatedata}
-                          closemodal={() => {
-                            setishavePayment(false)
-                            setcollectionUpdateModal(false)
-                          }}
-                          partnerlist={partner}
-                          loggedUser={loggedUser}
-                          setishavePayment={setishavePayment}
-                          handleCollectionUpdate={handleCollectionUpdate}
-                          isUpdateMode={paymentUpdatedInSession}
-                        />
-                      )}
-                  </div>
-                )}
-
-                {/* Remarks */}
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
-                    Remarks
-                  </label>
-                  <textarea
-                    rows={4}
-                    name="Remarks"
-                    value={formData.Remarks || demoData.demoDescription}
-                    onChange={handleDataChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    placeholder="Add detailed remarks or notes here..."
-                  />
-                  {errors.Remarks && (
-                    <p className="mt-1.5 text-xs text-red-600 font-medium">
-                      {errors.Remarks}
-                    </p>
-                  )}
-                  {demoerror.demoDescription && (
-                    <p className="mt-1.5 text-xs text-red-600 font-medium">
-                      {demoerror.demoDescription}
-                    </p>
-                  )}
                 </div>
               </div>
-            </div>
 
-            {/* Footer */}
-            <div className="flex items-center justify-end gap-3 px-6 py-2 border-t border-gray-200 bg-[#ADD8E6]">
-              <button
-                type="button"
-                onClick={handleCloseFollowupModal}
-                className="px-6 py-1.5 border-2 border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-100 hover:border-gray-400 transition-all"
-              >
-                Cancel
-              </button>
+              {/* Footer */}
+              <div className="flex items-center justify-end gap-3 px-6 py-2 border-t border-gray-200 bg-[#ADD8E6]">
+                <button
+                  type="button"
+                  onClick={handleCloseFollowupModal}
+                  className="px-6 py-1.5 border-2 border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-100 hover:border-gray-400 transition-all"
+                >
+                  Cancel
+                </button>
 
-              <button
-                onClick={
-                  isAllocated ? handleDemoSubmit : handleFollowUpDateSubmit
-                }
-                className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all"
-              >
-                {followupDateLoader || loader ? (
-                  <div className="flex items-center">
-                    Processing
-                    <FaSpinner className="animate-spin h-5 w-5 text-white ml-2" />
-                  </div>
-                ) : (
-                  <div>{isHaveEditchoice ? "UPDATE" : "SUBMIT"}</div>
-                )}
-              </button>
+                <button
+                  onClick={
+                    isAllocated ? handleDemoSubmit : handleFollowUpDateSubmit
+                  }
+                  className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 shadow-lg hover:shadow-xl transition-all"
+                >
+                  {followupDateLoader || loader ? (
+                    <div className="flex items-center">
+                      Processing
+                      <FaSpinner className="animate-spin h-5 w-5 text-white ml-2" />
+                    </div>
+                  ) : (
+                    <div>{isHaveEditchoice ? "UPDATE" : "SUBMIT"}</div>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+        <PerformanceModal
+          modalOpen={openModal}
+          splitType={targetData?.selectedMeasurementType}
+          selectedperiod={selectedPeriod}
+          allperiods={targetData?.periods}
+          onselectedPeriodChange={(val, val2) => {
+            setSelectedMonth(val2)
+            setselectedPeriod(val)
+          }}
+          onMonthChange={(val) => {
+            setcategorylist([])
+            setacheivedProducts([])
+            setselectedDataPopup([])
+            setperiodMode(val)
+          }}
+          onYearChange={(val) => {
+            setcategorylist([])
+            setacheivedProducts([])
+            setselectedDataPopup([])
+            setSelectedYear(val)
+          }}
+          productlist={productlist}
+          onClose={() => {
+            setselecteduserName(loggedUser?.name)
+            setacheivedProducts([])
+            setOpenModal(false)
+          }}
+          selectedMonth={periodMode}
+          selectedYear={selectedYear}
+          summary={{
+            target: selectedDatapopup?.target,
+            achieved: selectedDatapopup?.achieved,
+            balance:
+              selectedDatapopup?.achieved > selectedDatapopup?.target
+                ? 0
+                : selectedDatapopup?.balance
+          }}
+          products={achievedproducts}
+          targetData={targetData?.userWiseResults}
+          loggedUser={loggedUser}
+          selectedUser={selectedUserName}
+          category={selectedCategory}
+          handleSelectedUser={handleSelectedUser}
+        />
+      </div>
     </div>
   )
 }

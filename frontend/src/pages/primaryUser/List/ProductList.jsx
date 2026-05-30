@@ -46,7 +46,7 @@ function ProductList() {
   }, [error])
 
   return (
-    <div className="h-full">
+    <div className="h-full bg-[#ADD8E6] p-5">
       <ProductListform productlist={products} loading={loading}/>
     </div>
   )

@@ -1,2717 +1,4 @@
-// import React, { useEffect, useState } from "react"
-// import { toast } from "react-toastify"
-// import dayjs from "dayjs"
-// import { FaArrowRight } from "react-icons/fa"
-// import BarLoader from "react-spinners/BarLoader"
-// import { HiChevronLeft, HiChevronRight } from "react-icons/hi" // Impo
-// import UseFetch from "../../hooks/useFetch"
-// import api from "../../api/api"
 
-// function LeaveApplication() {
-//   const [events, setEvents] = useState([])
-//   // const [ownCalander,setOwnCalander]=useState()
-//   const [edit, setEdit] = useState(null)
-//   const [showTypeSelector, setShowTypeSelector] = useState(false)
-//   const [selectedType, setSelectedType] = useState("") // leave | onsite | mispunch
-//   const [isHaveCompensatoryleave, setcompensatoryLeave] = useState(false)
-//   const [selectedDate, setSelectedDate] = useState(new Date())
-//   const [visibleDays, setVisibleDays] = useState([])
-//   const [BalanceprivilegeleaveCount, setBalanceprivilegeLeaveCount] =
-//     useState(0)
-//   const [BalancesickleaveCount, setBalansickLeaveCount] = useState(0)
-//   const [visibleMonth, setVisibleMonth] = useState("")
-//   const [currentDate, setCurrentDate] = useState(new Date())
-//   const [leaveBalance, setLeaveBalance] = useState({})
-//   const [BalancedcasualleaveCount, setBalancecasualLeaveCount] = useState(0)
-//   const [BalancecompensatoryleaveCount, setBalancecompensatoryLeaveCount] =
-//     useState(0)
-//   const [allleaves, setAllleaves] = useState([])
-//   const [allOnsites, setAllOnsite] = useState([])
-//   const [errors, setErrors] = useState({})
-
-//   const [MonthData, setMonthData] = useState({})
-//   const [currentMonthData, setcurrentMonthData] = useState({})
-//   const [currentMonth, setCurrentMonth] = useState(null)
-//   const [currentYear, setCurrentYear] = useState(new Date().getFullYear())
-//   const [message, setMessage] = useState({
-//     top: "",
-//     bottom: ""
-//   })
-//   console.log(message)
-//   const [showModal, setShowModal] = useState(false)
-//   console.log(showModal)
-//   const [pastDate, setPastDate] = useState(null)
-//   const [selectedTab, setSelectedTab] = useState("Leave")
-//   const [formData, setFormData] = useState({
-//     leaveDate: "",
-//     onsiteDate: "",
-//     formerOnsiteDate: "",
-//     leaveType: "Full Day",
-//     onsiteType: "Full Day",
-
-//     halfDayPeriod: "Morning",
-//     onsite: false,
-//     leaveCategory: "",
-//     reason: "",
-//     description: "",
-//     eventId: null
-//   })
-//   console.log(formData)
-//   const [isOnsite, setIsOnsite] = useState(false)
-//   const [loader, setLoader] = useState(false)
-//   const [tableRows, setTableRows] = useState([])
-//   const [clickedDate, setclickedDate] = useState(null)
-//   const [currentmonthleaveData, setcurrentmonthLeaveData] = useState([])
-//   const [currentmonthonsiteData, setcurrentmonthOnsiteData] = useState([])
-//   const userData = localStorage.getItem("user")
-//   const tabs = ["Leave", "Onsite"]
-//   const user = JSON.parse(userData)
-//   console.log(user)
-//   const { data: leaves, refreshHook } = UseFetch(
-//     user && `/auth/getallLeave?userid=${user._id}`
-//   )
-// const {data:misspunchData,refreshHook:misspunchRefresh}=UseFetch(`/auth/getallmisspunch?userid=${user._id}&from="leaveApplicatiion"`)
-// console.log(misspunchData)
-//   const { data: compensatoryleaves, refreshHook: refreshHookCompensatory } =
-//     UseFetch(user && `/auth/getallcompensatoryleave?userid=${user._id}`)
-//   const { data: monthlyHoly } = UseFetch(
-//     currentMonth &&
-//       `/customer/getallCurrentmonthHoly?currentmonth=${currentMonth}`
-//   )
-//   const { data: allonsite, refreshHook: refreshHookOnsite } = UseFetch(
-//     user && `/auth/getallOnsite?userid=${user._id}`
-//   )
-//   const { data: leavemasterleavecount } = UseFetch(
-//     "/auth/getleavemasterleavecount"
-//   )
-//   useEffect(() => {
-//     if (MonthData && currentMonth) {
-//       setcurrentMonthData(MonthData[currentMonth])
-//     }
-//   }, [currentMonth, MonthData])
-
-//   useEffect(() => {
-//     const year = currentDate.getFullYear()
-//     const month = String(currentDate.getMonth() + 1).padStart(2, "0") // Convert to "01-12" format
-//     setCurrentMonth(`${year}-${month}`)
-//   }, [currentDate])
-//   useEffect(() => {
-//     const filteredcurrentmonthlyLeaves = allleaves?.filter((leaves) => {
-//       ///leavedate is iso format like "2025-03-03T12:00:00Z" so here slice 0 takes the first part and get the first 7 means 2025-03 because current month includes year also 2025-03
-//       const leaveMonth = leaves.leaveDate.split("T")[0].slice(0, 7)
-//       //here currentMonth have year and month no date
-//       return leaveMonth === currentMonth
-//     })
-//     setcurrentmonthLeaveData(filteredcurrentmonthlyLeaves)
-//   }, [allleaves, currentDate, currentMonth])
-//   useEffect(() => {
-//     if ((leaves && leaves.length > 0) || (allonsite && allonsite.length) > 0) {
-//       setAllleaves(leaves)
-//       setAllOnsite(allonsite)
-//     }
-//   }, [leaves, allonsite])
-//   useEffect(() => {
-//     if (allOnsites && allOnsites.length > 0) {
-//       const filteredcurrentmonthlyOnsites = allOnsites?.filter((onsites) => {
-//         ///onsitedate is iso format like "2025-03-03T12:00:00Z" so here slice 0 takes the first part and get the first 7 means 2025-03 because current month includes year also 2025-03
-//         const onsiteMonth = onsites.onsiteDate.split("T")[0].slice(0, 7)
-
-//         //here currentMonth have year and month no date
-//         return onsiteMonth === currentMonth
-//       })
-//       setcurrentmonthOnsiteData(filteredcurrentmonthlyOnsites)
-//     }
-//   }, [allOnsites, currentMonth])
-//   useEffect(() => {
-//     const days = []
-
-//     const year = currentDate.getFullYear()
-//     const month = currentDate.getMonth() + 1
-//     setCurrentYear(year)
-
-//     // Set month name
-//     setVisibleMonth(
-//       `${currentDate.toLocaleString("default", { month: "long" })} ${year}`
-//     )
-
-//     // Get last day of the month
-//     const lastDay = new Date(year, month, 0).getDate()
-
-//     // Generate all days in the month
-//     for (let i = 1; i <= lastDay; i++) {
-//       const date = new Date(year, month - 1, i + 1)
-
-//       days.push({
-//         fullDate: date.toISOString().split("T")[0], // Format: YYYY-MM-DD
-//         fullMonthDay: date.toLocaleDateString("en-GB", {
-//           day: "2-digit",
-//           month: "long",
-//           year: "numeric",
-//           timeZone: "UTC"
-//         }), // Format: 07 March 2025
-//         day: date
-//       })
-//     }
-
-//     setVisibleDays(days)
-//   }, [currentDate])
-//   useEffect(() => {
-//     const today = dayjs().format("YYYY-MM-DD") // Get today's date in YYYY-MM-DD format
-
-//     const isPastDate =
-//       formData?.leaveDate && dayjs(formData.leaveDate).isBefore(today)
-
-//     setPastDate(isPastDate)
-//   }, [formData])
-//   console.log(allleaves)
-//   useEffect(() => {
-//     if (
-//       allleaves &&
-//       allleaves.length > 0 &&
-//       leavemasterleavecount &&
-//       compensatoryleaves >= 0
-//     ) {
-//       const currentDate = new Date()
-//       const currentYear = currentDate.getFullYear()
-//       const currentmonth = currentDate.getMonth() + 1
-//       const leaveDate = formData?.leaveDate
-//         ? new Date(formData?.leaveDate)
-//         : new Date()
-//       const leaveYear = leaveDate.getFullYear()
-
-//       const privileageDate = new Date(user?.privilegeleavestartsfrom)
-//       const privileagestartYear = privileageDate.getFullYear()
-//       const privileagestartmonth = privileageDate.getMonth() + 1 // 1-based month
-//       const casualstartDate = new Date(user?.casualleavestartsfrom)
-//       const casualstartYear = casualstartDate.getFullYear()
-//       const casualstartmonth = casualstartDate.getMonth() + 1 // 1-based month
-//       console.log(casualstartDate)
-//       const totalprivilegeLeave = leavemasterleavecount?.totalprivilegeLeave
-//       const privilegePerMonth = totalprivilegeLeave / 12
-//       const totalcasualLeave = leavemasterleavecount?.totalcasualleave
-//       const casualPerMonth = totalcasualLeave / 12
-//       let ownedprivilegeCount = 0
-//       let ownedcasualCount = 0
-//       console.log(casualstartYear)
-//       console.log(currentYear)
-//       if (casualstartYear < currentYear) {
-//         let casualCount
-
-//         if (casualstartYear < leaveYear && leaveYear < currentYear) {
-//           casualCount = casualPerMonth
-//         } else if (casualstartYear < leaveYear) {
-//           casualCount = casualPerMonth
-//         } else if (casualstartYear === leaveYear) {
-//           casualCount = casualPerMonth
-//         }
-//         ownedcasualCount = casualCount
-//       } else if (casualstartYear === currentYear) {
-//         console.log(currentmonth)
-//         console.log(casualstartmonth)
-//         // If privilege started this year, give leaves from start month to current month
-//         if (currentmonth >= casualstartmonth) {
-//           ownedcasualCount = casualPerMonth
-//         } else {
-//           ownedcasualCount = 0
-//         }
-//       } else {
-//         ownedcasualCount = 0
-//       }
-
-//       if (privileagestartYear < currentYear) {
-//         let privilegeCount
-
-//         if (privileagestartYear < leaveYear && leaveYear < currentYear) {
-//           privilegeCount = 12 * privilegePerMonth
-//         } else if (privileagestartYear < leaveYear) {
-//           privilegeCount = currentmonth * privilegePerMonth
-//         } else if (privileagestartYear === leaveYear) {
-//           const monthsRemainingInStartYear = 12 - privileagestartmonth + 1 // Calculate remaining months including startMonth
-//           privilegeCount = monthsRemainingInStartYear * privilegePerMonth
-//         }
-//         ownedprivilegeCount = privilegeCount
-//       } else if (privileagestartYear === currentYear) {
-//         // If privilege started this year, give leaves from start month to current month
-//         if (currentmonth >= privileagestartmonth) {
-//           ownedprivilegeCount =
-//             (currentmonth - privileagestartmonth + 1) * privilegePerMonth
-//         } else {
-//           ownedprivilegeCount = 0 // Not eligible yet
-//         }
-//       } else {
-//         // If privilege starts in a future year, no leaves yet
-//         ownedprivilegeCount = 0
-//       }
-//       const filteredcurrentmonthlyLeaves = allleaves.filter((leaves) => {
-//         ///leavedate is iso format like "2025-03-03T12:00:00Z" so here slice 0 takes the first part and get the first 7 means 2025-03 because current month includes year also 2025-03
-//         const leaveMonth = leaves.leaveDate.split("T")[0].slice(0, 7)
-//         //here currentMonth have year and month no date
-//         return leaveMonth === currentMonth
-//       })
-//       setcurrentmonthLeaveData(filteredcurrentmonthlyLeaves)
-
-//       const usedCasualCount = allleaves?.reduce((count, leave) => {
-//         if (!leave.leaveDate) return count
-//         const leaveDate = new Date(formData.leaveDate)
-//         const leaveMonthYear = `${leaveDate.getFullYear()}-${String(
-//           leaveDate.getMonth() + 1
-//         ).padStart(2, "0")}`
-
-//         const leaveDateObj = new Date(leave.leaveDate)
-//         const leaveMonthYearFromData = `${leaveDateObj.getFullYear()}-${String(
-//           leaveDateObj.getMonth() + 1
-//         ).padStart(2, "0")}`
-//         if (
-//           leave.leaveCategory === "casual Leave" &&
-//           leaveMonthYear === leaveMonthYearFromData
-//         ) {
-//           return count + (leave.leaveType === "Half Day" ? 0.5 : 1)
-//         }
-
-//         return count
-//       }, 0)
-
-//       const takenPrivilegeCount = allleaves?.reduce((count, leave) => {
-//         if (!leave.leaveDate) return count
-
-//         const leaveYear = new Date(formData.leaveDate).getFullYear()
-//         const leaveYearFromData = new Date(leave.leaveDate).getFullYear()
-
-//         if (
-//           leave.leaveCategory === "privileage Leave" &&
-//           leaveYear === leaveYearFromData
-//         ) {
-//           return count + (leave.leaveType === "Half Day" ? 0.5 : 1)
-//         }
-
-//         return count
-//       }, 0)
-//       console.log(ownedcasualCount)
-//       const balancecasualcount = ownedcasualCount - usedCasualCount
-//       const balanceprivilege = ownedprivilegeCount - takenPrivilegeCount
-//       console.log(compensatoryleaves)
-//       setBalanceprivilegeLeaveCount(Math.max(balanceprivilege, 0))
-//       setBalancecasualLeaveCount(Math.max(balancecasualcount, 0))
-//       setBalancecompensatoryLeaveCount(compensatoryleaves)
-//       setLeaveBalance({
-//         ...leaveBalance,
-//         casual: Math.max(balancecasualcount, 0),
-//         privilege: Math.max(balanceprivilege, 0),
-//         sick: BalancesickleaveCount,
-//         compensatory: compensatoryleaves
-//       })
-//     } else if (
-//       (!allleaves && leavemasterleavecount) ||
-//       (allleaves && allleaves.length === 0 && leavemasterleavecount) ||
-//       compensatoryleaves >= 0
-//     ) {
-//       const currentDate = new Date()
-//       const currentYear = currentDate.getFullYear()
-//       const currentmonth = currentDate.getMonth() + 1
-//       const leaveDate = formData.leaveDate
-//         ? new Date(formData.leaveDate)
-//         : new Date()
-//       const leaveYear = leaveDate.getFullYear()
-//       const privileagestartDate = new Date(user?.privilegeleavestartsfrom)
-//       const privileagestartYear = privileagestartDate.getFullYear()
-//       const privileagestartmonth = privileagestartDate.getMonth() + 1 // 1-based month
-//       const casualstartDate = new Date(user?.privilegeleavestartsfrom)
-//       const casualstartYear = casualstartDate.getFullYear()
-//       const casualstartmonth = casualstartDate.getMonth() + 1 // 1-based month
-//       const totalprivilegeLeave =
-//         leavemasterleavecount?.totalprivilegeLeave || 0
-//       const privilegePerMonth = totalprivilegeLeave / 12 // 1 or 2 per month
-//       const totalcasualLeave = leavemasterleavecount?.totalcasualleave || 0
-//       const casualPerMonth = totalcasualLeave / 12
-
-//       let ownedprivilegeCount = 0
-//       let ownedcasualCount = 0
-//       if (casualstartYear < currentYear) {
-//         let casualCount
-//         if (casualstartYear < leaveYear && leaveYear < currentYear) {
-//           casualCount = casualPerMonth
-//         } else if (casualstartYear < leaveYear) {
-//           casualCount = casualPerMonth
-//         } else if (casualstartYear === leaveYear) {
-//           casualCount = casualPerMonth
-//         }
-//         ownedcasualCount = casualCount
-//       } else if (casualstartYear === currentYear) {
-//         // If privilege started this year, give leaves from start month to current month
-//         if (currentmonth >= casualstartmonth) {
-//           ownedcasualCount = casualPerMonth
-//         } else {
-//           ownedcasualCount = 0
-//         }
-//       } else {
-//         ownedcasualCount = 0
-//       }
-//       if (privileagestartYear < currentYear) {
-//         let privilegeCount
-//         if (privileagestartYear < leaveYear && leaveYear < currentYear) {
-//           privilegeCount = 12 * privilegePerMonth
-//         } else if (privileagestartYear < leaveYear) {
-//           privilegeCount = currentmonth * privilegePerMonth
-//         } else if (privileagestartYear === leaveYear) {
-//           const monthsRemainingInStartYear = 12 - privileagestartmonth + 1 // Calculate remaining months including startMonth
-//           privilegeCount = monthsRemainingInStartYear * privilegePerMonth
-//         }
-//         ownedprivilegeCount = privilegeCount
-//       } else if (privileagestartYear === currentYear) {
-//         // If privilege started this year, give leaves from start month to current month
-//         if (currentmonth >= privileagestartmonth) {
-//           ownedprivilegeCount =
-//             (currentmonth - privileagestartmonth + 1) * privilegePerMonth
-//         } else {
-//           ownedprivilegeCount = 0 // Not eligible yet
-//         }
-//       } else {
-//         // If privilege starts in a future year, no leaves yet
-//         ownedprivilegeCount = 0
-//       }
-
-//       setBalanceprivilegeLeaveCount(ownedprivilegeCount)
-//       setBalancecasualLeaveCount(ownedcasualCount)
-//       setBalancecompensatoryLeaveCount(compensatoryleaves)
-//       setLeaveBalance({
-//         ...leaveBalance,
-//         casual: ownedcasualCount,
-//         privilege: ownedprivilegeCount,
-//         sick: BalancesickleaveCount,
-//         compensatory: compensatoryleaves
-//       })
-//     }
-//   }, [
-//     currentMonth,
-//     allleaves,
-//     leavemasterleavecount,
-//     formData,
-//     compensatoryleaves
-//   ])
-
-//   useEffect(() => {
-//     if (isOnsite) {
-//       setFormData((prev) => ({
-//         ...prev,
-//         onsite: true
-//       }))
-//     }
-//   }, [isOnsite])
-
-//   useEffect(() => {
-//     if (
-//       allleaves &&
-//       allleaves.length > 0 &&
-//       allOnsites &&
-//       allOnsites.length > 0
-//     ) {
-//       const events = [...allleaves, ...allOnsites]
-//       setEvents(events)
-//     } else if (
-//       (allleaves && allleaves.length > 0) ||
-//       (allOnsites && allOnsites.length > 0)
-//     ) {
-//       if (allleaves) {
-//         setEvents(allleaves)
-//       } else if (allOnsites) {
-//         setEvents(allOnsites)
-//       }
-//     }
-//   }, [allleaves, allOnsites])
-
-//   useEffect(() => {
-//     if (!showModal) {
-//       setIsOnsite(false)
-//     }
-//   }, [showModal])
-//   useEffect(() => {
-//     if (isOnsite && clickedDate) {
-//       // Find the event that matches the clicked date
-//       const existingEvent = events.filter((event) => {
-//         const eventDate = event?.onsiteDate
-//         if (!eventDate) return false
-//         return (
-//           event.onsiteDate.toString().split("T")[0] === clickedDate &&
-//           event.onsiteData
-//         )
-//       })
-
-//       // If a matching event is found and it has onsite data
-//       if (existingEvent && existingEvent.length > 0) {
-//         const matchedOnsiteData = existingEvent[0]?.onsiteData
-//           ?.flat()
-//           ?.map((status) => ({
-//             siteName: status.siteName,
-//             place: status.place,
-//             Start: status.Start,
-//             End: status.End,
-//             km: status.km,
-//             kmExpense: status.kmExpense,
-//             foodExpense: status.foodExpense
-//           }))
-
-//         // Now set the table rows with the matched onsite data and an empty row for new input
-//         setTableRows(matchedOnsiteData)
-//       }
-//     }
-//   }, [isOnsite, clickedDate])
-
-//   const addRow = () => {
-//     setTableRows([
-//       ...tableRows,
-//       {
-//         siteName: "",
-//         place: "",
-//         Start: "",
-//         End: "",
-//         km: "",
-//         kmExpense: "",
-//         foodExpense: ""
-//       }
-//     ])
-//   }
-//   console.log(selectedTab)
-//   const handledelete = async (data) => {
-//     try {
-//       setLoader(true)
-//       const payload = {
-//         ...(data.leaveType
-//           ? {
-//               leaveType: data.leaveType,
-//               reason: data.reason,
-//               leaveDate: data.leaveDate,
-//               leaveCategory: data.leaveCategory,
-//               prevCategory: formData.prevCategory
-//             }
-//           : {
-//               docId: data?.onsiteId,
-//               onsiteType: data.onsiteType,
-//               description: data.description,
-//               onsiteDate: data.onsiteDate
-//             })
-//       }
-//       const isLeave = "leaveType" in payload
-//       const isOnsite = "onsiteType" in payload
-//       let type = ""
-//       if (isLeave) {
-//         type = "leave"
-//         const response = await api.post(
-//           `/auth/deleteEvent?type=${type}&userid=${user._id}`,
-//           payload
-//         )
-//         const data = response?.data?.data
-
-//         if (response.status === 200) {
-//           setLoader(false)
-
-//           setAllleaves(data)
-//           setShowModal(false)
-//           setFormData({
-//             startDate: "",
-
-//             leaveType: "Full Day",
-//             onsiteType: "Full Day",
-//             formerOnsiteType: "",
-
-//             halfDayPeriod: "",
-//             onsite: false,
-//             leaveCategory: "",
-//             reason: "",
-//             description: ""
-//           })
-//           setSelectedTab("Leave")
-//           toast.success(response.data.message)
-//         } else if (response.status === 201) {
-//           setLoader(false)
-//           setAllleaves(data)
-//           setAllleaves([])
-//           setShowModal(false)
-//           setSelectedTab("Leave")
-//           setFormData({
-//             startDate: "",
-
-//             leaveType: "Full Day",
-//             onsiteType: "Full Day",
-//             formerOnsiteType: "",
-//             halfDayPeriod: "",
-//             onsite: false,
-//             leaveCategory: "",
-//             reason: "",
-//             description: ""
-//           })
-//           setSelectedTab("Leave")
-//           toast.success(response.data.message)
-//         }
-//       } else if (isOnsite) {
-//         type = "onsite"
-//         const response = await api.post(
-//           `/auth/deleteEvent?type=${type}&userid=${user._id}`,
-//           payload
-//         )
-//         const data = response.data.data
-//         if (response.status === 200) {
-//           setLoader(false)
-//           setMessage({ top: "", bottom: "" })
-//           setAllOnsite(data)
-//           refreshHook()
-//           refreshHookCompensatory()
-
-//           setTableRows([])
-//           setSelectedTab("Leave")
-//           setShowModal(false)
-//           setFormData({
-//             startDate: "",
-
-//             leaveType: "Full Day",
-//             onsiteType: "Full Day",
-//             formerOnsiteType: "",
-//             halfDayPeriod: "",
-//             onsite: false,
-//             leaveCategory: "",
-//             reason: "",
-//             description: ""
-//           })
-//           setSelectedTab("Leave")
-//           toast.success(response.data.message)
-//         } else if (response.status === 201) {
-//           setLoader(false)
-//           setAllOnsite(data)
-//           setShowModal(false)
-//           setMessage({ top: "", bottom: "" })
-//           setAllOnsite([])
-//           setTableRows([])
-//           setFormData({
-//             startDate: "",
-
-//             leaveType: "Full Day",
-//             onsiteType: "Full Day",
-//             formerOnsiteType: "",
-//             halfDayPeriod: "",
-//             onsite: false,
-//             leaveCategory: "",
-//             reason: "",
-//             description: ""
-//           })
-//           setSelectedTab("Leave")
-//           toast.success(response.data.message)
-//         }
-//       }
-//     } catch (error) {
-//       setLoader(false)
-//       setMessage((prev) => ({ ...prev, bottom: error.response.data.message }))
-//       console.log(error.response.data.message)
-//     }
-//   }
-//   console.log(formData)
-//   const handleDateClick = (date) => {
-//     console.log(date)
-//     setclickedDate(date)
-//     const clickedDate = date
-//     const dayOfWeek = new Date(clickedDate).getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-//     const isSunday = dayOfWeek === 0
-
-//     const isHoliday = monthlyHoly?.some((holiday) => {
-//       const formattedHolyDate = holiday.holyDate.split("T")[0] // Extract YYYY-MM-DD
-//       return formattedHolyDate === date
-//     })
-//     if (isHoliday || isSunday) {
-//       setcompensatoryLeave(true)
-//     }
-
-//     const existingEvent = events?.filter((event) => {
-//       const eventDate = event?.leaveDate // Normalize to YYYY-MM-DD
-
-//       if (!eventDate) return false
-//       return eventDate.toString().split("T")[0] === clickedDate // Compare only the date part
-//     })
-
-//     if (existingEvent && existingEvent.length > 0) {
-//       setFormData({
-//         ...formData,
-//         leaveDate: existingEvent[0]?.leaveDate.toString().split("T")[0],
-//         halfDayPeriod: existingEvent?.halfDayPeriod || "",
-//         leaveType: existingEvent?.leaveType || "Full Day",
-
-//         reason: existingEvent?.reason || ""
-//       })
-
-//       // Set the form data dynamically based on the relevant event
-//     } else {
-//       setFormData({
-//         ...formData,
-//         leaveDate: clickedDate,
-//         onsiteDate: clickedDate,
-//         misspunchDate: clickedDate,
-//         leaveType: "Full Day",
-//         reason: "",
-//         description: ""
-//       })
-//     }
-
-//     // setShowModal(true)
-//     setSelectedType("") // reset previous selection
-//     setShowTypeSelector(true) // open radio popup
-//   }
-//   const handleTypeContinue = () => {
-//     setShowTypeSelector(false)
-
-//     if (selectedType === "leave") setSelectedTab("Leave")
-//     if (selectedType === "onsite") setSelectedTab("Onsite")
-//     if (selectedType === "mispunch") setSelectedTab("Mispunch")
-
-//     // handleDateClick(selectedDate.fullDate)
-//     setShowModal(true)
-//   }
-
-//   // Check if a date is the currently selected date
-//   const isSelected = (date) => {
-//     return date.toDateString() === selectedDate.toDateString()
-//   }
-
-//   // Check if a date is today
-//   const isToday = (date) => {
-//     const today = new Date()
-//     return date.toDateString() === today.toDateString()
-//   }
-
-//   // Navigate to previous month
-//   const prevMonth = () => {
-//     const newDate = new Date(currentDate)
-//     newDate.setMonth(newDate.getMonth() - 1)
-//     setCurrentDate(newDate)
-//   }
-
-//   // Navigate to next month
-//   const nextMonth = () => {
-//     const newDate = new Date(currentDate)
-//     newDate.setMonth(newDate.getMonth() + 1)
-//     setCurrentDate(newDate)
-//   }
-
-//   // Go to current month
-//   const goToToday = () => {
-//     setCurrentDate(new Date())
-//   }
-//   console.log(tabs)
-//   const handleDataChange = (e) => {
-//     console.log(formData)
-//     console.log(e)
-//     setMessage((prev) => ({
-//       ...prev,
-//       top: "",
-//       bottom: ""
-//     }))
-//     const { name, value } = e.target
-//     if (name === "onsiteDate") {
-//       const dayOfWeek = new Date(value).getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-//       const isSunday = dayOfWeek === 0
-
-//       const isHoliday = monthlyHoly?.some((holiday) => {
-//         const formattedHolyDate = holiday.holyDate.split("T")[0] // Extract YYYY-MM-DD
-//         return formattedHolyDate === value
-//       })
-//       if (isHoliday || isSunday) {
-//         setcompensatoryLeave(true)
-//       } else {
-//         setcompensatoryLeave(false)
-//       }
-//     }
-//     // Access current values for leave type & category
-//     const selectedCategory =
-//       name === "leaveCategory" ? value : formData.leaveCategory
-
-//     // Define leave balances (you may already have these as props or state)
-//     const balances = {
-//       "casual Leave": BalancedcasualleaveCount,
-//       "privileage Leave": BalanceprivilegeleaveCount,
-//       "compensatory Leave": BalancecompensatoryleaveCount,
-//       "sick Leave": BalancesickleaveCount,
-//       "other Leave": 1
-//     }
-
-//     // Get selected balance
-//     const selectedBalance = balances[selectedCategory] ?? 0
-
-//     // Check if switching to Full Day requires >= 1 leave
-//     if (
-//       name === "leaveType" &&
-//       value === "Full Day" &&
-//       selectedCategory &&
-//       (edit && formData.prevCategory === selectedCategory
-//         ? selectedBalance + 0.5 < 1
-//         : selectedBalance < 1)
-//     ) {
-//       setMessage((prev) => ({
-//         ...prev,
-//         top: `You don't have enough ${selectedCategory} for a Full Day leave.`
-//       }))
-//       // setMessage(
-//       //   `You don't have enough ${selectedCategory} for a Full Day leave.`
-//       // )
-//       return
-//     }
-//     if (value === "Half Day") {
-//       setFormData((prev) => ({
-//         ...prev,
-//         [name]: value,
-//         halfDayPeriod: "Morning"
-//       }))
-//     } else {
-//       if (message) setMessage("")
-//       setFormData((prev) => ({
-//         ...prev,
-//         [name]: value
-//       }))
-//     }
-
-//     if (errors[name]) {
-//       setErrors((prev) => ({ ...prev, [name]: "" })) // ✅ Clear error
-//     }
-//   }
-//   const handleTimeChange = (type, field, value) => {
-//     setselectedAttendance((prev) => {
-//       // Ensure the nested object exists for `type`
-//       const currentType = prev[type] || { hours: "", minutes: "", amPm: "" }
-
-//       return {
-//         ...prev,
-//         [type]: {
-//           ...currentType, // Preserve existing fields
-//           [field]: value // Update the specific field
-//         }
-//       }
-//     })
-//   }
-//   console.log(user)
-//   const handleSubmit = async (tab) => {
-//     console.log(tab)
-//     console.log("enddddddddddddddddddddddddddddddddddddddddd")
-//     try {
-//       if (tab === "New Leave" || tab === "Edit Leave") {
-//         const dayOfWeek = new Date(formData.leaveDate).getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-//         const isSunday = dayOfWeek === 0
-
-//         const isHoliday = monthlyHoly?.some((holiday) => {
-//           const formattedHolyDate = holiday.holyDate.split("T")[0] // Extract YYYY-MM-DD
-//           return formattedHolyDate === formData.leaveDate
-//         })
-
-//         if (isSunday || isHoliday) {
-//           setMessage((prev) => ({
-//             ...prev,
-//             bottom: "It's a holiday—you can't request leave."
-//           }))
-//           return
-//         }
-//       }
-
-//       if (tab === "Leave" || tab === "New Leave" || tab === "Edit Leave") {
-//         // Validation
-//         let newErrors = {}
-//         if (!formData.leaveType) newErrors.leaveType = "Shift is required"
-//         if (formData.leaveType === "Half Day" && !formData.halfDayPeriod)
-//           newErrors.halfDayPeriod = "Please select Half Day period"
-//         if (!formData.leaveDate) newErrors.leaveDate = "Leave Date is required"
-//         if (!formData.leaveCategory)
-//           newErrors.leaveCategory = "Leave Type is required"
-//         if (!formData.reason) newErrors.reason = "Reason is required"
-//         if (Object.keys(newErrors).length > 0) {
-//           console.log(newErrors)
-//           setErrors(newErrors)
-//           return
-//         }
-//         let isApprovedLeave
-//         if (formData.leaveId) {
-//           isApprovedLeave = allleaves?.find((leave) => {
-//             const matchedid = leave._id === formData.leaveId
-
-//             return (
-//               matchedid && (leave.adminverified || leave.departmentverified)
-//             )
-//           })
-//         }
-
-//         if (isApprovedLeave) {
-//           setMessage((prev) => ({
-//             ...prev,
-//             bottom: "This leave is already approved. Do not make any changes."
-//           }))
-//         } else {
-//           setMessage({ top: "", bottom: "" })
-//           console.log("hhhhh")
-//           //Assuming you have an API endpoint for creating leave requests
-//           const response = await fetch(
-//             `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
-//             {
-//               method: "POST",
-//               headers: {
-//                 "Content-Type": "application/json"
-//               },
-//               body: JSON.stringify(formData),
-//               credentials: "include"
-//             }
-//           )
-
-// const response = await fetch(
-//   `https://www.crm.camet.in/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
-//   {
-//     method: "POST",
-//     headers: {
-//       "Content-Type": "application/json"
-//     },
-//     body: JSON.stringify(formData),
-//     credentials: "include"
-//   }
-// )
-
-//           const responseData = await response.json()
-
-//           if (!response.ok) {
-//             throw new Error("Failed to apply for leave")
-//           } else {
-//             setLoader(false)
-//             setEdit(false)
-//             if (response.status === 200) {
-//               setSelectedTab("Leave")
-//               refreshHook()
-//               refreshHookCompensatory()
-
-//               setFormData({
-//                 leaveDate: "",
-//                 leaveType: "Full Day",
-//                 onsiteType: "Full Day",
-//                 halfDayPeriod: "Morning",
-//                 onsite: false,
-//                 leaveCategory: "",
-//                 reason: "",
-//                 description: ""
-//               })
-//               setErrors("")
-//               setShowModal(false)
-//               toast.success(responseData.message)
-//             } else if (response.status === 201) {
-//               setMessage((prev) => ({
-//                 ...prev,
-//                 bottom: responseData.message
-//               }))
-//             }
-//           }
-//         }
-//       } else if (tab === "New Onsite" || tab === "Edit Onsite") {
-//         console.log("Processing onsite request")
-
-//         // Validation
-//         let newErrors = {}
-//         if (!formData.onsiteType) newErrors.onsiteType = "Shift is required"
-//         if (formData.onsiteType === "Half Day" && !formData.halfDayPeriod)
-//           newErrors.halfDayPeriod = "Please select Half Day period"
-//         if (!formData.onsiteDate)
-//           newErrors.onsiteDate = "Onsite Date is required"
-//         if (tableRows.length === 0)
-//           newErrors.tabledataError = "Please add table data"
-//         if (!formData.description)
-//           newErrors.description = "Description is required"
-
-//         if (Object.keys(newErrors).length > 0) {
-//           setErrors(newErrors)
-//           return
-//         }
-
-//         // Helper function to check if an onsite for a given date is already approved
-//         const checkApprovedOnsiteByDate = (date) => {
-//           return allOnsites?.find((onsite) => {
-//             const onsiteDate = new Date(onsite.onsiteDate)
-
-//             const isSameDate =
-//               onsiteDate.getFullYear() === date.getFullYear() &&
-//               onsiteDate.getMonth() === date.getMonth() &&
-//               onsiteDate.getDate() === date.getDate()
-
-//             return (
-//               isSameDate && (onsite.adminverified || onsite.departmentverified)
-//             )
-//           })
-//         }
-
-//         // Helper function to check if two dates are the same
-//         const isSameDate = (date1, date2) => {
-//           return (
-//             date1.getFullYear() === date2.getFullYear() &&
-//             date1.getMonth() === date2.getMonth() &&
-//             date1.getDate() === date2.getDate()
-//           )
-//         }
-
-//         // For Edit Onsite, check if the original onsite was approved
-//         if (tab === "Edit Onsite" && formData.formerOnsiteDate) {
-//           const approvedFormerOnsite = checkApprovedOnsiteByDate(
-//             new Date(formData.formerOnsiteDate)
-//           )
-
-//           if (approvedFormerOnsite) {
-//             // Check if user is trying to change the date or onsite type
-//             const isDateChanged = !isSameDate(
-//               new Date(formData.onsiteDate),
-//               new Date(formData.formerOnsiteDate)
-//             )
-//             console.log(isDateChanged)
-//             const isOnsiteTypeChanged =
-//               formData.onsiteType !== formData.formerOnsiteType
-//             console.log(isOnsiteTypeChanged)
-//             if (isDateChanged || isOnsiteTypeChanged) {
-//               setMessage((prev) => ({
-//                 ...prev,
-//                 bottom:
-//                   "This onsite is already approved. You cannot change the date or onsite type. Only table data and description can be edited."
-//               }))
-//               return // Stop execution
-//             }
-
-//             // If neither date nor type changed, allow editing table and description
-//             console.log(
-//               "Approved onsite - allowing table and description edit only"
-//             )
-//           }
-//         }
-
-//         // For New Onsite or Edit Onsite (if not approved or not changing restricted fields)
-//         // Check if there's already an approved onsite on the new date
-//         const approvedOnsiteOnNewDate = checkApprovedOnsiteByDate(
-//           new Date(formData.onsiteDate)
-//         )
-
-//         if (approvedOnsiteOnNewDate && tab === "New Onsite") {
-//           setMessage((prev) => ({
-//             ...prev,
-//             bottom: "An approved onsite already exists for this date."
-//           }))
-//           return
-//         }
-
-//         // Clear any previous messages
-//         setMessage({ top: "", bottom: "" })
-
-//         // Proceed with API call
-//         setLoader(true)
-//         const response = await api.post(
-//           `http://localhost:9000/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
-//           { formData, tableRows }
-//         )
-
-// const response = await api.post(
-//   `https://www.crm.camet.in/api/auth/onsiteRegister?selectedid=${user._id}&assignedto=${user.assignedto}&compensatoryLeave=${isHaveCompensatoryleave}`,
-//   { formData, tableRows }
-// )
-
-//         if (response.status === 200) {
-//           setcompensatoryLeave(false)
-//           setLoader(false)
-//           toast.success("Onsite applied successfully")
-//           setSelectedTab("Leave")
-//           setFormData((prev) => ({
-//             ...prev,
-//             leaveDate: "",
-//             description: "",
-//             onsite: false,
-//             halfDayPeriod: "Morning",
-//             onsiteType: "Full Day",
-//             leaveType: "Full Day"
-//           }))
-//           setTableRows([
-//             {
-//               siteName: "",
-//               place: "",
-//               Start: "",
-//               End: "",
-//               km: "",
-//               kmExpense: "",
-//               foodExpense: ""
-//             }
-//           ])
-//           setShowModal(false)
-//           refreshHook()
-//           refreshHookOnsite()
-//           refreshHookCompensatory()
-//         } else if (response.status === 201) {
-//           setLoader(false)
-//           setMessage((prev) => ({
-//             ...prev,
-//             bottom: response.data.message
-//           }))
-//         }
-//       } else if (tab === "Mispunch") {
-//         console.log("hhhhhh")
-//         console.log(formData)
-//         setLoader(true)
-//         const misspunchData = {
-//           misspunchDate: formData.misspunchDate,
-//           remark: formData?.remark,
-//           misspunchTime: formData?.misspunchTime,
-//           misspunchType: formData?.mispunchType,
-//           userId: user?._id,
-//           userModel: user?.role,
-//           assignedto: user?.assignedto
-//         }
-//         console.log(misspunchData)
-
-//         const response = await api.post(
-//           "http://localhost:9000/api/auth/misspunchRegister",
-//           misspunchData
-//         )
-
-//         // const response = await api.post(
-//         //   "https://www.crm.camet.in/api/auth/misspunchRegister",
-//         //   misspunchData
-//         // )
-//         if (response.status === 201 || response.status === 200) {
-//           console.log("Success:", response.data)
-//           toast.success("Misspunch registered")
-//           setLoader(false)
-//         }
-//         console.log(misspunchData)
-//       }
-//       console.log("H")
-//     } catch (error) {
-//       console.log(error)
-//       console.log(error?.response?.data?.message)
-//       setLoader(false)
-
-//       setMessage((prev) => ({
-//         ...prev,
-//         bottom: error?.response?.data?.message || "An error occurred"
-//       }))
-//       toast.error(error?.response?.data?.message || "error occured")
-//       console.log("error:", error)
-//     }
-//   }
-
-//   const formatTo12Hour = (time) => {
-//     if (!time) return "--:--"
-
-//     if (time.includes("AM") || time.includes("PM")) return time
-
-//     const [hours, minutes] = time.split(":").map(Number)
-//     const suffix = hours >= 12 ? "PM" : "AM"
-//     const hour12 = hours % 12 || 12
-
-//     return `${String(hour12).padStart(2, "0")}:${String(minutes).padStart(2, "0")} ${suffix}`
-//   }
-
-//   const convertTimeStringToParts = (time) => {
-//     if (!time) {
-//       return { hour: "09", minute: "30", period: "AM" }
-//     }
-
-//     if (time.includes("AM") || time.includes("PM")) {
-//       const [timePart, period] = time.split(" ")
-//       const [hour, minute] = timePart.split(":")
-
-//       return {
-//         hour: hour.padStart(2, "0"),
-//         minute: minute.padStart(2, "0"),
-//         period
-//       }
-//     }
-
-//     const [hours, minutes] = time.split(":").map(Number)
-//     const period = hours >= 12 ? "PM" : "AM"
-//     const hour12 = hours % 12 || 12
-
-//     return {
-//       hour: String(hour12).padStart(2, "0"),
-//       minute: String(minutes).padStart(2, "0"),
-//       period
-//     }
-//   }
-
-//   const updateMisspunchTime = (hour, minute, period) => {
-//     const finalTime = `${hour}:${minute} ${period}`
-
-//     setFormData((prev) => ({
-//       ...prev,
-//       editHour: hour,
-//       editMinute: minute,
-//       editPeriod: period,
-//       misspunchTime: finalTime
-//     }))
-//   }
-
-//   const resetApplicationFlow = () => {
-//     setShowModal(false)
-//     setShowTypeSelector(false)
-//     setSelectedType("")
-//     setSelectedDate(null)
-//     setcompensatoryLeave(false)
-//     setEdit(false)
-//     setSelectedTab("Leave")
-//     setTableRows([])
-//     setMessage("")
-//     setErrors("")
-//     setIsOnsite(false)
-//     setFormData({
-//       description: "",
-//       onsite: false,
-//       halfDayPeriod: "",
-//       leaveType: "Full Day",
-//       leaveCategory: "",
-//       reason: "",
-//       mispunchType: "",
-//       remark: ""
-//     })
-//   }
-
-//   const handleTypeSelection = (type, date) => {
-//     setSelectedType(type)
-
-//     if (type === "leave") {
-//       setSelectedTab("Leave")
-//       setIsOnsite(false)
-//     }
-
-//     if (type === "onsite") {
-//       setSelectedTab("Onsite")
-//       setIsOnsite(true)
-//     }
-
-//     if (type === "mispunch") {
-//       setSelectedTab("Mispunch")
-//       setIsOnsite(false)
-//     }
-
-//     handleDateClick(date.fullDate)
-//     setShowTypeSelector(false)
-//     setShowModal(true)
-//   }
-
-//   const handleSubmitAndReset = async (tabName) => {
-//     await handleSubmit(tabName)
-//     resetApplicationFlow()
-//   }
-
-//   const selectedTabContent = (value) => {
-//     let existingEvent
-//     switch (true) {
-//       case value === "Leave":
-//         existingEvent = events?.filter((event) => {
-//           const eventDate = event?.leaveDate
-//           if (!eventDate) return false
-//           return eventDate === clickedDate // Compare only the date part
-//         })
-//         if (existingEvent && existingEvent.length > 0) {
-//           setFormData({
-//             ...formData,
-//             leaveDate: existingEvent?.leaveDate,
-//             halfDayPeriod: existingEvent?.halfDayPeriod || "",
-//             leaveType: existingEvent?.leaveType || "",
-//             reason: existingEvent?.reason || "",
-//             onsite: false
-//           })
-//         } else {
-//           setFormData({
-//             ...formData,
-//             leaveDate: clickedDate,
-
-//             leaveType: "Full Day",
-//             reason: "",
-//             onsiteType: "",
-//             onsite: false
-//           })
-//         }
-
-//         // Handle the case where the fields are missing or falsy
-//         break
-
-//       case value === "Onsite":
-//         existingEvent = events?.filter((event) => {
-//           const eventDate = event?.onsiteDate
-//           if (!eventDate) return false
-//           return eventDate.toString().split("T")[0] === clickedDate // Compare only the date part
-//         })
-//         if (existingEvent && existingEvent.length > 0) {
-//           console.log("hhhhhh")
-//           // Set the form data dynamically based on the relevant event
-//           setFormData({
-//             onsiteDate: existingEvent[0]?.onsiteDate.toString().split("T")[0],
-//             formerOnsiteDate: existingEvent[0]?.onsiteDate
-//               .toString()
-//               .split("T")[0],
-//             formerOnsiteType: existingEvent[0]?.onsiteType,
-
-//             onsiteType: existingEvent[0]?.onsiteType || "",
-//             halfDayPeriod: existingEvent[0]?.halfDayPeriod || "",
-//             description: existingEvent[0]?.description || "",
-//             onsite: true
-//           })
-//         } else {
-//           setFormData({
-//             ...formData,
-//             onsiteDate: clickedDate,
-
-//             onsiteType: "Full Day",
-//             leaveType: "",
-//             description: "",
-//             onsite: true
-//           })
-//         }
-
-//         break
-
-//       default:
-//         console.log("Default case: None of the above conditions met.")
-//       // Handle other cases
-//     }
-//   }
-//   const renderContent = () => {
-//     switch (selectedTab) {
-//       case "Leave":
-//         return (
-//           <div className=" rounded-lg shadow-lg max-w-[380px]  min-w-[300px] z-40 border border-gray-300 overflow-hidden">
-//             {/* Leave Balance Section */}
-//             <div className="p-2">
-//               <h2 className="text-gray-600 font-semibold text-lg ">
-//                 Leave Balance
-//               </h2>
-//               <p className="text-2xl font-bold text-gray-800">
-//                 {BalanceprivilegeleaveCount +
-//                   BalancedcasualleaveCount +
-//                   BalancecompensatoryleaveCount}
-//                 leaves
-//               </p>
-//               <div className="grid grid-cols-2 gap-1 border border-gray-300 rounded-lg p-2 bg-gray-50">
-//                 <div className="font-semibold text-gray-700 text-left">
-//                   Category
-//                 </div>
-//                 <div className="font-semibold text-gray-700 text-right">
-//                   Balance
-//                 </div>
-
-//                 {Object.entries(leaveBalance).map(([category, balance]) => (
-//                   <React.Fragment key={category}>
-//                     <div className="capitalize text-gray-600 text-left">
-//                       {category} Leave
-//                     </div>
-//                     <div className="text-gray-600 text-right font-medium">
-//                       {balance}
-//                     </div>
-//                   </React.Fragment>
-//                 ))}
-//               </div>
-//             </div>
-
-//             {/* Divider */}
-//             <div className="border-t border-gray-300"></div>
-
-//             {/* Upcoming Leaves */}
-//             <div className="p-2 text-center">
-//               {currentmonthleaveData?.length > 0 && (
-//                 <h2 className="text-gray-600 font-semibold text-sm mb-2">
-//                   Upcoming Leaves
-//                 </h2>
-//               )}
-
-//               <div className="space-y-3 max-h-36 overflow-y-auto">
-//                 {currentmonthleaveData?.length > 0 ? (
-//                   currentmonthleaveData.map((leave, index) => (
-//                     <div
-//                       key={index}
-//                       className="flex items-center justify-between bg-gray-50 border border-gray-300 p-3 rounded-lg shadow-sm hover:cursor-pointer"
-//                     >
-//                       {/* Date */}
-//                       <div className="text-gray-700 font-semibold w-24 text-sm">
-//                         {leave.leaveDate
-//                           .split("T")[0]
-//                           .split("-")
-//                           .reverse()
-//                           .join("-")}
-//                       </div>
-
-//                       {/* Full/Half Day & Category */}
-//                       <div className="flex flex-col text-gray-600">
-//                         <span className="text-sm">{leave?.leaveType}</span>
-//                         <span className="text-sm font-semibold">
-//                           {leave?.leaveCategory}
-//                         </span>
-//                       </div>
-
-//                       {/* Status: Oval Badge */}
-//                       <div
-//                         className={`px-3 py-1 text-sm rounded-full text-white ${
-//                           leave.departmentstatus === "Dept Approved" ||
-//                           leave.hrstatus === "HR/Onsite Approved"
-//                             ? "bg-green-500"
-//                             : leave.departmentstatus === "Not Approved" &&
-//                                 leave.hrstatus === "Not Approved"
-//                               ? "bg-yellow-500"
-//                               : "bg-red-500"
-//                         }`}
-//                       >
-//                         {leave.departmentstatus === "Dept Approved" ||
-//                         leave.hrstatus === "HR/Onsite Approved"
-//                           ? "Approved"
-//                           : leave.departmentstatus === "Not Approved" &&
-//                               leave.hrstatus === "Not Approved"
-//                             ? "Pending"
-//                             : ""}
-//                       </div>
-
-//                       {/* Forward Arrow */}
-//                       <FaArrowRight
-//                         className=" ml-2 text-gray-500 cursor-pointer transition-transform duration-200 ease-in-out hover:scale-125"
-//                         onClick={() => {
-//                           setSelectedTab("Edit Leave")
-//                           setEdit(true)
-
-//                           setFormData({
-//                             leaveId: leave._id,
-//                             leaveDate: leave.leaveDate.toString().split("T")[0],
-//                             leaveType: leave.leaveType,
-//                             halfDayPeriod:
-//                               leave.leaveType === "Half Day"
-//                                 ? leave.halfDayPeriod
-//                                 : undefined,
-//                             leaveCategory: leave.leaveCategory,
-//                             prevCategory: leave.leaveCategory,
-//                             reason: leave.reason
-//                           })
-//                         }}
-//                       />
-//                     </div>
-//                   ))
-//                 ) : (
-//                   <p className="text-gray-500 text-sm italic text-center">
-//                     "No Upcoming Leaves"
-//                   </p>
-//                 )}
-//               </div>
-//             </div>
-//           </div>
-//         )
-//       case "Onsite":
-//         return (
-//           <div className="p-2  text-center border border-gray-300 rounded-lg min-w-[320px] max-w-[380px] ">
-//             {currentmonthonsiteData?.length > 0 && (
-//               <h2 className="text-gray-600 font-semibold text-sm mb-2">
-//                 Upcoming Onsite
-//               </h2>
-//             )}
-
-//             <div className="space-y-3 max-h-96  min-h-36 overflow-y-auto">
-//               {currentmonthonsiteData?.length > 0 ? (
-//                 [...currentmonthonsiteData]
-//                   .sort(
-//                     (a, b) => new Date(a.onsiteDate) - new Date(b.onsiteDate)
-//                   )
-//                   .map((onsite, index) => (
-//                     <div
-//                       key={index}
-//                       className="flex items-center justify-between bg-gray-50 border border-gray-300 p-3 rounded-lg shadow-sm hover:cursor-pointer"
-//                     >
-//                       {/* Date */}
-//                       <div className="text-gray-700 font-semibold w-24 text-sm">
-//                         {onsite.onsiteDate
-//                           .split("T")[0]
-//                           .split("-")
-//                           .reverse()
-//                           .join("-")}
-//                       </div>
-
-//                       {/* Full/Half Day & Category */}
-//                       <div className="flex flex-col text-gray-600">
-//                         <span className="text-sm">{onsite?.onsiteType}</span>
-//                         {/* <span className="text-sm font-semibold">
-//                           {leave?.leaveCategory}
-//                         </span> */}
-//                       </div>
-
-//                       {/* Status: Oval Badge */}
-//                       <div
-//                         className={`px-3 py-1 text-sm rounded-full text-white ${
-//                           onsite.departmentstatus === "Dept Approved" ||
-//                           onsite.hrstatus === "HR/Onsite Approved"
-//                             ? "bg-green-500"
-//                             : onsite.departmentstatus === "Not Approved" &&
-//                                 onsite.hrstatus === "Not Approved"
-//                               ? "bg-yellow-500"
-//                               : "bg-red-500"
-//                         }`}
-//                       >
-//                         {onsite.departmentstatus === "Dept Approved" ||
-//                         onsite.hrstatus === "HR/Onsite Approved"
-//                           ? "Approved"
-//                           : onsite.departmentstatus === "Not Approved" &&
-//                               onsite.hrstatus === "Not Approved"
-//                             ? "Pending"
-//                             : ""}
-//                       </div>
-
-//                       {/* Forward Arrow */}
-//                       <FaArrowRight
-//                         className="text-gray-500 cursor-pointer transition-transform duration-200 ease-in-out hover:scale-125"
-//                         onClick={() => {
-//                           setSelectedTab("Edit Onsite")
-//                           setEdit(true)
-
-//                           setFormData({
-//                             onsiteId: onsite._id,
-//                             onsiteDate: onsite.onsiteDate
-//                               .toString()
-//                               .split("T")[0],
-//                             formerOnsiteDate: onsite.onsiteDate
-//                               .toString()
-//                               .split("T")[0],
-//                             formerOnsiteType: onsite.onsiteType,
-
-//                             onsiteType: onsite.onsiteType,
-//                             halfDayPeriod:
-//                               onsite.onsiteType === "Half Day"
-//                                 ? onsite.halfDayPeriod
-//                                 : undefined,
-
-//                             description: onsite.description
-//                           })
-//                           if (
-//                             onsite.onsiteData &&
-//                             onsite.onsiteData.length > 0
-//                           ) {
-//                             const matchedOnsiteData = onsite.onsiteData[0]
-//                               ?.flat()
-//                               ?.map((status) => ({
-//                                 siteName: status.siteName,
-//                                 place: status.place,
-//                                 Start: status.Start,
-//                                 End: status.End,
-//                                 km: status.km,
-//                                 kmExpense: status.kmExpense,
-//                                 foodExpense: status.foodExpense
-//                               }))
-//                             // Now set the table rows with the matched onsite data and an empty row for new input
-//                             setTableRows(matchedOnsiteData)
-//                           }
-//                         }}
-//                       />
-//                     </div>
-//                   ))
-//               ) : (
-//                 <p className="text-gray-500 text-sm italic text-center">
-//                   No Upcoming Onsites
-//                 </p>
-//               )}
-//             </div>
-//           </div>
-//         )
-//       case "New Onsite":
-//       case "Edit Onsite":
-//         return (
-//           <div>
-//             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
-//               <div>
-//                 <label className="block mb-1">Onsite Date</label>
-//                 <input
-//                   type="date"
-//                   name="onsiteDate"
-//                   defaultValue={formData.onsiteDate}
-//                   onChange={handleDataChange}
-//                   className="border p-2 rounded w-full"
-//                 />
-//               </div>
-
-//               <div>
-//                 <label className="block mb-1">Onsite Type</label>
-//                 <select
-//                   name="onsiteType"
-//                   defaultValue={formData.onsiteType}
-//                   onChange={handleDataChange}
-//                   className="border p-2 rounded w-full"
-//                 >
-//                   <option value="Full Day">Full Day</option>
-//                   <option value="Half Day">Half Day</option>
-//                 </select>
-//               </div>
-//               {errors.onsiteType && (
-//                 <p className="text-red-500">{errors.onsiteType}</p>
-//               )}
-//               {formData.onsiteType === "Half Day" && (
-//                 <>
-//                   <div className="">
-//                     <label className="block mb-1">Select Half Day Period</label>
-//                     <select
-//                       name="halfDayPeriod"
-//                       defaultValue={formData.halfDayPeriod}
-//                       onChange={handleDataChange}
-//                       className="border p-2 rounded w-full appearance-none"
-//                     >
-//                       <option value="Morning">Morning</option>
-//                       <option value="Afternoon">Afternoon</option>
-//                     </select>
-//                   </div>
-//                   {errors.halfDayPeriod && (
-//                     <p className="text-red-500">{errors.halfDayPeriod}</p>
-//                   )}
-//                 </>
-//               )}
-//             </div>
-//             <div className="mb-4">
-//               <div className="overflow-x-auto overflow-y-auto ">
-//                 <table className=" border border-gray-200 text-center w-full">
-//                   <thead className="text-sm overflow-x-auto">
-//                     <tr>
-//                       <th className="border px-2 py-1 min-w-[150px]">
-//                         Site Name
-//                       </th>
-//                       <th className="border px-2 py-1 min-w-[150px]">Place</th>
-//                       <th className="border px-2 py-1  min-w-[80px]">Start</th>
-//                       <th className="border px-2 py-1  min-w-[80px]">End</th>
-//                       <th className="border px-2 py-1 min-w-[80px] ">KM</th>
-//                       <th className="border px-2 py-1  min-w-[100px]">TA</th>
-//                       <th className="border px-2 py-1  min-w-[100px]">Food </th>
-//                       <th className="border px-2 py-1  min-w-[80px]">
-//                         Actions
-//                       </th>
-//                     </tr>
-//                   </thead>
-//                   <tbody>
-//                     {tableRows?.map((row, index) => (
-//                       <tr key={index}>
-//                         <td className="border p-1.5 ">
-//                           <input
-//                             type="text"
-//                             value={row.siteName}
-//                             onChange={(e) => {
-//                               const updatedRows = [...tableRows]
-//                               updatedRows[index].siteName = e.target.value
-//                               setTableRows(updatedRows)
-//                               setErrors((prev) => ({
-//                                 ...prev,
-//                                 tabledataError: ""
-//                               }))
-//                             }}
-//                             className="border p-1 rounded w-full"
-//                           />
-//                         </td>
-//                         <td className="border p-1.5 ">
-//                           <input
-//                             type="text"
-//                             value={row.place}
-//                             onChange={(e) => {
-//                               const updatedRows = [...tableRows]
-//                               updatedRows[index].place = e.target.value
-//                               setTableRows(updatedRows)
-//                               setErrors((prev) => ({
-//                                 ...prev,
-//                                 tabledataError: ""
-//                               }))
-//                             }}
-//                             className="border p-1 rounded "
-//                           />
-//                         </td>
-//                         <td className="border p-1.5">
-//                           <input
-//                             type="number"
-//                             value={row.Start}
-//                             onChange={(e) => {
-//                               const updatedRows = [...tableRows]
-//                               updatedRows[index].Start = e.target.value
-//                               setTableRows(updatedRows)
-//                               setErrors((prev) => ({
-//                                 ...prev,
-//                                 tabledataError: ""
-//                               }))
-//                             }}
-//                             className="border p-1 rounded w-full"
-//                           />
-//                         </td>
-//                         <td className="border p-1.5">
-//                           <input
-//                             type="number"
-//                             value={row.End}
-//                             onChange={(e) => {
-//                               const updatedRows = [...tableRows]
-//                               updatedRows[index].End = e.target.value
-//                               setTableRows(updatedRows)
-//                               setErrors((prev) => ({
-//                                 ...prev,
-//                                 tabledataError: ""
-//                               }))
-//                             }}
-//                             className="border p-1 rounded w-full"
-//                           />
-//                         </td>
-//                         <td className="border p-1.5">
-//                           <input
-//                             type="number"
-//                             value={row.km}
-//                             onChange={(e) => {
-//                               const updatedRows = [...tableRows]
-//                               updatedRows[index].km = e.target.value
-//                               setTableRows(updatedRows)
-//                               setErrors((prev) => ({
-//                                 ...prev,
-//                                 tabledataError: ""
-//                               }))
-//                             }}
-//                             className="border p-1 rounded w-full"
-//                           />
-//                         </td>
-//                         <td className="border p-1.5">
-//                           <input
-//                             type="number"
-//                             value={row.kmExpense}
-//                             onChange={(e) => {
-//                               const updatedRows = [...tableRows]
-//                               updatedRows[index].kmExpense = e.target.value
-//                               setTableRows(updatedRows)
-//                               setErrors((prev) => ({
-//                                 ...prev,
-//                                 tabledataError: ""
-//                               }))
-//                             }}
-//                             className="border p-1 rounded w-full"
-//                           />
-//                         </td>
-//                         <td className="border p-1.5 ">
-//                           <input
-//                             type="number"
-//                             value={row.foodExpense}
-//                             onChange={(e) => {
-//                               const updatedRows = [...tableRows]
-//                               updatedRows[index].foodExpense = e.target.value
-//                               setTableRows(updatedRows)
-//                               setErrors((prev) => ({
-//                                 ...prev,
-//                                 tabledataError: ""
-//                               }))
-//                             }}
-//                             className="border p-1 rounded w-full"
-//                           />
-//                         </td>
-//                         <td className="border p-1.5">
-//                           <button
-//                             onClick={() => {
-//                               const updatedRows = [...tableRows]
-//                               updatedRows.splice(index, 1)
-//                               setTableRows(updatedRows)
-//                             }}
-//                             className="text-red-500"
-//                           >
-//                             Remove
-//                           </button>
-//                         </td>
-//                       </tr>
-//                     ))}
-//                   </tbody>
-//                 </table>
-//               </div>
-//               <button
-//                 onClick={addRow}
-//                 className="mt-2 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-//               >
-//                 Add Row
-//               </button>
-//             </div>
-//             {errors.tabledataError && (
-//               <p className="text-red-500">{errors.tabledataError}</p>
-//             )}
-//             <div className="mb-4">
-//               <label className="block mb-2">Description</label>
-//               <textarea
-//                 name="description"
-//                 defaultValue={formData?.description}
-//                 onChange={handleDataChange}
-//                 rows="4"
-//                 className="border p-2 rounded w-full"
-//               ></textarea>
-//             </div>
-
-//             {errors.description && (
-//               <p className="text-red-500">{errors.description}</p>
-//             )}
-//             <div className="text-center text-red-700 ">
-//               <p>{message?.bottom}</p>
-//             </div>
-//           </div>
-//         )
-//       case "New Leave":
-//       case "Edit Leave":
-//         return (
-//           <div className="bg-white rounded-lg shadow-lg max-w-[380px] min-w-[300px] z-40 border border-gray-100 px-5">
-//             <h2 className="text-xl font-semibold text-center">
-//               Leave Application
-//             </h2>
-//             <p className="mt-2 text-center text-red-600">{message.top}</p>
-//             <div className="mt-4">
-//               {/* Full Day / Half Day Selection */}
-//               <div className="flex gap-4">
-//                 <label>
-//                   <input
-//                     name="leaveType"
-//                     type="radio"
-//                     value="Full Day"
-//                     checked={formData.leaveType === "Full Day"}
-//                     onChange={handleDataChange}
-//                   />
-//                   Full Day
-//                 </label>
-//                 <label>
-//                   <input
-//                     name="leaveType"
-//                     type="radio"
-//                     value="Half Day"
-//                     checked={formData.leaveType === "Half Day"}
-//                     onChange={handleDataChange}
-//                   />
-//                   Half Day
-//                 </label>
-//                 {errors.leaveType && (
-//                   <p className="text-red-500">{errors.leaveType}</p>
-//                 )}
-//                 {formData.leaveType === "Half Day" && (
-//                   <>
-//                     <select
-//                       name="halfDayPeriod"
-//                       className="border p-2 rounded w-auto"
-//                       value={formData?.halfDayPeriod}
-//                       // onChange={(e) => setLeaveOption(e.target.value)}
-//                       // onChange={(e) => {
-//                       //   setFormData((prev) => ({
-//                       //     ...prev,
-//                       //     halfDayPeriod: e.target.value // Replace newDate with the actual value you want to set
-//                       //   }))
-//                       // }}
-//                       onChange={handleDataChange}
-//                     >
-//                       <option value="">Select Period</option>
-//                       <option value="Morning">Morning</option>
-//                       <option value="Afternoon">Afternoon</option>
-//                     </select>
-//                     {errors.halfDayPeriod && (
-//                       <p className="text-red-500">{errors.halfDayPeriod}</p>
-//                     )}
-//                   </>
-//                 )}
-//               </div>
-//               {/* Leave Dates */}
-//               {formData.leaveType === "Full Day" ? (
-//                 <>
-//                   <div className="mt-1 flex flex-col">
-//                     <label className="text-sm font-semibold">Leave Date</label>
-//                     <input
-//                       name="leaveDate"
-//                       type="date"
-//                       value={formData?.leaveDate}
-//                       onChange={handleDataChange}
-//                       className="border p-2 rounded"
-//                     />
-//                   </div>
-//                   {errors.leaveDate && (
-//                     <p className="text-red-500">{errors.leaveDate}</p>
-//                   )}
-//                 </>
-//               ) : (
-//                 <>
-//                   <div className="mt-1">
-//                     <label className="text-sm font-semibold">Leave Date</label>
-//                     <input
-//                       name="leaveDate"
-//                       type="date"
-//                       value={formData?.leaveDate}
-//                       onChange={handleDataChange}
-//                       className="border p-2 rounded w-full"
-//                     />
-//                   </div>
-//                   {errors.leaveDate && (
-//                     <p className="text-red-500">{errors.leaveDate}</p>
-//                   )}
-//                 </>
-//               )}
-//               {/* Leave Type Dropdown */}
-//               <div className="mt-1 w-full">
-//                 <label className="text-sm font-semibold">Leave Type</label>
-//                 <select
-//                   name="leaveCategory"
-//                   className="border p-2 rounded w-full min-w-full"
-//                   value={formData?.leaveCategory || ""}
-//                   onChange={handleDataChange}
-//                 >
-//                   <option value="">Select Leave Type</option>
-//                   {/* If the selected leave date is in the past, only show "Other Leave" */}
-//                   {pastDate ? (
-//                     <>
-//                       <option value="other Leave">Other Leave</option>
-//                       {formData.leaveCategory === "casual Leave" && (
-//                         <option value="casual Leave">Casual Leave</option>
-//                       )}
-//                       {formData.leaveCategory === "privileage Leave" && (
-//                         <option value="privileage Leave">
-//                           Privileage Leave
-//                         </option>
-//                       )}
-//                       {formData.leaveCategory === "compensatory Leave" && (
-//                         <option value="compensatory Leave">
-//                           Compensatory Leave
-//                         </option>
-//                       )}
-//                       {formData.leaveCategory === "sick Leave" && (
-//                         <option value="sick Leave">Sick Leave</option>
-//                       )}
-//                     </>
-//                   ) : (
-//                     <>
-//                       {((formData.leaveType === "Full Day" &&
-//                         BalancedcasualleaveCount >= 1) ||
-//                         (formData.leaveType === "Half Day" &&
-//                           BalancedcasualleaveCount >= 0.5) ||
-//                         formData.leaveCategory === "casual Leave") && (
-//                         <option value="casual Leave">Casual Leave</option>
-//                       )}
-//                       {((formData.leaveType === "Full Day" &&
-//                         BalanceprivilegeleaveCount >= 1) ||
-//                         (formData.leaveType === "Half Day" &&
-//                           BalanceprivilegeleaveCount >= 0.5) ||
-//                         formData.leaveCategory === "privileage Leave") && (
-//                         <option value="privileage Leave">
-//                           Privilege Leave
-//                         </option>
-//                       )}
-//                       {((formData.leaveType === "Full Day" &&
-//                         BalancecompensatoryleaveCount >= 1) ||
-//                         (formData.leaveType === "Half Day" &&
-//                           BalancecompensatoryleaveCount >= 0.5) ||
-//                         formData.leaveCategory === "compensatory Leave") && (
-//                         <option value="compensatory Leave">
-//                           Compensatory Leave
-//                         </option>
-//                       )}
-//                       {((formData.leaveType === "Full Day" &&
-//                         BalancesickleaveCount >= 1) ||
-//                         (formData.leaveType === "Half Day" &&
-//                           BalancesickleaveCount >= 0.5) ||
-//                         formData.leaveCategory === "sick Leave") && (
-//                         <option value="sick Leave">Sick Leave</option>
-//                       )}
-//                       <option value="other Leave">Other Leave</option>
-//                     </>
-//                   )}
-//                 </select>
-//               </div>
-//               {errors.leaveCategory && (
-//                 <p className="text-red-500">{errors.leaveCategory}</p>
-//               )}
-//               {/* Reason */}
-//               <div className="mt-1">
-//                 <label className="text-sm font-semibold">Reason</label>
-//                 <textarea
-//                   name="reason"
-//                   className="border p-2 rounded w-full"
-//                   rows="3"
-//                   placeholder="Enter reason"
-//                   value={formData?.reason}
-//                   onChange={handleDataChange}
-//                 ></textarea>
-//               </div>
-//               {errors.reason && <p className="text-red-500">{errors.reason}</p>}
-//               <div className="text-center text-red-700 py-3">
-//                 <p>{message.bottom}</p>
-//               </div>
-//
-//             </div>
-//           </div>
-//         )
-//       default:
-//         return <p>Select a tab to view the content.</p>
-//     }
-//   }
-//   return (
-//     <div className="w-full">
-//       {/* HEADER */}
-//       <div className="sticky top-0 z-30 flex items-center justify-between bg-white px-4 py-3">
-//         <h2 className="text-xl font-semibold">{visibleMonth}</h2>
-
-//         <div className="flex space-x-2">
-//           <button
-//             onClick={prevMonth}
-//             className="rounded-full bg-gray-100 p-2 transition hover:bg-gray-200"
-//           >
-//             <HiChevronLeft className="h-5 w-5" />
-//           </button>
-
-//           <button
-//             onClick={goToToday}
-//             className="rounded-lg bg-gray-100 px-4 py-2 transition hover:bg-gray-200"
-//           >
-//             Today
-//           </button>
-
-//           <button
-//             onClick={nextMonth}
-//             className="rounded-full bg-gray-100 p-2 transition hover:bg-gray-200"
-//           >
-//             <HiChevronRight className="h-5 w-5" />
-//           </button>
-//         </div>
-//       </div>
-
-//       {/* DATE LIST */}
-//       <div className="mx-4 overflow-y-auto rounded-lg border">
-//         {visibleDays.map((date, index) => (
-//           <div
-//             key={index}
-//             onClick={() => {
-//               setSelectedDate(date)
-//               setSelectedType("")
-//               setShowTypeSelector(true)
-//             }}
-//             className="mb-2 flex cursor-pointer items-center justify-between bg-gray-200 px-4 py-2"
-//           >
-//             <div>
-//               <div className="flex items-center">
-//                 <div className="mr-4 rounded-full border px-2 text-sm font-bold sm:text-lg">
-//                   {date.fullMonthDay}
-//                 </div>
-
-//                 <div className="font-medium">
-//                   {new Date(date.fullDate).toLocaleString("default", {
-//                     weekday: "long"
-//                   })}
-//                 </div>
-//               </div>
-//             </div>
-
-//             {/* LEAVE DATA */}
-//             <div className="flex flex-col">
-//               {currentmonthleaveData?.length > 0 &&
-//                 currentmonthleaveData
-//                   .filter(
-//                     (leave) =>
-//                       new Date(leave.leaveDate).toISOString().split("T")[0] ===
-//                       date.fullDate
-//                   )
-//                   .map((leave, i) => (
-//                     <div key={i} className="mb-1 flex items-center">
-//                       <div className="flex flex-col text-gray-600">
-//                         <span className="text-sm">{leave?.leaveType}</span>
-//                         <span className="text-sm font-semibold">
-//                           {leave?.leaveCategory}
-//                         </span>
-//                       </div>
-
-//                       <div
-//                         className={`ml-2 rounded-full px-3 py-1 text-sm text-white ${
-//                           leave.departmentstatus === "Dept Approved" ||
-//                           leave.hrstatus === "HR/Onsite Approved"
-//                             ? "bg-green-500"
-//                             : leave.departmentstatus === "Not Approved" &&
-//                                 leave.hrstatus === "Not Approved"
-//                               ? "bg-yellow-500"
-//                               : "bg-red-500"
-//                         }`}
-//                       >
-//                         {leave.departmentstatus === "Dept Approved" ||
-//                         leave.hrstatus === "HR/Onsite Approved"
-//                           ? "Approved"
-//                           : leave.departmentstatus === "Not Approved" &&
-//                               leave.hrstatus === "Not Approved"
-//                             ? "Pending"
-//                             : ""}
-//                       </div>
-//                     </div>
-//                   ))}
-//             </div>
-//           </div>
-//         ))}
-//       </div>
-
-//       {/* TYPE SELECTOR POPUP */}
-//       {showTypeSelector && (
-//         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-//           <div className="w-80 rounded-lg bg-white p-6 shadow-lg">
-//             <h3 className="mb-4 text-center text-lg font-semibold">
-//               Select Request Type
-//             </h3>
-
-//             <div className="flex flex-col space-y-3">
-//               {["leave", "onsite", "mispunch"].map((type) => (
-//                 <label
-//                   key={type}
-//                   className="flex cursor-pointer items-center space-x-2 rounded-md px-2 py-2 transition hover:bg-gray-50"
-//                 >
-//                   <input
-//                     type="radio"
-//                     name="type"
-//                     value={type}
-//                     checked={selectedType === type}
-//                     onChange={(e) =>
-//                       handleTypeSelection(e.target.value, selectedDate)
-//                     }
-//                   />
-//                   <span className="capitalize">{type}</span>
-//                 </label>
-//               ))}
-//             </div>
-
-//             <div className="mt-5 flex justify-end">
-//               <button
-//                 className="rounded bg-gray-400 px-4 py-1 text-white transition hover:bg-gray-500"
-//                 onClick={() => {
-//                   setShowTypeSelector(false)
-//                   setSelectedType("")
-//                 }}
-//               >
-//                 Cancel
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-
-//       {/* MAIN MODAL */}
-//       {showModal && leaveBalance && (
-//         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-//           <div
-//             className={`mx-4 flex max-h-[90vh] flex-col overflow-y-auto rounded-lg bg-white shadow-lg ${
-//               selectedTab === "New Onsite" ? "md:w-3/4" : "sm:w-auto"
-//             }`}
-//           >
-//             {loader && (
-//               <BarLoader
-//                 cssOverride={{ width: "100%", height: "6px" }}
-//                 color="#4A90E2"
-//               />
-//             )}
-
-//             <div className="p-3">
-//               {/* TABS */}
-//               <div className="flex justify-center space-x-4">
-//                 {tabs
-//                   ?.filter((tab) => {
-//                     if (selectedType === "leave") {
-//                       return ["Leave", "New Leave", "Edit Leave"].includes(tab)
-//                     }
-//                     if (selectedType === "onsite") {
-//                       return ["Onsite", "New Onsite", "Edit Onsite"].includes(
-//                         tab
-//                       )
-//                     }
-//                     if (selectedType === "mispunch") {
-//                       return tab === "Mispunch"
-//                     }
-//                     return false
-//                   })
-//                   .map((tab) => (
-//                     <span
-//                       key={tab}
-//                       onClick={() => {
-//                         setSelectedTab(tab)
-//                         setMessage("")
-//                         selectedTabContent(tab)
-//                         setIsOnsite(tab === "Onsite")
-//                       }}
-//                       className={`cursor-pointer ${
-//                         selectedTab === tab
-//                           ? "font-semibold text-blue-500 underline"
-//                           : "text-black"
-//                       }`}
-//                     >
-//                       {tab}
-//                     </span>
-//                   ))}
-//               </div>
-
-//               {/* CONTENT */}
-//               <div className="mt-4">
-//                 {selectedTab !== "Mispunch" && renderContent()}
-
-//                 {/* {selectedTab === "Mispunch" && (
-//                   <div className="max-h-[calc(100vh-280px)] space-y-4 overflow-y-auto px-1">
-
-//                     <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
-//                       <div className="flex items-center justify-between">
-//                         <div className="flex items-center gap-2">
-//                           <svg
-//                             className="h-4 w-4 text-blue-600"
-//                             fill="none"
-//                             stroke="currentColor"
-//                             viewBox="0 0 24 24"
-//                           >
-//                             <path
-//                               strokeLinecap="round"
-//                               strokeLinejoin="round"
-//                               strokeWidth={2}
-//                               d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-//                             />
-//                           </svg>
-
-//                           <span className="text-xs font-medium text-blue-900">
-//                             Request Date
-//                           </span>
-//                         </div>
-
-//                         <span className="text-sm font-semibold text-blue-700">
-//                           {(formData.misspunchDate
-//                             ? new Date(formData.misspunchDate)
-//                             : new Date()
-//                           ).toLocaleDateString("en-GB", {
-//                             day: "2-digit",
-//                             month: "short",
-//                             year: "numeric"
-//                           })}
-//                         </span>
-//                       </div>
-//                     </div>
-
-//                     <div className="rounded-lg border-l-4 border-amber-500 bg-gradient-to-r from-amber-50 to-orange-50 p-3">
-//                       <div className="flex items-start gap-2">
-//                         <div className="mt-0.5 flex-shrink-0 rounded-full bg-amber-100 p-1.5">
-//                           <svg
-//                             className="h-4 w-4 text-amber-600"
-//                             fill="none"
-//                             stroke="currentColor"
-//                             viewBox="0 0 24 24"
-//                           >
-//                             <path
-//                               strokeLinecap="round"
-//                               strokeLinejoin="round"
-//                               strokeWidth={2}
-//                               d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-//                             />
-//                           </svg>
-//                         </div>
-
-//                         <div>
-//                           <h3 className="mb-0.5 text-sm font-semibold text-gray-800">
-//                             Report a Misspunch
-//                           </h3>
-//                           <p className="text-xs leading-tight text-gray-600">
-//                             Missed clocking in or out? Let us know and we'll
-//                             help correct your attendance.
-//                           </p>
-//                         </div>
-//                       </div>
-//                     </div>
-
-//                     <div className="space-y-4">
-
-//                       <div>
-//                         <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-gray-700">
-//                           <svg
-//                             className="h-3.5 w-3.5 text-gray-500"
-//                             fill="none"
-//                             stroke="currentColor"
-//                             viewBox="0 0 24 24"
-//                           >
-//                             <path
-//                               strokeLinecap="round"
-//                               strokeLinejoin="round"
-//                               strokeWidth={2}
-//                               d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-//                             />
-//                           </svg>
-//                           Punch Type
-//                         </label>
-
-//                         <div className="grid grid-cols-2 gap-2.5">
-//                           {["In", "Out"].map((type) => (
-//                             <button
-//                               key={type}
-//                               type="button"
-//                               onClick={() =>
-//                                 setFormData((prev) => ({
-//                                   ...prev,
-//                                   mispunchType: type
-//                                 }))
-//                               }
-//                               className={`relative rounded-lg border-2 px-3 py-2.5 transition-all duration-200 ${
-//                                 formData.mispunchType === type
-//                                   ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm"
-//                                   : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
-//                               }`}
-//                             >
-//                               <div className="flex items-center justify-center gap-1.5">
-//                                 {type === "In" ? (
-//                                   <svg
-//                                     className="h-4 w-4"
-//                                     fill="none"
-//                                     stroke="currentColor"
-//                                     viewBox="0 0 24 24"
-//                                   >
-//                                     <path
-//                                       strokeLinecap="round"
-//                                       strokeLinejoin="round"
-//                                       strokeWidth={2}
-//                                       d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
-//                                     />
-//                                   </svg>
-//                                 ) : (
-//                                   <svg
-//                                     className="h-4 w-4"
-//                                     fill="none"
-//                                     stroke="currentColor"
-//                                     viewBox="0 0 24 24"
-//                                   >
-//                                     <path
-//                                       strokeLinecap="round"
-//                                       strokeLinejoin="round"
-//                                       strokeWidth={2}
-//                                       d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-//                                     />
-//                                   </svg>
-//                                 )}
-
-//                                 <span className="text-sm font-medium">
-//                                   Punch {type}
-//                                 </span>
-//                               </div>
-
-//                               {formData.mispunchType === type && (
-//                                 <div className="absolute -right-1 -top-1 rounded-full bg-blue-500 p-0.5 text-white">
-//                                   <svg
-//                                     className="h-2.5 w-2.5"
-//                                     fill="currentColor"
-//                                     viewBox="0 0 20 20"
-//                                   >
-//                                     <path
-//                                       fillRule="evenodd"
-//                                       clipRule="evenodd"
-//                                       d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-//                                     />
-//                                   </svg>
-//                                 </div>
-//                               )}
-//                             </button>
-//                           ))}
-//                         </div>
-//                       </div>
-
-//                       <div>
-//                         <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-gray-700">
-//                           <svg
-//                             className="h-3.5 w-3.5 text-gray-500"
-//                             fill="none"
-//                             stroke="currentColor"
-//                             viewBox="0 0 24 24"
-//                           >
-//                             <path
-//                               strokeLinecap="round"
-//                               strokeLinejoin="round"
-//                               strokeWidth={2}
-//                               d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-//                             />
-//                           </svg>
-//                           Reason for Misspunch
-//                         </label>
-
-//                         <textarea
-//                           className="w-full resize-none rounded-lg border-2 border-gray-200 px-3 py-2 text-sm transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-//                           rows={3}
-//                           placeholder="Please explain why you missed the punch (e.g., forgot to clock in, system error, etc.)"
-//                           value={formData.remark || ""}
-//                           onChange={(e) =>
-//                             setFormData((prev) => ({
-//                               ...prev,
-//                               remark: e.target.value
-//                             }))
-//                           }
-//                         />
-
-//                         <p className="mt-1 text-xs text-gray-500">
-//                           Provide clear details to help us process your request
-//                           faster
-//                         </p>
-//                       </div>
-//                     </div>
-//                   </div>
-//                 )} */}
-//                 {selectedTab === "Mispunch" && (
-//                   <div className="max-h-[calc(100vh-280px)] space-y-4 overflow-y-auto px-1">
-//                     {/* Date Display */}
-//                     <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
-//                       <div className="flex items-center justify-between">
-//                         <div className="flex items-center gap-2">
-//                           <svg
-//                             className="h-4 w-4 text-blue-600"
-//                             fill="none"
-//                             stroke="currentColor"
-//                             viewBox="0 0 24 24"
-//                           >
-//                             <path
-//                               strokeLinecap="round"
-//                               strokeLinejoin="round"
-//                               strokeWidth={2}
-//                               d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-//                             />
-//                           </svg>
-
-//                           <span className="text-xs font-medium text-blue-900">
-//                             Request Date
-//                           </span>
-//                         </div>
-
-//                         <span className="text-sm font-semibold text-blue-700">
-//                           {(formData.misspunchDate
-//                             ? new Date(formData.misspunchDate)
-//                             : new Date()
-//                           ).toLocaleDateString("en-GB", {
-//                             day: "2-digit",
-//                             month: "short",
-//                             year: "numeric"
-//                           })}
-//                         </span>
-//                       </div>
-//                     </div>
-
-//                     {/* Header Section */}
-//                     <div className="rounded-lg border-l-4 border-amber-500 bg-gradient-to-r from-amber-50 to-orange-50 p-3">
-//                       <div className="flex items-start gap-2">
-//                         <div className="mt-0.5 flex-shrink-0 rounded-full bg-amber-100 p-1.5">
-//                           <svg
-//                             className="h-4 w-4 text-amber-600"
-//                             fill="none"
-//                             stroke="currentColor"
-//                             viewBox="0 0 24 24"
-//                           >
-//                             <path
-//                               strokeLinecap="round"
-//                               strokeLinejoin="round"
-//                               strokeWidth={2}
-//                               d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-//                             />
-//                           </svg>
-//                         </div>
-
-//                         <div>
-//                           <h3 className="mb-0.5 text-sm font-semibold text-gray-800">
-//                             Report a Misspunch
-//                           </h3>
-//                           <p className="text-xs leading-tight text-gray-600">
-//                             Missed clocking in or out? Let us know and we'll
-//                             help correct your attendance.
-//                           </p>
-//                         </div>
-//                       </div>
-//                     </div>
-
-//                     {/* Form Fields */}
-//                     <div className="space-y-4">
-//                       {/* Punch Type */}
-//                       <div>
-//                         <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-gray-700">
-//                           <svg
-//                             className="h-3.5 w-3.5 text-gray-500"
-//                             fill="none"
-//                             stroke="currentColor"
-//                             viewBox="0 0 24 24"
-//                           >
-//                             <path
-//                               strokeLinecap="round"
-//                               strokeLinejoin="round"
-//                               strokeWidth={2}
-//                               d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-//                             />
-//                           </svg>
-//                           Punch Type
-//                         </label>
-
-//                         <div className="grid grid-cols-2 gap-2.5">
-//                           {["In", "Out"].map((type) => (
-//                             <button
-//                               key={type}
-//                               type="button"
-//                               onClick={() => {
-//                                 const defaultTime =
-//                                   type === "In" ? "09:30 AM" : "05:30 PM"
-//                                 const selectedTime =
-//                                   formData.mispunchType === type &&
-//                                   formData.misspunchTime
-//                                     ? formData.misspunchTime
-//                                     : defaultTime
-
-//                                 const timeParts =
-//                                   convertTimeStringToParts(selectedTime)
-
-//                                 setFormData((prev) => ({
-//                                   ...prev,
-//                                   mispunchType: type,
-//                                   showMisspunchTime: true,
-//                                   isTimeEditable: false,
-//                                   misspunchTime: selectedTime,
-//                                   editHour: timeParts.hour,
-//                                   editMinute: timeParts.minute,
-//                                   editPeriod: timeParts.period
-//                                 }))
-//                               }}
-//                               className={`relative rounded-lg border-2 px-3 py-2.5 transition-all duration-200 ${
-//                                 formData.mispunchType === type
-//                                   ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm"
-//                                   : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50"
-//                               }`}
-//                             >
-//                               <div className="flex items-center justify-center gap-1.5">
-//                                 <span className="text-sm font-medium">
-//                                   Punch {type}
-//                                 </span>
-//                               </div>
-
-//                               {formData.mispunchType === type && (
-//                                 <div className="absolute -right-1 -top-1 rounded-full bg-blue-500 p-0.5 text-white">
-//                                   <svg
-//                                     className="h-2.5 w-2.5"
-//                                     fill="currentColor"
-//                                     viewBox="0 0 20 20"
-//                                   >
-//                                     <path
-//                                       fillRule="evenodd"
-//                                       clipRule="evenodd"
-//                                       d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-//                                     />
-//                                   </svg>
-//                                 </div>
-//                               )}
-//                             </button>
-//                           ))}
-//                         </div>
-//                       </div>
-
-//                       {/* Time Section */}
-//                       {formData.showMisspunchTime && (
-//                         <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-//                           <div className="mb-2 flex items-center justify-between">
-//                             <label className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
-//                               {formData.mispunchType === "In"
-//                                 ? "Punch In Time"
-//                                 : "Punch Out Time"}
-//                             </label>
-
-//                             <button
-//                               type="button"
-//                               onClick={() =>
-//                                 setFormData((prev) => ({
-//                                   ...prev,
-//                                   isTimeEditable: !prev.isTimeEditable
-//                                 }))
-//                               }
-//                               className={`rounded-md px-3 py-1 text-xs font-medium transition ${
-//                                 formData.isTimeEditable
-//                                   ? "bg-green-100 text-green-700 hover:bg-green-200"
-//                                   : "bg-blue-100 text-blue-700 hover:bg-blue-200"
-//                               }`}
-//                             >
-//                               {formData.isTimeEditable ? "Done" : "Edit"}
-//                             </button>
-//                           </div>
-
-//                           {!formData.isTimeEditable ? (
-//                             <div className="flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2">
-//                               <span className="text-sm text-gray-600">
-//                                 Selected Time
-//                               </span>
-//                               <span className="text-sm font-semibold text-gray-800">
-//                                 {formatTo12Hour(formData.misspunchTime)}
-//                               </span>
-//                             </div>
-//                           ) : (
-//                             <div className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-white px-2 py-1.5">
-//                               <select
-//                                 value={formData.editHour || "09"}
-//                                 onChange={(e) =>
-//                                   updateMisspunchTime(
-//                                     e.target.value,
-//                                     formData.editMinute || "30",
-//                                     formData.editPeriod || "AM"
-//                                   )
-//                                 }
-//                                 className="h-8 w-14 rounded-md border border-gray-200 bg-white px-1 text-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200"
-//                               >
-//                                 {Array.from({ length: 12 }, (_, i) => {
-//                                   const hour = String(i + 1).padStart(2, "0")
-//                                   return (
-//                                     <option key={hour} value={hour}>
-//                                       {hour}
-//                                     </option>
-//                                   )
-//                                 })}
-//                               </select>
-
-//                               <span className="text-xs text-gray-500">:</span>
-
-//                               <select
-//                                 value={formData.editMinute || "30"}
-//                                 onChange={(e) =>
-//                                   updateMisspunchTime(
-//                                     formData.editHour || "09",
-//                                     e.target.value,
-//                                     formData.editPeriod || "AM"
-//                                   )
-//                                 }
-//                                 className="h-8 w-14 rounded-md border border-gray-200 bg-white px-1 text-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200"
-//                               >
-//                                 {Array.from({ length: 60 }, (_, i) => {
-//                                   const minute = String(i).padStart(2, "0")
-//                                   return (
-//                                     <option key={minute} value={minute}>
-//                                       {minute}
-//                                     </option>
-//                                   )
-//                                 })}
-//                               </select>
-
-//                               <select
-//                                 value={formData.editPeriod || "AM"}
-//                                 onChange={(e) =>
-//                                   updateMisspunchTime(
-//                                     formData.editHour || "09",
-//                                     formData.editMinute || "30",
-//                                     e.target.value
-//                                   )
-//                                 }
-//                                 className="h-8 w-14 rounded-md border border-gray-200 bg-white px-1 text-xs focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-200"
-//                               >
-//                                 <option value="AM">AM</option>
-//                                 <option value="PM">PM</option>
-//                               </select>
-//                             </div>
-//                           )}
-
-//                           <p className="mt-2 text-xs text-gray-500">
-//                             Default time is shown based on selected punch type.
-//                             Click Edit to change it.
-//                           </p>
-//                         </div>
-//                       )}
-
-//                       {/* Remark */}
-//                       <div>
-//                         <label className="mb-2 flex items-center gap-1.5 text-xs font-medium text-gray-700">
-//                           Reason for Misspunch
-//                         </label>
-
-//                         <textarea
-//                           className="w-full resize-none rounded-lg border-2 border-gray-200 px-3 py-2 text-sm transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-//                           rows={3}
-//                           placeholder="Please explain why you missed the punch"
-//                           value={formData.remark || ""}
-//                           onChange={(e) =>
-//                             setFormData((prev) => ({
-//                               ...prev,
-//                               remark: e.target.value
-//                             }))
-//                           }
-//                         />
-//                       </div>
-//                     </div>
-//                   </div>
-//                 )}
-//               </div>
-
-//               {/* BUTTONS SECTION */}
-//               <div className="mt-4 flex justify-center gap-4">
-//                 {/* MISPUNCH SUBMIT */}
-//                 {selectedTab === "Mispunch" && (
-//                   <button
-//                     className="group relative rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-200 transition-all duration-200 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl hover:shadow-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
-//                     onClick={() => handleSubmitAndReset("Mispunch")}
-//                     disabled={!formData.mispunchType || !formData.remark}
-//                   >
-//                     <span className="flex items-center gap-1.5">
-//                       Submit Request
-//                       <svg
-//                         className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1"
-//                         fill="none"
-//                         stroke="currentColor"
-//                         viewBox="0 0 24 24"
-//                       >
-//                         <path
-//                           strokeLinecap="round"
-//                           strokeLinejoin="round"
-//                           strokeWidth={2}
-//                           d="M13 7l5 5m0 0l-5 5m5-5H6"
-//                         />
-//                       </svg>
-//                     </span>
-//                   </button>
-//                 )}
-
-//                 {/* LEAVE APPLY NEW */}
-//                 {selectedTab === "Leave" && (
-//                   <button
-//                     className="rounded-lg bg-blue-800 px-4 py-2 text-white hover:bg-blue-700"
-//                     onClick={() => {
-//                       setSelectedTab("New Leave")
-//                       setFormData((prev) => ({
-//                         ...prev,
-//                         leaveType: "Full Day",
-//                         leaveCategory: "",
-//                         halfDayPeriod: "",
-//                         reason: ""
-//                       }))
-//                     }}
-//                   >
-//                     Apply New Leaves
-//                   </button>
-//                 )}
-
-//                 {/* ONSITE APPLY NEW */}
-//                 {selectedTab === "Onsite" && (
-//                   <button
-//                     onClick={() => {
-//                       setSelectedTab("New Onsite")
-//                       setFormData((prev) => ({
-//                         ...prev,
-//                         onsiteType: "Full Day",
-//                         halfDayPeriod: "",
-//                         description: ""
-//                       }))
-//                       setTableRows([])
-//                     }}
-//                     className="rounded-lg bg-blue-800 px-4 py-2 text-white shadow-lg hover:bg-blue-900"
-//                   >
-//                     Apply New Onsite
-//                   </button>
-//                 )}
-
-//                 {/* SUBMIT / UPDATE */}
-//                 {(selectedTab === "Edit Onsite" ||
-//                   selectedTab === "Edit Leave" ||
-//                   selectedTab === "New Leave" ||
-//                   selectedTab === "New Onsite") && (
-//                   <>
-//                     <button
-//                       className="rounded bg-gradient-to-b from-blue-400 to-blue-500 px-4 py-2 text-white hover:from-blue-400 hover:to-blue-600"
-//                       onClick={() => handleSubmitAndReset(selectedTab)}
-//                     >
-//                       {selectedTab === "Edit Onsite" ||
-//                       selectedTab === "Edit Leave"
-//                         ? "Update"
-//                         : "Submit"}
-//                     </button>
-
-//                     {(selectedTab === "Edit Onsite" ||
-//                       selectedTab === "Edit Leave") && (
-//                       <button
-//                         className="rounded-md bg-red-600 px-4 py-2 font-semibold text-white shadow-lg transition-all duration-200 hover:bg-red-700 active:translate-y-[2px] active:shadow-md"
-//                         onClick={() => handledelete(formData)}
-//                       >
-//                         Delete
-//                       </button>
-//                     )}
-//                   </>
-//                 )}
-
-//                 {/* CLOSE */}
-//                 <button
-//                   className="rounded bg-gray-500 px-4 py-2 text-white hover:bg-gray-600"
-//                   onClick={resetApplicationFlow}
-//                 >
-//                   Close
-//                 </button>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   )
-// }
-
-// export default LeaveApplication
 import React, { useEffect, useState } from "react"
 import { toast } from "react-toastify"
 import dayjs from "dayjs"
@@ -2720,7 +7,28 @@ import BarLoader from "react-spinners/BarLoader"
 import { HiChevronLeft, HiChevronRight } from "react-icons/hi"
 import UseFetch from "../../hooks/useFetch"
 import api from "../../api/api"
-
+import { StaticSidebar } from "./StaticSidebar"
+import { PerformanceModal } from "./PerformanceModal"
+import AdminHeader from "../../header/AdminHeader"
+import StaffHeader from "../../header/StaffHeader"
+import {
+  Eye,
+  Phone,
+  Mail,
+  Settings,
+  MessageSquareText,
+  User,
+  Calendar,
+  Clock,
+  UserPlus,
+  UserCheck,
+  IndianRupee,
+  BellRing,
+  History,
+  ChevronDown,
+  ChevronRight,
+  X
+} from "lucide-react"
 function LeaveApplication() {
   const [events, setEvents] = useState([])
   const [edit, setEdit] = useState(null)
@@ -2750,6 +58,17 @@ console.log(errors)
     top: "",
     bottom: ""
   })
+  const [selectedUserName, setselecteduserName] = useState(null)
+  const [selectedCategory, setselectedCategory] = useState(null)
+  const [selectedDatapopup, setselectedDataPopup] = useState({})
+  const [selectedYear, setSelectedYear] = useState(null)
+  const [periodMode, setperiodMode] = useState("all")
+  const [targetData, settargetData] = useState([])
+  console.log(targetData)
+  const [openModal, setOpenModal] = useState(false)
+  const [productlist, setproductList] = useState([])
+  const [achievedproducts, setacheivedProducts] = useState([])
+  const [selectedPeriod, setselectedPeriod] = useState("")
   const [showModal, setShowModal] = useState(false)
   const [pastDate, setPastDate] = useState(null)
   const [selectedTab, setSelectedTab] = useState("Leave")
@@ -2782,8 +101,10 @@ console.log(errors)
   const [currentmonthleaveData, setcurrentmonthLeaveData] = useState([])
   const [currentmonthonsiteData, setcurrentmonthOnsiteData] = useState([])
   const [currentmonthmisspunchData, setcurrentmonthMisspunchData] = useState([])
-console.log("hhh")
+
+  console.log("hhh")
   const userData = localStorage.getItem("user")
+
   const tabs = [
     "Leave",
     "New Leave",
@@ -2795,11 +116,16 @@ console.log("hhh")
     "New Mispunch"
   ]
   const user = JSON.parse(userData)
+  const [selectedcompanyBranch, setselectedcompanyBranch] = useState(
+    user?.selected[0]?.branch_id
+  )
 
   const { data: leaves, refreshHook } = UseFetch(
     user && `/auth/getallLeave?userid=${user._id}`
   )
-
+  const { data: branchProduct } = UseFetch(
+    `/product/getallbranchProduct?branch=${selectedcompanyBranch}`
+  )
   const { data: misspunchData, refreshHook: misspunchRefresh } = UseFetch(
     user && `/auth/getallmisspunch?userid=${user._id}&from="leaveApplicatiion"`
   )
@@ -2822,20 +148,20 @@ console.log("hhh")
 
   useEffect(() => {
     if (MonthData && currentMonth) {
-console.log("hhh")
+      console.log("hhh")
       setcurrentMonthData(MonthData[currentMonth])
     }
   }, [currentMonth, MonthData])
 
   useEffect(() => {
-console.log("hh")
+    console.log("hh")
     const year = currentDate.getFullYear()
     const month = String(currentDate.getMonth() + 1).padStart(2, "0")
     setCurrentMonth(`${year}-${month}`)
   }, [currentDate])
 
   useEffect(() => {
-console.log("hh")
+    console.log("hh")
     const filteredcurrentmonthlyLeaves = allleaves?.filter((leave) => {
       const leaveMonth = leave.leaveDate.split("T")[0].slice(0, 7)
       return leaveMonth === currentMonth
@@ -2847,7 +173,7 @@ console.log("hh")
     if ((leaves && leaves.length > 0) || (allonsite && allonsite.length) > 0) {
       setAllleaves(leaves || [])
       setAllOnsite(allonsite || [])
-console.log("hhh")
+      console.log("hhh")
     }
   }, [leaves, allonsite])
 
@@ -2857,10 +183,10 @@ console.log("hhh")
         const onsiteMonth = onsite.onsiteDate.split("T")[0].slice(0, 7)
         return onsiteMonth === currentMonth
       })
-console.log("hh")
+      console.log("hh")
       setcurrentmonthOnsiteData(filteredcurrentmonthlyOnsites || [])
     } else {
-console.log("H")
+      console.log("H")
       setcurrentmonthOnsiteData([])
     }
   }, [allOnsites, currentMonth])
@@ -2871,10 +197,10 @@ console.log("H")
         const misspunchMonth = item.misspunchDate?.split("T")[0]?.slice(0, 7)
         return misspunchMonth === currentMonth
       })
-console.log("h")
+      console.log("h")
       setcurrentmonthMisspunchData(filteredCurrentMonthlyMisspunch)
     } else {
-console.log("h")
+      console.log("h")
       setcurrentmonthMisspunchData([])
     }
   }, [misspunchData, currentMonth])
@@ -2905,7 +231,7 @@ console.log("h")
         day: date
       })
     }
-console.log("hhh")
+    console.log("hhh")
     setVisibleDays(days)
   }, [currentDate])
 
@@ -2914,7 +240,7 @@ console.log("hhh")
     const isPastDate =
       formData?.leaveDate && dayjs(formData.leaveDate).isBefore(today)
     setPastDate(isPastDate)
-console.log("hh")
+    console.log("hh")
   }, [formData])
 
   useEffect(() => {
@@ -2924,7 +250,7 @@ console.log("hh")
       leavemasterleavecount &&
       compensatoryleaves >= 0
     ) {
-console.log("Hh")
+      console.log("Hh")
       const currentDate = new Date()
       const currentYear = currentDate.getFullYear()
       const currentmonth = currentDate.getMonth() + 1
@@ -3044,7 +370,7 @@ console.log("Hh")
       (allleaves && allleaves.length === 0 && leavemasterleavecount) ||
       compensatoryleaves >= 0
     ) {
-console.log("h")
+      console.log("h")
       const currentDate = new Date()
       const currentYear = currentDate.getFullYear()
       const currentmonth = currentDate.getMonth() + 1
@@ -3124,10 +450,9 @@ console.log("h")
     allleaves,
     leavemasterleavecount,
     formData,
-    compensatoryleaves,
-  
+    compensatoryleaves
   ])
-console.log("hh")
+  console.log("hh")
   useEffect(() => {
     if (isOnsite) {
       setFormData((prev) => ({
@@ -3207,7 +532,104 @@ console.log("hh")
       }
     ])
   }
+  const handleMoreClick = (id, name) => {
+    const Datas = targetData?.userWiseResults
+    console.log(id)
+    console.log(name)
+    console.log("hh")
+    const filteredList = branchProduct
+      .filter(
+        (item) =>
+          item.selected?.some(
+            (selectedItem) => String(selectedItem.category_id) === String(id)
+          ) || String(item.category_id) === String(id)
+      )
+      .map((item) => item.productName || item.serviceName)
+    console.log(filteredList)
+    setproductList(filteredList)
+    setselectedCategory({ Id: id, categoryName: name })
+    console.log("J")
+    console.log(targetData)
+    console.log(user?._id)
+    const filteredloggedUserItem = Datas.filter(
+      (item) => item.userId === user._id
+    )
+    console.log("hhh")
 
+    console.log(Datas)
+    console.log("hhhh")
+    console.log(filteredloggedUserItem)
+    console.log(id)
+    // const filteredselectedCategory =
+    //   filteredloggedUserItem[0].categories.filter(
+    //     (item) => item.categoryId === id
+    //   )
+    const filteredselectedCategory = Datas.flatMap(
+      (user) => user.categories || []
+    ).filter((item) => item.categoryId === id)
+    console.log("Hh")
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+    console.log("hhh")
+    setselectedDataPopup(summary)
+    console.log(filteredselectedCategory && filteredselectedCategory.length)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      setacheivedProducts((prev) => [
+        ...prev,
+        ...filteredselectedCategory.flatMap((item) =>
+          (item?.products || []).map((product) => ({
+            productname: product.name,
+            amount: product.achieved
+          }))
+        )
+      ])
+    } else {
+      setacheivedProducts([])
+    }
+    setOpenModal(true)
+  }
+  const handleSelectedUser = (category, userId, userName) => {
+    setselecteduserName(userName)
+    setselectedCategory({
+      Id: category.Id,
+      categoryName: category.categoryName
+    })
+    const filteredloggedUserItem = data?.userWiseResults.filter(
+      (item) => item.userId === userId
+    )
+    const filteredselectedCategory =
+      filteredloggedUserItem[0].categories.filter(
+        (item) => item.categoryId === category.Id
+      )
+    const summary = filteredselectedCategory.reduce(
+      (acc, cur) => {
+        acc.target += Number(cur.target || 0)
+        acc.achieved += Number(cur.achieved || 0)
+        acc.balance += Number(cur.balance || 0)
+        return acc
+      },
+      { target: 0, achieved: 0, balance: 0 }
+    )
+
+    setselectedDataPopup(summary)
+    if (filteredselectedCategory && filteredselectedCategory.length) {
+      setacheivedProducts(
+        filteredselectedCategory[0]?.products?.map((product) => ({
+          productname: product.name,
+          amount: product.achieved
+        })) || []
+      )
+    } else {
+      setacheivedProducts([])
+    }
+  }
   const handledelete = async (data) => {
     try {
       setLoader(true)
@@ -3573,6 +995,8 @@ console.log(formData)
           }))
           return false
         } else {
+console.log(
+"GGGGGGGGGggggggggggggggggggggggggg")
           setMessage({ top: "", bottom: "" })
           // const response = await fetch(
           //   `http://localhost:9000/api/auth/leave?selectedid=${user._id}&assignedto=${user.assignedto}`,
@@ -4936,320 +2360,527 @@ console.log("hhh")
   }
 
   return (
-    <div className="w-full">
-      <div className="sticky top-0 z-30 flex items-center justify-between bg-white px-4 py-3">
-        <h2 className="text-xl font-semibold">{visibleMonth}</h2>
+    <div className="h-full bg-[#ADD8E6] overflow-hidden">
+      <div className="flex h-full flex-row">
+        <StaticSidebar
+          handleMoreClick={handleMoreClick}
+          selectedCompanyBranch={selectedcompanyBranch}
+          setselectedCompanyBranch={setselectedcompanyBranch}
+          parenttargetData={settargetData}
+          parentperiodmode={setperiodMode}
+          parentyear={setSelectedYear}
+          setselectedPeriod={setselectedPeriod}
+        />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          <header className="flex items-center justify-between bg-[#ADD8E6]">
+            {user?.role?.toLowerCase() === "admin" ? (
+              <AdminHeader hide={true} />
+            ) : (
+              <StaffHeader hide={true} />
+            )}
 
-        <div className="flex space-x-2">
-          <button
-            onClick={prevMonth}
-            className="rounded-full bg-gray-100 p-2 transition hover:bg-gray-200"
-          >
-            <HiChevronLeft className="h-5 w-5" />
-          </button>
+            <div className="flex items-center gap-1.5  bg-[#ADD8E6] pr-3 h-full">
+              <button className="rounded-full p-1.5 transition bg-slate-100">
+                <Mail size={15} strokeWidth={2.2} />
+              </button>
+              <div className="relative">
+                <button className="rounded-full p-1.5 transition bg-slate-100">
+                  <MessageSquareText size={15} strokeWidth={2.2} />
+                </button>
+                <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500" />
+              </div>
+              <button className="rounded-full p-1.5 transition bg-slate-100">
+                <Settings size={15} strokeWidth={2.2} />
+              </button>
+              {/* <button className="rounded-full p-1.5 transition bg-slate-100">
+                <User size={15} strokeWidth={2.2} />
+              </button> */}
 
-          <button
-            onClick={goToToday}
-            className="rounded-lg bg-gray-100 px-4 py-2 transition hover:bg-gray-200"
-          >
-            Today
-          </button>
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowUserMenu((prev) => !prev)
+                  }}
+                  className="rounded-full p-1.5 transition bg-slate-100"
+                >
+                  <User size={15} strokeWidth={2.2} />
+                </button>
 
-          <button
-            onClick={nextMonth}
-            className="rounded-full bg-gray-100 p-2 transition hover:bg-gray-200"
-          >
-            <HiChevronRight className="h-5 w-5" />
-          </button>
-        </div>
-      </div>
+                {/* {showUserMenu && (
+                  <div
+                    onClick={(e) => e.stopPropagation()} 
+                    className="absolute right-0 mt-2 w-32 bg-white border border-slate-200 rounded-md shadow-lg z-50"
+                  >
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )} */}
+              </div>
+            </div>
+          </header>
+          <div className="sticky top-0 z-30 flex items-center justify-between px-4 py-3">
+            <h2 className="text-xl font-semibold">{visibleMonth}</h2>
 
-      <div className="mx-4 overflow-y-auto rounded-lg border">
-        {visibleDays.map((date, index) => (
-          <div
-            key={index}
-            onClick={() => {
-              setSelectedDate(date)
-              setSelectedType("")
-              setShowTypeSelector(true)
-            }}
-            className="mb-2 flex cursor-pointer items-center justify-between bg-gray-200 px-4 py-2"
-          >
-            <div>
-              <div className="flex items-center">
-                <div className="mr-4 rounded-full border px-2 text-sm font-bold sm:text-lg">
-                  {date.fullMonthDay}
+            <div className="flex space-x-2">
+              <button
+                onClick={prevMonth}
+                className="rounded-full bg-gray-100 p-2 transition hover:bg-gray-200"
+              >
+                <HiChevronLeft className="h-5 w-5" />
+              </button>
+
+              <button
+                onClick={goToToday}
+                className="rounded-lg bg-gray-100 px-4 py-2 transition hover:bg-gray-200"
+              >
+                Today
+              </button>
+
+              <button
+                onClick={nextMonth}
+                className="rounded-full bg-gray-100 p-2 transition hover:bg-gray-200"
+              >
+                <HiChevronRight className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+          {/* <div className="mx-4 overflow-y-auto rounded-lg border">
+            {visibleDays.map((date, index) => (
+              <div
+                key={index}
+                onClick={() => {
+                  setSelectedDate(date)
+                  setSelectedType("")
+                  setShowTypeSelector(true)
+                }}
+                className="mb-2 flex cursor-pointer items-center justify-between bg-white px-4 py-2"
+              >
+                <div>
+                  <div className="flex items-center">
+                    <div className="mr-4 rounded-full border px-2 text-sm font-bold sm:text-lg">
+                      {date.fullMonthDay}
+                    </div>
+
+                    <div className="font-medium">
+                      {new Date(date.fullDate).toLocaleString("default", {
+                        weekday: "long"
+                      })}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="font-medium">
+                <div className="flex flex-col">
+                  {currentmonthleaveData?.length > 0 &&
+                    currentmonthleaveData
+                      .filter(
+                        (leave) =>
+                          new Date(leave.leaveDate)
+                            .toISOString()
+                            .split("T")[0] === date.fullDate
+                      )
+                      .map((leave, i) => (
+                        <div key={i} className="mb-1 flex items-center">
+                          <div className="flex flex-col text-gray-600">
+                            <span className="text-sm">{leave?.leaveType}</span>
+                            <span className="text-sm font-semibold">
+                              {leave?.leaveCategory}
+                            </span>
+                          </div>
+
+                          <div
+                            className={`ml-2 rounded-full px-3 py-1 text-sm text-white ${
+                              leave.departmentstatus === "Dept Approved" ||
+                              leave.hrstatus === "HR/Onsite Approved"
+                                ? "bg-green-500"
+                                : leave.departmentstatus === "Not Approved" &&
+                                    leave.hrstatus === "Not Approved"
+                                  ? "bg-yellow-500"
+                                  : "bg-red-500"
+                            }`}
+                          >
+                            {leave.departmentstatus === "Dept Approved" ||
+                            leave.hrstatus === "HR/Onsite Approved"
+                              ? "Approved"
+                              : leave.departmentstatus === "Not Approved" &&
+                                  leave.hrstatus === "Not Approved"
+                                ? "Pending"
+                                : ""}
+                          </div>
+                        </div>
+                      ))}
+                </div>
+              </div>
+            ))}
+          </div> */}
+<div className="mx-4 overflow-y-auto rounded-2xl border border-slate-200 bg-slate-50/80 p-3 shadow-sm">
+  <div className="space-y-3">
+    {visibleDays.map((date, index) => {
+      const dayLeaves =
+        currentmonthleaveData?.filter(
+          (leave) =>
+            new Date(leave.leaveDate).toISOString().split("T")[0] ===
+            date.fullDate
+        ) || []
+
+      return (
+        <div
+          key={index}
+          onClick={() => {
+            setSelectedDate(date)
+            setSelectedType("")
+            setShowTypeSelector(true)
+          }}
+          className="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+        >
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex min-w-0 items-center gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-center text-sm font-bold text-white shadow-sm sm:h-16 sm:w-16 sm:text-base">
+                {date.fullMonthDay}
+              </div>
+
+              <div className="min-w-0">
+                <div className="text-base font-semibold text-slate-900 sm:text-lg">
                   {new Date(date.fullDate).toLocaleString("default", {
                     weekday: "long"
+                  })}
+                </div>
+                <div className="mt-1 text-sm text-slate-500">
+                  {new Date(date.fullDate).toLocaleDateString("en-IN", {
+                    day: "2-digit",
+                    month: "long",
+                    year: "numeric"
                   })}
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-col">
-              {currentmonthleaveData?.length > 0 &&
-                currentmonthleaveData
-                  .filter(
-                    (leave) =>
-                      new Date(leave.leaveDate).toISOString().split("T")[0] ===
-                      date.fullDate
-                  )
-                  .map((leave, i) => (
-                    <div key={i} className="mb-1 flex items-center">
-                      <div className="flex flex-col text-gray-600">
-                        <span className="text-sm">{leave?.leaveType}</span>
-                        <span className="text-sm font-semibold">
+            <div className="flex flex-col gap-2 md:min-w-[280px] md:items-end">
+              {dayLeaves.length > 0 ? (
+                dayLeaves.map((leave, i) => {
+                  const isApproved =
+                    leave.departmentstatus === "Dept Approved" ||
+                    leave.hrstatus === "HR/Onsite Approved"
+
+                  const isPending =
+                    leave.departmentstatus === "Not Approved" &&
+                    leave.hrstatus === "Not Approved"
+
+                  return (
+                    <div
+                      key={i}
+                      className="flex w-full flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-slate-700">
+                          {leave?.leaveType}
+                        </div>
+                        <div className="truncate text-sm font-semibold text-slate-900">
                           {leave?.leaveCategory}
-                        </span>
+                        </div>
                       </div>
 
-                      <div
-                        className={`ml-2 rounded-full px-3 py-1 text-sm text-white ${
-                          leave.departmentstatus === "Dept Approved" ||
-                          leave.hrstatus === "HR/Onsite Approved"
-                            ? "bg-green-500"
-                            : leave.departmentstatus === "Not Approved" &&
-                                leave.hrstatus === "Not Approved"
-                              ? "bg-yellow-500"
-                              : "bg-red-500"
+                      <span
+                        className={`inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${
+                          isApproved
+                            ? "bg-emerald-100 text-emerald-700"
+                            : isPending
+                              ? "bg-amber-100 text-amber-700"
+                              : "bg-rose-100 text-rose-700"
                         }`}
                       >
-                        {leave.departmentstatus === "Dept Approved" ||
-                        leave.hrstatus === "HR/Onsite Approved"
+                        {isApproved
                           ? "Approved"
-                          : leave.departmentstatus === "Not Approved" &&
-                              leave.hrstatus === "Not Approved"
+                          : isPending
                             ? "Pending"
-                            : ""}
-                      </div>
+                            : "Rejected"}
+                      </span>
                     </div>
-                  ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {showTypeSelector && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-80 rounded-lg bg-white p-6 shadow-lg">
-            <h3 className="mb-4 text-center text-lg font-semibold">
-              Select Request Type
-            </h3>
-
-            <div className="flex flex-col space-y-3">
-              {["leave", "onsite", "mispunch"].map((type) => (
-                <label
-                  key={type}
-                  className="flex cursor-pointer items-center space-x-2 rounded-md px-2 py-2 transition hover:bg-gray-50"
-                >
-                  <input
-                    type="radio"
-                    name="type"
-                    value={type}
-                    checked={selectedType === type}
-                    onChange={(e) =>
-                      handleTypeSelection(e.target.value, selectedDate)
-                    }
-                  />
-                  <span className="capitalize">{type}</span>
-                </label>
-              ))}
-            </div>
-
-            <div className="mt-5 flex justify-end">
-              <button
-                className="rounded bg-gray-400 px-4 py-1 text-white transition hover:bg-gray-500"
-                onClick={() => {
-                  setShowTypeSelector(false)
-                  setSelectedType("")
-                }}
-              >
-                Cancel
-              </button>
+                  )
+                })
+              ) : (
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-400 md:text-right">
+                  No leave applied
+                </div>
+              )}
             </div>
           </div>
         </div>
-      )}
+      )
+    })}
+  </div>
+</div>
+        </div>
 
-      {showModal && leaveBalance && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div
-            className={`mx-4 flex max-h-[90vh] flex-col overflow-y-auto rounded-lg bg-white shadow-lg ${
-              selectedTab === "New Onsite" ? "md:w-3/4" : "sm:w-auto"
-            }`}
-          >
-            {loader && (
-              <BarLoader
-                cssOverride={{ width: "100%", height: "6px" }}
-                color="#4A90E2"
-              />
-            )}
+        {showTypeSelector && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="w-80 rounded-lg bg-white p-6 shadow-lg">
+              <h3 className="mb-4 text-center text-lg font-semibold">
+                Select Request Type
+              </h3>
 
-            <div className="p-3">
-              <div className="flex justify-center space-x-4">
-                {tabs
-                  ?.filter((tab) => {
-                    if (selectedType === "leave") {
-                      return ["Leave", "New Leave", "Edit Leave"].includes(tab)
-                    }
-                    if (selectedType === "onsite") {
-                      return ["Onsite", "New Onsite", "Edit Onsite"].includes(
-                        tab
-                      )
-                    }
-                    if (selectedType === "mispunch") {
-                      return ["Mispunch", "New Mispunch"].includes(tab)
-                    }
-                    return false
-                  })
-                  .map((tab) => (
-                    <span
-                      key={tab}
-                      onClick={() => {
-                        setSelectedTab(tab)
-                        setMessage({ top: "", bottom: "" })
-                        selectedTabContent(tab)
-                        setIsOnsite(tab === "Onsite")
-                      }}
-                      className={`cursor-pointer ${
-                        selectedTab === tab
-                          ? "font-semibold text-blue-500 underline"
-                          : "text-black"
-                      }`}
-                    >
-                      {tab}
-                    </span>
-                  ))}
+              <div className="flex flex-col space-y-3">
+                {["leave", "onsite", "mispunch"].map((type) => (
+                  <label
+                    key={type}
+                    className="flex cursor-pointer items-center space-x-2 rounded-md px-2 py-2 transition hover:bg-gray-50"
+                  >
+                    <input
+                      type="radio"
+                      name="type"
+                      value={type}
+                      checked={selectedType === type}
+                      onChange={(e) =>
+                        handleTypeSelection(e.target.value, selectedDate)
+                      }
+                    />
+                    <span className="capitalize">{type}</span>
+                  </label>
+                ))}
               </div>
 
-              <div className="mt-4">{renderContent()}</div>
-
-              <div className="mt-4 flex justify-center gap-4">
-                {selectedTab === "Leave" && (
-                  <button
-                    className="rounded-lg bg-blue-800 px-4 py-2 text-white hover:bg-blue-700"
-                    onClick={() => {
-                      setSelectedTab("New Leave")
-                      setFormData((prev) => ({
-                        ...prev,
-                        leaveType: "Full Day",
-                        leaveCategory: "",
-                        halfDayPeriod: "",
-                        reason: ""
-                      }))
-                    }}
-                  >
-                    Apply New Leaves
-                  </button>
-                )}
-
-                {selectedTab === "Onsite" && (
-                  <button
-                    onClick={() => {
-                      setSelectedTab("New Onsite")
-                      setFormData((prev) => ({
-                        ...prev,
-                        onsiteType: "Full Day",
-                        halfDayPeriod: "",
-                        description: ""
-                      }))
-                      setTableRows([])
-                    }}
-                    className="rounded-lg bg-blue-800 px-4 py-2 text-white shadow-lg hover:bg-blue-900"
-                  >
-                    Apply New Onsite
-                  </button>
-                )}
-
-                {selectedTab === "Mispunch" && (
-                  <button
-                    onClick={() => {
-                      setSelectedTab("New Mispunch")
-                      setFormData((prev) => ({
-                        ...prev,
-                        misspunchDate: clickedDate || prev.misspunchDate,
-                        mispunchType: "",
-                        misspunchTime: "",
-                        remark: "",
-                        showMisspunchTime: false,
-                        isTimeEditable: false,
-                        editHour: "09",
-                        editMinute: "30",
-                        editPeriod: "AM"
-                      }))
-                    }}
-                    className="rounded-lg bg-blue-800 px-4 py-2 text-white shadow-lg hover:bg-blue-900"
-                  >
-                    Apply New Misspunch
-                  </button>
-                )}
-
-                {selectedTab === "New Mispunch" && (
-                  <button
-                    className="group relative rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-200 transition-all duration-200 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl hover:shadow-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
-                    onClick={() => handleSubmitAndReset("New Mispunch")}
-                    disabled={!formData.mispunchType || !formData.remark}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      Submit Request
-                      <svg
-                        className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M13 7l5 5m0 0l-5 5m5-5H6"
-                        />
-                      </svg>
-                    </span>
-                  </button>
-                )}
-
-                {(selectedTab === "Edit Onsite" ||
-                  selectedTab === "Edit Leave" ||
-                  selectedTab === "New Leave" ||
-                  selectedTab === "New Onsite") && (
-                  <>
-                    <button
-                      className="rounded bg-gradient-to-b from-blue-400 to-blue-500 px-4 py-2 text-white hover:from-blue-400 hover:to-blue-600"
-                      onClick={() => handleSubmitAndReset(selectedTab)}
-                    >
-                      {selectedTab === "Edit Onsite" ||
-                      selectedTab === "Edit Leave"
-                        ? "Update"
-                        : "Submit"}
-                    </button>
-
-                    {(selectedTab === "Edit Onsite" ||
-                      selectedTab === "Edit Leave") && (
-                      <button
-                        className="rounded-md bg-red-600 px-4 py-2 font-semibold text-white shadow-lg transition-all duration-200 hover:bg-red-700 active:translate-y-[2px] active:shadow-md"
-                        onClick={() => handledelete(formData)}
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </>
-                )}
-
+              <div className="mt-5 flex justify-end">
                 <button
-                  className="rounded bg-gray-500 px-4 py-2 text-white hover:bg-gray-600"
-                  onClick={resetApplicationFlow}
+                  className="rounded bg-gray-400 px-4 py-1 text-white transition hover:bg-gray-500"
+                  onClick={() => {
+                    setShowTypeSelector(false)
+                    setSelectedType("")
+                  }}
                 >
-                  Close
+                  Cancel
                 </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {showModal && leaveBalance && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div
+              className={`mx-4 flex max-h-[90vh] flex-col overflow-y-auto rounded-lg bg-white shadow-lg ${
+                selectedTab === "New Onsite" ? "md:w-3/4" : "sm:w-auto"
+              }`}
+            >
+              {loader && (
+                <BarLoader
+                  cssOverride={{ width: "100%", height: "6px" }}
+                  color="#4A90E2"
+                />
+              )}
+
+              <div className="p-3">
+                <div className="flex justify-center space-x-4">
+                  {tabs
+                    ?.filter((tab) => {
+                      if (selectedType === "leave") {
+                        return ["Leave", "New Leave", "Edit Leave"].includes(
+                          tab
+                        )
+                      }
+                      if (selectedType === "onsite") {
+                        return ["Onsite", "New Onsite", "Edit Onsite"].includes(
+                          tab
+                        )
+                      }
+                      if (selectedType === "mispunch") {
+                        return ["Mispunch", "New Mispunch"].includes(tab)
+                      }
+                      return false
+                    })
+                    .map((tab) => (
+                      <span
+                        key={tab}
+                        onClick={() => {
+                          setSelectedTab(tab)
+                          setMessage({ top: "", bottom: "" })
+                          selectedTabContent(tab)
+                          setIsOnsite(tab === "Onsite")
+                        }}
+                        className={`cursor-pointer ${
+                          selectedTab === tab
+                            ? "font-semibold text-blue-500 underline"
+                            : "text-black"
+                        }`}
+                      >
+                        {tab}
+                      </span>
+                    ))}
+                </div>
+
+                <div className="mt-4">{renderContent()}</div>
+
+                <div className="mt-4 flex justify-center gap-4">
+                  {selectedTab === "Leave" && (
+                    <button
+                      className="rounded-lg bg-blue-800 px-4 py-2 text-white hover:bg-blue-700"
+                      onClick={() => {
+                        setSelectedTab("New Leave")
+                        setFormData((prev) => ({
+                          ...prev,
+                          leaveType: "Full Day",
+                          leaveCategory: "",
+                          halfDayPeriod: "",
+                          reason: ""
+                        }))
+                      }}
+                    >
+                      Apply New Leaves
+                    </button>
+                  )}
+
+                  {selectedTab === "Onsite" && (
+                    <button
+                      onClick={() => {
+                        setSelectedTab("New Onsite")
+                        setFormData((prev) => ({
+                          ...prev,
+                          onsiteType: "Full Day",
+                          halfDayPeriod: "",
+                          description: ""
+                        }))
+                        setTableRows([])
+                      }}
+                      className="rounded-lg bg-blue-800 px-4 py-2 text-white shadow-lg hover:bg-blue-900"
+                    >
+                      Apply New Onsite
+                    </button>
+                  )}
+
+                  {selectedTab === "Mispunch" && (
+                    <button
+                      onClick={() => {
+                        setSelectedTab("New Mispunch")
+                        setFormData((prev) => ({
+                          ...prev,
+                          misspunchDate: clickedDate || prev.misspunchDate,
+                          mispunchType: "",
+                          misspunchTime: "",
+                          remark: "",
+                          showMisspunchTime: false,
+                          isTimeEditable: false,
+                          editHour: "09",
+                          editMinute: "30",
+                          editPeriod: "AM"
+                        }))
+                      }}
+                      className="rounded-lg bg-blue-800 px-4 py-2 text-white shadow-lg hover:bg-blue-900"
+                    >
+                      Apply New Misspunch
+                    </button>
+                  )}
+
+                  {selectedTab === "New Mispunch" && (
+                    <button
+                      className="group relative rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-200 transition-all duration-200 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl hover:shadow-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
+                      onClick={() => handleSubmitAndReset("New Mispunch")}
+                      disabled={!formData.mispunchType || !formData.remark}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        Submit Request
+                        <svg
+                          className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 7l5 5m0 0l-5 5m5-5H6"
+                          />
+                        </svg>
+                      </span>
+                    </button>
+                  )}
+
+                  {(selectedTab === "Edit Onsite" ||
+                    selectedTab === "Edit Leave" ||
+                    selectedTab === "New Leave" ||
+                    selectedTab === "New Onsite") && (
+                    <>
+                      <button
+                        className="rounded bg-gradient-to-b from-blue-400 to-blue-500 px-4 py-2 text-white hover:from-blue-400 hover:to-blue-600"
+                        onClick={() => handleSubmitAndReset(selectedTab)}
+                      >
+                        {selectedTab === "Edit Onsite" ||
+                        selectedTab === "Edit Leave"
+                          ? "Update"
+                          : "Submit"}
+                      </button>
+
+                      {(selectedTab === "Edit Onsite" ||
+                        selectedTab === "Edit Leave") && (
+                        <button
+                          className="rounded-md bg-red-600 px-4 py-2 font-semibold text-white shadow-lg transition-all duration-200 hover:bg-red-700 active:translate-y-[2px] active:shadow-md"
+                          onClick={() => handledelete(formData)}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </>
+                  )}
+
+                  <button
+                    className="rounded bg-gray-500 px-4 py-2 text-white hover:bg-gray-600"
+                    onClick={resetApplicationFlow}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        <PerformanceModal
+          modalOpen={openModal}
+          splitType={targetData?.selectedMeasurementType}
+          selectedperiod={selectedPeriod}
+          allperiods={targetData?.periods}
+          onselectedPeriodChange={(val, val2) => {
+            setSelectedMonth(val2)
+            setselectedPeriod(val)
+          }}
+          onMonthChange={(val) => {
+            setcategorylist([])
+            setacheivedProducts([])
+            setselectedDataPopup([])
+            setperiodMode(val)
+          }}
+          onYearChange={(val) => {
+            setcategorylist([])
+            setacheivedProducts([])
+            setselectedDataPopup([])
+            setSelectedYear(val)
+          }}
+          productlist={productlist}
+          onClose={() => {
+            setselecteduserName(user?.name)
+            setacheivedProducts([])
+            setOpenModal(false)
+          }}
+          selectedMonth={periodMode}
+          selectedYear={selectedYear}
+          summary={{
+            target: selectedDatapopup?.target,
+            achieved: selectedDatapopup?.achieved,
+            balance:
+              selectedDatapopup?.achieved > selectedDatapopup?.target
+                ? 0
+                : selectedDatapopup?.balance
+          }}
+          products={achievedproducts}
+          targetData={targetData?.userWiseResults}
+          loggedUser={user}
+          selectedUser={selectedUserName}
+          category={selectedCategory}
+          handleSelectedUser={handleSelectedUser}
+        />
+      </div>
     </div>
   )
 }

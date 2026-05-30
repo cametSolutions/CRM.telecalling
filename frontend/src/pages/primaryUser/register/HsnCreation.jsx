@@ -75,7 +75,7 @@ function HsnCreation() {
   }
 
   return (
-    <div className="container items-center p-8  bg-gray-100 ">
+    <div className="container items-center   bg-[#ADD8E6] p-5 ">
       <div className=" bg-white w-auto p-8 shadow-xl">
         <div className="flex justify-end">
           <button

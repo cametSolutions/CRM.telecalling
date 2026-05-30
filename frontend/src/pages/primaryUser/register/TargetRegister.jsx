@@ -190,7 +190,7 @@ export const TargetRegister = () => {
   const { data } = UseFetch("/auth/getallusers?isVerified=true")
   const { data: category } = UseFetch("/inventory/getCategory")
   const { data: tasklist } = UseFetch("/lead/getAlltasktoTarget")
-
+console.log(tasklist)
   const loggeduserBranch = useSelector(
     (state) => state.companyBranch.loggeduserbranches
   )

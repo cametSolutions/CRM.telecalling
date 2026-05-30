@@ -39,7 +39,7 @@ console.log(user.role)
     }
   }
   return (
-    <div className="h-full">
+    <div className="h-auto bg-[#ADD8E6] min-h-full p-5">
       <ProductAdd process="Registration" handleProductData={handleSubmit} />
     </div>
   )

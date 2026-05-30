@@ -103,8 +103,8 @@ const MarketingDashboard = () => {
   const [periodMode, setperiodMode] = useState("all")
   const [loggedusedTarget, setloggeduserTarget] = useState([])
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()))
-  const { data: followup } = UseFetch("/lead/getfollowupsummaryReport")
-
+  const { data: followup } = UseFetch(`/lead/getfollowupsummaryReport?branchId=${selectedBranch}`)
+console.log(selectedBranch)
   const { data, loading: targetLoading } = UseFetch(
     selectedBranch &&
       selectedMonth &&
@@ -271,11 +271,7 @@ const MarketingDashboard = () => {
       console.log(uniqueCategories)
       console.log(data?.userWiseResults)
       const updatedCategories = uniqueCategories.map((cat) => {
-        // Get ALL matching categories (for different months)
-        // const matchedCategories =
-        //   data?.userWiseResults?.categories.filter(
-        //     (c) => c.categoryId === cat.categoryId
-        //   ) || []
+       
         const matchedCategories =
           data?.userWiseResults
             ?.flatMap((user) => user.categories || [])
@@ -299,6 +295,7 @@ const MarketingDashboard = () => {
       })
       console.log(data?.userWiseResults)
       console.log(updatedCategories)
+console.log(updatedCategories)
       setcategorylist(updatedCategories)
     }
   }, [data])
@@ -630,7 +627,7 @@ const MarketingDashboard = () => {
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           {/* TOP NAVBAR */}
 
-          <header className="flex items-center justify-between border-b border-slate-200 bg-[#0F172A]/95 py-0.5 ">
+          <header className="flex items-center justify-between bg-[#ADD8E6] py-0.5 ">
             {user?.role?.toLowerCase() === "admin" ? (
               <AdminHeader />
             ) : (

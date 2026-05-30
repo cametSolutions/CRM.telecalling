@@ -1,4 +1,3 @@
-
 import React, { useState } from "react"
 import { Menu, ChevronLeft, ChevronRight } from "lucide-react"
 
@@ -7,12 +6,13 @@ import CategoryDetailsModal from "./CategoryDetailsModal"
 
 const Sidebar = ({
   handleMoreClick,
-achievedPoints,
+  achievedPoints,
   sidebarOpen,
   toggleSidebar,
   user,
   selectedBranch,
   setselectedBranch,
+  setselectedParentBranch,
   branchOptions,
   categorylist,
   targetLoading,
@@ -20,12 +20,13 @@ achievedPoints,
   SkeletonTable,
   setAvatarOpen
 }) => {
-console.log(categorylist)
+  console.log(selectedBranch)
+  console.log(categorylist)
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState(null)
 
   const handleCategoryClick = (categoryId, categoryName) => {
-console.log("hh")
+    console.log("hh")
     const category = categorylist.find(
       (cat) => String(cat.categoryId) === String(categoryId)
     )
@@ -34,7 +35,7 @@ console.log("hh")
     setModalOpen(true)
 
     if (handleMoreClick) {
-console.log("hhh")
+      console.log("hhh")
       handleMoreClick(categoryId, categoryName)
     }
   }
@@ -46,7 +47,7 @@ console.log("hhh")
           flex flex-col border-r border-teal-900/40
           bg-gradient-to-b from-[#0f766e] to-[#115e59] text-white
           transition-[width] duration-200 ease-in-out
-          lg:h-full lg:flex-shrink-0
+          h-full lg:flex-shrink-0
           ${sidebarOpen ? "w-full lg:w-[240px]" : "w-full lg:w-[64px]"}
         `}
       >
@@ -114,7 +115,11 @@ console.log("hhh")
             <div className="mt-1.5">
               <BranchSelect
                 value={selectedBranch}
-                onChange={setselectedBranch}
+                onChange={(value) =>{
+
+                  setselectedParentBranch(value)
+                  setselectedBranch(value)}
+                }
                 options={branchOptions}
               />
             </div>

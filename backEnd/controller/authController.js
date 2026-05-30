@@ -7790,7 +7790,9 @@ export const LeaveApply = async (req, res) => {
   const { selectedid, assignedto } = req.query
 
   const objectId = new mongoose.Types.ObjectId(selectedid)
+console.log("objectiddddddd")
   const assignedTo = new mongoose.Types.ObjectId(assignedto)
+console.log("assingnedto")
 
   const {
     leaveDate,
